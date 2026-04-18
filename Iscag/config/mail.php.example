@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * Mail Configuration Template
+ * 
+ * Instructions:
+ * 1. Copy this file to mail.php
+ * 2. Update the credentials with your actual Gmail App Password.
+ */
+return [
+    'host'       => 'smtp.gmail.com',
+    'auth'       => true,
+    'username'   => 'your-email@gmail.com',
+    'password'   => 'your-app-password',
+    'secure'     => 'tls', // 'tls' or 'ssl'
+    'port'       => 587,   // 587 for tls, 465 for ssl
+    'from_email' => 'your-email@gmail.com',
+    'from_name'  => 'ISCAG Philippines',
+];
