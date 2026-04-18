@@ -11,8 +11,10 @@
 // Define the base path of the application (one level up from public/)
 define('BASE_PATH', dirname(__DIR__));
 
-// Base URL for generating links (adjust if your project is not at /Iscag)
-define('BASE_URL', '/Iscag');
+// Base URL for generating links (Auto-detected)
+$scriptPath = str_replace('\\', '/', $_SERVER['SCRIPT_NAME']);
+$baseUrl = str_replace('/public/index.php', '', $scriptPath);
+define('BASE_URL', rtrim($baseUrl, '/'));
 
 /**
  * Generate a full URL path relative to the application root.
@@ -47,7 +49,7 @@ require_once BASE_PATH . '/routes/web.php';
 // Parse the request URI and extract the route
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Remove the base URL prefix (e.g. /Iscag) to get the clean route
+// Remove the base URL prefix to get the clean route
 $route = $requestUri;
 if (BASE_URL !== '' && strpos($route, BASE_URL) === 0) {
     $route = substr($route, strlen(BASE_URL));

@@ -6,10 +6,16 @@ require_once BASE_PATH . '/app/helpers/Auth.php';
 Auth::protect();
 
 if (!function_exists('asset')) {
-    function asset($path) { return "/Iscag/public/" . ltrim($path, '/'); }
+    function asset($path) { 
+        $baseUrl = str_replace('/public/index.php', '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
+        return rtrim($baseUrl, '/') . "/public/" . ltrim($path, '/'); 
+    }
 }
 if (!function_exists('url')) {
-    function url($path) { return "/Iscag/" . ltrim($path, '/'); }
+    function url($path) { 
+        $baseUrl = str_replace('/public/index.php', '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
+        return rtrim($baseUrl, '/') . "/" . ltrim($path, '/'); 
+    }
 }
 
 if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant'])) {
