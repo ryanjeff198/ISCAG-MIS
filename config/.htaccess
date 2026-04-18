@@ -1,3 +1,0 @@
-# Temporarily allowed for debugging
-Order allow,deny
-Allow from all
