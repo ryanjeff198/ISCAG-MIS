@@ -38,6 +38,7 @@ $routes = [
     '/user/apartment/info'   => ['ApartmentController', 'info'],
     '/user/apartment/parking' => ['ApartmentController', 'parking'],
     '/user/apartment/save'   => ['ApartmentController', 'save'],
+    '/user/apartment/submit' => ['ApartmentController', 'finalizeSubmission'],
     '/user/apartment/upload' => ['ApartmentController', 'handleUpload'],
     '/user/apartment/image'  => ['ApartmentController', 'serveImage'],
     '/user/apartment/uploads/check' => ['ApartmentController', 'checkUploads'],
@@ -53,8 +54,12 @@ $routes = [
 
     // MIS Admin Hub Routes
     '/admin/mis_admin/apartment_records'   => ['AdminController', 'apartmentRecords'],
-    '/admin/mis_admin/tenant_confirmation' => ['AdminController', 'tenantConfirmation'],
+    '/admin/mis_admin/apartment_confirmation' => ['AdminController', 'apartmentConfirmation'],
+    '/admin/mis_admin/apartment_confirmation/approve' => ['AdminController', 'approveApartmentApp'],
+    '/admin/mis_admin/apartment_confirmation/reject' => ['AdminController', 'rejectApartmentApp'],
     '/admin/mis_admin/parking_approval'    => ['AdminController', 'parkingApproval'],
+    '/admin/mis_admin/parking/approve'     => ['AdminController', 'approveParking'],
+    '/admin/mis_admin/parking/reject'      => ['AdminController', 'rejectParking'],
     '/admin/mis_admin/billing'             => ['AdminController', 'billing'],
     '/admin/mis_admin/statement_of_account' => ['AdminController', 'soa'],
     '/admin/mis_admin/reports'             => ['AdminController', 'reports'],
@@ -64,4 +69,5 @@ $routes = [
     '/admin/mis_admin/records'             => ['AdminController', 'userRecords'],
     '/admin/mis_admin/audit_logs'          => ['AdminController', 'auditLogs'],
     '/admin/mis_admin/notification'        => ['AdminController', 'notificationInbox'],
+    '/admin/mis_admin/tenant_image'        => ['AdminController', 'serveTenantImage'],
 ];

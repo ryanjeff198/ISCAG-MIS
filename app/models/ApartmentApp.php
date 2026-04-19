@@ -22,7 +22,7 @@ class ApartmentApp {
             'tribalaffliation','numofmuslim','occupation','monthly_income',
             'companyname','companyadd','companyphone',
             'dateofshahadah','ref_name','ref_contact',
-            'iscag_students','date_applied'
+            'iscag_students','date_applied','family_data'
         ];
         $safe = [];
         foreach ($allowed as $col) {

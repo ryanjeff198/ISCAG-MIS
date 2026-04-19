@@ -610,3 +610,41 @@ function reportBadgeClass(status) {
   };
   return map[status] || 'badge-info';
 }
+
+// ══════════════════════════════════════
+//  PAGE BOOTSTRAP
+// ══════════════════════════════════════
+/**
+ * standardizePage(role)
+ * Central bootstrapper called by every admin view.
+ * Initializes sidebar toggle, dropdown navigation, user nav, and date display.
+ * @param {string} role - 'admin' | 'staff' | 'tenant'
+ */
+function standardizePage(role) {
+  initAdminData();
+  initReportsData();
+  initSidebar();
+  initDropdowns();
+  loadUserNav();
+  setTopBarDate();
+  initNotifBadge(role);
+}
+
+
+// ══════════════════════════════════════
+//  ACTION MENU LOGIC
+// ══════════════════════════════════════
+function toggleActionMenu(btn, e) {
+  if (e) e.stopPropagation();
+  const dropdown = btn.nextElementSibling;
+  if (!dropdown) return;
+
+  const isShow = dropdown.classList.contains('show');
+  document.querySelectorAll('.action-menu-dropdown').forEach(d => d.classList.remove('show'));
+  if (!isShow) dropdown.classList.add('show');
+}
+
+// Close menus when clicking outside
+window.addEventListener('click', () => {
+  document.querySelectorAll('.action-menu-dropdown').forEach(d => d.classList.remove('show'));
+});
