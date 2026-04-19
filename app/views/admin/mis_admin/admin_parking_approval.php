@@ -1,3 +1,4 @@
+<?php $active_page = 'parking_approval'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,276 +8,6 @@
   <title>ISCAG MIS — Parking Approval</title>
   <meta name="description" content="Admin parking rental application review and approval" />
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
-  <style>
-    /* ── Tab navigation ── */
-    .tab-nav {
-      display: flex;
-      gap: 0;
-      border-bottom: 2px solid var(--border);
-      margin-bottom: 20px;
-    }
-
-    .tab-btn {
-      padding: 10px 20px;
-      background: none;
-      border: none;
-      border-bottom: 3px solid transparent;
-      font-family: inherit;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.18s;
-      margin-bottom: -2px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .tab-btn:hover {
-      color: var(--primary);
-    }
-
-    .tab-btn.active {
-      color: var(--primary-dark);
-      border-bottom-color: var(--primary);
-    }
-
-    .tab-btn svg {
-      width: 15px;
-      height: 15px;
-      fill: currentColor;
-    }
-
-    .tab-btn .tab-count {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 20px;
-      height: 20px;
-      border-radius: 10px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      margin-left: 2px;
-      padding: 0 6px;
-    }
-
-    .tab-btn .tab-count.pending {
-      background: rgba(199, 154, 43, 0.15);
-      color: var(--warning);
-    }
-
-    .tab-btn .tab-count.rejected {
-      background: rgba(139, 46, 46, 0.12);
-      color: var(--danger);
-    }
-
-    .tab-btn .tab-count.approved {
-      background: rgba(47, 138, 96, 0.12);
-      color: var(--success);
-    }
-
-    .tab-panel {
-      display: none;
-    }
-
-    .tab-panel.active {
-      display: block;
-    }
-
-    /* ── Review Modal ── */
-    .review-modal .modal-content {
-      max-width: 760px;
-      max-height: 90vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .review-modal .modal-body {
-      overflow-y: auto;
-      flex: 1;
-      max-height: 65vh;
-    }
-
-    /* ── Detail grid ── */
-    .detail-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 16px;
-    }
-
-    .detail-item {
-      padding: 10px 14px;
-      background: #f8faf9;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-
-    .detail-item label {
-      display: block;
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--text-muted);
-      margin-bottom: 3px;
-    }
-
-    .detail-item p {
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--text-main);
-      margin: 0;
-    }
-
-    .detail-item.full-width {
-      grid-column: 1 / -1;
-    }
-
-    /* ── Section divider ── */
-    .detail-section-title {
-      font-family: 'Lora', serif;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--primary-dark);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 10px 0 8px;
-      border-bottom: 1.5px solid var(--primary);
-      margin: 16px 0 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .detail-section-title:first-child {
-      margin-top: 0;
-    }
-
-    .detail-section-title svg {
-      width: 14px;
-      height: 14px;
-      fill: var(--accent);
-    }
-
-    /* ── Vehicle highlight ── */
-    .vehicle-highlight {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px 20px;
-      background: linear-gradient(135deg, rgba(26, 58, 92, 0.04), rgba(23, 107, 69, 0.03));
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      margin-bottom: 16px;
-    }
-
-    .vehicle-icon-wrap {
-      width: 52px;
-      height: 52px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .vehicle-icon-wrap svg {
-      width: 26px;
-      height: 26px;
-      fill: white;
-    }
-
-    .vehicle-info h4 {
-      font-family: 'Lora', serif;
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--primary-dark);
-      margin: 0 0 2px;
-    }
-
-    .vehicle-info p {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
-    .vehicle-plate {
-      margin-left: auto;
-      padding: 6px 16px;
-      background: var(--primary-dark);
-      color: white;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    /* ── Feedback textarea ── */
-    .feedback-area {
-      width: 100%;
-      min-height: 80px;
-      padding: 10px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 0.85rem;
-      resize: vertical;
-    }
-
-    .feedback-area:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1);
-    }
-
-    /* ── Empty state ── */
-    .empty-state {
-      text-align: center;
-      padding: 50px 20px;
-      color: var(--text-muted);
-    }
-
-    .empty-state svg {
-      width: 48px;
-      height: 48px;
-      fill: var(--border);
-      margin-bottom: 12px;
-    }
-
-    .empty-state h4 {
-      font-family: 'Lora', serif;
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      margin: 0 0 6px;
-    }
-
-    .empty-state p {
-      font-size: 0.82rem;
-      margin: 0;
-    }
-
-    /* ── Badge overrides ── */
-    .badge-pending {
-      background: rgba(199, 154, 43, 0.12);
-      color: var(--warning);
-    }
-
-    .badge-approved {
-      background: rgba(47, 138, 96, 0.12);
-      color: var(--success);
-    }
-
-    .badge-rejected {
-      background: rgba(139, 46, 46, 0.12);
-      color: var(--danger);
-    }
-  </style>
 </head>
 
 <body>
@@ -296,7 +27,7 @@
           </div>
         </div>
         <div class="top-bar-actions">
-          <a href="<?= url('/admin/mis_admin') ?>" class="btn-topbar">← Dashboard</a>
+          <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
         </div>
       </div>
 
@@ -510,11 +241,8 @@
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     // ══ INIT ══
-    initAdminData();
+    standardizePage('admin');
     setCurrentRole(ROLES.MIS_ADMIN);
-    loadUserNav();
-    initSidebar();
-    initDropdowns();
 
     // ══ PARKING DATA ══
     const PARKING_KEY = 'mis_parking_applications';
@@ -558,11 +286,20 @@
           <td style="font-weight:700;letter-spacing:0.04em;">${a.plateNo}</td>
           <td>${formatDate(a.submittedAt)}</td>
           <td>
-            <div class="actions-cell">
-              <button class="btn-action btn-view" onclick="openReview('${a.id}')">
-                <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                Review
+            <div class="action-menu">
+              <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
+                <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
               </button>
+              <div class="action-menu-dropdown">
+                <button class="action-menu-item" onclick="openReview('${a.id}')">
+                  <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                  Review Application
+                </button>
+                <button class="action-menu-item" onclick="showToast('Downloading vehicle doc for ${a.id}...','var(--info)')">
+                  <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                  Download Vehicle Docs
+                </button>
+              </div>
             </div>
           </td>
         </tr>`).join('');

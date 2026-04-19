@@ -12,12 +12,22 @@ class ApartmentController extends Controller {
 
     public function status() {
         Auth::protectRole(['Applicant', 'Tenant']);
-        $this->view('user/Apartment/tenant_status');
+        $userId = $_SESSION['user_id'];
+        $model = new ApartmentApp();
+        $application = $model->getApplication($userId);
+        $this->view('user/Apartment/tenant_status', [
+            'application' => $application
+        ]);
     }
 
     public function info() {
         Auth::protectRole(['Applicant', 'Tenant']);
-        $this->view('user/Apartment/apartment_information');
+        $userId = $_SESSION['user_id'];
+        $model = new ApartmentApp();
+        $application = $model->getApplication($userId);
+        $this->view('user/Apartment/apartment_information', [
+            'application' => $application
+        ]);
     }
 
     public function save() {

@@ -22,7 +22,7 @@ class ApartmentApp {
             'tribalaffliation','numofmuslim','occupation','monthly_income',
             'companyname','companyadd','companyphone',
             'dateofshahadah','ref_name','ref_contact',
-            'iscag_students','date_applied'
+            'iscag_students','date_applied','family_data'
         ];
         $safe = [];
         foreach ($allowed as $col) {
@@ -128,6 +128,24 @@ class ApartmentApp {
             error_log("saveApplication failed: " . $e->getMessage());
             return false;
         }
+    }
+
+    public function getAllApplications() {
+        $sql = "SELECT a.application_id as id, a.tenant_id, a.roomtype, a.date as submitted_at, a.status,
+                       u.first_name, u.last_name, u.email, u.contactnum,
+                       i.*
+                FROM apartmentsapp a
+                LEFT JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
+                LEFT JOIN tenant_addinfo i ON a.tenant_id = i.tenant_id
+                ORDER BY a.application_id DESC";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function updateApplicationStatus($id, $status) {
+        $sql = "UPDATE apartmentsapp SET status = :status WHERE application_id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['status' => $status, 'id' => $id]);
     }
 
     // ─── tenant_requirements (BLOB uploads) ───────────────

@@ -1870,6 +1870,8 @@ if ($userId) {
                   <td class="field-label">Occupation:</td>
                   <td class="field-value"><input type="text" placeholder="Current job or occupation" id="occupation" />
                   </td>
+                  <td class="field-label">Monthly Income:</td>
+                  <td class="field-value"><input type="number" placeholder="₱ 0.00" id="monthly-income" /></td>
                   <td class="field-label">Company Name:</td>
                   <td class="field-value"><input type="text" placeholder="Employer / Company" id="company" /></td>
                 </tr>
@@ -2199,7 +2201,7 @@ if ($userId) {
     </div><!-- /.main-content -->
   </div><!-- /.app-wrapper -->
 
-  <script src="../../JS/room-preview.js"></script>
+  <script src="<?= asset('JS/room-preview.js') ?>"></script>
   <script>
     // ═══ DATA HELPERS ═══
     const STORAGE_KEYS = {
@@ -2493,6 +2495,21 @@ if ($userId) {
       };
       const roomtype = unitRadio ? (unitMap[unitRadio.id] || 'Studio') : 'Studio';
 
+      const familyRows = document.querySelectorAll('#family-members-body tr');
+      const familyData = [];
+      familyRows.forEach(row => {
+        const inputs = row.querySelectorAll('input, select');
+        const name = inputs[0].value.trim();
+        if (name) {
+          familyData.push({
+            name: name,
+            relation: inputs[1].value,
+            age: inputs[2].value,
+            religion: inputs[3].value
+          });
+        }
+      });
+
       const payload = {
         addinfo: {
           familyname: v('family-name'),
@@ -2509,13 +2526,15 @@ if ($userId) {
           numofmuslim: parseInt(v('muslim-count')) || 0,
           civil_status: v('civil-status'),
           occupation: v('occupation'),
+          monthly_income: v('monthly-income'),
           companyname: v('company'),
           companyadd: v('company-address'),
           companyphone: v('company-phone'),
           ref_name: v('ref-name'),
           ref_contact: v('ref-contact'),
           iscag_students: parseInt(v('iscag-students')) || 0,
-          date_applied: v('date-application')
+          date_applied: v('date-application'),
+          family_data: JSON.stringify(familyData)
         },
         roomtype: roomtype
       };

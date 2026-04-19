@@ -52,7 +52,9 @@ $routes = [
 
     // MIS Admin Hub Routes
     '/admin/mis_admin/apartment_records'   => ['AdminController', 'apartmentRecords'],
-    '/admin/mis_admin/tenant_confirmation' => ['AdminController', 'tenantConfirmation'],
+    '/admin/mis_admin/apartment_confirmation' => ['AdminController', 'apartmentConfirmation'],
+    '/admin/mis_admin/apartment_confirmation/approve' => ['AdminController', 'approveApartmentApp'],
+    '/admin/mis_admin/apartment_confirmation/reject' => ['AdminController', 'rejectApartmentApp'],
     '/admin/mis_admin/parking_approval'    => ['AdminController', 'parkingApproval'],
     '/admin/mis_admin/billing'             => ['AdminController', 'billing'],
     '/admin/mis_admin/statement_of_account' => ['AdminController', 'soa'],
@@ -63,4 +65,5 @@ $routes = [
     '/admin/mis_admin/records'             => ['AdminController', 'userRecords'],
     '/admin/mis_admin/audit_logs'          => ['AdminController', 'auditLogs'],
     '/admin/mis_admin/notification'        => ['AdminController', 'notificationInbox'],
+    '/admin/mis_admin/tenant_image'        => ['AdminController', 'serveTenantImage'],
 ];
