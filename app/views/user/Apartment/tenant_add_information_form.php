@@ -15,20 +15,25 @@ if ($userId) {
     $aptModel  = new ApartmentApp();
     
     $account = $userModel->findById($userId);
-    $info = $aptModel->getInfo($userId);
+    $appInfo = $aptModel->getInfo($userId);
+    $profile = $userModel->getAdditionalInfo($userId);
     
+    // dbUser is used by the Access Gate and Navigation (should be Profile info)
     $dbUser = [
         'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
-        'email' => $info['email'] ?? ($account['email'] ?? ''),
-        'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
-        'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
-        'dob' => $info['birthdate'] ?? '',
-        'civil' => $info['civil_status'] ?? '',
-        'address' => $info['address'] ?? '',
-        'occupation' => $info['occupation'] ?? '',
-        'arabicName' => $info['muslimname'] ?? '',
-        'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
+        'email' => $profile['email'] ?? ($account['email'] ?? ''),
+        'gender' => !empty($profile['sex']) ? $profile['sex'] : ($account['sex'] ?? ''),
+        'phone' => $profile['phone'] ?? ($account['contactnum'] ?? ''),
+        'dob' => $profile['birthdate'] ?? '',
+        'civil' => $profile['civil_status'] ?? '',
+        'address' => $profile['address'] ?? '',
+        'occupation' => $profile['occupation'] ?? '',
+        'arabicName' => $profile['muslimname'] ?? '',
+        'revertYear' => $profile['dateofshahadah'] ?? '',
     ];
+
+    // appData is used to pre-fill the form (should be Application info)
+    $appData = $appInfo;
 }
 ?>
 <!DOCTYPE html>
@@ -1795,12 +1800,12 @@ if ($userId) {
               <table class="info-table">
                 <tr>
                   <td class="field-label">Family Name:</td>
-                  <td class="field-value"><input type="text" placeholder="Surname / Family name" id="family-name" />
+                  <td class="field-value"><input type="text" placeholder="Surname / Family name" id="family-name" value="<?= htmlspecialchars($appData['familyname'] ?? '') ?>" />
                   </td>
                   <td class="field-label">Given Name:</td>
-                  <td class="field-value"><input type="text" placeholder="First name" id="given-name" /></td>
+                  <td class="field-value"><input type="text" placeholder="First name" id="given-name" value="<?= htmlspecialchars($appData['givenname'] ?? '') ?>" /></td>
                   <td class="field-label">Muslim Name:</td>
-                  <td class="field-value"><input type="text" placeholder="Arabic / Muslim name" id="muslim-name" /></td>
+                  <td class="field-value"><input type="text" placeholder="Arabic / Muslim name" id="muslim-name" value="<?= htmlspecialchars($appData['muslimname'] ?? '') ?>" /></td>
                   <td class="field-label" style="min-width:40px;">M.I.</td>
                   <td class="field-value" style="width:60px;"><input type="text" placeholder="—" id="mi" maxlength="3"
                       style="text-align:center;" /></td>
@@ -1811,12 +1816,12 @@ if ($userId) {
               <table class="info-table">
                 <tr>
                   <td class="field-label">Date of Birth:</td>
-                  <td class="field-value"><input type="date" id="dob" /></td>
+                  <td class="field-value"><input type="date" id="dob" value="<?= htmlspecialchars($appData['birthdate'] ?? '') ?>" /></td>
                   <td class="field-label" style="min-width:50px;">Age:</td>
-                  <td class="field-value" style="width:70px;"><input type="number" id="age" placeholder="—" min="0"
+                  <td class="field-value" style="width:70px;"><input type="number" id="age" placeholder="—" min="0" value="<?= htmlspecialchars($appData['age'] ?? '') ?>"
                       style="text-align:center;" /></td>
                   <td class="field-label">Place of Birth:</td>
-                  <td class="field-value"><input type="text" placeholder="City / Province" id="pob" /></td>
+                  <td class="field-value"><input type="text" placeholder="City / Province" id="pob" value="<?= htmlspecialchars($appData['pob'] ?? '') ?>" /></td>
                 </tr>
               </table>
 
@@ -1825,7 +1830,7 @@ if ($userId) {
                 <tr>
                   <td class="field-label">Address:</td>
                   <td class="field-value" colspan="5"><input type="text" placeholder="Complete current address"
-                      id="address" /></td>
+                      id="address" value="<?= htmlspecialchars($appData['address'] ?? '') ?>" /></td>
                 </tr>
               </table>
 
@@ -1833,11 +1838,11 @@ if ($userId) {
               <table class="info-table">
                 <tr>
                   <td class="field-label">Date of Shahadah:</td>
-                  <td class="field-value"><input type="date" id="shahadah-date" /></td>
+                  <td class="field-value"><input type="date" id="shahadah-date" value="<?= htmlspecialchars($appData['dateofshahadah'] ?? '') ?>" /></td>
                   <td class="field-label">Tribal Affiliation:</td>
-                  <td class="field-value"><input type="text" placeholder="e.g., Maranao, Tausug" id="tribal" /></td>
+                  <td class="field-value"><input type="text" placeholder="e.g., Maranao, Tausug" id="tribal" value="<?= htmlspecialchars($appData['tribalaffliation'] ?? '') ?>" /></td>
                   <td class="field-label">Phone No.:</td>
-                  <td class="field-value"><input type="tel" placeholder="09XX-XXX-XXXX" id="phone" /></td>
+                  <td class="field-value"><input type="tel" placeholder="09XX-XXX-XXXX" id="phone" value="<?= htmlspecialchars($appData['phone'] ?? '') ?>" /></td>
                 </tr>
               </table>
 
@@ -1846,23 +1851,23 @@ if ($userId) {
                 <tr>
                   <td class="field-label">No. of Muslim in the Family:</td>
                   <td class="field-value" style="width:80px;"><input type="number" placeholder="—" id="muslim-count"
-                      min="0" style="text-align:center;" /></td>
+                      min="0" style="text-align:center;" value="<?= htmlspecialchars($appData['numofmuslim'] ?? '') ?>" /></td>
                   <td class="field-label">Civil Status:</td>
                   <td class="field-value">
                     <select id="civil-status">
                       <option value="">— Select —</option>
-                      <option>Single</option>
-                      <option>Married</option>
-                      <option>Widowed</option>
-                      <option>Divorced</option>
+                      <option <?= ($appData['civil_status'] ?? '') == 'Single' ? 'selected' : '' ?>>Single</option>
+                      <option <?= ($appData['civil_status'] ?? '') == 'Married' ? 'selected' : '' ?>>Married</option>
+                      <option <?= ($appData['civil_status'] ?? '') == 'Widowed' ? 'selected' : '' ?>>Widowed</option>
+                      <option <?= ($appData['civil_status'] ?? '') == 'Divorced' ? 'selected' : '' ?>>Divorced</option>
                     </select>
                   </td>
                   <td class="field-label">Gender:</td>
                   <td class="field-value">
                     <select id="gender">
                       <option value="">— Select —</option>
-                      <option>Male</option>
-                      <option>Female</option>
+                      <option <?= ($appData['sex'] ?? '') == 'Male' ? 'selected' : '' ?>>Male</option>
+                      <option <?= ($appData['sex'] ?? '') == 'Female' ? 'selected' : '' ?>>Female</option>
                     </select>
                   </td>
                 </tr>
