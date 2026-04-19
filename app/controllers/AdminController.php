@@ -162,7 +162,17 @@ class AdminController extends Controller
 
         require_once BASE_PATH . '/app/models/ApartmentApp.php';
         $model = new ApartmentApp();
-        $result = $model->getUnifiedImage($userId, $type);
+        
+        // Look up the tenant's addinfo record, then fetch the image
+        $info = $model->getInfo($userId);
+        if (empty($info)) {
+            http_response_code(404);
+            echo 'No application info found';
+            return;
+        }
+
+        $infoId = $info['tenant_info'];
+        $result = $model->getAddInfoImage($infoId, $type);
 
         if (!$result) {
             http_response_code(404);
@@ -171,6 +181,8 @@ class AdminController extends Controller
         }
 
         header("Content-Type: " . $result['mime']);
+        header("Content-Length: " . strlen($result['data']));
+        header("Cache-Control: private, max-age=3600");
         echo $result['data'];
     }
 }

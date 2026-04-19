@@ -30,25 +30,33 @@ class ApartmentApp {
                 $safe[$col] = $data[$col];
             }
         }
-        if (empty($safe)) return false;
-
+        // If no whitelisted fields were provided, still allow creating a minimal record
         $this->db->beginTransaction();
         try {
             $existing = $this->getInfo($userId);
             if (!$existing) {
-                $safe['tenant_id'] = $userId;
-                $cols = implode(',', array_keys($safe));
-                $phs  = implode(',', array_map(fn($k) => ":$k", array_keys($safe)));
-                $sql  = "INSERT INTO tenant_addinfo ($cols) VALUES ($phs)";
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute($safe);
+                if (empty($safe)) {
+                    // Create a minimal record with just tenant_id
+                    $sql = "INSERT INTO tenant_addinfo (tenant_id) VALUES (:tenant_id)";
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->execute(['tenant_id' => $userId]);
+                } else {
+                    $safe['tenant_id'] = $userId;
+                    $cols = implode(',', array_keys($safe));
+                    $phs  = implode(',', array_map(fn($k) => ":$k", array_keys($safe)));
+                    $sql  = "INSERT INTO tenant_addinfo ($cols) VALUES ($phs)";
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->execute($safe);
+                }
                 $lastId = $this->db->lastInsertId();
             } else {
-                $set = implode(',', array_map(fn($k) => "$k = :$k", array_keys($safe)));
-                $sql = "UPDATE tenant_addinfo SET $set WHERE tenant_id = :tenant_id";
-                $safe['tenant_id'] = $userId;
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute($safe);
+                if (!empty($safe)) {
+                    $set = implode(',', array_map(fn($k) => "$k = :$k", array_keys($safe)));
+                    $sql = "UPDATE tenant_addinfo SET $set WHERE tenant_id = :tenant_id";
+                    $safe['tenant_id'] = $userId;
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->execute($safe);
+                }
                 $lastId = $existing['tenant_info'];
             }
             $this->db->commit();
@@ -209,6 +217,13 @@ class ApartmentApp {
 
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);
+    }
+
+    // ─── TENANT SUBMISSION ──────────────────────────
+    public function updateStatusByTenant($userId, $status) {
+        $sql = "UPDATE apartmentsapp SET status = :status WHERE tenant_id = :uid";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['status' => $status, 'uid' => $userId]);
     }
 
 }

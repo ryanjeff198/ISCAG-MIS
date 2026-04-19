@@ -615,6 +615,12 @@
                      <img src="${baseUrl}?uid=${tenantId}&type=nbi" onerror="this.parentElement.innerHTML='<div style=\'font-size:0.65rem;color:#999;text-align:center;padding:30px 5px;\'>Not Uploaded</div>'" />
                   </div>
                </div>
+               <div class="verify-card">
+                  <div class="verify-card-title">2x2 Photo</div>
+                  <div class="verify-img-wrap" onclick="viewFullImage('${baseUrl}?uid=${tenantId}&type=picture')">
+                     <img src="${baseUrl}?uid=${tenantId}&type=picture" onerror="this.parentElement.innerHTML='<div style=\'font-size:0.65rem;color:#999;text-align:center;padding:30px 5px;\'>Not Uploaded</div>'" />
+                  </div>
+               </div>
             </div>
 
           </div>
