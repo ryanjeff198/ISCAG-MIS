@@ -1,4 +1,20 @@
-<?php $active_page = 'audit_logs'; ?>
+<?php 
+$active_page = 'audit_logs'; 
+if (!function_exists('asset')) {
+    function asset($path) { 
+        $baseUrl = str_replace('/public/index.php', '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
+        $baseUrl = rtrim($baseUrl, '/');
+        if (str_ends_with($baseUrl, '/public')) return $baseUrl . '/' . ltrim($path, '/');
+        return $baseUrl . "/public/" . ltrim($path, '/'); 
+    }
+}
+if (!function_exists('url')) {
+    function url($path) { 
+        $baseUrl = str_replace('/public/index.php', '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
+        return rtrim($baseUrl, '/') . "/" . ltrim($path, '/'); 
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
