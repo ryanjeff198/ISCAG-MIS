@@ -8,6 +8,144 @@
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
   <!-- Chart.js Integration -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ── DASHBOARD SPECIFIC STYLES ── */
+    .module-hub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .hub-card {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .hub-card:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      transform: translateY(-3px);
+    }
+
+    .hub-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .hub-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .hub-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    .hub-title h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      margin: 0;
+    }
+
+    .hub-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hub-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #f8faf9;
+      text-decoration: none;
+      color: var(--text-main);
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: all 0.18s;
+    }
+
+    .hub-link:hover {
+      background: var(--primary-light);
+      color: white;
+    }
+
+    .hub-link-arrow {
+      opacity: 0.5;
+      transition: transform 0.2s;
+    }
+
+    .hub-link:hover .hub-link-arrow {
+      transform: translateX(4px);
+      opacity: 1;
+    }
+
+    .chart-container {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 24px;
+      margin-bottom: 24px;
+      height: 400px;
+    }
+
+    .activity-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-marker {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .activity-content {
+      font-size: 0.85rem;
+    }
+
+    .activity-time {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+  </style>
 </head>
 
 <body>
@@ -89,15 +227,18 @@
 
         <!-- MODULE HUB -->
         <div class="module-hub-grid">
-          <!-- Pending Requests -->
+          <!-- Operations -->
           <div class="hub-card">
             <div class="hub-header">
-              <div class="hub-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg></div>
-              <div class="hub-title"><h3>Pending Requests</h3></div>
+              <div class="hub-icon"><svg viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg></div>
+              <div class="hub-title"><h3>Apartment Management</h3></div>
             </div>
             <div class="hub-links">
-              <a href="<?= url('/admin/mis_admin/apartment_confirmation') ?>" class="hub-link">
-                Apartment Confirmations <span class="hub-link-arrow">→</span>
+              <a href="<?= url('/admin/mis_admin/apartment_records') ?>" class="hub-link">
+                Apartment Inventory <span class="hub-link-arrow">→</span>
+              </a>
+              <a href="<?= url('/admin/mis_admin/tenant_confirmation') ?>" class="hub-link">
+                Pending Tenant Approvals <span class="hub-link-arrow">→</span>
               </a>
               <a href="<?= url('/admin/mis_admin/parking_approval') ?>" class="hub-link">
                 Parking Allocation <span class="hub-link-arrow">→</span>
@@ -128,12 +269,9 @@
           <div class="hub-card">
             <div class="hub-header">
               <div class="hub-icon" style="background:var(--info);"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
-              <div class="hub-title"><h3>Community Hub</h3></div>
+              <div class="hub-title"><h3>Community Records</h3></div>
             </div>
             <div class="hub-links">
-              <a href="<?= url('/admin/mis_admin/apartment_records') ?>" class="hub-link">
-                Unit Inventory <span class="hub-link-arrow">→</span>
-              </a>
               <a href="<?= url('/admin/mis_admin/daawah_records') ?>" class="hub-link">
                 Da'wah & Counseling Logs <span class="hub-link-arrow">→</span>
               </a>
@@ -149,8 +287,8 @@
           <!-- System -->
           <div class="hub-card" style="border-left: 4px solid var(--primary);">
             <div class="hub-header">
-              <div class="hub-icon" style="background:var(--primary);"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.5 1.1 2.5 2.5S13.4 12 12 12s-2.5-1.1-2.5-2.5S10.6 7 12 7zm0 14c-2.7 0-5.8-1.3-7.5-3.6.1-2.1 4.5-3.2 7.5-3.2s7.4 1.1 7.5 3.2c-1.7 2.3-4.8 3.6-7.5 3.6z"/></svg></div>
-              <div class="hub-title"><h3>System Control</h3></div>
+              <div class="hub-icon" style="background:var(--primary);"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div>
+              <div class="hub-title"><h3>System Governance</h3></div>
             </div>
             <div class="hub-links">
               <a href="<?= url('/admin/mis_admin/records') ?>" class="hub-link">
@@ -160,7 +298,7 @@
                 System Audit Trails <span class="hub-link-arrow">→</span>
               </a>
               <a href="<?= url('/admin/mis_admin/notification') ?>" class="hub-link">
-                Admin Inbox <span class="hub-link-arrow">→</span>
+                Internal Notifications <span class="hub-link-arrow">→</span>
               </a>
             </div>
           </div>
@@ -172,8 +310,6 @@
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      standardizePage('admin');
-
       // ── MOCK DATA ENGINE ──
       const stats = {
         users: 1248,
@@ -239,13 +375,17 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom' } },
+          plugins: {
+            legend: { position: 'bottom' }
+          },
           scales: {
             y: { beginAtZero: true, grid: { color: '#eee' } },
             x: { grid: { display: false } }
           }
         }
       });
+      initSidebar();
+      initDropdowns();
     });
   </script>
 </body>

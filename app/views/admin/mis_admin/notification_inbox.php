@@ -1,4 +1,3 @@
-<?php $active_page = 'notification'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,6 +6,233 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ISCAG MIS — Admin Notifications</title>
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+  <style>
+    .notif-card {
+      padding: 16px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: white;
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      position: relative;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .notif-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      transform: translateY(-2px);
+    }
+
+    .notif-card.unread {
+      background: rgba(30, 95, 139, 0.03);
+      border-color: rgba(30, 95, 139, 0.3);
+    }
+
+    .notif-card.unread::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 16px;
+      bottom: 16px;
+      width: 4px;
+      border-radius: 0 4px 4px 0;
+      background: var(--primary);
+    }
+
+    .notif-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .notif-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
+    }
+
+    .notif-content {
+      flex: 1;
+    }
+
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+
+    .notif-title {
+      font-weight: 700;
+      color: var(--primary-dark);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    .notif-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .notif-message {
+      font-size: 0.85rem;
+      color: var(--text-color);
+      margin: 0 0 8px 0;
+      line-height: 1.4;
+    }
+
+    .type-system {
+      background: var(--border);
+    }
+
+    .type-system svg {
+      fill: var(--text-main) !important;
+    }
+
+    .type-approve {
+      background: var(--success);
+    }
+
+    .type-reject,
+    .type-alert {
+      background: var(--danger);
+    }
+
+    .type-assign {
+      background: var(--accent);
+    }
+
+    .type-request {
+      background: var(--primary);
+    }
+
+    .type-payment {
+      background: #2e5a8a;
+    }
+
+    .type-user {
+      background: var(--info);
+    }
+
+    .type-update {
+      background: var(--accent);
+    }
+
+    .type-schedule {
+      background: #5a2e7a;
+    }
+
+    .type-staff {
+      background: var(--primary-dark);
+    }
+
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      background: white;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+    }
+
+    .notif-detail-view {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 28px;
+      display: none;
+    }
+
+    .btn-back {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+      transition: all 0.18s;
+    }
+
+    .btn-back:hover {
+      background: #f0f2f1;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .detail-meta {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    .detail-meta-item {
+      padding: 14px 18px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .detail-meta-item .label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+
+    .detail-meta-item .value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--primary-dark);
+    }
+
+    .btn-go-source {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+      color: white;
+      border: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 24px;
+      transition: all 0.18s;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(23, 107, 69, 0.25);
+    }
+
+    .btn-go-source:hover {
+      box-shadow: 0 6px 20px rgba(23, 107, 69, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-go-source svg {
+      width: 16px;
+      height: 16px;
+      fill: white;
+    }
+  </style>
 </head>
 
 <body>
@@ -25,7 +251,7 @@
           </div>
         </div>
         <div class="top-bar-actions">
-          <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
+          <a href="<?= url('/admin/mis_admin') ?>" class="btn-topbar">← Dashboard</a>
           <button class="btn-topbar primary" onclick="markAllRead()">Mark All Read</button>
         </div>
       </div>
@@ -75,8 +301,10 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    standardizePage('admin');
+    initAdminData();
     initReportsData();
+    initSidebar();
+    initDropdowns();
 
     // Map activity log types to admin source pages
     function getSourcePage(type) {

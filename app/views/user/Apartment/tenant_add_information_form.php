@@ -1879,8 +1879,6 @@ if ($userId) {
                   <td class="field-label">Occupation:</td>
                   <td class="field-value"><input type="text" placeholder="Current job or occupation" id="occupation" />
                   </td>
-                  <td class="field-label">Monthly Income:</td>
-                  <td class="field-value"><input type="number" placeholder="₱ 0.00" id="monthly-income" /></td>
                   <td class="field-label">Company Name:</td>
                   <td class="field-value"><input type="text" placeholder="Employer / Company" id="company" /></td>
                 </tr>
@@ -2210,7 +2208,7 @@ if ($userId) {
     </div><!-- /.main-content -->
   </div><!-- /.app-wrapper -->
 
-  <script src="<?= asset('JS/room-preview.js') ?>"></script>
+  <script src="../../JS/room-preview.js"></script>
   <script>
     // ═══ DATA HELPERS ═══
     const STORAGE_KEYS = {
@@ -2504,21 +2502,6 @@ if ($userId) {
       };
       const roomtype = unitRadio ? (unitMap[unitRadio.id] || 'Studio') : 'Studio';
 
-      const familyRows = document.querySelectorAll('#family-members-body tr');
-      const familyData = [];
-      familyRows.forEach(row => {
-        const inputs = row.querySelectorAll('input, select');
-        const name = inputs[0].value.trim();
-        if (name) {
-          familyData.push({
-            name: name,
-            relation: inputs[1].value,
-            age: inputs[2].value,
-            religion: inputs[3].value
-          });
-        }
-      });
-
       const payload = {
         addinfo: {
           familyname: v('family-name'),
@@ -2535,15 +2518,13 @@ if ($userId) {
           numofmuslim: parseInt(v('muslim-count')) || 0,
           civil_status: v('civil-status'),
           occupation: v('occupation'),
-          monthly_income: v('monthly-income'),
           companyname: v('company'),
           companyadd: v('company-address'),
           companyphone: v('company-phone'),
           ref_name: v('ref-name'),
           ref_contact: v('ref-contact'),
           iscag_students: parseInt(v('iscag-students')) || 0,
-          date_applied: v('date-application'),
-          family_data: JSON.stringify(familyData)
+          date_applied: v('date-application')
         },
         roomtype: roomtype
       };
@@ -3208,16 +3189,11 @@ if ($userId) {
         return;
       }
 
-      // Finalize on Server
-      fetch('<?= url("/user/apartment/submit") ?>', { method: 'POST' })
-        .then(r => r.json())
-        .then(res => {
-          if (res.success) {
-            // Save locally for UI consistency (User Dashboard)
-            const newReq = addRequest({
-              type: 'apartment_application',
-              user: user.id
-            });
+      // Save the application request
+      const newReq = addRequest({
+        type: 'apartment_application',
+        user: user.id
+      });
 
       // Save required documents status
       const reqDocs = [{
@@ -3314,15 +3290,8 @@ if ($userId) {
       // Clear the temporary uploaded documents from local storage
       localStorage.removeItem(DOC_STORAGE_KEY);
 
-            showSuccessView();
-          } else {
-            showToast('Submission failed: ' + (res.message || 'Unknown error'), '#8b2e2e');
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          showToast('An error occurred during submission.', '#8b2e2e');
-        });
+      // Show success
+      showSuccessView();
     });
 
     function showSuccessView() {
