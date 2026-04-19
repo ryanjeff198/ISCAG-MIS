@@ -3287,6 +3287,8 @@ if ($userId) {
         });
         localStorage.setItem('mis_notifications', JSON.stringify(notifs));
       }
+      // Clear the temporary uploaded documents from local storage
+      localStorage.removeItem(DOC_STORAGE_KEY);
 
       // Show success
       showSuccessView();
