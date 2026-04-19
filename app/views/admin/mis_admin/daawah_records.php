@@ -21,7 +21,7 @@
             <div class="top-bar-subtitle">Manage counseling, Islamic education, and marriage service requests</div>
           </div>
         </div>
-        <div class="top-bar-actions"><a href="<?= url('/admin/mis_admin') ?>" class="btn-topbar">← Dashboard</a></div>
+        <div class="top-bar-actions"><a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a></div>
       </div>
       <div class="page-body">
         
@@ -45,7 +45,7 @@
           </div>
         </div>
         <div class="breadcrumb-bar">
-          <a href="<?= url('/admin/mis_admin') ?>">MIS Admin</a><span class="sep">›</span><span class="current">Da'wah
+          <a href="<?= url('/admin/dashboard') ?>">MIS Admin</a><span class="sep">›</span><span class="current">Da'wah
             Records</span>
         </div>
 
@@ -142,7 +142,7 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    initAdminData(); loadUserNav();
+    standardizePage('admin');
     const DAWAH_TYPES = ['counseling_female', 'counseling_male', 'islamic_education', 'marriage_service'];
     let allReqs = getRequests().filter(r => DAWAH_TYPES.includes(r.type));
 
@@ -155,16 +155,32 @@
     function renderTable(data) {
       document.getElementById('req-count').textContent = data.length + ' records';
       const tbody = document.getElementById('req-tbody');
-      if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No records found.</td></tr>'; return; }
-      tbody.innerHTML = data.map(r => `<tr data-id="${r.id}" data-type="${r.type}" data-status="${r.status}" data-name="${(r.name || '').toLowerCase()}">
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No records found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(r => `<tr data-id="${r.id}">
       <td class="td-id">${r.id}</td>
       <td style="font-weight:600;">${r.name || 'Unknown'}</td>
       <td>${typeLabel(r.type)}</td>
       <td>${formatDate(r.date)}</td>
       <td><span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
-      <td class="actions-cell">
-        <button class="btn-action btn-approve" onclick="approveReq('${r.id}')"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Approve</button>
-        <button class="btn-action btn-reject" onclick="rejectReq('${r.id}')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>Reject</button>
+      <td>
+        <div class="action-menu">
+          <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
+            <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+          <div class="action-menu-dropdown">
+            <button class="action-menu-item" onclick="approveReq('${r.id}')">
+              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Approve Request
+            </button>
+            <button class="action-menu-item danger" onclick="rejectReq('${r.id}')">
+              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              Reject Request
+            </button>
+          </div>
+        </div>
       </td>
     </tr>`).join('');
     }
@@ -183,14 +199,28 @@
 
     function approveReq(id) {
       const all = getRequests(); const r = all.find(x => x.id === id);
-      if (r) { r.status = 'approved'; r.updatedAt = new Date().toISOString().split('T')[0]; saveRequests(all); addActivityEntry('Request approved', id + ' approved by MIS Admin', 'MIS Admin', 'approve'); showToast('✅ ' + id + ' approved!', 'var(--success)'); allReqs = getRequests().filter(r => DAWAH_TYPES.includes(r.type)); filterTable(); }
+      if (r) {
+        r.status = 'approved';
+        r.updatedAt = new Date().toISOString().split('T')[0];
+        saveRequests(all);
+        addActivityEntry('Request approved', id + ' approved by MIS Admin', 'MIS Admin', 'approve');
+        showToast('✅ ' + id + ' approved!', 'var(--success)');
+        allReqs = getRequests().filter(r => DAWAH_TYPES.includes(r.type));
+        filterTable();
+      }
     }
     function rejectReq(id) {
       const all = getRequests(); const r = all.find(x => x.id === id);
-      if (r) { r.status = 'rejected'; r.updatedAt = new Date().toISOString().split('T')[0]; saveRequests(all); addActivityEntry('Request rejected', id + ' rejected by MIS Admin', 'MIS Admin', 'reject'); showToast('❌ ' + id + ' rejected.', 'var(--danger)'); allReqs = getRequests().filter(r => DAWAH_TYPES.includes(r.type)); filterTable(); }
+      if (r) {
+        r.status = 'rejected';
+        r.updatedAt = new Date().toISOString().split('T')[0];
+        saveRequests(all);
+        addActivityEntry('Request rejected', id + ' rejected by MIS Admin', 'MIS Admin', 'reject');
+        showToast('❌ ' + id + ' rejected.', 'var(--danger)');
+        allReqs = getRequests().filter(r => DAWAH_TYPES.includes(r.type));
+        filterTable();
+      }
     }
-
-    initSidebar(); initDropdowns();
   </script>
 </body>
 

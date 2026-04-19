@@ -1135,14 +1135,11 @@
         
         let assignedApt = null;
 
-        // Determine if they have an active assigned apartment. Using 'APT-A1' if their profile is 'VERIFIED' or 'approved' or if they have an active app. For demo purposes, we will mock APT-A1 if they have any approved app or if we just want to preview it.
-        const reqRaw = localStorage.getItem(STORAGE_KEYS.requests);
-        const requests = reqRaw ? JSON.parse(reqRaw) : [];
-        const myApp = requests.find(r => r.type === 'apartment_application' && r.user === user.id && r.status === 'approved');
+        // Determine if they have an active assigned apartment.
+        const dbApp = <?= json_encode($application ?? null) ?>;
         
-        // For demonstration purposes, if they don't have an approved app, we'll still show APT-A1 as an example if user.apartment is manually set, otherwise empty state
-        if (myApp || user.apartment) {
-             assignedApt = DEFAULT_APARTMENTS.find(a => a.id === (user.apartment || 'APT-A1'));
+        if (dbApp && dbApp.status.toLowerCase() === 'approved') {
+             assignedApt = DEFAULT_APARTMENTS.find(a => a.type === dbApp.roomtype) || DEFAULT_APARTMENTS[0];
         }
 
         if (!assignedApt) {
