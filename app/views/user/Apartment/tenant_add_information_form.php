@@ -16,7 +16,7 @@ if ($userId) {
     $dbUser = [
         'name' => $info['full_name'] ?? trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
         'email' => $info['email'] ?? ($account['email'] ?? ''),
-        'gender' => $info['sex'] ?? ($account['sex'] ?? ''),
+        'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
         'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
         'dob' => $info['birthdate'] ?? '',
         'civil' => $info['civil_status'] ?? '',

@@ -439,7 +439,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       $dbUser = [
           'name' => $info['full_name'] ?? trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
           'email' => $info['email'] ?? ($account['email'] ?? ''),
-          'gender' => $info['sex'] ?? ($account['sex'] ?? ''),
+          'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
           'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
           'dob' => $info['birthdate'] ?? '',
           'civil' => $info['civil_status'] ?? '',
@@ -813,28 +813,28 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
     // ── Da'wah sidebar dropdown (gender-based, correct paths) ──
     const dawahMenu = document.getElementById('dawah-menu');
     const dawahTrigger = document.getElementById('dawah-trigger');
-    if (user.sex === 'Female') {
+    if (String(user.gender).toLowerCase() === 'female') {
       dawahMenu.innerHTML = `
-      <a href="<?= url('/user/services/female-counseling') ?>">
+      <a href="<?= url('/user/services/counseling/female') ?>">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
         Sisters' Counseling
       </a>`;
-      dawahTrigger.setAttribute('data-href', "<?= url('/user/services/female-counseling') ?>");
+      dawahTrigger.setAttribute('data-href', "<?= url('/user/services/counseling/female') ?>");
     } else {
       dawahMenu.innerHTML = `
-      <a href="<?= url('/user/services/male-counseling') ?>">
+      <a href="<?= url('/user/services/counseling/male') ?>">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
         Brothers' Counseling
       </a>`;
-      dawahTrigger.setAttribute('data-href', "<?= url('/user/services/male-counseling') ?>");
+      dawahTrigger.setAttribute('data-href', "<?= url('/user/services/counseling/male') ?>");
     }
 
     // ── Build service cards ──
     const serviceGrid = document.getElementById('service-grid');
 
-    const dawahHref = user.sex === 'Female'
-      ? "<?= url('/user/services/female-counseling') ?>"
-      : "<?= url('/user/services/male-counseling') ?>";
+    const dawahHref = String(user.gender).toLowerCase() === 'female'
+      ? "<?= url('/user/services/counseling/female') ?>"
+      : "<?= url('/user/services/counseling/male') ?>";
 
     const services = [
       {
@@ -849,15 +849,15 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       {
         id: 'dawah',
         title: !isComplete ? "Da'wah — Counseling Services"
-          : user.sex === 'Female' ? "Da'wah — Sisters' Counseling"
+          : String(user.gender).toLowerCase() === 'female' ? "Da'wah — Sisters' Counseling"
             : "Da'wah — Brothers' Counseling",
         desc: !isComplete
           ? 'Request a confidential counseling session for personal, family, or spiritual matters. Complete your profile to access gender-specific counseling services.'
-          : user.sex === 'Female'
+          : String(user.gender).toLowerCase() === 'female'
             ? 'Request a confidential session with our female counselors. All sessions are conducted with utmost privacy and respect for Islamic values.'
             : 'Request a confidential counseling session with our male counselors for personal, family, or spiritual matters. Schedule your preferred appointment time.',
         icon: '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>',
-        iconClass: user.sex === 'Female' ? 'purple' : 'teal',
+        iconClass: String(user.gender).toLowerCase() === 'female' ? 'purple' : 'teal',
         href: dawahHref,
         btnText: 'Request Service'
       },

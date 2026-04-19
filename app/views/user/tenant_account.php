@@ -7,7 +7,7 @@ $display_name = trim(($account['first_name'] ?? '') . ' ' . ($account['last_name
 $phpUser = [
     'name' => $display_name,
     'email' => $info['email'] ?? ($account['email'] ?? ''),
-    'gender' => $info['sex'] ?? ($account['sex'] ?? ''),
+    'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
     'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
     'dob' => $info['birthdate'] ?? '',
     'civil' => $info['civil_status'] ?? '',
@@ -621,7 +621,19 @@ $phpUser = [
         };
         Object.entries(fields).forEach(([key, id]) => {
             const el = document.getElementById(id);
-            if (el && user[key]) el.value = user[key];
+            if (el && user[key]) {
+                if (el.tagName === 'SELECT') {
+                    const val = String(user[key]).toLowerCase();
+                    for (let i = 0; i < el.options.length; i++) {
+                        if (el.options[i].value.toLowerCase() === val) {
+                            el.selectedIndex = i;
+                            break;
+                        }
+                    }
+                } else {
+                    el.value = user[key];
+                }
+            }
         });
         document.getElementById('profile-fullname').textContent = user.name;
         document.getElementById('profile-email').textContent = user.email;
