@@ -399,7 +399,7 @@
         </svg></button>
       <div class="sidebar-header">
         <div class="sidebar-brand">
-          <img src="../../logo.jpg" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
+          <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
           <div class="brand-text"><strong>ISCAG MIS</strong><span>Apartment Staff</span></div>
         </div>
       </div>

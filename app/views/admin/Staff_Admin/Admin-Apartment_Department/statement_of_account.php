@@ -183,7 +183,7 @@
       </button>
       <div class="sidebar-header">
         <div class="sidebar-brand">
-          <img src="../../logo.jpg" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
+          <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
           <div class="brand-text"><strong>ISCAG MIS</strong><span>Apartment Staff</span></div>
         </div>
       </div>
@@ -282,7 +282,7 @@
         <div class="soa-container" id="soa-document" style="display: none;">
           <div class="soa-header">
             <div class="soa-brand">
-              <img src="../../logo.jpg" alt="ISCAG Logo" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
+              <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
               <div class="soa-brand-text">
                 <h2>ISCAG Management Information System</h2>
                 <p>Darul Iman Apartment Complex</p>
