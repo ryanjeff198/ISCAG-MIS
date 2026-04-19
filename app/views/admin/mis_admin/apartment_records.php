@@ -1,4 +1,3 @@
-<?php $active_page = 'apartment_records'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -22,10 +21,7 @@
             <div class="top-bar-subtitle">Manage apartment units, applications, tenants, and billing</div>
           </div>
         </div>
-        <div class="top-bar-actions">
-          <a href="<?= url('/admin/mis_admin/apartment_confirmation') ?>" class="btn-topbar primary">Applications for Review</a>
-          <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
-        </div>
+        <div class="top-bar-actions"><a href="<?= url('/admin/mis_admin') ?>" class="btn-topbar">← Dashboard</a></div>
       </div>
       <div class="page-body">
         
@@ -49,7 +45,7 @@
           </div>
         </div>
         <div class="breadcrumb-bar">
-          <a href="<?= url('/admin/dashboard') ?>">MIS Admin</a><span class="sep">›</span><span class="current">Apartment
+          <a href="<?= url('/admin/mis_admin') ?>">MIS Admin</a><span class="sep">›</span><span class="current">Apartment
             Records</span>
         </div>
 
@@ -83,6 +79,15 @@
               <div class="stat-label">Occupied</div>
             </div>
           </div>
+          <div class="stat-card">
+            <div class="stat-icon teal"><svg viewBox="0 0 24 24">
+                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z" />
+              </svg></div>
+            <div>
+              <div class="stat-value" id="s-apps">0</div>
+              <div class="stat-label">Applications</div>
+            </div>
+          </div>
         </div>
 
         <!-- UNIT TABLE -->
@@ -111,6 +116,32 @@
           </div>
         </div>
 
+        <!-- APPLICATION REQUESTS -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h6><svg viewBox="0 0 24 24">
+                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z" />
+              </svg>Apartment Applications</h6>
+            <span style="font-size:0.75rem;color:var(--text-muted);" id="app-count">0 records</span>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Applicant</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="app-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
         <!-- BILLING -->
         <div class="section-card">
@@ -143,13 +174,16 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    standardizePage('admin');
+    initAdminData(); loadUserNav();
     const apts = getApartments();
+    const reqs = getRequests().filter(r => r.type === 'apartment_application');
     const bills = getBilling().filter(b => b.type.toLowerCase().includes('apartment'));
 
     document.getElementById('s-units').textContent = apts.length;
     document.getElementById('s-avail').textContent = apts.reduce((s, a) => s + a.available, 0);
     document.getElementById('s-occ').textContent = apts.filter(a => a.status === 'occupied').length;
+    document.getElementById('s-apps').textContent = reqs.length;
+    document.getElementById('app-count').textContent = reqs.length + ' records';
 
     // Units
     document.getElementById('unit-tbody').innerHTML = apts.map(a => {
@@ -159,34 +193,47 @@
       <td>₱${a.price.toLocaleString()}</td>
       <td style="text-align:center;font-weight:700;color:${a.available > 0 ? 'var(--success)' : 'var(--danger)'};">${a.available}</td>
       <td><span class="badge-status ${bc}">${statusLabel(a.status)}</span></td>
-      <td>
-        <div class="action-menu">
-          <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
-            <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
-          <div class="action-menu-dropdown">
-            <button class="action-menu-item" onclick="showToast('Viewing ${a.id}','var(--info)')">
-              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg>
-              View Unit Details
-            </button>
-          </div>
-        </div>
-      </td>
+      <td><button class="btn-action btn-view" onclick="showToast('Viewing ${a.id}','var(--info)')"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg>View</button></td>
     </tr>`;
     }).join('');
 
+    // Applications
+    const appTb = document.getElementById('app-tbody');
+    if (!reqs.length) { appTb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No applications.</td></tr>'; }
+    else {
+      appTb.innerHTML = reqs.map(r => `<tr>
+    <td class="td-id">${r.id}</td><td style="font-weight:600;">${r.name || 'Unknown'}</td>
+    <td>${formatDate(r.date)}</td><td><span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
+    <td style="color:var(--text-muted);">${formatDate(r.updatedAt)}</td>
+    <td class="actions-cell">
+      <button class="btn-action btn-approve" onclick="approveReq('${r.id}')"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Approve</button>
+      <button class="btn-action btn-reject" onclick="rejectReq('${r.id}')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>Reject</button>
+    </td>
+  </tr>`).join('');
+    }
+
     // Billing
     const billTb = document.getElementById('bill-tbody');
-    if (!bills.length) {
-      billTb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted);">No billing records.</td></tr>';
-    } else {
+    if (!bills.length) { billTb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted);">No billing records.</td></tr>'; }
+    else {
       billTb.innerHTML = bills.map(b => `<tr>
-      <td class="td-id">${b.id}</td><td style="font-weight:600;">${b.name}</td>
-      <td style="font-weight:700;">${currencyFormat(b.amount)}</td>
-      <td style="color:var(--text-muted);">${formatDate(b.dueDate)}</td>
-      <td><span class="badge-status ${badgeClass(b.status)}">${statusLabel(b.status)}</span></td>
-    </tr>`).join('');
+    <td class="td-id">${b.id}</td><td style="font-weight:600;">${b.name}</td>
+    <td style="font-weight:700;">${currencyFormat(b.amount)}</td>
+    <td style="color:var(--text-muted);">${formatDate(b.dueDate)}</td>
+    <td><span class="badge-status ${badgeClass(b.status)}">${statusLabel(b.status)}</span></td>
+  </tr>`).join('');
     }
+
+    function approveReq(id) {
+      const all = getRequests(); const r = all.find(x => x.id === id);
+      if (r) { r.status = 'approved'; r.updatedAt = new Date().toISOString().split('T')[0]; saveRequests(all); addActivityEntry('Application approved', id + ' approved by MIS Admin', 'MIS Admin', 'approve'); showToast('✅ ' + id + ' approved!', 'var(--success)'); location.reload(); }
+    }
+    function rejectReq(id) {
+      const all = getRequests(); const r = all.find(x => x.id === id);
+      if (r) { r.status = 'rejected'; r.updatedAt = new Date().toISOString().split('T')[0]; saveRequests(all); addActivityEntry('Application rejected', id + ' rejected by MIS Admin', 'MIS Admin', 'reject'); showToast('❌ ' + id + ' rejected.', 'var(--danger)'); location.reload(); }
+    }
+
+    initSidebar(); initDropdowns();
   </script>
 </body>
 
