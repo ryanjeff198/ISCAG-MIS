@@ -1682,3 +1682,212 @@ textarea.form-control { resize: vertical; }
   .form-grid.cols-2,
   .form-grid.cols-2-1 { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════
+   ADMIN MODULES: SHARED COMPONENTS
+   ═══════════════════════════════════════ */
+
+/* ── Filter Bar & Controls Panel ── */
+.filter-bar, .controls-panel {
+  display: flex;
+  gap: 15px;
+  background: white;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-input, .form-control {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.filter-input:focus, .form-control:focus {
+  border-color: var(--primary);
+}
+
+/* ── Audit Logs Table & Tags ── */
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.audit-table th {
+  background: #f8faf9;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border);
+}
+
+.audit-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tag-login { background: rgba(31,111,90,0.1); color: var(--info); }
+.tag-delete { background: rgba(139,46,46,0.1); color: var(--danger); }
+.tag-update { background: rgba(199,154,43,0.1); color: var(--warning); }
+.tag-create { background: rgba(46,125,85,0.1); color: var(--success); }
+
+/* ── Notification Broadcast Layout ── */
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.compose-card, .history-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.compose-header {
+  padding: 18px 24px;
+  background: var(--primary-dark);
+  color: white;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.compose-card form { padding: 24px; }
+
+.form-row { margin-bottom: 20px; }
+.form-label { display: block; font-weight: 700; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+
+.btn-submit {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background 0.2s;
+}
+
+.btn-submit:hover { background: var(--primary-dark); }
+
+.sent-item {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 16px;
+  transition: background 0.15s;
+}
+
+.sent-item:hover { background: #fcfdfc; }
+
+.sent-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #f0f4f2; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: var(--primary);
+}
+
+.sent-icon svg { width: 18px; height: 18px; fill: currentColor; }
+
+.sent-content { flex: 1; }
+.sent-content h5 { margin: 0 0 4px; font-size: 0.95rem; color: var(--text-main); }
+.sent-content p { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 8px; line-height: 1.4; }
+
+.sent-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; color: var(--text-muted); }
+
+.target-badge {
+  background: #e8ece9; padding: 2px 8px; border-radius: 10px; font-weight: 700; color: var(--primary);
+}
+
+/* ── Notification Inbox ── */
+.notif-card {
+  display: flex; gap: 16px; padding: 20px; border-bottom: 1px solid var(--border);
+  background: white; cursor: pointer; transition: all 0.2s;
+}
+
+.notif-card:hover { background: #f8faf9; }
+.notif-card.unread { border-left: 4px solid var(--danger); background: #fff9f9; }
+
+.notif-icon {
+  width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.notif-icon svg { width: 20px; height: 20px; fill: white; }
+
+.type-system { background: var(--primary); }
+.type-alert { background: var(--danger); }
+.type-payment { background: var(--warning); }
+.type-request { background: var(--info); }
+
+.notif-content { flex: 1; }
+.notif-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.notif-title { font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin: 0; }
+.notif-time { font-size: 0.72rem; color: var(--text-muted); }
+.notif-message { font-size: 0.88rem; color: var(--text-muted); margin: 0; }
+
+.notif-detail-view {
+  background: white; padding: 32px; display: none;
+}
+
+/* ── Statement of Account ── */
+.soa-container {
+  background: white; border-radius: 12px; border: 1px solid var(--border);
+  padding: 40px; max-width: 900px; margin: 20px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.soa-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  border-bottom: 2px solid var(--primary-dark); padding-bottom: 20px; margin-bottom: 30px;
+}
+
+.soa-brand { display: flex; align-items: center; gap: 15px; }
+.soa-brand img { width: 80px; height: 80px; border-radius: 8px; }
+
+.soa-brand-text h2 { margin: 0; color: var(--primary-dark); font-size: 1.5rem; }
+.soa-brand-text p { margin: 5px 0 0; font-size: 0.85rem; color: var(--text-muted); }
+
+.soa-title { text-align: right; }
+.soa-title h1 { margin: 0; color: var(--text-main); font-size: 2rem; text-transform: uppercase; letter-spacing: 2px; }
+.soa-title p { margin: 5px 0 0; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
+
+.soa-details {
+  display: flex; justify-content: space-between; margin-bottom: 30px;
+  background: #f8f9fa; padding: 20px; border-radius: 8px;
+}
+
+.soa-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+.soa-table th { background: var(--primary-dark); color: white; padding: 12px; text-align: left; font-size: 0.9rem; }
+.soa-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+
+.soa-summary { width: 100%; max-width: 350px; margin-left: auto; }
+.soa-summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.soa-summary-row.total {
+  font-size: 1.2rem; font-weight: 700; color: var(--primary-dark);
+  border-bottom: none; border-top: 2px solid var(--primary-dark); margin-top: 10px; padding-top: 15px;
+}
