@@ -2361,7 +2361,7 @@ if ($userId) {
     const navRole = document.getElementById('nav-role');
     if (navRole) {
       const isComplete = user.profileComplete;
-      navRole.textContent = isComplete ? "<?= $_SESSION['role'] ?? 'Verified User' ?>" : 'Not Verified';
+      navRole.textContent = isComplete ? "<?= $_SESSION['role'] ?? 'Verified User' ?>" : 'Applicant';
       navRole.style.color = isComplete ? 'var(--success)' : 'var(--warning)';
     }
 

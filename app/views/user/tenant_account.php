@@ -159,7 +159,7 @@ $phpUser = [
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                                     <span id="role-badge"
                                         style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(199,154,43,0.12);color:var(--warning);">⏳
-                                        Not Verified</span>
+                                        Applicant</span>
                                     <span
                                         style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(46,125,85,0.1);color:var(--success);">✅
                                         Active</span>

@@ -774,7 +774,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
 
     // ── Set role label color based on status ──
     const navRole = document.getElementById('nav-role');
-    if (navRole && navRole.textContent === 'Not Verified') {
+    if (navRole && navRole.textContent === 'Applicant') {
       navRole.style.color = 'var(--warning)';
     } else if (navRole) {
       navRole.style.color = 'var(--success)';
