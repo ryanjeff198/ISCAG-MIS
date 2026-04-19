@@ -489,7 +489,7 @@
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
           <div><label class="form-label">Muslim / Arabic Name</label><input type="text" class="form-control"
               id="f-arabic" placeholder="e.g., Abdullah" /></div>
-          <div><label class="form-label">Masjid Membership</label>
+          <div><label class="form-label">ISCAG Membership</label>
             <select class="form-control" id="f-membership" style="appearance:auto;">
               <option value="">— Select —</option>
               <option>Regular Member</option>

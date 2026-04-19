@@ -1,3 +1,22 @@
+<?php
+$info = $info ?? [];
+$account = $account ?? [];
+
+$display_name = trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? ''));
+
+$phpUser = [
+    'name' => $display_name,
+    'email' => $info['email'] ?? ($account['email'] ?? ''),
+    'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
+    'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
+    'dob' => $info['birthdate'] ?? '',
+    'civil' => $info['civil_status'] ?? '',
+    'address' => $info['address'] ?? '',
+    'occupation' => $info['occupation'] ?? '',
+    'arabicName' => $info['muslimname'] ?? '',
+    'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
+];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -532,24 +551,29 @@
         // ── Role label: use SESSION data (injected by sidebar sync) ──
         // The sidebar already rendered the correct PHP role; here we just
         // style it green. Lock state also comes from session, not localStorage.
-        const SESSION_ROLE   = '<?= htmlspecialchars($_SESSION['role'] ?? '') ?>';
-        const SESSION_GENDER = '<?= htmlspecialchars($_SESSION['gender'] ?? '') ?>';
+        const DB_USER = <?= json_encode($phpUser) ?>;
+        const PROFILE_FIELDS = ['name', 'email', 'gender', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
+        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', gender: 'Gender', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
 
-        // Services are unlocked when user has a real role (Applicant / Tenant)
-        const isComplete = SESSION_ROLE !== '';
+        // Calculate profile completion from DB data
+        const missingFields = [];
+        let filledCount = 0;
+        PROFILE_FIELDS.forEach(k => {
+            if (DB_USER[k] && String(DB_USER[k]).trim() !== '') { filledCount++; } else { missingFields.push(FIELD_LABELS[k] || k); }
+        });
+        const percentage = Math.round((filledCount / PROFILE_FIELDS.length) * 100);
+        const isComplete = percentage === 100;
 
         const navRole = document.getElementById('nav-role');
         if (navRole) {
-            // Sidebar PHP already set textContent from $_SESSION['role'];
-            // just ensure the colour is green.
-            navRole.style.color = 'var(--success)';
+            navRole.style.color = isComplete ? 'var(--success)' : 'var(--warning)';
         }
 
-        // Da'wah dropdown dynamic path based on SESSION gender
+        // Da'wah dropdown dynamic path based on DB gender
         const dawahMenu    = document.getElementById('dawah-menu');
         const dawahTrigger = document.getElementById('dawah-trigger');
         if (dawahMenu && dawahTrigger) {
-            const genderLower = SESSION_GENDER.toLowerCase();
+            const genderLower = String(DB_USER.gender).toLowerCase();
             if (genderLower === 'female') {
                 dawahMenu.innerHTML = `
                 <a href="<?= url('/user/services/counseling/female') ?>">
@@ -567,14 +591,17 @@
             }
         }
 
-        // Dropdown Lock Logic — unlock for any authenticated session user
+        // Dropdown Lock Logic — lock services when profile is incomplete
         function applyDropdownLocks() {
             const wraps = ['damayan-wrap', 'dawah-wrap', 'apartment-wrap'];
             wraps.forEach(id => {
                 const wrap = document.getElementById(id);
                 if (!wrap) return;
-                // Always unlocked for logged-in Applicant / Tenant roles
-                wrap.classList.remove('locked');
+                if (isComplete) {
+                    wrap.classList.remove('locked');
+                } else {
+                    wrap.classList.add('locked');
+                }
             });
         }
         applyDropdownLocks();
@@ -589,8 +616,8 @@
             if (!trigger || !menu) return;
             trigger.addEventListener('click', () => {
                 if (wrap && wrap.classList.contains('locked')) {
-                    showToast('🔒 Please complete your profile to unlock services.', '#c79a2b');
-                    setTimeout(() => window.location.href = '<?= url('/user/profile') ?>', 1000);
+                    showToast('Please complete your profile to unlock services.', '#c79a2b');
+                    setTimeout(() => window.location.href = '<?= url('/user/profile') ?>', 1200);
                     return;
                 }
                 if (_sidebar && _sidebar.classList.contains('collapsed')) {

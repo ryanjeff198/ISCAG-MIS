@@ -1062,7 +1062,7 @@ $phpUser = [
 
         // ── Lock/Unlock service dropdowns ──
         function applyDropdownLocks() {
-            const { percentage } = getProfileCompletion();
+            const { percentage, missingFields } = getProfileCompletion();
             const wraps = ['damayan-wrap', 'dawah-wrap', 'apartment-wrap'];
             wraps.forEach(id => {
                 const wrap = document.getElementById(id);

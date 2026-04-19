@@ -2072,7 +2072,7 @@ if ($userId) {
                 <input class="form-check-input" type="checkbox" id="decl2" />
                 <label class="form-check-label" for="decl2">
                   I understand that submitting false information may result in immediate disqualification. I agree to
-                  comply with all Masjid apartment rules and regulations.
+                  comply with all ISCAG apartment rules and regulations.
                 </label>
               </div>
             </div>
@@ -2309,7 +2309,7 @@ if ($userId) {
         civil: 'Civil Status',
         occupation: 'Occupation',
         arabicName: 'Muslim / Arabic Name',
-        membership: 'Masjid Membership'
+        membership: 'ISCAG Membership'
       };
       PROFILE_FIELDS.forEach(k => {
         if (user[k] && String(user[k]).trim() !== '') {

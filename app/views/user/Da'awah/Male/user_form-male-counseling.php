@@ -190,7 +190,7 @@
     const user = getUser();
     const missing = [];
     let filled = 0;
-    const labels = { name:'Full Name', email:'Email Address', gender:'Gender', phone:'Contact Number', address:'Complete Address', dob:'Date of Birth', civil:'Civil Status', occupation:'Occupation', arabicName:'Muslim / Arabic Name', membership:'Masjid Membership' };
+    const labels = { name:'Full Name', email:'Email Address', gender:'Gender', phone:'Contact Number', address:'Complete Address', dob:'Date of Birth', civil:'Civil Status', occupation:'Occupation', arabicName:'Muslim / Arabic Name', membership:'ISCAG Membership' };
     PROFILE_FIELDS.forEach(k => {
       if (user[k] && String(user[k]).trim() !== '') { filled++; } else { missing.push(labels[k] || k); }
     });

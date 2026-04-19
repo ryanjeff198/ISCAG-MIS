@@ -1404,7 +1404,7 @@
               <div class="info-field-value">${safeVal(user.occupation)}</div>
             </div>
             <div class="info-field">
-              <div class="info-field-label">Masjid Membership</div>
+              <div class="info-field-label">ISCAG Membership</div>
               <div class="info-field-value">${safeVal(user.membership)}</div>
             </div>
             <div class="info-field">

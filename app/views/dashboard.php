@@ -544,7 +544,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         <!-- WELCOME BANNER -->
         <div class="welcome-banner">
           <h3 id="welcome-heading">Assalamu Alaikum, <?= htmlspecialchars(explode(' ', $_SESSION['name'] ?? 'User')[0]) ?>!</h3>
-          <p>Welcome to the Masjid Management Information System. Select a service below to submit a request.</p>
+          <p>Welcome to the ISCAG Management Information System. Select a service below to submit a request.</p>
 
           <!-- Profile completion widget -->
           <div class="profile-widget" id="profile-widget">
@@ -864,7 +864,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       {
         id: 'apartment',
         title: 'Apartment Application',
-        desc: 'Apply for a housing unit in the Masjid apartment complex. Submit your family details and preferred unit type for review by the Apartment Management.',
+        desc: 'Apply for a housing unit in the ISCAG apartment complex. Submit your family details and preferred unit type for review by the Apartment Management.',
         icon: '<path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zm-8 4H7v-2h2v2zm0-4H7V9h2v2zm0-4H7V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2z"/>',
         iconClass: 'green',
         href: '<?= url('/user/apartment/apply') ?>',
