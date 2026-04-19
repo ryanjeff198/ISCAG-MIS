@@ -25,7 +25,12 @@ $dbUser = [
 if (!function_exists('asset')) {
     function asset($path) { 
         $baseUrl = str_replace('/public/index.php', '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
-        return rtrim($baseUrl, '/') . "/public/" . ltrim($path, '/'); 
+        $baseUrl = rtrim($baseUrl, '/');
+        // Ensure we don't double up on /public if it's already in the baseUrl
+        if (str_ends_with($baseUrl, '/public')) {
+            return $baseUrl . '/' . ltrim($path, '/');
+        }
+        return $baseUrl . "/public/" . ltrim($path, '/'); 
     }
 }
 if (!function_exists('url')) {
@@ -37,6 +42,12 @@ if (!function_exists('url')) {
 
 if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant'])) {
 ?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ISCAG MIS — Admin Hub</title>
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
   <!-- Chart.js Integration -->
