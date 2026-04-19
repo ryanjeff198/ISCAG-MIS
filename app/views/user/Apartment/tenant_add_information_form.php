@@ -9,22 +9,31 @@ $userId = $_SESSION['user_id'] ?? null;
 $dbUser = [];
 if ($userId) {
     require_once BASE_PATH . '/app/models/User.php';
-    $userModel = new User();
-    $account = $userModel->findById($userId);
-    $info = $userModel->getAdditionalInfo($userId);
+    require_once BASE_PATH . '/app/models/ApartmentApp.php';
     
+    $userModel = new User();
+    $aptModel  = new ApartmentApp();
+    
+    $account = $userModel->findById($userId);
+    $appInfo = $aptModel->getInfo($userId);
+    $profile = $userModel->getAdditionalInfo($userId);
+    
+    // dbUser is used by the Access Gate and Navigation (should be Profile info)
     $dbUser = [
-        'name' => $info['full_name'] ?? trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
-        'email' => $info['email'] ?? ($account['email'] ?? ''),
-        'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
-        'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
-        'dob' => $info['birthdate'] ?? '',
-        'civil' => $info['civil_status'] ?? '',
-        'address' => $info['address'] ?? '',
-        'occupation' => $info['occupation'] ?? '',
-        'arabicName' => $info['muslimname'] ?? '',
-        'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
+        'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
+        'email' => $profile['email'] ?? ($account['email'] ?? ''),
+        'gender' => !empty($profile['sex']) ? $profile['sex'] : ($account['sex'] ?? ''),
+        'phone' => $profile['phone'] ?? ($account['contactnum'] ?? ''),
+        'dob' => $profile['birthdate'] ?? '',
+        'civil' => $profile['civil_status'] ?? '',
+        'address' => $profile['address'] ?? '',
+        'occupation' => $profile['occupation'] ?? '',
+        'arabicName' => $profile['muslimname'] ?? '',
+        'revertYear' => $profile['dateofshahadah'] ?? '',
     ];
+
+    // appData is used to pre-fill the form (should be Application info)
+    $appData = $appInfo;
 }
 ?>
 <!DOCTYPE html>
@@ -1791,12 +1800,12 @@ if ($userId) {
               <table class="info-table">
                 <tr>
                   <td class="field-label">Family Name:</td>
-                  <td class="field-value"><input type="text" placeholder="Surname / Family name" id="family-name" />
+                  <td class="field-value"><input type="text" placeholder="Surname / Family name" id="family-name" value="<?= htmlspecialchars($appData['familyname'] ?? '') ?>" />
                   </td>
                   <td class="field-label">Given Name:</td>
-                  <td class="field-value"><input type="text" placeholder="First name" id="given-name" /></td>
+                  <td class="field-value"><input type="text" placeholder="First name" id="given-name" value="<?= htmlspecialchars($appData['givenname'] ?? '') ?>" /></td>
                   <td class="field-label">Muslim Name:</td>
-                  <td class="field-value"><input type="text" placeholder="Arabic / Muslim name" id="muslim-name" /></td>
+                  <td class="field-value"><input type="text" placeholder="Arabic / Muslim name" id="muslim-name" value="<?= htmlspecialchars($appData['muslimname'] ?? '') ?>" /></td>
                   <td class="field-label" style="min-width:40px;">M.I.</td>
                   <td class="field-value" style="width:60px;"><input type="text" placeholder="—" id="mi" maxlength="3"
                       style="text-align:center;" /></td>
@@ -1807,12 +1816,12 @@ if ($userId) {
               <table class="info-table">
                 <tr>
                   <td class="field-label">Date of Birth:</td>
-                  <td class="field-value"><input type="date" id="dob" /></td>
+                  <td class="field-value"><input type="date" id="dob" value="<?= htmlspecialchars($appData['birthdate'] ?? '') ?>" /></td>
                   <td class="field-label" style="min-width:50px;">Age:</td>
-                  <td class="field-value" style="width:70px;"><input type="number" id="age" placeholder="—" min="0"
+                  <td class="field-value" style="width:70px;"><input type="number" id="age" placeholder="—" min="0" value="<?= htmlspecialchars($appData['age'] ?? '') ?>"
                       style="text-align:center;" /></td>
                   <td class="field-label">Place of Birth:</td>
-                  <td class="field-value"><input type="text" placeholder="City / Province" id="pob" /></td>
+                  <td class="field-value"><input type="text" placeholder="City / Province" id="pob" value="<?= htmlspecialchars($appData['pob'] ?? '') ?>" /></td>
                 </tr>
               </table>
 
@@ -1821,7 +1830,7 @@ if ($userId) {
                 <tr>
                   <td class="field-label">Address:</td>
                   <td class="field-value" colspan="5"><input type="text" placeholder="Complete current address"
-                      id="address" /></td>
+                      id="address" value="<?= htmlspecialchars($appData['address'] ?? '') ?>" /></td>
                 </tr>
               </table>
 
@@ -1829,11 +1838,11 @@ if ($userId) {
               <table class="info-table">
                 <tr>
                   <td class="field-label">Date of Shahadah:</td>
-                  <td class="field-value"><input type="date" id="shahadah-date" /></td>
+                  <td class="field-value"><input type="date" id="shahadah-date" value="<?= htmlspecialchars($appData['dateofshahadah'] ?? '') ?>" /></td>
                   <td class="field-label">Tribal Affiliation:</td>
-                  <td class="field-value"><input type="text" placeholder="e.g., Maranao, Tausug" id="tribal" /></td>
+                  <td class="field-value"><input type="text" placeholder="e.g., Maranao, Tausug" id="tribal" value="<?= htmlspecialchars($appData['tribalaffliation'] ?? '') ?>" /></td>
                   <td class="field-label">Phone No.:</td>
-                  <td class="field-value"><input type="tel" placeholder="09XX-XXX-XXXX" id="phone" /></td>
+                  <td class="field-value"><input type="tel" placeholder="09XX-XXX-XXXX" id="phone" value="<?= htmlspecialchars($appData['phone'] ?? '') ?>" /></td>
                 </tr>
               </table>
 
@@ -1842,23 +1851,23 @@ if ($userId) {
                 <tr>
                   <td class="field-label">No. of Muslim in the Family:</td>
                   <td class="field-value" style="width:80px;"><input type="number" placeholder="—" id="muslim-count"
-                      min="0" style="text-align:center;" /></td>
+                      min="0" style="text-align:center;" value="<?= htmlspecialchars($appData['numofmuslim'] ?? '') ?>" /></td>
                   <td class="field-label">Civil Status:</td>
                   <td class="field-value">
                     <select id="civil-status">
                       <option value="">— Select —</option>
-                      <option>Single</option>
-                      <option>Married</option>
-                      <option>Widowed</option>
-                      <option>Divorced</option>
+                      <option <?= ($appData['civil_status'] ?? '') == 'Single' ? 'selected' : '' ?>>Single</option>
+                      <option <?= ($appData['civil_status'] ?? '') == 'Married' ? 'selected' : '' ?>>Married</option>
+                      <option <?= ($appData['civil_status'] ?? '') == 'Widowed' ? 'selected' : '' ?>>Widowed</option>
+                      <option <?= ($appData['civil_status'] ?? '') == 'Divorced' ? 'selected' : '' ?>>Divorced</option>
                     </select>
                   </td>
                   <td class="field-label">Gender:</td>
                   <td class="field-value">
                     <select id="gender">
                       <option value="">— Select —</option>
-                      <option>Male</option>
-                      <option>Female</option>
+                      <option <?= ($appData['sex'] ?? '') == 'Male' ? 'selected' : '' ?>>Male</option>
+                      <option <?= ($appData['sex'] ?? '') == 'Female' ? 'selected' : '' ?>>Female</option>
                     </select>
                   </td>
                 </tr>
@@ -3210,32 +3219,100 @@ if ($userId) {
               user: user.id
             });
 
-            // Keep all the local storage logic for the user side to work
-            const reqDocs = [
-              { id: 'doc-income', name: 'Proof of Income', status: 'completed', completedNote: 'Document uploaded and submitted' },
-              { id: 'doc-id', name: 'Valid ID (Photocopy)', status: 'completed', completedNote: 'Document uploaded and submitted' },
-              { id: 'doc-birth', name: 'Birth Certificate (Photocopy)', status: 'completed', completedNote: 'Document uploaded and submitted' },
-              { id: 'doc-nbi', name: 'NBI / Police Clearance', status: 'completed', completedNote: 'Document uploaded and submitted' },
-              { id: 'doc-photo', name: '2x2 Picture (2pcs)', status: 'completed', completedNote: 'Document uploaded and submitted' }
-            ];
-            localStorage.setItem('mis_apt_docs_' + newReq.id, JSON.stringify(reqDocs));
+      // Save required documents status
+      const reqDocs = [{
+          id: 'doc-income',
+          name: 'Proof of Income',
+          status: 'completed',
+          completedNote: 'Document uploaded and submitted'
+        },
+        {
+          id: 'doc-id',
+          name: 'Valid ID (Photocopy)',
+          status: 'completed',
+          completedNote: 'Document uploaded and submitted'
+        },
+        {
+          id: 'doc-birth',
+          name: 'Birth Certificate (Photocopy)',
+          status: 'completed',
+          completedNote: 'Document uploaded and submitted'
+        },
+        {
+          id: 'doc-nbi',
+          name: 'NBI / Police Clearance',
+          status: 'completed',
+          completedNote: 'Document uploaded and submitted'
+        },
+        {
+          id: 'doc-photo',
+          name: '2x2 Picture (2pcs)',
+          status: 'completed',
+          completedNote: 'Document uploaded and submitted'
+        }
+      ];
+      localStorage.setItem('mis_apt_docs_' + newReq.id, JSON.stringify(reqDocs));
 
-            const reports = JSON.parse(localStorage.getItem('mis_reports') || '[]');
-            const today = new Date().toISOString().split('T')[0];
-            const uploadedDocs = getUploadedDocs();
-            const hasDoc = (key) => !!uploadedDocs[key];
-            const reportId = 'RPT-' + String(reports.length + 1).padStart(3, '0');
+      // ── Create PENDING_MIS Report for MIS Admin review ──
+      const reports = JSON.parse(localStorage.getItem('mis_reports') || '[]');
+      const existingReport = reports.find(r => r.tenantId === user.id && (r.status === 'PENDING_MIS' || r.status === 'VERIFIED'));
+      if (!existingReport) {
+        const reportId = 'RPT-' + String(reports.length + 1).padStart(3, '0');
+        const today = new Date().toISOString().split('T')[0];
+        const uploadedDocs = getUploadedDocs();
+        const hasDoc = (key) => !!uploadedDocs[key];
 
-            reports.unshift({
-                id: reportId, tenantId: user.id, tenantName: user.name, status: 'PENDING_MIS',
-                roomId: null, roomName: null, remarks: '', submittedAt: today, verifiedAt: null,
-                approvedAt: null, requirements: {
-                    valid_id: hasDoc('doc-id-front') && hasDoc('doc-id-back'),
-                    certificate: hasDoc('doc-birth'), photo: hasDoc('doc-photo'),
-                    contract: hasDoc('doc-income'), nbi_clearance: hasDoc('doc-nbi')
-                }, billingIds: [], updatedAt: today
-            });
-            localStorage.setItem('mis_reports', JSON.stringify(reports));
+        const newReport = {
+          id: reportId,
+          tenantId: user.id,
+          tenantName: user.name,
+          status: 'PENDING_MIS',
+          roomId: null,
+          roomName: null,
+          remarks: '',
+          submittedAt: today,
+          verifiedAt: null,
+          approvedAt: null,
+          requirements: {
+            valid_id: hasDoc('doc-id-front') && hasDoc('doc-id-back'),
+            certificate: hasDoc('doc-birth'),
+            photo: hasDoc('doc-photo'),
+            contract: hasDoc('doc-income'),
+            nbi_clearance: hasDoc('doc-nbi')
+          },
+          billingIds: [],
+          updatedAt: today
+        };
+        reports.push(newReport);
+        localStorage.setItem('mis_reports', JSON.stringify(reports));
+
+        // Activity log
+        const actLog = JSON.parse(localStorage.getItem('mis_activity_log') || '[]');
+        actLog.unshift({
+          action: 'Application submitted',
+          detail: reportId + ' — ' + user.name + ' submitted apartment application with all documents',
+          actor: user.name,
+          time: new Date().toISOString(),
+          type: 'request'
+        });
+        if (actLog.length > 50) actLog.length = 50;
+        localStorage.setItem('mis_activity_log', JSON.stringify(actLog));
+
+        // Notification
+        const notifs = JSON.parse(localStorage.getItem('mis_notifications') || '[]');
+        notifs.unshift({
+          id: 'NOT-' + String(notifs.length + 1).padStart(3, '0'),
+          tenantId: user.id,
+          title: 'Application Submitted',
+          message: 'Your apartment application ' + reportId + ' has been submitted and is pending MIS Admin review.',
+          type: 'system',
+          read: false,
+          createdAt: new Date().toISOString()
+        });
+        localStorage.setItem('mis_notifications', JSON.stringify(notifs));
+      }
+      // Clear the temporary uploaded documents from local storage
+      localStorage.removeItem(DOC_STORAGE_KEY);
 
             showSuccessView();
           } else {

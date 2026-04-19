@@ -124,14 +124,24 @@ class User
         return $stmt->execute(['password' => $hashed, 'confirmpass' => $hashed, 'email' => $email]);
     }
 
-    /**
-     * Fetch additional profile information.
-     */
     public function getAdditionalInfo($userId)
     {
-        $stmt = $this->db->prepare("SELECT * FROM tenant_addinfo WHERE tenant_id = :userId LIMIT 1");
+        $stmt = $this->db->prepare("SELECT * FROM tenant_user_profiles WHERE tenant_id = :userId LIMIT 1");
         $stmt->execute(['userId' => $userId]);
-        return $stmt->fetch();
+        $row = $stmt->fetch();
+        
+        if ($row) {
+            // Map new column names back to expected keys for backward compatibility in views
+            return [
+                'muslimname' => $row['muslim_name'],
+                'birthdate' => $row['birthdate'],
+                'civil_status' => $row['civil_status'],
+                'occupation' => $row['occupation'],
+                'address' => $row['address'],
+                'dateofshahadah' => $row['revert_year']
+            ];
+        }
+        return [];
     }
 
     /**
@@ -168,26 +178,26 @@ class User
 
             $res1 = $stmt1->execute();
 
-            // 2. Update additional info in tenant_addinfo
+            // 2. Update additional info in tenant_user_profiles
             // We check if the record exists first; if not, we should probably create it
-            $stmtCheck = $this->db->prepare("SELECT COUNT(*) FROM tenant_addinfo WHERE tenant_id = :userId");
+            $stmtCheck = $this->db->prepare("SELECT COUNT(*) FROM tenant_user_profiles WHERE tenant_id = :userId");
             $stmtCheck->execute(['userId' => $userId]);
             $exists = $stmtCheck->fetchColumn() > 0;
 
             if ($exists) {
                 $stmt2 = $this->db->prepare("
-                    UPDATE tenant_addinfo 
-                    SET muslimname = :arabicName, 
+                    UPDATE tenant_user_profiles 
+                    SET muslim_name = :arabicName, 
                         birthdate = :dob, 
                         civil_status = :civil, 
                         occupation = :occupation, 
                         address = :address,
-                        dateofshahadah = :revertYear
+                        revert_year = :revertYear
                     WHERE tenant_id = :userId
                 ");
             } else {
                 $stmt2 = $this->db->prepare("
-                    INSERT INTO tenant_addinfo (tenant_id, muslimname, birthdate, civil_status, occupation, address, dateofshahadah)
+                    INSERT INTO tenant_user_profiles (tenant_id, muslim_name, birthdate, civil_status, occupation, address, revert_year)
                     VALUES (:userId, :arabicName, :dob, :civil, :occupation, :address, :revertYear)
                 ");
             }
@@ -199,10 +209,7 @@ class User
             $stmt2->bindValue(':address', $data['address']);
             $stmt2->bindValue(':userId', $userId, PDO::PARAM_INT);
             
-            $revertVal = null;
-            if (!empty($data['revertYear'])) {
-                 $revertVal = $data['revertYear'] . "-01-01";
-            }
+            $revertVal = $data['revertYear'] ?? null;
             $stmt2->bindValue(':revertYear', $revertVal);
 
             $res2 = $stmt2->execute();
