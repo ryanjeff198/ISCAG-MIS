@@ -167,6 +167,25 @@
     .btn-circle.reject:hover svg { fill: var(--danger); }
     
     .actions-cell { display: flex; gap: 6px; }
+    
+    .reject-reason-wrap {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .reject-select {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      background: var(--danger);
+      color: white;
+      font-weight: 700;
+      outline: none;
+      cursor: pointer;
+    }
+    .reject-select:focus { border-color: var(--danger); }
   </style>
 </head>
 
@@ -252,7 +271,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 id="modal-title">Review Application</h5>
-        <button class="modal-close">×</button>
+        <button class="modal-close" onclick="closeModal('review-modal')">×</button>
       </div>
       <div class="modal-body" id="modal-body" style="padding:0; background: #f0f4f2;">
         <!-- Overhauled Paper Layout will be injected here -->
@@ -458,13 +477,39 @@
       if (r.status.toLowerCase() === 'pending') {
         document.getElementById('modal-footer').innerHTML = `
           <button class="btn-topbar" onclick="closeModal('review-modal')">Close</button>
-          <button class="btn-topbar" style="color:var(--danger);" onclick="rejectApp(${r.id})">Reject Application</button>
-          <button class="btn-topbar primary" onclick="approveApp(${r.id})">Confirm & Approve Details</button>
+          <div id="footer-actions" style="display:flex; gap:10px; align-items:center; margin-left:auto;">
+            <button class="btn-topbar" style="color:var(--danger);" onclick="showRejectReason(${r.id})">Reject Application</button>
+            <button class="btn-topbar primary" onclick="approveApp(${r.id})">Confirm & Approve Details</button>
+          </div>
         `;
       } else {
         document.getElementById('modal-footer').innerHTML = `<button class="btn-topbar" onclick="closeModal('review-modal')">Close</button>`;
       }
       openModal('review-modal');
+    }
+
+    function showRejectReason(id) {
+      document.getElementById('footer-actions').innerHTML = `
+        <div class="reject-reason-wrap">
+          <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Select Reason:</span>
+          <select class="reject-select" id="reject-reason">
+            <option value="Incomplete Documents">Incomplete Documents</option>
+            <option value="Unmatched Information">Unmatched Information</option>
+            <option value="Invalid Identification">Invalid Identification</option>
+            <option value="Poor Credit/Income Proof">Poor Credit/Income Proof</option>
+            <option value="Other">Other</option>
+          </select>
+          <button class="btn-topbar" style="color:var(--danger); border-color:var(--danger);" onclick="rejectApp(${id})">Confirm Rejection</button>
+          <button class="btn-topbar" onclick="resetFooterActions(${id})">Cancel</button>
+        </div>
+      `;
+    }
+
+    function resetFooterActions(id) {
+       document.getElementById('footer-actions').innerHTML = `
+          <button class="btn-topbar" style="color:var(--danger);" onclick="showRejectReason(${id})">Reject Application</button>
+          <button class="btn-topbar primary" onclick="approveApp(${id})">Confirm & Approve Details</button>
+       `;
     }
 
     function viewFullImage(src) {
@@ -485,7 +530,11 @@
       if (confirm('Approve these application details?')) window.location.href = '<?= url('/admin/mis_admin/apartment_confirmation/approve') ?>?id=' + id;
     }
     function rejectApp(id) {
-      if (confirm('Reject these application details?')) window.location.href = '<?= url('/admin/mis_admin/apartment_confirmation/reject') ?>?id=' + id;
+      const reasonEl = document.getElementById('reject-reason');
+      const reason = reasonEl ? reasonEl.value : 'Other';
+      if (confirm(`Reject this application for: "${reason}"?`)) {
+        window.location.href = `<?= url('/admin/mis_admin/apartment_confirmation/reject') ?>?id=${id}&reason=${encodeURIComponent(reason)}`;
+      }
     }
 
     setupModalClose('review-modal');

@@ -54,10 +54,11 @@ class AdminController extends Controller
     public function rejectApartmentApp(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         $id = $_GET['id'] ?? null;
+        $reason = $_GET['reason'] ?? null;
         if ($id) {
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
-            $model->updateApplicationStatus($id, 'Rejected');
+            $model->updateApplicationStatus($id, 'Rejected', $reason);
         }
         header('Location: ' . url('/admin/mis_admin/apartment_confirmation'));
     }

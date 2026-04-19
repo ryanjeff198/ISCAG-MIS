@@ -142,10 +142,10 @@ class ApartmentApp {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function updateApplicationStatus($id, $status) {
-        $sql = "UPDATE apartmentsapp SET status = :status WHERE application_id = :id";
+    public function updateApplicationStatus($id, $status, $remarks = null) {
+        $sql = "UPDATE apartmentsapp SET status = :status, remarks = :remarks WHERE application_id = :id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute(['status' => $status, 'id' => $id]);
+        return $stmt->execute(['status' => $status, 'remarks' => $remarks, 'id' => $id]);
     }
 
     // ─── tenant_requirements (BLOB uploads) ───────────────
@@ -218,5 +218,11 @@ class ApartmentApp {
             error_log("updateRequirement failed for $type: " . $e->getMessage());
             return false;
         }
+    }
+
+    public function updateStatusByTenant($userId, $status) {
+        $sql = "UPDATE apartmentsapp SET status = :status WHERE tenant_id = :uid";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['status' => $status, 'uid' => $userId]);
     }
 }

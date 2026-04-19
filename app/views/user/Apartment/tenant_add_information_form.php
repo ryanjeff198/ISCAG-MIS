@@ -3199,107 +3199,53 @@ if ($userId) {
         return;
       }
 
-      // Save the application request
-      const newReq = addRequest({
-        type: 'apartment_application',
-        user: user.id
-      });
+      // Finalize on Server
+      fetch('<?= url("/user/apartment/submit") ?>', { method: 'POST' })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            // Save locally for UI consistency (User Dashboard)
+            const newReq = addRequest({
+              type: 'apartment_application',
+              user: user.id
+            });
 
-      // Save required documents status
-      const reqDocs = [{
-          id: 'doc-income',
-          name: 'Proof of Income',
-          status: 'completed',
-          completedNote: 'Document uploaded and submitted'
-        },
-        {
-          id: 'doc-id',
-          name: 'Valid ID (Photocopy)',
-          status: 'completed',
-          completedNote: 'Document uploaded and submitted'
-        },
-        {
-          id: 'doc-birth',
-          name: 'Birth Certificate (Photocopy)',
-          status: 'completed',
-          completedNote: 'Document uploaded and submitted'
-        },
-        {
-          id: 'doc-nbi',
-          name: 'NBI / Police Clearance',
-          status: 'completed',
-          completedNote: 'Document uploaded and submitted'
-        },
-        {
-          id: 'doc-photo',
-          name: '2x2 Picture (2pcs)',
-          status: 'completed',
-          completedNote: 'Document uploaded and submitted'
-        }
-      ];
-      localStorage.setItem('mis_apt_docs_' + newReq.id, JSON.stringify(reqDocs));
+            // Keep all the local storage logic for the user side to work
+            const reqDocs = [
+              { id: 'doc-income', name: 'Proof of Income', status: 'completed', completedNote: 'Document uploaded and submitted' },
+              { id: 'doc-id', name: 'Valid ID (Photocopy)', status: 'completed', completedNote: 'Document uploaded and submitted' },
+              { id: 'doc-birth', name: 'Birth Certificate (Photocopy)', status: 'completed', completedNote: 'Document uploaded and submitted' },
+              { id: 'doc-nbi', name: 'NBI / Police Clearance', status: 'completed', completedNote: 'Document uploaded and submitted' },
+              { id: 'doc-photo', name: '2x2 Picture (2pcs)', status: 'completed', completedNote: 'Document uploaded and submitted' }
+            ];
+            localStorage.setItem('mis_apt_docs_' + newReq.id, JSON.stringify(reqDocs));
 
-      // ── Create PENDING_MIS Report for MIS Admin review ──
-      const reports = JSON.parse(localStorage.getItem('mis_reports') || '[]');
-      const existingReport = reports.find(r => r.tenantId === user.id && (r.status === 'PENDING_MIS' || r.status === 'VERIFIED'));
-      if (!existingReport) {
-        const reportId = 'RPT-' + String(reports.length + 1).padStart(3, '0');
-        const today = new Date().toISOString().split('T')[0];
-        const uploadedDocs = getUploadedDocs();
-        const hasDoc = (key) => !!uploadedDocs[key];
+            const reports = JSON.parse(localStorage.getItem('mis_reports') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+            const uploadedDocs = getUploadedDocs();
+            const hasDoc = (key) => !!uploadedDocs[key];
+            const reportId = 'RPT-' + String(reports.length + 1).padStart(3, '0');
 
-        const newReport = {
-          id: reportId,
-          tenantId: user.id,
-          tenantName: user.name,
-          status: 'PENDING_MIS',
-          roomId: null,
-          roomName: null,
-          remarks: '',
-          submittedAt: today,
-          verifiedAt: null,
-          approvedAt: null,
-          requirements: {
-            valid_id: hasDoc('doc-id-front') && hasDoc('doc-id-back'),
-            certificate: hasDoc('doc-birth'),
-            photo: hasDoc('doc-photo'),
-            contract: hasDoc('doc-income'),
-            nbi_clearance: hasDoc('doc-nbi')
-          },
-          billingIds: [],
-          updatedAt: today
-        };
-        reports.push(newReport);
-        localStorage.setItem('mis_reports', JSON.stringify(reports));
+            reports.unshift({
+                id: reportId, tenantId: user.id, tenantName: user.name, status: 'PENDING_MIS',
+                roomId: null, roomName: null, remarks: '', submittedAt: today, verifiedAt: null,
+                approvedAt: null, requirements: {
+                    valid_id: hasDoc('doc-id-front') && hasDoc('doc-id-back'),
+                    certificate: hasDoc('doc-birth'), photo: hasDoc('doc-photo'),
+                    contract: hasDoc('doc-income'), nbi_clearance: hasDoc('doc-nbi')
+                }, billingIds: [], updatedAt: today
+            });
+            localStorage.setItem('mis_reports', JSON.stringify(reports));
 
-        // Activity log
-        const actLog = JSON.parse(localStorage.getItem('mis_activity_log') || '[]');
-        actLog.unshift({
-          action: 'Application submitted',
-          detail: reportId + ' — ' + user.name + ' submitted apartment application with all documents',
-          actor: user.name,
-          time: new Date().toISOString(),
-          type: 'request'
+            showSuccessView();
+          } else {
+            showToast('Submission failed: ' + (res.message || 'Unknown error'), '#8b2e2e');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showToast('An error occurred during submission.', '#8b2e2e');
         });
-        if (actLog.length > 50) actLog.length = 50;
-        localStorage.setItem('mis_activity_log', JSON.stringify(actLog));
-
-        // Notification
-        const notifs = JSON.parse(localStorage.getItem('mis_notifications') || '[]');
-        notifs.unshift({
-          id: 'NOT-' + String(notifs.length + 1).padStart(3, '0'),
-          tenantId: user.id,
-          title: 'Application Submitted',
-          message: 'Your apartment application ' + reportId + ' has been submitted and is pending MIS Admin review.',
-          type: 'system',
-          read: false,
-          createdAt: new Date().toISOString()
-        });
-        localStorage.setItem('mis_notifications', JSON.stringify(notifs));
-      }
-
-      // Show success
-      showSuccessView();
     });
 
     function showSuccessView() {

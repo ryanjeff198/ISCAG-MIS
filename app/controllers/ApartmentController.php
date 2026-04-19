@@ -148,4 +148,16 @@ class ApartmentController extends Controller {
         Auth::protectRole(['Tenant']);
         $this->view('user/Apartment/tenant_parking');
     }
+
+    public function finalizeSubmission() {
+        Auth::protectRole(['Applicant', 'Tenant']);
+        header('Content-Type: application/json');
+        $userId = $_SESSION['user_id'];
+        
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        $model = new ApartmentApp();
+        $ok = $model->updateStatusByTenant($userId, 'Pending');
+        
+        echo json_encode(['success' => $ok]);
+    }
 }

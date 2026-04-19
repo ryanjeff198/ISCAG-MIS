@@ -38,6 +38,7 @@ $routes = [
     '/user/apartment/info'   => ['ApartmentController', 'info'],
     '/user/apartment/parking' => ['ApartmentController', 'parking'],
     '/user/apartment/save'   => ['ApartmentController', 'save'],
+    '/user/apartment/submit' => ['ApartmentController', 'finalizeSubmission'],
     '/user/apartment/upload' => ['ApartmentController', 'handleUpload'],
     '/user/apartment/image'  => ['ApartmentController', 'serveImage'],
 
