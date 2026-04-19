@@ -9,12 +9,16 @@ $userId = $_SESSION['user_id'] ?? null;
 $dbUser = [];
 if ($userId) {
     require_once BASE_PATH . '/app/models/User.php';
+    require_once BASE_PATH . '/app/models/ApartmentApp.php';
+    
     $userModel = new User();
+    $aptModel  = new ApartmentApp();
+    
     $account = $userModel->findById($userId);
-    $info = $userModel->getAdditionalInfo($userId);
+    $info = $aptModel->getInfo($userId);
     
     $dbUser = [
-        'name' => $info['full_name'] ?? trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
+        'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
         'email' => $info['email'] ?? ($account['email'] ?? ''),
         'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
         'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),

@@ -40,6 +40,7 @@ $routes = [
     '/user/apartment/save'   => ['ApartmentController', 'save'],
     '/user/apartment/upload' => ['ApartmentController', 'handleUpload'],
     '/user/apartment/image'  => ['ApartmentController', 'serveImage'],
+    '/user/apartment/uploads/check' => ['ApartmentController', 'checkUploads'],
 
     // Service Modules
     '/user/services/burial-form'      => ['UserController', 'burialForm'],
