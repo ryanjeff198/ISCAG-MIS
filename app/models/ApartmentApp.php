@@ -130,4 +130,85 @@ class ApartmentApp {
         }
     }
 
+    // ─── ADMIN DASHBOARD METHODS ──────────────────────────
+    public function getAllApplications() {
+        $sql = "
+            SELECT 
+                a.application_id as id,
+                a.tenant_id as tenant_id,
+                u.first_name,
+                u.last_name,
+                u.contactnum as contactnum,
+                a.roomtype,
+                a.date as submitted_at,
+                a.status,
+                a.reject_reason,
+                a.updated_at,
+                t.* 
+            FROM apartmentsapp a
+            JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
+            LEFT JOIN tenant_addinfo t ON a.tenant_id = t.tenant_id
+            ORDER BY a.application_id DESC
+        ";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function updateApplicationStatus($applicationId, $status, $reason = null) {
+        $sql = "UPDATE apartmentsapp SET status = :status";
+        $params = ['status' => $status, 'id' => $applicationId];
+        
+        if ($reason !== null) {
+            $sql .= ", reject_reason = :reason";
+            $params['reason'] = $reason;
+        }
+        
+        $sql .= " WHERE application_id = :id";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
+
+    // ─── PARKING METHODS ──────────────────────────
+    public function getAllParkingApplications() {
+        $sql = "
+            SELECT 
+                p.parking_id as id,
+                p.tenant_id as tenant_id,
+                u.first_name,
+                u.last_name,
+                u.email,
+                u.contactnum,
+                p.ownername,
+                p.vehiclename,
+                p.plateno,
+                p.typeofvehicle,
+                p.datestarted,
+                p.datestarted as submitted_at,
+                p.status,
+                p.remarks,
+                p.signature
+            FROM tenant_parking p
+            JOIN tenant_accounts u ON p.tenant_id = u.tenant_id
+            ORDER BY p.parking_id DESC
+        ";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function updateParkingStatus($parkingId, $status, $reason = null) {
+        $sql = "UPDATE tenant_parking SET status = :status";
+        $params = ['status' => $status, 'id' => $parkingId];
+
+        if ($reason !== null) {
+            $sql .= ", remarks = :reason";
+            $params['reason'] = $reason;
+        }
+
+        $sql .= " WHERE parking_id = :id";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
+
 }
