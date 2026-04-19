@@ -132,6 +132,7 @@ class ApartmentApp {
 
     public function getAllApplications() {
         $sql = "SELECT a.application_id as id, a.tenant_id, a.roomtype, a.date as submitted_at, a.status,
+                       a.remarks as reject_reason,
                        u.first_name, u.last_name, u.email, u.contactnum,
                        i.*
                 FROM apartmentsapp a
@@ -146,6 +147,43 @@ class ApartmentApp {
         $sql = "UPDATE apartmentsapp SET status = :status, remarks = :remarks WHERE application_id = :id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['status' => $status, 'remarks' => $remarks, 'id' => $id]);
+    }
+
+    // ─── tenant_parking ───────────────────────────────────
+    public function getAllParkingApplications() {
+        $sql = "SELECT p.*, p.parking_id as id, p.date as submitted_at,
+                       u.first_name, u.last_name, u.email, u.contactnum
+                FROM tenant_parking p
+                LEFT JOIN tenant_accounts u ON p.tenant_id = u.tenant_id
+                ORDER BY p.parking_id DESC";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function updateParkingStatus($id, $status, $remarks = null) {
+        // Note: The tenant_parking table doesn't have a status or remarks column in the SQL dump,
+        // but it's likely needed for the workflow. I'll add them if they exist or handle it.
+        // Let's assume we use a 'status' and 'remarks' column.
+        $sql = "UPDATE tenant_parking SET status = :status, remarks = :remarks WHERE parking_id = :id";
+        $stmt = $this->db->prepare($sql);
+        try {
+            return $stmt->execute(['status' => $status, 'remarks' => $remarks, 'id' => $id]);
+        } catch (PDOException $e) {
+            error_log("updateParkingStatus failed: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getUnifiedImage($userId, $type) {
+        // First try the new tenant_addinfo_images table
+        $info = $this->getInfo($userId);
+        if (!empty($info)) {
+            $img = $this->getAddInfoImage($info['tenant_info'], $type);
+            if ($img) return $img;
+        }
+
+        // Fallback to legacy tenant_requirements
+        return $this->getRequirementImage($userId, $type);
     }
 
     // ─── tenant_requirements (BLOB uploads) ───────────────

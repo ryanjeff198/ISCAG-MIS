@@ -8,7 +8,7 @@ class AdminController extends Controller
     public function dashboard(): void
     {
         Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
-        $this->view('dashboard', ['active_page' => 'admin_dashboard']);
+        $this->view('admin/mis_admin/admin_dashboard', ['active_page' => 'admin_dashboard']);
     }
 
     public function apartment(): void
@@ -65,7 +65,36 @@ class AdminController extends Controller
 
     public function parkingApproval(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/mis_admin/admin_parking_approval', ['active_page' => 'parking_approval']);
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        $model = new ApartmentApp();
+        $reports = $model->getAllParkingApplications();
+        $this->view('admin/mis_admin/admin_parking_approval', [
+            'active_page' => 'parking_approval',
+            'reports' => $reports
+        ]);
+    }
+
+    public function approveParking(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            require_once BASE_PATH . '/app/models/ApartmentApp.php';
+            $model = new ApartmentApp();
+            $model->updateParkingStatus($id, 'Approved');
+        }
+        header('Location: ' . url('/admin/mis_admin/parking_approval'));
+    }
+
+    public function rejectParking(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        $reason = $_GET['reason'] ?? null;
+        if ($id) {
+            require_once BASE_PATH . '/app/models/ApartmentApp.php';
+            $model = new ApartmentApp();
+            $model->updateParkingStatus($id, 'Rejected', $reason);
+        }
+        header('Location: ' . url('/admin/mis_admin/parking_approval'));
     }
 
     public function billing(): void {
@@ -133,14 +162,7 @@ class AdminController extends Controller
 
         require_once BASE_PATH . '/app/models/ApartmentApp.php';
         $model = new ApartmentApp();
-        $info = $model->getInfo($userId);
-        if (empty($info)) {
-            http_response_code(404);
-            echo 'Info not found';
-            return;
-        }
-        $infoId = $info['tenant_info'];
-        $result = $model->getAddInfoImage($infoId, $type);
+        $result = $model->getUnifiedImage($userId, $type);
 
         if (!$result) {
             http_response_code(404);

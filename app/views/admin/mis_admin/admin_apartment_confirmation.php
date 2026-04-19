@@ -208,11 +208,48 @@
       </div>
 
       <div class="page-body">
+        
+        <!-- Admin Insights Ribbon -->
+        <div class="admin-insights">
+          <div class="insight-card">
+            <div class="insight-label">Pending Review</div>
+            <div class="insight-value warning"><?= count(array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'pending')) ?></div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-label">Total Applications</div>
+            <div class="insight-value info"><?= count($reports) ?></div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-label">Verified (MIS)</div>
+            <div class="insight-value success"><?= count(array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'approved')) ?></div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-label">Rejected</div>
+            <div class="insight-value danger"><?= count(array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'rejected')) ?></div>
+          </div>
+        </div>
+
+         <?php
+           $pending_reports  = array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'pending');
+           $approved_reports = array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'approved');
+           $rejected_reports = array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'rejected');
+         ?>
+
          <div class="tab-nav">
-           <button class="tab-btn active">Pending Confirmations <span class="tab-count pending"><?= count(array_filter($reports, fn($r) => strtolower($r['status']) === 'pending')) ?></span></button>
+           <button class="tab-btn active" onclick="switchTab('pending', this)">Pending <span class="tab-count pending"><?= count($pending_reports) ?></span></button>
+           <button class="tab-btn" onclick="switchTab('approved', this)">Approved <span class="tab-count approved"><?= count($approved_reports) ?></span></button>
+           <button class="tab-btn" onclick="switchTab('rejected', this)">Rejected <span class="tab-count rejected"><?= count($rejected_reports) ?></span></button>
          </div>
 
-         <div class="section-card">
+         <!-- ═══ PENDING TABLE ═══ -->
+         <div class="section-card tab-panel" id="tab-pending">
+            <div class="section-card-header">
+              <h6>
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                Pending Review
+              </h6>
+              <span style="font-size:0.75rem;color:var(--text-muted);"><?= count($pending_reports) ?> record<?= count($pending_reports) !== 1 ? 's' : '' ?></span>
+            </div>
             <div class="section-card-body" style="padding:0;">
                <table class="mis-table">
                   <thead>
@@ -228,10 +265,10 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <?php if (empty($reports)): ?>
-                       <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No application records found.</td></tr>
+                    <?php if (empty($pending_reports)): ?>
+                       <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No pending applications.</td></tr>
                     <?php else: ?>
-                       <?php foreach ($reports as $r): ?>
+                       <?php foreach ($pending_reports as $r): ?>
                           <tr>
                              <td class="td-id"><?= $r['id'] ?></td>
                              <td style="font-weight:600;"><?= $r['tenant_id'] ?></td>
@@ -239,21 +276,117 @@
                              <td><?= htmlspecialchars($r['last_name'] ?? '—') ?></td>
                              <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
                              <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
-                             <td><span class="badge-status badge-<?= strtolower($r['status']) == 'pending' ? 'pending' : (strtolower($r['status']) == 'approved' ? 'approved' : 'rejected') ?>"><?= $r['status'] ?></span></td>
+                             <td><span class="badge-status badge-pending"><?= $r['status'] ?></span></td>
                              <td>
                                 <div class="actions-cell">
                                    <button class="btn-circle eye" onclick="openReview(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
                                       <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                                    </button>
-                                   <?php if (isset($r['status']) && trim(strtolower($r['status'])) === 'pending'): ?>
-                                      <button class="btn-circle check" onclick="approveApp(<?= $r['id'] ?>)" title="Approve">
-                                         <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                                      </button>
-                                      <button class="btn-circle reject" onclick="rejectApp(<?= $r['id'] ?>)" title="Reject">
-                                         <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                                      </button>
-                                   <?php endif; ?>
+                                   <button class="btn-circle check" onclick="approveApp(<?= $r['id'] ?>)" title="Approve">
+                                      <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                   </button>
+                                   <button class="btn-circle reject" onclick="rejectApp(<?= $r['id'] ?>)" title="Reject">
+                                      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                   </button>
                                 </div>
+                             </td>
+                          </tr>
+                       <?php endforeach; ?>
+                    <?php endif; ?>
+                  </tbody>
+               </table>
+            </div>
+         </div>
+
+         <!-- ═══ APPROVED TABLE ═══ -->
+         <div class="section-card tab-panel" id="tab-approved" style="display:none;">
+            <div class="section-card-header">
+              <h6>
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Approved Applications
+              </h6>
+              <span style="font-size:0.75rem;color:var(--text-muted);"><?= count($approved_reports) ?> record<?= count($approved_reports) !== 1 ? 's' : '' ?></span>
+            </div>
+            <div class="section-card-body" style="padding:0;">
+               <table class="mis-table">
+                  <thead>
+                    <tr>
+                      <th>Ref #</th>
+                      <th>Tenant ID</th>
+                      <th>Full Name</th>
+                      <th>Room Type</th>
+                      <th>Submitted</th>
+                      <th>Approved At</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php if (empty($approved_reports)): ?>
+                       <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No approved applications yet.</td></tr>
+                    <?php else: ?>
+                       <?php foreach ($approved_reports as $r): ?>
+                          <tr>
+                             <td class="td-id"><?= $r['id'] ?></td>
+                             <td style="font-weight:600;"><?= $r['tenant_id'] ?></td>
+                             <td><?= htmlspecialchars(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?></td>
+                             <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
+                             <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
+                             <td><?= !empty($r['updated_at']) ? date('M d, Y', strtotime($r['updated_at'])) : '—' ?></td>
+                             <td><span class="badge-status badge-approved"><?= $r['status'] ?></span></td>
+                             <td>
+                                <button class="btn-circle eye" onclick="openReview(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
+                                   <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                </button>
+                             </td>
+                          </tr>
+                       <?php endforeach; ?>
+                    <?php endif; ?>
+                  </tbody>
+               </table>
+            </div>
+         </div>
+
+         <!-- ═══ REJECTED TABLE ═══ -->
+         <div class="section-card tab-panel" id="tab-rejected" style="display:none;">
+            <div class="section-card-header">
+              <h6>
+                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                Rejected Applications
+              </h6>
+              <span style="font-size:0.75rem;color:var(--text-muted);"><?= count($rejected_reports) ?> record<?= count($rejected_reports) !== 1 ? 's' : '' ?></span>
+            </div>
+            <div class="section-card-body" style="padding:0;">
+               <table class="mis-table">
+                  <thead>
+                    <tr>
+                      <th>Ref #</th>
+                      <th>Tenant ID</th>
+                      <th>Full Name</th>
+                      <th>Room Type</th>
+                      <th>Submitted</th>
+                      <th>Reason</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php if (empty($rejected_reports)): ?>
+                       <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No rejected applications.</td></tr>
+                    <?php else: ?>
+                       <?php foreach ($rejected_reports as $r): ?>
+                          <tr>
+                             <td class="td-id"><?= $r['id'] ?></td>
+                             <td style="font-weight:600;"><?= $r['tenant_id'] ?></td>
+                             <td><?= htmlspecialchars(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?></td>
+                             <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
+                             <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
+                             <td style="font-size:0.82rem;color:var(--danger);font-weight:600;"><?= htmlspecialchars($r['reject_reason'] ?? '—') ?></td>
+                             <td><span class="badge-status badge-rejected"><?= $r['status'] ?></span></td>
+                             <td>
+                                <button class="btn-circle eye" onclick="openReview(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
+                                   <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                </button>
                              </td>
                           </tr>
                        <?php endforeach; ?>
@@ -284,6 +417,18 @@
   <script>
     standardizePage('admin');
 
+    // ── Tab Switching Logic ──
+    function switchTab(tabName, btn) {
+      // Hide all panels
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      // Deactivate all tab buttons
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      // Show target panel and activate button
+      const panel = document.getElementById('tab-' + tabName);
+      if (panel) panel.style.display = 'block';
+      if (btn) btn.classList.add('active');
+    }
+
     function formatDate(dateStr) {
       if (!dateStr) return '—';
       const date = new Date(dateStr);
@@ -304,11 +449,13 @@
       // Handle family data if available
       let familyHtml = '<tr><td colspan="5" style="text-align:center;color:#999;padding:15px;">No family members listed.</td></tr>';
       try {
-        const family = JSON.parse(r.family_data || '[]');
-        if (family.length > 0) {
-          familyHtml = family.map((f, i) => `<tr><td>${i+1}</td><td>${f.name || '—'}</td><td>${f.relation || '—'}</td><td>${f.age || '—'}</td><td>${f.religion || 'Islam'}</td></tr>`).join('');
+        const familyData = typeof r.family_data === 'string' ? JSON.parse(r.family_data || '[]') : (r.family_data || []);
+        if (Array.isArray(familyData) && familyData.length > 0) {
+          familyHtml = familyData.map((f, i) => `<tr><td>${i+1}</td><td>${f.name || '—'}</td><td>${f.relation || '—'}</td><td>${f.age || '—'}</td><td>${f.religion || 'Islam'}</td></tr>`).join('');
         }
-      } catch(e) {}
+      } catch(e) {
+        console.error("Family parsing error:", e);
+      }
 
       document.getElementById('modal-body').innerHTML = `
         <div class="form-document">
