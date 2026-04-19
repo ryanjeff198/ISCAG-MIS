@@ -13,7 +13,7 @@ const STORAGE_KEYS = {
 /* ── Required profile fields (10 total) ── */
 const PROFILE_FIELDS = [
   'name', 'email', 'gender', 'phone', 'address',
-  'dob', 'civil', 'occupation', 'arabicName', 'membership'
+  'dob', 'civil', 'occupation', 'arabicName', 'revertYear'
 ];
 
 /* ── Field display labels for missing-field lists ── */
@@ -27,7 +27,7 @@ const FIELD_LABELS = {
   civil: 'Civil Status',
   occupation: 'Occupation',
   arabicName: 'Muslim / Arabic Name',
-  membership: 'Masjid Membership'
+  revertYear: 'Year Reverted / Born Muslim'
 };
 
 /* ══════════════════════════════════════════

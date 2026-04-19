@@ -5,11 +5,34 @@ if (!defined('BASE_PATH')) {
 require_once BASE_PATH . '/app/helpers/Auth.php';
 Auth::protect();
 
+$info = $info ?? [];
+$account = $account ?? [];
+$display_name = trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? ''));
+
+$dbUser = [
+    'name' => $display_name,
+    'email' => $info['email'] ?? ($account['email'] ?? ''),
+    'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
+    'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
+    'dob' => $info['birthdate'] ?? '',
+    'civil' => $info['civil_status'] ?? '',
+    'address' => $info['address'] ?? '',
+    'occupation' => $info['occupation'] ?? '',
+    'arabicName' => $info['muslimname'] ?? '',
+    'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
+];
+
 if (!function_exists('asset')) {
-    function asset($path) { return "/Iscag/public/" . ltrim($path, '/'); }
+    function asset($path) { 
+        $baseUrl = str_replace('/public/index.php', '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
+        return rtrim($baseUrl, '/') . "/public/" . ltrim($path, '/'); 
+    }
 }
 if (!function_exists('url')) {
-    function url($path) { return "/Iscag/" . ltrim($path, '/'); }
+    function url($path) { 
+        $baseUrl = str_replace('/public/index.php', '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
+        return rtrim($baseUrl, '/') . "/" . ltrim($path, '/'); 
+    }
 }
 
 if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant'])) {
@@ -168,7 +191,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       <!-- Top Bar -->
       <div class="top-bar">
         <div class="top-bar-left">
-          <img src="<?= asset('assets/ISCAG_Logo.jpg') ?>" style="width:40px;height:40px;border-radius:8px;margin-right:12px;" alt="Logo" />
+          <img src="<?= asset('assets/logo.jpg') ?>" style="width:40px;height:40px;border-radius:8px;margin-right:12px;" alt="Logo" />
           <div>
             <div class="top-bar-title">Administrative Hub</div>
             <div class="top-bar-subtitle" id="top-date-admin">Unified Management & Service Monitoring</div>
@@ -433,7 +456,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       $dbUser = [
           'name' => $info['full_name'] ?? trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
           'email' => $info['email'] ?? ($account['email'] ?? ''),
-          'gender' => $info['sex'] ?? ($account['sex'] ?? ''),
+          'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
           'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
           'dob' => $info['birthdate'] ?? '',
           'civil' => $info['civil_status'] ?? '',
@@ -538,7 +561,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         <!-- WELCOME BANNER -->
         <div class="welcome-banner">
           <h3 id="welcome-heading">Assalamu Alaikum, <?= htmlspecialchars(explode(' ', $_SESSION['name'] ?? 'User')[0]) ?>!</h3>
-          <p>Welcome to the Masjid Management Information System. Select a service below to submit a request.</p>
+          <p>Welcome to the ISCAG Management Information System. Select a service below to submit a request.</p>
 
           <!-- Profile completion widget -->
           <div class="profile-widget" id="profile-widget">
@@ -641,10 +664,11 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       };
 
       // Synchronize with DB data — DB is the source of truth.
-      // Even if empty, we overwrite localStorage/Mock defaults.
-      Object.keys(DB_USER).forEach(key => {
-        user[key] = DB_USER[key] || '';
-      });
+      if (typeof DB_USER !== 'undefined' && DB_USER !== null) {
+        Object.keys(DB_USER).forEach(key => {
+          user[key] = DB_USER[key] || '';
+        });
+      }
       return user;
     }
     function getRequests() {
@@ -768,7 +792,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
 
     // ── Set role label color based on status ──
     const navRole = document.getElementById('nav-role');
-    if (navRole && navRole.textContent === 'Not Verified') {
+    if (navRole && navRole.textContent === 'Applicant') {
       navRole.style.color = 'var(--warning)';
     } else if (navRole) {
       navRole.style.color = 'var(--success)';
@@ -807,28 +831,28 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
     // ── Da'wah sidebar dropdown (gender-based, correct paths) ──
     const dawahMenu = document.getElementById('dawah-menu');
     const dawahTrigger = document.getElementById('dawah-trigger');
-    if (user.sex === 'Female') {
+    if (String(user.gender).toLowerCase() === 'female') {
       dawahMenu.innerHTML = `
-      <a href="<?= url('/user/services/female-counseling') ?>">
+      <a href="<?= url('/user/services/counseling/female') ?>">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
         Sisters' Counseling
       </a>`;
-      dawahTrigger.setAttribute('data-href', "<?= url('/user/services/female-counseling') ?>");
+      dawahTrigger.setAttribute('data-href', "<?= url('/user/services/counseling/female') ?>");
     } else {
       dawahMenu.innerHTML = `
-      <a href="<?= url('/user/services/male-counseling') ?>">
+      <a href="<?= url('/user/services/counseling/male') ?>">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
         Brothers' Counseling
       </a>`;
-      dawahTrigger.setAttribute('data-href', "<?= url('/user/services/male-counseling') ?>");
+      dawahTrigger.setAttribute('data-href', "<?= url('/user/services/counseling/male') ?>");
     }
 
     // ── Build service cards ──
     const serviceGrid = document.getElementById('service-grid');
 
-    const dawahHref = user.sex === 'Female'
-      ? "<?= url('/user/services/female-counseling') ?>"
-      : "<?= url('/user/services/male-counseling') ?>";
+    const dawahHref = String(user.gender).toLowerCase() === 'female'
+      ? "<?= url('/user/services/counseling/female') ?>"
+      : "<?= url('/user/services/counseling/male') ?>";
 
     const services = [
       {
@@ -843,22 +867,22 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       {
         id: 'dawah',
         title: !isComplete ? "Da'wah — Counseling Services"
-          : user.sex === 'Female' ? "Da'wah — Sisters' Counseling"
+          : String(user.gender).toLowerCase() === 'female' ? "Da'wah — Sisters' Counseling"
             : "Da'wah — Brothers' Counseling",
         desc: !isComplete
           ? 'Request a confidential counseling session for personal, family, or spiritual matters. Complete your profile to access gender-specific counseling services.'
-          : user.sex === 'Female'
+          : String(user.gender).toLowerCase() === 'female'
             ? 'Request a confidential session with our female counselors. All sessions are conducted with utmost privacy and respect for Islamic values.'
             : 'Request a confidential counseling session with our male counselors for personal, family, or spiritual matters. Schedule your preferred appointment time.',
         icon: '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>',
-        iconClass: user.sex === 'Female' ? 'purple' : 'teal',
+        iconClass: String(user.gender).toLowerCase() === 'female' ? 'purple' : 'teal',
         href: dawahHref,
         btnText: 'Request Service'
       },
       {
         id: 'apartment',
         title: 'Apartment Application',
-        desc: 'Apply for a housing unit in the Masjid apartment complex. Submit your family details and preferred unit type for review by the Apartment Management.',
+        desc: 'Apply for a housing unit in the ISCAG apartment complex. Submit your family details and preferred unit type for review by the Apartment Management.',
         icon: '<path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zm-8 4H7v-2h2v2zm0-4H7V9h2v2zm0-4H7V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2z"/>',
         iconClass: 'green',
         href: '<?= url('/user/apartment/apply') ?>',

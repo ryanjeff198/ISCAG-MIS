@@ -178,7 +178,7 @@
 <script>
   // ── Inlined data helpers ──
   const STORAGE_KEYS = { user: 'mis_user', requests: 'mis_requests', apartments: 'mis_apartments', initialized: 'mis_data_init' };
-  const PROFILE_FIELDS = ['name','email','gender','phone','address','dob','civil','occupation','arabicName','membership'];
+  const PROFILE_FIELDS = ['name','email','gender','phone','address','dob','civil','occupation','arabicName','revertYear'];
   const DEFAULT_USER = { 
     id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>', 
     name: '<?= addslashes($_SESSION['name'] ?? "User") ?>', 
@@ -247,7 +247,7 @@
     e.preventDefault();
     const d1 = document.getElementById('decl1').checked;
     if (!d1) {
-      showToast('⚠️ Please check the declaration box before submitting.', '#8b2e2e');
+      showToast('Please check the declaration box before submitting.', '#8b2e2e');
       return;
     }
     addRequest({ type: 'burial_service', user: user.id });

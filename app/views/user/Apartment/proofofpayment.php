@@ -437,7 +437,7 @@
             const size = input.files[0]?.size;
 
             if (size > 5 * 1024 * 1024) {
-                showToast("❌ File size must be under 5MB.", "#dc3545");
+                showToast("File size must be under 5MB.", "#dc3545");
                 input.value = "";
                 document.getElementById('file-name').textContent = "Drag & Drop or Click to Select File";
                 return;
@@ -511,7 +511,7 @@
             const file = document.getElementById('f-file').files[0];
 
             if (!amt || !date || !method || !ref || !file) {
-                showToast("⚠️ All fields are required to submit.", "orange");
+                showToast("All fields are required to submit.", "orange");
                 return;
             }
 
@@ -535,11 +535,11 @@
             logAudit(`Uploaded proof of payment for ₱${amt} (${method})`);
             notifyAdmin(`New Payment Proof submitted by ${CURRENT_TENANT.name} (${ref})`);
 
-            showToast("✅ Payment Proof submitted successfully! Pending verification.", "var(--success)");
+            showToast("Payment Proof submitted successfully! Pending verification.", "var(--success)");
 
             // Notification ping for tenant
             setTimeout(() => {
-                showToast(`🔔 Notice: You will be notified when the Billing Admin verifies this.`, "var(--primary)");
+                showToast(`Notice: You will be notified when the Billing Admin verifies this.`, "var(--primary)");
             }, 3500);
 
             // Clean form

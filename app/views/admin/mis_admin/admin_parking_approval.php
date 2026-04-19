@@ -289,7 +289,7 @@
     <main class="main-content">
       <div class="top-bar">
         <div class="top-bar-left">
-          <img src="<?= asset('assets/ISCAG_Logo.jpg') ?>" style="width:40px;height:40px;border-radius:8px;margin-right:12px;" alt="Logo" />
+          <img src="<?= asset('assets/logo.jpg') ?>" style="width:40px;height:40px;border-radius:8px;margin-right:12px;" alt="Logo" />
           <div>
             <div class="top-bar-title">Parking Rental Approval</div>
             <div class="top-bar-subtitle">Review and approve tenant parking rental applications</div>

@@ -1,3 +1,22 @@
+<?php
+$info = $info ?? [];
+$account = $account ?? [];
+
+$display_name = trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? ''));
+
+$phpUser = [
+    'name' => $display_name,
+    'email' => $info['email'] ?? ($account['email'] ?? ''),
+    'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
+    'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
+    'dob' => $info['birthdate'] ?? '',
+    'civil' => $info['civil_status'] ?? '',
+    'address' => $info['address'] ?? '',
+    'occupation' => $info['occupation'] ?? '',
+    'arabicName' => $info['muslimname'] ?? '',
+    'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
+];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -314,8 +333,18 @@
     <script src="<?= asset('JS/admin-shared.js') ?>"></script>
     <script>
         initAdminData();
-        initReportsData();
-        initSidebar();
+        // ── Sidebar toggle ──
+        const sidebar = document.getElementById('sidebar');
+        const toggle = document.getElementById('sidebar-toggle');
+        if (toggle && sidebar) {
+            toggle.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                if (sidebar.classList.contains('collapsed')) {
+                    document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
+                    document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
+                }
+            });
+        }
 
         // Map notification type to a readable label
         function typeToLabel(type) {
@@ -397,7 +426,7 @@
                 <span class="notif-time">${timeAgo(n.createdAt)}</span>
               </div>
               <p class="notif-message">${shortMsg}</p>
-              <div style="font-size:0.75rem;color:var(--accent);font-weight:600;margin-top:4px;">Click to read full details &rarr;</div>
+              <div style="font-size:0.75rem;color:var(--accent);font-weight:600;margin-top:4px;">Click to read full details</div>
             </div>
           </div>
         `;
@@ -467,7 +496,7 @@
           </div>
           <div class="detail-meta-item">
             <div class="label">Status</div>
-            <div class="value" style="color:var(--success);">✅ Read</div>
+            <div class="value" style="color:var(--success);">Read</div>
           </div>
         </div>
         
@@ -508,48 +537,91 @@
             renderNotifications();
         }
 
-        loadUserNav();
-        initNotifBadge('tenant');
+        // ── Navigation UI Helpers ──
+        function loadUserNav() {
+            const u = getUser();
+            const navName = document.getElementById('nav-name');
+            const navAvatar = document.getElementById('nav-avatar');
+            if (navName) navName.textContent = u.name;
+            if (navAvatar) {
+                const photo = localStorage.getItem('mis_user_photo');
+                if (photo) {
+                    navAvatar.textContent = '';
+                    navAvatar.style.backgroundImage = 'url(' + photo + ')';
+                    navAvatar.style.backgroundSize = 'cover';
+                    navAvatar.style.backgroundPosition = 'center';
+                } else {
+                    const ini = u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                    navAvatar.textContent = ini;
+                }
+            }
+        }
 
-        // Set initials
+        function initNotifBadge() {
+            const user = getUser();
+            const notifs = getNotifications().filter(n => n.tenantId === user.id && !n.read);
+            if (notifs.length > 0) {
+                document.querySelectorAll('.nav-item').forEach(link => {
+                    const label = link.querySelector('.nav-item-label');
+                    if (label && label.textContent.trim() === 'Notifications') {
+                        if (!link.querySelector('.notif-dot')) {
+                            const dot = document.createElement('span');
+                            dot.className = 'notif-dot';
+                            dot.textContent = notifs.length;
+                            link.style.position = 'relative';
+                            link.appendChild(dot);
+                        }
+                    }
+                });
+            }
+        }
+
+        loadUserNav();
+        initNotifBadge();
+
+        // ── Set initials & avatar override ──
+        const navAvatar = document.getElementById('nav-avatar');
         const user = getUser();
         const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-
-        // Avatar override logic
-        const navAvatar = document.getElementById('nav-avatar');
         const photo = localStorage.getItem('mis_user_photo');
         if (photo) {
             navAvatar.textContent = '';
             navAvatar.style.backgroundImage = 'url(' + photo + ')';
             navAvatar.style.backgroundSize = 'cover';
             navAvatar.style.backgroundPosition = 'center';
-        } else {
+        } else if (navAvatar) {
             navAvatar.textContent = initials;
         }
 
-        document.getElementById('nav-name').textContent = user.name;
+        const navNameEl = document.getElementById('nav-name');
+        if (navNameEl) navNameEl.textContent = user.name;
 
         // ── Role label: use SESSION data (injected by sidebar sync) ──
         // The sidebar already rendered the correct PHP role; here we just
         // style it green. Lock state also comes from session, not localStorage.
-        const SESSION_ROLE   = '<?= htmlspecialchars($_SESSION['role'] ?? '') ?>';
-        const SESSION_GENDER = '<?= htmlspecialchars($_SESSION['gender'] ?? '') ?>';
+        const DB_USER = <?= json_encode($phpUser) ?>;
+        const PROFILE_FIELDS = ['name', 'email', 'gender', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
+        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', gender: 'Gender', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
 
-        // Services are unlocked when user has a real role (Applicant / Tenant)
-        const isComplete = SESSION_ROLE !== '';
+        // Calculate profile completion from DB data
+        const missingFields = [];
+        let filledCount = 0;
+        PROFILE_FIELDS.forEach(k => {
+            if (DB_USER[k] && String(DB_USER[k]).trim() !== '') { filledCount++; } else { missingFields.push(FIELD_LABELS[k] || k); }
+        });
+        const percentage = Math.round((filledCount / PROFILE_FIELDS.length) * 100);
+        const isComplete = percentage === 100;
 
         const navRole = document.getElementById('nav-role');
         if (navRole) {
-            // Sidebar PHP already set textContent from $_SESSION['role'];
-            // just ensure the colour is green.
-            navRole.style.color = 'var(--success)';
+            navRole.style.color = isComplete ? 'var(--success)' : 'var(--warning)';
         }
 
-        // Da'wah dropdown dynamic path based on SESSION gender
+        // Da'wah dropdown dynamic path based on DB gender
         const dawahMenu    = document.getElementById('dawah-menu');
         const dawahTrigger = document.getElementById('dawah-trigger');
         if (dawahMenu && dawahTrigger) {
-            const genderLower = SESSION_GENDER.toLowerCase();
+            const genderLower = String(DB_USER.gender).toLowerCase();
             if (genderLower === 'female') {
                 dawahMenu.innerHTML = `
                 <a href="<?= url('/user/services/counseling/female') ?>">
@@ -567,40 +639,55 @@
             }
         }
 
-        // Dropdown Lock Logic — unlock for any authenticated session user
+        // Dropdown Lock Logic — lock services when profile is incomplete
         function applyDropdownLocks() {
             const wraps = ['damayan-wrap', 'dawah-wrap', 'apartment-wrap'];
             wraps.forEach(id => {
                 const wrap = document.getElementById(id);
                 if (!wrap) return;
-                // Always unlocked for logged-in Applicant / Tenant roles
-                wrap.classList.remove('locked');
+                if (isComplete) {
+                    wrap.classList.remove('locked');
+                } else {
+                    wrap.classList.add('locked');
+                }
             });
         }
         applyDropdownLocks();
 
         // Dropdown Click Handlers
-        const _sidebar = document.getElementById('sidebar');
-
         function initDropdown(triggerId, menuId, wrapId) {
             const trigger = document.getElementById(triggerId);
             const menu = document.getElementById(menuId);
             const wrap = document.getElementById(wrapId);
             if (!trigger || !menu) return;
-            trigger.addEventListener('click', () => {
+
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent document-level interference
+
+                // If locked, prevent everything and show message
                 if (wrap && wrap.classList.contains('locked')) {
-                    showToast('🔒 Please complete your profile to unlock services.', '#c79a2b');
-                    setTimeout(() => window.location.href = '<?= url('/user/profile') ?>', 1000);
+                    e.preventDefault();
+                    showToast('Please complete your profile to unlock services.', '#c79a2b');
+                    setTimeout(() => window.location.href = '<?= url('/user/profile') ?>', 1200);
                     return;
                 }
-                if (_sidebar && _sidebar.classList.contains('collapsed')) {
+
+                // If sidebar is collapsed, navigate to the first link or data-href
+                if (sidebar && sidebar.classList.contains('collapsed')) {
                     const href = trigger.getAttribute('data-href');
-                    if (href) window.location.href = href;
+                    if (href) {
+                        e.preventDefault();
+                        window.location.href = href;
+                    }
                     return;
                 }
+
+                // Normal expanded toggle
+                e.preventDefault();
                 const isOpen = menu.classList.contains('open');
                 document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
                 document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
+
                 if (!isOpen) {
                     menu.classList.add('open');
                     trigger.classList.add('open');

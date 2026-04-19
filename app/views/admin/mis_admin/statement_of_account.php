@@ -183,7 +183,7 @@
     <main class="main-content">
       <div class="top-bar">
         <div class="top-bar-left">
-          <img src="<?= asset('assets/ISCAG_Logo.jpg') ?>" style="width:40px;height:40px;border-radius:8px;margin-right:12px;" alt="Logo" />
+          <img src="<?= asset('assets/logo.jpg') ?>" style="width:40px;height:40px;border-radius:8px;margin-right:12px;" alt="Logo" />
           <div>
             <div class="top-bar-title">Statement of Account</div>
             <div class="top-bar-subtitle">Generate official financial statements for tenants</div>
@@ -250,7 +250,7 @@
         <div class="soa-container" id="soa-document" style="display: none;">
           <div class="soa-header">
             <div class="soa-brand">
-              <img src="<?= asset('assets/ISCAG_Logo.jpg') ?>" alt="ISCAG Logo">
+              <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo">
               <div class="soa-brand-text">
                 <h2>ISCAG Management Information System</h2>
                 <p>Darul Iman Apartment Complex</p>

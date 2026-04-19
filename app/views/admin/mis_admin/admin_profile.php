@@ -157,7 +157,7 @@
     <main class="main-content">
       <div class="top-bar">
         <div class="top-bar-left">
-          <img src="<?= asset('assets/ISCAG_Logo.jpg') ?>" style="width:40px;height:40px;border-radius:8px;margin-right:12px;" alt="Logo" />
+          <img src="<?= asset('assets/logo.jpg') ?>" style="width:40px;height:40px;border-radius:8px;margin-right:12px;" alt="Logo" />
           <div>
             <div class="top-bar-title">Admin Profile</div>
             <div class="top-bar-subtitle">Manage your administrator account and personal information</div>
@@ -489,7 +489,7 @@
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
           <div><label class="form-label">Muslim / Arabic Name</label><input type="text" class="form-control"
               id="f-arabic" placeholder="e.g., Abdullah" /></div>
-          <div><label class="form-label">Masjid Membership</label>
+          <div><label class="form-label">ISCAG Membership</label>
             <select class="form-control" id="f-membership" style="appearance:auto;">
               <option value="">— Select —</option>
               <option>Regular Member</option>

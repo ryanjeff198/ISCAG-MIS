@@ -10,7 +10,16 @@ class UserController extends Controller
     public function dashboard(): void
     {
         Auth::protectRole(['Applicant', 'Tenant']);
-        $this->view('dashboard');
+        $userId = $_SESSION['user_id'] ?? null;
+        
+        $userModel = new User();
+        $account = $userModel->findById($userId);
+        $info = $userModel->getAdditionalInfo($userId);
+        
+        $this->view('dashboard', [
+            'account' => $account,
+            'info' => $info
+        ]);
     }
     public function profile(): void
     {
@@ -30,7 +39,16 @@ class UserController extends Controller
     public function notifications(): void
     {
         Auth::protectRole(['Applicant', 'Tenant']);
-        $this->view('user/tenant_notification');
+        $userId = $_SESSION['user_id'] ?? null;
+
+        $userModel = new User();
+        $account = $userModel->findById($userId);
+        $info = $userModel->getAdditionalInfo($userId);
+
+        $this->view('user/tenant_notification', [
+            'account' => $account,
+            'info' => $info
+        ]);
     }
 
     public function updateProfile(): void

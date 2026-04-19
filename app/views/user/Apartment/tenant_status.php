@@ -1090,7 +1090,7 @@
         const navRole = document.getElementById('nav-role');
         if (navRole) {
             const isComplete = user.profileComplete;
-            navRole.textContent = isComplete ? "<?= $_SESSION['role'] ?? 'Verified User' ?>" : 'Not Verified';
+            navRole.textContent = isComplete ? "<?= $_SESSION['role'] ?? 'Verified User' ?>" : 'Applicant';
             navRole.style.color = isComplete ? 'var(--success)' : 'var(--warning)';
         }
 
@@ -1404,7 +1404,7 @@
               <div class="info-field-value">${safeVal(user.occupation)}</div>
             </div>
             <div class="info-field">
-              <div class="info-field-label">Masjid Membership</div>
+              <div class="info-field-label">ISCAG Membership</div>
               <div class="info-field-value">${safeVal(user.membership)}</div>
             </div>
             <div class="info-field">
