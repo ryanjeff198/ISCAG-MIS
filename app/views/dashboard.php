@@ -970,7 +970,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       });
     }
     applyDropdownLocks();
-// End of Dropdown 
+
     // ── Dropdown toggles (with lock check) ──
     function initDropdown(triggerId, menuId, wrapId) {
       const trigger = document.getElementById(triggerId);
@@ -1008,7 +1008,6 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
     initNotifBadge('tenant');
   </script>
 </body>
-
 </html>
 <?php
 }

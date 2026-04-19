@@ -59,17 +59,17 @@
 
         <!-- TAB NAV -->
         <div class="tab-nav">
-          <button class="tab-btn active" onclick="switchTab('pending')">
+          <button class="tab-btn active" onclick="switchTab('pending', this)">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>
             Pending Review
             <span class="tab-count pending" id="tab-pending-count"><?= count(array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'PENDING' || empty($r['status']))) ?></span>
           </button>
-          <button class="tab-btn" onclick="switchTab('approved')">
+          <button class="tab-btn" onclick="switchTab('approved', this)">
             <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
             Approved
             <span class="tab-count approved" id="tab-approved-count"><?= count(array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'APPROVED')) ?></span>
           </button>
-          <button class="tab-btn" onclick="switchTab('rejected')">
+          <button class="tab-btn" onclick="switchTab('rejected', this)">
             <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
             Rejected
             <span class="tab-count rejected" id="tab-rejected-count"><?= count(array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'REJECTED')) ?></span>
@@ -77,158 +77,152 @@
         </div>
 
         <!-- PENDING TAB -->
-        <div class="tab-panel active" id="tab-pending">
-          <div class="section-card">
-            <div class="section-card-header">
-              <h6>
-                <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" /></svg>
-                Pending Parking Applications
-              </h6>
-            </div>
-            <div class="section-card-body" style="padding:0;">
-              <div class="table-wrapper">
-                <table class="mis-table">
-                  <thead>
-                    <tr>
-                      <th>Parking ID</th>
-                      <th>Applicant</th>
-                      <th>Vehicle</th>
-                      <th>Plate No.</th>
-                      <th>Submitted</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="pending-tbody">
-                    <?php 
-                      $pending = array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'PENDING' || empty($r['status']));
-                      if (empty($pending)): 
-                    ?>
-                       <tr><td colspan="6"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><h4>No Pending Applications</h4><p>All parking applications have been reviewed.</p></div></td></tr>
-                    <?php else: ?>
-                       <?php foreach ($pending as $a): ?>
-                          <tr>
-                            <td class="td-id"><?= $a['id'] ?></td>
-                            <td style="font-weight:600;"><?= htmlspecialchars(($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') ?: ($a['ownername'] ?? '—')) ?></td>
-                            <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
-                            <td style="font-weight:700;letter-spacing:0.04em;"><?= htmlspecialchars($a['plateno'] ?? '—') ?></td>
-                            <td><?= date('M d, Y', strtotime($a['submitted_at'])) ?></td>
-                            <td>
-                              <div class="action-menu">
-                                <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
-                                  <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        <div class="section-card tab-panel active" id="tab-pending">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" /></svg>
+              Pending Applications
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Parking ID</th>
+                    <th>Applicant</th>
+                    <th>Vehicle</th>
+                    <th>Plate No.</th>
+                    <th>Submitted</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="pending-tbody">
+                  <?php 
+                    $pending = array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'PENDING' || empty($r['status']));
+                    if (empty($pending)): 
+                  ?>
+                      <tr><td colspan="6"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><h4>No Pending Applications</h4><p>All parking applications have been reviewed.</p></div></td></tr>
+                  <?php else: ?>
+                      <?php foreach ($pending as $a): ?>
+                        <tr>
+                          <td class="td-id"><?= $a['id'] ?></td>
+                          <td style="font-weight:600;"><?= htmlspecialchars(($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') ?: ($a['ownername'] ?? '—')) ?></td>
+                          <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
+                          <td style="font-weight:700;letter-spacing:0.04em;"><?= htmlspecialchars($a['plateno'] ?? '—') ?></td>
+                          <td><?= date('M d, Y', strtotime($a['submitted_at'])) ?></td>
+                          <td>
+                            <div class="action-menu">
+                              <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
+                                <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                              </button>
+                              <div class="action-menu-dropdown">
+                                <button class="action-menu-item" onclick="openReview(<?= htmlspecialchars(json_encode($a)) ?>)">
+                                  <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                  Review Application
                                 </button>
-                                <div class="action-menu-dropdown">
-                                  <button class="action-menu-item" onclick="openReview(<?= htmlspecialchars(json_encode($a)) ?>)">
-                                    <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                                    Review Application
-                                  </button>
-                                </div>
                               </div>
-                            </td>
-                          </tr>
-                       <?php endforeach; ?>
-                    <?php endif; ?>
-                  </tbody>
-                </table>
-              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
         <!-- APPROVED TAB -->
-        <div class="tab-panel" id="tab-approved">
-          <div class="section-card">
-            <div class="section-card-header">
-              <h6>
-                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
-                Approved Parking Rentals
-              </h6>
-            </div>
-            <div class="section-card-body" style="padding:0;">
-              <div class="table-wrapper">
-                <table class="mis-table">
-                  <thead>
-                    <tr>
-                      <th>Parking ID</th>
-                      <th>Tenant</th>
-                      <th>Vehicle</th>
-                      <th>Plate No.</th>
-                      <th>Type</th>
-                      <th>Date Started</th>
-                      <th>Approved On</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="approved-tbody">
-                    <?php 
-                      $approved = array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'APPROVED');
-                      if (empty($approved)): 
-                    ?>
-                       <tr><td colspan="8"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg><h4>No Approved Parking Yet</h4><p>Approved parking rentals will appear here.</p></div></td></tr>
-                    <?php else: ?>
-                       <?php foreach ($approved as $a): ?>
-                          <tr>
-                            <td class="td-id"><?= $a['id'] ?></td>
-                            <td style="font-weight:600;"><?= htmlspecialchars(($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') ?: ($a['ownername'] ?? '—')) ?></td>
-                            <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
-                            <td style="font-weight:700;letter-spacing:0.04em;"><?= htmlspecialchars($a['plateno'] ?? '—') ?></td>
-                            <td><?= htmlspecialchars($a['typeofvehicle'] ?? '—') ?></td>
-                            <td><?= date('M d, Y', strtotime($a['datestarted'] ?? '')) ?></td>
-                            <td><?= !empty($a['updated_at']) ? date('M d, Y', strtotime($a['updated_at'])) : '—' ?></td>
-                            <td><span class="badge-status badge-approved"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;"></span> Approved</span></td>
-                          </tr>
-                       <?php endforeach; ?>
-                    <?php endif; ?>
-                  </tbody>
-                </table>
-              </div>
+        <div class="section-card tab-panel" id="tab-approved" style="display:none;">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
+              Approved Parking Rentals
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Parking ID</th>
+                    <th>Tenant</th>
+                    <th>Vehicle</th>
+                    <th>Plate No.</th>
+                    <th>Type</th>
+                    <th>Date Started</th>
+                    <th>Approved On</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="approved-tbody">
+                  <?php 
+                    $approved = array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'APPROVED');
+                    if (empty($approved)): 
+                  ?>
+                      <tr><td colspan="8"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg><h4>No Approved Parking Yet</h4><p>Approved parking rentals will appear here.</p></div></td></tr>
+                  <?php else: ?>
+                      <?php foreach ($approved as $a): ?>
+                        <tr>
+                          <td class="td-id"><?= $a['id'] ?></td>
+                          <td style="font-weight:600;"><?= htmlspecialchars(($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') ?: ($a['ownername'] ?? '—')) ?></td>
+                          <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
+                          <td style="font-weight:700;letter-spacing:0.04em;"><?= htmlspecialchars($a['plateno'] ?? '—') ?></td>
+                          <td><?= htmlspecialchars($a['typeofvehicle'] ?? '—') ?></td>
+                          <td><?= date('M d, Y', strtotime($a['datestarted'] ?? '')) ?></td>
+                          <td><?= !empty($a['updated_at']) ? date('M d, Y', strtotime($a['updated_at'])) : '—' ?></td>
+                          <td><span class="badge-status badge-approved"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;"></span> Approved</span></td>
+                        </tr>
+                      <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
         <!-- REJECTED TAB -->
-        <div class="tab-panel" id="tab-rejected">
-          <div class="section-card">
-            <div class="section-card-header">
-              <h6>
-                <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-                Rejected Applications
-              </h6>
-            </div>
-            <div class="section-card-body" style="padding:0;">
-              <div class="table-wrapper">
-                <table class="mis-table">
-                  <thead>
-                    <tr>
-                      <th>Parking ID</th>
-                      <th>Applicant</th>
-                      <th>Vehicle</th>
-                      <th>Plate No.</th>
-                      <th>Feedback</th>
-                      <th>Rejected On</th>
-                    </tr>
-                  </thead>
-                  <tbody id="rejected-tbody">
-                    <?php 
-                      $rejected = array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'REJECTED');
-                      if (empty($rejected)): 
-                    ?>
-                       <tr><td colspan="6"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><h4>No Rejected Applications</h4><p>No applications have been rejected.</p></div></td></tr>
-                    <?php else: ?>
-                       <?php foreach ($rejected as $a): ?>
-                          <tr>
-                            <td class="td-id"><?= $a['id'] ?></td>
-                            <td style="font-weight:600;"><?= htmlspecialchars(($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') ?: ($a['ownername'] ?? '—')) ?></td>
-                            <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
-                            <td style="font-weight:700;letter-spacing:0.04em;"><?= htmlspecialchars($a['plateno'] ?? '—') ?></td>
-                            <td style="font-size:0.82rem;color:var(--danger);max-width:220px;"><?= htmlspecialchars($a['remarks'] ?? '—') ?></td>
-                            <td><?= !empty($a['updated_at']) ? date('M d, Y', strtotime($a['updated_at'])) : '—' ?></td>
-                          </tr>
-                       <?php endforeach; ?>
-                    <?php endif; ?>
-                  </tbody>
-                </table>
-              </div>
+        <div class="section-card tab-panel" id="tab-rejected" style="display:none;">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
+              Rejected Applications
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Parking ID</th>
+                    <th>Applicant</th>
+                    <th>Vehicle</th>
+                    <th>Plate No.</th>
+                    <th>Feedback</th>
+                    <th>Rejected On</th>
+                  </tr>
+                </thead>
+                <tbody id="rejected-tbody">
+                  <?php 
+                    $rejected = array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'REJECTED');
+                    if (empty($rejected)): 
+                  ?>
+                      <tr><td colspan="6"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><h4>No Rejected Applications</h4><p>No applications have been rejected.</p></div></td></tr>
+                  <?php else: ?>
+                      <?php foreach ($rejected as $a): ?>
+                        <tr>
+                          <td class="td-id"><?= $a['id'] ?></td>
+                          <td style="font-weight:600;"><?= htmlspecialchars(($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') ?: ($a['ownername'] ?? '—')) ?></td>
+                          <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
+                          <td style="font-weight:700;letter-spacing:0.04em;"><?= htmlspecialchars($a['plateno'] ?? '—') ?></td>
+                          <td style="font-size:0.82rem;color:var(--danger);max-width:220px;"><?= htmlspecialchars($a['remarks'] ?? '—') ?></td>
+                          <td><?= !empty($a['updated_at']) ? date('M d, Y', strtotime($a['updated_at'])) : '—' ?></td>
+                        </tr>
+                      <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -298,18 +292,22 @@
     standardizePage('admin');
     setCurrentRole(ROLES.MIS_ADMIN);
 
-    // ══ TAB SWITCHING ══
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    // ── TAB SWITCHING ──
+    function switchTab(tabName, btn) {
+      // Hide all panels
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.getElementById('tab-' + tab).classList.add('active');
-      document.querySelectorAll('.tab-btn').forEach(b => {
-        if ((tab === 'pending' && b.textContent.includes('Pending')) ||
-          (tab === 'approved' && b.textContent.includes('Approved')) ||
-          (tab === 'rejected' && b.textContent.includes('Rejected'))) {
-          b.classList.add('active');
-        }
-      });
+      
+      // Deactivate all tab buttons
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      
+      // Show target panel and activate button
+      const panel = document.getElementById('tab-' + tabName);
+      if (panel) {
+        panel.style.display = 'block';
+        panel.classList.add('active');
+      }
+      if (btn) btn.classList.add('active');
     }
 
     // ══ REVIEW MODAL ══
