@@ -1,3 +1,4 @@
+<?php $active_page = 'soa'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,170 +8,6 @@
   <title>ISCAG MIS — Statement of Account</title>
   <meta name="description" content="Generate and view Statement of Account for tenants" />
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
-  <style>
-    .soa-container {
-      background: white;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      padding: 40px;
-      max-width: 900px;
-      margin: 20px auto;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    }
-    .soa-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      border-bottom: 2px solid var(--primary-dark);
-      padding-bottom: 20px;
-      margin-bottom: 30px;
-    }
-    .soa-brand {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    .soa-brand img {
-      width: 80px;
-      height: 80px;
-      border-radius: 8px;
-    }
-    .soa-brand-text h2 {
-      margin: 0;
-      color: var(--primary-dark);
-      font-size: 1.5rem;
-      font-family: inherit;
-    }
-    .soa-brand-text p {
-      margin: 5px 0 0;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-    .soa-title {
-      text-align: right;
-    }
-    .soa-title h1 {
-      margin: 0;
-      color: var(--text-main);
-      font-size: 2rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-    .soa-title p {
-      margin: 5px 0 0;
-      color: var(--text-muted);
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-    .soa-details {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 30px;
-      background: #f8f9fa;
-      padding: 20px;
-      border-radius: 8px;
-    }
-    .soa-details-left p, .soa-details-right p {
-      margin: 5px 0;
-      font-size: 0.95rem;
-    }
-    .soa-details strong {
-      color: var(--primary-dark);
-    }
-    .soa-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 30px;
-    }
-    .soa-table th {
-      background: var(--primary-dark);
-      color: white;
-      padding: 12px;
-      text-align: left;
-      font-size: 0.9rem;
-    }
-    .soa-table td {
-      padding: 12px;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.95rem;
-    }
-    .soa-summary {
-      width: 100%;
-      max-width: 350px;
-      margin-left: auto;
-    }
-    .soa-summary-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .soa-summary-row.total {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--primary-dark);
-      border-bottom: none;
-      border-top: 2px solid var(--primary-dark);
-      margin-top: 10px;
-      padding-top: 15px;
-    }
-    .controls-panel {
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      margin-bottom: 24px;
-      display: flex;
-      gap: 20px;
-      align-items: flex-end;
-      flex-wrap: wrap;
-    }
-    .form-group {
-      flex: 1;
-      min-width: 200px;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--primary-dark);
-    }
-    .form-group select, .form-group input {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .form-group select:focus, .form-group input:focus {
-      border-color: var(--primary);
-    }
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      .soa-container, .soa-container * {
-        visibility: visible;
-      }
-      .soa-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        max-width: 100%;
-        box-shadow: none;
-        border: none;
-        margin: 0;
-        padding: 0;
-      }
-      .controls-panel {
-        display: none !important;
-      }
-    }
-  </style>
 </head>
 
 <body>
@@ -190,7 +27,7 @@
           </div>
         </div>
         <div class="top-bar-actions">
-          <a href="<?= url('/admin/mis_admin') ?>" class="btn-topbar">← Dashboard</a>
+          <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
           <button class="btn-topbar primary" onclick="window.print()">
             <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;">
               <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
@@ -328,9 +165,7 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    initAdminData();
-    initSidebar();
-    initDropdowns();
+    standardizePage('admin');
 
     const mockTransactions = [
       { tenantId: 'USR-001', date: '2026-03-01', desc: 'Monthly Rent - March', ref: 'INV-2026-004', charge: 3500, payment: 0 },

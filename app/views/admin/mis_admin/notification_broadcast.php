@@ -1,3 +1,4 @@
+<?php $active_page = 'notifications'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,168 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISCAG MIS — Send Notifications</title>
     <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
-    <style>
-        .split-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-        }
-
-        @media (max-width: 900px) {
-            .split-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .compose-card {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            padding: 24px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-        }
-
-        .compose-header {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--primary-dark);
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .form-row {
-            margin-bottom: 16px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin-bottom: 6px;
-            color: var(--text-main);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1.5px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-
-        .form-control:focus {
-            border-color: var(--primary);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1);
-        }
-
-        .btn-submit {
-            width: 100%;
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(23, 107, 69, 0.2);
-            transition: all 0.2s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(23, 107, 69, 0.3);
-            background: var(--primary-dark);
-        }
-
-        /* History side */
-        .history-card {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            padding: 0;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .history-list {
-            max-height: 550px;
-            overflow-y: auto;
-            padding: 0 16px 16px;
-        }
-
-        .sent-item {
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            gap: 16px;
-        }
-
-        .sent-item:last-child {
-            border-bottom: none;
-        }
-
-        .sent-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--primary-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .sent-icon svg {
-            width: 20px;
-            height: 20px;
-            fill: white;
-        }
-
-        .sent-content h5 {
-            margin: 0 0 4px 0;
-            color: var(--primary-dark);
-            font-size: 0.95rem;
-        }
-
-        .sent-content p {
-            margin: 0 0 8px 0;
-            font-size: 0.85rem;
-            color: var(--text-color);
-            line-height: 1.4;
-        }
-
-        .sent-meta {
-            display: flex;
-            gap: 12px;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .target-badge {
-            background: rgba(30, 95, 139, 0.1);
-            color: #1e5f8b;
-            padding: 2px 8px;
-            border-radius: 12px;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-        }
-    </style>
 </head>
 
 <body>
@@ -187,7 +26,7 @@
                     </div>
                 </div>
                 <div class="top-bar-actions">
-                    <a href="<?= url('/admin/mis_admin') ?>" class="btn-topbar">← Dashboard</a>
+                    <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
                 </div>
             </div>
 
@@ -291,21 +130,8 @@
 
     <script src="<?= asset('JS/admin-shared.js') ?>"></script>
     <script>
-        initAdminData();
-        initSidebar();
-        initDropdowns();
+        standardizePage('admin');
 
-        function showToast(msg, bg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.style.background = bg || '#333';
-            toast.style.visibility = 'visible';
-            toast.style.opacity = '1';
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.style.visibility = 'hidden', 400);
-            }, 3000);
-        }
 
         function toggleSpecificUser() {
             const aud = document.getElementById('target-audience').value;
@@ -424,7 +250,24 @@
                         <svg viewBox="0 0 24 24">${getIconForType(b.type)}</svg>
                     </div>
                     <div class="sent-content">
-                        <h5>${b.title}</h5>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <h5 style="margin:0;">${b.title}</h5>
+                            <div class="action-menu">
+                                <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
+                                    <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                                </button>
+                                <div class="action-menu-dropdown">
+                                    <button class="action-menu-item" onclick="showToast('Resending broadcast...','var(--success)')">
+                                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                                        Resend Broadcast
+                                    </button>
+                                    <button class="action-menu-item danger" onclick="showToast('Broadcast deleted from history','var(--danger)')">
+                                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                        Delete Forever
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         <p>${b.body.substring(0, 80)}${b.body.length > 80 ? '...' : ''}</p>
                         <div class="sent-meta">
                             <span class="target-badge">To: ${b.target}</span>

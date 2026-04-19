@@ -7,101 +7,6 @@
   <title>ISCAG MIS — Billing & Payments</title>
   <meta name="description" content="Manage tenant billing, payments, and financial records" />
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
-  <style>
-    /* ── Tab navigation ── */
-    .tab-nav {
-      display: flex;
-      gap: 0;
-      border-bottom: 2px solid var(--border);
-      margin-bottom: 20px;
-    }
-
-    .tab-btn {
-      padding: 10px 20px;
-      background: none;
-      border: none;
-      border-bottom: 3px solid transparent;
-      font-family: inherit;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.18s;
-      margin-bottom: -2px;
-    }
-
-    .tab-btn:hover {
-      color: var(--primary);
-    }
-
-    .tab-btn.active {
-      color: var(--primary-dark);
-      border-bottom-color: var(--primary);
-    }
-
-    .tab-btn .tab-count {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 20px;
-      height: 20px;
-      border-radius: 10px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      margin-left: 6px;
-      padding: 0 6px;
-    }
-
-    .tab-btn .tab-count.pending {
-      background: rgba(199, 154, 43, 0.15);
-      color: var(--warning);
-    }
-
-    .tab-btn .tab-count.overdue {
-      background: rgba(139, 46, 46, 0.12);
-      color: var(--danger);
-    }
-
-    .tab-btn .tab-count.paid {
-      background: rgba(47, 138, 96, 0.12);
-      color: var(--success);
-    }
-
-    .tab-panel {
-      display: none;
-    }
-
-    .tab-panel.active {
-      display: block;
-    }
-
-    /* ── Empty state ── */
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-muted);
-    }
-
-    .empty-state svg {
-      width: 48px;
-      height: 48px;
-      fill: var(--border);
-      margin-bottom: 12px;
-    }
-
-    .empty-state h4 {
-      font-family: 'Lora', serif;
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      margin: 0 0 6px;
-    }
-
-    .empty-state p {
-      font-size: 0.82rem;
-      margin: 0;
-    }
-  </style>
 </head>
 
 <body>
@@ -121,7 +26,7 @@
           </div>
         </div>
         <div class="top-bar-actions">
-          <a href="<?= url('/admin/mis_admin') ?>" class="btn-topbar">← Dashboard</a>
+          <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
           <button class="btn-topbar primary" id="btn-generate-invoice">
             <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;">
               <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
@@ -262,98 +167,31 @@
           </select>
         </div>
 
-        <!-- ALL TAB -->
-        <div class="tab-panel active" id="tab-all">
-          <div class="section-card">
-            <div class="section-card-body" style="padding:0;">
-              <div class="table-wrapper">
-                <table class="mis-table">
-                  <thead>
-                    <tr>
-                      <th>Invoice ID</th>
-                      <th>Tenant Name</th>
-                      <th>Unit</th>
-                      <th>Amount</th>
-                      <th>Due Date</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="all-tbody"></tbody>
-                </table>
-              </div>
-            </div>
+        <!-- SINGLE TABLE -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg>
+              <span id="table-title">All Invoices</span>
+            </h6>
+            <span style="font-size:0.75rem;color:var(--text-muted);" id="table-count">0 records</span>
           </div>
-        </div>
-
-        <!-- PENDING TAB -->
-        <div class="tab-panel" id="tab-pending">
-          <div class="section-card">
-            <div class="section-card-body" style="padding:0;">
-              <div class="table-wrapper">
-                <table class="mis-table">
-                  <thead>
-                    <tr>
-                      <th>Invoice ID</th>
-                      <th>Tenant Name</th>
-                      <th>Unit</th>
-                      <th>Amount</th>
-                      <th>Due Date</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="pending-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- OVERDUE TAB -->
-        <div class="tab-panel" id="tab-overdue">
-          <div class="section-card">
-            <div class="section-card-body" style="padding:0;">
-              <div class="table-wrapper">
-                <table class="mis-table">
-                  <thead>
-                    <tr>
-                      <th>Invoice ID</th>
-                      <th>Tenant Name</th>
-                      <th>Unit</th>
-                      <th>Amount</th>
-                      <th>Due Date</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="overdue-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- PAID TAB -->
-        <div class="tab-panel" id="tab-paid">
-          <div class="section-card">
-            <div class="section-card-body" style="padding:0;">
-              <div class="table-wrapper">
-                <table class="mis-table">
-                  <thead>
-                    <tr>
-                      <th>Invoice ID</th>
-                      <th>Tenant Name</th>
-                      <th>Unit</th>
-                      <th>Amount</th>
-                      <th>Due Date</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="paid-tbody"></tbody>
-                </table>
-              </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Invoice ID</th>
+                    <th>Tenant Name</th>
+                    <th>Unit</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="billing-tbody"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -365,11 +203,10 @@
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     // ══ INIT ══
-    initAdminData();
+    standardizePage('admin');
     setCurrentRole(ROLES.MIS_ADMIN);
-    loadUserNav();
-    initSidebar();
-    initDropdowns();
+
+    let currentTab = 'all';
 
     // Generate mock billing data if it doesn't exist
     function initBillingData() {
@@ -389,12 +226,12 @@
       return JSON.parse(localStorage.getItem('mis_billing_records') || '[]');
     }
 
-    // Tab switching
+    // Tab switching — just updates the filter and re-renders
     function switchTab(tabId) {
+      currentTab = tabId;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       event.currentTarget.classList.add('active');
-      document.getElementById('tab-' + tabId).classList.add('active');
+      renderAll();
     }
 
     function statusBadge(status) {
@@ -404,12 +241,11 @@
       return '<span class="badge-status">' + status + '</span>';
     }
 
+    const tabTitles = { all: 'All Invoices', pending: 'Pending Payments', overdue: 'Overdue Invoices', paid: 'Paid Invoices' };
+
     // ══ RENDER ══
     function renderAll() {
       const records = getBillingRecords();
-      let pending = records.filter(r => r.status === 'pending');
-      let overdue = records.filter(r => r.status === 'overdue');
-      let paid = records.filter(r => r.status === 'paid');
 
       // Filter handling
       const term = document.getElementById('search-input').value.toLowerCase();
@@ -423,12 +259,12 @@
         return true;
       });
 
-      // Update filtered arrays
-      pending = filtered.filter(r => r.status === 'pending');
-      overdue = filtered.filter(r => r.status === 'overdue');
-      paid = filtered.filter(r => r.status === 'paid');
+      // Apply tab filter
+      if (currentTab !== 'all') {
+        filtered = filtered.filter(r => r.status === currentTab);
+      }
 
-      // Stats
+      // Stats (always from unfiltered records)
       document.getElementById('stat-pending').textContent = records.filter(r => r.status === 'pending').length;
       document.getElementById('stat-overdue').textContent = records.filter(r => r.status === 'overdue').length;
 
@@ -438,41 +274,66 @@
       const totalRev = paidThisMonth.reduce((sum, r) => sum + r.amount, 0);
       document.getElementById('stat-revenue').textContent = '₱' + totalRev.toLocaleString();
 
+      // Insight ribbon stats
+      const pendEl = document.getElementById('stat-pending-val');
+      const overdueEl = document.getElementById('stat-overdue-val');
+      const revEl = document.getElementById('stat-revenue-val');
+      if (pendEl) pendEl.textContent = records.filter(r => r.status === 'pending').length;
+      if (overdueEl) overdueEl.textContent = records.filter(r => r.status === 'overdue').length;
+      if (revEl) revEl.textContent = '₱' + records.filter(r => r.status === 'paid').reduce((s, r) => s + r.amount, 0).toLocaleString();
+
       // Tab counts
       document.getElementById('tab-pending-count').textContent = records.filter(r => r.status === 'pending').length;
       document.getElementById('tab-overdue-count').textContent = records.filter(r => r.status === 'overdue').length;
 
-      function renderTbody(tbodyId, dataList, emptyMsg) {
-        const tbody = document.getElementById(tbodyId);
-        if (dataList.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg><h4>' + emptyMsg + '</h4><p>No records found.</p></div></td></tr>';
-        } else {
-          tbody.innerHTML = dataList.map(r => `
-                <tr>
-                  <td class="td-id">${r.id}</td>
-                  <td style="font-weight:600;">${r.tenantName}</td>
-                  <td>${r.unit}</td>
-                  <td style="font-weight:700;">₱${r.amount.toLocaleString()}</td>
-                  <td>${r.dueDate}</td>
-                  <td>${statusBadge(r.status)}</td>
-                  <td>
-                    <div class="actions-cell">
-                      <button class="btn-action btn-view" title="View Details">
-                        <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                      </button>
-                      ${r.status === 'overdue' ? `<button class="btn-action btn-view" style="color:var(--danger);" title="Send Reminder"><svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-11 5H9v-2h2v2zm0-4H9V7h2v6z"/></svg></button>` : ''}
-                      ${r.status !== 'paid' ? `<button class="btn-action btn-view" style="color:var(--success);" title="Mark Paid"><svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></button>` : ''}
-                    </div>
-                  </td>
-                </tr>
-              `).join('');
-        }
-      }
+      // Table header
+      document.getElementById('table-title').textContent = tabTitles[currentTab] || 'All Invoices';
+      document.getElementById('table-count').textContent = filtered.length + ' record' + (filtered.length !== 1 ? 's' : '');
 
-      renderTbody('all-tbody', filtered, 'No Invoices');
-      renderTbody('pending-tbody', pending, 'No Pending Payments');
-      renderTbody('overdue-tbody', overdue, 'No Overdue Invoices');
-      renderTbody('paid-tbody', paid, 'No Paid Invoices');
+      // Render single tbody
+      const tbody = document.getElementById('billing-tbody');
+      if (filtered.length === 0) {
+        const emptyMsgs = { all: 'No Invoices', pending: 'No Pending Payments', overdue: 'No Overdue Invoices', paid: 'No Paid Invoices' };
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg><h4>' + (emptyMsgs[currentTab] || 'No Records') + '</h4><p>No records match your filters.</p></div></td></tr>';
+      } else {
+        tbody.innerHTML = filtered.map(r => `
+              <tr>
+                <td class="td-id">${r.id}</td>
+                <td style="font-weight:600;">${r.tenantName}</td>
+                <td>${r.unit}</td>
+                <td style="font-weight:700;">₱${r.amount.toLocaleString()}</td>
+                <td>${r.dueDate}</td>
+                <td>${statusBadge(r.status)}</td>
+                <td>
+                  <div class="action-menu">
+                    <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
+                      <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                    </button>
+                    <div class="action-menu-dropdown">
+                      <button class="action-menu-item" onclick="showToast('Viewing ${r.id}','var(--info)')">
+                        <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        Invoice Details
+                      </button>
+                      ${r.status === 'overdue' ? `
+                      <button class="action-menu-item danger" onclick="showToast('Reminder sent to ${r.tenantName}','var(--danger)')">
+                        <svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-11 5H9v-2h2v2zm0-4H9V7h2v6z"/></svg>
+                        Send Overdue Reminder
+                      </button>` : ''}
+                      ${r.status !== 'paid' ? `
+                      <button class="action-menu-item success" onclick="showToast('Receipt generated for ${r.id}','var(--success)')">
+                        <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                        Mark as Paid
+                      </button>` : ''}
+                      <button class="action-menu-item" onclick="showToast('Downloading PDF...','var(--info)')">
+                        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        Download PDF
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            `).join('');
+      }
     }
 
     document.getElementById('search-input').addEventListener('input', renderAll);

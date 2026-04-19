@@ -12,12 +12,22 @@ class ApartmentController extends Controller {
 
     public function status() {
         Auth::protectRole(['Applicant', 'Tenant']);
-        $this->view('user/Apartment/tenant_status');
+        $userId = $_SESSION['user_id'];
+        $model = new ApartmentApp();
+        $application = $model->getApplication($userId);
+        $this->view('user/Apartment/tenant_status', [
+            'application' => $application
+        ]);
     }
 
     public function info() {
         Auth::protectRole(['Applicant', 'Tenant']);
-        $this->view('user/Apartment/apartment_information');
+        $userId = $_SESSION['user_id'];
+        $model = new ApartmentApp();
+        $application = $model->getApplication($userId);
+        $this->view('user/Apartment/apartment_information', [
+            'application' => $application
+        ]);
     }
 
     public function save() {
@@ -137,5 +147,17 @@ class ApartmentController extends Controller {
     public function parking() {
         Auth::protectRole(['Tenant']);
         $this->view('user/Apartment/tenant_parking');
+    }
+
+    public function finalizeSubmission() {
+        Auth::protectRole(['Applicant', 'Tenant']);
+        header('Content-Type: application/json');
+        $userId = $_SESSION['user_id'];
+        
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        $model = new ApartmentApp();
+        $ok = $model->updateStatusByTenant($userId, 'Pending');
+        
+        echo json_encode(['success' => $ok]);
     }
 }
