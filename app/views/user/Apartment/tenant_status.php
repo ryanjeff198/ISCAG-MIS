@@ -1128,10 +1128,15 @@
         // ═══════════════════════════════════════════
         const root = document.getElementById('tenant-info-root');
 
-        // Get latest application from database
-        const dbApp = <?= json_encode($application ?? null) ?>;
-        const aptApp = dbApp;
-        const report = dbApp; // In this schema, apartmentsapp acts as the report
+        // Get latest application
+        const reqRaw = localStorage.getItem(STORAGE_KEYS.requests);
+        const requests = reqRaw ? JSON.parse(reqRaw) : [];
+        const aptApp = requests.filter(r => r.type === 'apartment_application' && r.user === user.id)
+            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+        // Get report
+        const reports = JSON.parse(localStorage.getItem('mis_reports') || '[]');
+        const report = reports.find(r => r.tenantId === user.id) || null;
 
         // Get uploaded docs
         const docUploads = JSON.parse(localStorage.getItem('mis_req_doc_uploads') || '{}');

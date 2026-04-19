@@ -8,9 +8,9 @@ $initials = strtoupper(substr($admin_name_parts[0], 0, 1) . (count($admin_name_p
 $active_page = $active_page ?? 'admin_dashboard';
 
 // Determine which dropdowns should be open based on the active page
-$is_pending_open = in_array($active_page, ['apartment_confirmation', 'parking_approval']);
+$is_apart_open = in_array($active_page, ['apartment_records', 'tenant_confirmation', 'parking_approval']);
 $is_finance_open = in_array($active_page, ['billing', 'soa', 'reports']);
-$is_comm_open = in_array($active_page, ['apartment_records', 'daawah_records', 'damayan_records', 'notifications']);
+$is_comm_open = in_array($active_page, ['daawah_records', 'damayan_records', 'notifications']);
 $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification']);
 ?>
 <aside class="sidebar" id="sidebar">
@@ -42,16 +42,17 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
             <span class="nav-item-label">Hub Overview</span>
         </a>
 
-        <!-- PENDING REQUESTS -->
+        <!-- OPERATIONS (Apartment Hub) -->
         <div class="nav-section-label">Operations</div>
-        <div class="nav-dropdown-wrap" id="pending-wrap">
-            <button class="nav-dropdown-trigger <?= $is_pending_open ? 'open' : '' ?>" id="pending-trigger" data-href="<?= url('/admin/mis_admin/tenant_confirmation') ?>">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>
-                <span class="nav-item-label">Pending Requests</span>
+        <div class="nav-dropdown-wrap" id="apart-wrap">
+            <button class="nav-dropdown-trigger <?= $is_apart_open ? 'open' : '' ?>" id="apart-trigger" data-href="<?= url('/admin/mis_admin/apartment_records') ?>">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+                <span class="nav-item-label">Apartment Mgmt</span>
                 <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
             </button>
-            <div class="nav-dropdown <?= $is_pending_open ? 'open' : '' ?>" id="pending-menu">
-                <a href="<?= url('/admin/mis_admin/apartment_confirmation') ?>" class="<?= $active_page === 'apartment_confirmation' ? 'active-submenu' : '' ?>">App. Confirmation</a>
+            <div class="nav-dropdown <?= $is_apart_open ? 'open' : '' ?>" id="apart-menu">
+                <a href="<?= url('/admin/mis_admin/apartment_records') ?>" class="<?= $active_page === 'apartment_records' ? 'active-submenu' : '' ?>">Unit Inventory</a>
+                <a href="<?= url('/admin/mis_admin/tenant_confirmation') ?>" class="<?= $active_page === 'tenant_confirmation' ? 'active-submenu' : '' ?>">Tenant Approvals</a>
                 <a href="<?= url('/admin/mis_admin/parking_approval') ?>" class="<?= $active_page === 'parking_approval' ? 'active-submenu' : '' ?>">Parking Alloc.</a>
             </div>
         </div>
@@ -78,7 +79,6 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
                 <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
             </button>
             <div class="nav-dropdown <?= $is_comm_open ? 'open' : '' ?>" id="comm-menu">
-                <a href="<?= url('/admin/mis_admin/apartment_records') ?>" class="<?= $active_page === 'apartment_records' ? 'active-submenu' : '' ?>">Unit Inventory</a>
                 <a href="<?= url('/admin/mis_admin/daawah_records') ?>" class="<?= $active_page === 'daawah_records' ? 'active-submenu' : '' ?>">Da'wah Records</a>
                 <a href="<?= url('/admin/mis_admin/damayan_records') ?>" class="<?= $active_page === 'damayan_records' ? 'active-submenu' : '' ?>">Damayan Burial</a>
                 <a href="<?= url('/admin/mis_admin/notifications') ?>" class="<?= $active_page === 'notifications' ? 'active-submenu' : '' ?>">System Broadcast</a>

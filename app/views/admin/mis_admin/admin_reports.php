@@ -8,6 +8,284 @@
   <meta name="description"
     content="Central tenant report dashboard for application tracking, room assignment, and billing status." />
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+  <style>
+    /* ── Requirements dots ── */
+    .req-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .req-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      border: 1.5px solid var(--border);
+      position: relative;
+      cursor: help;
+    }
+
+    .req-dot.done {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .req-dot.missing {
+      background: transparent;
+      border-color: var(--danger);
+    }
+
+    /* ── Report detail panel ── */
+    .report-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .detail-block {
+      margin-bottom: 16px;
+    }
+
+    .detail-block-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .detail-block-value {
+      font-size: 0.87rem;
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    /* ── Timeline mini ── */
+    .mini-timeline {
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .mini-timeline::before {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 4px;
+      bottom: 4px;
+      width: 2px;
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    .mini-tl-item {
+      position: relative;
+      margin-bottom: 10px;
+      padding-left: 8px;
+    }
+
+    .mini-tl-item::before {
+      content: '';
+      position: absolute;
+      left: -19px;
+      top: 5px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      border: 2px solid white;
+      box-shadow: 0 0 0 1px var(--primary-light);
+    }
+
+    .mini-tl-item .tl-action {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .mini-tl-item .tl-time {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Requirements checklist ── */
+    .req-checklist {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .req-checklist li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 0.84rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .req-checklist li:last-child {
+      border-bottom: none;
+    }
+
+    .req-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .req-check.yes {
+      background: var(--success);
+    }
+
+    .req-check.yes svg {
+      fill: white;
+    }
+
+    .req-check.no {
+      background: rgba(139, 46, 46, 0.1);
+      border: 1.5px solid var(--danger);
+    }
+
+    .req-check.no svg {
+      fill: var(--danger);
+    }
+
+    .req-check svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* ── Status pipeline ── */
+    .status-pipeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 20px 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .pipeline-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 80px;
+      position: relative;
+    }
+
+    .pipeline-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2.5px solid var(--border);
+      background: white;
+      transition: all 0.2s;
+    }
+
+    .pipeline-dot svg {
+      width: 14px;
+      height: 14px;
+      fill: var(--border);
+    }
+
+    .pipeline-dot.done {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .pipeline-dot.done svg {
+      fill: white;
+    }
+
+    .pipeline-dot.current {
+      background: var(--accent);
+      border-color: var(--accent);
+      animation: pulse 2s ease infinite;
+    }
+
+    .pipeline-dot.current svg {
+      fill: white;
+    }
+
+    .pipeline-dot.rejected {
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .pipeline-dot.rejected svg {
+      fill: white;
+    }
+
+    .pipeline-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 80px;
+    }
+
+    .pipeline-line {
+      flex: 1;
+      height: 2.5px;
+      background: var(--border);
+      min-width: 20px;
+    }
+
+    .pipeline-line.done {
+      background: var(--success);
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(199, 154, 43, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 0 6px rgba(199, 154, 43, 0);
+      }
+    }
+
+    /* ── Reject modal textarea ── */
+    .reject-textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color 0.18s;
+    }
+
+    .reject-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1);
+    }
+
+    @media (max-width: 768px) {
+      .report-detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .status-pipeline {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -27,7 +305,7 @@
           </div>
         </div>
         <div class="top-bar-actions">
-          <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
+          <a href="<?= url('/admin/mis_admin') ?>" class="btn-topbar">← Dashboard</a>
           <span id="top-date" style="font-size:0.8rem;color:var(--text-muted);"></span>
         </div>
       </div>
@@ -55,7 +333,7 @@
         </div>
         <!-- BREADCRUMB -->
         <div class="breadcrumb-bar">
-          <a href="<?= url('/admin/dashboard') ?>">Dashboard</a><span class="sep">›</span>
+          <a href="<?= url('/admin/mis_admin') ?>">Dashboard</a><span class="sep">›</span>
           <span class="current">Tenant Reports</span>
         </div>
 
@@ -217,8 +495,10 @@
     // ══════════════════════════════════════
     //  INIT
     // ══════════════════════════════════════
-    standardizePage('admin');
+    initAdminData();
+    initReportsData();
     setCurrentRole(ROLES.MIS_ADMIN);
+    loadUserNav(); setTopBarDate(); initSidebar(); initDropdowns();
     setupModalClose('modal-view');
     setupModalClose('modal-reject');
 
@@ -268,29 +548,17 @@
         <td><span class="badge-status ${reportBadgeClass(r.status)}">${reportStatusLabel(r.status)}</span></td>
         <td style="color:var(--text-muted);">${formatDate(r.submittedAt)}</td>
         <td>
-          <div class="action-menu">
-            <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
-              <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          <div class="actions-cell">
+            <button class="btn-action btn-view" onclick="viewReport('${r.id}')">
+              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg>View
             </button>
-            <div class="action-menu-dropdown">
-              <button class="action-menu-item" onclick="viewReport('${r.id}')">
-                <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                View Full Report
-              </button>
-              ${canApprove ? `
-              <button class="action-menu-item success" onclick="handleApprove('${r.id}')">
-                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                Approve & Forward
-              </button>
-              <button class="action-menu-item danger" onclick="handleReject('${r.id}')">
-                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                Mark Incomplete
-              </button>` : ''}
-              <button class="action-menu-item" onclick="showToast('Downloading summary for ${r.id}...','var(--info)')">
-                <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                Download PDF
-              </button>
-            </div>
+            ${canApprove ? `
+            <button class="btn-action btn-approve" onclick="handleApprove('${r.id}')">
+              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Approve
+            </button>
+            <button class="btn-action btn-reject" onclick="handleReject('${r.id}')">
+              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>Reject
+            </button>` : ''}
           </div>
         </td>
       </tr>`;

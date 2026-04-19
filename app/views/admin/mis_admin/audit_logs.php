@@ -1,4 +1,3 @@
-<?php $active_page = 'audit_logs'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -8,6 +7,95 @@
     <title>ISCAG MIS — Data Audit Logs</title>
     <meta name="description" content="System tracking and audit logging" />
     <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+    <style>
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .audit-table th {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .audit-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .audit-table tbody tr:hover {
+            background: #fcfcfc;
+        }
+
+        .tag {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .tag-login {
+            background: rgba(47, 138, 96, 0.1);
+            color: var(--success);
+        }
+
+        .tag-delete {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
+        }
+
+        .tag-update {
+            background: rgba(199, 154, 43, 0.1);
+            color: var(--warning);
+        }
+
+        .tag-create {
+            background: rgba(23, 107, 69, 0.1);
+            color: var(--primary);
+        }
+
+        .tag-billing {
+            background: rgba(43, 110, 199, 0.1);
+            color: #2b6ec7;
+        }
+
+        .log-details {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-top: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+    </style>
 </head>
 
 <body>
@@ -27,7 +115,7 @@
                     </div>
                 </div>
                 <div class="top-bar-actions">
-                    <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
+                    <a href="<?= url('/admin/mis_admin') ?>" class="btn-topbar">← Dashboard</a>
                     <button class="btn-topbar" onclick="downloadCSV()">
                         <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;">
                             <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
@@ -109,7 +197,9 @@
 
     <script src="<?= asset('JS/admin-shared.js') ?>"></script>
     <script>
-        standardizePage('admin');
+        initAdminData();
+        initSidebar();
+        initDropdowns();
 
         // Generate mock audit logs if not present
         function loadMockLogs() {

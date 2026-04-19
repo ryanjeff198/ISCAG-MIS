@@ -7,6 +7,92 @@
   <title>ISCAG MIS — User Management</title>
   <meta name="description" content="Manage all registered users, roles, and profiles" />
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+  <style>
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-cell .mini-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .user-cell .user-name {
+      font-weight: 600;
+    }
+
+    .user-cell .user-email {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .profile-bar-wrap {
+      width: 50px;
+      height: 6px;
+      background: #e8ece9;
+      border-radius: 3px;
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    .profile-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .detail-grid .detail-item label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .detail-grid .detail-item p {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 0;
+    }
+
+    .role-select {
+      padding: 4px 8px;
+      border-radius: 5px;
+      border: 1.5px solid var(--border);
+      font-size: 0.78rem;
+      font-family: inherit;
+      background: white;
+      cursor: pointer;
+      transition: border-color 0.18s;
+    }
+
+    .role-select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+  </style>
 </head>
 
 <body>
@@ -26,7 +112,7 @@
           </div>
         </div>
         <div class="top-bar-actions">
-          <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
+          <a href="<?= url('/admin/mis_admin') ?>" class="btn-topbar">← Dashboard</a>
         </div>
       </div>
 
@@ -52,7 +138,7 @@
           </div>
         </div>
         <div class="breadcrumb-bar">
-          <a href="<?= url('/admin/dashboard') ?>">Dashboard</a>
+          <a href="<?= url('/admin/mis_admin') ?>">Dashboard</a>
           <span class="sep">›</span>
           <span class="current">User Management</span>
         </div>
@@ -184,7 +270,9 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    standardizePage('admin');
+    initAdminData();
+    loadUserNav();
+    setTopBarDate();
 
     let allUsers = getAllUsers();
 
@@ -231,20 +319,15 @@
         <td><span class="badge-status ${badgeClass(u.status)}">${statusLabel(u.status)}</span></td>
         <td style="font-size:0.82rem;color:var(--text-muted);">${formatDate(u.joined)}</td>
         <td>
-          <div class="action-menu">
-            <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
-              <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          <div class="actions-cell">
+            <button class="btn-action btn-view" onclick="viewUser('${u.id}')">
+              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              View
             </button>
-            <div class="action-menu-dropdown">
-              <button class="action-menu-item" onclick="viewUser('${u.id}')">
-                <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                View Details
-              </button>
-              <button class="action-menu-item ${u.status === 'active' ? 'danger' : ''}" onclick="toggleStatus('${u.id}')">
-                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                ${u.status === 'active' ? 'Deactivate User' : 'Activate User'}
-              </button>
-            </div>
+            <button class="btn-action btn-edit" onclick="toggleStatus('${u.id}')">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              ${u.status === 'active' ? 'Deactivate' : 'Activate'}
+            </button>
           </div>
         </td>
       </tr>`;
@@ -331,6 +414,8 @@
       applyFilters();
     }
 
+    initSidebar();
+    initDropdowns();
     setupModalClose('user-detail-modal');
   </script>
 </body>
