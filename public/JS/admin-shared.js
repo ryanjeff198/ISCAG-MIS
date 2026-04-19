@@ -25,13 +25,13 @@ const STORAGE_KEYS = {
   proofpayment: 'mis_proofpayment'
 };
 
-const PROFILE_FIELDS = ['name','email','gender','phone','address','dob','civil','occupation','arabicName','membership'];
+const PROFILE_FIELDS = ['name','email','gender','phone','address','dob','civil','occupation','arabicName','revertYear'];
 
 const FIELD_LABELS = {
   name:'Full Name', email:'Email Address', gender:'Gender',
   phone:'Contact Number', address:'Complete Address', dob:'Date of Birth',
   civil:'Civil Status', occupation:'Occupation',
-  arabicName:'Muslim / Arabic Name', membership:'Masjid Membership'
+  arabicName:'Muslim / Arabic Name', revertYear:'Year Reverted'
 };
 
 // ── Default data (matches user dashboard defaults) ──
@@ -463,20 +463,19 @@ function addNotification(tenantId, title, message, type, link) {
  */
 function initNotifBadge(role) {
   let unread = 0;
-  if (role === 'tenant') {
-    const user = getUser();
-    const notifs = getNotifications();
+  const user = getUser();
+  const notifs = getNotifications();
+
+  if (role === 'tenant' || !role) {
     unread = notifs.filter(n => n.tenantId === user.id && !n.read).length;
   } else if (role === 'staff') {
-    // Staff sees activity-log-based notifications; first 3 are unread by convention
     const log = getActivityLog();
     unread = Math.min(3, log.length);
   } else {
-    // MIS admin sees activity-log-based notifications; first 5 unread
     const log = getActivityLog();
     unread = Math.min(5, log.length);
   }
-  // Find the Notifications link in the sidebar and inject a dot
+
   if (unread > 0) {
     document.querySelectorAll('.nav-item').forEach(link => {
       const label = link.querySelector('.nav-item-label');
@@ -560,6 +559,39 @@ function assignRoom(reportId, roomId) {
   addActivityEntry('Billing Generated', billId + ' — ₱' + apt.price.toLocaleString() + ' for ' + r.tenantName, 'System', 'payment');
   addNotification(r.tenantId, 'Room Assigned', 'You have been assigned to ' + apt.name + '. Monthly billing of ₱' + apt.price.toLocaleString() + ' has been generated.', 'assign');
   return true;
+}
+
+// ── Notifications Storage Helpers ──
+function getNotifications() {
+  const raw = localStorage.getItem('mis_notifications');
+  return raw ? JSON.parse(raw) : [
+    { id:'NOT-001', tenantId:'USR-001', title:'Application Approved', message:'Congratulations! Your apartment application has been approved. You can now view your room assignment.', type:'approve', read:false, createdAt:new Date(Date.now()-86400000).toISOString(), link:'/user/dashboard' },
+    { id:'NOT-002', tenantId:'USR-001', title:'System Update', message:'Welcome to the new ISCAG MIS portal. Please complete your profile to access all services.', type:'system', read:true, createdAt:new Date(Date.now()-172800000).toISOString(), link:'/user/profile' }
+  ];
+}
+function saveNotifications(notifs) {
+  localStorage.setItem('mis_notifications', JSON.stringify(notifs));
+}
+function getUserNotifications() {
+  const user = getUser();
+  return getNotifications().filter(n => n.tenantId === user.id);
+}
+
+
+
+function timeAgo(date) {
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " years ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " months ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " days ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " hours ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " minutes ago";
+  return Math.floor(seconds) + " seconds ago";
 }
 
 // ── Status label for report statuses ──

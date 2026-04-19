@@ -2536,16 +2536,16 @@ if ($userId) {
         const d1 = document.getElementById('decl1').checked;
         const d2 = document.getElementById('decl2').checked;
         if (!d1 || !d2) {
-          showToast('⚠️ Please check both declaration boxes before proceeding.', '#8b2e2e');
+          showToast('Please check both declaration boxes before proceeding.', '#8b2e2e');
           return;
         }
         // Save Step 1 data to server before transitioning
         saveStep1ToServer()
           .then(res => {
             if (res.success) {
-              showToast('✓ Application info saved!', '#2f8a60');
+              showToast('Application info saved!', '#2f8a60');
             } else {
-              showToast('⚠️ Could not save info: ' + (res.message || 'Unknown error'), '#8b2e2e');
+              showToast('Could not save info: ' + (res.message || 'Unknown error'), '#8b2e2e');
             }
           })
           .catch(err => console.error('Save error:', err));
@@ -3066,19 +3066,19 @@ if ($userId) {
 
     function handleFileUpload(docId, file) {
       if (file.size > 5 * 1024 * 1024) {
-        showToast('⚠️  File is too large. Maximum size is 5MB.', '#8b2e2e');
+        showToast('File is too large. Maximum size is 5MB.', '#8b2e2e');
         return;
       }
       const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
       if (!validTypes.includes(file.type)) {
-        showToast('⚠️  Invalid file type. Please upload JPG, PNG, or PDF.', '#8b2e2e');
+        showToast('Invalid file type. Please upload JPG, PNG, or PDF.', '#8b2e2e');
         return;
       }
       const reader = new FileReader();
       reader.onload = function(e) {
         saveUploadedDoc(docId, e.target.result);
         renderCards();
-        showToast('✓  Document uploaded successfully!', '#2f8a60');
+        showToast('Document uploaded successfully!', '#2f8a60');
       };
       reader.readAsDataURL(file);
 
@@ -3176,7 +3176,7 @@ if ($userId) {
       const allUploaded = allKeys.every(k => !!docs[k]);
 
       if (!allUploaded) {
-        showToast('⚠️  Please upload all required documents before submitting.', '#8b2e2e');
+        showToast('Please upload all required documents before submitting.', '#8b2e2e');
         return;
       }
 

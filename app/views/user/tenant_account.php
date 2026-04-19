@@ -786,15 +786,15 @@ $phpUser = [
                     uploadLabel.style.display = 'block';
                     syncSidebarAvatar(committedPhoto);
                     avatarEl.style.backgroundImage = 'url(' + committedPhoto + ')';
-                    showToast('🖼️ Profile image saved!', '#176b45');
+                    showToast('Profile image saved!', '#176b45');
                     localStorage.removeItem('mis_user_photo'); // clear old ls usage
                 } else {
-                    showToast('❌ Error: ' + res.message, 'var(--danger)');
+                    showToast('Error: ' + res.message, 'var(--danger)');
                 }
             })
             .catch(err => {
                 console.error(err);
-                showToast('❌ Upload failed.', 'var(--danger)');
+                showToast('Upload failed.', 'var(--danger)');
             })
             .finally(() => {
                 avatarSaveBtn.textContent = originalText;
@@ -955,9 +955,9 @@ $phpUser = [
                         }
 
                         if (pct2 === 100 && pct < 100) {
-                            showToast('🎉 Your profile has been successfully completed. You now have full access to all available departments.', 'var(--success)');
+                            showToast('Profile completed successfully. You now have full access to all available departments.', 'var(--success)');
                         } else {
-                            showToast('✅ Profile updated successfully!', 'var(--success)');
+                            showToast('Profile updated successfully!', 'var(--success)');
                         }
 
                         closeModal(false);
@@ -966,12 +966,12 @@ $phpUser = [
                             window._afterProfileSave(pct2);
                         }
                     } else {
-                        showToast('❌ Error: ' + res.message, 'var(--danger)');
+                        showToast('Error: ' + res.message, 'var(--danger)');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    showToast('❌ Failed to save profile to server.', 'var(--danger)');
+                    showToast('Failed to save profile to server.', 'var(--danger)');
                 })
                 .finally(() => {
                     modalSaveBtn.disabled = false;
@@ -1021,7 +1021,7 @@ $phpUser = [
             activityVisible = !activityVisible;
             if (activityVisible) {
                 activitySection.style.display = 'block';
-                viewActivityBtn.textContent = '📊 Hide Activity';
+                viewActivityBtn.textContent = 'Hide Activity';
                 viewActivityBtn.style.borderColor = 'var(--primary)';
                 viewActivityBtn.style.color = 'var(--primary)';
                 viewActivityBtn.style.background = 'rgba(23,107,69,0.04)';
@@ -1033,7 +1033,7 @@ $phpUser = [
                 }, 50);
             } else {
                 activitySection.style.display = 'none';
-                viewActivityBtn.textContent = '📊 View Activity';
+                viewActivityBtn.textContent = 'View Activity';
                 viewActivityBtn.style.borderColor = 'var(--border)';
                 viewActivityBtn.style.color = 'var(--text-muted)';
                 viewActivityBtn.style.background = 'white';
@@ -1128,27 +1128,27 @@ $phpUser = [
                 }
             });
         };
-
-        // Notification Badge System
-        (function() {
-            const raw = localStorage.getItem('mis_notifications');
-            const notifs = raw ? JSON.parse(raw) : [];
-            const unread = notifs.filter(n => n.tenantId === user.id && !n.read).length;
-            if (unread > 0) {
-                document.querySelectorAll('.nav-item').forEach(link => {
-                    const label = link.querySelector('.nav-item-label');
-                    if (label && label.textContent.trim() === 'Notifications') {
-                        if (!link.querySelector('.notif-dot')) {
-                            const dot = document.createElement('span');
-                            dot.className = 'notif-dot';
-                            dot.textContent = unread;
-                            link.style.position = 'relative';
-                            link.appendChild(dot);
-                        }
-                    }
-                });
+        function loadUserNav() {
+            const u = getUser();
+            const navName = document.getElementById('nav-name');
+            const navAvatar = document.getElementById('nav-avatar');
+            if (navName) navName.textContent = u.name;
+            if (navAvatar) {
+                const photo = localStorage.getItem('mis_user_photo');
+                if (photo) {
+                    navAvatar.textContent = '';
+                    navAvatar.style.backgroundImage = 'url(' + photo + ')';
+                    navAvatar.style.backgroundSize = 'cover';
+                    navAvatar.style.backgroundPosition = 'center';
+                } else {
+                    const ini = u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                    navAvatar.textContent = ini;
+                }
             }
-        })();
+        }
+
+        loadUserNav();
+        initNotifBadge();
     </script>
 </body>
 

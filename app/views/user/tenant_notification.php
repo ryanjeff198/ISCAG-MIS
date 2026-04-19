@@ -333,8 +333,18 @@ $phpUser = [
     <script src="<?= asset('JS/admin-shared.js') ?>"></script>
     <script>
         initAdminData();
-        initReportsData();
-        initSidebar();
+        // ── Sidebar toggle ──
+        const sidebar = document.getElementById('sidebar');
+        const toggle = document.getElementById('sidebar-toggle');
+        if (toggle && sidebar) {
+            toggle.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                if (sidebar.classList.contains('collapsed')) {
+                    document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
+                    document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
+                }
+            });
+        }
 
         // Map notification type to a readable label
         function typeToLabel(type) {
@@ -416,7 +426,7 @@ $phpUser = [
                 <span class="notif-time">${timeAgo(n.createdAt)}</span>
               </div>
               <p class="notif-message">${shortMsg}</p>
-              <div style="font-size:0.75rem;color:var(--accent);font-weight:600;margin-top:4px;">Click to read full details &rarr;</div>
+              <div style="font-size:0.75rem;color:var(--accent);font-weight:600;margin-top:4px;">Click to read full details</div>
             </div>
           </div>
         `;
@@ -486,7 +496,7 @@ $phpUser = [
           </div>
           <div class="detail-meta-item">
             <div class="label">Status</div>
-            <div class="value" style="color:var(--success);">✅ Read</div>
+            <div class="value" style="color:var(--success);">Read</div>
           </div>
         </div>
         
@@ -527,26 +537,64 @@ $phpUser = [
             renderNotifications();
         }
 
-        loadUserNav();
-        initNotifBadge('tenant');
+        // ── Navigation UI Helpers ──
+        function loadUserNav() {
+            const u = getUser();
+            const navName = document.getElementById('nav-name');
+            const navAvatar = document.getElementById('nav-avatar');
+            if (navName) navName.textContent = u.name;
+            if (navAvatar) {
+                const photo = localStorage.getItem('mis_user_photo');
+                if (photo) {
+                    navAvatar.textContent = '';
+                    navAvatar.style.backgroundImage = 'url(' + photo + ')';
+                    navAvatar.style.backgroundSize = 'cover';
+                    navAvatar.style.backgroundPosition = 'center';
+                } else {
+                    const ini = u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                    navAvatar.textContent = ini;
+                }
+            }
+        }
 
-        // Set initials
+        function initNotifBadge() {
+            const user = getUser();
+            const notifs = getNotifications().filter(n => n.tenantId === user.id && !n.read);
+            if (notifs.length > 0) {
+                document.querySelectorAll('.nav-item').forEach(link => {
+                    const label = link.querySelector('.nav-item-label');
+                    if (label && label.textContent.trim() === 'Notifications') {
+                        if (!link.querySelector('.notif-dot')) {
+                            const dot = document.createElement('span');
+                            dot.className = 'notif-dot';
+                            dot.textContent = notifs.length;
+                            link.style.position = 'relative';
+                            link.appendChild(dot);
+                        }
+                    }
+                });
+            }
+        }
+
+        loadUserNav();
+        initNotifBadge();
+
+        // ── Set initials & avatar override ──
+        const navAvatar = document.getElementById('nav-avatar');
         const user = getUser();
         const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-
-        // Avatar override logic
-        const navAvatar = document.getElementById('nav-avatar');
         const photo = localStorage.getItem('mis_user_photo');
         if (photo) {
             navAvatar.textContent = '';
             navAvatar.style.backgroundImage = 'url(' + photo + ')';
             navAvatar.style.backgroundSize = 'cover';
             navAvatar.style.backgroundPosition = 'center';
-        } else {
+        } else if (navAvatar) {
             navAvatar.textContent = initials;
         }
 
-        document.getElementById('nav-name').textContent = user.name;
+        const navNameEl = document.getElementById('nav-name');
+        if (navNameEl) navNameEl.textContent = user.name;
 
         // ── Role label: use SESSION data (injected by sidebar sync) ──
         // The sidebar already rendered the correct PHP role; here we just
@@ -607,27 +655,39 @@ $phpUser = [
         applyDropdownLocks();
 
         // Dropdown Click Handlers
-        const _sidebar = document.getElementById('sidebar');
-
         function initDropdown(triggerId, menuId, wrapId) {
             const trigger = document.getElementById(triggerId);
             const menu = document.getElementById(menuId);
             const wrap = document.getElementById(wrapId);
             if (!trigger || !menu) return;
-            trigger.addEventListener('click', () => {
+
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent document-level interference
+
+                // If locked, prevent everything and show message
                 if (wrap && wrap.classList.contains('locked')) {
+                    e.preventDefault();
                     showToast('Please complete your profile to unlock services.', '#c79a2b');
                     setTimeout(() => window.location.href = '<?= url('/user/profile') ?>', 1200);
                     return;
                 }
-                if (_sidebar && _sidebar.classList.contains('collapsed')) {
+
+                // If sidebar is collapsed, navigate to the first link or data-href
+                if (sidebar && sidebar.classList.contains('collapsed')) {
                     const href = trigger.getAttribute('data-href');
-                    if (href) window.location.href = href;
+                    if (href) {
+                        e.preventDefault();
+                        window.location.href = href;
+                    }
                     return;
                 }
+
+                // Normal expanded toggle
+                e.preventDefault();
                 const isOpen = menu.classList.contains('open');
                 document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
                 document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
+
                 if (!isOpen) {
                     menu.classList.add('open');
                     trigger.classList.add('open');

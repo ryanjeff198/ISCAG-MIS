@@ -163,7 +163,7 @@
 <script>
   // ── Inlined data helpers ──
   const STORAGE_KEYS = { user: 'mis_user', requests: 'mis_requests', initialized: 'mis_data_init' };
-  const PROFILE_FIELDS = ['name','email','gender','phone','address','dob','civil','occupation','arabicName','membership'];
+  const PROFILE_FIELDS = ['name','email','gender','phone','address','dob','civil','occupation','arabicName','revertYear'];
   const DEFAULT_USER = { 
     id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>', 
     name: '<?= addslashes($_SESSION['name'] ?? "User") ?>', 
@@ -190,7 +190,7 @@
     const user = getUser();
     const missing = [];
     let filled = 0;
-    const labels = { name:'Full Name', email:'Email Address', gender:'Gender', phone:'Contact Number', address:'Complete Address', dob:'Date of Birth', civil:'Civil Status', occupation:'Occupation', arabicName:'Muslim / Arabic Name', membership:'ISCAG Membership' };
+    const labels = { name:'Full Name', email:'Email Address', gender:'Gender', phone:'Contact Number', address:'Complete Address', dob:'Date of Birth', civil:'Civil Status', occupation:'Occupation', arabicName:'Muslim / Arabic Name', revertYear:'Year Reverted' };
     PROFILE_FIELDS.forEach(k => {
       if (user[k] && String(user[k]).trim() !== '') { filled++; } else { missing.push(labels[k] || k); }
     });
@@ -321,7 +321,7 @@
     e.preventDefault();
     const d1 = document.getElementById('decl1').checked;
     if (!d1) {
-      showToast('⚠️ Please check the declaration box before submitting.', '#8b2e2e');
+      showToast('Please check the declaration box before submitting.', '#8b2e2e');
       return;
     }
     addRequest({ type: 'female_counseling', user: user.id });

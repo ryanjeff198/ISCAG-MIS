@@ -1376,7 +1376,7 @@
 
                 for (const [key, label] of Object.entries(requiredMap)) {
                     if (!fields[key]) {
-                        showToast('⚠️ Please fill in: ' + label, 'var(--danger)');
+                        showToast('Please fill in: ' + label, 'var(--danger)');
                         return;
                     }
                 }
@@ -1398,7 +1398,7 @@
                 apps.push(newApp);
                 saveParkingApps(apps);
 
-                showToast('✅ Parking application submitted successfully! Awaiting admin approval.', 'var(--success)');
+                showToast('Parking application submitted successfully! Awaiting admin approval.', 'var(--success)');
 
                 // Redirect to Tenant Information page
                 setTimeout(() => window.location.href = 'tenant_information.html', 1000);
@@ -1419,7 +1419,7 @@
                 document.getElementById('plate-no').value = '';
                 document.getElementById('date-started').value = '';
                 document.getElementById('parking-no').value = generateParkingId();
-                showToast('🔄 Form has been reset.', 'var(--text-muted)');
+                showToast('Form has been reset.', 'var(--text-muted)');
             });
 
 

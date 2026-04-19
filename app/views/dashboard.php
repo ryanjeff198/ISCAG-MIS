@@ -5,6 +5,23 @@ if (!defined('BASE_PATH')) {
 require_once BASE_PATH . '/app/helpers/Auth.php';
 Auth::protect();
 
+$info = $info ?? [];
+$account = $account ?? [];
+$display_name = trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? ''));
+
+$dbUser = [
+    'name' => $display_name,
+    'email' => $info['email'] ?? ($account['email'] ?? ''),
+    'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
+    'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
+    'dob' => $info['birthdate'] ?? '',
+    'civil' => $info['civil_status'] ?? '',
+    'address' => $info['address'] ?? '',
+    'occupation' => $info['occupation'] ?? '',
+    'arabicName' => $info['muslimname'] ?? '',
+    'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
+];
+
 if (!function_exists('asset')) {
     function asset($path) { 
         $baseUrl = str_replace('/public/index.php', '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
@@ -647,10 +664,11 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       };
 
       // Synchronize with DB data — DB is the source of truth.
-      // Even if empty, we overwrite localStorage/Mock defaults.
-      Object.keys(DB_USER).forEach(key => {
-        user[key] = DB_USER[key] || '';
-      });
+      if (typeof DB_USER !== 'undefined' && DB_USER !== null) {
+        Object.keys(DB_USER).forEach(key => {
+          user[key] = DB_USER[key] || '';
+        });
+      }
       return user;
     }
     function getRequests() {
