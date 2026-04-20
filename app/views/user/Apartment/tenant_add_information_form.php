@@ -1964,7 +1964,7 @@ if ($userId) {
                     </svg>
                   </div>
                   <div class="unit-card-thumb">
-                    <img src="<?= asset('assets/room-images/2br-1.png') ?>" alt="Two-Bedroom Preview" />
+                    <img src="<?= asset('assets/2BR Type/2BR front.png') ?>" alt="Two-Bedroom Preview" />
                     <span class="unit-card-thumb-overlay">2 Bedroom</span>
                   </div>
                   <div class="unit-card-body">

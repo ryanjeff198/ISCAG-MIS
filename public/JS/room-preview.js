@@ -50,8 +50,8 @@ const ROOM_DATA = {
     price: '₱7,500 / month',
     capacity: 'Larger families (3–5 persons)',
     description: 'A spacious two-bedroom apartment designed for growing families. Includes a master bedroom, a second bedroom, a full living and dining area, a complete kitchen, and a bathroom. Ideal for families seeking comfort and privacy within the community housing complex.',
-    images: ['room-images/2br-1.png', 'room-images/2br-2.png'],
-    imageCaptions: ['Living & Dining Area', 'Master Bedroom'],
+    images: ['2BR Type/2BR 1.png', '2BR Type/2BR front.png', '1BR Type/1BR 3.jpg', '2BR Type/2BR 4.png'],
+    imageCaptions: ['Kitchen', 'Living Room', 'Sleeping Room', 'Shower & Bath'],
     features: [
       { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '50 sqm' },
       { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V7H1v10h22v-6c0-2.21-1.79-4-4-4z"/></svg>', label: 'Bedrooms', value: '2 (separate)' },
