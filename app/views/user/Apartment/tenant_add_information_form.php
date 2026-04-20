@@ -46,6 +46,18 @@ if ($userId) {
   <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>" />
   <style>
     /* ═══════════════════════════════════════════
+       HIDE NUMBER INPUT SCROLL ARROWS
+       ═══════════════════════════════════════════ */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield; /* Firefox */
+    }
+
+    /* ═══════════════════════════════════════════
        STEPPER PROGRESS BAR
        ═══════════════════════════════════════════ */
     .stepper-wrapper {
@@ -1879,10 +1891,8 @@ if ($userId) {
                   <td class="field-label">Occupation:</td>
                   <td class="field-value"><input type="text" placeholder="Current job or occupation" id="occupation" />
                   </td>
-                  <td class="field-label">Monthly Income:</td>
-                  <td class="field-value"><input type="number" placeholder="₱ 0.00" id="monthly-income" /></td>
                   <td class="field-label">Company Name:</td>
-                  <td class="field-value"><input type="text" placeholder="Employer / Company" id="company" /></td>
+                  <td class="field-value" colspan="3"><input type="text" placeholder="Employer / Company" id="company" /></td>
                 </tr>
               </table>
 
