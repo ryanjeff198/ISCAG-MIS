@@ -33,8 +33,8 @@ const ROOM_DATA = {
     price: '₱5,000 / month',
     capacity: 'Small families (2–3 persons)',
     description: 'A comfortable one-bedroom apartment ideal for small families or couples who prefer a separate sleeping area. Features a distinct living room, a private bedroom, a full bathroom, and a dining-kitchen area with ample counter space.',
-    images: ['room-images/1br-1.png', 'room-images/1br-2.png'],
-    imageCaptions: ['Bedroom', 'Living & Dining Area'],
+    images: ['1BR Type/1BR 1.jpg', '1BR Type/1BR 2.jpg', '1BR Type/1BR 3.jpg', '1BR Type/1BR 4.jpg'],
+    imageCaptions: ['Kitchen & Living room', 'Living room & Bedroom', 'Sleeping Room', 'Hallway'],
     features: [
       { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '35 sqm' },
       { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V7H1v10h22v-6c0-2.21-1.79-4-4-4z"/></svg>', label: 'Bedrooms', value: '1 (separate)' },
