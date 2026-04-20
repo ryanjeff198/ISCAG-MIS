@@ -52,9 +52,28 @@ body {
   object-fit: cover;
 }
 
+/* HOME LINK */
+.dev-home-link {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dev-home-link:hover {
+  text-decoration: underline;
+}
+
 /* RIGHT SIDE (FORM) */
 .dev-login-right {
   flex: 1;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -159,11 +178,12 @@ body {
 <!-- SPLIT -->
 <div class="dev-login-split">
   <div class="dev-login-left">
-    <img src="<?= asset('assets/bgcover.png') ?>" alt="ISCAG Philippines" class="dev-login-bg">
+    <img src="<?= asset('assets/ISCAG BG.png') ?>" alt="ISCAG Philippines" class="dev-login-bg">
   </div>
 
   <!-- Log In form -->
   <div class="dev-login-right">
+    <a href="<?= url('/') ?>" class="dev-home-link"><i class="bi bi-arrow-left"></i> Home</a>
     <div class="dev-login-form">
 
       <h1 class="dev-login-title">Log in</h1>

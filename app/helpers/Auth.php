@@ -53,27 +53,32 @@ class Auth
     }
 
     /**
-     * Protect route: Hide with 404 if not authenticated.
+     * Protect route: Hide with redirect if not authenticated.
      */
     public static function protect(): void
     {
         if (!self::check()) {
-            // Temporarily disabled for debugging
-            // require_once BASE_PATH . '/app/controllers/ErrorController.php';
-            // ErrorController::show404();
+            header('Location: ' . url('/login'));
+            exit;
         }
     }
 
     /**
-     * Protect route by role: Hide with 404 if role doesn't match.
+     * Protect route by role: Hide with redirect if role doesn't match.
      */
     public static function protectRole(string|array $roles): void
     {
         self::protect();
         if (!self::hasRole($roles)) {
-            // Temporarily disabled for debugging
-            // require_once BASE_PATH . '/app/controllers/ErrorController.php';
-            // ErrorController::show404();
+            // Redirect unauthorized roles back to their dashboard
+            // Admins go to admin dashboard, Users go to user dashboard
+            $role = self::role();
+            if ($role === 'Admin' || str_starts_with($role, 'Staff_')) {
+                header('Location: ' . url('/admin/dashboard'));
+            } else {
+                header('Location: ' . url('/user/dashboard'));
+            }
+            exit;
         }
     }
 }

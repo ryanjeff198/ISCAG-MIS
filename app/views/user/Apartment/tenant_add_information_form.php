@@ -46,6 +46,18 @@ if ($userId) {
   <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>" />
   <style>
     /* ═══════════════════════════════════════════
+       HIDE NUMBER INPUT SCROLL ARROWS
+       ═══════════════════════════════════════════ */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield; /* Firefox */
+    }
+
+    /* ═══════════════════════════════════════════
        STEPPER PROGRESS BAR
        ═══════════════════════════════════════════ */
     .stepper-wrapper {
@@ -1879,10 +1891,8 @@ if ($userId) {
                   <td class="field-label">Occupation:</td>
                   <td class="field-value"><input type="text" placeholder="Current job or occupation" id="occupation" />
                   </td>
-                  <td class="field-label">Monthly Income:</td>
-                  <td class="field-value"><input type="number" placeholder="₱ 0.00" id="monthly-income" /></td>
                   <td class="field-label">Company Name:</td>
-                  <td class="field-value"><input type="text" placeholder="Employer / Company" id="company" /></td>
+                  <td class="field-value" colspan="3"><input type="text" placeholder="Employer / Company" id="company" /></td>
                 </tr>
               </table>
 
@@ -1916,7 +1926,7 @@ if ($userId) {
                     </svg>
                   </div>
                   <div class="unit-card-thumb">
-                    <img src="<?= asset('assets/room-images/studio-1.png') ?>" alt="Studio Preview" />
+                    <img src="<?= asset('assets/Studio Type/Studio type front.jpg') ?>" alt="Studio Preview" />
                     <span class="unit-card-thumb-overlay">Studio</span>
                   </div>
                   <div class="unit-card-body">
@@ -1940,7 +1950,7 @@ if ($userId) {
                     </svg>
                   </div>
                   <div class="unit-card-thumb">
-                    <img src="<?= asset('assets/room-images/1br-1.png') ?>" alt="One-Bedroom Preview" />
+                    <img src="<?= asset('assets/1BR Type/1BR front.jpg') ?>" alt="One-Bedroom Preview" />
                     <span class="unit-card-thumb-overlay">1 Bedroom</span>
                   </div>
                   <div class="unit-card-body">
@@ -1964,7 +1974,7 @@ if ($userId) {
                     </svg>
                   </div>
                   <div class="unit-card-thumb">
-                    <img src="<?= asset('assets/room-images/2br-1.png') ?>" alt="Two-Bedroom Preview" />
+                    <img src="<?= asset('assets/2BR Type/2BR front.png') ?>" alt="Two-Bedroom Preview" />
                     <span class="unit-card-thumb-overlay">2 Bedroom</span>
                   </div>
                   <div class="unit-card-body">
@@ -2210,7 +2220,7 @@ if ($userId) {
     </div><!-- /.main-content -->
   </div><!-- /.app-wrapper -->
 
-  <script src="<?= asset('JS/room-preview.js') ?>"></script>
+  <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
   <script>
     // ═══ DATA HELPERS ═══
     const STORAGE_KEYS = {
@@ -2783,7 +2793,7 @@ if ($userId) {
     function previewRoom(unitType) {
       openRoomPreview(unitType, {
         availableCount: unitAvailability[unitType] || 0,
-        basePath: 'assets/room-images/',
+        basePath: '<?= asset('assets/') ?>',
         selectLabel: 'Select This Unit',
         onSelect: function(type) {
           const radioMap = {

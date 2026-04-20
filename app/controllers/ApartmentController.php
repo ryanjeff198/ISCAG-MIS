@@ -6,12 +6,12 @@ require_once BASE_PATH . '/app/helpers/Auth.php';
 class ApartmentController extends Controller {
 
     public function apply() {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Applicant']);
         $this->view('user/Apartment/tenant_add_information_form');
     }
 
     public function status() {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Applicant']);
         $userId = $_SESSION['user_id'];
         $model = new ApartmentApp();
         $application = $model->getApplication($userId);
@@ -31,7 +31,7 @@ class ApartmentController extends Controller {
     }
 
     public function save() {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Applicant']);
         header('Content-Type: application/json');
         $userId = $_SESSION['user_id'];
         $body   = json_decode(file_get_contents('php://input'), true);
@@ -60,7 +60,7 @@ class ApartmentController extends Controller {
     }
 
     public function handleUpload() {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Applicant']);
         header('Content-Type: application/json');
         $userId = $_SESSION['user_id'];
         $type   = $_POST['type'] ?? 'picture';
@@ -150,7 +150,7 @@ class ApartmentController extends Controller {
     }
 
     public function finalizeSubmission() {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Applicant']);
         header('Content-Type: application/json');
         $userId = $_SESSION['user_id'];
         

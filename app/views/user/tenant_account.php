@@ -110,7 +110,7 @@ $phpUser = [
 
                     <!-- gradient banner strip -->
                     <div
-                        style="background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary-light) 100%);height:72px;position:relative;overflow:hidden;">
+                        style="background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary-light) 100%);height:80px;position:relative;">
                         <div
                             style="position:absolute;right:-20px;bottom:-20px;width:140px;height:140px;border-radius:50%;background:rgba(201,168,76,0.12);">
                         </div>
@@ -119,14 +119,14 @@ $phpUser = [
                         </div>
                     </div>
 
-                    <div style="padding:0 28px 24px;">
+                    <div style="padding:20px 28px 24px;">
 
                         <!-- avatar row -->
                         <div
-                            style="display:flex;align-items:flex-end;gap:20px;margin-top:-44px;margin-bottom:16px;flex-wrap:wrap;">
-                            <div style="flex-shrink:0;text-align:center;">
+                            style="display:flex;align-items:center;gap:20px;margin-bottom:16px;flex-wrap:wrap;">
+                            <div style="flex-shrink:0;text-align:center;position:relative;z-index:2;">
                                 <div class="profile-avatar-lg" id="profile-avatar-lg"
-                                    style="overflow:hidden;margin:0 auto 8px;width:88px;height:88px;font-size:2rem;border:3px solid white;box-shadow:0 2px 12px rgba(0,0,0,0.15);">
+                                    style="overflow:hidden;margin:0 auto 8px;width:88px;height:88px;font-size:2rem;border:3px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.05);">
                                     MU</div>
                                 <input type="file" id="avatar-input" accept="image/*" style="display:none;" />
                                 <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -145,12 +145,19 @@ $phpUser = [
                             </div>
 
                             <!-- name / badges / progress -->
-                            <div style="flex:1;min-width:220px;padding-top:48px;">
+                            <div style="flex:1;min-width:220px;">
                                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
                                     <h4 style="font-family:'Lora',serif;font-weight:700;color:var(--primary-dark);margin:0;font-size:1.15rem;"
                                         id="profile-fullname">Muhammad Usman</h4>
+                                    <span
+                                        style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(46,125,85,0.1);color:var(--success);">
+                                        <span style="width:8px;height:8px;background:currentColor;border-radius:50%;"></span>
+                                        Active</span>
                                     <span class="profile-complete-badge" id="profile-badge"
-                                        style="background:rgba(139,46,46,0.1);color:var(--danger);">🔒 Incomplete</span>
+                                        style="background:rgba(139,46,46,0.1);color:var(--danger);display:inline-flex;align-items:center;gap:6px;margin-left:auto;">
+                                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg>
+                                        Incomplete
+                                    </span>
                                 </div>
                                 <p style="color:var(--text-muted);font-size:0.83rem;margin:0 0 10px;"
                                     id="profile-email">musman@example.com</p>
@@ -158,14 +165,14 @@ $phpUser = [
                                 <!-- info badges -->
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                                     <span id="role-badge"
-                                        style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(199,154,43,0.12);color:var(--warning);">⏳
+                                        style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(199,154,43,0.12);color:var(--warning);">
+                                        <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm.5 13H11v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                                         Applicant</span>
                                     <span
-                                        style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(46,125,85,0.1);color:var(--success);">✅
-                                        Active</span>
-                                    <span
                                         style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(199,154,43,0.12);color:var(--warning);"
-                                        id="member-since-badge">📅 Member Since —</span>
+                                        id="member-since-badge">
+                                        <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+                                        Member Since —</span>
                                 </div>
 
                                 <!-- profile completion bar -->
@@ -227,7 +234,9 @@ $phpUser = [
                                 Profile</button>
                             <button type="button"
                                 style="padding:8px 18px;border-radius:8px;border:1.5px solid var(--border);background:white;color:var(--text-muted);font-size:0.82rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.18s;"
-                                id="view-activity-btn">📊 View Activity</button>
+                                id="view-activity-btn">
+                                <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/></svg>
+                                View Activity</button>
                         </div>
 
                         <!-- last activity + contact -->
@@ -646,7 +655,7 @@ $phpUser = [
         }
         const roleBadge = document.getElementById('role-badge');
         if (roleBadge && SESSION_ROLE) {
-            roleBadge.innerHTML = '✅ ' + SESSION_ROLE;
+            roleBadge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;margin-right:4px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' + SESSION_ROLE;
             roleBadge.style.background = 'rgba(23,107,69,0.1)';
             roleBadge.style.color = 'var(--primary)';
         }
@@ -660,8 +669,8 @@ $phpUser = [
             localStorage.setItem('mis_member_since', d);
             return d;
         })();
-        document.getElementById('member-since-badge').textContent =
-            '\uD83D\uDCC5 Member Since ' + new Date(memberSince).toLocaleDateString('en-US', {
+        document.getElementById('member-since-badge').innerHTML =
+            '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;margin-right:4px;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg> Member Since ' + new Date(memberSince).toLocaleDateString('en-US', {
                 month: 'short',
                 year: 'numeric'
             });
@@ -851,9 +860,10 @@ $phpUser = [
         let snapshot = {};
 
         if (user.profileComplete) {
-            badge.textContent = '✅ Profile Complete';
+            badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Profile Complete';
             badge.style.background = 'rgba(46,125,85,0.1)';
             badge.style.color = 'var(--success)';
+            badge.style.marginLeft = 'auto';
         }
 
         function openModal() {

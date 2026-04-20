@@ -124,6 +124,15 @@ class User
         return $stmt->execute(['password' => $hashed, 'confirmpass' => $hashed, 'email' => $email]);
     }
 
+    /**
+     * Update user role.
+     */
+    public function updateRole(int $userId, string $role): bool
+    {
+        $stmt = $this->db->prepare("UPDATE {$this->table} SET role = :role WHERE tenant_id = :id");
+        return $stmt->execute(['role' => $role, 'id' => $userId]);
+    }
+
     public function getAdditionalInfo($userId)
     {
         $stmt = $this->db->prepare("SELECT * FROM tenant_user_profiles WHERE tenant_id = :userId LIMIT 1");

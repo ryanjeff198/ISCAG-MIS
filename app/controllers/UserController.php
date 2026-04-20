@@ -203,4 +203,61 @@ class UserController extends Controller
         Auth::protectRole(['Applicant', 'Tenant']);
         $this->view('user/Da\'awah/Female/user_form-female-counseling');
     }
+
+    public function checkStatus(): void
+    {
+        Auth::protectRole(['Applicant', 'Tenant']);
+        $userId = $_SESSION['user_id'] ?? 0;
+        
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        
+        $userModel = new User();
+        $notifModel = new Notification();
+        
+        $user = $userModel->findById($userId);
+        $notifications = $notifModel->getUserNotifications($userId);
+        
+        // Sync session role with DB immediately
+        $dbRole = $user['role'] ?? 'Applicant';
+        if ($dbRole !== ($_SESSION['role'] ?? '')) {
+            $_SESSION['role'] = $dbRole;
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode([
+            'role' => $dbRole,
+            'notifications' => $notifications
+        ]);
+        exit;
+    }
+
+    public function markNotificationRead(): void
+    {
+        Auth::protectRole(['Applicant', 'Tenant']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $notifId = $input['id'] ?? 0;
+            $userId = $_SESSION['user_id'] ?? 0;
+            
+            if ($notifId && $userId) {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notifModel = new Notification();
+                $notifModel->markAsRead($notifId, $userId);
+                
+                // If the session role is Applicant but DB says Tenant, update session now
+                require_once BASE_PATH . '/app/models/User.php';
+                $userModel = new User();
+                $user = $userModel->findById($userId);
+                if ($user && $user['role'] === 'Tenant') {
+                    $_SESSION['role'] = 'Tenant';
+                }
+                
+                echo json_encode(['success' => true]);
+                exit;
+            }
+        }
+        echo json_encode(['success' => false]);
+        exit;
+    }
 }
