@@ -42,6 +42,7 @@ body {
 /* LEFT SIDE */
 .auth-left {
   flex: 1;
+  position: relative;
   background: var(--green-dark);
 }
 
@@ -51,9 +52,28 @@ body {
   object-fit: cover;
 }
 
+/* HOME LINK */
+.auth-home-link {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.auth-home-link:hover {
+  text-decoration: underline;
+}
+
 /* RIGHT SIDE */
 .auth-right {
   flex: 1;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -216,10 +236,11 @@ body {
 
   <div class="auth-split">
     <div class="auth-left">
-      <img src="<?= asset('assets/bg-image.png') ?>" alt="ISCAG Philippines">
+      <img src="<?= asset('assets/ISCAG BG.png') ?>" alt="ISCAG Philippines">
     </div>
 
     <div class="auth-right">
+      <a href="<?= url('/') ?>" class="auth-home-link"><i class="bi bi-arrow-left"></i> Home</a>
       <div class="auth-card register-card">
 
         <h1 class="auth-title">Create Account</h1>
