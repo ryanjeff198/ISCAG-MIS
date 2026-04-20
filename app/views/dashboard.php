@@ -292,7 +292,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
           <div class="hub-card">
             <div class="hub-header">
               <div class="hub-icon" style="background:var(--accent);"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h9zm-9-2h10V7H12v9zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></div>
-              <div class="hub-title"><h3>Financial Control</h3></div>
+              <div class="hub-title"><h3>Financial Management</h3></div>
             </div>
             <div class="hub-links">
               <a href="<?= url('/admin/mis_admin/billing') ?>" class="hub-link">

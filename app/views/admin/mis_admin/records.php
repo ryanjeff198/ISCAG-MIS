@@ -19,7 +19,7 @@
     <main class="main-content">
       <div class="top-bar">
         <div class="top-bar-left">
-          <img src="<?= asset('assets/logo.jpg') ?>" style="width:40px;height:40px;border-radius:8px;margin-right:12px;" alt="Logo" />
+          
           <div>
             <div class="top-bar-title">User Management</div>
             <div class="top-bar-subtitle">View and manage all registered user accounts</div>
@@ -336,3 +336,4 @@
 </body>
 
 </html>
+

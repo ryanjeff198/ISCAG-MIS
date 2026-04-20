@@ -56,11 +56,11 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
             </div>
         </div>
 
-        <!-- FINANCE (Financial Control) -->
+        <!-- FINANCE (Financial Management) -->
         <div class="nav-dropdown-wrap" id="finance-wrap">
             <button class="nav-dropdown-trigger <?= $is_finance_open ? 'open' : '' ?>" id="finance-trigger" data-href="<?= url('/admin/mis_admin/billing') ?>">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h9zm-9-2h10V7H12v9zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                <span class="nav-item-label">Financial Control</span>
+                <span class="nav-item-label">Financial Management</span>
                 <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
             </button>
             <div class="nav-dropdown <?= $is_finance_open ? 'open' : '' ?>" id="finance-menu">

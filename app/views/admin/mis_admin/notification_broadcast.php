@@ -35,7 +35,7 @@ if (!function_exists('url')) {
         <main class="main-content">
             <div class="top-bar">
                 <div class="top-bar-left">
-                    <img src="<?= asset('assets/logo.jpg') ?>" style="width:40px;height:40px;border-radius:8px;margin-right:12px;" alt="Logo" />
+                    
                     <div>
                         <div class="top-bar-title">Notification Broadcast Hub</div>
                         <div class="top-bar-subtitle">Create and send instant alerts to specific users or entire departments.</div>
@@ -312,3 +312,4 @@ if (!function_exists('url')) {
     </script>
 </body>
 </html>
+
