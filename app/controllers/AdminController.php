@@ -14,16 +14,51 @@ class AdminController extends Controller
     public function apartment(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/apartment_dashboard');
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_dashboard');
+    }
+
+    public function apartmentInfo(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartments_info');
+    }
+
+    public function apartmentProfile(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_profile');
+    }
+
+    public function apartmentNotifications(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_notification');
+    }
+
+    public function apartmentSoa(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/statement_of_account');
     }
 
     public function payment(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/payment');
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/payment');
     }
 
     // MIS Admin Modules
+    public function staffApartmentConfirmation(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        $model = new ApartmentApp();
+        $reports = $model->getAllApplications();
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_confirmation', [
+            'active_page' => 'apartment_confirmation',
+            'reports' => $reports
+        ]);
+    }
+
     public function apartmentRecords(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         $this->view('admin/mis_admin/apartment_records', ['active_page' => 'apartment_records']);

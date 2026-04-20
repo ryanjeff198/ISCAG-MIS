@@ -49,8 +49,13 @@ $routes = [
     '/user/services/counseling/female' => ['UserController', 'femaleCounseling'],
 
     // Admin Modules (New)
-    '/admin/apartment'  => ['AdminController', 'apartment'],
-    '/admin/payment'    => ['AdminController', 'payment'],
+    '/admin/apartment'               => ['AdminController', 'apartment'],
+    '/admin/apartment/info'          => ['AdminController', 'apartmentInfo'],
+    '/admin/apartment/profile'       => ['AdminController', 'apartmentProfile'],
+    '/admin/apartment/notifications' => ['AdminController', 'apartmentNotifications'],
+    '/admin/apartment/confirmation'  => ['AdminController', 'staffApartmentConfirmation'],
+    '/admin/apartment/soa'           => ['AdminController', 'apartmentSoa'],
+    '/admin/payment'                 => ['AdminController', 'payment'],
 
     // MIS Admin Hub Routes
     '/admin/mis_admin/apartment_records'   => ['AdminController', 'apartmentRecords'],
