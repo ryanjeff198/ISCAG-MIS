@@ -110,7 +110,7 @@ $phpUser = [
 
                     <!-- gradient banner strip -->
                     <div
-                        style="background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary-light) 100%);height:72px;position:relative;overflow:hidden;">
+                        style="background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary-light) 100%);height:80px;position:relative;">
                         <div
                             style="position:absolute;right:-20px;bottom:-20px;width:140px;height:140px;border-radius:50%;background:rgba(201,168,76,0.12);">
                         </div>
@@ -119,14 +119,14 @@ $phpUser = [
                         </div>
                     </div>
 
-                    <div style="padding:0 28px 24px;">
+                    <div style="padding:20px 28px 24px;">
 
                         <!-- avatar row -->
                         <div
-                            style="display:flex;align-items:flex-end;gap:20px;margin-top:-44px;margin-bottom:16px;flex-wrap:wrap;">
-                            <div style="flex-shrink:0;text-align:center;">
+                            style="display:flex;align-items:center;gap:20px;margin-bottom:16px;flex-wrap:wrap;">
+                            <div style="flex-shrink:0;text-align:center;position:relative;z-index:2;">
                                 <div class="profile-avatar-lg" id="profile-avatar-lg"
-                                    style="overflow:hidden;margin:0 auto 8px;width:88px;height:88px;font-size:2rem;border:3px solid white;box-shadow:0 2px 12px rgba(0,0,0,0.15);">
+                                    style="overflow:hidden;margin:0 auto 8px;width:88px;height:88px;font-size:2rem;border:3px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.05);">
                                     MU</div>
                                 <input type="file" id="avatar-input" accept="image/*" style="display:none;" />
                                 <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
@@ -145,7 +145,7 @@ $phpUser = [
                             </div>
 
                             <!-- name / badges / progress -->
-                            <div style="flex:1;min-width:220px;padding-top:48px;">
+                            <div style="flex:1;min-width:220px;">
                                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
                                     <h4 style="font-family:'Lora',serif;font-weight:700;color:var(--primary-dark);margin:0;font-size:1.15rem;"
                                         id="profile-fullname">Muhammad Usman</h4>

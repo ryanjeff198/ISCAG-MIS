@@ -424,7 +424,7 @@
     </div>
   </div>
 
-  <script src="<?= asset('JS/room-preview.js') ?>"></script>
+  <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     initAdminData();
@@ -637,7 +637,7 @@
       if (typeof openRoomPreview === 'function') {
         openRoomPreview(unitType, {
           availableCount: availCount,
-          basePath: '../../user/Apartment/assets/room-images/',
+          basePath: '<?= asset('assets/') ?>',
           selectLabel: 'View Unit Details',
           onSelect: function (type) {
             showToast('📋 Unit details for ' + type.toUpperCase() + ' — view only in Staff Admin mode.', 'var(--info)');

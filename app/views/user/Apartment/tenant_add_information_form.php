@@ -1916,7 +1916,7 @@ if ($userId) {
                     </svg>
                   </div>
                   <div class="unit-card-thumb">
-                    <img src="<?= asset('assets/room-images/studio-1.png') ?>" alt="Studio Preview" />
+                    <img src="<?= asset('assets/Studio Type/Studio type front.jpg') ?>" alt="Studio Preview" />
                     <span class="unit-card-thumb-overlay">Studio</span>
                   </div>
                   <div class="unit-card-body">
@@ -2210,7 +2210,7 @@ if ($userId) {
     </div><!-- /.main-content -->
   </div><!-- /.app-wrapper -->
 
-  <script src="<?= asset('JS/room-preview.js') ?>"></script>
+  <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
   <script>
     // ═══ DATA HELPERS ═══
     const STORAGE_KEYS = {
@@ -2783,7 +2783,7 @@ if ($userId) {
     function previewRoom(unitType) {
       openRoomPreview(unitType, {
         availableCount: unitAvailability[unitType] || 0,
-        basePath: 'assets/room-images/',
+        basePath: '<?= asset('assets/') ?>',
         selectLabel: 'Select This Unit',
         onSelect: function(type) {
           const radioMap = {
