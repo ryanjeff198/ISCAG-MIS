@@ -177,6 +177,12 @@ class ApartmentApp {
         return $stmt->execute($params);
     }
 
+    public function getTenantIdByApplicationId($applicationId) {
+        $stmt = $this->db->prepare("SELECT tenant_id FROM apartmentsapp WHERE application_id = :id LIMIT 1");
+        $stmt->execute(['id' => $applicationId]);
+        return $stmt->fetchColumn();
+    }
+
     // ─── PARKING METHODS ──────────────────────────
     public function getAllParkingApplications() {
         $sql = "

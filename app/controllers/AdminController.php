@@ -80,8 +80,27 @@ class AdminController extends Controller
         $id = $_GET['id'] ?? null;
         if ($id) {
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
-            $model = new ApartmentApp();
-            $model->updateApplicationStatus($id, 'Approved');
+            require_once BASE_PATH . '/app/models/User.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            
+            $appModel = new ApartmentApp();
+            $appModel->updateApplicationStatus($id, 'Approved');
+            
+            $tenantId = $appModel->getTenantIdByApplicationId($id);
+            if ($tenantId) {
+                // Update role
+                $userModel = new User();
+                $userModel->updateRole($tenantId, 'Tenant');
+                
+                // Trigger real-time feedback notification
+                $notifModel = new Notification();
+                $notifModel->create(
+                    $tenantId,
+                    'Congratulations!',
+                    'You are now officially a tenant. Your account has been successfully approved.',
+                    'approval'
+                );
+            }
         }
         header('Location: ' . url('/admin/mis_admin/apartment_confirmation'));
     }

@@ -592,7 +592,8 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
           </div>
         </div>
 
-        <!-- SERVICE CARDS -->
+        <?php if (($_SESSION['role'] ?? '') === 'Applicant'): ?>
+        <!-- SERVICE CARDS (APPLICANT ONLY) -->
         <h6
           style="font-family:'Lora',serif;font-size:0.9rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">
           Available Services</h6>
@@ -630,6 +631,89 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
             </div>
           </div>
         </div>
+        <?php else: ?>
+        <!-- TENANT DASHBOARD (TENANT ONLY) -->
+        <div class="section-card">
+            <div class="section-card-header" style="background: linear-gradient(135deg, #0f5c3a, #176b45); color: white;">
+                <h6 style="color: white; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;">
+                        <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm5 15h-2v-6H9v6H7v-7.81l5-4.5 5 4.5V18z"/>
+                    </svg>
+                    My Apartment Details
+                </h6>
+            </div>
+            <div class="section-card-body">
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">You are now an official tenant. Your account has full access to the MIS Tenant features. You can view your current unit assignment and lease details below.</p>
+                <div style="margin-top: 16px;">
+                    <a href="<?= url('/user/apartment/info') ?>" class="btn-topbar primary" style="text-decoration: none; display: inline-block;">
+                        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        View Apartment Details
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tenant Onboarding Guide Modal -->
+        <div id="tenant-onboarding-modal" style="
+            position: fixed; inset: 0; z-index: 99999;
+            display: none; align-items: center; justify-content: center;
+            background: rgba(15,30,22,0.6); backdrop-filter: blur(6px);
+            opacity: 0; transition: opacity 0.3s ease;
+        ">
+            <div style="
+                background: white; border-radius: 16px; width: 100%; max-width: 500px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.25); overflow: hidden;
+                transform: translateY(30px); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            " id="onboarding-modal-content">
+                <div style="height: 4px; background: linear-gradient(90deg, #0f5c3a, #c79a2b);"></div>
+                <div style="padding: 32px 28px 24px; text-align: center;">
+                    <svg viewBox="0 0 24 24" style="width: 64px; height: 64px; fill: #2f8a60; margin: 0 auto 16px;">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                    </svg>
+                    <h4 style="font-family: 'Lora', serif; font-size: 1.4rem; font-weight: 700; color: #0f5c3a; margin: 0 0 10px;">Welcome to Your Tenant Dashboard!</h4>
+                    <p style="font-size: 0.9rem; color: #6f7f78; line-height: 1.6; margin: 0 0 16px;">Now that your application is approved, your interface has automatically transformed to give you access to all tenant services.</p>
+                    
+                    <div style="text-align: left; background: #f8faf9; padding: 16px; border-radius: 8px; border: 1px solid #e8ece9;">
+                        <ul style="font-size: 0.85rem; color: #1f2e2a; line-height: 1.6; margin: 0; padding-left: 18px;">
+                            <li style="margin-bottom: 6px;"><strong>Navigation Guide:</strong> Check the left sidebar to access your Apartment Information and Parking features.</li>
+                            <li style="margin-bottom: 6px;"><strong>Unit Details:</strong> Click "View Apartment Details" to see your current assignment.</li>
+                            <li><strong>Policies:</strong> Please adhere to all ISCAG community guidelines, maintenance rules, and timely payment of bills.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; padding: 0 28px 24px; justify-content: center;">
+                    <button id="btn-start-exploring" style="
+                        padding: 10px 24px; border-radius: 8px; border: none;
+                        background: linear-gradient(135deg, #0f5c3a, #2f8a60);
+                        color: white; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+                        box-shadow: 0 4px 12px rgba(15,92,58,0.3); transition: all 0.2s;
+                    ">Got it / Start Exploring</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('tenant_onboarding_completed')) {
+                const modal = document.getElementById('tenant-onboarding-modal');
+                const content = document.getElementById('onboarding-modal-content');
+                
+                modal.style.display = 'flex';
+                // Trigger reflow
+                void modal.offsetWidth;
+                modal.style.opacity = '1';
+                content.style.transform = 'translateY(0)';
+                
+                document.getElementById('btn-start-exploring').addEventListener('click', () => {
+                    modal.style.opacity = '0';
+                    content.style.transform = 'translateY(30px)';
+                    setTimeout(() => modal.style.display = 'none', 400);
+                    localStorage.setItem('tenant_onboarding_completed', 'true');
+                });
+            }
+        });
+        </script>
+        <?php endif; ?>
 
       </div>
     </div>

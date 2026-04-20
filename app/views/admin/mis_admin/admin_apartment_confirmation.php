@@ -679,13 +679,31 @@
       overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.remove(); });
     }
 
+    function pushAuditLog(action, details) {
+      try {
+        let logs = JSON.parse(localStorage.getItem('mis_audit_logs') || '[]');
+        logs.unshift({
+          admin_id: '<?= addslashes($_SESSION['name'] ?? 'MIS-ADMIN') ?>',
+          module: 'APARTMENT',
+          action: action,
+          timestamp: new Date().toISOString(),
+          details: details
+        });
+        localStorage.setItem('mis_audit_logs', JSON.stringify(logs));
+      } catch(e) { console.warn('Audit log write failed:', e); }
+    }
+
     function approveApp(id) {
-      if (confirm('Approve these application details?')) window.location.href = '<?= url('/admin/mis_admin/apartment_confirmation/approve') ?>?id=' + id;
+      if (confirm('Approve these application details?')) {
+        pushAuditLog('APPROVE_APP', 'Approved apartment application ID: ' + id + ' — role upgraded to Tenant');
+        window.location.href = '<?= url('/admin/mis_admin/apartment_confirmation/approve') ?>?id=' + id;
+      }
     }
     function rejectApp(id) {
       const reasonEl = document.getElementById('reject-reason');
       const reason = reasonEl ? reasonEl.value : 'Other';
       if (confirm(`Reject this application for: "${reason}"?`)) {
+        pushAuditLog('REJECT_APP', 'Rejected apartment application ID: ' + id + ' — Reason: ' + reason);
         window.location.href = `<?= url('/admin/mis_admin/apartment_confirmation/reject') ?>?id=${id}&reason=${encodeURIComponent(reason)}`;
       }
     }

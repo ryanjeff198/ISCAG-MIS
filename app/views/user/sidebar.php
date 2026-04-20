@@ -124,6 +124,7 @@ $active_page = $active_page ?? 'dashboard';
                 </svg>
             </button>
             <div class="nav-dropdown <?= in_array($active_page, ['apartment_apply', 'apartment_status', 'apartment_info', 'apartment_parking']) ? 'open' : '' ?>" id="apartment-menu">
+                <?php if (($_SESSION['role'] ?? '') === 'Applicant'): ?>
                 <a href="<?= url('/user/apartment/apply') ?>" class="<?= $active_page === 'apartment_apply' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path
@@ -138,6 +139,7 @@ $active_page = $active_page ?? 'dashboard';
                     </svg>
                     Application Status
                 </a>
+                <?php endif; ?>
                 <a href="<?= url('/user/apartment/info') ?>" class="<?= $active_page === 'apartment_info' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z" />
@@ -203,4 +205,119 @@ $active_page = $active_page ?? 'dashboard';
 .nav-dropdown-wrap.locked .nav-lock-badge { display: inline-flex !important; }
 .sidebar.collapsed .nav-lock-badge { display: none !important; }
 .sidebar.collapsed .nav-lock-icon { display: none !important; }
+
+/* ── Approval Modal CSS ── */
+#approval-modal {
+    position: fixed; inset: 0; z-index: 99999;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(15,30,22,0.6); backdrop-filter: blur(6px);
+    opacity: 0; transition: opacity 0.3s ease;
+}
+#approval-modal.show {
+    display: flex; opacity: 1;
+}
+.approval-modal-content {
+    background: white; border-radius: 16px; width: 100%; max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25); overflow: hidden;
+    transform: translateY(30px); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#approval-modal.show .approval-modal-content {
+    transform: translateY(0);
+}
+.approval-modal-header { height: 4px; background: linear-gradient(90deg,#0f5c3a,#c79a2b); }
+.approval-modal-body { padding: 32px 28px 24px; text-align: center; }
+.approval-modal-icon { width: 64px; height: 64px; fill: #2f8a60; margin: 0 auto 16px; }
+.approval-modal-title { font-family: 'Lora', serif; font-size: 1.4rem; font-weight: 700; color: #0f5c3a; margin: 0 0 10px; }
+.approval-modal-text { font-size: 0.9rem; color: #6f7f78; line-height: 1.6; margin: 0; }
+.approval-modal-footer { display: flex; gap: 10px; padding: 0 28px 24px; justify-content: center; }
+.approval-btn {
+    padding: 10px 24px; border-radius: 8px; border: none;
+    background: linear-gradient(135deg,#0f5c3a,#2f8a60);
+    color: white; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(15,92,58,0.3); transition: all 0.2s;
+}
+.approval-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15,92,58,0.4); }
 </style>
+
+<!-- ── Approval Modal HTML ── -->
+<div id="approval-modal">
+    <div class="approval-modal-content">
+        <div class="approval-modal-header"></div>
+        <div class="approval-modal-body">
+            <svg class="approval-modal-icon" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            <h4 class="approval-modal-title">Congratulations!</h4>
+            <p class="approval-modal-text">You are now officially a tenant. Your account has been successfully approved and all features are now unlocked.</p>
+        </div>
+        <div class="approval-modal-footer">
+            <button class="approval-btn" id="approval-continue-btn">Continue to Dashboard</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * ISCAG MIS — Real-Time Approval Poller
+ */
+(function() {
+    const currentRole = '<?= addslashes($_SESSION['role'] ?? "Applicant") ?>';
+    let approvalNotifId = null;
+
+    function checkUserStatus() {
+        fetch('<?= url("/user/status/check") ?>')
+            .then(res => res.json())
+            .then(data => {
+                // Find an unread approval notification
+                const notifs = data.notifications || [];
+                const approvalNotif = notifs.find(n => n.type === 'approval' && n.is_read == 0);
+                
+                if (approvalNotif) {
+                    approvalNotifId = approvalNotif.notification_id || approvalNotif.id;
+                    showApprovalModal();
+                } else if (data.role === 'Tenant' && currentRole !== 'Tenant') {
+                    // Fallback: if role changed but no notification found, force reload
+                    window.location.reload();
+                }
+                
+                // Update notification badge if element exists
+                const unreadCount = notifs.filter(n => n.is_read == 0).length;
+                window.MIS_UNREAD_COUNT = unreadCount;
+            })
+            .catch(err => console.error('Poller error:', err));
+    }
+
+    function showApprovalModal() {
+        const modal = document.getElementById('approval-modal');
+        if (modal && !modal.classList.contains('show')) {
+            modal.classList.add('show');
+        }
+    }
+
+    const continueBtn = document.getElementById('approval-continue-btn');
+    if (continueBtn) {
+        continueBtn.addEventListener('click', () => {
+            if (approvalNotifId) {
+                // Mark notification as read to avoid showing modal again
+                fetch('<?= url("/user/notifications/mark-read") ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: approvalNotifId })
+                }).then(() => {
+                    window.location.href = '<?= url("/user/dashboard") ?>';
+                });
+            } else {
+                window.location.href = '<?= url("/user/dashboard") ?>';
+            }
+        });
+    }
+
+    // Always check immediately on load to catch notifications
+    setTimeout(checkUserStatus, 800);
+
+    // Poll every 15 seconds if they are an Applicant waiting
+    if (currentRole === 'Applicant') {
+        setInterval(checkUserStatus, 15000);
+    }
+})();
+</script>
