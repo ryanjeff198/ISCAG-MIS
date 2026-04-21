@@ -186,6 +186,16 @@
       cursor: pointer;
     }
     .reject-select:focus { border-color: var(--danger); }
+
+    /* ── Hover Overrides for Apartment Staff ── */
+    .tab-btn:hover { color: var(--accent) !important; }
+    .tab-btn.active { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+
+    .btn-circle.eye:hover { background: rgba(199, 154, 43, 0.1) !important; }
+    .btn-circle.eye:hover svg { fill: var(--accent) !important; }
+    
+    .btn-circle.check:hover { background: rgba(199, 154, 43, 0.1) !important; }
+    .btn-circle.check:hover svg { fill: var(--accent) !important; }
   </style>
 </head>
 

@@ -348,10 +348,7 @@ function initLogoutModal() {
         <div style="background:white;border-radius:16px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;transform:translateY(20px);transition:transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
           <div style="height:4px;background:linear-gradient(90deg,#8b2e2e,#c79a2b);"></div>
           <div style="padding:32px 28px 24px;text-align:center;">
-            <svg viewBox="0 0 24 24" style="width:60px;height:60px;fill:#8b2e2e;margin-bottom:16px;">
-              <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-            </svg>
-            <h4 style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:#1f2e2a;margin:0 0 10px;">Sign Out</h4>
+            <h4 style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:#1f2e2a;margin:0 0 10px;">Log Out</h4>
             <p style="font-size:0.9rem;color:#6f7f78;margin:0;line-height:1.5;">Are you sure you want to log out of your account?</p>
           </div>
           <div style="display:flex;gap:10px;padding:0 28px 24px;justify-content:center;">

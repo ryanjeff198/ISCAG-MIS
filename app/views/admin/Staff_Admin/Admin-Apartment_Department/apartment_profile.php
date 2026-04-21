@@ -94,17 +94,18 @@
       padding: 9px 20px;
       border-radius: 8px;
       border: none;
-      background: linear-gradient(135deg, #a67c1b, var(--accent-light));
+      background: linear-gradient(135deg, #8a6b1a, #6d5414);
       color: white;
       font-size: 0.85rem;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(199, 154, 43, 0.3);
+      box-shadow: 0 4px 12px rgba(138, 107, 26, 0.3);
       font-family: inherit;
     }
 
     .btn-submit:hover {
-      box-shadow: 0 6px 20px rgba(199, 154, 43, 0.4);
+      background: linear-gradient(135deg, #a6811f, #8a6b1a);
+      box-shadow: 0 6px 20px rgba(138, 107, 26, 0.4);
       transform: translateY(-1px);
     }
 
@@ -138,6 +139,17 @@
       height: 20px;
       fill: white;
     }
+
+    /* ── Hover Overrides ── */
+    .tab-btn:hover { color: var(--accent) !important; }
+    .tab-btn.active { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+    
+    #edit-btn:hover,
+    button[onclick*="avatar-input"]:hover {
+      background: #b08925 !important;
+      box-shadow: 0 4px 15px rgba(138, 107, 26, 0.35) !important;
+      transform: translateY(-1px);
+    }
   </style>
 </head>
 
@@ -162,7 +174,7 @@
         <!-- PROFILE HEADER -->
         <div class="section-card" style="margin-bottom:24px;overflow:hidden;">
           <div
-            style="background:linear-gradient(135deg,#8a6b1a 0%,var(--accent-light) 100%);height:72px;position:relative;overflow:hidden;">
+            style="background:linear-gradient(135deg,#8a6b1a 0%,var(--accent-light) 100%);height:100px;position:relative;overflow:hidden;">
             <div
               style="position:absolute;right:-20px;bottom:-20px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.1);">
             </div>
@@ -176,10 +188,10 @@
                 </div>
                 <input type="file" id="avatar-input" accept="image/*" style="display:none;" />
                 <button onclick="document.getElementById('avatar-input').click()"
-                  style="margin-top:8px;padding:5px 12px;border-radius:6px;border:1.5px solid var(--accent);background:white;color:var(--accent);font-size:0.75rem;font-weight:700;cursor:pointer;">Edit
+                  style="margin-top:8px;padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:white;font-size:0.75rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(138, 107, 26, 0.25);">Edit
                   Photo</button>
               </div>
-              <div style="flex:1;min-width:220px;padding-top:36px;">
+              <div style="flex:1;min-width:220px;padding-top:48px;">
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
                   <h4
                     style="font-family:'Lora',serif;font-weight:700;color:var(--primary-dark);margin:0;font-size:1.15rem;"
@@ -231,7 +243,7 @@
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
               <button id="edit-btn" type="button"
-                style="font-size:0.82rem;padding:8px 18px;border-radius:8px;border:1.5px solid var(--accent);background:white;color:var(--accent);font-weight:700;cursor:pointer;font-family:inherit;">Update
+                style="font-size:0.82rem;padding:8px 18px;border-radius:8px;border:none;background:var(--accent);color:white;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(138, 107, 26, 0.25);">Update
                 Profile</button>
             </div>
           </div>

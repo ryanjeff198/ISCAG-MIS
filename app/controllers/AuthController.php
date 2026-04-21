@@ -39,6 +39,8 @@ class AuthController extends Controller
                 // Redirect based on role
                 if ($user['role'] === 'Admin') {
                     header('Location: ' . url('/admin/dashboard'));
+                } elseif ($user['role'] === 'Staff_Tenant') {
+                    header('Location: ' . url('/admin/apartment'));
                 } else {
                     header('Location: ' . url('/user/dashboard'));
                 }
@@ -209,6 +211,8 @@ class AuthController extends Controller
                 // Redirect based on role
                 if ($user['role'] === 'Admin') {
                     header('Location: ' . url('/admin/dashboard'));
+                } elseif ($user['role'] === 'Staff_Tenant') {
+                    header('Location: ' . url('/admin/apartment'));
                 } else {
                     header('Location: ' . url('/user/dashboard'));
                 }

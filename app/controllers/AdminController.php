@@ -8,6 +8,12 @@ class AdminController extends Controller
     public function dashboard(): void
     {
         Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
+        
+        if ($_SESSION['role'] === 'Staff_Tenant') {
+            header('Location: ' . url('/admin/apartment'));
+            exit;
+        }
+
         $this->view('admin/mis_admin/admin_dashboard', ['active_page' => 'admin_dashboard']);
     }
 
