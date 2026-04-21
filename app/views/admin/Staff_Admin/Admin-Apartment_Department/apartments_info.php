@@ -124,10 +124,17 @@
             margin-bottom: 16px;
         }
 
-        .unit-status-available { background: #e6f7ef; color: #176b45; }
-        .unit-status-occupied { background: #fff4e6; color: #b45d00; }
-        .unit-status-reserved { background: #eef2ff; color: #3730a3; }
-        .unit-status-maintenance { background: #fef2f2; color: #991b1b; }
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-available { background: rgba(46, 125, 85, 0.1); color: var(--success); }
+        .badge-occupied { background: rgba(199, 154, 43, 0.1); color: var(--accent); }
+        .badge-reserved { background: rgba(30, 95, 139, 0.1); color: var(--info); }
+        .badge-maintenance { background: rgba(139, 46, 46, 0.1); color: var(--danger); }
 
         /* Image Gallery in Modal */
         .image-gallery-grid {
@@ -341,17 +348,37 @@
                         <div class="form-group"><label class="form-label">Bathroom</label><input type="text" class="form-control" name="bathroom" id="t-bathroom"></div>
                     </div>
 
-                    <!-- Gallery Section -->
+                    <!-- Thumbnail Section -->
+                    <div class="form-group full" style="margin-top:20px;">
+                        <label class="form-label">Primary Thumbnail</label>
+                        <div style="display:flex; gap:16px; align-items:flex-start;">
+                            <div id="t-thumb-preview" style="width:120px; height:80px; border-radius:8px; background:#f0f2f1; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <span style="font-size:0.7rem; color:var(--text-muted);">No image</span>
+                            </div>
+                            <div style="flex:1;">
+                                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">This is the main image shown in the listing view.</p>
+                                <button type="button" class="btn-topbar" style="font-size:0.75rem; padding:6px 12px;" onclick="document.getElementById('thumb-upload').click()">
+                                    <svg viewBox="0 0 24 24" style="width:14px; margin-right:4px;"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                                    Upload Thumbnail
+                                </button>
+                                <input type="file" id="thumb-upload" accept="image/*" style="display:none;" onchange="handleThumbUpload(this)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Carousel Slides Section -->
                     <div id="type-gallery-section" style="margin-top:24px;">
-                        <label class="form-label">Photo Gallery</label>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <label class="form-label" style="margin:0;">Carousel Slides</label>
+                            <button type="button" class="btn-topbar" style="font-size:0.75rem; padding:6px 12px;" onclick="document.getElementById('gallery-upload').click()">
+                                <svg viewBox="0 0 24 24" style="width:14px; margin-right:4px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                                Add Slides
+                            </button>
+                        </div>
                         <div class="image-gallery-grid" id="image-gallery-grid">
                             <!-- JS populated -->
                         </div>
-                        <div class="upload-placeholder" onclick="document.getElementById('gallery-upload').click()" style="margin-top:16px;">
-                            <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:var(--text-muted);margin-bottom:8px;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" /></svg>
-                            <span style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Click to upload photos</span>
-                            <input type="file" id="gallery-upload" multiple accept="image/*" style="display:none;" onchange="handleGalleryUpload(this)">
-                        </div>
+                        <input type="file" id="gallery-upload" multiple accept="image/*" style="display:none;" onchange="handleGalleryUpload(this)">
                     </div>
                 </form>
             </div>
@@ -373,28 +400,32 @@
             <div class="modal-body">
                 <form id="unit-form">
                     <input type="hidden" id="u-id" name="unit_id">
+                    <div class="form-row" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="form-group">
+                            <label class="form-label">Apartment Type</label>
+                            <select class="form-control" name="type_id" id="u-type" required>
+                                <!-- JS populated -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Room Number / ID</label>
+                            <input type="text" class="form-control" name="room_number" id="u-number" placeholder="e.g. 101-A" required>
+                        </div>
+                    </div>
+                    <div class="form-row" style="grid-template-columns: repeat(1, 1fr);">
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-control" name="status" id="u-status">
+                                <option value="Available">Available</option>
+                                <option value="Occupied">Occupied</option>
+                                <option value="Reserved">Reserved</option>
+                                <option value="Maintenance">Maintenance</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="form-group full">
-                        <label class="form-label">Apartment Type</label>
-                        <select class="form-control" name="type_id" id="u-type" required>
-                            <!-- JS populated -->
-                        </select>
-                    </div>
-                    <div class="form-group full" style="margin-top:16px;">
-                        <label class="form-label">Room Number / ID</label>
-                        <input type="text" class="form-control" name="room_number" id="u-number" placeholder="e.g. 101-A" required>
-                    </div>
-                    <div class="form-group full" style="margin-top:16px;">
-                        <label class="form-label">Status</label>
-                        <select class="form-control" name="status" id="u-status">
-                            <option value="Available">Available</option>
-                            <option value="Occupied">Occupied</option>
-                            <option value="Reserved">Reserved</option>
-                            <option value="Maintenance">Maintenance</option>
-                        </select>
-                    </div>
-                    <div class="form-group full" style="margin-top:16px;">
                         <label class="form-label">Description / Internal Notes</label>
-                        <textarea class="form-control" name="description" id="u-desc"></textarea>
+                        <textarea class="form-control" name="description" id="u-desc" style="height:80px;"></textarea>
                     </div>
                 </form>
             </div>
@@ -446,47 +477,62 @@
                 return;
             }
 
-            grid.innerHTML = apartmentTypes.map(t => `
+            const html = apartmentTypes.map(t => `
                 <div class="type-card">
                     <div class="type-card-image">
-                        <img src="<?= asset('') ?>${t.thumbnail || 'assets/placeholder.png'}" alt="${t.label}">
-                        <span class="type-card-badge">${t.available_count} Available</span>
-                    </div>
-                    <div class="type-card-body">
-                        <h4 class="type-card-title">${t.label}</h4>
-                        <div class="type-card-price">₱${Number(t.price).toLocaleString()} <small>/ mo</small></div>
-                        <div class="type-card-stats">
-                            <div class="type-card-stat"><svg viewBox="0 0 24 24"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>${t.floor_area || '--'}</div>
-                            <div class="type-card-stat"><svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>${t.capacity || '--'}</div>
+                        ${t.thumbnail 
+                            ? `<img src="<?= asset('') ?>${t.thumbnail}" alt="${t.label}">`
+                            : `<div style="width:100%; height:100%; background:#f0f2f1; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:0.8rem;">No Image</div>`
+                        }
+                        <div class="type-card-actions" style="position:absolute; top:12px; right:12px; display:flex; gap:6px;">
+                            <button class="btn-action" style="padding:6px 12px; border-radius:8px; display:flex; align-items:center; gap:6px; background:white; border:1px solid var(--border); cursor:pointer; font-size:0.75rem; font-weight:700; color:var(--primary);" onclick="openTypeModal('edit', ${t.type_id})">
+                                <svg viewBox="0 0 24 24" style="width:14px; fill:currentColor;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+                                Edit
+                            </button>
                         </div>
                     </div>
-                    <div class="type-card-footer">
-                        <button class="btn-action primary" style="flex:1;" onclick="openTypeModal('edit', ${t.type_id})">Manage Type</button>
+                    <div class="type-card-content" style="padding:16px;">
+                        <h6 style="margin:0 0 4px; font-family:'Lora',serif; color:var(--primary-dark); font-weight:700;">${t.label}</h6>
+                        <p style="color:var(--accent); font-weight:700; font-size:0.95rem; margin-bottom:12px;">₱${Number(t.price).toLocaleString()} / month</p>
+                        <div style="display:flex; gap:12px; font-size:0.78rem; color:var(--text-muted);">
+                            <span style="display:flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:13px; fill:currentColor;"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg> ${t.capacity}</span>
+                        </div>
                     </div>
                 </div>
             `).join('');
+            grid.innerHTML = html;
         }
 
         function renderUnits() {
             const tbody = document.getElementById('units-tbody');
             if (!roomUnits.length) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px;">No units registered.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">No units registered yet.</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = roomUnits.map(u => `
-                <tr>
-                    <td style="font-weight:700;">${u.room_number}</td>
-                    <td><span class="badge-status badge-reserved">${u.type_label}</span></td>
-                    <td style="font-weight:600;">₱${Number(u.price).toLocaleString()}</td>
-                    <td>${u.tenant_id || '<span style="color:var(--text-muted);">Unassigned</span>'}</td>
-                    <td><span class="badge-status unit-status-${u.status.toLowerCase()}">${u.status}</span></td>
-                    <td class="actions-cell">
-                        <button class="btn-action btn-view" onclick="openUnitModal('edit', ${u.unit_id})" title="Edit Unit"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
-                        <button class="btn-action btn-reject" onclick="deleteUnit(${u.unit_id})" title="Delete Unit"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+            tbody.innerHTML = roomUnits.map(u => {
+                const statusClass = u.status.toLowerCase() === 'available' ? 'badge-available' 
+                    : u.status.toLowerCase() === 'occupied' ? 'badge-occupied'
+                    : 'badge-reserved';
+                return `<tr>
+                    <td style="font-weight:600;">#${u.room_number}</td>
+                    <td>${u.type_label}</td>
+                    <td>₱${Number(u.price).toLocaleString()}</td>
+                    <td>${u.tenant_id ? 'Assigned' : '—'}</td>
+                    <td><span class="badge-status ${statusClass}">${u.status}</span></td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn-action btn-edit" style="padding:5px 12px; gap:6px;" onclick="openUnitModal('edit', ${u.unit_id})">
+                                <svg viewBox="0 0 24 24" style="width:14px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+                                Edit
+                            </button>
+                            <button class="btn-action btn-delete" style="padding:5px; border-radius:50%;" onclick="deleteUnit(${u.unit_id})" title="Delete Unit">
+                                <svg viewBox="0 0 24 24" style="width:14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            </button>
+                        </div>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
 
         function populateTypeDropdowns() {
@@ -517,6 +563,16 @@
                         document.getElementById('t-area').value = type.floor_area;
                         document.getElementById('t-bedrooms').value = type.bedrooms;
                         document.getElementById('t-bathroom').value = type.bathroom;
+
+                        // Handle thumbnail preview
+                        const thumb = (type.images || []).find(img => img.is_thumbnail);
+                        const thumbPreview = document.getElementById('t-thumb-preview');
+                        if (thumb) {
+                            thumbPreview.innerHTML = `<img src="<?= asset('') ?>${thumb.file_path}" style="width:100%; height:100%; object-fit:cover;">`;
+                        } else {
+                            thumbPreview.innerHTML = `<span style="font-size:0.7rem; color:var(--text-muted);">No image</span>`;
+                        }
+
                         renderGallery(type.images || []);
                     } else {
                         showToast("Could not load type details", "var(--danger)");
@@ -569,6 +625,42 @@
             `).join('');
         }
 
+        async function handleThumbUpload(input) {
+            const typeId = document.getElementById('t-id').value;
+            if (!typeId) return;
+            const file = input.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('type_id', typeId);
+            formData.append('image', file);
+            formData.append('is_thumbnail', '1');
+
+            try {
+                const res = await fetch('<?= url("/api/apartment-types/upload-image") ?>', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => r.json());
+
+                if (res.success) {
+                    showToast("Thumbnail updated", "var(--success)");
+                    const detail = await fetch(`<?= url("/api/apartment-types/detail") ?>?id=${typeId}`).then(r => r.json());
+                    if (detail.success) {
+                        const thumb = (detail.data.images || []).find(img => img.is_thumbnail);
+                        if (thumb) {
+                            document.getElementById('t-thumb-preview').innerHTML = `<img src="<?= asset('') ?>${thumb.file_path}" style="width:100%; height:100%; object-fit:cover;">`;
+                        }
+                        renderGallery(detail.data.images);
+                    }
+                    loadData();
+                } else {
+                    showToast(res.error, "var(--danger)");
+                }
+            } catch (err) {
+                showToast("Upload failed", "var(--danger)");
+            }
+        }
+
         async function handleGalleryUpload(input) {
             const typeId = document.getElementById('t-id').value;
             if (!typeId) return;
@@ -585,7 +677,7 @@
                     }).then(r => r.json());
 
                     if (res.success) {
-                        showToast("Image uploaded", "var(--success)");
+                        showToast("Slide added", "var(--success)");
                     } else {
                         showToast(res.error, "var(--danger)");
                     }
@@ -593,7 +685,7 @@
                     showToast("Upload failed", "var(--danger)");
                 }
             }
-            // Refresh detail to show new images
+            // Refresh
             const detail = await fetch(`<?= url("/api/apartment-types/detail") ?>?id=${typeId}`).then(r => r.json());
             if (detail.success) renderGallery(detail.data.images);
         }
