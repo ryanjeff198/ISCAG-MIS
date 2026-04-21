@@ -265,11 +265,13 @@ function formatDateTime(dateStr) {
 }
 
 function timeAgo(dateStr) {
+  if (!dateStr) return '—';
   const now = new Date();
   const then = new Date(dateStr);
   const diffMs = now - then;
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'Just now';
+  const seconds = Math.floor(diffMs / 1000);
+  if (seconds < 60) return 'Just now';
+  const mins = Math.floor(seconds / 60);
   if (mins < 60) return mins + 'm ago';
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return hrs + 'h ago';
@@ -310,7 +312,8 @@ function badgeClass(status) {
 }
 
 function statusLabel(status) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  if (!status) return '—';
+  return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
 }
 
 function currencyFormat(amount) {
@@ -422,10 +425,10 @@ const DEFAULT_REPORTS = [
 ];
 
 const DEFAULT_NOTIFICATIONS = [
-  { id:'NOT-001', tenantId:'USR-002', title:'Application Received', message:'Your apartment application RPT-002 has been submitted and is pending MIS review. Please wait while our team reviews your documents and requirements. You will be notified once a decision has been made.', type:'system', read:false, createdAt:'2026-03-28T10:00:00', link:'Apartment/tenant_information.html' },
-  { id:'NOT-002', tenantId:'USR-005', title:'Revision Required', message:'Your application RPT-004 requires revision. Please resubmit a valid government-issued ID. Make sure the ID is clear, uncropped, and government-issued (e.g., PhilSys, Passport, Driver\'s License). Go to your Tenant Information page to re-upload.', type:'reject', read:false, createdAt:'2026-04-07T14:30:00', link:'Apartment/tenant_information.html' },
-  { id:'NOT-003', tenantId:'USR-001', title:'Room Assigned', message:'Congratulations! You have been assigned to Unit A-2, 1-Bedroom. Monthly billing of ₱5,000 has been generated and is now due on the 1st of each month. Please visit the Payment page to view your Statement of Account and submit proof of payment.', type:'assign', read:true, createdAt:'2026-03-15T09:00:00', link:'Apartment/tenant_information.html' },
-  { id:'NOT-004', tenantId:'USR-003', title:'Application Verified', message:'Your application RPT-003 has been verified by MIS Admin and forwarded to the Apartment department for room assignment. You will receive another notification once a room is assigned to you. Thank you for your patience.', type:'approve', read:false, createdAt:'2026-04-05T11:00:00', link:'Apartment/tenant_information.html' }
+  { id:'NOT-001', tenantId:'USR-002', title:'Application Received', message:'Your apartment application RPT-002 has been submitted and is pending MIS review.', type:'system', read:false, createdAt:'2026-03-28T10:00:00', link:'/user/dashboard' },
+  { id:'NOT-002', tenantId:'USR-005', title:'Revision Required', message:'Your application RPT-004 requires revision. Please resubmit a valid government-issued ID.', type:'reject', read:false, createdAt:'2026-04-07T14:30:00', link:'/user/dashboard' },
+  { id:'NOT-003', tenantId:'USR-001', title:'Room Assigned', message:'Congratulations! You have been assigned to Unit A-2, 1-Bedroom.', type:'assign', read:true, createdAt:'2026-03-15T09:00:00', link:'/user/dashboard' },
+  { id:'NOT-004', tenantId:'USR-003', title:'Application Verified', message:'Your application RPT-003 has been verified by MIS Admin.', type:'approve', read:false, createdAt:'2026-04-05T11:00:00', link:'/user/dashboard' }
 ];
 
 function initReportsData() {
@@ -457,9 +460,8 @@ function addNotification(tenantId, title, message, type, link) {
 }
 
 /**
- * initNotifBadge() — Call on every page to show/hide a red dot on the
+ * initNotifBadge() — Call on every page to show/hide a badge on the
  * Notifications sidebar link when there are unread notifications.
- * Works for tenant, apartment staff, and MIS admin portals.
  */
 function initNotifBadge(role) {
   let unread = 0;
@@ -467,20 +469,16 @@ function initNotifBadge(role) {
     const user = getUser();
     const notifs = getNotifications();
     unread = notifs.filter(n => n.tenantId === user.id && !n.read).length;
-  } else if (role === 'staff') {
-    // Staff sees activity-log-based notifications; first 3 are unread by convention
-    const log = getActivityLog();
-    unread = Math.min(3, log.length);
   } else {
-    // MIS admin sees activity-log-based notifications; first 5 unread
+    // Admin/Staff sees activity-log-based notifications by convention
     const log = getActivityLog();
     unread = Math.min(5, log.length);
   }
-  // Find the Notifications link in the sidebar and inject a dot
+  
   if (unread > 0) {
     document.querySelectorAll('.nav-item').forEach(link => {
       const label = link.querySelector('.nav-item-label');
-      if (label && label.textContent.trim() === 'Notifications') {
+      if (label && (label.textContent.trim() === 'Notifications' || label.textContent.trim() === 'Admin Inbox')) {
         if (!link.querySelector('.notif-dot')) {
           const dot = document.createElement('span');
           dot.className = 'notif-dot';
@@ -493,7 +491,7 @@ function initNotifBadge(role) {
   }
 }
 
-// ── Workflow: MIS Admin approves application ──
+// ── Workflow Logic ──
 function approveReport(reportId) {
   const reports = getReports();
   const r = reports.find(x => x.id === reportId);
@@ -503,12 +501,11 @@ function approveReport(reportId) {
   r.updatedAt = r.verifiedAt;
   r.remarks = 'Documents verified. Ready for room assignment.';
   saveReports(reports);
-  addActivityEntry('Application Verified', reportId + ' — ' + r.tenantName + ' verified by MIS Admin', 'MIS Admin', 'approve');
-  addNotification(r.tenantId, 'Application Verified', 'Your application ' + reportId + ' has been verified and forwarded to the Apartment department.', 'approve');
+  addActivityEntry('Application Verified', reportId + ' — ' + r.tenantName, 'MIS Admin', 'approve');
+  addNotification(r.tenantId, 'Application Verified', 'Your application ' + reportId + ' has been verified.', 'approve');
   return true;
 }
 
-// ── Workflow: MIS Admin rejects application ──
 function rejectReport(reportId, remarks) {
   const reports = getReports();
   const r = reports.find(x => x.id === reportId);
@@ -517,52 +514,42 @@ function rejectReport(reportId, remarks) {
   r.remarks = remarks || 'Application requires revision.';
   r.updatedAt = new Date().toISOString().split('T')[0];
   saveReports(reports);
-  addActivityEntry('Application Rejected', reportId + ' — ' + r.tenantName + ' sent back for revision', 'MIS Admin', 'approve');
+  addActivityEntry('Application Rejected', reportId + ' — ' + r.tenantName, 'MIS Admin', 'approve');
   addNotification(r.tenantId, 'Revision Required', 'Your application ' + reportId + ' requires revision: ' + r.remarks, 'reject');
   return true;
 }
 
-// ── Workflow: Apartment Admin assigns room ──
 function assignRoom(reportId, roomId) {
   const reports = getReports();
   const r = reports.find(x => x.id === reportId);
   if (!r || r.status !== 'VERIFIED') return false;
   const apts = getApartments();
   const apt = apts.find(a => a.id === roomId);
-  if (!apt || apt.available <= 0) {
-    r.status = 'WAITING_LIST';
-    r.remarks = 'No rooms available. Added to waiting list.';
-    r.updatedAt = new Date().toISOString().split('T')[0];
-    saveReports(reports);
-    addActivityEntry('Added to Waiting List', reportId + ' — ' + r.tenantName + ' (no rooms)', 'Apartment Admin', 'update');
-    addNotification(r.tenantId, 'Waiting List', 'No rooms are currently available. You have been added to the waiting list.', 'system');
-    return 'waiting';
-  }
+  if (!apt || apt.available <= 0) return 'waiting';
+
   apt.available--;
   if (apt.available <= 0) apt.status = 'occupied';
   saveApartments(apts);
+
   r.status = 'APPROVED';
   r.roomId = roomId;
   r.roomName = apt.name;
   r.approvedAt = new Date().toISOString().split('T')[0];
   r.updatedAt = r.approvedAt;
-  r.remarks = '';
   saveReports(reports);
-  // Auto-generate billing
+
+  // Generate billing
   const billing = getBilling();
   const billId = 'BIL-' + String(billing.length + 1).padStart(3, '0');
   const nextMonth = new Date(); nextMonth.setMonth(nextMonth.getMonth() + 1); nextMonth.setDate(1);
   billing.push({ id:billId, userId:r.tenantId, name:r.tenantName, type:'Apartment Rent', amount:apt.price, status:'pending', dueDate:nextMonth.toISOString().split('T')[0], paidDate:null });
   saveBilling(billing);
-  r.billingIds.push(billId);
-  saveReports(reports);
-  addActivityEntry('Room Assigned', reportId + ' — ' + r.tenantName + ' assigned to ' + apt.name, 'Apartment Admin', 'approve');
-  addActivityEntry('Billing Generated', billId + ' — ₱' + apt.price.toLocaleString() + ' for ' + r.tenantName, 'System', 'payment');
-  addNotification(r.tenantId, 'Room Assigned', 'You have been assigned to ' + apt.name + '. Monthly billing of ₱' + apt.price.toLocaleString() + ' has been generated.', 'assign');
+
+  addActivityEntry('Room Assigned', reportId + ' — ' + r.tenantName + ' to ' + apt.name, 'Apartment Admin', 'approve');
+  addNotification(r.tenantId, 'Room Assigned', 'You have been assigned to ' + apt.name + '.', 'assign');
   return true;
 }
 
-// ── Status label for report statuses ──
 function reportStatusLabel(status) {
   const map = {
     PENDING_MIS: 'Pending MIS', REVISION: 'Revision', VERIFIED: 'Verified',
@@ -578,6 +565,7 @@ function reportBadgeClass(status) {
   };
   return map[status] || 'badge-info';
 }
+
 
 // ══════════════════════════════════════
 //  LOGOUT CONFIRMATION MODAL
@@ -626,18 +614,14 @@ function initLogoutModal() {
       e.preventDefault();
       targetHref = href;
       modal.style.display = 'flex';
-      // Force reflow
-      void modal.offsetWidth;
+      void modal.offsetWidth; // force reflow
       modal.style.opacity = '1';
       inner.style.transform = 'translateY(0)';
     };
 
     cancelBtn.addEventListener('click', hideModal);
     modal.addEventListener('click', e => { if(e.target === modal) hideModal(); });
-    
-    confirmBtn.addEventListener('click', () => {
-      window.location.href = targetHref || '/logout';
-    });
+    confirmBtn.addEventListener('click', () => { window.location.href = targetHref || '/logout'; });
 
     logoutLinks.forEach(link => {
       link.addEventListener('click', function(e) {
@@ -647,15 +631,10 @@ function initLogoutModal() {
   }
 }
 
+
 // ══════════════════════════════════════
 //  PAGE BOOTSTRAP
 // ══════════════════════════════════════
-/**
- * standardizePage(role)
- * Central bootstrapper called by every admin view.
- * Initializes sidebar toggle, dropdown navigation, user nav, and date display.
- * @param {string} role - 'admin' | 'staff' | 'tenant'
- */
 function standardizePage(role) {
   initAdminData();
   initReportsData();
@@ -667,26 +646,22 @@ function standardizePage(role) {
   initLogoutModal();
 }
 
-
-// ══════════════════════════════════════
-//  ACTION MENU LOGIC
-// ══════════════════════════════════════
 function toggleActionMenu(btn, e) {
   if (e) e.stopPropagation();
   const dropdown = btn.nextElementSibling;
   if (!dropdown) return;
-
   const isShow = dropdown.classList.contains('show');
   document.querySelectorAll('.action-menu-dropdown').forEach(d => d.classList.remove('show'));
   if (!isShow) dropdown.classList.add('show');
 }
 
-// Close menus when clicking outside
 window.addEventListener('click', () => {
   document.querySelectorAll('.action-menu-dropdown').forEach(d => d.classList.remove('show'));
 });
 
-document.addEventListener('DOMContentLoaded', initLogoutModal);
+// Auto-init for cases where script is loaded after DOM
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
   initLogoutModal();
+} else {
+  document.addEventListener('DOMContentLoaded', initLogoutModal);
 }
