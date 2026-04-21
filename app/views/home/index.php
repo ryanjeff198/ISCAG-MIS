@@ -27,6 +27,7 @@
       <li><a href="#contact">Contact Us</a></li>
     </ul>
     <div class="nav-right">
+      <a href="<?= url('/register') ?>" class="btn-signup" style="margin-right: 12px; font-weight: 600; color: var(--primary); text-decoration: none;">Sign Up</a>
       <a href="<?= url('/login') ?>" class="btn-login">Login</a>
     </div>
     <button class="mobile-toggle" onclick="document.getElementById('mobileMenu').classList.toggle('active')">
@@ -42,6 +43,7 @@
   <a href="#services" onclick="this.parentNode.classList.remove('active')">Services</a>
   <a href="#donate" onclick="this.parentNode.classList.remove('active')">Donate</a>
   <a href="#contact" onclick="this.parentNode.classList.remove('active')">Contact Us</a>
+  <a href="<?= url('/register') ?>" class="btn-signup" style="display:inline-block; text-align:center; margin-bottom: 10px; color: var(--primary); font-weight: 600;">Sign Up</a>
   <a href="<?= url('/login') ?>" class="btn-login" style="display:inline-block; text-align:center;">Login</a>
 </div>
 
@@ -55,7 +57,7 @@
     </p>
     <div class="hero-buttons">
       <a href="#donate" class="btn-primary-green">Donate Now</a>
-      <a href="#community" class="btn-outline-light">Join Community</a>
+      <a href="<?= url('/register') ?>" class="btn-outline-light">Join Community</a>
     </div>
   </div>
 </section>
