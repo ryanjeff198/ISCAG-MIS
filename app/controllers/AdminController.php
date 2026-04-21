@@ -14,48 +14,87 @@ class AdminController extends Controller
     public function apartment(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_dashboard');
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/ApartmentType.php';
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        
+        $userModel = new User();
+        $typeModel = new ApartmentType();
+        $appModel = new ApartmentApp();
+        
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $units = $typeModel->getAllUnits();
+        $applications = $appModel->getAllApplications();
+        
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_dashboard', [
+            'dbUser' => $dbUser,
+            'units' => $units,
+            'applications' => $applications
+        ]);
     }
 
     public function apartmentInfo(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartments_info');
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartments_info', ['dbUser' => $dbUser]);
     }
 
     public function apartmentProfile(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_profile');
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $user = $userModel->findById($_SESSION['user_id']);
+        $extra = $userModel->getAdditionalInfo($_SESSION['user_id']);
+        
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_profile', [
+            'dbUser' => array_merge($user ?: [], $extra ?: [])
+        ]);
     }
 
     public function apartmentNotifications(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_notification');
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_notification', ['dbUser' => $dbUser]);
     }
 
     public function apartmentSoa(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/Staff_Admin/Admin-Apartment_Department/statement_of_account');
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/statement_of_account', ['dbUser' => $dbUser]);
     }
 
     public function payment(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/Staff_Admin/Admin-Apartment_Department/payment');
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/payment', ['dbUser' => $dbUser]);
     }
 
     // MIS Admin Modules
     public function staffApartmentConfirmation(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        require_once BASE_PATH . '/app/models/User.php';
         $model = new ApartmentApp();
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
         $reports = $model->getAllApplications();
         $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_confirmation', [
             'active_page' => 'apartment_confirmation',
-            'reports' => $reports
+            'reports' => $reports,
+            'dbUser' => $dbUser
         ]);
     }
 

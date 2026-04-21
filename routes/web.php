@@ -78,4 +78,18 @@ $routes = [
     '/admin/mis_admin/audit_logs'          => ['AdminController', 'auditLogs'],
     '/admin/mis_admin/notification'        => ['AdminController', 'notificationInbox'],
     '/admin/mis_admin/tenant_image'        => ['AdminController', 'serveTenantImage'],
+
+    // Apartment Type Management API
+    '/api/apartment-types'                 => ['ApartmentTypeController', 'listTypes'],
+    '/api/apartment-types/detail'          => ['ApartmentTypeController', 'getType'],
+    '/api/apartment-types/create'          => ['ApartmentTypeController', 'createType'],
+    '/api/apartment-types/update'          => ['ApartmentTypeController', 'updateType'],
+    '/api/apartment-types/delete'          => ['ApartmentTypeController', 'deleteType'],
+    '/api/apartment-types/upload-image'    => ['ApartmentTypeController', 'uploadImage'],
+    '/api/apartment-types/delete-image'    => ['ApartmentTypeController', 'deleteImage'],
+    '/api/apartment-types/set-thumbnail'   => ['ApartmentTypeController', 'setThumbnail'],
+    '/api/apartment-units'                 => ['ApartmentTypeController', 'listUnits'],
+    '/api/apartment-units/create'          => ['ApartmentTypeController', 'createUnit'],
+    '/api/apartment-units/update'          => ['ApartmentTypeController', 'updateUnit'],
+    '/api/apartment-units/delete'          => ['ApartmentTypeController', 'deleteUnit'],
 ];

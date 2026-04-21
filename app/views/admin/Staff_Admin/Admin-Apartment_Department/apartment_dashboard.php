@@ -52,80 +52,10 @@
   <div class="app-wrapper">
 
     <!----sidebar---->
-    <aside class="sidebar" id="sidebar">
-      <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar"><svg viewBox="0 0 24 24">
-          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-        </svg></button>
-      <div class="sidebar-header">
-        <div class="sidebar-brand">
-          <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
-          <div class="brand-text"><strong>ISCAG MIS</strong><span>Apartment Staff</span></div>
-        </div>
-      </div>
-      <div class="sidebar-user">
-        <div class="user-avatar" id="nav-avatar" style="background:var(--accent);">AK</div>
-        <div class="user-info"><strong id="nav-name">Apartment Staff</strong><span>Staff Admin</span></div>
-      </div>
-      <nav class="sidebar-nav">
-        <div class="nav-section-label">Admin</div>
-        <a href="<?= url('/admin/apartment') ?>" class="nav-item active" data-tooltip="Dashboard">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
-          </svg>
-          <span class="nav-item-label">Dashboard</span>
-        </a>
-        <a href="<?= url('/admin/apartment/profile') ?>" class="nav-item" data-tooltip="Profile">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-          </svg>
-          <span class="nav-item-label">My Profile</span>
-        </a>
-        <a href="<?= url('/admin/apartment/confirmation') ?>" class="nav-item" data-tooltip="Applications">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
-          </svg>
-          <span class="nav-item-label">Review Applications</span>
-        </a>
-        <div class="nav-section-label">Management</div>
-        <a href="<?= url('/admin/apartment/info') ?>" class="nav-item" data-tooltip="Apartment Info">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z" />
-          </svg>
-          <span class="nav-item-label">Apartment Info</span>
-        </a>
-        <a href="<?= url('/admin/payment') ?>" class="nav-item" data-tooltip="Billing & Payment">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
-          </svg>
-          <span class="nav-item-label">Billing & Payment</span>
-        </a>
-        <a href="<?= url('/admin/apartment/soa') ?>" class="nav-item" data-tooltip="SOA">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM9 13h6v2H9v-2zm6 4H9v2h6v-2z" />
-          </svg>
-          <span class="nav-item-label">Statement of Account</span>
-        </a>
-        <a href="<?= url('/admin/apartment/notifications') ?>" class="nav-item" data-tooltip="Notifications">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-          </svg>
-          <span class="nav-item-label">Notifications</span>
-        </a>
-      </nav>
-      <div class="sidebar-footer">
-        <a href="<?= url('/logout') ?>" class="nav-item" data-tooltip="Logout">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-          </svg>
-          <span class="nav-item-label">Logout</span>
-        </a>
-      </div>
-    </aside>
+    <?php 
+      $active_page = 'dashboard';
+      include BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Apartment_Department/sidebar.php'; 
+    ?>
 
     <!-- ═══ MAIN CONTENT ═══ -->
     <div class="main-content">
@@ -427,15 +357,30 @@
   <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
+    <?php
+      $totalUnits = count($units);
+      $availableSlots = 0;
+      $fullyOccupied = 0;
+      $reserved = 0;
+      foreach ($units as $u) {
+          if (strtolower($u['status']) === 'available') $availableSlots++;
+          if (strtolower($u['status']) === 'occupied') $fullyOccupied++;
+          if (strtolower($u['status']) === 'reserved') $reserved++;
+      }
+    ?>
+
     standardizePage('staff');
-    setCurrentRole(ROLES.STAFF_ADMIN);
+    setCurrentRole(ROLES.STAFF_TENANT);
+    syncSessionUser("<?= addslashes(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>", "<?= addslashes($dbUser['email'] ?? '') ?>", "Staff Admin");
+
+    const dbUnits = <?= json_encode($units) ?>;
+    const dbApplications = <?= json_encode($applications) ?>;
 
     function refreshStats() {
-      const apts = getApartments();
-      document.getElementById('stat-total').textContent = apts.length;
-      document.getElementById('stat-available').textContent = apts.reduce((s, a) => s + a.available, 0);
-      document.getElementById('stat-occupied').textContent = apts.filter(a => a.status === 'occupied').length;
-      document.getElementById('stat-reserved').textContent = apts.filter(a => a.status === 'reserved').length;
+      document.getElementById('stat-total').textContent = "<?= $totalUnits ?>";
+      document.getElementById('stat-available').textContent = "<?= $availableSlots ?>";
+      document.getElementById('stat-occupied').textContent = "<?= $fullyOccupied ?>";
+      document.getElementById('stat-reserved').textContent = "<?= $reserved ?>";
     }
     // ── Stats ──
     refreshStats();
@@ -451,75 +396,60 @@
 
     // ── Units table ──
     function renderUnitsTable() {
-      const apts = getApartments();
       const unitsTbody = document.getElementById('units-tbody');
-      unitsTbody.innerHTML = apts.map(apt => {
-        const unitType = getUnitType(apt.name);
-        const bc = apt.status === 'available' ? 'badge-available'
-          : apt.status === 'occupied' ? 'badge-occupied'
+      unitsTbody.innerHTML = dbUnits.map(u => {
+        const statusClass = u.status.toLowerCase() === 'available' ? 'badge-available'
+          : u.status.toLowerCase() === 'occupied' ? 'badge-occupied'
             : 'badge-reserved';
-        const sl = apt.status.charAt(0).toUpperCase() + apt.status.slice(1);
+        
+        const unitType = u.type_key;
 
-        let tLabel = '—';
-        if (unitType === 'studio') tLabel = 'Studio';
-        else if (unitType === '1br') tLabel = '1-Bedroom';
-        else if (unitType === '2br') tLabel = '2-Bedroom';
-        else tLabel = 'Family Suite';
-
-        const viewBtn = unitType
-          ? `<button class="btn-action btn-view" onclick="adminPreview('${unitType}', ${apt.available})">
+        const viewBtn = `<button class="btn-action btn-view" onclick="adminPreview('${unitType}', '${u.status}')">
              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
              View
-           </button>` : '';
+           </button>`;
 
-        const assignBtn = `<button class="btn-action btn-assign" disabled title="Use Verified Applications queue below">
-        <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-        Assign
-      </button>`;
-
-        const manageBtn = `<button class="btn-action btn-manage" style="color:var(--primary);" onclick="openManageUnit('${apt.id}')" title="Manage Unit">
+        const manageBtn = `<button class="btn-action btn-manage" style="color:var(--primary);" onclick="location.href='<?= url("/admin/apartment/info") ?>'" title="Manage Unit">
         <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-        Manage
+        Edit
       </button>`;
 
         return `<tr>
-        <td class="td-id">${apt.id}</td>
-        <td style="font-weight:600;">${apt.name}</td>
-        <td>${tLabel}</td>
-        <td>₱${apt.price.toLocaleString()}</td>
-        <td style="text-align:center;font-weight:700;color:${apt.available > 0 ? 'var(--success)' : 'var(--danger)'};">${apt.available}</td>
-        <td><span class="badge-status ${bc}">${sl}</span></td>
-        <td><div class="actions-cell">${viewBtn}${manageBtn}${assignBtn}</div></td>
+        <td class="td-id">#${u.unit_id}</td>
+        <td style="font-weight:600;">Room ${u.room_number}</td>
+        <td>${u.type_label}</td>
+        <td>₱${Number(u.price).toLocaleString()}</td>
+        <td style="text-align:center;font-weight:700;color:${u.status.toLowerCase() === 'available' ? 'var(--success)' : 'var(--danger)'};">${u.status.toLowerCase() === 'available' ? '1' : '0'}</td>
+        <td><span class="badge-status ${statusClass}">${u.status}</span></td>
+        <td><div class="actions-cell">${viewBtn}${manageBtn}</div></td>
       </tr>`;
       }).join('');
     }
     renderUnitsTable();
 
-    // ═══ VERIFIED APPLICATIONS (from MIS Admin) ═══
+    // ── Verified Applications table ──
     function renderVerifiedApps() {
-      const reports = getReports();
-      const verified = reports.filter(r => r.status === 'VERIFIED');
+      const verified = dbApplications.filter(a => a.status.toUpperCase() === 'APPROVED' || a.status.toUpperCase() === 'VERIFIED');
       const tbody = document.getElementById('verified-tbody');
       document.getElementById('verified-count-badge').textContent = verified.length + ' verified';
-
+ 
       if (verified.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><h4>No Verified Applications</h4><p>Applications verified by MIS Admin will appear here for room assignment.</p></div></td></tr>';
         return;
       }
-
-      tbody.innerHTML = verified.map(r => {
-        const reqCount = Object.values(r.requirements || {}).filter(v => v).length;
-        const reqTotal = Object.keys(r.requirements || {}).length;
+ 
+      tbody.innerHTML = verified.map(a => {
+        const applicantName = (a.first_name || '') + ' ' + (a.last_name || '');
         return `<tr>
-        <td class="td-id">${r.id}</td>
-        <td style="font-weight:600;">${r.tenantName}</td>
-        <td>${formatDate(r.verifiedAt)}</td>
-        <td><span style="font-size:0.82rem;font-weight:600;color:var(--success);">${reqCount}/${reqTotal} complete</span></td>
+        <td class="td-id">#${a.id}</td>
+        <td style="font-weight:600;">${applicantName}</td>
+        <td>${formatDate(a.submitted_at || new Date())}</td>
+        <td><span style="font-size:0.82rem;font-weight:600;color:var(--success);">Verified</span></td>
         <td>
           <div class="actions-cell">
-            <button class="btn-action btn-approve" onclick="openAssignModal('${r.id}')">
+            <button class="btn-action btn-approve" onclick="location.href='<?= url("/admin/apartment/info") ?>'">
               <svg viewBox="0 0 24 24"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z"/></svg>
-              Assign Room
+              Manage Units
             </button>
           </div>
         </td>
@@ -594,25 +524,28 @@
       }
     });
 
-    // ── Applications table ──
-    const allReqs = getRequests();
-    const aptReqs = allReqs.filter(r => r.type === 'apartment_application');
-    const appsTbody = document.getElementById('apps-tbody');
-    if (aptReqs.length === 0) {
-      appsTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:28px;color:var(--text-muted);">No applications found.</td></tr>';
-    } else {
-      appsTbody.innerHTML = aptReqs.slice(0, 10).map(req => {
-        const bc = req.status === 'approved' ? 'badge-available'
-          : req.status === 'pending' ? 'badge-reserved'
-            : 'badge-occupied';
-        return `<tr>
-        <td class="td-id">${req.id}</td>
-        <td style="font-weight:600;">${req.name || 'Unknown'}</td>
-        <td>${formatDate(req.date)}</td>
-        <td><span class="badge-status ${bc}">${statusLabel(req.status)}</span></td>
-      </tr>`;
-      }).join('');
+    // ── Recent Applications table ──
+    function renderRecentApps() {
+      const appsTbody = document.getElementById('apps-tbody');
+      if (dbApplications.length === 0) {
+        appsTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:28px;color:var(--text-muted);">No applications found.</td></tr>';
+      } else {
+        appsTbody.innerHTML = dbApplications.slice(0, 10).map(req => {
+          const applicantName = (req.first_name || '') + ' ' + (req.last_name || '');
+          const status = req.status || 'Pending';
+          const bc = status.toLowerCase() === 'approved' || status.toLowerCase() === 'verified' ? 'badge-available'
+            : status.toLowerCase() === 'pending' ? 'badge-reserved'
+              : 'badge-occupied';
+          return `<tr>
+          <td class="td-id">#${req.id}</td>
+          <td style="font-weight:600;">${applicantName}</td>
+          <td>${formatDate(req.submitted_at || new Date())}</td>
+          <td><span class="badge-status ${bc}">${status}</span></td>
+        </tr>`;
+        }).join('');
+      }
     }
+    renderRecentApps();
 
     // ── Billing (read-only) ──
     function renderBilling() {

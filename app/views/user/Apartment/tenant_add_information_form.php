@@ -1917,79 +1917,12 @@ if ($userId) {
               <p class="unit-type-note">Select your preferred apartment unit type. Final assignment is subject to
                 availability.</p>
 
-              <div class="unit-cards">
-                <label class="unit-card selected" for="unit1">
-                  <input type="radio" name="unit" id="unit1" checked />
-                  <div class="unit-card-check">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                    </svg>
-                  </div>
-                  <div class="unit-card-thumb">
-                    <img src="<?= asset('assets/Studio Type/Studio type front.jpg') ?>" alt="Studio Preview" />
-                    <span class="unit-card-thumb-overlay">Studio</span>
-                  </div>
-                  <div class="unit-card-body">
-                    <div class="unit-card-label">Studio Unit</div>
-                    <div class="unit-card-sub">For 1–2 persons</div>
-                  </div>
-                  <button type="button" class="unit-card-view" id="view-studio"
-                    onclick="event.preventDefault();event.stopPropagation();previewRoom('studio')">
-                    <svg viewBox="0 0 24 24">
-                      <path
-                        d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" />
-                    </svg>
-                    View Room
-                  </button>
-                </label>
-                <label class="unit-card" for="unit2">
-                  <input type="radio" name="unit" id="unit2" />
-                  <div class="unit-card-check">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                    </svg>
-                  </div>
-                  <div class="unit-card-thumb">
-                    <img src="<?= asset('assets/1BR Type/1BR front.jpg') ?>" alt="One-Bedroom Preview" />
-                    <span class="unit-card-thumb-overlay">1 Bedroom</span>
-                  </div>
-                  <div class="unit-card-body">
-                    <div class="unit-card-label">One-Bedroom</div>
-                    <div class="unit-card-sub">For small families</div>
-                  </div>
-                  <button type="button" class="unit-card-view" id="view-1br"
-                    onclick="event.preventDefault();event.stopPropagation();previewRoom('1br')">
-                    <svg viewBox="0 0 24 24">
-                      <path
-                        d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" />
-                    </svg>
-                    View Room
-                  </button>
-                </label>
-                <label class="unit-card" for="unit3">
-                  <input type="radio" name="unit" id="unit3" />
-                  <div class="unit-card-check">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                    </svg>
-                  </div>
-                  <div class="unit-card-thumb">
-                    <img src="<?= asset('assets/2BR Type/2BR front.png') ?>" alt="Two-Bedroom Preview" />
-                    <span class="unit-card-thumb-overlay">2 Bedroom</span>
-                  </div>
-                  <div class="unit-card-body">
-                    <div class="unit-card-label">Two-Bedroom</div>
-                    <div class="unit-card-sub">For larger families</div>
-                  </div>
-                  <button type="button" class="unit-card-view" id="view-2br"
-                    onclick="event.preventDefault();event.stopPropagation();previewRoom('2br')">
-                    <svg viewBox="0 0 24 24">
-                      <path
-                        d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" />
-                    </svg>
-                    View Room
-                  </button>
-                </label>
+              <div class="unit-cards" id="unit-cards-container">
+                <!-- Dynamically loaded from API -->
+                <div style="grid-column: 1/-1; text-align: center; padding: 32px; background: #f9fafb; border-radius: 12px; border: 1px dashed var(--border);">
+                  <div class="loader" style="margin: 0 auto 16px;"></div>
+                  <p style="color: var(--text-muted); font-size: 0.9rem;">Fetching available apartment units...</p>
+                </div>
               </div>
 
               <!-- ══ SECTION 3: FAMILY MEMBERS ══ -->
@@ -3420,6 +3353,54 @@ if ($userId) {
         </div>
       `;
     }
+
+    // ── Dynamic Apartment Types ──
+    async function loadApartmentTypes() {
+      const container = document.getElementById('unit-cards-container');
+      try {
+        const response = await fetch('<?= url("/api/apartment-types") ?>');
+        const res = await response.json();
+        if (res.success) {
+          const types = res.data;
+          if (!types.length) {
+            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No available unit types found.</p>';
+            return;
+          }
+          container.innerHTML = types.map((t, idx) => `
+            <label class="unit-card ${idx === 0 ? 'selected' : ''}" for="unit-${t.type_id}">
+              <input type="radio" name="unit" id="unit-${t.type_id}" value="${t.type_key}" ${idx === 0 ? 'checked' : ''} />
+              <div class="unit-card-check">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
+              </div>
+              <div class="unit-card-thumb">
+                <img src="<?= asset('') ?>${t.thumbnail || 'assets/placeholder.png'}" alt="${t.label}" />
+                <span class="unit-card-thumb-overlay">${t.label.split(' ')[0]}</span>
+              </div>
+              <div class="unit-card-body">
+                <div class="unit-card-label">${t.label}</div>
+                <div class="unit-card-sub">${t.capacity || 'For residents'}</div>
+              </div>
+              <button type="button" class="unit-card-view" 
+                onclick='event.preventDefault();event.stopPropagation(); if(window.openRoomPreview) window.openRoomPreview(${JSON.stringify(t).replace(/'/g, "&apos;")})'>
+                <svg viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" /></svg>
+                View Room
+              </button>
+            </label>
+          `).join('');
+
+          // Re-attach card selection effects
+          container.querySelectorAll('.unit-card').forEach(card => {
+            card.addEventListener('click', function() {
+              container.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+              this.classList.add('selected');
+            });
+          });
+        }
+      } catch (err) {
+        console.error("API Error:", err);
+      }
+    }
+    loadApartmentTypes();
 
     // ── Check if user already has a pending/approved application ──
     function checkExistingApplication() {

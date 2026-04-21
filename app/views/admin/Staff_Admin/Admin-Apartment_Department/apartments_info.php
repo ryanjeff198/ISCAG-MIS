@@ -5,211 +5,275 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISCAG MIS — Apartment Management</title>
-    <meta name="description"
-        content="Manage and view detailed information regarding apartment buildings and locations." />
     <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
     <style>
-        /* Form Field Styles */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #0f5c3a 0%, #1a8e5f 100%);
+            --accent-gradient: linear-gradient(135deg, #c79a2b 0%, #e5b95d 100%);
+        }
+
+        /* Apartment Types Grid */
+        .types-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .type-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .type-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+            border-color: var(--primary-light);
+        }
+
+        .type-card-image {
+            height: 180px;
+            background: #f0f2f1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .type-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .type-card:hover .type-card-image img {
+            transform: scale(1.1);
+        }
+
+        .type-card-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(15, 92, 58, 0.9);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            backdrop-filter: blur(4px);
+        }
+
+        .type-card-body {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .type-card-title {
+            font-family: 'Lora', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin: 0 0 8px;
+        }
+
+        .type-card-price {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        .type-card-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .type-card-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .type-card-stat svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        .type-card-footer {
+            padding: 16px 20px;
+            background: #f9fafb;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Table & Forms */
+        .section-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .unit-status-available { background: #e6f7ef; color: #176b45; }
+        .unit-status-occupied { background: #fff4e6; color: #b45d00; }
+        .unit-status-reserved { background: #eef2ff; color: #3730a3; }
+        .unit-status-maintenance { background: #fef2f2; color: #991b1b; }
+
+        /* Image Gallery in Modal */
+        .image-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            border: 2px solid transparent;
+        }
+
+        .gallery-item.is-thumb {
+            border-color: var(--accent);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gallery-item-actions {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .gallery-item:hover .gallery-item-actions {
+            opacity: 1;
+        }
+
+        .btn-gallery-action {
+            background: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-gallery-action:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-gallery-action.delete { color: var(--danger); }
+        .btn-gallery-action.thumb { color: var(--accent); }
+
+        .upload-placeholder {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-placeholder:hover {
+            border-color: var(--primary);
+            background: rgba(23, 107, 69, 0.02);
+        }
+
+        /* Form Row Helper */
         .form-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin-bottom: 16px;
         }
 
-        .form-group.full {
-            grid-column: 1 / -1;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid var(--border);
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.9rem;
-            color: var(--text-main);
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1);
-        }
-
-        .error-message {
-            color: var(--danger);
-            font-size: 0.75rem;
-            margin-top: 4px;
-            display: none;
-        }
-
-        textarea.form-control {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .actions-cell {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        /* Role-based display */
-        .only-staff {
-            display: inline-flex;
-        }
-
-        .only-mis {
-            display: none;
-        }
-
-        body.mis-admin-mode .only-staff {
-            display: none !important;
-        }
-
-        body.mis-admin-mode .only-mis {
-            display: inline-flex !important;
-        }
-
-        .hidden {
-            display: none !important;
-        }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-label { display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: 700; color: var(--text-main); }
+        .form-control { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; transition: all 0.2s; }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1); }
     </style>
 </head>
 
 <body>
     <div class="app-wrapper">
+        <!-- Sidebar -->
+        <?php 
+          $active_page = 'info';
+          include BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Apartment_Department/sidebar.php'; 
+        ?>
 
-        <!----sidebar---->
-        <aside class="sidebar" id="sidebar">
-            <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar"><svg viewBox="0 0 24 24">
-                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-                </svg></button>
-            <div class="sidebar-header">
-                <div class="sidebar-brand">
-                    <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
-                    <div class="brand-text"><strong>ISCAG MIS</strong><span>Apartment Staff</span></div>
-                </div>
-            </div>
-            <div class="sidebar-user">
-                <div class="user-avatar" id="nav-avatar" style="background:var(--accent);">AK</div>
-                <div class="user-info"><strong id="nav-name">Apartment Staff</strong><span>Staff Admin</span></div>
-            </div>
-            <nav class="sidebar-nav">
-                <div class="nav-section-label">Admin</div>
-                <a href="<?= url('/admin/apartment') ?>" class="nav-item" data-tooltip="Dashboard">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
-                    </svg>
-                    <span class="nav-item-label">Dashboard</span>
-                </a>
-                <a href="<?= url('/admin/apartment/profile') ?>" class="nav-item" data-tooltip="Profile">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-                    </svg>
-                    <span class="nav-item-label">My Profile</span>
-                </a>
-                <a href="<?= url('/admin/apartment/confirmation') ?>" class="nav-item" data-tooltip="Applications">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
-                    </svg>
-                    <span class="nav-item-label">Review Applications</span>
-                </a>
-                <div class="nav-section-label">Management</div>
-                <a href="<?= url('/admin/apartment/info') ?>" class="nav-item active" data-tooltip="Apartment Info">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z" />
-                    </svg>
-                    <span class="nav-item-label">Apartment Info</span>
-                </a>
-                <a href="<?= url('/admin/payment') ?>" class="nav-item" data-tooltip="Billing & Payment">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
-                    </svg>
-                    <span class="nav-item-label">Billing & Payment</span>
-                </a>
-                <a href="<?= url('/admin/apartment/soa') ?>" class="nav-item" data-tooltip="SOA">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM9 13h6v2H9v-2zm6 4H9v2h6v-2z" />
-                    </svg>
-                    <span class="nav-item-label">Statement of Account</span>
-                </a>
-                <a href="<?= url('/admin/apartment/notifications') ?>" class="nav-item" data-tooltip="Notifications">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-                    </svg>
-                    <span class="nav-item-label">Notifications</span>
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <a href="<?= url('/logout') ?>" class="nav-item" data-tooltip="Logout">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-                    </svg>
-                    <span class="nav-item-label">Logout</span>
-                </a>
-            </div>
-        </aside>
-        <!-- ═══ MAIN CONTENT ═══ -->
         <div class="main-content">
             <div class="top-bar">
                 <div>
-                    <div class="top-bar-title">Apartment Information Management</div>
-                    <div class="top-bar-subtitle">Create, view, and manage apartment records & buildings.</div>
+                    <div class="top-bar-title">Apartment Management</div>
+                    <div class="top-bar-subtitle">Manage apartment types, images, and individual units.</div>
                 </div>
-                <div class="top-bar-actions" id="topbar-actions-block">
-                    <button class="btn-topbar primary" id="btn-add-apt" onclick="openAptModal('add')">
-                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;">
-                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                        </svg>
-                        Add Apartment
+                <div class="top-bar-actions">
+                    <button class="btn-topbar primary" onclick="openTypeModal('add')">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
+                        Add New Type
+                    </button>
+                    <button class="btn-topbar" onclick="openUnitModal('add')">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" /></svg>
+                        Add Room/Unit
                     </button>
                 </div>
             </div>
 
             <div class="page-body">
                 <div class="breadcrumb-bar">
-                    <a href="<?= url('/admin/apartment') ?>">Apartment Department</a>
+                    <a href="<?= url('/admin/apartment') ?>">Dashboard</a>
                     <span class="sep">›</span>
-                    <span class="current">Apartments Information</span>
+                    <span class="current">Apartment Management</span>
                 </div>
 
-                <!-- RESTRICTION BANNER -->
-                <div class="restriction-banner" style="margin-bottom: 24px;" id="role-banner">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-                    </svg>
-                    <div>
-                        <strong id="banner-title">Apartment Admin Mode</strong> — Manage apartment location records. New
-                        entries are subject to MIS Admin approval before they become active.
+                <!-- Section: Apartment Types -->
+                <div class="section-header-row">
+                    <h5 style="font-family:'Lora',serif; font-weight:700; color:var(--primary-dark); margin:0;">Apartment Types & Gallery</h5>
+                </div>
+                <div class="types-grid" id="types-grid">
+                    <!-- Loaded via API -->
+                    <div style="grid-column:1/-1; text-align:center; padding:40px;">
+                        <div class="loader" style="margin:0 auto 20px;"></div>
+                        <p style="color:var(--text-muted);">Loading apartment types...</p>
                     </div>
                 </div>
 
-                <!-- APARTMENTS RECORD TABLE -->
+                <!-- Section: Registered Units -->
                 <div class="section-card">
-                    <div class="section-card-header">
+                    <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center;">
                         <h6>
-                            <svg viewBox="0 0 24 24">
-                                <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z" />
-                            </svg>
-                            Registered Apartments
+                            <svg viewBox="0 0 24 24"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z" /></svg>
+                            Registered Room Units
                         </h6>
                     </div>
                     <div class="section-card-body" style="padding:0;">
@@ -217,91 +281,126 @@
                             <table class="mis-table">
                                 <thead>
                                     <tr>
-                                        <th>Apartment ID</th>
-                                        <th>Application ID</th>
-                                        <th>Room Number</th>
-                                        <th>Description</th>
+                                        <th>Unit / Room #</th>
+                                        <th>Type</th>
+                                        <th>Price</th>
+                                        <th>Tenant</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="apt-tbody">
-                                    <!-- Populated via JS -->
+                                <tbody id="units-tbody">
+                                    <!-- Loaded via API -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <!-- ═══ ADD/EDIT APARTMENT MODAL ═══ -->
-    <div class="modal-backdrop" id="apt-modal" style="display:none;">
-        <div class="modal-content" style="max-width:600px;">
+    <!-- ═══ MODAL: MANAGE TYPE ═══ -->
+    <div class="modal-backdrop" id="type-modal" style="display:none;">
+        <div class="modal-content" style="max-width:800px;">
             <div class="modal-bar"></div>
             <div class="modal-header">
-                <h5 id="apt-modal-title">
-                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--accent);">
-                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                    </svg>
-                    <span id="apt-modal-label">Add Apartment Record</span>
-                </h5>
-                <button class="modal-close" onclick="closeModal('apt-modal')">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-                    </svg>
-                </button>
+                <h5 id="type-modal-title">Apartment Type Details</h5>
+                <button class="modal-close" onclick="closeModal('type-modal')">&times;</button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="form-mode" value="add">
-                <input type="hidden" id="form-apt-id" value="">
+                <form id="type-form">
+                    <input type="hidden" id="t-id" name="type_id">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Type Label</label>
+                            <input type="text" class="form-control" name="label" id="t-label" placeholder="e.g. Studio Unit" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Type Key (unique identifier)</label>
+                            <input type="text" class="form-control" name="type_key" id="t-key" placeholder="e.g. studio" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Monthly Price (₱)</label>
+                            <input type="number" class="form-control" name="price" id="t-price" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Capacity</label>
+                            <input type="text" class="form-control" name="capacity" id="t-capacity" placeholder="e.g. 1-2 persons">
+                        </div>
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" id="t-desc"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Floor Area</label><input type="text" class="form-control" name="floor_area" id="t-area"></div>
+                        <div class="form-group"><label class="form-label">Bedrooms</label><input type="text" class="form-control" name="bedrooms" id="t-bedrooms"></div>
+                        <div class="form-group"><label class="form-label">Bathroom</label><input type="text" class="form-control" name="bathroom" id="t-bathroom"></div>
+                    </div>
 
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Application ID</label>
-                        <select class="form-control" id="f-application-id">
-                            <option value="">— Unassigned / No Application —</option>
-                            <option value="APP-1001">APP-1001 (Muhammad Usman)</option>
-                            <option value="APP-1002">APP-1002 (Ahmad Khalil)</option>
-                            <option value="APP-1003">APP-1003 (Fatima Zahra)</option>
-                            <option value="APP-1004">APP-1004 (Yusuf Ali)</option>
-                        </select>
+                    <!-- Gallery Section -->
+                    <div id="type-gallery-section" style="margin-top:24px;">
+                        <label class="form-label">Photo Gallery</label>
+                        <div class="image-gallery-grid" id="image-gallery-grid">
+                            <!-- JS populated -->
+                        </div>
+                        <div class="upload-placeholder" onclick="document.getElementById('gallery-upload').click()" style="margin-top:16px;">
+                            <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:var(--text-muted);margin-bottom:8px;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" /></svg>
+                            <span style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Click to upload photos</span>
+                            <input type="file" id="gallery-upload" multiple accept="image/*" style="display:none;" onchange="handleGalleryUpload(this)">
+                        </div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Room Number *</label>
-                        <input type="text" class="form-control" id="f-roomnumber" placeholder="e.g. 101-A" required>
-                        <div class="error-message" id="err-roomnumber">Room Number is required.</div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Description *</label>
-                        <textarea class="form-control" id="f-desc" placeholder="Details about this apartment unit"
-                            required></textarea>
-                        <div class="error-message" id="err-desc">Description is required.</div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group full">
-                        <label class="form-label">Status</label>
-                        <select class="form-control" id="f-status">
-                            <option value="Pending">Pending</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Rejected">Rejected</option>
-                            <option value="Occupied">Occupied</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                    </div>
-                </div>
+                </form>
             </div>
             <div class="modal-footer">
-                <button class="btn-topbar" onclick="closeModal('apt-modal')">Cancel</button>
-                <button class="btn-topbar primary" id="btn-save-apt" onclick="saveAptForm()">Save Apartment</button>
+                <button class="btn-topbar" onclick="closeModal('type-modal')">Cancel</button>
+                <button class="btn-topbar primary" id="btn-save-type" onclick="saveType()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: MANAGE UNIT ═══ -->
+    <div class="modal-backdrop" id="unit-modal" style="display:none;">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-bar"></div>
+            <div class="modal-header">
+                <h5 id="unit-modal-title">Room Unit Details</h5>
+                <button class="modal-close" onclick="closeModal('unit-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="unit-form">
+                    <input type="hidden" id="u-id" name="unit_id">
+                    <div class="form-group full">
+                        <label class="form-label">Apartment Type</label>
+                        <select class="form-control" name="type_id" id="u-type" required>
+                            <!-- JS populated -->
+                        </select>
+                    </div>
+                    <div class="form-group full" style="margin-top:16px;">
+                        <label class="form-label">Room Number / ID</label>
+                        <input type="text" class="form-control" name="room_number" id="u-number" placeholder="e.g. 101-A" required>
+                    </div>
+                    <div class="form-group full" style="margin-top:16px;">
+                        <label class="form-label">Status</label>
+                        <select class="form-control" name="status" id="u-status">
+                            <option value="Available">Available</option>
+                            <option value="Occupied">Occupied</option>
+                            <option value="Reserved">Reserved</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <div class="form-group full" style="margin-top:16px;">
+                        <label class="form-label">Description / Internal Notes</label>
+                        <textarea class="form-control" name="description" id="u-desc"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-topbar" onclick="closeModal('unit-modal')">Cancel</button>
+                <button class="btn-topbar primary" onclick="saveUnit()">Save Unit</button>
             </div>
         </div>
     </div>
@@ -309,253 +408,287 @@
     <script src="<?= asset('JS/admin-shared.js') ?>"></script>
     <script>
         standardizePage('staff');
-        // ══ INIT ROLE ══
-        // Check role dynamically: Assume MIS_ADMIN or STAFF_ADMIN 
-        // We read from localStorage or default to STAFF_ADMIN for this specific page test
-        const savedRole = localStorage.getItem('mis_current_role') || ROLES.STAFF_ADMIN;
-        window.currentUserRole = savedRole;
-        setCurrentRole(savedRole);
+        syncSessionUser("<?= addslashes(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>", "<?= addslashes($dbUser['email'] ?? '') ?>", "Staff Admin");
 
-        if (savedRole === ROLES.MIS_ADMIN) {
-            document.body.classList.add('mis-admin-mode');
-            document.getElementById('sidebar-role-name').textContent = "MIS Admin";
-            document.getElementById('banner-title').textContent = "MIS Admin Mode";
-            document.querySelector('.restriction-banner div').innerHTML = "<strong>MIS Admin Mode</strong> — You have access to review, approve, or reject new Apartment entries submitted by the Apartment Staff.";
-        } else {
-            document.body.classList.remove('mis-admin-mode');
+        let apartmentTypes = [];
+        let roomUnits = [];
+
+        async function init() {
+            await loadData();
         }
 
-        // ══ DATA MANAGEMENT ══
-        function getApartmentRecords() {
-            if (!localStorage.getItem('mis_apartment_records')) {
-                // Initialize default dummy if empty
-                const initial = [
-                    {
-                        apartment_id: "APTREC-001",
-                        application_id: "APP-1001",
-                        roomnumber: "101-A",
-                        description: "Main residential block unit.",
-                        status: "Active"
-                    },
-                    {
-                        apartment_id: "APTREC-002",
-                        application_id: "APP-1002",
-                        roomnumber: "205-B",
-                        description: "New extension with 2-bedroom family unit.",
-                        status: "Pending"
-                    }
-                ];
-                localStorage.setItem('mis_apartment_records', JSON.stringify(initial));
+        async function loadData() {
+            try {
+                const [typesRes, unitsRes] = await Promise.all([
+                    fetch('<?= url("/api/apartment-types") ?>').then(r => r.json()),
+                    fetch('<?= url("/api/apartment-units") ?>').then(r => r.json())
+                ]);
+
+                if (typesRes.success) {
+                    apartmentTypes = typesRes.data;
+                    renderTypes();
+                    populateTypeDropdowns();
+                }
+                if (unitsRes.success) {
+                    roomUnits = unitsRes.data.units;
+                    renderUnits();
+                }
+            } catch (err) {
+                console.error("Failed to load data:", err);
+                showToast("Failed to sync with database", "var(--danger)");
             }
-            return JSON.parse(localStorage.getItem('mis_apartment_records'));
         }
 
-        function saveApartmentRecords(records) {
-            localStorage.setItem('mis_apartment_records', JSON.stringify(records));
-        }
-
-        function logAudit(actionDesc, actionType) {
-            const logs = JSON.parse(localStorage.getItem('mis_audit_logs') || '[]');
-            const roleStr = savedRole === ROLES.MIS_ADMIN ? 'MIS_ADMIN' : 'APT_ADMIN';
-
-            logs.push({
-                admin_id: roleStr,
-                action: actionType,
-                module: 'APARTMENT',
-                description: actionDesc,
-                ip_address: '192.168.1.' + Math.floor(Math.random() * 255), // Mocked IP
-                timestamp: new Date().toISOString()
-            });
-            localStorage.setItem('mis_audit_logs', JSON.stringify(logs));
-        }
-
-        // ══ RENDER TABLE ══
-        function renderTable() {
-            const records = getApartmentRecords();
-            const tbody = document.getElementById('apt-tbody');
-
-            if (records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">No apartment records found.</td></tr>';
+        function renderTypes() {
+            const grid = document.getElementById('types-grid');
+            if (!apartmentTypes.length) {
+                grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">No apartment types defined yet.</p>';
                 return;
             }
 
-            tbody.innerHTML = records.map(r => {
-                let badge = 'badge-reserved';
-                if (r.status === 'Pending') badge = 'badge-pending';
-                if (r.status === 'Approved' || r.status === 'Active') badge = 'badge-approved';
-                if (r.status === 'Occupied') badge = 'badge-approved';
-                if (r.status === 'Inactive' || r.status === 'Rejected') badge = 'badge-rejected';
+            grid.innerHTML = apartmentTypes.map(t => `
+                <div class="type-card">
+                    <div class="type-card-image">
+                        <img src="<?= asset('') ?>${t.thumbnail || 'assets/placeholder.png'}" alt="${t.label}">
+                        <span class="type-card-badge">${t.available_count} Available</span>
+                    </div>
+                    <div class="type-card-body">
+                        <h4 class="type-card-title">${t.label}</h4>
+                        <div class="type-card-price">₱${Number(t.price).toLocaleString()} <small>/ mo</small></div>
+                        <div class="type-card-stats">
+                            <div class="type-card-stat"><svg viewBox="0 0 24 24"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>${t.floor_area || '--'}</div>
+                            <div class="type-card-stat"><svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>${t.capacity || '--'}</div>
+                        </div>
+                    </div>
+                    <div class="type-card-footer">
+                        <button class="btn-action primary" style="flex:1;" onclick="openTypeModal('edit', ${t.type_id})">Manage Type</button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
-                let actions = `<div class="actions-cell">`;
+        function renderUnits() {
+            const tbody = document.getElementById('units-tbody');
+            if (!roomUnits.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px;">No units registered.</td></tr>';
+                return;
+            }
 
-                if (savedRole === ROLES.STAFF_ADMIN || savedRole === ROLES.MIS_ADMIN) {
-                    // Both Admins share full control
-                    actions += `<button class="btn-action btn-view" onclick="openAptModal('view', '${r.apartment_id}')" title="View Record"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>`;
+            tbody.innerHTML = roomUnits.map(u => `
+                <tr>
+                    <td style="font-weight:700;">${u.room_number}</td>
+                    <td><span class="badge-status badge-reserved">${u.type_label}</span></td>
+                    <td style="font-weight:600;">₱${Number(u.price).toLocaleString()}</td>
+                    <td>${u.tenant_id || '<span style="color:var(--text-muted);">Unassigned</span>'}</td>
+                    <td><span class="badge-status unit-status-${u.status.toLowerCase()}">${u.status}</span></td>
+                    <td class="actions-cell">
+                        <button class="btn-action btn-view" onclick="openUnitModal('edit', ${u.unit_id})" title="Edit Unit"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+                        <button class="btn-action btn-reject" onclick="deleteUnit(${u.unit_id})" title="Delete Unit"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
 
+        function populateTypeDropdowns() {
+            const dropdown = document.getElementById('u-type');
+            dropdown.innerHTML = '<option value="">-- Select Type --</option>' + 
+                apartmentTypes.map(t => `<option value="${t.type_id}">${t.label} (₱${Number(t.price).toLocaleString()})</option>`).join('');
+        }
 
-                    if (r.status === 'Pending') {
-                        actions += `<button class="btn-action btn-approve" onclick="approveApt('${r.apartment_id}')" title="Approve"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></button>`;
-                        actions += `<button class="btn-action btn-reject" onclick="rejectApt('${r.apartment_id}')" title="Reject"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
-                    } else if (r.status === 'Approved' || r.status === 'Active') {
-                        actions += `<button class="btn-action btn-approve" onclick="toggleStatus('${r.apartment_id}', 'Occupied')" title="Mark Occupied"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm2-4H9V7h4v5z"/></svg></button>`;
+        // ══ MODALS: TYPE ══
+        async function openTypeModal(mode, id = null) {
+            document.getElementById('type-form').reset();
+            document.getElementById('t-id').value = ''; // Explicitly clear hidden ID
+            document.getElementById('image-gallery-grid').innerHTML = '';
+            document.getElementById('type-gallery-section').style.display = mode === 'add' ? 'none' : 'block';
+            document.getElementById('type-modal-title').textContent = mode === 'add' ? 'Add New Apartment Type' : 'Edit Apartment Type';
+
+            if (mode === 'edit' && id) {
+                try {
+                    const res = await fetch(`<?= url("/api/apartment-types/detail") ?>?id=${id}`).then(r => r.json());
+                    if (res.success) {
+                        const type = res.data;
+                        document.getElementById('t-id').value = type.type_id;
+                        document.getElementById('t-label').value = type.label;
+                        document.getElementById('t-key').value = type.type_key;
+                        document.getElementById('t-price').value = type.price;
+                        document.getElementById('t-capacity').value = type.capacity;
+                        document.getElementById('t-desc').value = type.description;
+                        document.getElementById('t-area').value = type.floor_area;
+                        document.getElementById('t-bedrooms').value = type.bedrooms;
+                        document.getElementById('t-bathroom').value = type.bathroom;
+                        renderGallery(type.images || []);
+                    } else {
+                        showToast("Could not load type details", "var(--danger)");
+                        return;
                     }
+                } catch (err) {
+                    showToast("Network error while fetching details", "var(--danger)");
+                    return;
+                }
+            }
+            openModal('type-modal');
+        }
 
-                    if (r.status !== 'Inactive' && r.status !== 'Pending' && r.status !== 'Rejected') {
-                        actions += `<button class="btn-action btn-reject" onclick="toggleStatus('${r.apartment_id}', 'Inactive')" title="Set Inactive"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg></button>`;
-                    }
-                    if (r.status === 'Inactive') {
-                        actions += `<button class="btn-action btn-approve" onclick="toggleStatus('${r.apartment_id}', 'Approved')" title="Re-activate / Approve"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg></button>`;
-                    }
+        async function saveType() {
+            const formData = new FormData(document.getElementById('type-form'));
+            const data = Object.fromEntries(formData.entries());
+            const id = data.type_id;
+            const endpoint = id ? '<?= url("/api/apartment-types/update") ?>' : '<?= url("/api/apartment-types/create") ?>';
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                }).then(r => r.json());
+
+                if (res.success) {
+                    showToast(id ? "Type updated" : "Type created", "var(--success)");
+                    closeModal('type-modal');
+                    loadData();
                 } else {
-                    actions += `<button class="btn-action btn-view" onclick="openAptModal('view', '${r.apartment_id}')" title="View"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>`;
+                    showToast(res.error || "Failed to save type", "var(--danger)");
                 }
-
-                actions += `</div>`;
-
-                return `
-                    <tr>
-                        <td class="td-id">${r.apartment_id}</td>
-                        <td style="font-weight:700;">${r.application_id || '—'}</td>
-                        <td style="font-size:0.85rem; font-weight:700;">${r.roomnumber || '—'}</td>
-                        <td style="font-size:0.85rem;">${r.description || '—'}</td>
-                        <td><span class="badge-status ${badge}">${r.status}</span></td>
-                        <td>${actions}</td>
-                    </tr>
-                `;
-            }).join('');
+            } catch (err) {
+                console.error(err);
+                showToast("Network error while saving", "var(--danger)");
+            }
         }
 
-        // ══ ACTIONS ══
-        function openAptModal(mode, id = null) {
-            document.querySelectorAll('.error-message').forEach(e => e.style.display = 'none');
-            const modalTitle = document.getElementById('apt-modal-label');
-            const fAppId = document.getElementById('f-application-id');
-            const fRoom = document.getElementById('f-roomnumber');
-            const fDesc = document.getElementById('f-desc');
-            const fStatus = document.getElementById('f-status');
-            const btnSave = document.getElementById('btn-save-apt');
+        function renderGallery(images) {
+            const grid = document.getElementById('image-gallery-grid');
+            grid.innerHTML = images.map(img => `
+                <div class="gallery-item ${img.is_thumbnail ? 'is-thumb' : ''}">
+                    <img src="<?= asset('') ?>${img.file_path}" alt="Gallery">
+                    <div class="gallery-item-actions">
+                        <button class="btn-gallery-action thumb" onclick="setThumbnail(${img.image_id})" title="Set as Thumbnail"><svg viewBox="0 0 24 24" style="width:14px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>
+                        <button class="btn-gallery-action delete" onclick="deleteImage(${img.image_id})" title="Delete Image"><svg viewBox="0 0 24 24" style="width:14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
-            document.getElementById('form-mode').value = mode;
-            document.getElementById('form-apt-id').value = id || '';
+        async function handleGalleryUpload(input) {
+            const typeId = document.getElementById('t-id').value;
+            if (!typeId) return;
 
-            // Reset disables
-            fAppId.disabled = false;
-            fRoom.disabled = false;
-            fDesc.disabled = false;
-            btnSave.style.display = 'inline-flex';
+            for (const file of input.files) {
+                const formData = new FormData();
+                formData.append('type_id', typeId);
+                formData.append('image', file);
 
-            if (mode === 'add') {
-                modalTitle.textContent = "Add New Apartment";
-                fAppId.value = '';
-                fRoom.value = '';
-                fDesc.value = '';
-                fStatus.value = 'Pending';
-            } else if (mode === 'edit' || mode === 'view') {
-                modalTitle.textContent = mode === 'edit' ? "Edit Apartment Record" : "View Apartment Record";
-                const records = getApartmentRecords();
-                const apt = records.find(r => r.apartment_id === id);
-                if (apt) {
-                    fAppId.value = apt.application_id || '';
-                    fRoom.value = apt.roomnumber || '';
-                    fDesc.value = apt.description || '';
-                    fStatus.value = apt.status || 'Pending';
-                }
+                try {
+                    const res = await fetch('<?= url("/api/apartment-types/upload-image") ?>', {
+                        method: 'POST',
+                        body: formData
+                    }).then(r => r.json());
 
-                if (mode === 'view') {
-                    fAppId.disabled = true;
-                    fRoom.disabled = true;
-                    fDesc.disabled = true;
-                    fStatus.disabled = true;
-                    btnSave.style.display = 'none';
+                    if (res.success) {
+                        showToast("Image uploaded", "var(--success)");
+                    } else {
+                        showToast(res.error, "var(--danger)");
+                    }
+                } catch (err) {
+                    showToast("Upload failed", "var(--danger)");
                 }
             }
-            openModal('apt-modal');
+            // Refresh detail to show new images
+            const detail = await fetch(`<?= url("/api/apartment-types/detail") ?>?id=${typeId}`).then(r => r.json());
+            if (detail.success) renderGallery(detail.data.images);
         }
 
-        function saveAptForm() {
-            // Validation
-            let isValid = true;
-            const appId = document.getElementById('f-application-id').value.trim();
-            const room = document.getElementById('f-roomnumber').value.trim();
-            const desc = document.getElementById('f-desc').value.trim();
-            const mode = document.getElementById('form-mode').value;
-            const id = document.getElementById('form-apt-id').value;
+        async function setThumbnail(imageId) {
+            const res = await fetch('<?= url("/api/apartment-types/set-thumbnail") ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image_id: imageId })
+            }).then(r => r.json());
+            if (res.success) {
+                showToast("Thumbnail updated", "var(--success)");
+                loadData(); // To refresh the main grid
+                const typeId = document.getElementById('t-id').value;
+                const detail = await fetch(`<?= url("/api/apartment-types/detail") ?>?id=${typeId}`).then(r => r.json());
+                if (detail.success) renderGallery(detail.data.images);
+            }
+        }
 
-            if (!room) { document.getElementById('err-roomnumber').style.display = 'block'; isValid = false; } else { document.getElementById('err-roomnumber').style.display = 'none'; }
-            if (!desc) { document.getElementById('err-desc').style.display = 'block'; isValid = false; } else { document.getElementById('err-desc').style.display = 'none'; }
+        async function deleteImage(imageId) {
+            if (!confirm("Delete this image?")) return;
+            const res = await fetch('<?= url("/api/apartment-types/delete-image") ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image_id: imageId })
+            }).then(r => r.json());
+            if (res.success) {
+                showToast("Image deleted", "var(--success)");
+                const typeId = document.getElementById('t-id').value;
+                const detail = await fetch(`<?= url("/api/apartment-types/detail") ?>?id=${typeId}`).then(r => r.json());
+                if (detail.success) renderGallery(detail.data.images);
+            }
+        }
 
-            if (!isValid) return;
-
-            let records = getApartmentRecords();
-
-            if (mode === 'add') {
-                const newId = "APTREC-" + String(records.length + 1).padStart(3, '0');
-                const newStatus = document.getElementById('f-status').value || 'Pending';
-                records.push({
-                    apartment_id: newId,
-                    application_id: appId,
-                    roomnumber: room,
-                    description: desc,
-                    status: newStatus
-                });
-                logAudit(`Created new apartment record: ${room} as ${newStatus}`, 'CREATE');
-                showToast(`✅ Apartment created.`, 'var(--success)');
-            } else if (mode === 'edit') {
-                const index = records.findIndex(r => r.apartment_id === id);
-                if (index !== -1) {
-                    records[index].application_id = appId;
-                    records[index].roomnumber = room;
-                    records[index].description = desc;
-                    records[index].status = document.getElementById('f-status').value;
-                    logAudit(`Updated apartment record: ${id}`, 'UPDATE');
-                    showToast(`✅ Apartment updated successfully.`, 'var(--success)');
+        // ══ MODALS: UNIT ══
+        function openUnitModal(mode, id = null) {
+            document.getElementById('unit-form').reset();
+            document.getElementById('u-id').value = ''; // Explicitly clear hidden ID
+            document.getElementById('unit-modal-title').textContent = mode === 'add' ? 'Add New Room Unit' : 'Edit Room Unit';
+            
+            if (mode === 'edit' && id) {
+                const unit = roomUnits.find(u => u.unit_id == id);
+                if (unit) {
+                    document.getElementById('u-id').value = unit.unit_id;
+                    document.getElementById('u-type').value = unit.type_id;
+                    document.getElementById('u-number').value = unit.room_number;
+                    document.getElementById('u-status').value = unit.status;
+                    document.getElementById('u-desc').value = unit.description;
                 }
             }
-
-            saveApartmentRecords(records);
-            closeModal('apt-modal');
-            renderTable();
+            openModal('unit-modal');
         }
 
-        // Staff Actions
-        function toggleStatus(id, newStatus) {
-            let records = getApartmentRecords();
-            let apt = records.find(r => r.apartment_id === id);
-            if (apt) {
-                apt.status = newStatus;
-                saveApartmentRecords(records);
-                logAudit(`Changed status of ${id} to ${newStatus}`, 'STATUS_UPDATE');
-                showToast(`✅ Apartment marked as ${newStatus}.`, 'var(--success)');
-                renderTable();
+        async function saveUnit() {
+            const formData = new FormData(document.getElementById('unit-form'));
+            const data = Object.fromEntries(formData.entries());
+            const id = data.unit_id;
+            const endpoint = id ? '<?= url("/api/apartment-units/update") ?>' : '<?= url("/api/apartment-units/create") ?>';
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                }).then(r => r.json());
+
+                if (res.success) {
+                    showToast(id ? "Unit updated" : "Unit created", "var(--success)");
+                    closeModal('unit-modal');
+                    loadData();
+                } else {
+                    showToast(res.error || "Failed to save unit", "var(--danger)");
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Network error while saving unit", "var(--danger)");
             }
         }
 
-        // MIS Actions
-        function approveApt(id) {
-            let records = getApartmentRecords();
-            let apt = records.find(r => r.apartment_id === id);
-            if (apt) {
-                apt.status = 'Approved';
-                saveApartmentRecords(records);
-                logAudit(`Approved apartment record: ${id}`, 'APPROVE');
-                showToast(`✅ Apartment ${id} has been Approved.`, 'var(--success)');
-                renderTable();
+        async function deleteUnit(id) {
+            if (!confirm("Delete this room unit permanently?")) return;
+            const res = await fetch('<?= url("/api/apartment-units/delete") ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ unit_id: id })
+            }).then(r => r.json());
+            if (res.success) {
+                showToast("Unit deleted", "var(--success)");
+                loadData();
+            } else {
+                showToast(res.error || "Failed to delete unit", "var(--danger)");
             }
         }
 
-        function rejectApt(id) {
-            let records = getApartmentRecords();
-            let apt = records.find(r => r.apartment_id === id);
-            if (apt) {
-                apt.status = 'Inactive';
-                saveApartmentRecords(records);
-                logAudit(`Rejected apartment record: ${id}`, 'REJECT');
-                showToast(`❌ Apartment ${id} was Rejected.`, 'var(--warning)');
-                renderTable();
-            }
-        }
-
-        renderTable();
+        init();
     </script>
 </body>
 
