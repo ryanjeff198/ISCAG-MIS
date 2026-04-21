@@ -427,8 +427,7 @@
   <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    initAdminData();
-    initReportsData();
+    standardizePage('staff');
     setCurrentRole(ROLES.STAFF_ADMIN);
 
     function refreshStats() {

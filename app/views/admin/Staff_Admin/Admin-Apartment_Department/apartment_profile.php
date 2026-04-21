@@ -423,7 +423,7 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    initAdminData();
+    standardizePage('staff');
     const PROFILE_KEY = 'mis_apartment_staff_profile';
     const DEFAULT_PROFILE = { id: 'STF-001', name: 'Abdul Karim', email: 'akarim@iscag.org', phone: '+63 917 123 4567', gender: 'male', arabic: 'Abdul Karim', occupation: 'Property Manager', since: '2025-06-01' };
 
@@ -499,7 +499,6 @@
       r.readAsDataURL(file);
     });
 
-    initSidebar();
   </script>
 </body>
 

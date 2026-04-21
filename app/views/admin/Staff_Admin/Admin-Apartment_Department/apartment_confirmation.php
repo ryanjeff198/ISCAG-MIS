@@ -487,8 +487,7 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    initAdminData();
-    initSidebar();
+    standardizePage('staff');
 
     // ── Tab Switching Logic ──
     function switchTab(tabName, btn) {

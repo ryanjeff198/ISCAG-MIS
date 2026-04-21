@@ -308,6 +308,7 @@
 
     <script src="<?= asset('JS/admin-shared.js') ?>"></script>
     <script>
+        standardizePage('staff');
         // ══ INIT ROLE ══
         // Check role dynamically: Assume MIS_ADMIN or STAFF_ADMIN 
         // We read from localStorage or default to STAFF_ADMIN for this specific page test
@@ -554,7 +555,6 @@
             }
         }
 
-        initSidebar();
         renderTable();
     </script>
 </body>

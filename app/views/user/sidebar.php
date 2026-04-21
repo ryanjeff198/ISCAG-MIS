@@ -265,7 +265,8 @@ $active_page = $active_page ?? 'dashboard';
     let approvalNotifId = null;
 
     function checkUserStatus() {
-        fetch('<?= url("/user/status/check") ?>')
+        const cacheBuster = '?t=' + new Date().getTime();
+        fetch('<?= url("/user/status/check") ?>' + cacheBuster)
             .then(res => res.json())
             .then(data => {
                 // Find an unread approval notification
@@ -297,13 +298,23 @@ $active_page = $active_page ?? 'dashboard';
     const continueBtn = document.getElementById('approval-continue-btn');
     if (continueBtn) {
         continueBtn.addEventListener('click', () => {
+            // Hide the modal immediately for better UX
+            const modal = document.getElementById('approval-modal');
+            if (modal) modal.classList.remove('show');
+            
             if (approvalNotifId) {
                 // Mark notification as read to avoid showing modal again
                 fetch('<?= url("/user/notifications/mark-read") ?>', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: approvalNotifId })
-                }).then(() => {
+                })
+                .then(res => res.json())
+                .then(() => {
+                    window.location.href = '<?= url("/user/dashboard") ?>';
+                })
+                .catch(err => {
+                    console.error('Failed to mark read:', err);
                     window.location.href = '<?= url("/user/dashboard") ?>';
                 });
             } else {
@@ -320,4 +331,77 @@ $active_page = $active_page ?? 'dashboard';
         setInterval(checkUserStatus, 15000);
     }
 })();
+
+// ══════════════════════════════════════
+//  LOGOUT CONFIRMATION MODAL
+// ══════════════════════════════════════
+function initLogoutModal() {
+  if (window._logoutModalInit) return;
+  const logoutLinks = document.querySelectorAll('a[href*="/logout"], [data-tooltip="Logout"]');
+  if (logoutLinks.length === 0) return;
+
+  window._logoutModalInit = true;
+
+  if (!document.getElementById('logout-confirm-modal')) {
+    const modalHtml = `
+      <div id="logout-confirm-modal" style="position:fixed;inset:0;background:rgba(15,30,22,0.6);backdrop-filter:blur(6px);z-index:99999;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;">
+        <div style="background:white;border-radius:16px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;transform:translateY(20px);transition:transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+          <div style="height:4px;background:linear-gradient(90deg,#8b2e2e,#c79a2b);"></div>
+          <div style="padding:32px 28px 24px;text-align:center;">
+            <svg viewBox="0 0 24 24" style="width:60px;height:60px;fill:#8b2e2e;margin-bottom:16px;">
+              <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+            </svg>
+            <h4 style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:#1f2e2a;margin:0 0 10px;">Sign Out</h4>
+            <p style="font-size:0.9rem;color:#6f7f78;margin:0;line-height:1.5;">Are you sure you want to log out of your account?</p>
+          </div>
+          <div style="display:flex;gap:10px;padding:0 28px 24px;justify-content:center;">
+            <button id="logout-cancel-btn" style="padding:10px 24px;border-radius:8px;border:1.5px solid #e8ece9;background:white;color:#6f7f78;font-weight:600;cursor:pointer;transition:background 0.2s;">Cancel</button>
+            <button id="logout-confirm-btn" style="padding:10px 24px;border-radius:8px;border:none;background:#8b2e2e;color:white;font-weight:700;cursor:pointer;transition:background 0.2s;">Yes, Log out</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    const modal = document.getElementById('logout-confirm-modal');
+    const inner = modal.querySelector('div');
+    const cancelBtn = document.getElementById('logout-cancel-btn');
+    const confirmBtn = document.getElementById('logout-confirm-btn');
+    let targetHref = '';
+
+    const hideModal = () => {
+      modal.style.opacity = '0';
+      inner.style.transform = 'translateY(20px)';
+      setTimeout(() => modal.style.display = 'none', 200);
+    };
+
+    const showModal = (e, href) => {
+      e.preventDefault();
+      targetHref = href;
+      modal.style.display = 'flex';
+      // Force reflow
+      void modal.offsetWidth;
+      modal.style.opacity = '1';
+      inner.style.transform = 'translateY(0)';
+    };
+
+    cancelBtn.addEventListener('click', hideModal);
+    modal.addEventListener('click', e => { if(e.target === modal) hideModal(); });
+    
+    confirmBtn.addEventListener('click', () => {
+      window.location.href = targetHref || '/logout';
+    });
+
+    logoutLinks.forEach(link => {
+      link.addEventListener('click', function(e) {
+        showModal(e, this.getAttribute('href'));
+      });
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initLogoutModal);
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+  initLogoutModal();
+}
 </script>
