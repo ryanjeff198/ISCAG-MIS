@@ -34,26 +34,26 @@ body {
 }
 
 /* ─── SPLIT LAYOUT ─── */
-.dev-login-split {
+.auth-split {
   display: flex;
   min-height: 100vh;
 }
 
 /* LEFT SIDE (IMAGE) */
-.dev-login-left {
+.auth-left {
   flex: 1;
   position: relative;
   background: var(--green-dark);
 }
 
-.dev-login-bg {
+.auth-bg {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
 /* HOME LINK */
-.dev-home-link {
+.auth-home-link {
   position: absolute;
   top: 20px;
   left: 24px;
@@ -66,12 +66,12 @@ body {
   gap: 4px;
 }
 
-.dev-home-link:hover {
+.auth-home-link:hover {
   text-decoration: underline;
 }
 
 /* RIGHT SIDE (FORM) */
-.dev-login-right {
+.auth-right {
   flex: 1;
   position: relative;
   display: flex;
@@ -82,7 +82,7 @@ body {
 }
 
 /* FORM CARD */
-.dev-login-form {
+.auth-card {
   background: #fff;
   padding: 32px;
   border-radius: 12px;
@@ -92,7 +92,7 @@ body {
 }
 
 /* TITLE */
-.dev-login-title {
+.auth-title {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 24px;
@@ -122,7 +122,7 @@ body {
 }
 
 /* BUTTON */
-.dev-btn-primary {
+.btn-auth {
   background: var(--green);
   color: #fff;
   border: none;
@@ -133,18 +133,18 @@ body {
   transition: 0.2s;
 }
 
-.dev-btn-primary:hover {
+.btn-auth:hover {
   background: var(--green-dark);
 }
 
 /* LINK */
-.dev-link {
+.auth-link {
   color: var(--green);
   text-decoration: none;
   font-size: 14px;
 }
 
-.dev-link:hover {
+.auth-link:hover {
   text-decoration: underline;
 }
 
@@ -156,15 +156,15 @@ body {
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 768px) {
-  .dev-login-split {
+  .auth-split {
     flex-direction: column;
   }
 
-  .dev-login-left {
+  .auth-left {
     height: 200px;
   }
 
-  .dev-login-right {
+  .auth-right {
     padding: 20px;
   }
 }
@@ -176,17 +176,17 @@ body {
     <div id="header-placeholder"></div>
 
 <!-- SPLIT -->
-<div class="dev-login-split">
-  <div class="dev-login-left">
-    <img src="<?= asset('assets/ISCAG BG.png') ?>" alt="ISCAG Philippines" class="dev-login-bg">
+<div class="auth-split">
+  <div class="auth-left">
+    <img src="<?= asset('assets/ISCAG BG.png') ?>" alt="ISCAG Philippines" class="auth-bg">
   </div>
 
   <!-- Log In form -->
-  <div class="dev-login-right">
-    <a href="<?= url('/') ?>" class="dev-home-link"><i class="bi bi-arrow-left"></i> Home</a>
-    <div class="dev-login-form">
+  <div class="auth-right">
+    <a href="<?= url('/') ?>" class="auth-home-link"><i class="bi bi-arrow-left"></i> Home</a>
+    <div class="auth-card">
 
-      <h1 class="dev-login-title">Log in</h1>
+      <h1 class="auth-title">Log in</h1>
 
       <?php if (isset($error)): ?>
         <div class="alert alert-danger" style="font-size: 13px; margin-bottom: 15px; color: var(--danger); background: var(--danger-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--danger);"><?= $error ?></div>
@@ -209,15 +209,15 @@ body {
         </div>
 
       <div class="text-end mb-3">
-        <a href="<?= url('/forgot-password') ?>" class="dev-link">Forgot password?</a>
+        <a href="<?= url('/forgot-password') ?>" class="auth-link">Forgot password?</a>
       </div>
 
-        <button type="submit" class="dev-btn-primary w-100 mb-3">Sign In</button>
+        <button type="submit" class="btn-auth w-100 mb-3">Sign In</button>
       </form>
 
-      <div class="text-center">
-        Don't have an account? <a href="<?= url('/register') ?>" class="dev-link">Sign Up</a>
-      </div>
+      <p class="auth-footer-text" style="text-align: center; font-size: 14px;">
+        Don't have an account? <a href="<?= url('/register') ?>" class="auth-link">Sign Up</a>
+      </p>
 
     </div>
   </div>

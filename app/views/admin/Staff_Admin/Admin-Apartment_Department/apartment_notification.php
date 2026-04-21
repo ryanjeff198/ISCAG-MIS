@@ -351,9 +351,7 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    initAdminData();
-    initReportsData();
-    initSidebar();
+    standardizePage('staff');
 
     // Map activity log types to source pages for staff
     function getSourcePage(type) {

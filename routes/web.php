@@ -12,6 +12,7 @@
 $routes = [
     // Public pages
     '/'                 => ['HomeController',  'index'],
+    '/index'            => ['HomeController',  'index'],
 
     // Authentication
     '/login'            => ['AuthController',  'login'],

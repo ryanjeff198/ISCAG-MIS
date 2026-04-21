@@ -108,5 +108,10 @@ if (isset($routes[$route])) {
     // 404 — No matching route (DISABLED)
     // require_once BASE_PATH . '/app/controllers/ErrorController.php';
     // ErrorController::show404();
-    echo "404 - No matching route found in the MVC system.";
+    echo "404 - No matching route found in the MVC system.<br><br>";
+    echo "<b>DEBUG INFO:</b><br>";
+    echo "SCRIPT_NAME: " . $_SERVER['SCRIPT_NAME'] . "<br>";
+    echo "REQUEST_URI: " . $_SERVER['REQUEST_URI'] . "<br>";
+    echo "BASE_URL: " . BASE_URL . "<br>";
+    echo "Calculated Route: " . $route . "<br>";
 }

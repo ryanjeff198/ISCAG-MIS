@@ -647,6 +647,7 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
+    standardizePage('staff');
     // ── UNIFIED SYSTEM CONTEXT ──
     // Check if opened by ADMIN or USER by faking the session via URL params or existing memory.
     // We'll safely fallback to MIS_ADMIN if nothing is set strictly for demo purposes.
@@ -663,8 +664,6 @@
     let currentProofIdAction = null;
 
     function initPage() {
-      document.getElementById('sidebar-toggle').addEventListener('click', () => { document.getElementById('sidebar').classList.toggle('collapsed'); });
-
       // UI Adaptation based on roles
       const isAdmin = (activeRole === ROLES.MIS_ADMIN || activeRole === ROLES.STAFF_ADMIN);
 

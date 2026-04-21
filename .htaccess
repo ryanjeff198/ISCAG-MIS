@@ -1,4 +1,9 @@
 RewriteEngine On
+
+# Route the root directory to public/index.php
+RewriteRule ^$ public/index.php [L]
+
+# Route all other non-existent files/directories to public/index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php [QSA,L]
