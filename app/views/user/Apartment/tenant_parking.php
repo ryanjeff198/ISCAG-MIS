@@ -80,14 +80,6 @@
             margin-top: 2px;
         }
 
-        .form-doc-header-logo-right {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--accent);
-            flex-shrink: 0;
-        }
 
         .form-doc-title-bar {
             text-align: center;
@@ -1063,8 +1055,6 @@
                                     <div class="org-name-en">Islamic Studies, Call and Guidance of the Philippines</div>
                                     <div class="sec-reg">SEC. REG. NO. 0000185967</div>
                                 </div>
-                                <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo" class="form-doc-header-logo-right"
-                                    onerror="this.style.display='none'" />
                             </div>
                             <div class="form-doc-title-bar">
                                 <div>

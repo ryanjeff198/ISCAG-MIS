@@ -87,13 +87,15 @@ $active_page = $active_page ?? 'dashboard';
                 </svg>
             </button>
             <div class="nav-dropdown <?= $dawah_active ? 'open' : '' ?>" id="dawah-menu">
-                <?php if (($_SESSION['gender'] ?? '') !== 'female'): ?>
+                <?php 
+                $gender = strtolower($_SESSION['gender'] ?? '');
+                if ($gender !== 'female'): ?>
                 <a href="<?= url('/user/services/counseling/male') ?>" class="<?= $active_page === 'counseling_male' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
                     Brothers' Counseling
                 </a>
                 <?php endif; ?>
-                <?php if (($_SESSION['gender'] ?? '') !== 'male'): ?>
+                <?php if ($gender !== 'male'): ?>
                 <a href="<?= url('/user/services/counseling/female') ?>" class="<?= $active_page === 'counseling_female' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
                     Sisters' Counseling
@@ -157,6 +159,20 @@ $active_page = $active_page ?? 'dashboard';
             <span class="nav-item-label">Logout</span>
         </a>
     </div>
+
+    <!-- ═══ LOGOUT CONFIRMATION MODAL ═══ -->
+    <div id="logout-confirm-modal" style="position:fixed;inset:0;background:rgba(15,30,22,0.6);backdrop-filter:blur(6px);z-index:99999;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;">
+        <div style="background:white;border-radius:16px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;transform:translateY(20px);transition:transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <div style="height:4px;background:linear-gradient(90deg,#8b2e2e,#c79a2b);"></div>
+            <div style="padding:40px 28px 32px;text-align:center;">
+                <h4 style="font-family:'Lora',serif;font-size:1.25rem;font-weight:700;color:#1f2e2a;margin:0;">Log out of your account?</h4>
+            </div>
+            <div style="display:flex;gap:12px;padding:0 28px 32px;justify-content:center;">
+                <button id="logout-cancel-btn" style="flex:1;padding:12px 0;border-radius:10px;border:1.5px solid #e8ece9;background:white;color:#6f7f78;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit;">Cancel</button>
+                <button id="logout-confirm-btn" style="flex:1;padding:12px 0;border-radius:10px;border:none;background:#8b2e2e;color:white;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:inherit;box-shadow:0 4px 12px rgba(139,46,46,0.25);">Yes, Logout</button>
+            </div>
+        </div>
+    </div>
 </aside>
 <script>
     /**
@@ -217,12 +233,13 @@ $active_page = $active_page ?? 'dashboard';
         function applySidebarLocks() {
             const stored = JSON.parse(localStorage.getItem('mis_user') || '{}');
             const isComplete = stored.profileComplete || false;
+            const isTenant = stored.role === 'Tenant';
             const wraps = ['damayan-wrap', 'dawah-wrap', 'apartment-wrap'];
             
             wraps.forEach(id => {
                 const wrap = document.getElementById(id);
                 if (wrap) {
-                    if (isComplete) wrap.classList.remove('locked');
+                    if (isComplete || isTenant) wrap.classList.remove('locked');
                     else wrap.classList.add('locked');
                 }
             });
@@ -231,6 +248,14 @@ $active_page = $active_page ?? 'dashboard';
         initDropdown('damayan-trigger', 'damayan-menu', 'damayan-wrap');
         initDropdown('dawah-trigger', 'dawah-menu', 'dawah-wrap');
         initDropdown('apartment-trigger', 'apartment-menu', 'apartment-wrap');
+
+        // ── 2b. Da'wah Trigger data-href Sync ──
+        const dawahTrigger = document.getElementById('dawah-trigger');
+        if (dawahTrigger) {
+            const gender = '<?= strtolower($_SESSION['gender'] ?? "") ?>';
+            const dawahHref = (gender === 'female') ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
+            dawahTrigger.setAttribute('data-href', dawahHref);
+        }
         
         applySidebarLocks();
         // Re-check after a short delay to ensure localStorage is ready
@@ -286,17 +311,43 @@ $active_page = $active_page ?? 'dashboard';
 
     // ── 4. LOGOUT MODAL ──
     function initLogoutModal() {
+        const modal = document.getElementById('logout-confirm-modal');
+        const cancelBtn = document.getElementById('logout-cancel-btn');
+        const confirmBtn = document.getElementById('logout-confirm-btn');
         const logoutLinks = document.querySelectorAll('a[href*="/logout"], [data-tooltip="Logout"]');
+        
+        if (!modal || !cancelBtn || !confirmBtn) return;
+
+        let targetHref = '';
+
+        const showModal = (href) => {
+            targetHref = href;
+            modal.style.display = 'flex';
+            void modal.offsetWidth; // force reflow
+            modal.style.opacity = '1';
+            modal.firstElementChild.style.transform = 'translateY(0)';
+        };
+
+        const hideModal = () => {
+            modal.style.opacity = '0';
+            modal.firstElementChild.style.transform = 'translateY(20px)';
+            setTimeout(() => { modal.style.display = 'none'; }, 200);
+        };
+
         logoutLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
+            link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const href = this.getAttribute('href');
-                if (typeof showLogoutConfirm === 'function') {
-                    showLogoutConfirm(href);
-                } else if (confirm('Are you sure you want to log out?')) {
-                    window.location.href = href;
-                }
+                showModal(link.getAttribute('href'));
             });
+        });
+
+        cancelBtn.addEventListener('click', hideModal);
+        confirmBtn.addEventListener('click', () => {
+            if (targetHref) window.location.href = targetHref;
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) hideModal();
         });
     }
     document.addEventListener('DOMContentLoaded', initLogoutModal);

@@ -407,14 +407,6 @@ if ($userId) {
       margin-top: 2px;
     }
 
-    .form-doc-header-logo-right {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--accent);
-      flex-shrink: 0;
-    }
 
     .form-doc-title-bar {
       text-align: center;

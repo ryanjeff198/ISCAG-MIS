@@ -96,28 +96,34 @@ body {
 
 /* ── Toggle Button ── */
 
-.sidebar-toggle {
+#sidebar-toggle.sidebar-toggle {
   position: absolute;
   top: 16px;
   right: -14px;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--sidebar-bg);
-  border: 2px solid var(--border);
+  background: #e1ab39 !important;
+  border: 1.5px solid rgba(0,0,0,0.1);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 20;
-  transition: right 0.3s ease;
+  z-index: 100;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
-.sidebar-toggle svg {
-  width: 16px;
-  height: 16px;
-  fill: white;
+#sidebar-toggle.sidebar-toggle:hover {
+  transform: scale(1.1);
+  background: #f1bb49 !important;
+}
+
+#sidebar-toggle.sidebar-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: #0f5c3a !important;
   transition: transform 0.3s;
 }
 

@@ -635,9 +635,8 @@ function initLogoutModal() {
       <div id="logout-confirm-modal" style="position:fixed;inset:0;background:rgba(15,30,22,0.6);backdrop-filter:blur(6px);z-index:99999;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;">
         <div style="background:white;border-radius:16px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;transform:translateY(20px);transition:transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
           <div style="height:4px;background:linear-gradient(90deg,#8b2e2e,#c79a2b);"></div>
-          <div style="padding:32px 28px 24px;text-align:center;">
-            <h4 style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:#1f2e2a;margin:0 0 10px;">Log Out</h4>
-            <p style="font-size:0.9rem;color:#6f7f78;margin:0;line-height:1.5;">Are you sure you want to log out of your account?</p>
+          <div style="padding:40px 28px 32px;text-align:center;">
+            <h4 style="font-family:'Lora',serif;font-size:1.25rem;font-weight:700;color:#1f2e2a;margin:0;">Log out of your account?</h4>
           </div>
           <div style="display:flex;gap:10px;padding:0 28px 24px;justify-content:center;">
             <button id="logout-cancel-btn" style="padding:10px 24px;border-radius:8px;border:1.5px solid #e8ece9;background:white;color:#6f7f78;font-weight:600;cursor:pointer;transition:background 0.2s;">Cancel</button>
