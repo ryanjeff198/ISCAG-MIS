@@ -88,6 +88,7 @@ $routes = [
     '/api/apartment-types/upload-image'    => ['ApartmentTypeController', 'uploadImage'],
     '/api/apartment-types/delete-image'    => ['ApartmentTypeController', 'deleteImage'],
     '/api/apartment-types/set-thumbnail'   => ['ApartmentTypeController', 'setThumbnail'],
+    '/api/apartment-types/serve-image'     => ['ApartmentTypeController', 'serveImage'],
     '/api/apartment-units'                 => ['ApartmentTypeController', 'listUnits'],
     '/api/apartment-units/create'          => ['ApartmentTypeController', 'createUnit'],
     '/api/apartment-units/update'          => ['ApartmentTypeController', 'updateUnit'],

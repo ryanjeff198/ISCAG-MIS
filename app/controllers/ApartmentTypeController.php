@@ -146,29 +146,18 @@ class ApartmentTypeController
             $this->json(['success' => false, 'error' => 'Invalid file type. Allowed: JPG, PNG, GIF, WebP'], 400);
         }
 
-        // Ensure upload directory exists
-        $uploadDir = BASE_PATH . '/public/uploads/apartments/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
+        // Read binary data from upload
+        $binaryData = file_get_contents($file['tmp_name']);
+        if ($binaryData === false) {
+            $this->json(['success' => false, 'error' => 'Failed to read uploaded file'], 500);
         }
 
-        // Generate unique filename
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = "type{$typeId}_" . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-        $destPath = $uploadDir . $filename;
-
-        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
-            $this->json(['success' => false, 'error' => 'Failed to save uploaded file'], 500);
-        }
-
-        $relativePath = 'uploads/apartments/' . $filename;
         $caption = $_POST['caption'] ?? '';
         $isThumbnail = !empty($_POST['is_thumbnail']);
 
-        $imageId = $this->model->addImage($typeId, $relativePath, $caption, $isThumbnail);
+        $imageId = $this->model->addImage($typeId, $binaryData, $mime, $caption, $isThumbnail);
         $this->json(['success' => true, 'data' => [
             'image_id'  => $imageId,
-            'file_path' => $relativePath,
             'caption'   => $caption
         ]]);
     }
@@ -184,17 +173,8 @@ class ApartmentTypeController
             $this->json(['success' => false, 'error' => 'Missing image_id'], 400);
         }
 
-        $filePath = $this->model->removeImage($imageId);
-        if ($filePath) {
-            // Delete the physical file if it's in uploads/ (don't delete original assets)
-            if (str_starts_with($filePath, 'uploads/')) {
-                $fullPath = BASE_PATH . '/public/' . $filePath;
-                if (file_exists($fullPath)) {
-                    unlink($fullPath);
-                }
-            }
-        }
-        $this->json(['success' => true]);
+        $ok = $this->model->removeImage($imageId);
+        $this->json(['success' => $ok]);
     }
 
     /**
@@ -265,5 +245,36 @@ class ApartmentTypeController
         }
         $ok = $this->model->deleteUnit($id);
         $this->json(['success' => $ok]);
+    }
+
+    // ═══════════════════════════════════════════
+    //  SERVE IMAGE (BLOB → Browser)
+    // ═══════════════════════════════════════════
+
+    /**
+     * GET /api/apartment-types/serve-image?id=N
+     * Serves image binary from DB to browser.
+     */
+    public function serveImage(): void
+    {
+        $imageId = (int) ($_GET['id'] ?? 0);
+        if (!$imageId) {
+            http_response_code(400);
+            echo 'Missing image id';
+            return;
+        }
+
+        $result = $this->model->getImageData($imageId);
+        if (!$result) {
+            http_response_code(404);
+            echo 'Image not found';
+            return;
+        }
+
+        header('Content-Type: ' . $result['mime']);
+        header('Content-Length: ' . strlen($result['data']));
+        header('Cache-Control: public, max-age=86400');
+        echo $result['data'];
+        exit;
     }
 }

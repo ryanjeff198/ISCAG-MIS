@@ -480,8 +480,8 @@
             const html = apartmentTypes.map(t => `
                 <div class="type-card">
                     <div class="type-card-image">
-                        ${t.thumbnail 
-                            ? `<img src="<?= asset('') ?>${t.thumbnail}" alt="${t.label}">`
+                        ${t.thumbnail_id 
+                            ? `<img src="<?= url('/api/apartment-types/serve-image') ?>?id=${t.thumbnail_id}" alt="${t.label}">`
                             : `<div style="width:100%; height:100%; background:#f0f2f1; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:0.8rem;">No Image</div>`
                         }
                         <div class="type-card-actions" style="position:absolute; top:12px; right:12px; display:flex; gap:6px;">
@@ -568,7 +568,7 @@
                         const thumb = (type.images || []).find(img => img.is_thumbnail);
                         const thumbPreview = document.getElementById('t-thumb-preview');
                         if (thumb) {
-                            thumbPreview.innerHTML = `<img src="<?= asset('') ?>${thumb.file_path}" style="width:100%; height:100%; object-fit:cover;">`;
+                            thumbPreview.innerHTML = `<img src="<?= url('/api/apartment-types/serve-image') ?>?id=${thumb.image_id}" style="width:100%; height:100%; object-fit:cover;">`;
                         } else {
                             thumbPreview.innerHTML = `<span style="font-size:0.7rem; color:var(--text-muted);">No image</span>`;
                         }
@@ -616,7 +616,7 @@
             const grid = document.getElementById('image-gallery-grid');
             grid.innerHTML = images.map(img => `
                 <div class="gallery-item ${img.is_thumbnail ? 'is-thumb' : ''}">
-                    <img src="<?= asset('') ?>${img.file_path}" alt="Gallery">
+                    <img src="<?= url('/api/apartment-types/serve-image') ?>?id=${img.image_id}" alt="Gallery">
                     <div class="gallery-item-actions">
                         <button class="btn-gallery-action thumb" onclick="setThumbnail(${img.image_id})" title="Set as Thumbnail"><svg viewBox="0 0 24 24" style="width:14px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>
                         <button class="btn-gallery-action delete" onclick="deleteImage(${img.image_id})" title="Delete Image"><svg viewBox="0 0 24 24" style="width:14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
@@ -648,7 +648,7 @@
                     if (detail.success) {
                         const thumb = (detail.data.images || []).find(img => img.is_thumbnail);
                         if (thumb) {
-                            document.getElementById('t-thumb-preview').innerHTML = `<img src="<?= asset('') ?>${thumb.file_path}" style="width:100%; height:100%; object-fit:cover;">`;
+                            document.getElementById('t-thumb-preview').innerHTML = `<img src="<?= url('/api/apartment-types/serve-image') ?>?id=${thumb.image_id}" style="width:100%; height:100%; object-fit:cover;">`;
                         }
                         renderGallery(detail.data.images);
                     }

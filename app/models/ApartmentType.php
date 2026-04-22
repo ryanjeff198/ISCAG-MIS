@@ -26,9 +26,9 @@ class ApartmentType
     {
         $sql = "
             SELECT t.*, 
-                   (SELECT i.file_path FROM apartment_type_images i 
+                   (SELECT i.image_id FROM apartment_type_images i 
                     WHERE i.type_id = t.type_id AND i.is_thumbnail = 1 
-                    ORDER BY i.sort_order LIMIT 1) AS thumbnail
+                    ORDER BY i.sort_order LIMIT 1) AS thumbnail_id
             FROM apartment_types t
             WHERE t.is_active = 1
             ORDER BY t.sort_order, t.type_id
@@ -128,7 +128,8 @@ class ApartmentType
     public function getImagesByType(int $typeId): array
     {
         $stmt = $this->db->prepare(
-            "SELECT * FROM apartment_type_images WHERE type_id = :tid ORDER BY is_thumbnail DESC, sort_order"
+            "SELECT image_id, type_id, caption, is_thumbnail, sort_order, mime_type, created_at 
+             FROM apartment_type_images WHERE type_id = :tid ORDER BY is_thumbnail DESC, sort_order"
         );
         $stmt->execute(['tid' => $typeId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -137,7 +138,10 @@ class ApartmentType
     /**
      * Add an image to a type.
      */
-    public function addImage(int $typeId, string $filePath, string $caption = '', bool $isThumbnail = false): int
+    /**
+     * Add an image to a type (BLOB storage).
+     */
+    public function addImage(int $typeId, string $binaryData, string $mimeType, string $caption = '', bool $isThumbnail = false): int
     {
         // If marking as thumbnail, unmark all others for this type
         if ($isThumbnail) {
@@ -150,32 +154,43 @@ class ApartmentType
         $nextSort = $maxSort->fetchColumn();
 
         $stmt = $this->db->prepare(
-            "INSERT INTO apartment_type_images (type_id, file_path, caption, is_thumbnail, sort_order) 
-             VALUES (:tid, :fp, :cap, :thumb, :sort)"
+            "INSERT INTO apartment_type_images (type_id, image_data, mime_type, caption, is_thumbnail, sort_order) 
+             VALUES (:tid, :data, :mime, :cap, :thumb, :sort)"
         );
-        $stmt->execute([
-            'tid'   => $typeId,
-            'fp'    => $filePath,
-            'cap'   => $caption,
-            'thumb' => $isThumbnail ? 1 : 0,
-            'sort'  => $nextSort
-        ]);
+        $stmt->bindValue(':tid', $typeId, PDO::PARAM_INT);
+        $stmt->bindValue(':data', $binaryData, PDO::PARAM_LOB);
+        $stmt->bindValue(':mime', $mimeType, PDO::PARAM_STR);
+        $stmt->bindValue(':cap', $caption, PDO::PARAM_STR);
+        $stmt->bindValue(':thumb', $isThumbnail ? 1 : 0, PDO::PARAM_INT);
+        $stmt->bindValue(':sort', $nextSort, PDO::PARAM_INT);
+        $stmt->execute();
         return (int) $this->db->lastInsertId();
+    }
+
+    /**
+     * Get image BLOB data by image_id (for serving to browser).
+     */
+    public function getImageData(int $imageId): ?array
+    {
+        $stmt = $this->db->prepare("SELECT image_data, mime_type FROM apartment_type_images WHERE image_id = :id");
+        $stmt->execute(['id' => $imageId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && !empty($row['image_data'])) {
+            return ['data' => $row['image_data'], 'mime' => $row['mime_type'] ?: 'image/jpeg'];
+        }
+        return null;
     }
 
     /**
      * Remove an image record (file deletion handled by caller).
      */
-    public function removeImage(int $imageId): ?string
+    /**
+     * Remove an image record from DB (no file cleanup needed with BLOB).
+     */
+    public function removeImage(int $imageId): bool
     {
-        // Return the file path before deleting so caller can remove the file
-        $stmt = $this->db->prepare("SELECT file_path FROM apartment_type_images WHERE image_id = :id");
-        $stmt->execute(['id' => $imageId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$row) return null;
-
-        $this->db->prepare("DELETE FROM apartment_type_images WHERE image_id = :id")->execute(['id' => $imageId]);
-        return $row['file_path'];
+        $stmt = $this->db->prepare("DELETE FROM apartment_type_images WHERE image_id = :id");
+        return $stmt->execute(['id' => $imageId]);
     }
 
     /**
