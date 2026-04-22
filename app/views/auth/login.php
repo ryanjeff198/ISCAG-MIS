@@ -178,7 +178,7 @@ body {
 <!-- SPLIT -->
 <div class="auth-split">
   <div class="auth-left">
-    <img src="<?= asset('assets/ISCAG BG.png') ?>" alt="ISCAG Philippines" class="auth-bg">
+    <img src="<?= asset('assets/ISCAG1.png') ?>" alt="ISCAG Philippines" class="auth-bg">
   </div>
 
   <!-- Log In form -->

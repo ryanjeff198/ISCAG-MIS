@@ -221,7 +221,7 @@ input.error {
 
   <div class="auth-split">
     <div class="auth-left">
-      <img src="<?= asset('assets/bgcover.png') ?>" alt="ISCAG Philippines">
+      <img src="<?= asset('assets/ISCAG1.png') ?>" alt="ISCAG Philippines">
     </div>
 
     <div class="auth-right">
@@ -272,39 +272,43 @@ input.error {
     const btnText    = document.getElementById('btnText');
     const btnSpinner = document.getElementById('btnSpinner');
 
-    // Form is handled by PHP POST
-    /*
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      if (validateEmail()) sendOTP();
+      if (validateEmail()) {
+        sendOTP();
+      }
     });
-    */
-  });
-</script>
 
     function validateEmail() {
       const email = emailInput.value.trim();
       const re    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!email) {
-        showErr('Email address is required'); emailInput.classList.add('error'); return false;
+        showErr('Email address is required');
+        emailInput.classList.add('error');
+        return false;
       }
       if (!re.test(email)) {
-        showErr('Please enter a valid email address'); emailInput.classList.add('error'); return false;
+        showErr('Please enter a valid email address');
+        emailInput.classList.add('error');
+        return false;
       }
-      hideErr(); emailInput.classList.remove('error'); return true;
+      hideErr();
+      emailInput.classList.remove('error');
+      return true;
     }
 
     function sendOTP() {
       const email = emailInput.value.trim();
-      sendOtpBtn.disabled    = true;
-      btnText.textContent    = 'Sending...';
+      sendOtpBtn.disabled = true;
+      btnText.textContent = 'Sending...';
       btnSpinner.style.display = 'inline-block';
 
-      const otp       = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const otpExpiry = Date.now() + 5 * 60 * 1000;
+
       sessionStorage.setItem('resetEmail', email);
-      sessionStorage.setItem('resetOTP',   otp);
-      sessionStorage.setItem('otpExpiry',  otpExpiry.toString());
+      sessionStorage.setItem('resetOTP', otp);
+      sessionStorage.setItem('otpExpiry', otpExpiry.toString());
 
       setTimeout(() => {
         alert(`For demo purposes, your OTP is: ${otp}`);
@@ -312,11 +316,20 @@ input.error {
       }, 2000);
     }
 
-    function showErr(msg) { emailError.textContent = msg; emailError.classList.add('show'); }
-    function hideErr()    { emailError.classList.remove('show'); }
+    function showErr(msg) {
+      emailError.textContent = msg;
+      emailError.classList.add('show');
+    }
+
+    function hideErr() {
+      emailError.classList.remove('show');
+    }
 
     emailInput.addEventListener('input', function () {
-      if (this.classList.contains('error')) { this.classList.remove('error'); hideErr(); }
+      if (this.classList.contains('error')) {
+        this.classList.remove('error');
+        hideErr();
+      }
     });
   });
   </script>

@@ -243,7 +243,7 @@
 
   <div class="auth-split">
     <div class="auth-left">
-      <img src="<?= asset('assets/bgcover.png') ?>" alt="ISCAG Philippines">
+      <img src="<?= asset('assets/ISCAG1.png') ?>" alt="ISCAG Philippines">
     </div>
 
     <div class="auth-right">
@@ -299,13 +299,8 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      /* Handled by server session now
-      if (!sessionStorage.getItem('otpVerified') || !sessionStorage.getItem('resetEmail')) {
-        ...
-      }
-      */
-
-      // DOM elements
+      const demoOTP = sessionStorage.getItem('resetOTP');
+      
       const newPwInput = document.getElementById('newPassword');
       const confPwInput = document.getElementById('confirmPassword');
       const resetBtn = document.getElementById('resetBtn');
@@ -315,21 +310,30 @@
       const confPwErr = document.getElementById('confirmPasswordError');
       const confPwOk = document.getElementById('confirmPasswordSuccess');
       const strengthLbl = document.getElementById('strengthLabel');
+      const form = document.getElementById('resetPasswordForm');
 
-      // Event listeners
       document.getElementById('toggleNew').addEventListener('click', (e) => {
         e.preventDefault();
         toggleVisibility(newPwInput, e.currentTarget);
       });
+
       document.getElementById('toggleConfirm').addEventListener('click', (e) => {
         e.preventDefault();
         toggleVisibility(confPwInput, e.currentTarget);
       });
+
       newPwInput.addEventListener('input', handleNewPasswordInput);
       confPwInput.addEventListener('input', validatePasswordMatch);
-      document.getElementById('resetPasswordForm').addEventListener('submit', handleFormSubmit);
 
-      // Toggle password visibility
+      form.addEventListener('submit', function (e) {
+        if (demoOTP) {
+          e.preventDefault();
+          if (validateForm()) {
+            resetPassword();
+          }
+        }
+      });
+
       function toggleVisibility(input, btn) {
         const icon = btn.querySelector('i');
         const isPassword = input.type === 'password';
@@ -337,7 +341,6 @@
         icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
       }
 
-      // Handle new password input
       function handleNewPasswordInput() {
         const value = newPwInput.value;
         if (!value) {
@@ -354,7 +357,6 @@
         if (confPwInput.value) validatePasswordMatch();
       }
 
-      // Calculate password strength
       function calculateStrength(password) {
         if (!password) return 0;
         let score = 0;
@@ -369,7 +371,6 @@
         return 2;
       }
 
-      // Update strength indicator UI
       function updateStrengthIndicator(level) {
         const labels = ['', 'Weak', 'Medium', 'Strong'];
         const colors = ['', '#FF4D4F', '#FFC107', '#4CAF50'];
@@ -390,7 +391,6 @@
         resetBtn.disabled = level === 1;
       }
 
-      // Validate password requirements
       function validatePassword(password) {
         const isValid = password.length >= 8 &&
           /[A-Z]/.test(password) &&
@@ -403,7 +403,6 @@
         return isValid ? null : 'Password must be 8+ chars with uppercase, lowercase, number & special character.';
       }
 
-      // Validate password match
       function validatePasswordMatch() {
         const match = newPwInput.value === confPwInput.value && confPwInput.value !== '';
         if (!confPwInput.value) {
@@ -428,7 +427,6 @@
         return false;
       }
 
-      // Validate entire form
       function validateForm() {
         if (calculateStrength(newPwInput.value) === 1) return false;
         const msg = validatePassword(newPwInput.value);
@@ -439,18 +437,6 @@
         return validatePasswordMatch();
       }
 
-      // Form is handled by PHP POST
-      /*
-      document.getElementById('resetPasswordForm').addEventListener('submit', handleFormSubmit);
-      function handleFormSubmit(e) {
-        e.preventDefault();
-        if (validateForm()) resetPassword();
-      }
-      */
-    });
-  </script>
-
-      // Reset password and redirect
       function resetPassword() {
         resetBtn.disabled = true;
         btnText.textContent = 'Resetting...';
@@ -462,7 +448,6 @@
         }, 2000);
       }
 
-      // Show success prompt and redirect
       function showSuccessPrompt() {
         let prompt = document.getElementById('successPrompt');
         if (!prompt) {
@@ -491,7 +476,6 @@
         }, 3000);
       }
 
-      // Utility functions
       function show(element, message) {
         if (message) element.textContent = message;
         element.classList.add('show');
@@ -502,5 +486,6 @@
       }
     });
   </script>
+
 </body>
 </html>

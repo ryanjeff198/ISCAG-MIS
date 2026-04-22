@@ -236,7 +236,7 @@ body {
 
   <div class="auth-split">
     <div class="auth-left">
-      <img src="<?= asset('assets/ISCAG BG.png') ?>" alt="ISCAG Philippines">
+      <img src="<?= asset('assets/ISCAG1.png') ?>" alt="ISCAG Philippines">
     </div>
 
     <div class="auth-right">
