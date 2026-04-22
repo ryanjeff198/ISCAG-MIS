@@ -297,24 +297,6 @@
     });
   }
 
-  // ── Sidebar collapse ──
-  document.getElementById('sidebar-toggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('collapsed');
-  });
-
-  // ── Dropdown toggles ──
-  function initDropdown(triggerId, menuId) {
-    const trigger = document.getElementById(triggerId);
-    const menu = document.getElementById(menuId);
-    trigger.addEventListener('click', () => {
-      const isOpen = menu.classList.contains('open');
-      document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
-      document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
-      if (!isOpen) { menu.classList.add('open'); trigger.classList.add('open'); }
-    });
-  }
-  initDropdown('damayan-trigger', 'damayan-menu');
-  initDropdown('dawah-trigger', 'dawah-menu');
 
   // ── Submit button ──
   document.getElementById('submit-btn').addEventListener('click', (e) => {

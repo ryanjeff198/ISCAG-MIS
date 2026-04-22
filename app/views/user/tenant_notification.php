@@ -617,86 +617,10 @@ $phpUser = [
             navRole.style.color = isComplete ? 'var(--success)' : 'var(--warning)';
         }
 
-        // Da'wah dropdown dynamic path based on DB gender
-        const dawahMenu    = document.getElementById('dawah-menu');
-        const dawahTrigger = document.getElementById('dawah-trigger');
-        if (dawahMenu && dawahTrigger) {
-            const genderLower = String(DB_USER.gender).toLowerCase();
-            if (genderLower === 'female') {
-                dawahMenu.innerHTML = `
-                <a href="<?= url('/user/services/counseling/female') ?>">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-                    Sisters' Counseling
-                </a>`;
-                dawahTrigger.setAttribute('data-href', "<?= url('/user/services/counseling/female') ?>");
-            } else {
-                dawahMenu.innerHTML = `
-                <a href="<?= url('/user/services/counseling/male') ?>">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-                    Brothers' Counseling
-                </a>`;
-                dawahTrigger.setAttribute('data-href', "<?= url('/user/services/counseling/male') ?>");
-            }
-        }
+    </script>
+</body>
 
-        // Dropdown Lock Logic — lock services when profile is incomplete
-        function applyDropdownLocks() {
-            const wraps = ['damayan-wrap', 'dawah-wrap', 'apartment-wrap'];
-            wraps.forEach(id => {
-                const wrap = document.getElementById(id);
-                if (!wrap) return;
-                if (isComplete) {
-                    wrap.classList.remove('locked');
-                } else {
-                    wrap.classList.add('locked');
-                }
-            });
-        }
-        applyDropdownLocks();
-
-        // Dropdown Click Handlers
-        function initDropdown(triggerId, menuId, wrapId) {
-            const trigger = document.getElementById(triggerId);
-            const menu = document.getElementById(menuId);
-            const wrap = document.getElementById(wrapId);
-            if (!trigger || !menu) return;
-
-            trigger.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent document-level interference
-
-                // If locked, prevent everything and show message
-                if (wrap && wrap.classList.contains('locked')) {
-                    e.preventDefault();
-                    showToast('Please complete your profile to unlock services.', '#c79a2b');
-                    setTimeout(() => window.location.href = '<?= url('/user/profile') ?>', 1200);
-                    return;
-                }
-
-                // If sidebar is collapsed, navigate to the first link or data-href
-                if (sidebar && sidebar.classList.contains('collapsed')) {
-                    const href = trigger.getAttribute('data-href');
-                    if (href) {
-                        e.preventDefault();
-                        window.location.href = href;
-                    }
-                    return;
-                }
-
-                // Normal expanded toggle
-                e.preventDefault();
-                const isOpen = menu.classList.contains('open');
-                document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
-                document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
-
-                if (!isOpen) {
-                    menu.classList.add('open');
-                    trigger.classList.add('open');
-                }
-            });
-        }
-        initDropdown('damayan-trigger', 'damayan-menu', 'damayan-wrap');
-        initDropdown('dawah-trigger', 'dawah-menu', 'dawah-wrap');
-        initDropdown('apartment-trigger', 'apartment-menu', 'apartment-wrap');
+</html>
     </script>
 </body>
 
