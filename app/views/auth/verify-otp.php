@@ -303,19 +303,11 @@ body {
 
   <script>
   document.addEventListener('DOMContentLoaded', function () {
-    // Priority: sessionStorage (demo flow) then PHP Session (real flow)
-    const demoEmail = sessionStorage.getItem('resetEmail');
-    const demoOTP   = sessionStorage.getItem('resetOTP');
-    const demoExpiry = sessionStorage.getItem('otpExpiry');
-
-    const phpEmail = "<?= $_SESSION['temp_email'] ?? '' ?>";
-    const phpExpiry = "<?= $_SESSION['otp_expiry'] ?? '0' ?>";
-
-    const userEmail = demoEmail || phpEmail;
-    const expiryTime = demoExpiry || phpExpiry;
+    const userEmail = "<?= $_SESSION['temp_email'] ?? '' ?>";
+    const expiryTime = "<?= $_SESSION['otp_expiry'] ?? '0' ?>";
 
     if (!userEmail) {
-      alert('Session expired. Please start over.');
+      alert('Session expired or invalid. Please start over.');
       window.location.href = '<?= url('/forgot-password') ?>';
       return;
     }
@@ -365,33 +357,15 @@ body {
     });
 
     form.addEventListener('submit', function (e) {
-      // If it's a demo flow, handle verification here
-      if (demoOTP) {
-        e.preventDefault();
-        const enteredOTP = Array.from(otpBoxes).map(b => b.value).join('');
-        
-        verifyBtn.disabled = true;
-        btnText.textContent = 'Verifying...';
-        btnSpinner.style.display = 'inline-block';
-
-        setTimeout(() => {
-          if (enteredOTP === demoOTP) {
-            alert('OTP Verified Successfully!');
-            window.location.href = '<?= url('/reset-password') ?>';
-          } else {
-            verifyBtn.disabled = false;
-            btnText.textContent = 'Verify OTP';
-            btnSpinner.style.display = 'none';
-            showError('Invalid OTP. Please try again.');
-            otpBoxes.forEach(b => b.classList.add('error'));
-          }
-        }, 1500);
-      }
+      // Show loading state and let PHP handle verification
+      verifyBtn.disabled = true;
+      btnText.textContent = 'Verifying...';
+      btnSpinner.style.display = 'inline-block';
     });
 
     function startTimer() {
       const expiry = parseInt(expiryTime);
-      if (isNaN(expiry)) return;
+      if (isNaN(expiry) || expiry === 0) return;
 
       timerInterval = setInterval(() => {
         const left = expiry - Date.now();
@@ -421,15 +395,8 @@ body {
     }
 
     resendBtn.addEventListener('click', function() {
-      // For demo, just generate a new one
-      const newOTP = Math.floor(100000 + Math.random() * 900000).toString();
-      const newExpiry = Date.now() + 5 * 60 * 1000;
-      
-      sessionStorage.setItem('resetOTP', newOTP);
-      sessionStorage.setItem('otpExpiry', newExpiry.toString());
-      
-      location.reload(); // Simple way to restart everything
-      alert(`New OTP sent for demo: ${newOTP}`);
+      // Redirect to resend route
+      window.location.href = '<?= url('/resend-otp') ?>';
     });
   });
   </script>

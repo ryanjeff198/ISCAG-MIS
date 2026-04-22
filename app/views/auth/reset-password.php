@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ISCAG Philippines – Reset Password</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
       --green: #1c6b3a;
@@ -38,16 +38,61 @@
 
     .auth-left {
       flex: 1;
+      position: relative;
+      background: #1a1a1a;
       display: flex;
-      justify-content: center;
       align-items: center;
-      background: var(--green)22;
+      justify-content: center;
+      padding: 60px;
+      overflow: hidden;
     }
 
     .auth-left img {
-      max-width: 100%;
-      height: auto;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
+      z-index: 1;
+      opacity: 0.7;
+    }
+
+    .auth-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 2;
+    }
+
+    .auth-content {
+      position: relative;
+      z-index: 3;
+      max-width: 550px;
+      animation: fadeInRight 1.2s ease-out;
+    }
+
+    .auth-header-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 2.5rem;
+      color: #e1ab39;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 800;
+    }
+
+    .auth-header-desc {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.1rem;
+      color: white;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(-40px); }
+      to { opacity: 1; transform: translateX(0); }
     }
 
     .auth-right {
@@ -243,7 +288,12 @@
 
   <div class="auth-split">
     <div class="auth-left">
+      <div class="auth-overlay"></div>
       <img src="<?= asset('assets/ISCAG1.png') ?>" alt="ISCAG Philippines">
+      <div class="auth-content">
+        <h1 class="auth-header-title">Islamic Studies, Call and Guidance of the Philippines</h1>
+        <p class="auth-header-desc">To strive for excellence in education and personal growth of its members, promoting service to others, integrity, and love for God.</p>
+      </div>
     </div>
 
     <div class="auth-right">
@@ -299,7 +349,6 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      const demoOTP = sessionStorage.getItem('resetOTP');
       
       const newPwInput = document.getElementById('newPassword');
       const confPwInput = document.getElementById('confirmPassword');
@@ -326,11 +375,12 @@
       confPwInput.addEventListener('input', validatePasswordMatch);
 
       form.addEventListener('submit', function (e) {
-        if (demoOTP) {
+        if (!validateForm()) {
           e.preventDefault();
-          if (validateForm()) {
-            resetPassword();
-          }
+        } else {
+          resetBtn.disabled = true;
+          btnText.textContent = 'Resetting...';
+          btnSpinner.style.display = 'inline-block';
         }
       });
 
@@ -435,17 +485,6 @@
           return false;
         }
         return validatePasswordMatch();
-      }
-
-      function resetPassword() {
-        resetBtn.disabled = true;
-        btnText.textContent = 'Resetting...';
-        btnSpinner.style.display = 'inline-block';
-
-        setTimeout(() => {
-          ['resetEmail', 'resetOTP', 'otpExpiry', 'otpVerified'].forEach(key => sessionStorage.removeItem(key));
-          showSuccessPrompt();
-        }, 2000);
       }
 
       function showSuccessPrompt() {
