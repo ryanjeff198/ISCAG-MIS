@@ -130,7 +130,7 @@ $active_page = $active_page ?? 'dashboard';
                 </svg>
             </button>
             <div class="nav-dropdown <?= $apartment_active ? 'open' : '' ?>" id="apartment-menu">
-                <?php if (($_SESSION['role'] ?? '') === 'Applicant'): ?>
+                <?php if (($_SESSION['role'] ?? '') === 'Guest'): ?>
                 <a href="<?= url('/user/apartment/apply') ?>" class="<?= $active_page === 'apartment_apply' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path
@@ -183,7 +183,7 @@ $active_page = $active_page ?? 'dashboard';
         const sessionUser = {
             id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>',
             name: '<?= addslashes($_SESSION['name'] ?? "User") ?>',
-            role: '<?= addslashes($_SESSION['role'] ?? "Tenant") ?>',
+            role: '<?= addslashes($_SESSION['role'] ?? "Guest") ?>',
             gender: '<?= addslashes($_SESSION['gender'] ?? "") ?>'
         };
         const raw = localStorage.getItem('mis_user');
@@ -206,18 +206,6 @@ $active_page = $active_page ?? 'dashboard';
 
             trigger.addEventListener('click', (e) => {
                 e.preventDefault();
-
-                // ── Service Lock Enforcement ──
-                if (wrap && wrap.classList.contains('locked')) {
-                    if (typeof showToast === 'function') {
-                        showToast('Please complete your profile to unlock this service.', '#c79a2b');
-                    } else {
-                        alert('Please complete your profile to unlock this service.');
-                    }
-                    setTimeout(() => window.location.href = '<?= url("/user/profile") ?>', 1200);
-                    return;
-                }
-
                 const isOpen = menu.classList.contains('open');
                 document.querySelectorAll('.nav-dropdown, .nav-dropdown-trigger, .nav-dropdown-wrap').forEach(el => el.classList.remove('open'));
                 if (!isOpen) {
@@ -232,12 +220,13 @@ $active_page = $active_page ?? 'dashboard';
         function applySidebarLocks() {
             const stored = JSON.parse(localStorage.getItem('mis_user') || '{}');
             const isComplete = stored.profileComplete || false;
+            const isTenant = stored.role === 'Tenant';
             const wraps = ['damayan-wrap', 'dawah-wrap', 'apartment-wrap'];
             
             wraps.forEach(id => {
                 const wrap = document.getElementById(id);
                 if (wrap) {
-                    if (isComplete) wrap.classList.remove('locked');
+                    if (isComplete || isTenant) wrap.classList.remove('locked');
                     else wrap.classList.add('locked');
                 }
             });
@@ -272,7 +261,7 @@ $active_page = $active_page ?? 'dashboard';
                     if (approvalNotif) {
                         approvalNotifId = approvalNotif.id || approvalNotif.notification_id;
                         document.getElementById('approval-modal')?.classList.add('show');
-                    } else if (data.role === 'Tenant' && sessionUser.role === 'Applicant') {
+                    } else if (data.role === 'Tenant' && sessionUser.role === 'Guest') {
                         window.location.reload();
                     }
                 })
@@ -296,7 +285,7 @@ $active_page = $active_page ?? 'dashboard';
         }
 
         setTimeout(checkUserStatus, 800);
-        if (sessionUser.role === 'Applicant') setInterval(checkUserStatus, 15000);
+        if (sessionUser.role === 'Guest') setInterval(checkUserStatus, 15000);
     })();
 
     // ── 4. LOGOUT MODAL ──

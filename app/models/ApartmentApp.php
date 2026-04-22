@@ -200,8 +200,7 @@ class ApartmentApp {
                 p.datestarted,
                 p.datestarted as submitted_at,
                 p.status,
-                p.remarks,
-                p.signature
+                p.remarks
             FROM tenant_parking p
             JOIN tenant_accounts u ON p.tenant_id = u.tenant_id
             ORDER BY p.parking_id DESC

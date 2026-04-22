@@ -196,8 +196,7 @@
                   <h4
                     style="font-family:'Lora',serif;font-weight:700;color:var(--primary-dark);margin:0;font-size:1.15rem;"
                     id="p-name"><?= ($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '') ?: ($_SESSION['name'] ?? 'Apartment Staff') ?></h4>
-                  <span class="profile-complete-badge" id="p-badge"
-                    style="background:rgba(46,125,85,0.1);color:var(--success);"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Complete</span>
+
                 </div>
                 <p style="color:var(--text-muted);font-size:0.83rem;margin:0 0 10px;" id="p-email"><?= $dbUser['email'] ?? 'apartment@iscag.org' ?>
                 </p>
@@ -208,13 +207,7 @@
                   <span class="info-badge" style="background:rgba(30,95,139,0.1);color:var(--info);" id="p-occupation"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg> Staff Admin</span>
                   <span class="info-badge" style="background:rgba(30,95,139,0.1);color:var(--info);" id="p-since"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg> Staff Since —</span>
                 </div>
-                <div
-                  style="margin-bottom:4px;display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-muted);">
-                  <span>Profile Completion</span><span id="p-pct">100%</span>
-                </div>
-                <div class="progress-bar-wrap" style="height:6px;">
-                  <div class="progress-bar-fill" id="p-bar" style="width:100%;background:var(--success);"></div>
-                </div>
+
               </div>
             </div>
             <div style="border-top:1px solid var(--border);margin-bottom:18px;"></div>
@@ -448,18 +441,7 @@
       document.getElementById('qs-available').textContent = apts.filter(a => a.status === 'available').length;
       document.getElementById('qs-occupied').textContent = apts.filter(a => a.status === 'occupied').length;
       document.getElementById('qs-apps').textContent = apps.length;
-      const fields = ['name', 'email', 'phone', 'gender', 'arabic', 'occupation'];
-      const filled = fields.filter(k => p[k] && String(p[k]).trim()).length;
-      const pct = Math.round((filled / fields.length) * 100);
-      document.getElementById('p-pct').textContent = pct + '%';
-      document.getElementById('p-bar').style.width = pct + '%';
-      document.getElementById('p-bar').style.background = pct >= 100 ? 'var(--success)' : 'var(--accent)';
-      const badge = document.getElementById('p-badge');
-      badge.innerHTML = pct >= 100 
-        ? '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Complete' 
-        : '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"/></svg> ' + pct + '%';
-      badge.style.background = pct >= 100 ? 'rgba(46,125,85,0.1)' : 'rgba(199,154,43,0.12)';
-      badge.style.color = pct >= 100 ? 'var(--success)' : 'var(--warning)';
+
     }
     render();
 

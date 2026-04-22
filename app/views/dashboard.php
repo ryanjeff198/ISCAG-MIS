@@ -592,7 +592,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
           </div>
         </div>
 
-        <?php if (($_SESSION['role'] ?? '') === 'Applicant'): ?>
+        <?php if (($_SESSION['role'] ?? '') === 'Guest'): ?>
         <!-- SERVICE CARDS (APPLICANT ONLY) -->
         <h6
           style="font-family:'Lora',serif;font-size:0.9rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">
@@ -873,6 +873,13 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
     const { percentage, missingFields } = getProfileCompletion();
     const isComplete = percentage === 100;
 
+    // Sync completion status to localStorage so the sidebar knows to unlock
+    const storedUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.user) || '{}');
+    if (storedUser.profileComplete !== isComplete) {
+        storedUser.profileComplete = isComplete;
+        localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(storedUser));
+    }
+
     // ── Load user nav ──
     const navAvatar = document.getElementById('nav-avatar');
     if (navAvatar) {
@@ -887,7 +894,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
 
     // ── Set role label color based on status ──
     const navRole = document.getElementById('nav-role');
-    if (navRole && navRole.textContent === 'Applicant') {
+    if (navRole && navRole.textContent === 'Guest') {
       navRole.style.color = 'var(--warning)';
     } else if (navRole) {
       navRole.style.color = 'var(--success)';
@@ -1040,59 +1047,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       }).join('');
     }
 
-    // ── Sidebar toggle ──
-    const sidebar = document.getElementById('sidebar');
-    document.getElementById('sidebar-toggle').addEventListener('click', () => {
-      sidebar.classList.toggle('collapsed');
-      // Close any open dropdowns when collapsing
-      if (sidebar.classList.contains('collapsed')) {
-        document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
-        document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
-      }
-    });
 
-    // ── Lock/Unlock service dropdowns based on profile completion ──
-    function applyDropdownLocks() {
-      const wraps = ['damayan-wrap', 'dawah-wrap', 'apartment-wrap'];
-      wraps.forEach(id => {
-        const wrap = document.getElementById(id);
-        if (!wrap) return;
-        if (isComplete) {
-          wrap.classList.remove('locked');
-        } else {
-          wrap.classList.add('locked');
-        }
-      });
-    }
-    applyDropdownLocks();
-
-    // ── Dropdown toggles (with lock check) ──
-    function initDropdown(triggerId, menuId, wrapId) {
-      const trigger = document.getElementById(triggerId);
-      const menu = document.getElementById(menuId);
-      const wrap = document.getElementById(wrapId);
-      trigger.addEventListener('click', () => {
-        // If locked, show access modal
-        if (wrap && wrap.classList.contains('locked')) {
-          showAccessModal({ percentage, missingFields, redirectUrl: '<?= url('/user/profile') ?>' });
-          return;
-        }
-        // If sidebar is collapsed, navigate directly to the service page
-        if (sidebar.classList.contains('collapsed')) {
-          const href = trigger.getAttribute('data-href');
-          if (href) window.location.href = href;
-          return;
-        }
-        // Normal dropdown toggle when expanded
-        const isOpen = menu.classList.contains('open');
-        document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
-        document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
-        if (!isOpen) { menu.classList.add('open'); trigger.classList.add('open'); }
-      });
-    }
-    initDropdown('damayan-trigger', 'damayan-menu', 'damayan-wrap');
-    initDropdown('dawah-trigger', 'dawah-menu', 'dawah-wrap');
-    initDropdown('apartment-trigger', 'apartment-menu', 'apartment-wrap');
   </script>
 
   <!-- Notification Badge System -->
