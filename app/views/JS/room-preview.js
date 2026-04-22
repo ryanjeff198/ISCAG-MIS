@@ -10,58 +10,47 @@
    ══════════════════════════════════════════ */
 
 const ROOM_DATA = {
+  // Legacy hardcoded data (fallback)
   studio: {
-    type: 'studio',
-    label: 'Studio Unit',
-    price: '₱3,500 / month',
-    capacity: '1–2 persons',
-    description: 'A compact and efficient living space perfect for individuals or couples. The studio unit features an open-plan layout combining sleeping, living, and dining areas in one well-designed space, with a separate bathroom and a functional kitchenette.',
-    images: ['studio-1.png', 'studio-2.png'],
-    imageCaptions: ['Living & Sleeping Area', 'Kitchenette'],
+    type: 'studio', label: 'Studio Unit', price: '₱3,500 / month', capacity: '1–2 persons',
+    description: 'A compact and efficient living space perfect for individuals or couples.',
+    images: ['studio-1.png', 'studio-2.png'], imageCaptions: ['Living Area', 'Kitchenette'],
     features: [
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '22 sqm' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V7H1v10h22v-6c0-2.21-1.79-4-4-4z"/></svg>', label: 'Bedrooms', value: 'Open-plan' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M21 14v-4c0-.55-.45-1-1-1h-1V6c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v3H4c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h1v5h2v-1h10v1h2v-5h1c.55 0 1-.45 1-1zM7 6h10v3H7V6z"/></svg>', label: 'Bathroom', value: '1 (with shower)' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18 2.01L6 2c-1.1 0-2 .89-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.11-.9-1.99-2-1.99zM18 20H6v-9.02h12V20zm0-11H6V4h12v5z"/></svg>', label: 'Kitchen', value: 'Kitchenette' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>', label: 'Parking', value: 'Shared lot' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', label: 'Capacity', value: '1–2 persons' }
-    ]
-  },
-  '1br': {
-    type: '1br',
-    label: 'One-Bedroom Unit',
-    price: '₱5,000 / month',
-    capacity: 'Small families (2–3 persons)',
-    description: 'A comfortable one-bedroom apartment ideal for small families or couples who prefer a separate sleeping area. Features a distinct living room, a private bedroom, a full bathroom, and a dining-kitchen area with ample counter space.',
-    images: ['1br-1.png', '1br-2.png'],
-    imageCaptions: ['Bedroom', 'Living & Dining Area'],
-    features: [
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '35 sqm' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V7H1v10h22v-6c0-2.21-1.79-4-4-4z"/></svg>', label: 'Bedrooms', value: '1 (separate)' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M21 14v-4c0-.55-.45-1-1-1h-1V6c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v3H4c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h1v5h2v-1h10v1h2v-5h1c.55 0 1-.45 1-1zM7 6h10v3H7V6z"/></svg>', label: 'Bathroom', value: '1 (with shower)' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18 2.01L6 2c-1.1 0-2 .89-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.11-.9-1.99-2-1.99zM18 20H6v-9.02h12V20zm0-11H6V4h12v5z"/></svg>', label: 'Kitchen', value: 'Full kitchen' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>', label: 'Parking', value: 'Shared lot' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', label: 'Capacity', value: '2–3 persons' }
-    ]
-  },
-  '2br': {
-    type: '2br',
-    label: 'Two-Bedroom Unit',
-    price: '₱7,500 / month',
-    capacity: 'Larger families (3–5 persons)',
-    description: 'A spacious two-bedroom apartment designed for growing families. Includes a master bedroom, a second bedroom, a full living and dining area, a complete kitchen, and a bathroom. Ideal for families seeking comfort and privacy within the community housing complex.',
-    images: ['2br-1.png', '2br-2.png'],
-    imageCaptions: ['Living & Dining Area', 'Master Bedroom'],
-    features: [
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '50 sqm' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V7H1v10h22v-6c0-2.21-1.79-4-4-4z"/></svg>', label: 'Bedrooms', value: '2 (separate)' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M21 14v-4c0-.55-.45-1-1-1h-1V6c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v3H4c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h1v5h2v-1h10v1h2v-5h1c.55 0 1-.45 1-1zM7 6h10v3H7V6z"/></svg>', label: 'Bathroom', value: '1 (with shower & tub)' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18 2.01L6 2c-1.1 0-2 .89-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.11-.9-1.99-2-1.99zM18 20H6v-9.02h12V20zm0-11H6V4h12v5z"/></svg>', label: 'Kitchen', value: 'Full kitchen' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>', label: 'Parking', value: 'Dedicated slot' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', label: 'Capacity', value: '3–5 persons' }
+      { icon: 'floor', label: 'Floor Area', value: '22 sqm' },
+      { icon: 'people', label: 'Capacity', value: '1–2 persons' }
     ]
   }
 };
+
+/**
+ * Open the Room Preview modal.
+ * @param {string|Object} unitData — 'studio' string OR a full database object
+ */
+function openRoomPreview(unitData, options = {}) {
+  let room;
+  if (typeof unitData === 'string') {
+    room = ROOM_DATA[unitData];
+  } else {
+    // Map Database object to UI structure
+    room = {
+      type: unitData.type_key,
+      label: unitData.label,
+      price: '₱' + Number(unitData.price).toLocaleString() + ' / month',
+      capacity: unitData.capacity,
+      description: unitData.description,
+      images: (unitData.images || []).map(img => img.file_path),
+      imageCaptions: (unitData.images || []).map(img => img.caption || ''),
+      features: [
+        { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: unitData.floor_area || '--' },
+        { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V7H1v10h22v-6c0-2.21-1.79-4-4-4z"/></svg>', label: 'Bedrooms', value: unitData.bedrooms || '--' },
+        { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M21 14v-4c0-.55-.45-1-1-1h-1V6c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v3H4c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h1v5h2v-1h10v1h2v-5h1c.55 0 1-.45 1-1zM7 6h10v3H7V6z"/></svg>', label: 'Bathroom', value: unitData.bathroom || '--' },
+        { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', label: 'Capacity', value: unitData.capacity || '--' }
+      ]
+    };
+  }
+
+  if (!room) { console.error('Room Preview: Invalid unit data'); return; }
+
 
 
 /* ══════════════════════════════════════════

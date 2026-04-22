@@ -360,12 +360,25 @@ function initDropdowns() {
 }
 
 function loadUserNav() {
-  const user = getUser();
+  // Check for staff profile first if in staff mode
+  let user = getUser();
+  let roleLabel = 'Staff Admin';
+  const staffProfileRaw = localStorage.getItem('mis_apartment_staff_profile');
+  if (staffProfileRaw) {
+    const staff = JSON.parse(staffProfileRaw);
+    if (staff.name) user.name = staff.name;
+    if (staff.occupation) roleLabel = staff.occupation;
+  }
+
   const navName = document.getElementById('nav-name');
+  const navRole = document.querySelector('.sidebar-user .user-info span');
   const navAvatar = document.getElementById('nav-avatar');
+
   if (navName) navName.textContent = user.name;
+  if (navRole) navRole.textContent = roleLabel;
+  
   if (navAvatar) {
-    const photo = localStorage.getItem('mis_user_photo');
+    const photo = localStorage.getItem('mis_apartment_photo') || localStorage.getItem('mis_user_photo');
     if (photo) {
       navAvatar.textContent = '';
       navAvatar.style.backgroundImage = 'url(' + photo + ')';
@@ -374,6 +387,46 @@ function loadUserNav() {
     } else {
       navAvatar.textContent = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
     }
+  }
+}
+
+/**
+ * syncSessionUser() — Syncs the PHP session name to localStorage to ensure
+ * the UI reflects the actual logged-in account.
+ */
+function syncSessionUser(sessionName, sessionEmail, sessionRole) {
+  if (!sessionName) return;
+  
+  // Update main user
+  const user = getUser();
+  if (user.name !== sessionName) {
+    user.name = sessionName;
+    if (sessionEmail) user.email = sessionEmail;
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+  }
+
+  // Update staff profile
+  const staffRaw = localStorage.getItem('mis_apartment_staff_profile');
+  if (staffRaw) {
+    const staff = JSON.parse(staffRaw);
+    if (staff.name !== sessionName) {
+      staff.name = sessionName;
+      if (sessionEmail) staff.email = sessionEmail;
+      localStorage.setItem('mis_apartment_staff_profile', JSON.stringify(staff));
+    }
+  } else {
+    // Initialize staff profile if missing
+    const newStaff = { 
+      id: 'STF-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0'), 
+      name: sessionName, 
+      email: sessionEmail || '', 
+      phone: '', 
+      gender: '', 
+      arabic: sessionName, 
+      occupation: sessionRole || 'Apartment Manager', 
+      since: new Date().toISOString().split('T')[0] 
+    };
+    localStorage.setItem('mis_apartment_staff_profile', JSON.stringify(newStaff));
   }
 }
 
@@ -583,10 +636,7 @@ function initLogoutModal() {
         <div style="background:white;border-radius:16px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;transform:translateY(20px);transition:transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
           <div style="height:4px;background:linear-gradient(90deg,#8b2e2e,#c79a2b);"></div>
           <div style="padding:32px 28px 24px;text-align:center;">
-            <svg viewBox="0 0 24 24" style="width:60px;height:60px;fill:#8b2e2e;margin-bottom:16px;">
-              <path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
-            </svg>
-            <h4 style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:#1f2e2a;margin:0 0 10px;">Sign Out</h4>
+            <h4 style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:#1f2e2a;margin:0 0 10px;">Log Out</h4>
             <p style="font-size:0.9rem;color:#6f7f78;margin:0;line-height:1.5;">Are you sure you want to log out of your account?</p>
           </div>
           <div style="display:flex;gap:10px;padding:0 28px 24px;justify-content:center;">

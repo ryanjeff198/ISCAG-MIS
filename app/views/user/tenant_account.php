@@ -1066,59 +1066,6 @@ $phpUser = [
             }
         });
 
-        // ── Sidebar collapse ──
-        const sidebar = document.getElementById('sidebar');
-        document.getElementById('sidebar-toggle').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
-
-        // ── Lock/Unlock service dropdowns ──
-        function applyDropdownLocks() {
-            const { percentage, missingFields } = getProfileCompletion();
-            const wraps = ['damayan-wrap', 'dawah-wrap', 'apartment-wrap'];
-            wraps.forEach(id => {
-                const wrap = document.getElementById(id);
-                if (!wrap) return;
-                if (percentage === 100) {
-                    wrap.classList.remove('locked');
-                } else {
-                    wrap.classList.add('locked');
-                }
-            });
-        }
-        applyDropdownLocks();
-
-        // ── Dropdown toggles (with lock check) ──
-        function initDropdown(triggerId, menuId, wrapId) {
-            const trigger = document.getElementById(triggerId);
-            const menu = document.getElementById(menuId);
-            const wrap = document.getElementById(wrapId);
-            if (!trigger || !menu) return;
-            
-            trigger.addEventListener('click', (e) => {
-                // If locked, show modal prompting to complete profile
-                if (wrap && wrap.classList.contains('locked')) {
-                    e.preventDefault();
-                    const { percentage, missingFields } = getProfileCompletion();
-                    showAccessModal({ percentage, missingFields, redirectUrl: '<?= url('/user/profile') ?>' });
-                    return;
-                }
-                if (sidebar && sidebar.classList.contains('collapsed')) {
-                    e.preventDefault();
-                    const href = trigger.getAttribute('data-href');
-                    if (href) window.location.href = href;
-                    return;
-                }
-                const isOpen = menu.classList.contains('open');
-                document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
-                document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
-                if (!isOpen) {
-                    menu.classList.add('open');
-                    trigger.classList.add('open');
-                }
-            });
-        }
-        initDropdown('damayan-trigger', 'damayan-menu', 'damayan-wrap');
-        initDropdown('dawah-trigger', 'dawah-menu', 'dawah-wrap');
-        initDropdown('apartment-trigger', 'apartment-menu', 'apartment-wrap');
 
         // ── Re-check locks after profile save ──
         const origSaveHandler = modalSaveBtn.onclick;
@@ -1127,16 +1074,9 @@ $phpUser = [
         const _origMSBClick = modalSaveBtn.addEventListener;
         // Override: after profile save, re-evaluate locks
         window._afterProfileSave = function(newPct) {
-            const wraps = ['damayan-wrap', 'dawah-wrap', 'apartment-wrap'];
-            wraps.forEach(id => {
-                const wrap = document.getElementById(id);
-                if (!wrap) return;
-                if (newPct === 100) {
-                    wrap.classList.remove('locked');
-                } else {
-                    wrap.classList.add('locked');
-                }
-            });
+            if (typeof applySidebarLocks === 'function') {
+                applySidebarLocks();
+            }
         };
         function loadUserNav() {
             const u = getUser();

@@ -94,17 +94,18 @@
       padding: 9px 20px;
       border-radius: 8px;
       border: none;
-      background: linear-gradient(135deg, #a67c1b, var(--accent-light));
+      background: linear-gradient(135deg, #8a6b1a, #6d5414);
       color: white;
       font-size: 0.85rem;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(199, 154, 43, 0.3);
+      box-shadow: 0 4px 12px rgba(138, 107, 26, 0.3);
       font-family: inherit;
     }
 
     .btn-submit:hover {
-      box-shadow: 0 6px 20px rgba(199, 154, 43, 0.4);
+      background: linear-gradient(135deg, #a6811f, #8a6b1a);
+      box-shadow: 0 6px 20px rgba(138, 107, 26, 0.4);
       transform: translateY(-1px);
     }
 
@@ -138,6 +139,17 @@
       height: 20px;
       fill: white;
     }
+
+    /* ── Hover Overrides ── */
+    .tab-btn:hover { color: var(--accent) !important; }
+    .tab-btn.active { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+    
+    #edit-btn:hover,
+    button[onclick*="avatar-input"]:hover {
+      background: #b08925 !important;
+      box-shadow: 0 4px 15px rgba(138, 107, 26, 0.35) !important;
+      transform: translateY(-1px);
+    }
   </style>
 </head>
 
@@ -145,80 +157,10 @@
   <div class="app-wrapper">
 
     <!----sidebar---->
-    <aside class="sidebar" id="sidebar">
-      <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar"><svg viewBox="0 0 24 24">
-          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-        </svg></button>
-      <div class="sidebar-header">
-        <div class="sidebar-brand">
-          <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
-          <div class="brand-text"><strong>ISCAG MIS</strong><span>Apartment Staff</span></div>
-        </div>
-      </div>
-      <div class="sidebar-user">
-        <div class="user-avatar" id="nav-avatar" style="background:var(--accent);">AK</div>
-        <div class="user-info"><strong id="nav-name">Apartment Staff</strong><span>Staff Admin</span></div>
-      </div>
-      <nav class="sidebar-nav">
-        <div class="nav-section-label">Admin</div>
-        <a href="<?= url('/admin/apartment') ?>" class="nav-item" data-tooltip="Dashboard">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
-          </svg>
-          <span class="nav-item-label">Dashboard</span>
-        </a>
-        <a href="<?= url('/admin/apartment/profile') ?>" class="nav-item active" data-tooltip="Profile">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-          </svg>
-          <span class="nav-item-label">My Profile</span>
-        </a>
-        <a href="<?= url('/admin/apartment/confirmation') ?>" class="nav-item" data-tooltip="Applications">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
-          </svg>
-          <span class="nav-item-label">Review Applications</span>
-        </a>
-        <div class="nav-section-label">Management</div>
-        <a href="<?= url('/admin/apartment/info') ?>" class="nav-item" data-tooltip="Apartment Info">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z" />
-          </svg>
-          <span class="nav-item-label">Apartment Info</span>
-        </a>
-        <a href="<?= url('/admin/payment') ?>" class="nav-item" data-tooltip="Billing & Payment">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
-          </svg>
-          <span class="nav-item-label">Billing & Payment</span>
-        </a>
-        <a href="<?= url('/admin/apartment/soa') ?>" class="nav-item" data-tooltip="SOA">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM9 13h6v2H9v-2zm6 4H9v2h6v-2z" />
-          </svg>
-          <span class="nav-item-label">Statement of Account</span>
-        </a>
-        <a href="<?= url('/admin/apartment/notifications') ?>" class="nav-item" data-tooltip="Notifications">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-          </svg>
-          <span class="nav-item-label">Notifications</span>
-        </a>
-      </nav>
-      <div class="sidebar-footer">
-        <a href="<?= url('/logout') ?>" class="nav-item" data-tooltip="Logout">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-          </svg>
-          <span class="nav-item-label">Logout</span>
-        </a>
-      </div>
-    </aside>
+    <?php 
+      $active_page = 'profile';
+      include BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Apartment_Department/sidebar.php'; 
+    ?>
 
     <!----main content---->
     <div class="main-content">
@@ -232,7 +174,7 @@
         <!-- PROFILE HEADER -->
         <div class="section-card" style="margin-bottom:24px;overflow:hidden;">
           <div
-            style="background:linear-gradient(135deg,#8a6b1a 0%,var(--accent-light) 100%);height:72px;position:relative;overflow:hidden;">
+            style="background:linear-gradient(135deg,#8a6b1a 0%,var(--accent-light) 100%);height:100px;position:relative;overflow:hidden;">
             <div
               style="position:absolute;right:-20px;bottom:-20px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.1);">
             </div>
@@ -241,28 +183,30 @@
             <div style="display:flex;align-items:flex-end;gap:20px;margin-top:-44px;margin-bottom:16px;flex-wrap:wrap;">
               <div style="flex-shrink:0;text-align:center;">
                 <div class="profile-avatar-lg" id="profile-avatar"
-                  style="border:3px solid white;box-shadow:0 2px 12px rgba(0,0,0,0.15);">AK</div>
+                  style="border:3px solid white;box-shadow:0 2px 12px rgba(0,0,0,0.15);">
+                  <?= strtoupper(substr($dbUser['first_name'] ?? 'A', 0, 1) . substr($dbUser['last_name'] ?? 'S', 0, 1)) ?>
+                </div>
                 <input type="file" id="avatar-input" accept="image/*" style="display:none;" />
                 <button onclick="document.getElementById('avatar-input').click()"
-                  style="margin-top:8px;padding:5px 12px;border-radius:6px;border:1.5px solid var(--accent);background:white;color:var(--accent);font-size:0.75rem;font-weight:700;cursor:pointer;">Edit
+                  style="margin-top:8px;padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:white;font-size:0.75rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(138, 107, 26, 0.25);">Edit
                   Photo</button>
               </div>
               <div style="flex:1;min-width:220px;padding-top:48px;">
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
                   <h4
                     style="font-family:'Lora',serif;font-weight:700;color:var(--primary-dark);margin:0;font-size:1.15rem;"
-                    id="p-name">Apartment Staff</h4>
+                    id="p-name"><?= ($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '') ?: ($_SESSION['name'] ?? 'Apartment Staff') ?></h4>
                   <span class="profile-complete-badge" id="p-badge"
-                    style="background:rgba(46,125,85,0.1);color:var(--success);">✅ Complete</span>
+                    style="background:rgba(46,125,85,0.1);color:var(--success);"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Complete</span>
                 </div>
-                <p style="color:var(--text-muted);font-size:0.83rem;margin:0 0 10px;" id="p-email">apartment@iscag.org
+                <p style="color:var(--text-muted);font-size:0.83rem;margin:0 0 10px;" id="p-email"><?= $dbUser['email'] ?? 'apartment@iscag.org' ?>
                 </p>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-                  <span class="info-badge" style="background:rgba(199,154,43,0.12);color:var(--accent);">🏠 Apartment
+                  <span class="info-badge" style="background:rgba(199,154,43,0.12);color:var(--accent);"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg> Apartment
                     Department</span>
-                  <span class="info-badge" style="background:rgba(46,125,85,0.1);color:var(--success);">✅ Active</span>
-                  <span class="info-badge" style="background:rgba(30,95,139,0.1);color:var(--info);" id="p-since">📅
-                    Staff Since —</span>
+                  <span class="info-badge" style="background:rgba(46,125,85,0.1);color:var(--success);"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Active</span>
+                  <span class="info-badge" style="background:rgba(30,95,139,0.1);color:var(--info);" id="p-occupation"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg> Staff Admin</span>
+                  <span class="info-badge" style="background:rgba(30,95,139,0.1);color:var(--info);" id="p-since"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg> Staff Since —</span>
                 </div>
                 <div
                   style="margin-bottom:4px;display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-muted);">
@@ -299,7 +243,7 @@
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
               <button id="edit-btn" type="button"
-                style="font-size:0.82rem;padding:8px 18px;border-radius:8px;border:1.5px solid var(--accent);background:white;color:var(--accent);font-weight:700;cursor:pointer;font-family:inherit;">Update
+                style="font-size:0.82rem;padding:8px 18px;border-radius:8px;border:none;background:var(--accent);color:white;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(138, 107, 26, 0.25);">Update
                 Profile</button>
             </div>
           </div>
@@ -364,10 +308,10 @@
                 <p style="font-weight:600;font-family:monospace;color:var(--text-muted);" id="s-id">STF-001</p>
               </div>
               <div><label class="form-label">Role</label>
-                <p style="font-weight:600;">Apartment Staff Admin</p>
+                <p style="font-weight:600;" id="s-role">Apartment Staff Admin</p>
               </div>
               <div><label class="form-label">Department</label>
-                <p style="font-weight:600;">Apartments</p>
+                <p style="font-weight:600;" id="s-dept">Apartments</p>
               </div>
               <div><label class="form-label">Status</label>
                 <p><span class="badge-status badge-approved">Active</span></p>
@@ -386,7 +330,7 @@
       style="background:white;border-radius:12px;width:100%;max-width:620px;max-height:90vh;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.2);display:flex;flex-direction:column;">
       <div
         style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border);background:white;">
-        <h6 style="font-family:'Lora',serif;font-size:0.95rem;font-weight:700;color:var(--accent);margin:0;">✏️ Edit
+        <h6 style="font-family:'Lora',serif;font-size:0.95rem;font-weight:700;color:var(--accent);margin:0;"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg> Edit
           Profile</h6>
         <button onclick="closeModal()"
           style="background:none;border:none;cursor:pointer;font-size:1.5rem;color:var(--text-muted);">&times;</button>
@@ -423,32 +367,83 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
+    <?php
+      $fullName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? ''));
+      if (!$fullName) $fullName = $_SESSION['name'] ?? 'Apartment Staff';
+      $email = $dbUser['email'] ?? $_SESSION['email'] ?? 'staff@iscag.org';
+      $role = $dbUser['role'] ?? $_SESSION['role'] ?? 'Staff Admin';
+      $occupation = $dbUser['occupation'] ?? $role;
+    ?>
     standardizePage('staff');
+    syncSessionUser("<?= addslashes($fullName) ?>", "<?= addslashes($email) ?>", "<?= addslashes($role) ?>");
     const PROFILE_KEY = 'mis_apartment_staff_profile';
-    const DEFAULT_PROFILE = { id: 'STF-001', name: 'Abdul Karim', email: 'akarim@iscag.org', phone: '+63 917 123 4567', gender: 'male', arabic: 'Abdul Karim', occupation: 'Property Manager', since: '2025-06-01' };
+    const DEFAULT_PROFILE = { 
+      id: '<?= $dbUser['tenant_id'] ?? 'STF-001' ?>', 
+      name: "<?= addslashes($fullName) ?>", 
+      email: "<?= addslashes($email) ?>", 
+      phone: '<?= $dbUser['contactnum'] ?? '+63 917 123 4567' ?>', 
+      gender: '<?= strtolower($dbUser['sex'] ?? 'male') ?>', 
+      arabic: "<?= addslashes($dbUser['muslimname'] ?? $fullName) ?>", 
+      occupation: "<?= addslashes($occupation) ?>", 
+      since: '2025-06-01' 
+    };
 
     function getProfile() {
       const raw = localStorage.getItem(PROFILE_KEY);
-      if (raw) return JSON.parse(raw);
-      const staff = getStaffList();
-      const found = staff.find(s => s.department === 'Apartment');
-      if (found) { DEFAULT_PROFILE.name = found.name; DEFAULT_PROFILE.email = found.email; DEFAULT_PROFILE.id = found.id; DEFAULT_PROFILE.since = found.joined; }
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(DEFAULT_PROFILE));
-      return DEFAULT_PROFILE;
+      const dbProfile = {
+        name: "<?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: 'Apartment Staff' ?>",
+        email: "<?= $dbUser['email'] ?? 'staff@iscag.org' ?>",
+        phone: "<?= $dbUser['phone_number'] ?? '' ?>",
+        gender: "<?= $dbUser['sex'] ?? 'Male' ?>",
+        arabic: "<?= $dbUser['arabic_name'] ?? '' ?>",
+        occupation: "<?= $dbUser['occupation'] ?? 'Apartment Manager' ?>",
+        id: "<?= $dbUser['user_id'] ?? 'APT-001' ?>"
+      };
+      if (!raw) return dbProfile;
+      
+      const local = JSON.parse(raw);
+      // Merge: DB data always wins for name and email
+      return { ...local, ...dbProfile };
     }
 
     function render() {
       const p = getProfile();
       const apts = getApartments();
       const apps = getRequests().filter(r => r.type === 'apartment_application');
-      const initials = p.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-      document.getElementById('profile-avatar').textContent = initials;
+      const initials = p.name.split(' ').filter(n => n).map(n => n[0]).join('').slice(0, 2).toUpperCase();
+      const avatarEl = document.getElementById('profile-avatar');
+      const photo = localStorage.getItem('mis_apartment_photo');
+      if (photo) {
+        avatarEl.textContent = '';
+        avatarEl.style.backgroundImage = 'url(' + photo + ')';
+        avatarEl.style.backgroundSize = 'cover';
+        avatarEl.style.backgroundPosition = 'center';
+      } else {
+        avatarEl.textContent = initials;
+        avatarEl.style.backgroundImage = 'none';
+      }
       document.getElementById('p-name').textContent = p.name;
       document.getElementById('p-email').textContent = p.email;
-      document.getElementById('p-since').textContent = '📅 Staff Since ' + formatDate(p.since);
+      document.getElementById('p-since').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg> Staff Since ' + formatDate(p.since);
+      document.getElementById('p-occupation').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg> ' + (p.occupation || 'Staff Admin');
       document.getElementById('s-id').textContent = p.id;
-      const navA = document.getElementById('nav-avatar'); if (navA) navA.textContent = initials;
-      const navN = document.getElementById('nav-name'); if (navN) navN.textContent = p.name;
+      document.getElementById('s-role').textContent = p.occupation || 'Apartment Staff Admin';
+      document.getElementById('s-dept').textContent = p.department || 'Apartments';
+      const navA = document.getElementById('nav-avatar');
+      const navN = document.getElementById('nav-name');
+      const photo2 = localStorage.getItem('mis_apartment_photo');
+      if (navA) {
+        if (photo2) {
+          navA.textContent = '';
+          navA.style.backgroundImage = 'url(' + photo2 + ')';
+          navA.style.backgroundSize = 'cover';
+          navA.style.backgroundPosition = 'center';
+        } else {
+          navA.textContent = initials;
+          navA.style.backgroundImage = 'none';
+        }
+      }
+      if (navN) navN.textContent = p.name;
       document.getElementById('qs-units').textContent = apts.length;
       document.getElementById('qs-available').textContent = apts.filter(a => a.status === 'available').length;
       document.getElementById('qs-occupied').textContent = apts.filter(a => a.status === 'occupied').length;
@@ -460,7 +455,9 @@
       document.getElementById('p-bar').style.width = pct + '%';
       document.getElementById('p-bar').style.background = pct >= 100 ? 'var(--success)' : 'var(--accent)';
       const badge = document.getElementById('p-badge');
-      badge.textContent = pct >= 100 ? '✅ Complete' : '🔒 ' + pct + '%';
+      badge.innerHTML = pct >= 100 
+        ? '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Complete' 
+        : '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"/></svg> ' + pct + '%';
       badge.style.background = pct >= 100 ? 'rgba(46,125,85,0.1)' : 'rgba(199,154,43,0.12)';
       badge.style.color = pct >= 100 ? 'var(--success)' : 'var(--warning)';
     }

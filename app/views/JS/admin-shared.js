@@ -198,7 +198,8 @@ function getProfileCompletion(user) {
 const ROLES = {
   MIS_ADMIN: 'mis_admin',
   STAFF_ADMIN: 'staff_admin',
-  APARTMENT_ADMIN: 'apartment_admin'
+  APARTMENT_ADMIN: 'apartment_admin',
+  STAFF_TENANT: 'Staff_Tenant'
 };
 
 const PERMISSIONS = {
@@ -206,17 +207,17 @@ const PERMISSIONS = {
   manage_users:         [ROLES.MIS_ADMIN],
   approve_applications: [ROLES.MIS_ADMIN],
   reject_applications:  [ROLES.MIS_ADMIN],
-  manage_availability:  [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN],
-  view_billing:         [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN],
+  manage_availability:  [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN, ROLES.STAFF_TENANT],
+  view_billing:         [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN, ROLES.STAFF_TENANT],
   modify_billing:       [ROLES.MIS_ADMIN],
   access_reports:       [ROLES.MIS_ADMIN],
   access_logs:          [ROLES.MIS_ADMIN],
   manage_staff:         [ROLES.MIS_ADMIN],
   edit_records:         [ROLES.MIS_ADMIN],
-  update_unit_status:   [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN],
-  communicate:          [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN],
+  update_unit_status:   [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN, ROLES.STAFF_TENANT],
+  communicate:          [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN, ROLES.STAFF_TENANT],
   system_settings:      [ROLES.MIS_ADMIN],
-  view_assigned:        [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN]
+  view_assigned:        [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN, ROLES.STAFF_TENANT]
 };
 
 function checkPermission(action, role) {
@@ -238,7 +239,25 @@ function setCurrentRole(role) {
 // ══════════════════════════════════════
 function showToast(msg, bg) {
   const toast = document.createElement('div');
-  toast.textContent = msg;
+  let finalMsg = msg;
+  let iconSvg = '';
+
+  // Auto-detect icon based on common emojis or background color
+  if (msg.includes('✅')) {
+    iconSvg = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:white;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+    finalMsg = msg.replace('✅', '').trim();
+  } else if (msg.includes('⚠️') || msg.includes('❌') || (bg && bg.includes('danger'))) {
+    iconSvg = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
+    finalMsg = msg.replace(/[⚠️❌]/g, '').trim();
+  } else if (msg.includes('ℹ️') || msg.includes('📋') || (bg && bg.includes('info'))) {
+    iconSvg = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:white;"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>';
+    finalMsg = msg.replace(/[ℹ️📋]/g, '').trim();
+  } else if (msg.includes('⏳')) {
+    iconSvg = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:white;"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zM12 11.5l-4-4V4h8v3.5l-4 4z"/></svg>';
+    finalMsg = msg.replace('⏳', '').trim();
+  }
+
+  toast.innerHTML = `<div style="display:flex;align-items:center;gap:12px;">${iconSvg}<span>${finalMsg}</span></div>`;
   toast.style.cssText = 'position:fixed;top:24px;right:24px;background:' + (bg || 'var(--success)') +
     ';color:white;padding:14px 22px;border-radius:10px;z-index:99999;font-weight:600;' +
     'font-family:Source Sans 3,sans-serif;font-size:0.9rem;box-shadow:0 4px 16px rgba(0,0,0,0.18);' +
@@ -360,12 +379,25 @@ function initDropdowns() {
 }
 
 function loadUserNav() {
-  const user = getUser();
+  // Check for staff profile first if in staff mode
+  let user = getUser();
+  let roleLabel = 'Staff Admin';
+  const staffProfileRaw = localStorage.getItem('mis_apartment_staff_profile');
+  if (staffProfileRaw) {
+    const staff = JSON.parse(staffProfileRaw);
+    if (staff.name) user.name = staff.name;
+    if (staff.occupation) roleLabel = staff.occupation;
+  }
+
   const navName = document.getElementById('nav-name');
+  const navRole = document.querySelector('.sidebar-user .user-info span');
   const navAvatar = document.getElementById('nav-avatar');
+
   if (navName) navName.textContent = user.name;
+  if (navRole) navRole.textContent = roleLabel;
+  
   if (navAvatar) {
-    const photo = localStorage.getItem('mis_user_photo');
+    const photo = localStorage.getItem('mis_apartment_photo') || localStorage.getItem('mis_user_photo');
     if (photo) {
       navAvatar.textContent = '';
       navAvatar.style.backgroundImage = 'url(' + photo + ')';
@@ -375,6 +407,49 @@ function loadUserNav() {
       navAvatar.textContent = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
     }
   }
+}
+
+/**
+ * syncSessionUser() — Syncs the PHP session name to localStorage to ensure
+ * the UI reflects the actual logged-in account.
+ */
+function syncSessionUser(sessionName, sessionEmail, sessionRole) {
+  if (!sessionName) return;
+  
+  // Update main user
+  const user = getUser();
+  if (user.name !== sessionName) {
+    user.name = sessionName;
+    if (sessionEmail) user.email = sessionEmail;
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+  }
+
+  // Update staff profile
+  const staffRaw = localStorage.getItem('mis_apartment_staff_profile');
+  if (staffRaw) {
+    const staff = JSON.parse(staffRaw);
+    if (staff.name !== sessionName) {
+      staff.name = sessionName;
+      if (sessionEmail) staff.email = sessionEmail;
+      localStorage.setItem('mis_apartment_staff_profile', JSON.stringify(staff));
+    }
+  } else {
+    // Initialize staff profile if missing
+    const newStaff = { 
+      id: 'STF-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0'), 
+      name: sessionName, 
+      email: sessionEmail || '', 
+      phone: '', 
+      gender: '', 
+      arabic: sessionName, 
+      occupation: sessionRole || 'Apartment Manager', 
+      since: new Date().toISOString().split('T')[0] 
+    };
+    localStorage.setItem('mis_apartment_staff_profile', JSON.stringify(newStaff));
+  }
+
+  // Ensure the sidebar reflects the newly synced data immediately
+  loadUserNav();
 }
 
 function setTopBarDate() {
@@ -583,10 +658,7 @@ function initLogoutModal() {
         <div style="background:white;border-radius:16px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;transform:translateY(20px);transition:transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
           <div style="height:4px;background:linear-gradient(90deg,#8b2e2e,#c79a2b);"></div>
           <div style="padding:32px 28px 24px;text-align:center;">
-            <svg viewBox="0 0 24 24" style="width:60px;height:60px;fill:#8b2e2e;margin-bottom:16px;">
-              <path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
-            </svg>
-            <h4 style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:#1f2e2a;margin:0 0 10px;">Sign Out</h4>
+            <h4 style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:#1f2e2a;margin:0 0 10px;">Log Out</h4>
             <p style="font-size:0.9rem;color:#6f7f78;margin:0;line-height:1.5;">Are you sure you want to log out of your account?</p>
           </div>
           <div style="display:flex;gap:10px;padding:0 28px 24px;justify-content:center;">
