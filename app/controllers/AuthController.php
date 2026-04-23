@@ -290,6 +290,26 @@ class AuthController extends Controller
         $this->view('auth/reset-password');
     }
 
+    public function resendOtp(): void
+    {
+        $email = $_SESSION['temp_email'] ?? '';
+        if ($email) {
+            $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $expiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+            
+            // Generate and store OTP (using model helper)
+            $this->userModel->updateOTP($email, $otp, $expiry);
+            
+            if (Mailer::sendOTP($email, $otp)) {
+                $_SESSION['otp_expiry'] = strtotime($expiry) * 1000;
+                header('Location: ' . url('/verify-otp') . '?resend=success');
+                exit;
+            }
+        }
+        header('Location: ' . url('/forgot-password'));
+        exit;
+    }
+
     public function logout(): void
     {
         // Unset all session variables

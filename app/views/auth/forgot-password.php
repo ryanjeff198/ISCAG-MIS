@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ISCAG Philippines – Forgot Password</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     /* ─── VARIABLES ─── */
 :root {
@@ -40,16 +40,64 @@ body {
   min-height: 100vh;
 }
 
-/* LEFT SIDE */
+/* LEFT SIDE (IMAGE + TEXT) */
 .auth-left {
   flex: 1;
-  background: var(--green-dark);
+  position: relative;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  overflow: hidden;
 }
 
 .auth-left img {
+  position: absolute;
+  top: 0; left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  z-index: 1;
+  opacity: 0.7;
+}
+
+.auth-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 2;
+}
+
+.auth-content {
+  position: relative;
+  z-index: 3;
+  max-width: 550px;
+  animation: fadeInRight 1.2s ease-out;
+}
+
+.auth-header-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2.5rem;
+  color: #e1ab39;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 800;
+}
+
+.auth-header-desc {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.1rem;
+  color: white;
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 /* RIGHT SIDE */
@@ -221,7 +269,12 @@ input.error {
 
   <div class="auth-split">
     <div class="auth-left">
-      <img src="<?= asset('assets/bgcover.png') ?>" alt="ISCAG Philippines">
+      <div class="auth-overlay"></div>
+      <img src="<?= asset('assets/ISCAG1.png') ?>" alt="ISCAG Philippines">
+      <div class="auth-content">
+        <h1 class="auth-header-title">Islamic Studies, Call and Guidance of the Philippines</h1>
+        <p class="auth-header-desc">To strive for excellence in education and personal growth of its members, promoting service to others, integrity, and love for God.</p>
+      </div>
     </div>
 
     <div class="auth-right">
@@ -272,51 +325,49 @@ input.error {
     const btnText    = document.getElementById('btnText');
     const btnSpinner = document.getElementById('btnSpinner');
 
-    // Form is handled by PHP POST
-    /*
     form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      if (validateEmail()) sendOTP();
+      if (!validateEmail()) {
+        e.preventDefault();
+      } else {
+        // Show loading state
+        sendOtpBtn.disabled = true;
+        btnText.textContent = 'Sending OTP...';
+        btnSpinner.style.display = 'inline-block';
+      }
     });
-    */
-  });
-</script>
 
     function validateEmail() {
       const email = emailInput.value.trim();
       const re    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!email) {
-        showErr('Email address is required'); emailInput.classList.add('error'); return false;
+        showErr('Email address is required');
+        emailInput.classList.add('error');
+        return false;
       }
       if (!re.test(email)) {
-        showErr('Please enter a valid email address'); emailInput.classList.add('error'); return false;
+        showErr('Please enter a valid email address');
+        emailInput.classList.add('error');
+        return false;
       }
-      hideErr(); emailInput.classList.remove('error'); return true;
+      hideErr();
+      emailInput.classList.remove('error');
+      return true;
     }
 
-    function sendOTP() {
-      const email = emailInput.value.trim();
-      sendOtpBtn.disabled    = true;
-      btnText.textContent    = 'Sending...';
-      btnSpinner.style.display = 'inline-block';
-
-      const otp       = Math.floor(100000 + Math.random() * 900000).toString();
-      const otpExpiry = Date.now() + 5 * 60 * 1000;
-      sessionStorage.setItem('resetEmail', email);
-      sessionStorage.setItem('resetOTP',   otp);
-      sessionStorage.setItem('otpExpiry',  otpExpiry.toString());
-
-      setTimeout(() => {
-        alert(`For demo purposes, your OTP is: ${otp}`);
-        window.location.href = '<?= url('/verify-otp') ?>';
-      }, 2000);
+    function showErr(msg) {
+      emailError.textContent = msg;
+      emailError.classList.add('show');
     }
 
-    function showErr(msg) { emailError.textContent = msg; emailError.classList.add('show'); }
-    function hideErr()    { emailError.classList.remove('show'); }
+    function hideErr() {
+      emailError.classList.remove('show');
+    }
 
     emailInput.addEventListener('input', function () {
-      if (this.classList.contains('error')) { this.classList.remove('error'); hideErr(); }
+      if (this.classList.contains('error')) {
+        this.classList.remove('error');
+        hideErr();
+      }
     });
   });
   </script>

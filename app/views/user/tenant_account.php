@@ -601,18 +601,12 @@ $phpUser = [
 
         const user = getUser();
 
-        // ── Da'wah dropdown — use session gender ──
-        const SESSION_GENDER = '<?= addslashes($_SESSION['gender'] ?? '') ?>';
-        const dawahMenu = document.getElementById('dawah-menu');
+        // ── Da'wah dropdown — link handling ──
         const dawahTrigger = document.getElementById('dawah-trigger');
-        if (SESSION_GENDER.toLowerCase() === 'female') {
-            dawahMenu.innerHTML = `
-            <a href="<?= url('/user/services/counseling/female') ?>"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Sisters' Counseling</a>`;
-            if (dawahTrigger) dawahTrigger.setAttribute('data-href', "<?= url('/user/services/counseling/female') ?>");
-        } else {
-            dawahMenu.innerHTML = `
-            <a href="<?= url('/user/services/counseling/male') ?>"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>Brothers' Counseling</a>`;
-            if (dawahTrigger) dawahTrigger.setAttribute('data-href', "<?= url('/user/services/counseling/male') ?>");
+        if (dawahTrigger) {
+            const SESSION_GENDER = '<?= strtolower($_SESSION['gender'] ?? "") ?>';
+            const dawahHref = SESSION_GENDER === 'female' ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
+            dawahTrigger.setAttribute('data-href', dawahHref);
         }
 
         // ── Populate form fields ──

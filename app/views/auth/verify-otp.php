@@ -304,48 +304,69 @@ body {
   <script>
   document.addEventListener('DOMContentLoaded', function () {
     const userEmail = "<?= $_SESSION['temp_email'] ?? '' ?>";
-    const otpExpiry = "<?= $_SESSION['otp_expiry'] ?? '0' ?>";
+    const expiryTime = "<?= $_SESSION['otp_expiry'] ?? '0' ?>";
 
     if (!userEmail) {
-      alert('Session expired. Please register again.');
-      window.location.href = '<?= url('/register') ?>'; return;
+      alert('Session expired or invalid. Please start over.');
+      window.location.href = '<?= url('/forgot-password') ?>';
+      return;
     }
 
     document.getElementById('emailDisplay').textContent = userEmail;
 
+    const form       = document.getElementById('otpForm');
     const otpBoxes   = document.querySelectorAll('.otp-box');
     const verifyBtn  = document.getElementById('verifyBtn');
     const btnText    = document.getElementById('btnText');
     const btnSpinner = document.getElementById('btnSpinner');
     const resendBtn  = document.getElementById('resendBtn');
     const otpError   = document.getElementById('otpError');
-    const timerEl    = document.getElementById('timer');
     const timeLeftEl = document.getElementById('timeLeft');
+    const timerEl    = document.getElementById('timer');
     let timerInterval;
 
     startTimer();
 
     otpBoxes.forEach((box, i) => {
       box.addEventListener('input', function (e) {
-        if (!/^\d$/.test(e.target.value) && e.target.value !== '') { e.target.value = ''; return; }
-        if (e.target.value && i < otpBoxes.length - 1) otpBoxes[i + 1].focus();
+        if (!/^\d$/.test(e.target.value) && e.target.value !== '') {
+          e.target.value = '';
+          return;
+        }
+        if (e.target.value && i < otpBoxes.length - 1) {
+          otpBoxes[i + 1].focus();
+        }
         clearErrors();
       });
+
       box.addEventListener('keydown', function (e) {
-        if (e.key === 'Backspace' && !e.target.value && i > 0) otpBoxes[i - 1].focus();
+        if (e.key === 'Backspace' && !e.target.value && i > 0) {
+          otpBoxes[i - 1].focus();
+        }
       });
+
       box.addEventListener('paste', function (e) {
         e.preventDefault();
-        const d = e.clipboardData.getData('text').replace(/\D/g, '');
-        if (d.length === 6) { otpBoxes.forEach((b, j) => b.value = d[j] || ''); otpBoxes[5].focus(); clearErrors(); }
+        const data = e.clipboardData.getData('text').replace(/\D/g, '');
+        if (data.length === 6) {
+          otpBoxes.forEach((b, j) => b.value = data[j] || '');
+          otpBoxes[5].focus();
+          clearErrors();
+        }
       });
     });
 
-    // Form submission is handled by HTML POST now
-    // resendBtn.addEventListener('click', resendOTP);
+    form.addEventListener('submit', function (e) {
+      // Show loading state and let PHP handle verification
+      verifyBtn.disabled = true;
+      btnText.textContent = 'Verifying...';
+      btnSpinner.style.display = 'inline-block';
+    });
 
     function startTimer() {
-      const expiry = parseInt(otpExpiry);
+      const expiry = parseInt(expiryTime);
+      if (isNaN(expiry) || expiry === 0) return;
+
       timerInterval = setInterval(() => {
         const left = expiry - Date.now();
         if (left <= 0) {
@@ -359,29 +380,24 @@ body {
         }
         const m = Math.floor(left / 60000);
         const s = Math.floor((left % 60000) / 1000);
-        timeLeftEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        timeLeftEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       }, 1000);
     }
 
-    // Server-side handles verification now. 
-    // This is just for UI focus/pasting.
-
-    function resendOTP() {
-      const newOTP    = Math.floor(100000 + Math.random() * 900000).toString();
-      const newExpiry = Date.now() + 5 * 60 * 1000;
-      sessionStorage.setItem('resetOTP',  newOTP);
-      sessionStorage.setItem('otpExpiry', newExpiry.toString());
-      clearInterval(timerInterval);
-      timerEl.classList.remove('expired');
-      startTimer();
-      resendBtn.disabled = true; verifyBtn.disabled = false;
-      otpBoxes.forEach(b => { b.value = ''; b.classList.remove('error'); });
-      clearErrors(); otpBoxes[0].focus();
-      alert(`New OTP sent. For demo purposes, your new OTP is: ${newOTP}`);
+    function showError(msg) {
+      otpError.textContent = msg;
+      otpError.classList.add('show');
     }
 
-    function showError(msg) { otpError.textContent = msg; otpError.classList.add('show'); }
-    function clearErrors()  { otpError.classList.remove('show'); otpBoxes.forEach(b => b.classList.remove('error')); }
+    function clearErrors() {
+      otpError.classList.remove('show');
+      otpBoxes.forEach(b => b.classList.remove('error'));
+    }
+
+    resendBtn.addEventListener('click', function() {
+      // Redirect to resend route
+      window.location.href = '<?= url('/resend-otp') ?>';
+    });
   });
   </script>
 </body>
