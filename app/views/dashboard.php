@@ -1101,7 +1101,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       }).join('');
     }
 
-      // ── Status Announcement Logic (Diagnostic Version) ──
+      // ── Status Announcement Logic ──
       const appData = <?= json_encode($application ?? null) ?>;
       
       if (appData) {
@@ -1110,19 +1110,16 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
           const isSeen = parseInt(appData.status_seen);
           const isTarget = allowed.includes(status);
 
-          console.log('[Diagnostic] App Status:', status);
-          console.log('[Diagnostic] Seen State:', isSeen);
-          console.log('[Diagnostic] In Allowed List?', isTarget);
+          // Client-side guard: check localStorage to prevent re-showing after dismiss
+          const dismissKey = 'ann_dismissed_' + (appData.application_id || '') + '_' + status;
+          const alreadyDismissed = localStorage.getItem(dismissKey);
 
-          if (!isSeen && isTarget) {
-              // alert('Update Found! Triggering Modal for: ' + status); // Remove if annoying
-              showStatusAnnouncement(appData);
+          if (!isSeen && isTarget && !alreadyDismissed) {
+              showStatusAnnouncement(appData, dismissKey);
           }
-      } else {
-          console.log('[Diagnostic] No Application Data Received from Server.');
       }
 
-      function showStatusAnnouncement(app) {
+      function showStatusAnnouncement(app, dismissKey) {
           const modal = document.createElement('div');
           modal.id = 'status-announcement-modal';
           
@@ -1163,6 +1160,10 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                 </div>
                 <div class="ann-details">${detail}</div>
                 <div class="ann-footer">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; color:var(--text-muted); cursor:pointer; margin-bottom:12px; justify-content:flex-end;">
+                        <input type="checkbox" id="ann-dont-show" style="accent-color:var(--primary-dark); cursor:pointer;" checked>
+                        Don't show this again
+                    </label>
                     <button class="ann-btn primary" id="ann-dismiss-btn">Great, thanks!</button>
                     <button class="ann-btn secondary" id="ann-status-btn">View My Application Status</button>
                 </div>
@@ -1179,8 +1180,13 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
           }, 10);
 
           const dismiss = () => {
-              // AJAX to mark as seen
-              fetch('<?= url("/user/mark-status-seen") ?>', { method: 'POST' });
+              const dontShow = document.getElementById('ann-dont-show').checked;
+              
+              if (dontShow) {
+                  // Persist dismissal: client-side immediately + server-side
+                  localStorage.setItem(dismissKey, '1');
+                  fetch('<?= url("/user/mark-status-seen") ?>', { method: 'POST' });
+              }
               
               modal.style.opacity = '0';
               content.style.transform = 'translateY(20px) scale(0.95)';
