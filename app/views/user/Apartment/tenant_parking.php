@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISCAG MIS — Parking Rental Application</title>
+    <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
     <meta name="description" content="Submit a parking rental application for ISCAG apartment tenants" />
     <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>" />
     <style>
