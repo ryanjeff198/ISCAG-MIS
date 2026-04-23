@@ -4,9 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ISCAG Navbar</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -354,6 +355,313 @@
     }
     .dropdown-login::before { left: auto; right: 24px; transform: rotate(45deg); }
 
+    /* ─── HERO SECTION ────────────────────────────────────────── */
+    .hero-section {
+      padding-top: 68px; /* Offset for fixed navbar */
+      background: linear-gradient(135deg, #f8f7f4 0%, #ffffff 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-section::before {
+      content: '';
+      position: absolute;
+      top: -10%;
+      right: -5%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(20, 83, 45, 0.05) 0%, transparent 70%);
+      border-radius: 50%;
+      z-index: 0;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-label {
+      display: inline-block;
+      padding: 6px 18px;
+      background: var(--green-50);
+      color: var(--green-800);
+      font-size: 0.8rem;
+      font-weight: 700;
+      border-radius: 50px;
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border: 1px solid rgba(20, 83, 45, 0.1);
+    }
+
+    .hero-title {
+      font-family: 'Lora', serif;
+      font-size: clamp(2.5rem, 6vw, 4.2rem);
+      font-weight: 700;
+      color: var(--green-900);
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-title span {
+      color: var(--gold);
+    }
+
+    .hero-description {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      margin-bottom: 2.8rem;
+      max-width: 580px;
+      line-height: 1.7;
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-hero {
+      padding: 14px 36px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-hero-primary {
+      background: var(--green-800);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 15px rgba(20, 83, 45, 0.2);
+    }
+
+    .btn-hero-primary:hover {
+      background: var(--green-700);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(20, 83, 45, 0.3);
+      color: white;
+    }
+
+    .btn-hero-outline {
+      background: transparent;
+      color: var(--green-800);
+      border: 2px solid var(--green-800);
+    }
+
+    .btn-hero-outline:hover {
+      background: var(--green-800);
+      color: white;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(20, 83, 45, 0.15);
+    }
+
+    .btn-hero-text {
+      background: var(--green-50);
+      color: var(--green-800);
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 14px 32px;
+      border-radius: 12px;
+      border: 1px solid rgba(20, 83, 45, 0.1);
+    }
+
+    .btn-hero-text:hover {
+      background: var(--green-100);
+      color: var(--green-900);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(20, 83, 45, 0.1);
+    }
+    
+    .btn-hero-text svg {
+      transition: transform 0.3s ease;
+    }
+    
+    .btn-hero-text:hover svg {
+      transform: translateX(5px);
+    }
+
+    .hero-image-container {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-image-wrapper {
+      position: relative;
+      margin-top: -50px; /* Increased lift for images */
+    }
+
+    .hero-image-card {
+      background: white;
+      padding: 15px;
+      border-radius: 32px;
+      box-shadow: var(--shadow-lg);
+      transform: perspective(1200px) rotateY(-8deg) rotateX(2deg);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .hero-image-card:hover {
+      transform: perspective(1200px) rotateY(0deg) rotateX(0deg) scale(1.02);
+    }
+
+    .hero-image-card img {
+      width: 100%;
+      height: auto;
+      border-radius: 22px;
+      display: block;
+    }
+
+    /* Floating Badge inside Image Area */
+    /* Scroll Animation Utility */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .delay-1 { transition-delay: 0.1s; }
+    .delay-2 { transition-delay: 0.2s; }
+    .delay-3 { transition-delay: 0.3s; }
+
+    @media (max-width: 991.98px) {
+      .hero-section {
+        padding-top: 100px;
+        padding-bottom: 60px;
+        text-align: center;
+      }
+      .hero-description {
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .hero-btns {
+        justify-content: center;
+      }
+      .hero-image-container {
+        margin-top: 2rem;
+      }
+      .hero-image-card {
+        transform: none;
+      }
+    }
+
+    .hero-image-card-secondary {
+      position: absolute;
+      top: -40px;
+      right: -30px;
+      width: 200px;
+      background: white;
+      padding: 12px;
+      border-radius: 24px;
+      box-shadow: var(--shadow-lg);
+      transform: perspective(1200px) rotateY(15deg) rotateX(-5deg);
+      z-index: 4;
+      border: 1px solid rgba(0,0,0,0.05);
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .hero-image-card-secondary img {
+      width: 100%;
+      height: auto;
+      border-radius: 16px;
+      display: block;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: perspective(1200px) rotateY(15deg) rotateX(-5deg) translateY(0); }
+      50% { transform: perspective(1200px) rotateY(15deg) rotateX(-5deg) translateY(-15px); }
+    }
+
+    @media (max-width: 991.98px) {
+      .hero-image-card-secondary {
+        width: 140px;
+        top: -20px;
+        right: 0;
+      }
+      .hero-image-card-tertiary, .hero-image-card-quaternary, .hero-image-card-quinary {
+        display: none; /* Hide extra elements on smaller mobile screens for clarity */
+      }
+    }
+
+    .hero-image-card-tertiary {
+      position: absolute;
+      bottom: -30px;
+      left: -40px;
+      width: 180px;
+      background: white;
+      padding: 10px;
+      border-radius: 24px;
+      box-shadow: var(--shadow-lg);
+      transform: perspective(1200px) rotateY(-15deg) rotateX(10deg);
+      z-index: 5;
+      border: 1px solid rgba(0,0,0,0.05);
+      animation: floatTertiary 7s ease-in-out infinite;
+    }
+
+    .hero-image-card-quaternary {
+      position: absolute;
+      bottom: -60px;
+      right: 40px;
+      width: 160px;
+      background: white;
+      padding: 8px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-lg);
+      transform: perspective(1200px) rotateY(-5deg) rotateX(-10deg);
+      z-index: 2;
+      border: 1px solid rgba(0,0,0,0.05);
+      animation: floatQuaternary 5s ease-in-out infinite;
+    }
+
+    .hero-image-card-quinary {
+      position: absolute;
+      top: -70px;
+      left: 30px;
+      width: 150px;
+      background: white;
+      padding: 8px;
+      border-radius: 22px;
+      box-shadow: var(--shadow-lg);
+      transform: perspective(1200px) rotateY(12deg) rotateX(15deg);
+      z-index: 1;
+      border: 1px solid rgba(0,0,0,0.05);
+      animation: floatQuinary 6.5s ease-in-out infinite;
+    }
+
+    .hero-image-card-tertiary img, .hero-image-card-quaternary img, .hero-image-card-quinary img {
+      width: 100%;
+      height: auto;
+      border-radius: 16px;
+      display: block;
+    }
+
+    @keyframes floatTertiary {
+      0%, 100% { transform: perspective(1200px) rotateY(-15deg) rotateX(10deg) translateY(0); }
+      50% { transform: perspective(1200px) rotateY(-15deg) rotateX(10deg) translateY(-20px); }
+    }
+
+    @keyframes floatQuaternary {
+      0%, 100% { transform: perspective(1200px) rotateY(-5deg) rotateX(-10deg) translateY(0); }
+      50% { transform: perspective(1200px) rotateY(-5deg) rotateX(-10deg) translateY(-12px); }
+    }
+
+    @keyframes floatQuinary {
+      0%, 100% { transform: perspective(1200px) rotateY(12deg) rotateX(15deg) translateY(0); }
+      50% { transform: perspective(1200px) rotateY(12deg) rotateX(15deg) translateY(-18px); }
+    }
   </style>
 </head>
 <body>
@@ -534,11 +842,64 @@
   </div>
 </nav>
 
-<!-- ══════════ DEMO HERO ══════════ -->
-<div class="demo-hero">
-  <h1>ISCAG Navigation Preview</h1>
-  <p>Hover over the navbar items to explore dropdowns.</p>
-</div>
+<!-- ══════════════════════ HERO SECTION ══════════════════════ -->
+<section class="hero-section min-vh-100 d-flex align-items-center">
+  <div class="container">
+    <div class="row align-items-center">
+      
+      <!-- LEFT COLUMN: CONTENT -->
+      <div class="col-lg-6 hero-content">
+        <span class="hero-label">Welcome to ISCAG MIS</span>
+        <h1 class="hero-title">
+          Empowering the Community through <span>Guidance</span> & Knowledge
+        </h1>
+        <p class="hero-description">
+          Providing excellence in Islamic studies and social guidance. Access our specialized departments, manage your community services, and stay connected with our mission.
+        </p>
+        <div class="hero-btns">
+          <a href="#" class="btn-hero btn-hero-primary">
+            Get Started
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+          <a href="#departments" class="btn-hero-text">
+            Explore More
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: IMAGE -->
+      <div class="col-lg-6 hero-image-container">
+        <div class="hero-image-wrapper">
+          <div class="hero-image-card">
+            <img src="<?= asset('assets/image.png') ?>" alt="ISCAG Modern Facility">
+          </div>
+          
+          <!-- Secondary Floating Image -->
+          <div class="hero-image-card-secondary">
+            <img src="<?= asset('assets/ISCAG2.png') ?>" alt="ISCAG Detail 1">
+          </div>
+          
+          <!-- Tertiary Floating Image -->
+          <div class="hero-image-card-tertiary">
+            <img src="<?= asset('assets/ISCAG3.png') ?>" alt="ISCAG Detail 2">
+          </div>
+          
+          <!-- Quaternary Floating Image -->
+          <div class="hero-image-card-quaternary">
+            <img src="<?= asset('assets/ISCAG4.png') ?>" alt="ISCAG Detail 3">
+          </div>
+          
+          <!-- Quinary Floating Image -->
+          <div class="hero-image-card-quinary">
+            <img src="<?= asset('assets/ISCAG5.png') ?>" alt="ISCAG Detail 4">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
 
 <!-- ══════════ SCRIPT ══════════ -->
 <script>
@@ -567,6 +928,27 @@
       link.classList.add('active');
     });
   });
+
+  // Hero Reveal Animation on Scroll/Load
+  function reveal() {
+    var reveals = document.querySelectorAll(".reveal");
+    for (var i = 0; i < reveals.length; i++) {
+      var windowHeight = window.innerHeight;
+      var elementTop = reveals[i].getBoundingClientRect().top;
+      var elementVisible = 150;
+      if (elementTop < windowHeight - elementVisible) {
+        reveals[i].classList.add("active");
+      }
+    }
+  }
+
+  window.addEventListener("scroll", reveal);
+  // Initial check
+  window.addEventListener("load", reveal);
+  reveal(); // Trigger once on script load
 </script>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
