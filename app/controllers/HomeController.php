@@ -8,4 +8,9 @@ class HomeController extends Controller
     {
         $this->view('home/index');
     }
+
+    public function history(): void
+    {
+        $this->view('home/history');
+    }
 }
