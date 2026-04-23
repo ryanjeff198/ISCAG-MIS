@@ -6,12 +6,12 @@ require_once BASE_PATH . '/app/helpers/Auth.php';
 class ApartmentController extends Controller {
 
     public function apply() {
-        Auth::protectRole(['Applicant']);
+        Auth::protectRole(['Guest']);
         $this->view('user/Apartment/tenant_add_information_form');
     }
 
     public function status() {
-        Auth::protectRole(['Applicant']);
+        Auth::protectRole(['Guest']);
         $userId = $_SESSION['user_id'];
         $model = new ApartmentApp();
         $application = $model->getApplication($userId);
@@ -21,7 +21,7 @@ class ApartmentController extends Controller {
     }
 
     public function info() {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $userId = $_SESSION['user_id'];
         $model = new ApartmentApp();
         $application = $model->getApplication($userId);
@@ -31,7 +31,7 @@ class ApartmentController extends Controller {
     }
 
     public function save() {
-        Auth::protectRole(['Applicant']);
+        Auth::protectRole(['Guest']);
         header('Content-Type: application/json');
         $userId = $_SESSION['user_id'];
         $body   = json_decode(file_get_contents('php://input'), true);
@@ -60,7 +60,7 @@ class ApartmentController extends Controller {
     }
 
     public function handleUpload() {
-        Auth::protectRole(['Applicant']);
+        Auth::protectRole(['Guest']);
         header('Content-Type: application/json');
         $userId = $_SESSION['user_id'];
         $type   = $_POST['type'] ?? 'picture';
@@ -110,7 +110,7 @@ class ApartmentController extends Controller {
     }
 
     public function serveImage() {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $userId = $_SESSION['user_id'];
         $type   = $_GET['type'] ?? '';
 
@@ -150,7 +150,7 @@ class ApartmentController extends Controller {
     }
 
     public function finalizeSubmission() {
-        Auth::protectRole(['Applicant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         header('Content-Type: application/json');
         $userId = $_SESSION['user_id'];
         

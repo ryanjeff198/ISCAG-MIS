@@ -167,7 +167,7 @@ $phpUser = [
                                     <span id="role-badge"
                                         style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(199,154,43,0.12);color:var(--warning);">
                                         <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm.5 13H11v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                                        Applicant</span>
+                                        Guest</span>
                                     <span
                                         style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(199,154,43,0.12);color:var(--warning);"
                                         id="member-since-badge">

@@ -105,7 +105,7 @@ class AuthController extends Controller
                 'contactnum' => $_POST['contactnum'] ?? '',
                 'password' => password_hash($password, PASSWORD_DEFAULT),
                 'confirmpass' => password_hash($confirmpass, PASSWORD_DEFAULT),
-                'role' => 'Applicant',
+                'role' => 'Guest',
                 'otp_code' => str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT),
                 'otp_expiry' => date('Y-m-d H:i:s', strtotime('+10 minutes')),
                 'is_verified' => 0

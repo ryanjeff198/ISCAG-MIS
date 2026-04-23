@@ -163,13 +163,13 @@
 <script>
   // ── Inlined data helpers ──
   const STORAGE_KEYS = { user: 'mis_user', requests: 'mis_requests', initialized: 'mis_data_init' };
-  const PROFILE_FIELDS = ['name','email','gender','phone','address','dob','civil','occupation','arabicName','revertYear'];
+  const PROFILE_FIELDS = ['name','email','sex','phone','address','dob','civil','occupation','arabicName','revertYear'];
   const DEFAULT_USER = { 
     id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>', 
     name: '<?= addslashes($_SESSION['name'] ?? "User") ?>', 
     role: '<?= addslashes($_SESSION['role'] ?? "Tenant") ?>',
     email:'<?= $_SESSION['email'] ?? "" ?>', 
-    gender:'<?= $_SESSION['gender'] ?? "" ?>', 
+    sex:'<?= $_SESSION['gender'] ?? "" ?>', 
     phone:'', address:'', dob:'', civil:'', occupation:'', arabicName:'', membership:'', revertYear:'', apartment:'', profileComplete:false 
   };
 
@@ -190,7 +190,7 @@
     const user = getUser();
     const missing = [];
     let filled = 0;
-    const labels = { name:'Full Name', email:'Email Address', gender:'Gender', phone:'Contact Number', address:'Complete Address', dob:'Date of Birth', civil:'Civil Status', occupation:'Occupation', arabicName:'Muslim / Arabic Name', revertYear:'Year Reverted' };
+    const labels = { name:'Full Name', email:'Email Address', sex:'Sex', phone:'Contact Number', address:'Complete Address', dob:'Date of Birth', civil:'Civil Status', occupation:'Occupation', arabicName:'Muslim / Arabic Name', revertYear:'Year Reverted' };
     PROFILE_FIELDS.forEach(k => {
       if (user[k] && String(user[k]).trim() !== '') { filled++; } else { missing.push(labels[k] || k); }
     });
@@ -214,7 +214,16 @@
 
   // ── Profile access gate + gender gate ──
   const { percentage, missingFields } = getProfileCompletion();
-  if (percentage < 100 || user.gender !== 'female') {
+  const isComplete = percentage === 100;
+
+  // Sync completion status to localStorage so the sidebar knows to unlock
+  const storedUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.user) || '{}');
+  if (storedUser.profileComplete !== isComplete) {
+    storedUser.profileComplete = isComplete;
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(storedUser));
+  }
+
+  if (percentage < 100) {
     if (!document.getElementById('acm-keyframes')) {
       const styleEl = document.createElement('style');
       styleEl.id = 'acm-keyframes';
@@ -230,7 +239,7 @@
     let primaryLabel = 'Go to Profile';
     let primaryUrl = '../../user_profile.html';
 
-    if (percentage >= 100 && user.gender !== 'female') {
+    if (percentage >= 100 && user.sex !== 'female') {
       title = 'Access Restricted';
       message = 'This counseling service is exclusively available for sisters. You do not have access to this section.';
       primaryLabel = 'Back to Dashboard';

@@ -9,7 +9,7 @@ class UserController extends Controller
 {
     public function dashboard(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $userId = $_SESSION['user_id'] ?? null;
         
         $userModel = new User();
@@ -23,7 +23,7 @@ class UserController extends Controller
     }
     public function profile(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $userId = $_SESSION['user_id'] ?? null;
         
         $userModel = new User();
@@ -38,7 +38,7 @@ class UserController extends Controller
 
     public function notifications(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $userId = $_SESSION['user_id'] ?? null;
 
         $userModel = new User();
@@ -53,7 +53,7 @@ class UserController extends Controller
 
     public function updateProfile(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $userId = $_SESSION['user_id'] ?? null;
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -112,7 +112,7 @@ class UserController extends Controller
 
     public function uploadAvatar(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $userId = $_SESSION['user_id'] ?? null;
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -166,7 +166,7 @@ class UserController extends Controller
 
     public function serveAvatar(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $userId = $_SESSION['user_id'] ?? null;
 
         $db = getDbConnection();
@@ -188,25 +188,25 @@ class UserController extends Controller
 
     public function burialForm(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $this->view('user/Damayan/user_burial-form');
     }
 
     public function maleCounseling(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $this->view('user/Da\'awah/Male/user_form-male-counseling');
     }
 
     public function femaleCounseling(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $this->view('user/Da\'awah/Female/user_form-female-counseling');
     }
 
     public function checkStatus(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant']);
         $userId = $_SESSION['user_id'] ?? 0;
         
         require_once BASE_PATH . '/app/models/User.php';
@@ -219,7 +219,7 @@ class UserController extends Controller
         $notifications = $notifModel->getUserNotifications($userId);
         
         // Sync session role with DB immediately
-        $dbRole = $user['role'] ?? 'Applicant';
+        $dbRole = $user['role'] ?? 'Guest';
         if ($dbRole !== ($_SESSION['role'] ?? '')) {
             $_SESSION['role'] = $dbRole;
         }
@@ -247,7 +247,7 @@ class UserController extends Controller
                 $notifModel = new Notification();
                 $notifModel->markAsRead($notifId, $userId);
                 
-                // If the session role is Applicant but DB says Tenant, update session now
+                // If the session role is Guest but DB says Tenant, update session now
                 require_once BASE_PATH . '/app/models/User.php';
                 $userModel = new User();
                 $user = $userModel->findById($userId);
