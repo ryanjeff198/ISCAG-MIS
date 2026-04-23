@@ -223,7 +223,7 @@ class ApartmentType
             SELECT u.*, t.label AS type_label, t.type_key, t.price
             FROM apartment_units u
             JOIN apartment_types t ON u.type_id = t.type_id
-            ORDER BY u.room_number
+            ORDER BY u.building, u.room_number
         ";
         return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -247,12 +247,13 @@ class ApartmentType
     public function createUnit(array $data): int
     {
         $stmt = $this->db->prepare(
-            "INSERT INTO apartment_units (type_id, room_number, status, description, application_id, tenant_id) 
-             VALUES (:type_id, :room_number, :status, :description, :application_id, :tenant_id)"
+            "INSERT INTO apartment_units (type_id, room_number, building, status, description, application_id, tenant_id) 
+             VALUES (:type_id, :room_number, :building, :status, :description, :application_id, :tenant_id)"
         );
         $stmt->execute([
             'type_id'        => $data['type_id'],
             'room_number'    => $data['room_number'],
+            'building'       => $data['building'] ?? null,
             'status'         => $data['status'] ?? 'Available',
             'description'    => $data['description'] ?? '',
             'application_id' => $data['application_id'] ?? null,
@@ -266,7 +267,7 @@ class ApartmentType
      */
     public function updateUnit(int $id, array $data): bool
     {
-        $fields = ['type_id', 'room_number', 'status', 'description', 'application_id', 'tenant_id'];
+        $fields = ['type_id', 'room_number', 'building', 'status', 'description', 'application_id', 'tenant_id'];
         $safe = [];
         foreach ($fields as $f) {
             if (array_key_exists($f, $data)) {
@@ -300,6 +301,32 @@ class ApartmentType
         );
         $stmt->execute(['tid' => $typeId]);
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Get all distinct building names.
+     */
+    public function getBuildings(): array
+    {
+        return $this->db->query(
+            "SELECT DISTINCT building FROM apartment_units WHERE building IS NOT NULL ORDER BY building"
+        )->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Get units filtered by building.
+     */
+    public function getUnitsByBuilding(string $building): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT u.*, t.label AS type_label, t.type_key, t.price
+            FROM apartment_units u
+            JOIN apartment_types t ON u.type_id = t.type_id
+            WHERE u.building = :building
+            ORDER BY u.room_number
+        ");
+        $stmt->execute(['building' => $building]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     // ═══════════════════════════════════════════

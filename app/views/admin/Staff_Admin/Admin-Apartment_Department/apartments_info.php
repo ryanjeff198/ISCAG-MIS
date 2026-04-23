@@ -277,11 +277,16 @@
 
                 <!-- Section: Registered Units -->
                 <div class="section-card">
-                    <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <h6>
                             <svg viewBox="0 0 24 24"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z" /></svg>
                             Registered Room Units
                         </h6>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <select id="building-filter" class="form-control" style="width:auto; min-width:160px; font-size:0.82rem; padding:6px 12px;">
+                                <option value="">All Buildings</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="section-card-body" style="padding:0;">
                         <div class="table-wrapper">
@@ -289,6 +294,7 @@
                                 <thead>
                                     <tr>
                                         <th>Unit / Room #</th>
+                                        <th>Building</th>
                                         <th>Type</th>
                                         <th>Price</th>
                                         <th>Tenant</th>
@@ -409,10 +415,21 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Room Number / ID</label>
-                            <input type="text" class="form-control" name="room_number" id="u-number" placeholder="e.g. 101-A" required>
+                            <input type="text" class="form-control" name="room_number" id="u-number" placeholder="e.g. B1-01" required>
                         </div>
                     </div>
-                    <div class="form-row" style="grid-template-columns: repeat(1, 1fr);">
+                    <div class="form-row" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="form-group">
+                            <label class="form-label">Building</label>
+                            <select class="form-control" name="building" id="u-building">
+                                <option value="">— Select Building —</option>
+                                <option value="Building 1">Building 1</option>
+                                <option value="Building 2">Building 2</option>
+                                <option value="Building 3">Building 3</option>
+                                <option value="Building 4">Building 4</option>
+                                <option value="Building 5">Building 5</option>
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label class="form-label">Status</label>
                             <select class="form-control" name="status" id="u-status">
@@ -443,6 +460,7 @@
 
         let apartmentTypes = [];
         let roomUnits = [];
+        let allBuildings = [];
 
         async function init() {
             await loadData();
@@ -462,6 +480,8 @@
                 }
                 if (unitsRes.success) {
                     roomUnits = unitsRes.data.units;
+                    allBuildings = unitsRes.data.buildings || [];
+                    populateBuildingFilter();
                     renderUnits();
                 }
             } catch (err) {
@@ -505,17 +525,21 @@
 
         function renderUnits() {
             const tbody = document.getElementById('units-tbody');
-            if (!roomUnits.length) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">No units registered yet.</td></tr>';
+            const filterVal = document.getElementById('building-filter').value;
+            const filtered = filterVal ? roomUnits.filter(u => u.building === filterVal) : roomUnits;
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">No units found.</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = roomUnits.map(u => {
+            tbody.innerHTML = filtered.map(u => {
                 const statusClass = u.status.toLowerCase() === 'available' ? 'badge-available' 
                     : u.status.toLowerCase() === 'occupied' ? 'badge-occupied'
                     : 'badge-reserved';
                 return `<tr>
                     <td style="font-weight:600;">#${u.room_number}</td>
+                    <td>${u.building || '—'}</td>
                     <td>${u.type_label}</td>
                     <td>₱${Number(u.price).toLocaleString()}</td>
                     <td>${u.tenant_id ? 'Assigned' : '—'}</td>
@@ -533,6 +557,15 @@
                     </td>
                 </tr>`;
             }).join('');
+        }
+
+        function populateBuildingFilter() {
+            const select = document.getElementById('building-filter');
+            const current = select.value;
+            select.innerHTML = '<option value="">All Buildings</option>' +
+                allBuildings.map(b => `<option value="${b}">${b}</option>`).join('');
+            select.value = current;
+            select.addEventListener('change', renderUnits);
         }
 
         function populateTypeDropdowns() {
@@ -732,6 +765,7 @@
                     document.getElementById('u-id').value = unit.unit_id;
                     document.getElementById('u-type').value = unit.type_id;
                     document.getElementById('u-number').value = unit.room_number;
+                    document.getElementById('u-building').value = unit.building || '';
                     document.getElementById('u-status').value = unit.status;
                     document.getElementById('u-desc').value = unit.description;
                 }

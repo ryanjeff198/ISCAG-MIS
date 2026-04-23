@@ -202,7 +202,8 @@ class ApartmentTypeController
     {
         $units = $this->model->getAllUnits();
         $types = $this->model->getAllTypes();
-        $this->json(['success' => true, 'data' => ['units' => $units, 'types' => $types]]);
+        $buildings = $this->model->getBuildings();
+        $this->json(['success' => true, 'data' => ['units' => $units, 'types' => $types, 'buildings' => $buildings]]);
     }
 
     /**
