@@ -9,8 +9,18 @@ class HomeController extends Controller
         $this->view('home/index');
     }
 
-    public function history(): void
+    public function historyOrganization(): void
     {
-        $this->view('home/history');
+        $this->view('home/history-organization');
+    }
+
+    public function departments(): void
+    {
+        $this->view('home/departments');
+    }
+
+    public function contact(): void
+    {
+        $this->view('home/contact');
     }
 }

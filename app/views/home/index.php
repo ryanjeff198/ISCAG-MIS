@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ISCAG Navbar</title>
+  <title>About ISCAG - Islamic Studies, Call and Guidance</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -580,12 +580,12 @@
 <body>
 
 <?php 
-  $active_page = 'home';
+  $active_page = 'about';
   include 'partials/navbar.php'; 
 ?>
 
 <!-- ══════════════════════ HERO SECTION ══════════════════════ -->
-<section class="hero-section min-vh-100 d-flex align-items-center">
+<section class="hero-section min-vh-100 d-flex align-items-center fade-in">
   <div class="container">
     <div class="row align-items-center">
       
@@ -644,7 +644,7 @@
 </section>
 
 <!-- ══════════════════════ INSIGHTS OVERLAY ══════════════════════ -->
-<div class="insights-overlay">
+<div class="insights-overlay fade-in delay-200">
   <div class="container">
     <div class="insights-grid">
       <div class="insight-card reveal">

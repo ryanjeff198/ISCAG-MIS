@@ -13,7 +13,9 @@ $routes = [
     // Public pages
     '/'                 => ['HomeController',  'index'],
     '/index'            => ['HomeController',  'index'],
-    '/history'          => ['HomeController',  'history'],
+    '/history-organization' => ['HomeController',  'historyOrganization'],
+    '/departments'          => ['HomeController',  'departments'],
+    '/contact'              => ['HomeController',  'contact'],
 
     // Authentication
     '/login'            => ['AuthController',  'login'],

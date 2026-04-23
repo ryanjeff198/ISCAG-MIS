@@ -13,18 +13,22 @@
     <!-- CENTER LINKS -->
     <ul class="nav-links" style="list-style:none;">
 
-      <!-- HOME -->
-      <li class="nav-item">
-        <a href="<?= url('/') ?>" class="nav-link <?= (isset($active_page) && $active_page == 'home') ? 'active' : '' ?>">Home</a>
-      </li>
-
       <!-- ABOUT -->
       <li class="nav-item">
-        <a class="nav-link <?= (isset($active_page) && $active_page == 'about') ? 'active' : '' ?>" href="#">
+        <a class="nav-link <?= (isset($active_page) && $active_page == 'about' || (isset($active_page) && $active_page == 'home')) ? 'active' : '' ?>" href="<?= url('/') ?>">
           About
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
         </a>
         <div class="dropdown dropdown-simple" style="min-width:230px;">
+          <a href="<?= url('/') ?>" class="dropdown-item">
+            <span class="item-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-svg"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span class="item-text-wrap">
+              <span class="item-title">Overview</span>
+              <span class="item-desc">Welcome to ISCAG</span>
+            </span>
+          </a>
           <a href="<?= url('/') ?>#mission-vision" class="dropdown-item">
             <span class="item-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-svg"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
@@ -34,22 +38,13 @@
               <span class="item-desc">Our purpose and guiding principles</span>
             </span>
           </a>
-          <a href="<?= url('/history') ?>" class="dropdown-item">
+          <a href="<?= url('/history-organization') ?>" class="dropdown-item">
             <span class="item-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-svg"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
             </span>
             <span class="item-text-wrap">
-              <span class="item-title">History</span>
-              <span class="item-desc">How ISCAG was founded</span>
-            </span>
-          </a>
-          <a href="<?= url('/organization') ?>" class="dropdown-item">
-            <span class="item-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-svg"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </span>
-            <span class="item-text-wrap">
-              <span class="item-title">Organization</span>
-              <span class="item-desc">Leadership and structure</span>
+              <span class="item-title">History & Organization</span>
+              <span class="item-desc">Our heritage and leadership</span>
             </span>
           </a>
         </div>
@@ -57,7 +52,7 @@
 
       <!-- DEPARTMENT (MEGA) -->
       <li class="nav-item" id="deptNav">
-        <a class="nav-link" href="#">
+        <a class="nav-link <?= (isset($active_page) && $active_page == 'department') ? 'active' : '' ?>" href="<?= url('/departments') ?>">
           Department
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
         </a>
