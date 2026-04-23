@@ -107,14 +107,26 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 18px;
+            padding: 8px 22px;
             border-radius: 24px;
-            font-size: 0.72rem;
-            font-weight: 700;
+            font-size: 0.75rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
             white-space: nowrap;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(8px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .status-badge[onclick]:hover {
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            filter: brightness(1.1);
+        }
+
+        .status-badge[onclick]:active {
+            transform: scale(0.95);
         }
 
         .status-badge.pending {
@@ -949,6 +961,159 @@
             }
         }
 
+        /* ── Queue Status Modal ── */
+        .q-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 34, 53, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .q-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .q-modal-card {
+            width: 100%;
+            max-width: 420px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+
+        .q-modal-overlay.active .q-modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .q-modal-header {
+            padding: 24px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+            color: white;
+            position: relative;
+        }
+
+        .q-modal-close {
+            position: absolute;
+            top: 16px; right: 16px;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            color: white;
+        }
+
+        .q-modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+
+        .q-modal-body {
+            padding: 32px 24px;
+            text-align: center;
+        }
+
+        .q-circle-container {
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 24px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .q-circle-bg {
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 8px solid #f0f4f2;
+        }
+
+        .q-circle-progress {
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 8px solid var(--accent);
+            border-left-color: transparent;
+            border-bottom-color: transparent;
+            transform: rotate(45deg);
+            animation: qRotate 2s linear infinite;
+        }
+
+        @keyframes qRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .q-number {
+            font-family: 'Lora', serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            position: relative;
+            z-index: 2;
+        }
+
+        .q-pos-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-top: -10px;
+        }
+
+        .q-status-title {
+            font-family: 'Lora', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin: 0 0 8px;
+        }
+
+        .q-status-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin: 0 0 24px;
+        }
+
+        .q-footer-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            background: #f8faf9;
+            border: 1px solid var(--border);
+            color: var(--primary-dark);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .q-footer-btn:hover {
+            background: white;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
         /* ── Responsive ── */
         @media (max-width: 768px) {
             :root {
@@ -1147,9 +1312,18 @@
                 'PENDING_MIS': { label: 'Pending MIS Review', cls: 'pending', icon: '⏳' },
                 'VERIFIED': { label: 'Verified', cls: 'approved', icon: '✓' },
                 'approved': { label: 'Approved', cls: 'approved', icon: '✓' },
+                'Assigned': { label: 'Room Assigned', cls: 'approved', icon: '🏠' },
+                'Queued': { label: 'Waitlisted', cls: 'pending', icon: '📋' },
                 'rejected': { label: 'Rejected', cls: 'rejected', icon: '✕' }
             };
             const sts = statusMap[appStatus] || statusMap.pending;
+
+            // Handle Queued display name
+            if (appStatus === 'Queued' && aptApp && aptApp.queue_position) {
+                sts.label = `Waitlisted — Position #${aptApp.queue_position}`;
+            } else if (appStatus === 'Assigned' && aptApp && aptApp.room_number) {
+                 sts.label = `Room ${aptApp.room_number} Assigned`;
+            }
             const refId = report ? report.id : (aptApp ? aptApp.id : 'N/A');
             const submittedDate = report ? report.submittedAt : (aptApp ? aptApp.date : null);
 
@@ -1182,8 +1356,8 @@
             let activeStageIdx = 1; // Default = documents
             if (docsUploaded >= docsTotal) activeStageIdx = 2;
             if (appStatus === 'VERIFIED') activeStageIdx = 3;
-            if (appStatus === 'approved' || appStatus === 'VERIFIED') activeStageIdx = 3;
-            if (appStatus === 'approved') activeStageIdx = 4;
+            if (appStatus === 'approved' || appStatus === 'VERIFIED' || appStatus === 'Queued') activeStageIdx = 3;
+            if (appStatus === 'approved' || appStatus === 'Assigned' || (appStatus === 'Queued' && aptApp.queue_position)) activeStageIdx = 4;
 
             const timelineHtml = stages.map((s, i) => {
                 const cls = i < activeStageIdx ? 'completed' : (i === activeStageIdx ? 'active' : '');
@@ -1248,8 +1422,10 @@
                   <p class="status-hero-subtitle">Ref: ${refId} • Submitted ${formatDate(submittedDate)}</p>
                 </div>
               </div>
-              <div class="status-badge ${sts.cls}">
-                <span class="status-badge-dot"></span>
+              <div class="status-badge ${sts.cls}" 
+                   style="${(appStatus === 'Queued' || appStatus === 'Assigned') ? 'cursor:pointer; transition:all 0.2s; box-shadow:0 0 0 0 rgba(0,0,0,0);' : ''}"
+                   ${(appStatus === 'Queued' || appStatus === 'Assigned') ? 'onclick="openQueueModal()" title="View Live Tracker"' : ''}>
+                <span class="status-badge-dot" style="${(appStatus === 'Queued' || appStatus === 'Assigned') ? 'animation: blink 1.5s infinite;' : ''}"></span>
                 ${sts.label}
               </div>
             </div>
@@ -1436,30 +1612,61 @@
         </div>
         <?php endif; ?>
 
-        <!-- ═══ ACTION BAR ═══ -->
-        <div class="action-bar">
-          <div class="action-bar-text">
-            <h4>${docsUploaded >= docsTotal ? 'Application Complete' : 'Complete Your Application'}</h4>
-            <p>${docsUploaded >= docsTotal ? 'All documents have been submitted. Awaiting admin review.' : 'Upload remaining documents to finalize your application.'}</p>
-          </div>
-          <div class="action-bar-btns">
-            <a href="<?= url('/user/dashboard') ?>" class="btn-action outline">
-              <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-              Dashboard
-            </a>
-            ${docsUploaded < docsTotal
-                    ? `<a href="<?= url('/user/apartment/apply') ?>" class="btn-action primary">
-                  <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
-                  Upload Documents
-                 </a>`
-                    : `<a href="<?= url('/user/apartment/apply') ?>" class="btn-action primary">
-                  <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
-                  View Application Form
-                 </a>`
-                }
-          </div>
+      
+
+        <!-- ═══ QUEUE STATUS MODAL ═══ -->
+        <div id="q-modal" class="q-modal-overlay" onclick="if(event.target===this) closeQueueModal()">
+            <div class="q-modal-card">
+                <div class="q-modal-header">
+                    <button class="q-modal-close" onclick="closeQueueModal()">&times;</button>
+                    <h3 style="margin:0; font-family:'Lora', serif;">Live Tracker</h3>
+                    <p style="margin:4px 0 0; font-size:0.8rem; opacity:0.8;">Application ID: ${refId}</p>
+                </div>
+                <div class="q-modal-body">
+                    ${appStatus === 'Queued' ? `
+                        <div class="q-circle-container">
+                            <div class="q-circle-bg"></div>
+                            <div class="q-circle-progress"></div>
+                            <div style="display:flex; flex-direction:column; align-items:center;">
+                                <span class="q-number">${aptApp.queue_position}</span>
+                                <span class="q-pos-label">In Queue</span>
+                            </div>
+                        </div>
+                        <h4 class="q-status-title">You are on the Waitlist</h4>
+                        <p class="q-status-desc">
+                            We've accepted your application for a <strong>${aptApp.roomtype}</strong>. 
+                            You are currently <strong>Position #${aptApp.queue_position}</strong>. 
+                            The moment a unit is released, you will be automatically assigned.
+                        </p>
+                    ` : `
+                        <div class="q-circle-container" style="background: rgba(47,138,96,0.1); border-radius:50%;">
+                             <svg viewBox="0 0 24 24" style="width:80px;height:80px;fill:var(--success);"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                        </div>
+                        <h4 class="q-status-title">Room Assigned!</h4>
+                        <p class="q-status-desc">
+                            Great news! You have been assigned to <strong>Room ${aptApp.room_number}</strong> 
+                            in <strong>${aptApp.building}</strong>. Your membership is now active. 
+                            Welcome to the community!
+                        </p>
+                    `}
+                    <button class="q-footer-btn" onclick="closeQueueModal()">Close Tracker</button>
+                </div>
+            </div>
         </div>
       `;
+
+      // JS Functions for Modal
+      window.openQueueModal = function() {
+          document.getElementById('q-modal').classList.add('active');
+          document.body.style.overflow = 'hidden';
+      };
+      window.closeQueueModal = function() {
+          document.getElementById('q-modal').classList.remove('active');
+          document.body.style.overflow = '';
+      };
+
+      // Auto-open if Queued for the first time? (Optional)
+      // if(appStatus === 'Queued') setTimeout(openQueueModal, 800);
 
             // Set hero avatar photo
             if (userPhoto) {

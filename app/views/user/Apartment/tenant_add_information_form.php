@@ -990,6 +990,32 @@ if ($userId) {
       fill: currentColor;
     }
 
+    /* ── AVAILABILITY BADGES ── */
+    .avail-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .avail-badge.status-ok { background: rgba(47,138,96,0.1); color: var(--success); }
+    .avail-badge.status-low { background: rgba(199,154,43,0.1); color: var(--warning); }
+    .avail-badge.status-full { background: rgba(139, 46, 46, 0.1); color: var(--danger); }
+
+    .unit-card.unit-full {
+      opacity: 0.75;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
+    }
+    .unit-card.unit-full:hover {
+      border-color: var(--border) !important;
+      transform: none !important;
+    }
+    .unit-card.unit-full .unit-card-check {
+      display: none !important;
+    }
+
     .unit-card.selected .unit-card-view {
       background: var(--primary);
     }
@@ -3329,27 +3355,40 @@ if ($userId) {
             container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">No available unit types found.</p>';
             return;
           }
-          container.innerHTML = types.map((t, idx) => `
-            <label class="unit-card ${idx === 0 ? 'selected' : ''}" for="unit-${t.type_id}">
-              <input type="radio" name="unit" id="unit-${t.type_id}" value="${t.type_key}" ${idx === 0 ? 'checked' : ''} />
-              <div class="unit-card-check">
-                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
-              </div>
-              <div class="unit-card-thumb">
-                <img src="<?= asset('') ?>${t.thumbnail || 'assets/placeholder.png'}" alt="${t.label}" />
-                <span class="unit-card-thumb-overlay">${t.label.split(' ')[0]}</span>
-              </div>
-              <div class="unit-card-body">
-                <div class="unit-card-label">${t.label}</div>
-                <div class="unit-card-sub">${t.capacity || 'For residents'}</div>
-              </div>
-              <button type="button" class="unit-card-view" 
-                onclick='event.preventDefault();event.stopPropagation(); if(window.openRoomPreview) window.openRoomPreview(${JSON.stringify(t).replace(/'/g, "&apos;")})'>
-                <svg viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" /></svg>
-                View Room
-              </button>
-            </label>
-          `).join('');
+          container.innerHTML = types.map((t, idx) => {
+            const isFull = (t.available_count || 0) <= 0;
+            const availText = isFull ? 'No Units Available' : `${t.available_count} Units Available`;
+            const statusClass = isFull ? 'status-full' : (t.available_count < 5 ? 'status-low' : 'status-ok');
+            const thumbUrl = t.thumbnail_id 
+              ? `<?= url('/api/apartment-types/serve-image') ?>?id=${t.thumbnail_id}`
+              : `<?= asset('assets/placeholder.png') ?>`;
+
+            return `
+              <label class="unit-card ${idx === 0 && !isFull ? 'selected' : ''} ${isFull ? 'unit-full' : ''}" for="unit-${t.type_id}">
+                <input type="radio" name="unit" id="unit-${t.type_id}" value="${t.type_key}" 
+                  ${idx === 0 && !isFull ? 'checked' : ''} ${isFull ? 'disabled' : ''} />
+                <div class="unit-card-check">
+                  <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
+                </div>
+                <div class="unit-card-thumb">
+                  <img src="${thumbUrl}" alt="${t.label}" />
+                  <span class="unit-card-thumb-overlay">${t.label.split(' ')[0]}</span>
+                </div>
+                <div class="unit-card-body">
+                  <div class="unit-card-label">${t.label}</div>
+                  <div class="unit-card-sub" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>${t.capacity || 'For residents'}</span>
+                    <span class="avail-badge ${statusClass}">${availText}</span>
+                  </div>
+                </div>
+                <button type="button" class="unit-card-view" 
+                  onclick='event.preventDefault();event.stopPropagation(); if(window.openRoomPreview) window.openRoomPreview(${JSON.stringify(t).replace(/'/g, "&apos;")})'>
+                  <svg viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" /></svg>
+                  View Gallery
+                </button>
+              </label>
+            `;
+          }).join('');
 
           // Re-attach card selection effects
           container.querySelectorAll('.unit-card').forEach(card => {

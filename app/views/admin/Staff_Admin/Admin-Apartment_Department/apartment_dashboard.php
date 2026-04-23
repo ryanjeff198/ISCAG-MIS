@@ -171,6 +171,7 @@
                   <tr>
                     <th>Unit ID</th>
                     <th>Unit Name</th>
+                    <th>Building</th>
                     <th>Type</th>
                     <th>Price / mo</th>
                     <th>Available</th>
@@ -433,6 +434,7 @@
         return `<tr>
         <td class="td-id">#${u.unit_id}</td>
         <td style="font-weight:600;">Room ${u.room_number}</td>
+        <td>${u.building || '—'}</td>
         <td>${u.type_label}</td>
         <td>₱${Number(u.price).toLocaleString()}</td>
         <td style="text-align:center;font-weight:700;color:${u.status.toLowerCase() === 'available' ? 'var(--success)' : 'var(--danger)'};">${u.status.toLowerCase() === 'available' ? '1' : '0'}</td>

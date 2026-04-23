@@ -111,7 +111,12 @@ class ApartmentApp {
 
     // ─── apartmentsapp (unit type) ────────────────────────
     public function getApplication($userId) {
-        $stmt = $this->db->prepare("SELECT * FROM apartmentsapp WHERE tenant_id = :uid ORDER BY application_id DESC LIMIT 1");
+        $sql = "SELECT a.*, u.room_number, u.building 
+                FROM apartmentsapp a 
+                LEFT JOIN apartment_units u ON a.unit_id = u.unit_id 
+                WHERE a.tenant_id = :uid 
+                ORDER BY a.application_id DESC LIMIT 1";
+        $stmt = $this->db->prepare($sql);
         $stmt->execute(['uid' => $userId]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     }
@@ -229,6 +234,216 @@ class ApartmentApp {
         $sql = "UPDATE apartmentsapp SET status = :status WHERE tenant_id = :uid";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['status' => $status, 'uid' => $userId]);
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  ROOM ASSIGNMENT & WAITLIST ENGINE
+    // ═══════════════════════════════════════════════════
+
+    /**
+     * Core logic: After acceptance, assign a room OR add to waitlist.
+     * 
+     * Flow: 
+     *   1. Look up the application's requested room type
+     *   2. Find an available room of that type
+     *   3a. If found → Assign room, mark unit Occupied, change role to Tenant
+     *   3b. If none  → Calculate queue position, set status to Queued
+     *
+     * @return array ['result' => 'assigned'|'queued', 'unit_id' => int|null, 'queue_position' => int|null, 'room_number' => string|null]
+     */
+    public function assignOrQueue(int $applicationId): array
+    {
+        // Get the application
+        $stmt = $this->db->prepare("SELECT * FROM apartmentsapp WHERE application_id = :id");
+        $stmt->execute(['id' => $applicationId]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$app) return ['result' => 'error', 'message' => 'Application not found'];
+
+        // Map roomtype label → type_id
+        $typeId = $this->getTypeIdByLabel($app['roomtype']);
+        if (!$typeId) return ['result' => 'error', 'message' => 'Unknown room type: ' . $app['roomtype']];
+
+        // Find an available room of this type (first come first serve — pick first available)
+        $stmt = $this->db->prepare("
+            SELECT unit_id, room_number, building 
+            FROM apartment_units 
+            WHERE type_id = :tid AND status = 'Available' 
+            ORDER BY building, room_number 
+            LIMIT 1
+        ");
+        $stmt->execute(['tid' => $typeId]);
+        $room = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($room) {
+            // ── ASSIGN: Room is available ──
+            // Mark unit as Occupied
+            $this->db->prepare("
+                UPDATE apartment_units SET status = 'Occupied', tenant_id = :tid, application_id = :aid 
+                WHERE unit_id = :uid
+            ")->execute([
+                'tid' => $app['tenant_id'],
+                'aid' => $applicationId,
+                'uid' => $room['unit_id']
+            ]);
+
+            // Update application
+            $this->db->prepare("
+                UPDATE apartmentsapp 
+                SET status = 'Assigned', unit_id = :uid, assigned_at = NOW(), accepted_at = NOW()
+                WHERE application_id = :aid
+            ")->execute(['uid' => $room['unit_id'], 'aid' => $applicationId]);
+
+            // Change role: Guest → Tenant
+            $this->changeRoleToTenant($app['tenant_id']);
+
+            return [
+                'result' => 'assigned',
+                'unit_id' => $room['unit_id'],
+                'room_number' => $room['room_number'],
+                'building' => $room['building'],
+                'queue_position' => null
+            ];
+        } else {
+            // ── QUEUE: No rooms available ──
+            // Get next queue position for this room type
+            $stmt = $this->db->prepare("
+                SELECT COALESCE(MAX(queue_position), 0) + 1 
+                FROM apartmentsapp 
+                WHERE roomtype = :rt AND status = 'Queued'
+            ");
+            $stmt->execute(['rt' => $app['roomtype']]);
+            $nextPos = (int) $stmt->fetchColumn();
+
+            // Update application to Queued
+            $this->db->prepare("
+                UPDATE apartmentsapp 
+                SET status = 'Queued', queue_position = :qp, accepted_at = NOW()
+                WHERE application_id = :aid
+            ")->execute(['qp' => $nextPos, 'aid' => $applicationId]);
+
+            return [
+                'result' => 'queued',
+                'unit_id' => null,
+                'room_number' => null,
+                'building' => null,
+                'queue_position' => $nextPos
+            ];
+        }
+    }
+
+    /**
+     * When a tenant moves out (room becomes Available), 
+     * check if there's anyone queued for that room type and auto-assign.
+     */
+    public function releaseRoom(int $unitId): array
+    {
+        // Get unit info
+        $stmt = $this->db->prepare("
+            SELECT u.*, t.label AS type_label 
+            FROM apartment_units u 
+            JOIN apartment_types t ON u.type_id = t.type_id 
+            WHERE u.unit_id = :uid
+        ");
+        $stmt->execute(['uid' => $unitId]);
+        $unit = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$unit) return ['result' => 'error', 'message' => 'Unit not found'];
+
+        // Reset the unit to Available
+        $this->db->prepare("
+            UPDATE apartment_units 
+            SET status = 'Available', tenant_id = NULL, application_id = NULL 
+            WHERE unit_id = :uid
+        ")->execute(['uid' => $unitId]);
+
+        // Check if anyone is queued for this type
+        $stmt = $this->db->prepare("
+            SELECT application_id, tenant_id 
+            FROM apartmentsapp 
+            WHERE roomtype = :rt AND status = 'Queued' 
+            ORDER BY queue_position ASC 
+            LIMIT 1
+        ");
+        $stmt->execute(['rt' => $unit['type_label']]);
+        $next = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($next) {
+            // Auto-assign to next in queue
+            return $this->assignOrQueue($next['application_id']);
+        }
+
+        return ['result' => 'released', 'message' => 'Room released. No one in queue.'];
+    }
+
+    /**
+     * Get the waitlist for a specific room type.
+     */
+    public function getWaitlist(?string $roomtype = null): array
+    {
+        $sql = "
+            SELECT a.*, u.first_name, u.last_name
+            FROM apartmentsapp a
+            JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
+            WHERE a.status = 'Queued'
+        ";
+        $params = [];
+        if ($roomtype) {
+            $sql .= " AND a.roomtype = :rt";
+            $params['rt'] = $roomtype;
+        }
+        $sql .= " ORDER BY a.queue_position ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Get queue position for a specific application.
+     */
+    public function getQueuePosition(int $applicationId): ?int
+    {
+        $stmt = $this->db->prepare("SELECT queue_position FROM apartmentsapp WHERE application_id = :id AND status = 'Queued'");
+        $stmt->execute(['id' => $applicationId]);
+        $pos = $stmt->fetchColumn();
+        return $pos !== false ? (int) $pos : null;
+    }
+
+    /**
+     * Get the assigned room details for a tenant.
+     */
+    public function getAssignedRoom(int $tenantId): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT u.*, t.label AS type_label, t.price, t.type_key, a.assigned_at
+            FROM apartmentsapp a
+            JOIN apartment_units u ON a.unit_id = u.unit_id
+            JOIN apartment_types t ON u.type_id = t.type_id
+            WHERE a.tenant_id = :tid AND a.status = 'Assigned'
+            ORDER BY a.assigned_at DESC LIMIT 1
+        ");
+        $stmt->execute(['tid' => $tenantId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    // ── Helper: Map room type label to type_id ──
+    private function getTypeIdByLabel(string $label): ?int
+    {
+        // Match labels like "One-Bedroom" → apartment_types.label
+        $stmt = $this->db->prepare("
+            SELECT type_id FROM apartment_types 
+            WHERE label LIKE :lbl OR type_key = :key
+            LIMIT 1
+        ");
+        // Handle partial matches: "One-Bedroom" should match "One-Bedroom Unit"
+        $stmt->execute(['lbl' => '%' . $label . '%', 'key' => $label]);
+        $id = $stmt->fetchColumn();
+        return $id ? (int) $id : null;
+    }
+
+    // ── Helper: Change role from Guest to Tenant ──
+    private function changeRoleToTenant(int $tenantId): bool
+    {
+        $stmt = $this->db->prepare("UPDATE tenant_accounts SET role = 'Tenant' WHERE tenant_id = :tid AND role = 'Guest'");
+        return $stmt->execute(['tid' => $tenantId]);
     }
 
 }
