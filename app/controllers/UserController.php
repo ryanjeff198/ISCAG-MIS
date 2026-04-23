@@ -2,8 +2,8 @@
 
 require_once BASE_PATH . '/app/controllers/Controller.php';
 require_once BASE_PATH . '/app/helpers/Auth.php';
-
 require_once BASE_PATH . '/app/models/User.php';
+require_once BASE_PATH . '/app/models/ApartmentApp.php';
 
 class UserController extends Controller
 {
@@ -16,9 +16,13 @@ class UserController extends Controller
         $account = $userModel->findById($userId);
         $info = $userModel->getAdditionalInfo($userId);
         
+        $appModel = new ApartmentApp();
+        $application = $appModel->getApplication($userId);
+        
         $this->view('dashboard', [
             'account' => $account,
-            'info' => $info
+            'info' => $info,
+            'application' => $application
         ]);
     }
     public function profile(): void
@@ -259,7 +263,23 @@ class UserController extends Controller
                 exit;
             }
         }
+    }
+
+    public function markStatusSeen(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $userId = $_SESSION['user_id'] ?? 0;
+            if ($userId) {
+                $db = getDbConnection();
+                $stmt = $db->prepare("UPDATE apartmentsapp SET status_seen = 1 WHERE tenant_id = :id");
+                $stmt->execute(['id' => $userId]);
+                echo json_encode(['success' => true]);
+                return;
+            }
+        }
         echo json_encode(['success' => false]);
-        exit;
     }
 }

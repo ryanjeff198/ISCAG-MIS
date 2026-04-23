@@ -543,6 +543,60 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
     .sidebar.collapsed .nav-lock-icon {
       display: none !important;
     }
+
+    /* ── Status Announcement Modal ── */
+    #status-announcement-modal {
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(15, 30, 22, 0.65); backdrop-filter: blur(8px);
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+
+    #announcement-content {
+      background: white; border-radius: 20px; width: 100%; max-width: 440px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3); overflow: hidden;
+      transform: translateY(20px) scale(0.95); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .ann-header {
+      padding: 32px 24px 20px; text-align: center;
+      position: relative;
+    }
+
+    .ann-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .ann-icon svg { width: 32px; height: 32px; fill: white; }
+
+    .ann-title { font-family: 'Lora', serif; font-size: 1.4rem; font-weight: 700; color: var(--primary-dark); margin: 0 0 8px; }
+    .ann-desc { font-size: 0.92rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
+
+    .ann-details {
+      margin: 20px 24px; padding: 16px; border-radius: 12px;
+      background: #f8faf9; border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .ann-footer {
+      padding: 0 24px 32px; display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .ann-btn {
+      width: 100%; padding: 12px; border-radius: 10px; border: none;
+      font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+    }
+
+    .ann-btn.primary { background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); color: white; box-shadow: 0 4px 12px rgba(23,107,69,0.25); }
+    .ann-btn.secondary { background: white; border: 1.5px solid var(--border); color: var(--text-muted); }
+    .ann-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+
+    /* Theme colors */
+    .theme-success .ann-icon { background: linear-gradient(135deg, #2f8a60, #3da870); }
+    .theme-warning .ann-icon { background: linear-gradient(135deg, var(--accent), #d4a83a); }
+    .theme-danger .ann-icon { background: linear-gradient(135deg, #8b2e2e, #a94442); }
   </style>
 </head>
 
@@ -1047,7 +1101,98 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       }).join('');
     }
 
+      // ── Status Announcement Logic (Diagnostic Version) ──
+      const appData = <?= json_encode($application ?? null) ?>;
+      
+      if (appData) {
+          const status = (appData.status || '').toLowerCase();
+          const allowed = ['assigned', 'queued', 'rejected', 'approved'];
+          const isSeen = parseInt(appData.status_seen);
+          const isTarget = allowed.includes(status);
 
+          console.log('[Diagnostic] App Status:', status);
+          console.log('[Diagnostic] Seen State:', isSeen);
+          console.log('[Diagnostic] In Allowed List?', isTarget);
+
+          if (!isSeen && isTarget) {
+              // alert('Update Found! Triggering Modal for: ' + status); // Remove if annoying
+              showStatusAnnouncement(appData);
+          }
+      } else {
+          console.log('[Diagnostic] No Application Data Received from Server.');
+      }
+
+      function showStatusAnnouncement(app) {
+          const modal = document.createElement('div');
+          modal.id = 'status-announcement-modal';
+          
+          let theme = 'theme-warning';
+          let icon = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>';
+          let title = 'Application Update';
+          let desc = 'There is an update on your apartment application.';
+          let detail = '';
+
+          let statusLower = (app.status || '').toLowerCase();
+
+          if (statusLower === 'assigned' || statusLower === 'approved') {
+              theme = 'theme-success';
+              icon = '<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>';
+              title = 'Welcome Home!';
+              desc = 'Your apartment application has been approved and a room is ready for you.';
+              detail = `<div style="font-weight:700; color:var(--primary-dark); font-size:1.1rem;">Room ${app.room_number || 'TBD'}</div><div style="font-size:0.8rem; color:var(--text-muted);">${app.building || 'TBD'}</div>`;
+          } else if (statusLower === 'queued') {
+              theme = 'theme-warning';
+              icon = '<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>';
+              title = 'You are Waitlisted';
+              desc = 'Rooms are currently full, but you have been secured a spot in our waiting list.';
+              detail = `<div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Waitlist Position</div><div style="font-size:2rem; font-weight:800; color:var(--accent);">${app.queue_position}</div>`;
+          } else if (statusLower === 'rejected') {
+              theme = 'theme-danger';
+              icon = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 11c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm1 4h-2v-2h2v2z"/>';
+              title = 'Application Update';
+              desc = 'The administration has completed the review of your application.';
+              detail = `<div style="font-weight:600; font-size:0.9rem; color:#8b2e2e;">Please check your notifications for details.</div>`;
+          }
+
+          modal.innerHTML = `
+            <div id="announcement-content">
+                <div class="ann-header ${theme}">
+                    <div class="ann-icon"><svg viewBox="0 0 24 24">${icon}</svg></div>
+                    <h3 class="ann-title">${title}</h3>
+                    <p class="ann-desc">${desc}</p>
+                </div>
+                <div class="ann-details">${detail}</div>
+                <div class="ann-footer">
+                    <button class="ann-btn primary" id="ann-dismiss-btn">Great, thanks!</button>
+                    <button class="ann-btn secondary" id="ann-status-btn">View My Application Status</button>
+                </div>
+            </div>
+          `;
+
+          document.body.appendChild(modal);
+          const content = document.getElementById('announcement-content');
+
+          // Trigger animation
+          setTimeout(() => {
+              modal.style.opacity = '1';
+              content.style.transform = 'translateY(0) scale(1)';
+          }, 10);
+
+          const dismiss = () => {
+              // AJAX to mark as seen
+              fetch('<?= url("/user/mark-status-seen") ?>', { method: 'POST' });
+              
+              modal.style.opacity = '0';
+              content.style.transform = 'translateY(20px) scale(0.95)';
+              setTimeout(() => modal.remove(), 300);
+          };
+
+          document.getElementById('ann-dismiss-btn').onclick = dismiss;
+          document.getElementById('ann-status-btn').onclick = () => {
+              dismiss();
+              window.location.href = '<?= url("/user/apartment/status") ?>';
+          };
+      }
   </script>
 
   <!-- Notification Badge System -->

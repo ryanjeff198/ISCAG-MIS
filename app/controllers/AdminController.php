@@ -129,21 +129,32 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/Notification.php';
             
             $appModel = new ApartmentApp();
-            $appModel->updateApplicationStatus($id, 'Approved');
+            $notifModel = new Notification();
+            
+            // Use the Room Assignment & Waitlist Engine
+            $result = $appModel->assignOrQueue((int) $id);
             
             $tenantId = $appModel->getTenantIdByApplicationId($id);
-            if ($tenantId) {
-                // Update role
-                $userModel = new User();
-                $userModel->updateRole($tenantId, 'Tenant');
-                
-                // Trigger real-time feedback notification
-                $notifModel = new Notification();
+            
+            if ($result['result'] === 'assigned') {
+                // Room was available — tenant got assigned immediately
                 $notifModel->create(
                     $tenantId,
-                    'Congratulations!',
-                    'You are now officially a tenant. Your account has been successfully approved.',
+                    'Room Assigned!',
+                    'Congratulations! You have been assigned to Room ' . $result['room_number'] 
+                    . ' in ' . $result['building'] . '. Your account has been upgraded to Tenant.',
                     'approval'
+                );
+            } elseif ($result['result'] === 'queued') {
+                // No rooms available — tenant is waitlisted
+                $appModel->updateApplicationStatus($id, 'Queued');
+                $notifModel->create(
+                    $tenantId,
+                    'Application Accepted — Waitlisted',
+                    'Your application has been verified and accepted, but all rooms of your requested type are currently full. '
+                    . 'You are #' . $result['queue_position'] . ' in the waiting list. '
+                    . 'You will be notified when a room becomes available.',
+                    'info'
                 );
             }
         }
