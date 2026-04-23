@@ -107,14 +107,26 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 18px;
+            padding: 8px 22px;
             border-radius: 24px;
-            font-size: 0.72rem;
-            font-weight: 700;
+            font-size: 0.75rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
             white-space: nowrap;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(8px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .status-badge[onclick]:hover {
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            filter: brightness(1.1);
+        }
+
+        .status-badge[onclick]:active {
+            transform: scale(0.95);
         }
 
         .status-badge.pending {
@@ -1410,8 +1422,10 @@
                   <p class="status-hero-subtitle">Ref: ${refId} • Submitted ${formatDate(submittedDate)}</p>
                 </div>
               </div>
-              <div class="status-badge ${sts.cls}">
-                <span class="status-badge-dot"></span>
+              <div class="status-badge ${sts.cls}" 
+                   style="${(appStatus === 'Queued' || appStatus === 'Assigned') ? 'cursor:pointer; transition:all 0.2s; box-shadow:0 0 0 0 rgba(0,0,0,0);' : ''}"
+                   ${(appStatus === 'Queued' || appStatus === 'Assigned') ? 'onclick="openQueueModal()" title="View Live Tracker"' : ''}>
+                <span class="status-badge-dot" style="${(appStatus === 'Queued' || appStatus === 'Assigned') ? 'animation: blink 1.5s infinite;' : ''}"></span>
                 ${sts.label}
               </div>
             </div>
@@ -1598,25 +1612,7 @@
         </div>
         <?php endif; ?>
 
-        <!-- ═══ ACTION BAR ═══ -->
-        <div class="action-bar">
-          <div class="action-bar-text">
-            <h4>${appStatus === 'Queued' ? 'Currently Waitlisted' : (appStatus === 'Assigned' ? 'Room Assigned' : 'Application Status')}</h4>
-            <p>${appStatus === 'Queued' ? `Position #${aptApp.queue_position} in the ${aptApp.roomtype} queue.` : (appStatus === 'Assigned' ? `Welcome! You are assigned to Room ${aptApp.room_number}.` : 'View your documents and submission progress.')}</p>
-          </div>
-          <div class="action-bar-btns">
-            ${(appStatus === 'Queued' || appStatus === 'Assigned') ? `
-                <button onclick="openQueueModal()" class="btn-action primary" style="background: linear-gradient(135deg, var(--accent), #d4a83a); border:none;">
-                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-7c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z"/></svg>
-                    View Live Tracker
-                </button>
-            ` : ''}
-            <a href="<?= url('/user/dashboard') ?>" class="btn-action outline">
-              <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-              Dashboard
-            </a>
-          </div>
-        </div>
+      
 
         <!-- ═══ QUEUE STATUS MODAL ═══ -->
         <div id="q-modal" class="q-modal-overlay" onclick="if(event.target===this) closeQueueModal()">
