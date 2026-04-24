@@ -49,9 +49,14 @@ class UserController extends Controller
         $account = $userModel->findById($userId);
         $info = $userModel->getAdditionalInfo($userId);
 
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $notifModel = new Notification();
+        $notifications = $notifModel->getUserNotifications($userId);
+
         $this->view('user/tenant_notification', [
             'account' => $account,
-            'info' => $info
+            'info' => $info,
+            'notifications' => $notifications
         ]);
     }
 

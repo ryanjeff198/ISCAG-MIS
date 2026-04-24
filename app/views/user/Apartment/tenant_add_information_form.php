@@ -45,6 +45,7 @@ if ($userId) {
   <title>ISCAG MIS — Tenant Application</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>" />
+  <script src="<?= asset('JS/room-preview.js') ?>" defer></script>
   <style>
     /* ═══════════════════════════════════════════
        HIDE NUMBER INPUT SCROLL ARROWS
@@ -3357,7 +3358,10 @@ if ($userId) {
             return;
           }
           container.innerHTML = types.map((t, idx) => {
-            const isFull = (t.available_count || 0) <= 0;
+            const typeId = t.type_id || idx;
+            const typeKey = t.type_key || `unit-${typeId}`;
+            const label = t.label || 'Apartment Unit';
+            const isFull = (parseInt(t.available_count) || 0) <= 0;
             const availText = isFull ? 'No Units Available' : `${t.available_count} Units Available`;
             const statusClass = isFull ? 'status-full' : (t.available_count < 5 ? 'status-low' : 'status-ok');
             const thumbUrl = t.thumbnail_id 
@@ -3365,25 +3369,26 @@ if ($userId) {
               : `<?= asset('assets/placeholder.png') ?>`;
 
             return `
-              <label class="unit-card ${idx === 0 && !isFull ? 'selected' : ''} ${isFull ? 'unit-full' : ''}" for="unit-${t.type_id}">
-                <input type="radio" name="unit" id="unit-${t.type_id}" value="${t.type_key}" 
+              <label class="unit-card ${idx === 0 && !isFull ? 'selected' : ''} ${isFull ? 'unit-full' : ''}" for="unit-${typeId}">
+                <input type="radio" name="unit" id="unit-${typeId}" value="${typeKey}" 
                   ${idx === 0 && !isFull ? 'checked' : ''} ${isFull ? 'disabled' : ''} />
                 <div class="unit-card-check">
                   <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
                 </div>
                 <div class="unit-card-thumb">
-                  <img src="${thumbUrl}" alt="${t.label}" />
-                  <span class="unit-card-thumb-overlay">${t.label.split(' ')[0]}</span>
+                  <img src="${thumbUrl}" alt="${label}" onerror="this.src='<?= asset('assets/placeholder.png') ?>'" />
+                  <span class="unit-card-thumb-overlay">${label.split(' ')[0] || 'Unit'}</span>
                 </div>
                 <div class="unit-card-body">
-                  <div class="unit-card-label">${t.label}</div>
+                  <div class="unit-card-label">${label}</div>
                   <div class="unit-card-sub" style="display:flex; justify-content:space-between; align-items:center;">
                     <span>${t.capacity || 'For residents'}</span>
                     <span class="avail-badge ${statusClass}">${availText}</span>
                   </div>
                 </div>
                 <button type="button" class="unit-card-view" 
-                  onclick='event.preventDefault();event.stopPropagation(); if(window.openRoomPreview) window.openRoomPreview(${JSON.stringify(t).replace(/'/g, "&apos;")})'>
+                  data-unit='${JSON.stringify(t).replace(/'/g, "&apos;")}'
+                  data-id="${typeId}">
                   <svg viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" /></svg>
                   View Gallery
                 </button>
@@ -3391,12 +3396,49 @@ if ($userId) {
             `;
           }).join('');
 
-          // Re-attach card selection effects
+          // Attach listeners
           container.querySelectorAll('.unit-card').forEach(card => {
-            card.addEventListener('click', function() {
+            // Radio selection logic
+            card.addEventListener('click', function(e) {
+              if (e.target.closest('.unit-card-view')) return;
+              if (this.classList.contains('unit-full')) return; // Don't select full units
+              
               container.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
               this.classList.add('selected');
+              const radio = this.querySelector('input[type="radio"]');
+              if (radio) {
+                radio.checked = true;
+                // Trigger change event if needed
+                radio.dispatchEvent(new Event('change', { bubbles: true }));
+              }
             });
+
+            // View Gallery logic
+            const viewBtn = card.querySelector('.unit-card-view');
+            if (viewBtn) {
+              viewBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const unitData = JSON.parse(this.getAttribute('data-unit'));
+                const typeId = this.getAttribute('data-id');
+                
+                if (window.openRoomPreview) {
+                  window.openRoomPreview(unitData, {
+                    basePath: '<?= asset("assets/") ?>',
+                    serveUrl: '<?= url("/api/apartment-types/serve-image") ?>',
+                    onSelect: function() {
+                      const radio = document.getElementById("unit-" + typeId);
+                      if (radio) {
+                        radio.checked = true;
+                        container.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+                        radio.closest('.unit-card').classList.add('selected');
+                        radio.dispatchEvent(new Event('change', { bubbles: true }));
+                      }
+                    }
+                  });
+                }
+              });
+            }
           });
         }
       } catch (err) {

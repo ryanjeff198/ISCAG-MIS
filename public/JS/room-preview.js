@@ -1,68 +1,45 @@
 /**
  * ISCAG MIS — Room Preview Module
  * Self-contained modal with image carousel, room details, and availability status.
- * Usage: <script src="path/to/room-preview.js"></script>
- *        openRoomPreview('studio', { availableCount: 2, basePath: 'assets/room-images/', onSelect: fn })
+ * Supports both legacy string IDs and dynamic database objects.
  */
 
 /* ══════════════════════════════════════════
-   Room Data
+   Room Data (Legacy Fallbacks)
    ══════════════════════════════════════════ */
 
 const ROOM_DATA = {
   studio: {
-    type: 'studio',
-    label: 'Studio Unit',
-    price: '₱3,500 / month',
-    capacity: '1–2 persons',
-    description: 'A compact and efficient living space perfect for individuals or couples. The studio unit features an open-plan layout combining sleeping, living, and dining areas in one well-designed space, with a separate bathroom and a functional kitchenette.',
+    type: 'studio', label: 'Studio Unit', price: '₱3,500 / month', capacity: '1–2 persons',
+    description: 'A compact and efficient living space perfect for individuals or couples. Features an open-plan layout with a separate bathroom and kitchenette.',
     images: ['Studio Type/Studio type 1.jpg', 'Studio Type/Studio type 2.jpg', 'Studio Type/Studio type 3.jpg', 'Studio Type/Studio type 4.jpg', 'Studio Type/Studio type 5.jpg', 'Studio Type/Studio type 6.jpg', 'Studio Type/Studio type 7.jpg'],
-    imageCaptions: ['Hallway', 'Living Area', '', 'Kitchen & Dining Area', 'Sleeping Area', '', 'Workspace'],
+    imageCaptions: ['Hallway', 'Living Area', '', 'Kitchen & Dining', 'Sleeping Area', '', 'Workspace'],
     features: [
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '22 sqm' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V7H1v10h22v-6c0-2.21-1.79-4-4-4z"/></svg>', label: 'Bedrooms', value: 'Open-plan' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M21 14v-4c0-.55-.45-1-1-1h-1V6c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v3H4c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h1v5h2v-1h10v1h2v-5h1c.55 0 1-.45 1-1zM7 6h10v3H7V6z"/></svg>', label: 'Bathroom', value: '1 (with shower)' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18 2.01L6 2c-1.1 0-2 .89-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.11-.9-1.99-2-1.99zM18 20H6v-9.02h12V20zm0-11H6V4h12v5z"/></svg>', label: 'Kitchen', value: 'Kitchenette' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>', label: 'Parking', value: 'Shared lot' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', label: 'Capacity', value: '1–2 persons' }
+      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '22 sqm' },
+      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', label: 'Capacity', value: '1–2 persons' }
     ]
   },
   '1br': {
-    type: '1br',
-    label: 'One-Bedroom Unit',
-    price: '₱5,000 / month',
-    capacity: 'Small families (2–3 persons)',
-    description: 'A comfortable one-bedroom apartment ideal for small families or couples who prefer a separate sleeping area. Features a distinct living room, a private bedroom, a full bathroom, and a dining-kitchen area with ample counter space.',
+    type: '1br', label: 'One-Bedroom Unit', price: '₱5,000 / month', capacity: '2–3 persons',
+    description: 'A comfortable one-bedroom apartment ideal for small families or couples who prefer a separate sleeping area.',
     images: ['1BR Type/1BR 1.jpg', '1BR Type/1BR 2.jpg', '1BR Type/1BR 3.jpg', '1BR Type/1BR 4.jpg'],
-    imageCaptions: ['Kitchen & Living room', 'Living room & Bedroom', 'Sleeping Room', 'Hallway'],
+    imageCaptions: ['Kitchen & Living', 'Living Room', 'Sleeping Room', 'Hallway'],
     features: [
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '35 sqm' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V7H1v10h22v-6c0-2.21-1.79-4-4-4z"/></svg>', label: 'Bedrooms', value: '1 (separate)' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M21 14v-4c0-.55-.45-1-1-1h-1V6c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v3H4c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h1v5h2v-1h10v1h2v-5h1c.55 0 1-.45 1-1zM7 6h10v3H7V6z"/></svg>', label: 'Bathroom', value: '1 (with shower)' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18 2.01L6 2c-1.1 0-2 .89-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.11-.9-1.99-2-1.99zM18 20H6v-9.02h12V20zm0-11H6V4h12v5z"/></svg>', label: 'Kitchen', value: 'Full kitchen' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>', label: 'Parking', value: 'Shared lot' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', label: 'Capacity', value: '2–3 persons' }
+      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '35 sqm' },
+      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', label: 'Capacity', value: '2–3 persons' }
     ]
   },
   '2br': {
-    type: '2br',
-    label: 'Two-Bedroom Unit',
-    price: '₱7,500 / month',
-    capacity: 'Larger families (3–5 persons)',
-    description: 'A spacious two-bedroom apartment designed for growing families. Includes a master bedroom, a second bedroom, a full living and dining area, a complete kitchen, and a bathroom. Ideal for families seeking comfort and privacy within the community housing complex.',
+    type: '2br', label: 'Two-Bedroom Unit', price: '₱7,500 / month', capacity: '3–5 persons',
+    description: 'A spacious two-bedroom apartment designed for growing families. Includes master bedroom, second bedroom, and full living area.',
     images: ['2BR Type/2BR 1.png', '2BR Type/2BR front.png', '1BR Type/1BR 3.jpg', '2BR Type/2BR 4.png'],
-    imageCaptions: ['Kitchen', 'Living Room', 'Sleeping Room', 'Shower & Bath'],
+    imageCaptions: ['Kitchen', 'Living Room', 'Sleeping Room', 'Bathroom'],
     features: [
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '50 sqm' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V7H1v10h22v-6c0-2.21-1.79-4-4-4z"/></svg>', label: 'Bedrooms', value: '2 (separate)' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M21 14v-4c0-.55-.45-1-1-1h-1V6c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v3H4c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h1v5h2v-1h10v1h2v-5h1c.55 0 1-.45 1-1zM7 6h10v3H7V6z"/></svg>', label: 'Bathroom', value: '1 (with shower & tub)' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18 2.01L6 2c-1.1 0-2 .89-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.11-.9-1.99-2-1.99zM18 20H6v-9.02h12V20zm0-11H6V4h12v5z"/></svg>', label: 'Kitchen', value: 'Full kitchen' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>', label: 'Parking', value: 'Dedicated slot' },
-      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', label: 'Capacity', value: '3–5 persons' }
+      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>', label: 'Floor Area', value: '50 sqm' },
+      { icon: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>', label: 'Capacity', value: '3–5 persons' }
     ]
   }
 };
-
 
 /* ══════════════════════════════════════════
    CSS Injection (runs once)
@@ -73,327 +50,175 @@ const ROOM_DATA = {
   const style = document.createElement('style');
   style.id = 'room-preview-styles';
   style.textContent = `
-    /* ───── OVERLAY ───── */
     .rp-overlay {
-      position: fixed; inset: 0; z-index: 90000;
+      position: fixed; inset: 0; z-index: 99999;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(15,30,22,0.6);
-      backdrop-filter: blur(6px);
-      padding: 24px;
-      animation: rpFadeIn 0.25s ease;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      padding: 20px; animation: rpFadeIn 0.2s ease;
     }
     @keyframes rpFadeIn { from { opacity:0; } to { opacity:1; } }
-    @keyframes rpSlideUp {
-      from { opacity:0; transform:translateY(20px) scale(0.97); }
-      to   { opacity:1; transform:translateY(0) scale(1); }
-    }
     @keyframes rpFadeOut { from { opacity:1; } to { opacity:0; } }
-
-    /* ───── MODAL ───── */
+    
     .rp-modal {
-      background: white;
-      border-radius: 14px;
-      width: 100%; max-width: 600px;
-      max-height: 90vh;
-      overflow: hidden;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.28);
-      animation: rpSlideUp 0.3s ease;
-      display: flex; flex-direction: column;
+      background: white; border-radius: 16px; width: 100%; max-width: 600px;
+      max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
     }
 
-    /* ───── HEADER ───── */
     .rp-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 22px;
-      border-bottom: 1px solid var(--border, #d9e3de);
-      background: linear-gradient(135deg, var(--primary-dark, #0f5c3a) 0%, var(--primary-light, #2f8a60) 100%);
-      position: relative;
-    }
-    .rp-header::before {
-      content: '';
-      position: absolute; right: -10px; bottom: -10px;
-      width: 80px; height: 80px; border-radius: 50%;
-      background: rgba(201,168,76,0.12);
-    }
-    .rp-header-left { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
-    .rp-header-left h3 {
-      font-family: 'Lora', serif;
-      font-size: 1.08rem; font-weight: 700;
-      color: white; margin: 0;
-    }
-    .rp-badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 10px; border-radius: 20px;
-      font-size: 0.7rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.04em;
-    }
-    .rp-badge.available { background: rgba(47,138,96,0.2); color: #b8f0d0; }
-    .rp-badge.unavailable { background: rgba(139,46,46,0.25); color: #f0c4c4; }
-    .rp-badge-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-    }
-    .rp-badge.available .rp-badge-dot { background: #5effa0; }
-    .rp-badge.unavailable .rp-badge-dot { background: #ff6b6b; }
-    .rp-close {
-      background: rgba(255,255,255,0.15); border: none; cursor: pointer;
-      width: 32px; height: 32px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.18s;
-      position: relative; z-index: 1;
-    }
-    .rp-close:hover { background: rgba(255,255,255,0.3); }
-    .rp-close svg { width: 16px; height: 16px; fill: white; }
-
-    /* ───── BODY ───── */
-    .rp-body {
-      overflow-y: auto; flex: 1;
-      scrollbar-width: thin;
-      scrollbar-color: var(--border, #d9e3de) transparent;
-    }
-    .rp-body::-webkit-scrollbar { width: 5px; }
-    .rp-body::-webkit-scrollbar-track { background: transparent; }
-    .rp-body::-webkit-scrollbar-thumb { background: var(--border, #d9e3de); border-radius: 3px; }
-
-    /* ───── CAROUSEL ───── */
-    .rp-carousel { position: relative; background: #f0f2f1; overflow: hidden; }
-    .rp-carousel-track { display: flex; transition: transform 0.4s cubic-bezier(0.25,0.8,0.25,1); }
-    .rp-carousel-slide {
-      min-width: 100%; position: relative;
-    }
-    .rp-carousel-slide img {
-      width: 100%; height: 280px;
-      object-fit: cover; display: block;
-    }
-    .rp-slide-caption {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      padding: 8px 16px;
-      background: linear-gradient(to top, rgba(0,0,0,0.55), transparent);
-      color: white; font-size: 0.78rem; font-weight: 600;
-      text-align: center;
-    }
-    .rp-carousel-btn {
-      position: absolute; top: 50%; transform: translateY(-50%);
-      width: 36px; height: 36px; border-radius: 50%;
-      background: rgba(255,255,255,0.9); border: none;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      transition: all 0.18s; z-index: 2;
-    }
-    .rp-carousel-btn:hover { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-    .rp-carousel-btn svg { width: 16px; height: 16px; fill: var(--primary-dark, #0f5c3a); }
-    .rp-carousel-btn.prev { left: 12px; }
-    .rp-carousel-btn.next { right: 12px; }
-    .rp-carousel-dots {
-      position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 7px; z-index: 2;
-    }
-    .rp-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: rgba(255,255,255,0.5); border: none; cursor: pointer;
-      transition: all 0.2s; padding: 0;
-    }
-    .rp-dot.active { background: white; transform: scale(1.3); }
-
-    /* ───── DETAILS ───── */
-    .rp-details { padding: 22px; }
-    .rp-price-row {
+      padding: 16px 20px; background: #0f5c3a; color: white;
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 14px;
     }
-    .rp-price {
-      font-family: 'Lora', serif;
-      font-size: 1.2rem; font-weight: 700;
-      color: var(--primary-dark, #0f5c3a);
-    }
-    .rp-capacity {
-      font-size: 0.78rem; color: var(--text-muted, #6f7f78);
-      display: flex; align-items: center; gap: 5px;
-    }
-    .rp-desc {
-      font-size: 0.87rem; color: var(--text-main, #1f2e2a);
-      line-height: 1.65; margin-bottom: 18px;
-    }
-    .rp-features-title {
-      font-family: 'Lora', serif;
-      font-size: 0.85rem; font-weight: 700;
-      color: var(--primary-dark, #0f5c3a);
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid rgba(23,107,69,0.12);
-    }
-    .rp-features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    .rp-feature {
-      padding: 10px;
-      background: var(--content-bg, #f4f6f5);
-      border-radius: 8px;
-      text-align: center;
-      border: 1px solid var(--border, #d9e3de);
-    }
-    .rp-feature-icon { display:flex; align-items:center; justify-content:center; margin-bottom: 4px; color: var(--primary, #176b45); }
-    .rp-feature-label {
-      font-size: 0.68rem; font-weight: 600;
-      color: var(--text-muted, #6f7f78);
-      text-transform: uppercase; letter-spacing: 0.05em;
-      margin-bottom: 2px;
-    }
-    .rp-feature-value {
-      font-size: 0.82rem; font-weight: 700;
-      color: var(--text-main, #1f2e2a);
-    }
+    .rp-header h3 { margin: 0; font-size: 1.1rem; }
+    .rp-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1; }
 
-    /* ───── FOOTER ───── */
-    .rp-footer {
-      padding: 14px 22px;
-      border-top: 1px solid var(--border, #d9e3de);
-      display: flex; gap: 10px; justify-content: flex-end;
-      background: rgba(244,246,245,0.5);
-    }
-    .rp-btn-close-footer {
-      padding: 9px 20px; border-radius: 8px;
-      border: 1.5px solid var(--border, #d9e3de);
-      background: white; color: var(--text-muted, #6f7f78);
-      font-size: 0.85rem; font-weight: 600;
-      cursor: pointer; transition: all 0.18s;
-      font-family: 'Source Sans 3', sans-serif;
-    }
-    .rp-btn-close-footer:hover {
-      border-color: var(--primary, #176b45);
-      color: var(--primary, #176b45);
-    }
-    .rp-btn-select {
-      padding: 9px 20px; border-radius: 8px;
-      border: none;
-      background: linear-gradient(135deg, var(--primary-dark, #0f5c3a), var(--primary-light, #2f8a60));
-      color: white; font-size: 0.85rem; font-weight: 700;
-      cursor: pointer; transition: all 0.18s;
-      box-shadow: 0 4px 12px rgba(23,107,69,0.25);
-      font-family: 'Source Sans 3', sans-serif;
-    }
-    .rp-btn-select:hover:not(:disabled) {
-      box-shadow: 0 6px 20px rgba(23,107,69,0.35);
-      transform: translateY(-1px);
-    }
-    .rp-btn-select:disabled {
-      opacity: 0.5; cursor: not-allowed;
-      box-shadow: none; transform: none;
-    }
+    .rp-body { overflow-y: auto; flex: 1; }
+    .rp-carousel { position: relative; background: #eee; overflow: hidden; }
+    .rp-track { display: flex; transition: transform 0.3s ease; }
+    .rp-slide { min-width: 100%; }
+    .rp-slide img { width: 100%; height: 300px; object-fit: cover; display: block; }
+    
+    .rp-nav { position: absolute; top: 50%; width: 100%; display: flex; justify-content: space-between; transform: translateY(-50%); padding: 0 10px; pointer-events: none; }
+    .rp-nav button { pointer-events: auto; background: rgba(255,255,255,0.8); border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 18px; color: #0f5c3a; display: flex; align-items: center; justify-content: center; }
 
-    .rp-view-btn { display: none; }
-    .rp-view-btn svg { width: 13px; height: 13px; fill: currentColor; }
+    .rp-details { padding: 20px; }
+    .rp-price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .rp-price { font-size: 1.2rem; font-weight: 700; color: #0f5c3a; }
+    .rp-features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .rp-feature { background: #f4f7f5; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid #d9e3de; }
+    .rp-feature-label { font-size: 0.7rem; color: #666; text-transform: uppercase; margin-bottom: 2px; }
+    .rp-feature-value { font-weight: 700; font-size: 0.9rem; color: #1f2e2a; }
 
-    /* ───── RESPONSIVE ───── */
-    @media (max-width: 640px) {
-      .rp-modal { max-width: 100%; margin: 10px; }
-      .rp-carousel-slide img { height: 200px; }
-      .rp-features-grid { grid-template-columns: repeat(2, 1fr); }
-    }
+    .rp-footer { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; background: #f8faf9; }
+    .rp-btn { padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: inherit; }
+    .rp-btn-close { background: white; border: 1px solid #ddd; color: #666; }
+    .rp-btn-select { background: #0f5c3a; color: white; border: none; box-shadow: 0 4px 10px rgba(15,92,58,0.2); }
+    .rp-btn-select:disabled { opacity: 0.5; cursor: not-allowed; }
   `;
   document.head.appendChild(style);
 })();
 
-
-/* ══════════════════════════════════════════
-   Public API
-   ══════════════════════════════════════════ */
-
 /**
  * Open the Room Preview modal.
- * @param {string} unitType — 'studio', '1br', or '2br'
+ * @param {string|Object} unitData — 'studio' string OR a full database object
  * @param {Object} options
- * @param {number}   options.availableCount — number of available units (0 = Not Available)
- * @param {string}   options.basePath       — relative path to room images folder (default: 'assets/room-images/')
- * @param {Function} [options.onSelect]     — callback when "Select" is clicked, receives unitType
- * @param {string}   [options.selectLabel]  — custom label for the select button (default: 'Select This Unit')
  */
-function openRoomPreview(unitType, options = {}) {
-  const room = ROOM_DATA[unitType];
-  if (!room) { console.error('Room Preview: Unknown unit type "' + unitType + '"'); return; }
+function openRoomPreview(unitData, options = {}) {
+  let room;
+  let unitType = '';
+  
+  if (typeof unitData === 'string') {
+    unitType = unitData;
+    room = ROOM_DATA[unitData];
+  } else {
+    // Dynamic mapping for units not in ROOM_DATA (Automatic Preview)
+    const mapFeatureIcon = (label) => {
+      const l = label.toLowerCase();
+      if (l.includes('area') || l.includes('sqm') || l.includes('size')) return '<path d="M7 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-2h-2v2H5V4h2V2zm14 8V4c0-1.1-.9-2-2-2h-6v2h6v6h2zM9 10h8v8H9v-8zm2 2v4h4v-4h-4z"/>';
+      if (l.includes('capacity') || l.includes('person') || l.includes('people')) return '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5s-3 1.34-3 3 1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>';
+      return '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>';
+    };
 
-  const {
-    availableCount = 0,
-    basePath = '',
-    onSelect = null,
-    selectLabel = 'Select This Unit'
-  } = options;
+    unitType = unitData.type_key;
 
+    // Build image URLs from the API image objects
+    // DB images have {image_id, is_thumbnail, ...} — NOT file_path
+    // They are served via the serve-image endpoint (passed via options.serveUrl)
+    const serveUrl = options.serveUrl || '';
+    let imageUrls = [];
+    if (Array.isArray(unitData.images) && unitData.images.length > 0) {
+      imageUrls = unitData.images.map(img => {
+        if (typeof img === 'string') {
+          // Already a full URL or path
+          if (img.startsWith('http') || img.startsWith('/')) return img;
+          return img;
+        }
+        if (img.image_id && serveUrl) return serveUrl + '?id=' + img.image_id;
+        if (img.image_id) return '/api/apartment-types/serve-image?id=' + img.image_id;
+        if (img.file_path) return img.file_path;
+        return null;
+      }).filter(Boolean);
+    }
+    // Fallback: use the thumbnail_id from the list endpoint
+    if (imageUrls.length === 0 && unitData.thumbnail_id) {
+      imageUrls = [serveUrl ? serveUrl + '?id=' + unitData.thumbnail_id : '/api/apartment-types/serve-image?id=' + unitData.thumbnail_id];
+    }
+
+    room = {
+      label: unitData.label || 'Apartment Unit',
+      price: '₱' + (Number(unitData.price) || 0).toLocaleString() + ' / month',
+      description: unitData.description || 'A modern living space designed for comfort and convenience in the heart of the community.',
+      images: imageUrls,
+      features: [
+        { icon: mapFeatureIcon('Area'), label: 'Floor Area', value: unitData.floor_area || '--' },
+        { icon: mapFeatureIcon('Capacity'), label: 'Capacity', value: unitData.capacity || '--' }
+      ]
+    };
+    if (unitData.available_count !== undefined && options.availableCount === undefined) {
+      options.availableCount = unitData.available_count;
+    }
+  }
+
+  if (!room) { console.error('Room Preview: Invalid unit data', unitData); return; }
+
+  const { availableCount = 0, basePath = 'assets/', onSelect = null, selectLabel = 'Select This Unit' } = options;
   const isAvailable = availableCount > 0;
 
-  // Remove any existing modal
-  const existing = document.getElementById('room-preview-overlay');
+  const existing = document.getElementById('rp-overlay');
   if (existing) existing.remove();
 
-  // Build image slides
-  const slides = room.images.map((img, i) => `
-    <div class="rp-carousel-slide">
-      <img src="${encodeURI(basePath + img)}" alt="${room.label} — ${room.imageCaptions[i] || 'View ' + (i+1)}" loading="lazy" />
-      <div class="rp-slide-caption">${room.imageCaptions[i] || ''}</div>
-    </div>
-  `).join('');
+  const slides = (room.images && room.images.length > 0)
+    ? room.images.map(img => {
+        let src = img;
+        if (!img.startsWith('http') && !img.startsWith('/') && !img.startsWith('data:')) {
+          // If it starts with uploads/, it's relative to public/
+          // Otherwise, it might be relative to assets/
+          if (img.startsWith('uploads/')) {
+            src = basePath.replace('/assets/', '/') + img;
+          } else {
+            src = basePath + img;
+          }
+        }
+        return `<div class="rp-slide"><img src="${src}" alt="Room" /></div>`;
+      }).join('')
+    : `<div class="rp-slide" style="height:300px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; color:#999;">No images available</div>`;
 
-  const dots = room.images.map((_, i) => `
-    <button class="rp-dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Slide ${i+1}"></button>
-  `).join('');
-
-  // Build features grid
-  const features = room.features.map(f => `
-    <div class="rp-feature">
-      <div class="rp-feature-icon">${f.icon}</div>
-      <div class="rp-feature-label">${f.label}</div>
-      <div class="rp-feature-value">${f.value}</div>
-    </div>
-  `).join('');
-
-  // Badge
-  const badge = isAvailable
-    ? `<span class="rp-badge available"><span class="rp-badge-dot"></span>${availableCount} Available</span>`
-    : `<span class="rp-badge unavailable"><span class="rp-badge-dot"></span>Not Available</span>`;
-
-  // Select button
-  const selectBtn = onSelect
-    ? `<button class="rp-btn-select" id="rp-select-btn" ${!isAvailable ? 'disabled' : ''}>${selectLabel}</button>`
-    : '';
-
-  // Build modal HTML
   const html = `
-    <div class="rp-overlay" id="room-preview-overlay">
-      <div class="rp-modal" id="room-preview-modal">
+    <div class="rp-overlay" id="rp-overlay">
+      <div class="rp-modal">
         <div class="rp-header">
-          <div class="rp-header-left">
-            <h3>${room.label}</h3>
-            ${badge}
-          </div>
-          <button class="rp-close" id="rp-close-btn" title="Close preview">
-            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-          </button>
+          <h3>${room.label}</h3>
+          <button class="rp-close" id="rp-close-x">&times;</button>
         </div>
         <div class="rp-body">
-          <div class="rp-carousel" id="rp-carousel">
-            <div class="rp-carousel-track" id="rp-track">${slides}</div>
-            <button class="rp-carousel-btn prev" id="rp-prev" aria-label="Previous image">
-              <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-            </button>
-            <button class="rp-carousel-btn next" id="rp-next" aria-label="Next image">
-              <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-            </button>
-            <div class="rp-carousel-dots" id="rp-dots">${dots}</div>
+          <div class="rp-carousel">
+            <div class="rp-track" id="rp-track">${slides}</div>
+            ${room.images && room.images.length > 1 ? `
+              <div class="rp-nav">
+                <button id="rp-prev" type="button">&lt;</button>
+                <button id="rp-next" type="button">&gt;</button>
+              </div>
+            ` : ''}
           </div>
           <div class="rp-details">
             <div class="rp-price-row">
               <span class="rp-price">${room.price}</span>
-              <span class="rp-capacity"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> ${room.capacity}</span>
+              <span style="font-size:0.8rem; color:#666; font-weight:600;">${availableCount} Units Available</span>
             </div>
-            <p class="rp-desc">${room.description}</p>
-            <div class="rp-features-title">Key Features</div>
-            <div class="rp-features-grid">${features}</div>
+            <p style="font-size:0.88rem; line-height:1.6; color:#333; margin:0 0 15px;">${room.description}</p>
+            <div class="rp-features-grid">
+              ${room.features.map(f => `
+                <div class="rp-feature">
+                  <span class="rp-feature-label">${f.label}</span>
+                  <span class="rp-feature-value">${f.value}</span>
+                </div>
+              `).join('')}
+            </div>
           </div>
         </div>
         <div class="rp-footer">
-          <button class="rp-btn-close-footer" id="rp-close-footer">Close</button>
-          ${selectBtn}
+          <button class="rp-btn rp-btn-close" id="rp-close-btn" type="button">Close</button>
+          ${onSelect ? `<button class="rp-btn rp-btn-select" id="rp-select" type="button" ${!isAvailable ? 'disabled' : ''}>${selectLabel}</button>` : ''}
         </div>
       </div>
     </div>
@@ -401,53 +226,33 @@ function openRoomPreview(unitType, options = {}) {
 
   document.body.insertAdjacentHTML('beforeend', html);
 
-  // ── Carousel logic ──
-  let currentSlide = 0;
-  const totalSlides = room.images.length;
-  const track = document.getElementById('rp-track');
-  const dotsContainer = document.getElementById('rp-dots');
+  const overlay = document.getElementById('rp-overlay');
+  const close = () => { 
+    overlay.style.animation = 'rpFadeOut 0.2s forwards'; 
+    setTimeout(() => overlay.remove(), 200); 
+  };
+  
+  document.getElementById('rp-close-x').onclick = close;
+  document.getElementById('rp-close-btn').onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
 
-  function goToSlide(index) {
-    if (index < 0) index = totalSlides - 1;
-    if (index >= totalSlides) index = 0;
-    currentSlide = index;
-    track.style.transform = 'translateX(-' + (currentSlide * 100) + '%)';
-    dotsContainer.querySelectorAll('.rp-dot').forEach((d, i) => {
-      d.classList.toggle('active', i === currentSlide);
-    });
+  if (room.images && room.images.length > 1) {
+    let cur = 0;
+    const track = document.getElementById('rp-track');
+    const prev = document.getElementById('rp-prev');
+    const next = document.getElementById('rp-next');
+    
+    prev.onclick = (e) => { e.stopPropagation(); cur = (cur - 1 + room.images.length) % room.images.length; track.style.transform = `translateX(-${cur * 100}%)`; };
+    next.onclick = (e) => { e.stopPropagation(); cur = (cur + 1) % room.images.length; track.style.transform = `translateX(-${cur * 100}%)`; };
   }
 
-  document.getElementById('rp-prev').addEventListener('click', (e) => { e.stopPropagation(); goToSlide(currentSlide - 1); });
-  document.getElementById('rp-next').addEventListener('click', (e) => { e.stopPropagation(); goToSlide(currentSlide + 1); });
-  dotsContainer.querySelectorAll('.rp-dot').forEach(dot => {
-    dot.addEventListener('click', (e) => { e.stopPropagation(); goToSlide(parseInt(dot.dataset.index)); });
-  });
-
-  // ── Close logic ──
-  const overlay = document.getElementById('room-preview-overlay');
-
-  function closeModal() {
-    overlay.style.animation = 'rpFadeOut 0.2s ease forwards';
-    setTimeout(() => overlay.remove(), 200);
-  }
-
-  document.getElementById('rp-close-btn').addEventListener('click', closeModal);
-  document.getElementById('rp-close-footer').addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
-
-  // Keyboard
-  function onKeyDown(e) {
-    if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', onKeyDown); }
-    if (e.key === 'ArrowLeft') goToSlide(currentSlide - 1);
-    if (e.key === 'ArrowRight') goToSlide(currentSlide + 1);
-  }
-  document.addEventListener('keydown', onKeyDown);
-
-  // ── Select callback ──
   if (onSelect && isAvailable) {
-    document.getElementById('rp-select-btn').addEventListener('click', () => {
-      onSelect(unitType);
-      closeModal();
-    });
+    const selectBtn = document.getElementById('rp-select');
+    selectBtn.onclick = (e) => { 
+      e.stopPropagation();
+      onSelect(unitType); 
+      close(); 
+    };
   }
 }
+window.openRoomPreview = openRoomPreview;

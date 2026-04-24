@@ -455,6 +455,7 @@
     </div>
 
     <script src="<?= asset('JS/admin-shared.js') ?>"></script>
+    <script src="<?= asset('JS/room-preview.js') ?>"></script>
     <script>
         standardizePage('staff');
         syncSessionUser("<?= addslashes(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>", "<?= addslashes($dbUser['email'] ?? '') ?>", "Staff Admin");
@@ -515,13 +516,36 @@
                     <div class="type-card-content" style="padding:16px;">
                         <h6 style="margin:0 0 4px; font-family:'Lora',serif; color:var(--primary-dark); font-weight:700;">${t.label}</h6>
                         <p style="color:var(--accent); font-weight:700; font-size:0.95rem; margin-bottom:12px;">₱${Number(t.price).toLocaleString()} / month</p>
-                        <div style="display:flex; gap:12px; font-size:0.78rem; color:var(--text-muted);">
+                        <div style="display:flex; gap:12px; font-size:0.78rem; color:var(--text-muted); margin-bottom:16px;">
                             <span style="display:flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:13px; fill:currentColor;"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg> ${t.capacity}</span>
                         </div>
+                        <button class="btn-topbar" style="width:100%; justify-content:center; gap:8px; background:var(--bg-light); color:var(--primary); border-color:var(--primary);" onclick="previewUnit(${t.type_id})">
+                            <svg viewBox="0 0 24 24" style="width:14px; fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                            Preview as User
+                        </button>
                     </div>
                 </div>
             `).join('');
             grid.innerHTML = html;
+        }
+
+        function previewUnit(id) {
+            const t = apartmentTypes.find(x => x.type_id == id);
+            if (!t) return;
+            
+            // Format data for room-preview.js
+            const unitData = {
+                ...t,
+                images: t.images || []
+            };
+
+            if (window.openRoomPreview) {
+                window.openRoomPreview(unitData, {
+                    basePath: '<?= asset("assets/") ?>',
+                    serveUrl: '<?= url("/api/apartment-types/serve-image") ?>',
+                    onSelect: () => showToast("Selection preview successful", "var(--info)")
+                });
+            }
         }
 
         function renderUnits() {
