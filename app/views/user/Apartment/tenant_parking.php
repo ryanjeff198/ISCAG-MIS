@@ -1,3 +1,15 @@
+<?php
+require_once BASE_PATH . '/app/models/ApartmentApp.php';
+$apaModel = new ApartmentApp();
+$userId = $_SESSION['user_id'];
+$appInfo = $apaModel->getApplication($userId);
+$userFullInfo = $apaModel->getInfo($userId);
+
+$assignedRoom = $appInfo['room_number'] ?? '';
+$assignedBldg = $appInfo['building'] ?? '';
+$fullName = ($userFullInfo['givenname'] ?? '') . ' ' . ($userFullInfo['familyname'] ?? '');
+$dob = $userFullInfo['birthdate'] ?? '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1093,43 +1105,39 @@
                                 <tr>
                                     <td class="field-label">Full Name</td>
                                     <td class="field-value" colspan="3">
-                                        <input type="text" id="full-name" placeholder="Enter your full name" />
+                                        <input type="text" id="full-name" placeholder="Enter your full name" value="<?= htmlspecialchars($fullName) ?>" readonly />
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="field-label">Date of Birth</td>
                                     <td class="field-value" colspan="3">
-                                        <input type="date" id="date-of-birth" />
+                                        <input type="date" id="date-of-birth" value="<?= htmlspecialchars($dob) ?>" readonly />
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- COMPLETE ADDRESS -->
-                            <table class="info-table">
-                                <tr>
-                                    <td class="field-label">Complete Address</td>
-                                    <td class="field-value" colspan="3">
-                                        <input type="text" id="address-full" placeholder="House no. / Street" />
-                                    </td>
-                                </tr>
+                            
+                            
+                                    
+                                      
                             </table>
 
                             <div class="address-grid">
                                 <div class="addr-cell">
                                     <div class="addr-label">Room No.</div>
-                                    <input type="text" id="room-no" placeholder="e.g. 101" />
+                                    <input type="text" id="room-no" placeholder="e.g. 101" value="<?= htmlspecialchars($assignedRoom) ?>" readonly />
                                 </div>
                                 <div class="addr-cell">
                                     <div class="addr-label">Bldg. No.</div>
-                                    <input type="text" id="bldg-no" placeholder="e.g. A" />
+                                    <input type="text" id="bldg-no" placeholder="e.g. A" value="<?= htmlspecialchars($assignedBldg) ?>" readonly />
                                 </div>
                                 <div class="addr-cell">
                                     <div class="addr-label">Barangay</div>
-                                    <input type="text" id="brgy" placeholder="e.g. Salitran I" />
+                                    <input type="text" id="brgy" value="Salitran I" readonly />
                                 </div>
                                 <div class="addr-cell">
                                     <div class="addr-label">Municipality / City</div>
-                                    <input type="text" id="mun-city" placeholder="e.g. Dasmariñas City" />
+                                    <input type="text" id="mun-city" value="Dasmariñas City" readonly />
                                 </div>
                             </div>
 
@@ -1198,7 +1206,7 @@
 
                             <!-- SUBMIT ROW -->
                             <div class="form-submit-row">
-                                <button class="btn-cancel" id="btn-reset" type="button">Reset Form</button>
+                                
                                 <button class="btn-submit" id="btn-submit" type="button">
                                     <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;">
                                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
@@ -1309,18 +1317,16 @@
             document.getElementById('form-date').valueAsDate = new Date();
             document.getElementById('parking-no').value = generateParkingId();
 
-            // Pre-fill user data
-            if (user.name) document.getElementById('full-name').value = user.name;
-            if (user.dob) document.getElementById('date-of-birth').value = user.dob;
+            // Pre-fill user data removed (Handled by PHP)
 
             // ══════════════════════════════════════════
             // FORM SUBMISSION
             // ══════════════════════════════════════════
             document.getElementById('btn-submit').addEventListener('click', () => {
                 const fields = {
+                    date: document.getElementById('form-date').value,
                     fullName: document.getElementById('full-name').value.trim(),
                     dob: document.getElementById('date-of-birth').value,
-                    addressFull: document.getElementById('address-full').value.trim(),
                     roomNo: document.getElementById('room-no').value.trim(),
                     bldgNo: document.getElementById('bldg-no').value.trim(),
                     brgy: document.getElementById('brgy').value.trim(),
@@ -1346,27 +1352,33 @@
                     }
                 }
 
-                const apps = getParkingApps();
-                const newApp = {
-                    id: generateParkingId(),
-                    tenantId: user.id,
-                    tenantName: fields.fullName,
-                    date: document.getElementById('form-date').value,
-                    ...fields,
-                    status: 'PENDING', // PENDING, APPROVED, REJECTED
-                    submittedAt: new Date().toISOString(),
-                    reviewedAt: null,
-                    approvedAt: null,
-                    remarks: '',
-                };
+                const btn = document.getElementById('btn-submit');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = 'Submitting...';
+                btn.disabled = true;
 
-                apps.push(newApp);
-                saveParkingApps(apps);
-
-                showToast('Parking application submitted successfully! Awaiting admin approval.', 'var(--success)');
-
-                // Redirect to Tenant Information page
-                setTimeout(() => window.location.href = 'tenant_information.html', 1000);
+                fetch('<?= url("/user/apartment/parking/submit") ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(fields)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('Parking application submitted successfully!', 'var(--success)');
+                        setTimeout(() => window.location.href = '<?= url("/user/apartment/info") ?>', 1500);
+                    } else {
+                        showToast(data.message || 'Submission failed.', 'var(--danger)');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('Network error while submitting.', 'var(--danger)');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
             });
 
             // ── Reset form ──

@@ -149,6 +149,27 @@ class ApartmentController extends Controller {
         $this->view('user/Apartment/tenant_parking');
     }
 
+    public function submitParking() {
+        Auth::protectRole(['Tenant']);
+        header('Content-Type: application/json');
+        $userId = $_SESSION['user_id'];
+        $body = json_decode(file_get_contents('php://input'), true);
+
+        if (!$body) {
+            echo json_encode(['success' => false, 'message' => 'No data received']);
+            return;
+        }
+
+        $model = new ApartmentApp();
+        $result = $model->saveParkingApplication($userId, $body);
+
+        if ($result) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to save application']);
+        }
+    }
+
     public function finalizeSubmission() {
         Auth::protectRole(['Guest', 'Tenant']);
         header('Content-Type: application/json');
