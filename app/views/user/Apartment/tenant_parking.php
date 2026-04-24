@@ -1221,49 +1221,59 @@ $dob = $userFullInfo['birthdate'] ?? '';
                             </div>
 
                             <!-- VEHICLE INFORMATION -->
-                            <div class="doc-section-title">
-                                <svg viewBox="0 0 24 24">
-                                    <path
-                                        d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
-                                </svg>
-                                Vehicle Information
+                            <div class="doc-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+                                    </svg>
+                                    Vehicle Information
+                                </div>
+                                <button type="button" id="btn-add-vehicle" style="font-size:0.85rem; padding:6px 14px; background:var(--primary); color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer; align-items:center; display:flex; gap:6px;">
+                                    <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Add Vehicle
+                                </button>
                             </div>
 
-                            <table class="info-table">
-                                <tr>
-                                    <td class="field-label">Name of Vehicle</td>
-                                    <td class="field-value" colspan="3">
-                                        <input type="text" id="vehicle-name" placeholder="e.g. Toyota Vios" />
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="field-label">Name of Owner</td>
-                                    <td class="field-value" colspan="3">
-                                        <input type="text" id="vehicle-owner"
-                                            placeholder="Enter vehicle owner's name" />
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="field-label">Type of Vehicle</td>
-                                    <td class="field-value">
-                                        <select id="vehicle-type">
-                                            <option value="">Select type...</option>
-                                            <option value="Sedan">Sedan</option>
-                                            <option value="SUV">SUV</option>
-                                            <option value="Van">Van</option>
-                                            <option value="Motorcycle">Motorcycle</option>
-                                            <option value="Pickup Truck">Pickup Truck</option>
-                                            <option value="Hatchback">Hatchback</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </td>
-                                    <td class="field-label">Plate No.</td>
-                                    <td class="field-value">
-                                        <input type="text" id="plate-no" placeholder="e.g. ABC 1234"
-                                            style="text-transform:uppercase;font-weight:600;" />
-                                    </td>
-                                </tr>
-                            </table>
+                            <div id="vehicles-container">
+                                <div class="vehicle-block" style="border: 1.5px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 20px; position:relative; background: #fafafa;">
+                                    <div class="vehicle-header" style="font-weight:800; margin-bottom:16px; font-size:1rem; color:var(--primary-dark); display:flex; align-items:center; gap:8px;">
+                                        <svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg> 
+                                        <span>Vehicle #1</span>
+                                    </div>
+                                    <table class="info-table" style="background:white;">
+                                        <tr>
+                                            <td class="field-label">Name of Vehicle</td>
+                                            <td class="field-value" colspan="3">
+                                                <input type="text" class="vehicle-name" placeholder="e.g. Toyota Vios" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="field-label">Name of Owner</td>
+                                            <td class="field-value" colspan="3">
+                                                <input type="text" class="vehicle-owner" placeholder="Enter vehicle owner's name" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="field-label">Type of Vehicle</td>
+                                            <td class="field-value">
+                                                <select class="vehicle-type">
+                                                    <option value="">Select type...</option>
+                                                    <option value="Sedan">Sedan</option>
+                                                    <option value="SUV">SUV</option>
+                                                    <option value="Van">Van</option>
+                                                    <option value="Motorcycle">Motorcycle</option>
+                                                    <option value="Pickup Truck">Pickup Truck</option>
+                                                    <option value="Hatchback">Hatchback</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </td>
+                                            <td class="field-label">Plate No.</td>
+                                            <td class="field-value">
+                                                <input type="text" class="plate-no" placeholder="e.g. ABC 1234" style="text-transform:uppercase;font-weight:600;" />
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
 
                             <!-- DATE STARTED -->
                             <div class="doc-section-title">
@@ -1410,38 +1420,103 @@ $dob = $userFullInfo['birthdate'] ?? '';
 
             // Pre-fill user data removed (Handled by PHP)
 
+            // ── Dynamic Vehicles ──
+            const vehiclesContainer = document.getElementById('vehicles-container');
+            const btnAddVehicle = document.getElementById('btn-add-vehicle');
+            let vehicleCount = 1;
+
+            btnAddVehicle.addEventListener('click', () => {
+                vehicleCount++;
+                const block = document.createElement('div');
+                block.className = 'vehicle-block';
+                block.style.cssText = 'border: 1.5px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 20px; position:relative; background: #fafafa;';
+                block.innerHTML = `
+                    <button type="button" class="btn-remove-vehicle" style="position:absolute; top:20px; right:20px; background:rgba(220,53,69,0.1); border:none; color:var(--danger); font-size:1.2rem; cursor:pointer; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" title="Remove Vehicle">&times;</button>
+                    <div class="vehicle-header" style="font-weight:800; margin-bottom:16px; font-size:1rem; color:var(--primary-dark); display:flex; align-items:center; gap:8px;">
+                        <svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg> 
+                        <span>Vehicle #${vehicleCount}</span>
+                    </div>
+                    <table class="info-table" style="background:white;">
+                        <tr>
+                            <td class="field-label">Name of Vehicle</td>
+                            <td class="field-value" colspan="3"><input type="text" class="vehicle-name" placeholder="e.g. Honda Civic" /></td>
+                        </tr>
+                        <tr>
+                            <td class="field-label">Name of Owner</td>
+                            <td class="field-value" colspan="3"><input type="text" class="vehicle-owner" placeholder="Enter vehicle owner's name" /></td>
+                        </tr>
+                        <tr>
+                            <td class="field-label">Type of Vehicle</td>
+                            <td class="field-value">
+                                <select class="vehicle-type">
+                                    <option value="">Select type...</option>
+                                    <option value="Sedan">Sedan</option>
+                                    <option value="SUV">SUV</option>
+                                    <option value="Van">Van</option>
+                                    <option value="Motorcycle">Motorcycle</option>
+                                    <option value="Pickup Truck">Pickup Truck</option>
+                                    <option value="Hatchback">Hatchback</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </td>
+                            <td class="field-label">Plate No.</td>
+                            <td class="field-value"><input type="text" class="plate-no" placeholder="e.g. DEF 5678" style="text-transform:uppercase;font-weight:600;" /></td>
+                        </tr>
+                    </table>
+                `;
+                
+                block.querySelector('.btn-remove-vehicle').addEventListener('click', () => {
+                    block.remove();
+                    updateVehicleNumbers();
+                });
+                
+                vehiclesContainer.appendChild(block);
+            });
+
+            function updateVehicleNumbers() {
+                const headers = vehiclesContainer.querySelectorAll('.vehicle-header span');
+                headers.forEach((h, i) => {
+                    h.textContent = 'Vehicle #' + (i + 1);
+                });
+                vehicleCount = headers.length;
+            }
+
             // ══════════════════════════════════════════
             // FORM SUBMISSION
             // ══════════════════════════════════════════
             document.getElementById('btn-submit').addEventListener('click', () => {
-                const fields = {
-                    date: document.getElementById('form-date').value,
-                    fullName: document.getElementById('full-name').value.trim(),
-                    dob: document.getElementById('date-of-birth').value,
-                    roomNo: document.getElementById('room-no').value.trim(),
-                    bldgNo: document.getElementById('bldg-no').value.trim(),
-                    brgy: document.getElementById('brgy').value.trim(),
-                    munCity: document.getElementById('mun-city').value.trim(),
-                    vehicleName: document.getElementById('vehicle-name').value.trim(),
-                    vehicleOwner: document.getElementById('vehicle-owner').value.trim(),
-                    vehicleType: document.getElementById('vehicle-type').value,
-                    plateNo: document.getElementById('plate-no').value.trim().toUpperCase(),
-                    dateStarted: document.getElementById('date-started').value,
-                };
+                const vehicleBlocks = document.querySelectorAll('.vehicle-block');
+                const vehicles = [];
+                let hasError = false;
 
-                // Validate required fields
-                const requiredMap = {
-                    fullName: 'Full Name', vehicleName: 'Name of Vehicle',
-                    vehicleOwner: 'Name of Owner', vehicleType: 'Type of Vehicle',
-                    plateNo: 'Plate No.', dateStarted: 'Date Started'
-                };
+                vehicleBlocks.forEach((block, index) => {
+                    const name = block.querySelector('.vehicle-name').value.trim();
+                    const owner = block.querySelector('.vehicle-owner').value.trim();
+                    const type = block.querySelector('.vehicle-type').value;
+                    const plate = block.querySelector('.plate-no').value.trim().toUpperCase();
 
-                for (const [key, label] of Object.entries(requiredMap)) {
-                    if (!fields[key]) {
-                        showToast('Please fill in: ' + label, 'var(--danger)');
+                    if (!name || !owner || !type || !plate) {
+                        showToast('Please complete all fields for Vehicle #' + (index + 1), 'var(--danger)');
+                        hasError = true;
                         return;
                     }
+
+                    vehicles.push({ vehicleName: name, vehicleOwner: owner, vehicleType: type, plateNo: plate });
+                });
+
+                if (hasError) return;
+
+                const dateStarted = document.getElementById('date-started').value;
+                if (!dateStarted) {
+                    showToast('Please select Date Started', 'var(--danger)');
+                    return;
                 }
+
+                const fields = {
+                    date: document.getElementById('form-date').value,
+                    dateStarted: dateStarted,
+                    vehicles: vehicles
+                };
 
                 const btn = document.getElementById('btn-submit');
                 const originalText = btn.innerHTML;

@@ -155,18 +155,34 @@ class ApartmentController extends Controller {
         $userId = $_SESSION['user_id'];
         $body = json_decode(file_get_contents('php://input'), true);
 
-        if (!$body) {
-            echo json_encode(['success' => false, 'message' => 'No data received']);
+        if (!$body || empty($body['vehicles'])) {
+            echo json_encode(['success' => false, 'message' => 'No vehicles provided']);
             return;
         }
 
         $model = new ApartmentApp();
-        $result = $model->saveParkingApplication($userId, $body);
+        $allSuccess = true;
 
-        if ($result) {
+        foreach ($body['vehicles'] as $vehicle) {
+            // merge base fields with specific vehicle fields
+            $payload = [
+                'date' => $body['date'] ?? date('Y-m-d'),
+                'dateStarted' => $body['dateStarted'] ?? '',
+                'vehicleName' => $vehicle['vehicleName'],
+                'vehicleOwner' => $vehicle['vehicleOwner'],
+                'vehicleType' => $vehicle['vehicleType'],
+                'plateNo' => $vehicle['plateNo']
+            ];
+
+            if (!$model->saveParkingApplication($userId, $payload)) {
+                $allSuccess = false;
+            }
+        }
+
+        if ($allSuccess) {
             echo json_encode(['success' => true]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to save application']);
+            echo json_encode(['success' => false, 'message' => 'Some applications failed to save']);
         }
     }
 
