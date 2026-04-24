@@ -13,6 +13,14 @@ $routes = [
     // Public pages
     '/'                 => ['HomeController',  'index'],
     '/index'            => ['HomeController',  'index'],
+    '/history-organization' => ['HomeController',  'historyOrganization'],
+    '/departments'          => ['HomeController',  'departments'],
+    '/apartment'            => ['HomeController',  'apartment'],
+    '/daawah'               => ['HomeController',  'daawah'],
+    '/damayan'              => ['HomeController',  'damayan'],
+    '/events'               => ['HomeController',  'events'],
+    '/announcements'        => ['HomeController',  'announcements'],
+    '/contact'              => ['HomeController',  'contact'],
 
     // Authentication
     '/login'            => ['AuthController',  'login'],
