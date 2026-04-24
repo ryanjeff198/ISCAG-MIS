@@ -85,6 +85,9 @@
       margin-bottom: 40px;
       transition: all 0.4s ease;
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
     }
     .dept-main-card:hover {
       transform: translateY(-10px);
@@ -170,7 +173,7 @@
   <div class="container">
 
     <!-- Apartment -->
-    <div class="dept-main-card reveal">
+    <a href="<?= url('/apartment') ?>" class="dept-main-card reveal">
       <div class="dept-img">
         <img src="<?= asset('assets/1BR Type/1BR front.jpg') ?>" alt="Apartment">
       </div>
@@ -178,15 +181,15 @@
         <span class="dept-tag">Residential Services</span>
         <h2>Apartment Management</h2>
         <p>Providing safe, affordable, and Islamic-centered housing for families and students. Our residential complex offers a supportive environment focused on spiritual and community growth.</p>
-        <a href="<?= url('/apartment') ?>" class="btn-dept">
+        <div class="btn-dept">
           Explore Apartment Services
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </a>
+        </div>
       </div>
-    </div>
+    </a>
 
     <!-- Daawah -->
-    <div class="dept-main-card reverse reveal">
+    <a href="<?= url('/daawah') ?>" class="dept-main-card reverse reveal">
       <div class="dept-img">
         <img src="<?= asset('assets/hero-mosque.png') ?>" alt="Daawah">
       </div>
@@ -194,15 +197,15 @@
         <span class="dept-tag">Guidance & Call</span>
         <h2>Da'wah Department</h2>
         <p>The heart of our mission. We provide authentic Islamic knowledge, counseling for new Muslims, and programs designed to spread the message of peace and understanding across the Philippines.</p>
-        <a href="<?= url('/daawah') ?>" class="btn-dept">
+        <div class="btn-dept">
           Learn About Da'wah
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </a>
+        </div>
       </div>
-    </div>
+    </a>
 
     <!-- Damayan -->
-    <div class="dept-main-card reveal">
+    <a href="<?= url('/damayan') ?>" class="dept-main-card reveal">
       <div class="dept-img">
         <img src="<?= asset('assets/about-center.png') ?>" alt="Damayan">
       </div>
@@ -210,12 +213,12 @@
         <span class="dept-tag">Social Welfare</span>
         <h2>Damayan Services</h2>
         <p>Dedicated to bereavement support and social welfare. We assist families during their most difficult times, offering burial services and humanitarian aid to those in need.</p>
-        <a href="<?= url('/damayan') ?>" class="btn-dept">
+        <div class="btn-dept">
           View Damayan Support
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </a>
+        </div>
       </div>
-    </div>
+    </a>
 
   </div>
 </section>

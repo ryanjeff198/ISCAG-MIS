@@ -15,6 +15,9 @@ $routes = [
     '/index'            => ['HomeController',  'index'],
     '/history-organization' => ['HomeController',  'historyOrganization'],
     '/departments'          => ['HomeController',  'departments'],
+    '/apartment'            => ['HomeController',  'apartment'],
+    '/daawah'               => ['HomeController',  'daawah'],
+    '/damayan'              => ['HomeController',  'damayan'],
     '/contact'              => ['HomeController',  'contact'],
 
     // Authentication

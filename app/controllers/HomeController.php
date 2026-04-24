@@ -18,6 +18,21 @@ class HomeController extends Controller
     {
         $this->view('home/departments');
     }
+    
+    public function apartment(): void
+    {
+        $this->view('home/apartment');
+    }
+
+    public function daawah(): void
+    {
+        $this->view('home/daawah');
+    }
+
+    public function damayan(): void
+    {
+        $this->view('home/damayan');
+    }
 
     public function contact(): void
     {
