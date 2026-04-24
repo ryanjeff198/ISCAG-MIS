@@ -1397,7 +1397,8 @@ if ($userId) {
     .doc-preview-img {
       width: 100%;
       height: 200px;
-      object-fit: contain;
+      object-fit: cover;
+      object-position: center top;
       border-radius: 10px;
       border: 1.5px solid var(--border);
       background: #fafdf9;
@@ -2517,6 +2518,27 @@ if ($userId) {
       if (step === currentStep) return;
       // Validate Step 1 before moving to Step 2
       if (step === 2 && currentStep === 1) {
+        
+        // 1. Validate required text fields
+        const requiredFields = [
+          { id: 'family-name', name: 'Family Name' },
+          { id: 'given-name', name: 'Given Name' },
+          { id: 'dob', name: 'Date of Birth' },
+          { id: 'sex', name: 'Sex' },
+          { id: 'address', name: 'Address' },
+          { id: 'phone', name: 'Phone Number' }
+        ];
+
+        for (const field of requiredFields) {
+          const el = document.getElementById(field.id);
+          if (el && !el.value.trim()) {
+            showToast(`Please fill out the ${field.name} field before proceeding.`, '#8b2e2e');
+            el.focus();
+            return;
+          }
+        }
+
+        // 2. Validate declaration checkboxes
         const d1 = document.getElementById('decl1').checked;
         const d2 = document.getElementById('decl2').checked;
         if (!d1 || !d2) {
@@ -2814,6 +2836,7 @@ if ($userId) {
     }
 
     const DOC_STORAGE_KEY = 'mis_req_doc_uploads';
+    const inMemoryPreviews = {};
 
     function getUploadedDocs() {
       const raw = localStorage.getItem(DOC_STORAGE_KEY);
@@ -2823,16 +2846,38 @@ if ($userId) {
     function saveUploadedDoc(docId, dataUrl) {
       const docs = getUploadedDocs();
       docs[docId] = {
-        dataUrl,
         uploadedAt: new Date().toISOString()
       };
-      localStorage.setItem(DOC_STORAGE_KEY, JSON.stringify(docs));
+      inMemoryPreviews[docId] = dataUrl;
+      try {
+        localStorage.setItem(DOC_STORAGE_KEY, JSON.stringify(docs));
+      } catch(e) {
+        console.warn('localStorage quota exceeded for docs, saving in-memory only.', e);
+      }
     }
 
     function removeUploadedDoc(docId) {
       const docs = getUploadedDocs();
       delete docs[docId];
+      delete inMemoryPreviews[docId];
       localStorage.setItem(DOC_STORAGE_KEY, JSON.stringify(docs));
+    }
+
+    function getPreviewSrc(docId, docData) {
+      if (inMemoryPreviews[docId]) {
+        return inMemoryPreviews[docId];
+      }
+      const typeMap = {
+        'doc-income': 'proofofincome',
+        'doc-id-front': 'valididfront',
+        'doc-id-back': 'valididback',
+        'doc-birth': 'birthcert',
+        'doc-nbi': 'nbi',
+        'doc-photo': 'picture'
+      };
+      const serverType = typeMap[docId];
+      if (!serverType || !docData) return '';
+      return `<?= url('/user/apartment/serveImage') ?>?type=${serverType}&t=${new Date(docData.uploadedAt).getTime()}`;
     }
 
     // ═══ RENDER DOCUMENT CARDS ═══
@@ -2900,7 +2945,7 @@ if ($userId) {
                       </div>
                       <div class="doc-preview-wrap ${slotUploaded ? 'visible' : ''}" id="preview-${slot.key}">
                         ${slotUploaded
-                ? `<img class="doc-preview-img" src="${currentUploads[slot.key].dataUrl}" alt="${slot.label}" id="img-${slot.key}" />`
+                ? `<img class="doc-preview-img" src="${getPreviewSrc(slot.key, currentUploads[slot.key])}" alt="${slot.label}" id="img-${slot.key}" />`
                 : `<img class="doc-preview-img" src="" alt="${slot.label}" id="img-${slot.key}" style="display:none;" />`
               }
                         <div class="doc-preview-actions">
@@ -2980,7 +3025,7 @@ if ($userId) {
                 <input type="file" accept="image/*,.pdf" id="input-${doc.id}" />
               </div>
               <div class="doc-preview-wrap ${isUploaded ? 'visible' : ''}" id="preview-${doc.id}">
-                ${isUploaded ? `<img class="doc-preview-img" src="${currentUploads[doc.id].dataUrl}" alt="${doc.name}" id="img-${doc.id}" />` : `<img class="doc-preview-img" src="" alt="${doc.name}" id="img-${doc.id}" style="display:none;" />`}
+                ${isUploaded ? `<img class="doc-preview-img" src="${getPreviewSrc(doc.id, currentUploads[doc.id])}" alt="${doc.name}" id="img-${doc.id}" />` : `<img class="doc-preview-img" src="" alt="${doc.name}" id="img-${doc.id}" style="display:none;" />`}
                 <div class="doc-preview-actions">
                   <button class="doc-preview-btn view" onclick="viewFullImage('${doc.id}')" title="View full size">
                     <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
@@ -3091,13 +3136,15 @@ if ($userId) {
       const docData = docs[docId];
       if (!docData) return;
 
+      const src = getPreviewSrc(docId, docData);
+
       const overlay = document.createElement('div');
       overlay.className = 'img-preview-overlay';
       overlay.innerHTML = `
         <button class="img-preview-close" title="Close preview">
           <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
-        <img src="${docData.dataUrl}" alt="Document Preview" />
+        <img src="${src}" alt="Document Preview" />
       `;
       document.body.appendChild(overlay);
 

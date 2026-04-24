@@ -1310,7 +1310,7 @@
             const appStatus = report ? report.status : (aptApp ? aptApp.status : 'pending');
             const statusMap = {
                 'pending': { label: 'Pending Review', cls: 'pending', icon: '⏳' },
-                'PENDING_MIS': { label: 'Pending MIS Review', cls: 'pending', icon: '⏳' },
+                'PENDING_MIS': { label: 'Pending Admin Review', cls: 'pending', icon: '⏳' },
                 'VERIFIED': { label: 'Verified', cls: 'approved', icon: '✓' },
                 'approved': { label: 'Approved', cls: 'approved', icon: '✓' },
                 'Assigned': { label: 'Room Assigned', cls: 'approved', icon: '🏠' },
@@ -1349,7 +1349,7 @@
             const stages = [
                 { label: 'Application', key: 'submitted' },
                 { label: 'Documents', key: 'documents' },
-                { label: 'MIS Review', key: 'review' },
+                { label: 'Admin Review', key: 'review' },
                 { label: 'Verified', key: 'verified' },
                 { label: 'Approved', key: 'approved' }
             ];
