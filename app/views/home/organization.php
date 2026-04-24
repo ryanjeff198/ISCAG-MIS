@@ -188,7 +188,7 @@
   <div class="container">
     <span class="hero-label reveal">Our Leadership</span>
     <h1 class="hero-title reveal">Organizational Structure</h1>
-    <p class="hero-subtitle reveal">A dedicated team of scholars, professionals, and volunteers committed to the founding vision of ISCAG.</p>
+    <p class="hero-subtitle reveal">A dedicated team of scholars and professionals committed to the founding vision of ISCAG.</p>
   </div>
 </header>
 

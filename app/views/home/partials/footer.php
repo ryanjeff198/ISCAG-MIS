@@ -15,10 +15,10 @@
           Islamic Studies, Call and Guidance of the Philippines is dedicated to empowering the Ummah through knowledge, spiritual growth, and community service.
         </p>
         <div class="footer-social">
-          <a href="#" class="social-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
-          <a href="#" class="social-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
-          <a href="#" class="social-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg></a>
-          <a href="#" class="social-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
+          <!-- Facebook -->
+          <a href="#" class="social-btn" title="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+          <!-- Google -->
+          <a href="mailto:info@iscag.org.ph" class="social-btn" title="Google"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h4.74c-.2 1.04-1.2 3.05-4.74 3.05-3.09 0-5.62-2.56-5.62-5.71s2.53-5.71 5.62-5.71c1.76 0 2.94.75 3.61 1.39l2.58-2.48C17.02 3.14 14.93 2.11 12.48 2.11 7.15 2.11 2.83 6.44 2.83 11.78s4.32 9.67 9.65 9.67c5.57 0 9.27-3.91 9.27-9.44 0-.64-.07-1.12-.15-1.6l-9.12-.49z"/></svg></a>
         </div>
       </div>
 
@@ -40,7 +40,6 @@
         <ul class="footer-links">
           <li><a href="#">Islamic Guidance</a></li>
           <li><a href="#">Community Programs</a></li>
-          <li><a href="#">Volunteer Portal</a></li>
           <li><a href="#">Donations</a></li>
           <li><a href="#">FAQ</a></li>
         </ul>

@@ -34,6 +34,16 @@ class HomeController extends Controller
         $this->view('home/damayan');
     }
 
+    public function events(): void
+    {
+        $this->view('home/events');
+    }
+
+    public function announcements(): void
+    {
+        $this->view('home/announcements');
+    }
+
     public function contact(): void
     {
         $this->view('home/contact');

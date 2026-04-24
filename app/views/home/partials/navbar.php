@@ -115,7 +115,7 @@
 
       <!-- COMMUNITY -->
       <li class="nav-item">
-        <a class="nav-link" href="#">
+        <a class="nav-link <?= (isset($active_page) && $active_page == 'community') ? 'active' : '' ?>" href="<?= url('/events') ?>">
           Community
           <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
         </a>
@@ -136,15 +136,6 @@
             <span class="item-text-wrap">
               <span class="item-title">Announcements</span>
               <span class="item-desc">Latest news from ISCAG</span>
-            </span>
-          </a>
-          <a href="<?= url('/volunteer') ?>" class="dropdown-item">
-            <span class="item-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-svg"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
-            </span>
-            <span class="item-text-wrap">
-              <span class="item-title">Volunteer</span>
-              <span class="item-desc">Join our community efforts</span>
             </span>
           </a>
         </div>

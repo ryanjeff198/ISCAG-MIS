@@ -32,7 +32,7 @@
     /* ─── HERO ────────────────────────────────────────────── */
     .service-hero {
       padding: 160px 0 100px;
-      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); /* Blue for trust/support */
+      background: linear-gradient(135deg, var(--green-900) 0%, var(--green-800) 100%);
       color: white;
       text-align: center;
       position: relative;
@@ -120,8 +120,8 @@
     }
     .info-icon {
       width: 60px; height: 60px;
-      background: #eff6ff;
-      color: #1e40af;
+      background: var(--green-50);
+      color: var(--green-700);
       border-radius: 16px;
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 24px;
@@ -169,14 +169,169 @@
       margin-bottom: 30px;
     }
 
+    /* ─── DONATION SECTION ────────────────────────────────── */
+    .donation-section {
+      padding: 100px 0;
+      background: linear-gradient(rgba(6, 78, 59, 0.02), rgba(6, 78, 59, 0.05));
+      border-top: 1px solid rgba(6, 78, 59, 0.05);
+      border-bottom: 1px solid rgba(6, 78, 59, 0.05);
+    }
+    .donation-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    .donation-content h2 {
+      font-family: 'Lora', serif;
+      font-size: 2.5rem;
+      color: var(--green-900);
+      margin-bottom: 24px;
+    }
+    .donation-content p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      line-height: 1.8;
+      margin-bottom: 30px;
+    }
+    .donation-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .stat-item {
+      background: white;
+      padding: 24px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .stat-value {
+      display: block;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--green-700);
+      margin-bottom: 4px;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .donation-card {
+      background: white;
+      padding: 40px;
+      border-radius: 32px;
+      box-shadow: 0 30px 60px rgba(6, 78, 59, 0.1);
+      border: 1px solid rgba(6, 78, 59, 0.1);
+    }
+    .donation-card h3 {
+      font-family: 'Lora', serif;
+      font-size: 1.8rem;
+      color: var(--green-900);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .donation-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .don-opt {
+      padding: 15px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .don-opt:hover, .don-opt.active {
+      border-color: var(--green-600);
+      background: var(--green-50);
+      color: var(--green-700);
+    }
+    .custom-amount {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 30px;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+    .btn-donate {
+      width: 100%;
+      padding: 18px;
+      background: var(--green-700);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+    }
+    .btn-donate:hover {
+      background: var(--green-800);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(6, 78, 59, 0.2);
+    }
+    
+    .qr-toggle-btn {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      color: var(--green-700);
+      border: 2px solid var(--green-700);
+      border-radius: 12px;
+      font-weight: 700;
+      margin-top: 15px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .qr-toggle-btn:hover {
+      background: var(--green-50);
+    }
+    
+    .qr-container {
+      margin-top: 20px;
+      padding: 20px;
+      background: var(--green-50);
+      border-radius: 20px;
+      display: none;
+      text-align: center;
+      border: 1px dashed var(--green-700);
+    }
+    .qr-container img {
+      width: 180px;
+      height: 180px;
+      margin-bottom: 15px;
+      border-radius: 12px;
+      border: 5px solid white;
+      box-shadow: var(--shadow-md);
+    }
+    .qr-container p {
+      font-size: 0.85rem;
+      color: var(--green-900);
+      font-weight: 600;
+      margin-bottom: 0;
+    }
+
     /* ─── CTA ─────────────────────────────────────────────── */
     .cta-section {
       padding: 100px 0;
-      background: #f8fafc;
+      background: var(--green-50);
       text-align: center;
       border-radius: 40px;
       margin: 0 20px 100px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--border);
     }
     .cta-title {
       font-family: 'Lora', serif;
@@ -195,7 +350,7 @@
       align-items: center;
       gap: 12px;
       padding: 16px 36px;
-      background: #1e40af;
+      background: var(--green-700);
       color: white;
       border-radius: 12px;
       font-weight: 700;
@@ -203,9 +358,9 @@
       transition: all 0.3s ease;
     }
     .btn-cta:hover {
-      background: #1e3a8a;
+      background: var(--green-800);
       transform: translateY(-4px);
-      box-shadow: 0 15px 30px rgba(30, 64, 175, 0.2);
+      box-shadow: 0 15px 30px rgba(5, 150, 105, 0.2);
     }
 
     @media (max-width: 991px) {
@@ -242,7 +397,7 @@
         <span class="section-tag">Compassion in Action</span>
         <h2>Helping Hands, Healing Hearts</h2>
         <p>The word "Damayan" signifies mutual aid and compassion. At ISCAG, our Damayan Department is committed to standing by our community members during bereavement and other social hardships. We believe that no one should face difficult times alone.</p>
-        <p>Our dedicated volunteers and staff work tirelessly to provide both emotional support and practical solutions, ensuring that every member of our Ummah is cared for with dignity and respect.</p>
+        <p>Our dedicated staff works tirelessly to provide both emotional support and practical solutions, ensuring that every member of our Ummah is cared for with dignity and respect.</p>
       </div>
     </div>
 
@@ -274,7 +429,44 @@
         <p>Providing temporary financial and material assistance to families facing sudden hardships or humanitarian crises.</p>
       </div>
     </div>
+  </div>
+</section>
 
+<!-- DONATION SECTION -->
+<section class="donation-section">
+  <div class="container">
+    <div class="donation-grid">
+      <div class="donation-content reveal">
+        <span class="section-tag">Support Our Cause</span>
+        <h2>Your Donation Saves Lives and Provides Dignity</h2>
+        <p>At ISCAG, our Damayan services are fueled by the generosity of our community. Every peso you contribute goes directly toward assisting families in their times of greatest need—from emergency medical aid to providing a dignified burial for those who cannot afford it.</p>
+        
+        <div class="donation-stats">
+          <div class="stat-item">
+            <span class="stat-value">100%</span>
+            <span class="stat-label">Direct Impact</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">500+</span>
+            <span class="stat-label">Families Helped</span>
+          </div>
+        </div>
+
+        <p class="small text-muted"><em>"The best of people are those that bring most benefit to the rest of mankind."</em> — Prophet Muhammad (PBUH)</p>
+      </div>
+
+      <div class="donation-card reveal delay-1">
+        <h3>Donate via QR Code</h3>
+        <p class="text-center text-muted mb-4">Scan the QR code below to make a direct donation to our social welfare programs.</p>
+        
+        <div class="qr-container" style="display: block; border-style: solid; background: white;">
+          <img src="<?= asset('assets/donation_qr.png') ?>" alt="Donation QR Code" style="width: 220px; height: 220px;">
+          <p class="mt-2" style="font-size: 1rem; color: var(--green-700);">Scan with GCash, Maya, or Bank App</p>
+        </div>
+
+        <p class="text-center mt-4 small text-muted">Your generosity directly funds emergency aid and burial assistance for those in need.</p>
+      </div>
+    </div>
   </div>
 </section>
 
