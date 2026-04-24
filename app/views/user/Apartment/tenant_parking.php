@@ -938,6 +938,85 @@ $dob = $userFullInfo['birthdate'] ?? '';
             background: #b0bcc8;
         }
 
+        /* ── Success Modal ── */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .success-modal {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .success-modal {
+            transform: translateY(0) scale(1);
+        }
+        .success-modal-icon {
+            width: 72px;
+            height: 72px;
+            background: rgba(47, 138, 96, 0.1);
+            color: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+        .success-modal-icon svg {
+            width: 36px;
+            height: 36px;
+            fill: currentColor;
+        }
+        .success-modal h3 {
+            font-family: 'Lora', serif;
+            font-size: 1.4rem;
+            color: var(--primary-dark);
+            margin: 0 0 12px;
+        }
+        .success-modal p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin: 0 0 32px;
+            line-height: 1.5;
+        }
+        .success-modal-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+            color: white;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .success-modal-btn:hover {
+            box-shadow: 0 6px 20px rgba(23, 107, 69, 0.35);
+            transform: translateY(-2px);
+        }
+
         /* ── Animations ── */
         @keyframes fadeIn {
             from {
@@ -1250,6 +1329,18 @@ $dob = $userFullInfo['birthdate'] ?? '';
 
                 </div><!-- /.page-body -->
             </div><!-- /.main-content -->
+        <!-- Success Modal -->
+        <div class="modal-overlay" id="success-modal">
+            <div class="success-modal">
+                <div class="success-modal-icon">
+                    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
+                </div>
+                <h3>Application Submitted!</h3>
+                <p>Your parking rental application has been successfully submitted and is now queued for administrative review. You can track its status in your tenant portal.</p>
+                <a href="<?= url('/user/apartment/info') ?>" class="success-modal-btn">Continue to Dashboard</a>
+            </div>
+        </div>
+
         </div><!-- /.app-wrapper -->
 
         <script>
@@ -1365,8 +1456,7 @@ $dob = $userFullInfo['birthdate'] ?? '';
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        showToast('Parking application submitted successfully!', 'var(--success)');
-                        setTimeout(() => window.location.href = '<?= url("/user/apartment/info") ?>', 1500);
+                        document.getElementById('success-modal').classList.add('active');
                     } else {
                         showToast(data.message || 'Submission failed.', 'var(--danger)');
                         btn.innerHTML = originalText;
