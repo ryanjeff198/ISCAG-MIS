@@ -22,7 +22,7 @@ if ($userId) {
     $dbUser = [
         'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
         'email' => $profile['email'] ?? ($account['email'] ?? ''),
-        'gender' => !empty($profile['sex']) ? $profile['sex'] : ($account['sex'] ?? ''),
+        'sex' => !empty($profile['sex']) ? $profile['sex'] : ($_SESSION['sex'] ?? $_SESSION['gender'] ?? $account['sex'] ?? ''),
         'phone' => $profile['phone'] ?? ($account['contactnum'] ?? ''),
         'dob' => $profile['birthdate'] ?? '',
         'civil' => $profile['civil_status'] ?? '',
@@ -1893,9 +1893,9 @@ if ($userId) {
                       <option <?= ($appData['civil_status'] ?? '') == 'Divorced' ? 'selected' : '' ?>>Divorced</option>
                     </select>
                   </td>
-                  <td class="field-label">Gender:</td>
+                  <td class="field-label">Sex:</td>
                   <td class="field-value">
-                    <select id="gender">
+                    <select id="sex">
                       <option value="">— Select —</option>
                       <option <?= ($appData['sex'] ?? '') == 'Male' ? 'selected' : '' ?>>Male</option>
                       <option <?= ($appData['sex'] ?? '') == 'Female' ? 'selected' : '' ?>>Female</option>
@@ -2181,13 +2181,13 @@ if ($userId) {
       apartments: 'mis_apartments',
       initialized: 'mis_data_init'
     };
-    const PROFILE_FIELDS = ['name', 'email', 'gender', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
+    const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
     const DEFAULT_USER = {
       id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>',
       name: '<?= addslashes($_SESSION['name'] ?? "User") ?>',
       email: '<?= addslashes($_SESSION['email'] ?? "") ?>',
-      gender: '<?= addslashes($_SESSION['gender'] ?? "") ?>',
-      phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', membership: '', revertYear: '', apartment: '', profileComplete: false
+      sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>',
+      phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', revertYear: '', apartment: '', profileComplete: false
     };
     const DEFAULT_REQUESTS = [{
         id: 'BUR-001',
@@ -2275,7 +2275,7 @@ if ($userId) {
       const labels = {
         name: 'Full Name',
         email: 'Email Address',
-        gender: 'Gender',
+        sex: 'Sex',
         phone: 'Contact Number',
         address: 'Complete Address',
         dob: 'Date of Birth',
@@ -2483,7 +2483,7 @@ if ($userId) {
           birthdate: v('dob'),
           age: parseInt(v('age')) || 0,
           pob: v('pob'),
-          sex: v('gender'),
+          sex: v('sex'),
           address: v('address'),
           dateofshahadah: v('shahadah-date'),
           tribalaffliation: v('tribal'),

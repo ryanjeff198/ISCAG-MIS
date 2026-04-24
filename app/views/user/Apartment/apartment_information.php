@@ -1059,7 +1059,7 @@
             id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>', 
             name: '<?= addslashes($_SESSION['name'] ?? "User") ?>', 
             role: '<?= addslashes($_SESSION['role'] ?? "Tenant") ?>',
-            gender: '<?= addslashes($_SESSION['gender'] ?? "") ?>',
+            sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>',
             email: '<?= addslashes($_SESSION['email'] ?? "") ?>',
             phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', membership: '', revertYear: '', apartment: '', profileComplete: false 
         };

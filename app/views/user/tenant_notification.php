@@ -7,14 +7,20 @@ $display_name = trim(($account['first_name'] ?? '') . ' ' . ($account['last_name
 $phpUser = [
     'name' => $display_name,
     'email' => $info['email'] ?? ($account['email'] ?? ''),
-    'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
+    'sex' => (function() use ($info, $account) {
+        $s = !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? $account['gender'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
+        $ls = strtolower($s);
+        if ($ls === 'female' || $ls === 'f') return 'Female';
+        if ($ls === 'male' || $ls === 'm') return 'Male';
+        return $s;
+    })(),
     'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
     'dob' => $info['birthdate'] ?? '',
     'civil' => $info['civil_status'] ?? '',
     'address' => $info['address'] ?? '',
     'occupation' => $info['occupation'] ?? '',
     'arabicName' => $info['muslimname'] ?? '',
-    'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
+    'revertYear' => !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '',
 ];
 ?>
 <!DOCTYPE html>
@@ -601,8 +607,8 @@ $phpUser = [
         // The sidebar already rendered the correct PHP role; here we just
         // style it green. Lock state also comes from session, not localStorage.
         const DB_USER = <?= json_encode($phpUser) ?>;
-        const PROFILE_FIELDS = ['name', 'email', 'gender', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
-        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', gender: 'Gender', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
+        const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
+        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', sex: 'Sex', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
 
         // Calculate profile completion from DB data
         const missingFields = [];

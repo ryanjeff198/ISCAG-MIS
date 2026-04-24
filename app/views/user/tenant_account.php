@@ -7,14 +7,20 @@ $display_name = trim(($account['first_name'] ?? '') . ' ' . ($account['last_name
 $phpUser = [
     'name' => $display_name,
     'email' => $info['email'] ?? ($account['email'] ?? ''),
-    'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
+    'sex' => (function() use ($info, $account) {
+        $s = !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? $account['gender'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
+        $ls = strtolower($s);
+        if ($ls === 'female' || $ls === 'f') return 'Female';
+        if ($ls === 'male' || $ls === 'm') return 'Male';
+        return $s;
+    })(),
     'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
     'dob' => $info['birthdate'] ?? '',
     'civil' => $info['civil_status'] ?? '',
     'address' => $info['address'] ?? '',
     'occupation' => $info['occupation'] ?? '',
     'arabicName' => $info['muslimname'] ?? '',
-    'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
+    'revertYear' => !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '',
 ];
 ?>
 <!DOCTYPE html>
@@ -361,10 +367,10 @@ $phpUser = [
                     <div><label class="form-label">Email Address *</label><input type="email" class="form-control"
                             id="f-email" placeholder="email@example.com" value="<?= htmlspecialchars($account['email'] ?? '') ?>" readonly style="background:var(--bg-light);cursor:not-allowed;" /></div>
                     <div><label class="form-label">Sex *</label>
-                        <select class="form-select" id="f-gender" disabled style="background:var(--bg-light);cursor:not-allowed;">
+                        <select class="form-select" id="f-sex" disabled style="background:var(--bg-light);cursor:not-allowed;">
                             <option value="">— Select —</option>
-                            <option value="Male" <?= ($account['sex'] ?? '') === 'Male' ? 'selected' : '' ?>>Male</option>
-                            <option value="Female" <?= ($account['sex'] ?? '') === 'Female' ? 'selected' : '' ?>>Female</option>
+                            <option value="Male" <?= (strtolower($phpUser['sex'] ?? '') === 'male') ? 'selected' : '' ?>>Male</option>
+                            <option value="Female" <?= (strtolower($phpUser['sex'] ?? '') === 'female') ? 'selected' : '' ?>>Female</option>
                         </select>
                     </div>
                 </div>
@@ -423,13 +429,13 @@ $phpUser = [
             apartments: 'mis_apartments',
             initialized: 'mis_data_init'
         };
-        const PROFILE_FIELDS = ['name', 'email', 'gender', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
-        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', gender: 'Gender', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
+        const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
+        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', sex: 'Sex', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
         const DEFAULT_USER = {
             id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>',
             name: '<?= addslashes($_SESSION['name'] ?? "User") ?>',
             email: '<?= addslashes($_SESSION['email'] ?? "") ?>',
-            gender: '<?= addslashes($_SESSION['gender'] ?? "") ?>',
+            sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>',
             phone: '',
             address: '',
             dob: '',
@@ -437,7 +443,7 @@ $phpUser = [
             occupation: '',
             arabicName: '',
             membership: '',
-            revertYear: '',
+            revertYear: '<?= !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '' ?>',
             apartment: '',
             profileComplete: false
         };
@@ -504,7 +510,7 @@ $phpUser = [
             }
         }
 
-        const DB_USER = <?= json_encode($phpUser) ?>;
+        let DB_USER = <?= json_encode($phpUser) ?>;
 
         function getUser() {
             const raw = localStorage.getItem(STORAGE_KEYS.user);
@@ -513,9 +519,28 @@ $phpUser = [
             };
 
             // Sync with DB data — DB is the source of truth.
-            // Even if empty, we overwrite localStorage/Mock defaults.
-            Object.keys(DB_USER).forEach(key => {
-                user[key] = DB_USER[key] || '';
+            if (typeof DB_USER !== 'undefined' && DB_USER !== null) {
+                Object.keys(DB_USER).forEach(key => {
+                    let val = DB_USER[key] || '';
+                    if (key === 'sex' && val) {
+                        const v = val.toLowerCase();
+                        if (v === 'f' || v === 'female') val = 'Female';
+                        if (v === 'm' || v === 'male') val = 'Male';
+                    }
+                    if (val || !user[key]) {
+                        user[key] = val;
+                    }
+                });
+            }
+
+            // Final fallback: Use session data if still missing (helps with legacy sync issues)
+            const SESSION_FALLBACKS = {
+                sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>',
+                email: '<?= addslashes($_SESSION['email'] ?? "") ?>',
+                name: '<?= addslashes($_SESSION['name'] ?? "") ?>'
+            };
+            Object.entries(SESSION_FALLBACKS).forEach(([key, val]) => {
+                if (!user[key] && val) user[key] = val;
             });
 
             return user;
@@ -605,8 +630,8 @@ $phpUser = [
         // ── Da'wah dropdown — link handling ──
         const dawahTrigger = document.getElementById('dawah-trigger');
         if (dawahTrigger) {
-            const SESSION_GENDER = '<?= strtolower($_SESSION['gender'] ?? "") ?>';
-            const dawahHref = SESSION_GENDER === 'female' ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
+            const SESSION_SEX = '<?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>';
+            const dawahHref = SESSION_SEX === 'female' ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
             dawahTrigger.setAttribute('data-href', dawahHref);
         }
 
@@ -614,7 +639,7 @@ $phpUser = [
         const fields = {
             name: 'f-name',
             email: 'f-email',
-            gender: 'f-gender',
+            sex: 'f-sex',
             phone: 'f-phone',
             dob: 'f-dob',
             civil: 'f-civil',
@@ -931,6 +956,10 @@ $phpUser = [
                 .then(res => {
                     if (res.success) {
                         const updated = updateUser(data);
+                        // Update the local page-scope user object so subsequent calls are fresh
+                        Object.assign(user, updated);
+                        // Update DB_USER so getUser() doesn't overwrite with stale data
+                        Object.assign(DB_USER, data);
 
                         // Update UI
                         const navNameEl = document.getElementById('nav-name');
@@ -958,6 +987,16 @@ $phpUser = [
                             compBar.style.width = pct2 + '%';
                             compBar.style.background = pct2 === 100 ? 'var(--success)' : pct2 >= 50 ? 'var(--warning)' : 'var(--danger)';
                         }
+
+                        // Sync to localStorage for sidebar and dashboard
+                        updated.profileComplete = (pct2 === 100);
+                        localStorage.setItem('mis_user', JSON.stringify(updated));
+                        
+                        // Update the snapshot so reopening the modal shows current data
+                        Object.entries(fields).forEach(([key, id]) => {
+                            const el = document.getElementById(id);
+                            if (el) snapshot[id] = el.value;
+                        });
 
                         if (pct2 === 100 && pct < 100) {
                             showToast('Profile completed successfully. You now have full access to all available departments.', 'var(--success)');

@@ -12,7 +12,13 @@ $display_name = trim(($account['first_name'] ?? '') . ' ' . ($account['last_name
 $dbUser = [
     'name' => $display_name,
     'email' => $info['email'] ?? ($account['email'] ?? ''),
-    'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
+    'sex' => (function() use ($info, $account) {
+        $s = !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? $account['gender'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
+        $ls = strtolower($s);
+        if ($ls === 'female' || $ls === 'f') return 'Female';
+        if ($ls === 'male' || $ls === 'm') return 'Male';
+        return $s;
+    })(),
     'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
     'dob' => $info['birthdate'] ?? '',
     'civil' => $info['civil_status'] ?? '',
@@ -466,16 +472,22 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       $info = $userModel->getAdditionalInfo($userId);
       
       $dbUser = [
-          'name' => $info['full_name'] ?? trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
+          'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
           'email' => $info['email'] ?? ($account['email'] ?? ''),
-          'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
+          'sex' => (function() use ($info, $account) {
+              $s = !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? $account['gender'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
+              $ls = strtolower($s);
+              if ($ls === 'female' || $ls === 'f') return 'Female';
+              if ($ls === 'male' || $ls === 'm') return 'Male';
+              return $s;
+          })(),
           'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
           'dob' => $info['birthdate'] ?? '',
           'civil' => $info['civil_status'] ?? '',
           'address' => $info['address'] ?? '',
           'occupation' => $info['occupation'] ?? '',
           'arabicName' => $info['muslimname'] ?? '',
-          'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
+          'revertYear' => !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '',
       ];
   }
 ?>
@@ -764,6 +776,10 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                     modal.style.opacity = '0';
                     content.style.transform = 'translateY(30px)';
                     setTimeout(() => modal.style.display = 'none', 400);
+                    // Sync to localStorage for sidebar and dashboard
+                    let updated = getUser();
+                    updated.profileComplete = true;
+                    localStorage.setItem('mis_user', JSON.stringify(updated));
                     localStorage.setItem('tenant_onboarding_completed', 'true');
                 });
             }
@@ -778,15 +794,15 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
   <script>
     // ── Inlined data helpers (no module imports — works from file://) ──
     const STORAGE_KEYS = { user: 'mis_user', requests: 'mis_requests', apartments: 'mis_apartments', initialized: 'mis_data_init' };
-    const DB_USER = <?= json_encode($dbUser) ?>;
-    const PROFILE_FIELDS = ['name', 'email', 'gender', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
-    const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', gender: 'Gender', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
+    let DB_USER = <?= json_encode($dbUser) ?>;
+    const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
+    const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', sex: 'Sex', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
     const DEFAULT_USER = {
       id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>',
       name: '<?= addslashes($_SESSION['name'] ?? "User") ?>',
       email: '<?= addslashes($_SESSION['email'] ?? "") ?>',
-      gender: '<?= addslashes($_SESSION['gender'] ?? "") ?>',
-      phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', membership: '', revertYear: '', apartment: '', profileComplete: false
+      sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>',
+      phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', revertYear: '', apartment: '', profileComplete: false
     };
     const DEFAULT_REQUESTS = [
       { id: 'BUR-001', user: 'USR-001', type: 'burial_service', status: 'pending', date: '2026-03-15', updatedAt: '2026-03-15' },
@@ -817,9 +833,29 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       // Synchronize with DB data — DB is the source of truth.
       if (typeof DB_USER !== 'undefined' && DB_USER !== null) {
         Object.keys(DB_USER).forEach(key => {
-          user[key] = DB_USER[key] || '';
+          let val = DB_USER[key] || '';
+          // Normalize sex values for consistent comparison
+          if (key === 'sex' && val) {
+            const v = val.toLowerCase();
+            if (v === 'f' || v === 'female') val = 'Female';
+            if (v === 'm' || v === 'male') val = 'Male';
+          }
+          if (val || !user[key]) {
+            user[key] = val;
+          }
         });
       }
+
+      // Final fallback: Use session data if still missing (helps with legacy sync issues)
+      const SESSION_FALLBACKS = {
+        sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>',
+        email: '<?= addslashes($_SESSION['email'] ?? "") ?>',
+        name: '<?= addslashes($_SESSION['name'] ?? "") ?>'
+      };
+      Object.entries(SESSION_FALLBACKS).forEach(([key, val]) => {
+        if (!user[key] && val) user[key] = val;
+      });
+
       return user;
     }
     function getRequests() {
@@ -920,21 +956,24 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       });
     }
 
+    function initData() {
+      if (!localStorage.getItem(STORAGE_KEYS.initialized)) {
+        localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(DEFAULT_USER));
+        localStorage.setItem(STORAGE_KEYS.initialized, 'true');
+      }
+    }
+
     // ══════════════════════════════════════
     //  INIT
     // ══════════════════════════════════════
     initData();
-
     const user = getUser();
     const { percentage, missingFields } = getProfileCompletion();
-    const isComplete = percentage === 100;
+    const isComplete = (percentage === 100);
 
-    // Sync completion status to localStorage so the sidebar knows to unlock
-    const storedUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.user) || '{}');
-    if (storedUser.profileComplete !== isComplete) {
-        storedUser.profileComplete = isComplete;
-        localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(storedUser));
-    }
+    // Sync all fields to localStorage so other pages have fresh data from DB
+    user.profileComplete = isComplete;
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
 
     // ── Load user nav ──
     const navAvatar = document.getElementById('nav-avatar');
@@ -989,15 +1028,15 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
     // ── Da'wah dropdown — link handling ──
     const dawahTrigger = document.getElementById('dawah-trigger');
     if (dawahTrigger) {
-        const SESSION_GENDER = '<?= strtolower($_SESSION['gender'] ?? "") ?>';
-        const dawahHref = SESSION_GENDER === 'female' ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
+        const SESSION_SEX = '<?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>';
+        const dawahHref = SESSION_SEX === 'female' ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
         dawahTrigger.setAttribute('data-href', dawahHref);
     }
 
     // ── Build service cards ──
     const serviceGrid = document.getElementById('service-grid');
 
-    const dawahHref = String(user.gender).toLowerCase() === 'female'
+    const dawahHref = String(user.sex).toLowerCase() === 'female'
       ? "<?= url('/user/services/counseling/female') ?>"
       : "<?= url('/user/services/counseling/male') ?>";
 
@@ -1014,15 +1053,15 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       {
         id: 'dawah',
         title: !isComplete ? "Da'wah — Counseling Services"
-          : String(user.gender).toLowerCase() === 'female' ? "Da'wah — Sisters' Counseling"
+          : String(user.sex).toLowerCase() === 'female' ? "Da'wah — Sisters' Counseling"
             : "Da'wah — Brothers' Counseling",
         desc: !isComplete
           ? 'Request a confidential counseling session for personal, family, or spiritual matters. Complete your profile to access gender-specific counseling services.'
-          : String(user.gender).toLowerCase() === 'female'
+          : String(user.sex).toLowerCase() === 'female'
             ? 'Request a confidential session with our female counselors. All sessions are conducted with utmost privacy and respect for Islamic values.'
             : 'Request a confidential counseling session with our male counselors for personal, family, or spiritual matters. Schedule your preferred appointment time.',
         icon: '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>',
-        iconClass: String(user.gender).toLowerCase() === 'female' ? 'purple' : 'teal',
+        iconClass: String(user.sex).toLowerCase() === 'female' ? 'purple' : 'teal',
         href: dawahHref,
         btnText: 'Request Service'
       },

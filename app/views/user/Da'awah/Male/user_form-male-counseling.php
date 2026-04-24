@@ -164,14 +164,14 @@
 <script>
   // ── Inlined data helpers ──
   const STORAGE_KEYS = { user: 'mis_user', requests: 'mis_requests', initialized: 'mis_data_init' };
-  const PROFILE_FIELDS = ['name','email','sex','phone','address','dob','civil','occupation','arabicName','revertYear'];
+  const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
   const DEFAULT_USER = { 
     id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>', 
     name: '<?= addslashes($_SESSION['name'] ?? "User") ?>', 
     role: '<?= addslashes($_SESSION['role'] ?? "Tenant") ?>',
     email:'<?= $_SESSION['email'] ?? "" ?>', 
-    sex:'<?= $_SESSION['gender'] ?? "" ?>', 
-    phone:'', address:'', dob:'', civil:'', occupation:'', arabicName:'', membership:'', revertYear:'', apartment:'', profileComplete:false 
+    sex:'<?= $_SESSION['sex'] ?? $_SESSION['gender'] ?? "" ?>', 
+    phone:'', address:'', dob:'', civil:'', occupation:'', arabicName:'', revertYear:'', apartment:'', profileComplete:false 
   };
 
   function initData() {

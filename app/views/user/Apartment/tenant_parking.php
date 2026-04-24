@@ -1249,7 +1249,13 @@
             // DATA HELPERS
             // ══════════════════════════════════════════
             const STORAGE_KEYS = { user: 'mis_user', parking: 'mis_parking_applications' };
-            const DEFAULT_USER = { id: 'USR-001', name: 'Muhammad Usman', email: 'musman@example.com', gender: '', phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', membership: '', revertYear: '', apartment: '', profileComplete: false };
+            const DEFAULT_USER = { 
+                id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>', 
+                name: '<?= addslashes($_SESSION['name'] ?? "User") ?>', 
+                email: '<?= addslashes($_SESSION['email'] ?? "") ?>', 
+                sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>', 
+                phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', revertYear: '', apartment: '', profileComplete: false 
+            };
 
             function getUser() {
                 const raw = localStorage.getItem(STORAGE_KEYS.user);

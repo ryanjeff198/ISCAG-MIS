@@ -35,6 +35,7 @@ class AuthController extends Controller
                 $_SESSION['email'] = $user['email'];
                 $_SESSION['name'] = $user['first_name'] . ' ' . $user['last_name'];
                 $_SESSION['role'] = $user['role'];
+                $_SESSION['sex'] = $user['sex'] ?? $user['gender'] ?? 'Male';
 
                 // Redirect based on role
                 if ($user['role'] === 'Admin') {
@@ -207,6 +208,7 @@ class AuthController extends Controller
                 $_SESSION['email'] = $user['email'];
                 $_SESSION['name'] = $user['first_name'] . ' ' . $user['last_name'];
                 $_SESSION['role'] = $user['role'];
+                $_SESSION['sex'] = $user['sex'];
 
                 // Redirect based on role
                 if ($user['role'] === 'Admin') {
@@ -332,3 +334,4 @@ class AuthController extends Controller
         exit;
     }
 }
+

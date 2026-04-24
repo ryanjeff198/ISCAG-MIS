@@ -1224,7 +1224,7 @@
             id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>', 
             name: '<?= addslashes($_SESSION['name'] ?? "User") ?>', 
             role: '<?= addslashes($_SESSION['role'] ?? "Tenant") ?>',
-            gender: '<?= addslashes($_SESSION['gender'] ?? "") ?>',
+            sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>',
             email: '<?= addslashes($_SESSION['email'] ?? "") ?>',
             phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', membership: '', revertYear: '', apartment: '', profileComplete: false 
         };
@@ -1516,9 +1516,9 @@
             <div class="info-field">
               <div class="info-field-label">
                 <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                Gender
+                Sex
               </div>
-              <div class="info-field-value">${safeVal(user.gender)}</div>
+              <div class="info-field-value">${safeVal(user.sex)}</div>
             </div>
             <div class="info-field">
               <div class="info-field-label">
