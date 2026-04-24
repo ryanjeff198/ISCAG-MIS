@@ -1104,6 +1104,19 @@ $dob = $userFullInfo['birthdate'] ?? '';
 </head>
 
 <body>
+    <?php if (isset($hasPendingParking) && $hasPendingParking): ?>
+    <div class="modal-overlay active" style="z-index: 999999; display: flex !important;">
+        <div class="success-modal">
+            <div class="success-modal-icon" style="background: rgba(246, 194, 62, 0.1); color: var(--warning);">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            </div>
+            <h3 style="color: var(--text-main);">Application is Pending</h3>
+            <p>You have a parking rental application that is currently awaiting administrative approval. Please wait for the admins to process your existing application before submitting a new one.</p>
+            <a href="<?= url('/user/apartment/info') ?>" class="success-modal-btn" style="background: linear-gradient(135deg, var(--text-main), var(--text-muted));">Return to Dashboard</a>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div class="app-wrapper">
 
         <!-- ═══ SIDEBAR ═══ -->

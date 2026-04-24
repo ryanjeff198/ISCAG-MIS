@@ -146,7 +146,11 @@ class ApartmentController extends Controller {
 
     public function parking() {
         Auth::protectRole(['Tenant']);
-        $this->view('user/Apartment/tenant_parking');
+        $model = new ApartmentApp();
+        $hasPending = $model->hasPendingParkingApplication($_SESSION['user_id']);
+        $this->view('user/Apartment/tenant_parking', [
+            'hasPendingParking' => $hasPending
+        ]);
     }
 
     public function submitParking() {
