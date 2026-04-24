@@ -293,7 +293,7 @@
               <li><span></span> Full Kitchen Area</li>
             </ul>
             <div class="unit-footer">
-              <span class="unit-price">1-BR Unit</span>
+              <span class="unit-price">1-Bedroom Unit</span>
               <a href="<?= url('/register') ?>" class="unit-btn">Apply Now</a>
             </div>
           </div>
@@ -316,7 +316,7 @@
               <li><span></span> Family-Sized Layout</li>
             </ul>
             <div class="unit-footer">
-              <span class="unit-price">2-BR Unit</span>
+              <span class="unit-price">2-Bedroom Unit</span>
               <a href="<?= url('/register') ?>" class="unit-btn">Apply Now</a>
             </div>
           </div>

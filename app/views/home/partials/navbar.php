@@ -97,10 +97,10 @@
                 </span>
               </a>
 
-              <a href="<?= url('/daawah') ?>" class="dept-item"
-                 onmouseenter="swapLayout(true, '<?= asset('assets/hero-mosque.png') ?>', 'Daawah Programs')">
+               <a href="<?= url('/daawah') ?>" class="dept-item"
+                  onmouseenter="swapLayout(true, '<?= asset("assets/da'wah logo.jpg") ?>', 'Daawah Programs')">
                 <span class="dept-item-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-svg"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  <img src="<?= asset("assets/da'wah logo.jpg") ?>" alt="Daawah Logo" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">
                 </span>
                 <span class="dept-item-body">
                   <span class="dept-item-title">Daawah</span>

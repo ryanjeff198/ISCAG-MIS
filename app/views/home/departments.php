@@ -96,12 +96,20 @@
     }
     .dept-img {
       width: 40%;
-      min-height: 350px;
       position: relative;
+      overflow: hidden;
+    }
+    .dept-img .carousel, .dept-img .carousel-inner, .dept-img .carousel-item {
+      height: 100%;
     }
     .dept-img img {
-      width: 100%; height: 100%;
+      width: 100%; 
+      height: 100%;
       object-fit: cover;
+      transition: transform 10s ease;
+    }
+    .carousel-item.active img {
+      transform: scale(1.1);
     }
     .dept-body {
       width: 60%;
@@ -191,7 +199,19 @@
     <!-- Daawah -->
     <a href="<?= url('/daawah') ?>" class="dept-main-card reverse reveal">
       <div class="dept-img">
-        <img src="<?= asset('assets/hero-mosque.png') ?>" alt="Daawah">
+        <div id="deptDawahCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="4000">
+          <div class="carousel-inner" style="height: 100%;">
+            <div class="carousel-item active" style="height: 100%;">
+              <img src="<?= asset('assets/dawahFeatureImage4.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Daawah 4">
+            </div>
+            <div class="carousel-item" style="height: 100%;">
+              <img src="<?= asset('assets/dawahFeatureImage3.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Daawah 3">
+            </div>
+            <div class="carousel-item" style="height: 100%;">
+              <img src="<?= asset('assets/dawahFeatureImage2.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Daawah 2">
+            </div>
+          </div>
+        </div>
       </div>
       <div class="dept-body">
         <span class="dept-tag">Guidance & Call</span>

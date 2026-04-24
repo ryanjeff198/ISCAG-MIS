@@ -42,7 +42,7 @@
       content: "";
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: url('<?= asset('assets/hero-mosque.png') ?>') center/cover no-repeat;
+      background: url('<?= asset('assets/dawahHeroBG.jpg') ?>') center/cover no-repeat;
       opacity: 0.2;
       z-index: 0;
     }
@@ -153,7 +153,19 @@
       overflow: hidden;
       box-shadow: 0 30px 60px rgba(0,0,0,0.1);
     }
-    .feature-img img { width: 100%; height: auto; display: block; }
+    .feature-img .carousel, .feature-img .carousel-inner, .feature-img .carousel-item {
+      height: 100%;
+    }
+    .feature-img img { 
+      width: 100%; 
+      height: 100%; 
+      display: block; 
+      object-fit: cover;
+      transition: transform 10s ease;
+    }
+    .carousel-item.active img {
+      transform: scale(1.1);
+    }
     .feature-body { width: 50%; }
     
     .feature-body h2 {
@@ -176,7 +188,7 @@
       color: white;
       text-align: center;
       border-radius: 40px;
-      margin: 0 20px 100px;
+      margin: 0 auto 100px;
     }
     .cta-title {
       font-family: 'Lora', serif;
@@ -211,6 +223,16 @@
       .feature-row { flex-direction: column !important; gap: 40px; }
       .feature-img, .feature-body { width: 100%; }
     }
+    .hero-logo {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 0 auto 24px;
+      display: block;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
   </style>
 </head>
 <body>
@@ -224,6 +246,7 @@
 <header class="service-hero fade-in">
   <div class="container">
     <span class="hero-tag reveal">Guidance & Call</span>
+    <img src="<?= asset("assets/da'wah logo.jpg") ?>" alt="Daawah Logo" class="hero-logo reveal">
     <h1 class="hero-title reveal">Da'wah Department</h1>
     <p class="hero-subtitle reveal">Spreading the message of Islam through knowledge, compassion, and authentic guidance for all seekers of truth.</p>
   </div>
@@ -235,7 +258,7 @@
     
     <div class="feature-row reveal">
       <div class="feature-img">
-        <img src="<?= asset('assets/hero-mosque.png') ?>" alt="Islamic Knowledge">
+        <img src="<?= asset('assets/dawahFeatureImage3.jpg') ?>" alt="Islamic Knowledge">
       </div>
       <div class="feature-body">
         <span class="section-tag">Our Mission</span>
@@ -244,6 +267,41 @@
         <p>Through our programs, we aim to build bridges of understanding and support those who have recently embraced Islam, providing them with the necessary tools for their spiritual journey.</p>
       </div>
     </div>
+
+    <div class="feature-row reverse reveal">
+      <div class="feature-img">
+        <div id="dawahCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
+          <!-- Indicators -->
+          <div class="carousel-indicators mb-0">
+            <button type="button" data-bs-target="#dawahCarousel" data-bs-slide-to="0" class="active" aria-current="true"></button>
+            <button type="button" data-bs-target="#dawahCarousel" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#dawahCarousel" data-bs-slide-to="2"></button>
+            <button type="button" data-bs-target="#dawahCarousel" data-bs-slide-to="3"></button>
+          </div>
+          <div class="carousel-inner shadow-lg" style="border-radius: 24px; overflow: hidden;">
+            <div class="carousel-item active">
+              <img src="<?= asset('assets/dawahFeatureImage4.jpg') ?>" class="d-block w-100" alt="Dawah 4">
+            </div>
+            <div class="carousel-item">
+              <img src="<?= asset('assets/dawahFeatureImage3.jpg') ?>" class="d-block w-100" alt="Dawah 3">
+            </div>
+            <div class="carousel-item">
+              <img src="<?= asset('assets/dawahFeatureImage2.jpg') ?>" class="d-block w-100" alt="Dawah 2">
+            </div>
+            <div class="carousel-item">
+              <img src="<?= asset('assets/dawahFeatureImage.jpg') ?>" class="d-block w-100" alt="Dawah 1">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-body">
+        <span class="section-tag">Community Outreach</span>
+        <h2>Engaging with the Ummah</h2>
+        <p>Our outreach programs bring the community together through various events, workshops, and gatherings. We strive to create an inclusive environment where everyone can learn and grow together.</p>
+        <p>Stay updated with our latest activities and join us in our mission to spread peace and guidance.</p>
+      </div>
+    </div>
+
 
     <div class="section-header reveal">
       <span class="section-tag">Programs</span>
@@ -289,6 +347,7 @@
 
 <?php include 'partials/footer.php'; ?>
 <?php include 'partials/scripts.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
