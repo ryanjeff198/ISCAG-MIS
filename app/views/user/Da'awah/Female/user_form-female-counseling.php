@@ -240,7 +240,7 @@
     let primaryLabel = 'Go to Profile';
     let primaryUrl = '../../user_profile.html';
 
-    if (percentage >= 100 && user.sex !== 'female') {
+    if (percentage >= 100 && String(user.sex).toLowerCase() !== 'female') {
       title = 'Access Restricted';
       message = 'This counseling service is exclusively available for sisters. You do not have access to this section.';
       primaryLabel = 'Back to Dashboard';
@@ -297,7 +297,7 @@
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
     const modal = document.getElementById('access-control-modal');
-    document.getElementById('acm-primary-btn').addEventListener('click', () => { window.location.href = '<?= url('/user/profile') ?>'; });
+    document.getElementById('acm-primary-btn').addEventListener('click', () => { window.location.href = primaryUrl === '../../user-dashboard.html' ? '<?= url('/user/dashboard') ?>' : '<?= url('/user/profile') ?>'; });
     document.getElementById('acm-cancel-btn').addEventListener('click', () => {
       modal.style.animation = 'acmFadeIn 0.2s ease reverse forwards';
       setTimeout(() => modal.remove(), 200);

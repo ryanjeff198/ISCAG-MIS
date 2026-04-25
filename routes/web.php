@@ -66,6 +66,8 @@ $routes = [
     '/admin/apartment/profile'       => ['AdminController', 'apartmentProfile'],
     '/admin/apartment/notifications' => ['AdminController', 'apartmentNotifications'],
     '/admin/apartment/confirmation'  => ['AdminController', 'staffApartmentConfirmation'],
+    '/admin/apartment/confirmation/approve' => ['AdminController', 'staffApproveApartmentApp'],
+    '/admin/apartment/confirmation/reject'  => ['AdminController', 'staffRejectApartmentApp'],
     '/admin/apartment/soa'           => ['AdminController', 'apartmentSoa'],
     '/admin/apartment/tenants'       => ['AdminController', 'tenantInfo'],
     '/admin/payment'                 => ['AdminController', 'payment'],
@@ -73,8 +75,6 @@ $routes = [
     // MIS Admin Hub Routes
     '/admin/mis_admin/apartment_records'   => ['AdminController', 'apartmentRecords'],
     '/admin/mis_admin/apartment_confirmation' => ['AdminController', 'apartmentConfirmation'],
-    '/admin/mis_admin/apartment_confirmation/approve' => ['AdminController', 'approveApartmentApp'],
-    '/admin/mis_admin/apartment_confirmation/reject' => ['AdminController', 'rejectApartmentApp'],
     '/admin/mis_admin/parking_approval'    => ['AdminController', 'parkingApproval'],
     '/admin/mis_admin/parking/approve'     => ['AdminController', 'approveParking'],
     '/admin/mis_admin/parking/reject'      => ['AdminController', 'rejectParking'],

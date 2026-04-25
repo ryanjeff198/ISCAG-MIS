@@ -235,6 +235,18 @@
       document.head.appendChild(styleEl);
     }
 
+    let title = 'Profile Incomplete';
+    let message = 'Access to this section is restricted until your profile is fully completed.';
+    let primaryLabel = 'Go to Profile';
+    let primaryUrl = '../../user_profile.html';
+
+    if (percentage >= 100 && String(user.sex).toLowerCase() !== 'male') {
+      title = 'Access Restricted';
+      message = 'This counseling service is exclusively available for brothers. You do not have access to this section.';
+      primaryLabel = 'Back to Dashboard';
+      primaryUrl = '../../user-dashboard.html';
+    }
+
     const missingHtml = missingFields.length > 0
       ? `<div style="margin-top:16px;text-align:left;">
            <p style="font-size:0.78rem;color:#6f7f78;margin:0 0 8px;font-weight:600;">The following information is still required:</p>
@@ -271,13 +283,13 @@
               </svg>
               <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:#0f5c3a;">${percentage}%</span>
             </div>
-            <h4 style="font-family:'Lora',serif;font-size:1.15rem;font-weight:700;color:#0f5c3a;margin:0 0 10px;">Profile Incomplete</h4>
-            <p style="font-size:0.87rem;color:#6f7f78;line-height:1.6;margin:0;">Access to this section is restricted until your profile is fully completed.</p>
+            <h4 style="font-family:'Lora',serif;font-size:1.15rem;font-weight:700;color:#0f5c3a;margin:0 0 10px;">${title}</h4>
+            <p style="font-size:0.87rem;color:#6f7f78;line-height:1.6;margin:0;">${message}</p>
             ${missingHtml}
           </div>
           <div style="display:flex;gap:10px;padding:0 28px 24px;justify-content:center;">
             <button id="acm-cancel-btn" style="padding:10px 22px;border-radius:8px;border:1.5px solid #d9e3de;background:white;color:#6f7f78;font-size:0.85rem;font-weight:600;cursor:pointer;">Cancel</button>
-            <button id="acm-primary-btn" style="padding:10px 22px;border-radius:8px;border:none;background:linear-gradient(135deg,#0f5c3a,#2f8a60);color:white;font-size:0.85rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(15,92,58,0.3);">Go to Profile</button>
+            <button id="acm-primary-btn" style="padding:10px 22px;border-radius:8px;border:none;background:linear-gradient(135deg,#0f5c3a,#2f8a60);color:white;font-size:0.85rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(15,92,58,0.3);">${primaryLabel}</button>
           </div>
         </div>
       </div>
@@ -285,7 +297,7 @@
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
     const modal = document.getElementById('access-control-modal');
-    document.getElementById('acm-primary-btn').addEventListener('click', () => { window.location.href = '<?= url('/user/profile') ?>'; });
+    document.getElementById('acm-primary-btn').addEventListener('click', () => { window.location.href = primaryUrl === '../../user-dashboard.html' ? '<?= url('/user/dashboard') ?>' : '<?= url('/user/profile') ?>'; });
     document.getElementById('acm-cancel-btn').addEventListener('click', () => {
       modal.style.animation = 'acmFadeIn 0.2s ease reverse forwards';
       setTimeout(() => modal.remove(), 200);

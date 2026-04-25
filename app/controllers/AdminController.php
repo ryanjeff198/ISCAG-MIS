@@ -154,6 +154,57 @@ class AdminController extends Controller
         ]);
     }
 
+    public function staffApproveApartmentApp(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        if ($id !== null && $id !== '') {
+            require_once BASE_PATH . '/app/models/ApartmentApp.php';
+            require_once BASE_PATH . '/app/models/User.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            
+            $appModel = new ApartmentApp();
+            $notifModel = new Notification();
+            
+            // Use the Room Assignment & Waitlist Engine
+            $result = $appModel->assignOrQueue((int) $id);
+            
+            $tenantId = $appModel->getTenantIdByApplicationId($id);
+            
+            if ($result['result'] === 'assigned') {
+                $notifModel->create(
+                    $tenantId,
+                    'Room Assigned!',
+                    'Congratulations! You have been assigned to Room ' . $result['room_number'] 
+                    . ' in ' . $result['building'] . '. Your account has been upgraded to Tenant.',
+                    'approval'
+                );
+            } elseif ($result['result'] === 'queued') {
+                $appModel->updateApplicationStatus($id, 'Queued');
+                $notifModel->create(
+                    $tenantId,
+                    'Application Accepted — Waitlisted',
+                    'Your application has been verified and accepted, but all rooms of your requested type are currently full. '
+                    . 'You are #' . $result['queue_position'] . ' in the waiting list. '
+                    . 'You will be notified when a room becomes available.',
+                    'info'
+                );
+            }
+        }
+        header('Location: ' . url('/admin/apartment/confirmation'));
+    }
+
+    public function staffRejectApartmentApp(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        $reason = $_GET['reason'] ?? null;
+        if ($id !== null && $id !== '') {
+            require_once BASE_PATH . '/app/models/ApartmentApp.php';
+            $model = new ApartmentApp();
+            $model->updateApplicationStatus($id, 'Rejected', $reason);
+        }
+        header('Location: ' . url('/admin/apartment/confirmation'));
+    }
+
     public function apartmentRecords(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         $this->view('admin/mis_admin/apartment_records', ['active_page' => 'apartment_records']);
@@ -168,59 +219,6 @@ class AdminController extends Controller
             'active_page' => 'apartment_confirmation',
             'reports' => $reports
         ]);
-    }
-
-    public function approveApartmentApp(): void {
-        Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $id = $_GET['id'] ?? null;
-        if ($id) {
-            require_once BASE_PATH . '/app/models/ApartmentApp.php';
-            require_once BASE_PATH . '/app/models/User.php';
-            require_once BASE_PATH . '/app/models/Notification.php';
-            
-            $appModel = new ApartmentApp();
-            $notifModel = new Notification();
-            
-            // Use the Room Assignment & Waitlist Engine
-            $result = $appModel->assignOrQueue((int) $id);
-            
-            $tenantId = $appModel->getTenantIdByApplicationId($id);
-            
-            if ($result['result'] === 'assigned') {
-                // Room was available — tenant got assigned immediately
-                $notifModel->create(
-                    $tenantId,
-                    'Room Assigned!',
-                    'Congratulations! You have been assigned to Room ' . $result['room_number'] 
-                    . ' in ' . $result['building'] . '. Your account has been upgraded to Tenant.',
-                    'approval'
-                );
-            } elseif ($result['result'] === 'queued') {
-                // No rooms available — tenant is waitlisted
-                $appModel->updateApplicationStatus($id, 'Queued');
-                $notifModel->create(
-                    $tenantId,
-                    'Application Accepted — Waitlisted',
-                    'Your application has been verified and accepted, but all rooms of your requested type are currently full. '
-                    . 'You are #' . $result['queue_position'] . ' in the waiting list. '
-                    . 'You will be notified when a room becomes available.',
-                    'info'
-                );
-            }
-        }
-        header('Location: ' . url('/admin/mis_admin/apartment_confirmation'));
-    }
-
-    public function rejectApartmentApp(): void {
-        Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $id = $_GET['id'] ?? null;
-        $reason = $_GET['reason'] ?? null;
-        if ($id) {
-            require_once BASE_PATH . '/app/models/ApartmentApp.php';
-            $model = new ApartmentApp();
-            $model->updateApplicationStatus($id, 'Rejected', $reason);
-        }
-        header('Location: ' . url('/admin/mis_admin/apartment_confirmation'));
     }
 
     public function parkingApproval(): void {

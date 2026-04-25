@@ -157,6 +157,8 @@ class ApartmentApp {
                 a.status,
                 a.reject_reason,
                 a.updated_at,
+                a.assigned_at,
+                a.accepted_at,
                 t.* 
             FROM apartmentsapp a
             JOIN tenant_accounts u ON a.tenant_id = u.tenant_id

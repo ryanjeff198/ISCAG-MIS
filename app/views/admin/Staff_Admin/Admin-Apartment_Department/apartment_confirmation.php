@@ -236,7 +236,7 @@
           </div>
           <div class="insight-card">
             <div class="insight-label">Verified (Staff)</div>
-            <div class="insight-value success"><?= count(array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'approved')) ?></div>
+            <div class="insight-value success"><?= count(array_filter($reports, fn($r) => in_array(strtolower($r['status'] ?? ''), ['approved', 'assigned', 'queued']))) ?></div>
           </div>
           <div class="insight-card">
             <div class="insight-label">Rejected</div>
@@ -246,7 +246,7 @@
 
          <?php
            $pending_reports  = array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'pending');
-           $approved_reports = array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'approved');
+           $approved_reports = array_filter($reports, fn($r) => in_array(strtolower($r['status'] ?? ''), ['approved', 'assigned', 'queued']));
            $rejected_reports = array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'rejected');
          ?>
 
@@ -347,7 +347,7 @@
                              <td><?= htmlspecialchars(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?></td>
                              <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
                              <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
-                             <td><?= !empty($r['updated_at']) ? date('M d, Y', strtotime($r['updated_at'])) : '—' ?></td>
+                              <td><?= !empty($r['accepted_at']) ? date('M d, Y', strtotime($r['accepted_at'])) : '---' ?></td>
                              <td><span class="badge-status badge-approved"><?= $r['status'] ?></span></td>
                              <td>
                                 <button class="btn-circle eye" onclick="openReview(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
@@ -731,7 +731,7 @@
     function approveApp(id) {
       if (confirm('Approve these application details?')) {
         pushAuditLog('APPROVE_APP', 'Approved apartment application ID: ' + id + ' — role upgraded to Tenant');
-        window.location.href = '<?= url('/admin/mis_admin/apartment_confirmation/approve') ?>?id=' + id;
+        window.location.href = '<?= url('/admin/apartment/confirmation/approve') ?>?id=' + id;
       }
     }
     function rejectApp(id) {
@@ -739,7 +739,7 @@
       const reason = reasonEl ? reasonEl.value : 'Other';
       if (confirm(`Reject this application for: "${reason}"?`)) {
         pushAuditLog('REJECT_APP', 'Rejected apartment application ID: ' + id + ' — Reason: ' + reason);
-        window.location.href = `<?= url('/admin/mis_admin/apartment_confirmation/reject') ?>?id=${id}&reason=${encodeURIComponent(reason)}`;
+        window.location.href = `<?= url('/admin/apartment/confirmation/reject') ?>?id=${id}&reason=${encodeURIComponent(reason)}`;
       }
     }
 
