@@ -25,8 +25,10 @@ class ApartmentController extends Controller {
         $userId = $_SESSION['user_id'];
         $model = new ApartmentApp();
         $application = $model->getApplication($userId);
+        $tenantInfo = $model->getInfo($userId);
         $this->view('user/Apartment/apartment_information', [
-            'application' => $application
+            'application' => $application,
+            'tenantInfo' => $tenantInfo
         ]);
     }
 
@@ -146,7 +148,43 @@ class ApartmentController extends Controller {
 
     public function parking() {
         Auth::protectRole(['Tenant']);
-        $this->view('user/Apartment/tenant_parking');
+        $userId = $_SESSION['user_id'];
+        $model = new ApartmentApp();
+        $parkingApps = $model->getParkingApplicationsByTenant($userId);
+        
+        $this->view('user/Apartment/tenant_parking', [
+            'parkingApps' => $parkingApps
+        ]);
+    }
+
+    public function saveParking() {
+        Auth::protectRole(['Tenant']);
+        header('Content-Type: application/json');
+        
+        $body = json_decode(file_get_contents('php://input'), true);
+        if (!$body) {
+            echo json_encode(['success' => false, 'message' => 'No data received']);
+            return;
+        }
+
+        $userId = $_SESSION['user_id'];
+        $model = new ApartmentApp();
+        
+        $data = [
+            'tenant_id' => $userId,
+            'date' => date('Y-m-d'),
+            'vehiclename' => $body['vehicleName'] ?? '',
+            'ownername' => $body['vehicleOwner'] ?? '',
+            'typeofvehicle' => $body['vehicleType'] ?? '',
+            'plateno' => $body['plateNo'] ?? '',
+            'datestarted' => $body['dateStarted'] ?? ''
+        ];
+
+        if ($model->saveParkingApplication($data)) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Database error']);
+        }
     }
 
     public function finalizeSubmission() {

@@ -255,6 +255,41 @@ class AdminController extends Controller
         header('Location: ' . url('/admin/mis_admin/parking_approval'));
     }
 
+    // ── Staff Parking Approval ──
+    public function staffParkingApproval(): void {
+        Auth::protectRole(['Staff_Tenant', 'Admin']);
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        $model = new ApartmentApp();
+        $reports = $model->getAllParkingApplications();
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/parking_info', [
+            'active_page' => 'parking_approval',
+            'reports' => $reports
+        ]);
+    }
+
+    public function staffApproveParking(): void {
+        Auth::protectRole(['Staff_Tenant', 'Admin']);
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            require_once BASE_PATH . '/app/models/ApartmentApp.php';
+            $model = new ApartmentApp();
+            $model->updateParkingStatus($id, 'Approved');
+        }
+        header('Location: ' . url('/admin/apartment/parking'));
+    }
+
+    public function staffRejectParking(): void {
+        Auth::protectRole(['Staff_Tenant', 'Admin']);
+        $id = $_GET['id'] ?? null;
+        $reason = $_GET['reason'] ?? null;
+        if ($id) {
+            require_once BASE_PATH . '/app/models/ApartmentApp.php';
+            $model = new ApartmentApp();
+            $model->updateParkingStatus($id, 'Rejected', $reason);
+        }
+        header('Location: ' . url('/admin/apartment/parking'));
+    }
+
     public function billing(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         $this->view('admin/mis_admin/billing_and_payment', ['active_page' => 'billing']);

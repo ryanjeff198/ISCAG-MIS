@@ -49,6 +49,7 @@ $routes = [
     '/user/apartment/status' => ['ApartmentController', 'status'],
     '/user/apartment/info'   => ['ApartmentController', 'info'],
     '/user/apartment/parking' => ['ApartmentController', 'parking'],
+    '/user/apartment/parking/save' => ['ApartmentController', 'saveParking'],
     '/user/apartment/save'   => ['ApartmentController', 'save'],
     '/user/apartment/submit' => ['ApartmentController', 'finalizeSubmission'],
     '/user/apartment/upload' => ['ApartmentController', 'handleUpload'],
@@ -69,6 +70,9 @@ $routes = [
     '/admin/apartment/confirmation/approve' => ['AdminController', 'staffApproveApartmentApp'],
     '/admin/apartment/confirmation/reject'  => ['AdminController', 'staffRejectApartmentApp'],
     '/admin/apartment/soa'           => ['AdminController', 'apartmentSoa'],
+    '/admin/apartment/parking'       => ['AdminController', 'staffParkingApproval'],
+    '/admin/apartment/parking/approve' => ['AdminController', 'staffApproveParking'],
+    '/admin/apartment/parking/reject'=> ['AdminController', 'staffRejectParking'],
     '/admin/apartment/tenants'       => ['AdminController', 'tenantInfo'],
     '/admin/payment'                 => ['AdminController', 'payment'],
 

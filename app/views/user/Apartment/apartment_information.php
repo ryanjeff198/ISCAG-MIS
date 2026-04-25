@@ -1112,8 +1112,16 @@
 
         // Determine if they have an active assigned apartment.
         const dbApp = <?= json_encode($application ?? null) ?>;
+        const tenantInfo = <?= json_encode($tenantInfo ?? null) ?>;
+        let familyMembers = [];
+        if (tenantInfo && tenantInfo.family_data) {
+            try {
+                const parsed = JSON.parse(tenantInfo.family_data);
+                if (Array.isArray(parsed)) familyMembers = parsed;
+            } catch (e) { }
+        }
         
-        if (dbApp && dbApp.status.toLowerCase() === 'approved') {
+        if (dbApp && dbApp.status.toLowerCase() === 'assigned') {
              assignedApt = DEFAULT_APARTMENTS.find(a => a.type === dbApp.roomtype) || DEFAULT_APARTMENTS[0];
         }
 
@@ -1134,8 +1142,27 @@
         </div>`;
         } else {
             root.innerHTML = `
+        <!-- ═══ TENANT ACCOUNT INFO ═══ -->
+        <div class="section-card" style="margin-bottom: 24px; animation: slideUp 0.4s ease;">
+          <div class="section-card-body" style="display: flex; align-items: center; gap: 16px; padding: 20px 24px;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 700; color: white;">
+              ${user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <h3 style="margin: 0 0 4px; font-family: 'Lora', serif; font-size: 1.15rem; color: var(--primary-dark); font-weight: 700;">${user.name}</h3>
+              <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">
+                <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: currentColor; vertical-align: -2px; margin-right: 4px;"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                ${user.email || 'No email provided'}
+              </p>
+            </div>
+            <div style="margin-left: auto;">
+              <span style="background: rgba(47, 138, 96, 0.1); color: #2f8a60; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid rgba(47, 138, 96, 0.2);">Official Tenant</span>
+            </div>
+          </div>
+        </div>
+
         <!-- ═══ STATUS HERO ═══ -->
-        <div class="status-hero">
+        <div class="status-hero" style="animation-delay: 0.05s;">
           <div class="status-hero-top" style="background: linear-gradient(135deg, var(--info), #1e6b7a);">
             <div class="status-hero-header">
               <div class="status-hero-header-left">
@@ -1208,6 +1235,48 @@
           </div>
         </div>
 
+        <!-- ═══ TENANT GENERAL INFO & FAMILY ═══ -->
+        <div class="info-section" style="animation: slideUp 0.4s ease 0.2s backwards;">
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-header-icon" style="background: linear-gradient(135deg, #e67e22, #d35400);">
+                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              </div>
+              <h3 class="card-header-title">General Info & Family Members</h3>
+            </div>
+            <button class="btn-action outline" onclick="openAddFamilyModal()" style="padding: 6px 14px; font-size: 0.75rem;">
+               <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+               Add Member
+            </button>
+          </div>
+          <div class="info-grid">
+            <div class="info-field">
+              <div class="info-field-label">Primary Tenant</div>
+              <div class="info-field-value">${tenantInfo && tenantInfo.givenname ? tenantInfo.givenname + ' ' + (tenantInfo.familyname || '') : user.name}</div>
+            </div>
+            <div class="info-field">
+              <div class="info-field-label">Contact</div>
+              <div class="info-field-value">${user.phone || 'Not provided'}</div>
+            </div>
+          </div>
+          <div style="padding: 0;">
+            <table class="family-table" id="family-table-body">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Full Name</th>
+                  <th>Relationship</th>
+                  <th>Age</th>
+                  <th>Religion</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- ═══ ACTION BAR ═══ -->
         <div class="action-bar">
           <div class="action-bar-text">
@@ -1222,6 +1291,110 @@
           </div>
         </div>
         `;
+
+            // Render family members
+            const tbody = document.querySelector('#family-table-body tbody');
+            if (tbody) {
+                if (familyMembers.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="family-empty">
+                        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                        No family members added yet.
+                    </td></tr>`;
+                } else {
+                    tbody.innerHTML = familyMembers.map((m, i) => `
+                        <tr>
+                            <td>${i + 1}</td>
+                            <td style="font-weight: 600;">${m.name}</td>
+                            <td>${m.relation}</td>
+                            <td>${m.age}</td>
+                            <td>${m.religion}</td>
+                        </tr>
+                    `).join('');
+                }
+            }
+        }
+
+        // Add Family Member Modal Logic
+        function openAddFamilyModal() {
+            const modalHtml = `
+            <div id="add-family-modal" style="position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,0.4); backdrop-filter:blur(4px); animation:fadeIn 0.2s ease;">
+                <div style="background:white; border-radius:16px; width:100%; max-width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.1); overflow:hidden; animation:slideUp 0.3s ease;">
+                    <div style="padding:20px 24px; border-bottom:1px solid var(--border); background:linear-gradient(135deg, var(--primary-dark), var(--primary-light)); color:white;">
+                        <h3 style="margin:0; font-family:'Lora',serif; font-size:1.1rem;">Add Family Member</h3>
+                    </div>
+                    <div style="padding:24px;">
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Full Name</label>
+                            <input type="text" id="fam-name" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem;" placeholder="e.g. John Doe">
+                        </div>
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Relationship</label>
+                            <input type="text" id="fam-rel" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem;" placeholder="e.g. Son, Daughter">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+                            <div>
+                                <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Age</label>
+                                <input type="number" id="fam-age" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem;" placeholder="e.g. 12">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Religion</label>
+                                <input type="text" id="fam-relig" style="width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem;" placeholder="e.g. Islam">
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end;">
+                            <button onclick="document.getElementById('add-family-modal').remove()" style="padding:10px 20px; border-radius:8px; border:1px solid var(--border); background:white; color:var(--text-muted); font-weight:600; cursor:pointer;">Cancel</button>
+                            <button onclick="saveFamilyMember()" id="fam-save-btn" style="padding:10px 20px; border-radius:8px; border:none; background:var(--primary); color:white; font-weight:700; cursor:pointer;">Save Member</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function saveFamilyMember() {
+            const name = document.getElementById('fam-name').value.trim();
+            const relation = document.getElementById('fam-rel').value.trim();
+            const age = document.getElementById('fam-age').value.trim();
+            const religion = document.getElementById('fam-relig').value.trim();
+
+            if (!name || !relation) {
+                alert('Name and Relationship are required.');
+                return;
+            }
+
+            const btn = document.getElementById('fam-save-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            // Add to local array
+            familyMembers.push({ name, relation, age, religion });
+
+            // Send to server
+            fetch('<?= url("/user/apartment/save") ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    addinfo: {
+                        family_data: JSON.stringify(familyMembers)
+                    }
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Error saving family member.');
+                    btn.disabled = false;
+                    btn.textContent = 'Save Member';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Network error.');
+                btn.disabled = false;
+                btn.textContent = 'Save Member';
+            });
         }
     </script>
 </body>

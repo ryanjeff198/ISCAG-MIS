@@ -27,10 +27,25 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" /></svg>
       <span class="nav-item-label">My Profile</span>
     </a>
-    <a href="<?= url('/admin/apartment/confirmation') ?>" class="nav-item <?= ($active_page ?? '') == 'confirmation' ? 'active' : '' ?>" data-tooltip="Applications">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" /></svg>
-      <span class="nav-item-label">Review Applications</span>
-    </a>
+    <?php $review_active = in_array($active_page ?? '', ['confirmation', 'parking_approval']); ?>
+    <div class="nav-dropdown-wrap <?= $review_active ? 'open' : '' ?>" id="review-wrap">
+      <button class="nav-dropdown-trigger <?= $review_active ? 'open' : '' ?>" id="review-trigger" data-tooltip="Applications">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" /></svg>
+        <span class="nav-item-label">Review Applications</span>
+        <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+      <div class="nav-dropdown <?= $review_active ? 'open' : '' ?>" id="review-menu">
+        <a href="<?= url('/admin/apartment/confirmation') ?>" class="<?= ($active_page ?? '') === 'confirmation' ? 'active-submenu' : '' ?>">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px; height:14px; flex-shrink:0; opacity:0.7;"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
+          Apartment Application
+        </a>
+        <a href="<?= url('/admin/apartment/parking') ?>" class="<?= ($active_page ?? '') === 'parking_approval' ? 'active-submenu' : '' ?>">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px; height:14px; flex-shrink:0; opacity:0.7;"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+          Parking Application
+        </a>
+      </div>
+    </div>
+
     <div class="nav-section-label">Management</div>
     <a href="<?= url('/admin/apartment/info') ?>" class="nav-item <?= ($active_page ?? '') == 'info' ? 'active' : '' ?>" data-tooltip="Apartment Info">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z" /></svg>

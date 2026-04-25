@@ -231,6 +231,31 @@ class ApartmentApp {
         return $stmt->execute($params);
     }
 
+    public function saveParkingApplication($data) {
+        $sql = "INSERT INTO tenant_parking (
+            tenant_id, date, vehiclename, ownername, typeofvehicle, plateno, datestarted, status
+        ) VALUES (
+            :tenant_id, :date, :vehiclename, :ownername, :typeofvehicle, :plateno, :datestarted, 'Pending'
+        )";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'tenant_id' => $data['tenant_id'],
+            'date' => $data['date'] ?? date('Y-m-d'),
+            'vehiclename' => $data['vehiclename'],
+            'ownername' => $data['ownername'],
+            'typeofvehicle' => $data['typeofvehicle'],
+            'plateno' => $data['plateno'],
+            'datestarted' => $data['datestarted']
+        ]);
+    }
+
+    public function getParkingApplicationsByTenant($userId) {
+        $stmt = $this->db->prepare("SELECT * FROM tenant_parking WHERE tenant_id = :uid ORDER BY parking_id DESC");
+        $stmt->execute(['uid' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     // ─── TENANT SUBMISSION ──────────────────────────
     public function updateStatusByTenant($userId, $status) {
         $sql = "UPDATE apartmentsapp SET status = :status WHERE tenant_id = :uid";
