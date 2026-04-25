@@ -525,23 +525,30 @@ function initNotifBadge(role) {
   } else {
     // Admin/Staff sees activity-log-based notifications by convention
     const log = getActivityLog();
-    unread = Math.min(5, log.length);
+    const markedReadTime = parseInt(localStorage.getItem('staff_notifs_read') || '0', 10);
+    unread = log.filter((l, i) => {
+      const logTime = new Date(l.time).getTime();
+      return logTime > markedReadTime && (markedReadTime > 0 || i <= 2);
+    }).length;
   }
   
-  if (unread > 0) {
-    document.querySelectorAll('.nav-item').forEach(link => {
-      const label = link.querySelector('.nav-item-label');
-      if (label && (label.textContent.trim() === 'Notifications' || label.textContent.trim() === 'Admin Inbox')) {
-        if (!link.querySelector('.notif-dot')) {
-          const dot = document.createElement('span');
-          dot.className = 'notif-dot';
-          dot.textContent = unread;
-          link.style.position = 'relative';
-          link.appendChild(dot);
-        }
+  document.querySelectorAll('.nav-item').forEach(link => {
+    const label = link.querySelector('.nav-item-label');
+    if (label && (label.textContent.trim() === 'Notifications' || label.textContent.trim() === 'Admin Inbox')) {
+      // Remove existing dot first
+      const existingDot = link.querySelector('.notif-dot');
+      if (existingDot) existingDot.remove();
+
+      // Add if there are unread
+      if (unread > 0) {
+        const dot = document.createElement('span');
+        dot.className = 'notif-dot';
+        dot.textContent = unread;
+        link.style.position = 'relative';
+        link.appendChild(dot);
       }
-    });
-  }
+    }
+  });
 }
 
 // ── Workflow Logic ──
@@ -682,6 +689,144 @@ function initLogoutModal() {
 
 
 // ══════════════════════════════════════
+//  GLOBAL TABLE SEARCH
+// ══════════════════════════════════════
+function initTableSearch() {
+  const attachSearch = (table) => {
+    if (table.classList.contains('info-table') || table.classList.contains('family-doc-table')) return;
+    if (table.hasAttribute('data-searchable') && table.getAttribute('data-searchable') === 'false') return;
+    
+    // UI/UX placement: put search inside the .section-card-header if available
+    const sectionCard = table.closest('.section-card');
+    let targetContainer = null;
+    let rightSideActions = null;
+
+    if (sectionCard) {
+      const header = sectionCard.querySelector('.section-card-header');
+      if (header) {
+        targetContainer = header;
+        // Ensure header is nicely flexed
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.flexWrap = 'wrap';
+        header.style.gap = '10px';
+        
+        // Find existing right-side actions div if it exists
+        const children = Array.from(header.children);
+        rightSideActions = children.find(child => child.tagName === 'DIV');
+      }
+    }
+    
+    // Fallback if not in a section-card
+    if (!targetContainer) {
+      const wrapper = table.closest('.table-wrapper') || table.closest('.section-card-body') || table.parentElement;
+      targetContainer = wrapper.parentNode;
+    }
+
+    // Ensure we don't add multiple search bars for the same table
+    if (targetContainer.querySelector('.table-search-container')) return;
+
+    // Create the search UI
+    const container = document.createElement('div');
+    container.className = 'table-search-container';
+    container.style.margin = '0'; // override margin-bottom for header placement
+    
+    const innerWrapper = document.createElement('div');
+    innerWrapper.className = 'table-search-wrapper';
+    innerWrapper.style.minWidth = '220px';
+    
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.innerHTML = '<path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>';
+    icon.style.width = '16px';
+    icon.style.height = '16px';
+    icon.style.left = '12px';
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'table-search-input';
+    input.placeholder = 'Search records...';
+    input.style.padding = '8px 14px 8px 36px';
+    input.style.fontSize = '0.85rem';
+    
+    innerWrapper.appendChild(input);
+    innerWrapper.appendChild(icon);
+    container.appendChild(innerWrapper);
+    
+    // Inject it!
+    if (rightSideActions) {
+      rightSideActions.style.display = 'flex';
+      rightSideActions.style.gap = '8px';
+      rightSideActions.style.alignItems = 'center';
+      rightSideActions.insertBefore(container, rightSideActions.firstChild);
+    } else if (targetContainer.classList.contains('section-card-header')) {
+      targetContainer.appendChild(container);
+    } else {
+      // Fallback injection
+      container.style.padding = '16px 20px 0 20px';
+      targetContainer.insertBefore(container, targetContainer.querySelector('.table-wrapper') || targetContainer.firstChild);
+    }
+    
+    input.addEventListener('input', function() {
+      const term = this.value.toLowerCase().trim();
+      const tbody = table.querySelector('tbody') || table;
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      
+      let visibleCount = 0;
+      let dataRows = 0;
+      
+      rows.forEach(row => {
+        if (row.querySelector('th')) return;
+        if (row.classList.contains('table-search-empty-row')) return;
+        // Skip rows that span the whole table and say "No data"
+        if (row.cells.length === 1 && row.cells[0].colSpan > 1) return;
+        
+        dataRows++;
+        const text = row.textContent.toLowerCase();
+        if (text.includes(term)) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      
+      let emptyRow = tbody.querySelector('.table-search-empty-row');
+      if (visibleCount === 0 && dataRows > 0) {
+        if (!emptyRow) {
+          emptyRow = document.createElement('tr');
+          emptyRow.className = 'table-search-empty-row';
+          const tdCount = Array.from(rows[0].cells).length || 1;
+          emptyRow.innerHTML = `<td colspan="${tdCount}" class="table-search-empty">No matching records found for "${term}"</td>`;
+          tbody.appendChild(emptyRow);
+        } else {
+          emptyRow.querySelector('td').textContent = `No matching records found for "${term}"`;
+          emptyRow.style.display = '';
+        }
+      } else if (emptyRow) {
+        emptyRow.style.display = 'none';
+      }
+    });
+  };
+
+  document.querySelectorAll('.mis-table, .audit-table, .soa-table').forEach(attachSearch);
+
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          if (node.matches && node.matches('.mis-table, .audit-table, .soa-table')) attachSearch(node);
+          if (node.querySelectorAll) node.querySelectorAll('.mis-table, .audit-table, .soa-table').forEach(attachSearch);
+        }
+      });
+    });
+  });
+  
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// ══════════════════════════════════════
 //  PAGE BOOTSTRAP
 // ══════════════════════════════════════
 function standardizePage(role) {
@@ -693,6 +838,7 @@ function standardizePage(role) {
   setTopBarDate();
   initNotifBadge(role);
   initLogoutModal();
+  initTableSearch();
 }
 
 function toggleActionMenu(btn, e) {
@@ -711,6 +857,10 @@ window.addEventListener('click', () => {
 // Auto-init for cases where script is loaded after DOM
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
   initLogoutModal();
+  initTableSearch();
 } else {
-  document.addEventListener('DOMContentLoaded', initLogoutModal);
+  document.addEventListener('DOMContentLoaded', () => {
+    initLogoutModal();
+    initTableSearch();
+  });
 }

@@ -121,20 +121,26 @@
       border: 1px solid var(--border);
       margin-bottom: 24px;
       display: flex;
-      gap: 20px;
+      gap: 16px;
       align-items: flex-end;
       flex-wrap: wrap;
     }
     .form-group {
       flex: 1;
-      min-width: 200px;
+      min-width: 150px;
+    }
+    .form-group.flex-2 {
+      flex: 2;
+      min-width: 240px;
     }
     .form-group label {
       display: block;
       margin-bottom: 8px;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       font-weight: 700;
       color: var(--primary-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     .form-group select, .form-group input {
       width: 100%;
@@ -143,10 +149,36 @@
       border-radius: 8px;
       font-size: 0.95rem;
       outline: none;
-      transition: border-color 0.2s;
+      transition: all 0.2s;
+      background: #f8f9fa;
+      height: 42px;
+      box-sizing: border-box;
     }
     .form-group select:focus, .form-group input:focus {
       border-color: var(--primary);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(46,125,85,0.1);
+    }
+    .btn-filter {
+      padding: 0 24px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(46,125,85,0.2);
+    }
+    .btn-filter:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(46,125,85,0.3);
     }
     @media print {
       body * {
@@ -202,13 +234,13 @@
         
         <!-- Controls Panel -->
         <div class="controls-panel">
-          <div class="form-group">
+          <div class="form-group flex-2">
             <label>Select Tenant</label>
             <select id="tenant-select" onchange="generateSOA()">
-              <option value="">— Select a Tenant —</option>
-              <option value="USR-001">Muhammad Usman</option>
-              <option value="USR-002">Aisha Fatima</option>
-              <option value="USR-003">Omar Khan</option>
+              <option value="">— Select a Tenant to view Statement —</option>
+              <option value="USR-001">Muhammad Usman (APT-A1)</option>
+              <option value="USR-002">Aisha Fatima (APT-B1)</option>
+              <option value="USR-003">Omar Khan (APT-A2)</option>
             </select>
           </div>
           <div class="form-group">
@@ -219,8 +251,12 @@
             <label>Date To</label>
             <input type="date" id="date-to" onchange="generateSOA()" />
           </div>
-          <div>
-            <button class="btn-action" style="padding:10px 20px; background:var(--primary); color:white; border-radius:8px;" onclick="generateSOA()">Filter Data</button>
+          <div class="form-group" style="flex: 0 0 auto;">
+            <label>&nbsp;</label>
+            <button class="btn-filter" onclick="generateSOA()" style="width: 100%; justify-content: center;">
+              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+              Filter
+            </button>
           </div>
         </div>
 
@@ -254,7 +290,7 @@
             </div>
           </div>
 
-          <table class="soa-table">
+          <table class="soa-table" data-searchable="false">
             <thead>
               <tr>
                 <th>Date</th>
@@ -304,7 +340,7 @@
     </div>
   </div>
 
-  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
+  <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
     standardizePage('staff');
     syncSessionUser("<?= $_SESSION['name'] ?? '' ?>", "<?= $_SESSION['email'] ?? '' ?>", "<?= $_SESSION['role'] ?? 'Apartment Manager' ?>");

@@ -180,7 +180,7 @@
               style="position:absolute;right:-20px;bottom:-20px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.1);">
             </div>
           </div>
-          <div style="padding:0 28px 24px;">
+          <div style="padding:0 28px 24px; position:relative; z-index:2;">
             <div style="display:flex;align-items:flex-end;gap:20px;margin-top:-44px;margin-bottom:16px;flex-wrap:wrap;">
               <div style="flex-shrink:0;text-align:center;">
                 <div class="profile-avatar-lg" id="profile-avatar"
@@ -188,9 +188,16 @@
                   <?= strtoupper(substr($dbUser['first_name'] ?? 'A', 0, 1) . substr($dbUser['last_name'] ?? 'S', 0, 1)) ?>
                 </div>
                 <input type="file" id="avatar-input" accept="image/*" style="display:none;" />
-                <button onclick="document.getElementById('avatar-input').click()"
-                  style="margin-top:8px;padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:white;font-size:0.75rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(138, 107, 26, 0.25);">Edit
-                  Photo</button>
+                
+                <div id="avatar-actions-default">
+                  <button onclick="document.getElementById('avatar-input').click()"
+                    style="margin-top:8px;padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:white;font-size:0.75rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(138, 107, 26, 0.25);">Edit
+                    Photo</button>
+                </div>
+                <div id="avatar-actions-confirm" style="display:none; gap:6px; margin-top:8px; justify-content:center;">
+                  <button id="avatar-cancel" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:white;color:var(--text-muted);font-size:0.75rem;font-weight:700;cursor:pointer;">Cancel</button>
+                  <button id="avatar-save" style="padding:5px 10px;border-radius:6px;border:none;background:var(--success);color:white;font-size:0.75rem;font-weight:700;cursor:pointer;">Save</button>
+                </div>
               </div>
               <div style="flex:1;min-width:220px;padding-top:48px;">
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
@@ -359,7 +366,7 @@
     </div>
   </div>
 
-  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
+  <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
     <?php
       $fullName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? ''));
@@ -472,11 +479,47 @@
       closeModal(); showToast('✅ Profile updated!', 'var(--success)'); render();
     }
 
+    let pendingAvatarUrl = null;
+
     document.getElementById('avatar-input').addEventListener('change', function (e) {
       const file = e.target.files[0]; if (!file) return;
       const r = new FileReader();
-      r.onload = ev => { localStorage.setItem('mis_apartment_photo', ev.target.result); showToast('✅ Photo updated!', 'var(--success)'); render(); };
+      r.onload = ev => { 
+        pendingAvatarUrl = ev.target.result; 
+        
+        // Preview it immediately
+        const avatarEl = document.getElementById('profile-avatar');
+        avatarEl.textContent = '';
+        avatarEl.style.backgroundImage = 'url(' + pendingAvatarUrl + ')';
+        avatarEl.style.backgroundSize = 'cover';
+        avatarEl.style.backgroundPosition = 'center';
+        
+        // Show confirm/cancel buttons
+        document.getElementById('avatar-actions-default').style.display = 'none';
+        document.getElementById('avatar-actions-confirm').style.display = 'flex';
+      };
       r.readAsDataURL(file);
+    });
+
+    document.getElementById('avatar-cancel').addEventListener('click', () => {
+      pendingAvatarUrl = null;
+      document.getElementById('avatar-input').value = '';
+      
+      // Revert UI
+      document.getElementById('avatar-actions-default').style.display = 'block';
+      document.getElementById('avatar-actions-confirm').style.display = 'none';
+      render(); // restore original avatar from localStorage
+    });
+
+    document.getElementById('avatar-save').addEventListener('click', () => {
+      if (pendingAvatarUrl) {
+        localStorage.setItem('mis_apartment_photo', pendingAvatarUrl);
+        showToast('✅ Photo updated!', 'var(--success)');
+      }
+      document.getElementById('avatar-input').value = '';
+      document.getElementById('avatar-actions-default').style.display = 'block';
+      document.getElementById('avatar-actions-confirm').style.display = 'none';
+      render(); // applies changes to nav avatar too
     });
 
   </script>

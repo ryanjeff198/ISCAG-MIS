@@ -67,6 +67,7 @@ $routes = [
     '/admin/apartment/notifications' => ['AdminController', 'apartmentNotifications'],
     '/admin/apartment/confirmation'  => ['AdminController', 'staffApartmentConfirmation'],
     '/admin/apartment/soa'           => ['AdminController', 'apartmentSoa'],
+    '/admin/apartment/tenants'       => ['AdminController', 'tenantInfo'],
     '/admin/payment'                 => ['AdminController', 'payment'],
 
     // MIS Admin Hub Routes

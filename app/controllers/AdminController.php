@@ -79,13 +79,63 @@ class AdminController extends Controller
         $this->view('admin/Staff_Admin/Admin-Apartment_Department/statement_of_account', ['dbUser' => $dbUser]);
     }
 
+    public function tenantInfo(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+
+        $userModel = new User();
+        $appModel = new ApartmentApp();
+
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        // Get all tenant accounts
+        $db = getDbConnection();
+        $stmt = $db->query("SELECT tenant_id, first_name, last_name, email, contactnum, role FROM tenant_accounts ORDER BY tenant_id DESC");
+        $tenants = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Get all applications (with addinfo data)
+        $applications = $appModel->getAllApplications();
+
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/tenant_info', [
+            'dbUser' => $dbUser,
+            'tenants' => $tenants,
+            'applications' => $applications
+        ]);
+    }
+
     public function payment(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        require_once BASE_PATH . '/app/models/ApartmentType.php';
+
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
-        $this->view('admin/Staff_Admin/Admin-Apartment_Department/payment', ['dbUser' => $dbUser]);
+
+        $appModel = new ApartmentApp();
+        $typeModel = new ApartmentType();
+
+        $applications = $appModel->getAllApplications();
+        $approvedTenants = array_values(array_filter($applications, function($app) {
+            $status = strtolower($app['status'] ?? '');
+            return $status === 'approved' || $status === 'assigned' || $status === 'queued';
+        }));
+
+        $db = getDbConnection();
+        $stmt = $db->query("SELECT tenant_id, first_name, last_name, email, role FROM tenant_accounts ORDER BY first_name ASC");
+        $allUsers = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $apartmentTypes = $typeModel->getAllTypes();
+
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/payment', [
+            'dbUser' => $dbUser,
+            'approvedTenants' => $approvedTenants,
+            'allUsers' => $allUsers,
+            'apartmentTypes' => $apartmentTypes
+        ]);
     }
 
     // MIS Admin Modules

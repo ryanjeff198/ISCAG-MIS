@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISCAG MIS — Apartment Management</title>
     <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
-    <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+    <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #0f5c3a 0%, #1a8e5f 100%);
@@ -138,6 +138,34 @@
         .badge-maintenance { background: rgba(139, 46, 46, 0.1); color: var(--danger); }
 
         /* Image Gallery in Modal */
+        .btn-delete {
+            border-color: rgba(220, 53, 69, 0.3) !important;
+            color: var(--danger) !important;
+            background: rgba(220, 53, 69, 0.05) !important;
+        }
+        .btn-delete:hover {
+            background: var(--danger) !important;
+            color: white !important;
+            border-color: var(--danger) !important;
+        }
+        .btn-delete:hover svg {
+            fill: white !important;
+        }
+        
+        .btn-edit {
+            color: var(--primary) !important;
+            border-color: rgba(47, 138, 96, 0.3) !important;
+            background: rgba(47, 138, 96, 0.05) !important;
+        }
+        .btn-edit:hover {
+            background: var(--primary) !important;
+            color: white !important;
+            border-color: var(--primary) !important;
+        }
+        .btn-edit:hover svg {
+            fill: white !important;
+        }
+        
         .image-gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -454,8 +482,8 @@
         </div>
     </div>
 
-    <script src="<?= asset('JS/admin-shared.js') ?>"></script>
-    <script src="<?= asset('JS/room-preview.js') ?>"></script>
+    <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
     <script>
         standardizePage('staff');
         syncSessionUser("<?= addslashes(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>", "<?= addslashes($dbUser['email'] ?? '') ?>", "Staff Admin");
@@ -575,8 +603,9 @@
                                 <svg viewBox="0 0 24 24" style="width:14px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
                                 Edit
                             </button>
-                            <button class="btn-action btn-delete" style="padding:5px; border-radius:50%;" onclick="deleteUnit(${u.unit_id})" title="Delete Unit">
+                            <button class="btn-action btn-delete" style="padding:5px 12px; gap:6px;" onclick="deleteUnit(${u.unit_id})" title="Delete Unit">
                                 <svg viewBox="0 0 24 24" style="width:14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                Delete
                             </button>
                         </div>
                     </td>

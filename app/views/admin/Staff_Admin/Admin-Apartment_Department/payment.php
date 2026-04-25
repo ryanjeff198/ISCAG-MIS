@@ -414,7 +414,10 @@
           <label style="font-weight:700;color:var(--primary-dark);">Search / Select Tenant to Manage:</label>
           <select id="tenant-dropdown" onchange="loadTenantData()">
             <option value="">-- Choose Tenant --</option>
-            <!-- Populated if Admin -->
+            <?php foreach ($allUsers ?? [] as $u): ?>
+              <?php $uName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')); ?>
+              <option value="<?= $u['tenant_id'] ?>"><?= htmlspecialchars($uName ?: 'User '.$u['tenant_id']) ?> (ID: <?= $u['tenant_id'] ?>)</option>
+            <?php endforeach; ?>
           </select>
         </div>
 
@@ -576,7 +579,7 @@
     style="visibility:hidden;min-width:250px;background:#333;color:#fff;text-align:center;border-radius:8px;padding:16px;position:fixed;z-index:9999;bottom:30px;right:30px;font-size:0.9rem;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.2);transition:visibility 0.4s, opacity 0.4s;opacity:0;">
   </div>
 
-  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
+  <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
     <?php
       $fullName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? ''));
@@ -587,21 +590,60 @@
     standardizePage('staff');
     syncSessionUser("<?= addslashes($fullName) ?>", "<?= addslashes($email) ?>", "<?= addslashes($role) ?>");
     // ── UNIFIED SYSTEM CONTEXT ──
-    // Check if opened by ADMIN or USER by faking the session via URL params or existing memory.
-    // We'll safely fallback to MIS_ADMIN if nothing is set strictly for demo purposes.
-    let activeRole = localStorage.getItem('mis_current_role') || ROLES.MIS_ADMIN;
-    setCurrentRole(activeRole); // Re-enforce standard roles
+    const sessionRole = "<?= $_SESSION['role'] ?? '' ?>";
+    // Map PHP session roles directly to ensure the UI shows for admins
+    let activeRole = (sessionRole === 'Admin') ? ROLES.MIS_ADMIN : ROLES.STAFF_ADMIN;
+    
+    // Also update storage for consistency across other scripts
+    localStorage.setItem('mis_current_role', activeRole);
+    setCurrentRole(activeRole); 
 
-    const MOCK_DB = [
-      { id: "TNT-001", app_id: "APP-001", name: "Muhammad Usman", room: "101-A", current: { water: 350, rent: 5500, parking: 0, contribution: 100 }, prev: { water: 0, rent: 0, parking: 0, contribution: 0 }, payments: { water: 0, rent: 5500, parking: 0, contribution: 100 } },
-      { id: "TNT-002", app_id: "APP-002", name: "Ahmad Khalil", room: "102-B", current: { water: 420, rent: 6000, parking: 500, contribution: 100 }, prev: { water: 300, rent: 2000, parking: 0, contribution: 0 }, payments: { water: 300, rent: 2000, parking: 0, contribution: 0 } },
-      { id: "TNT-003", app_id: "APP-003", name: "Fatima Zahra", room: "201-B", current: { water: 300, rent: 7500, parking: 0, contribution: 100 }, prev: { water: 0, rent: 7500, parking: 0, contribution: 0 }, payments: { water: 0, rent: 0, parking: 0, contribution: 0 } }
-    ];
-
+    let APPROVED_TENANTS = [];
     let CURRENT_TARGET = null;
     let currentProofIdAction = null;
 
+    const APPROVED_FROM_DB = <?= json_encode($approvedTenants ?? []) ?>;
+    const ALL_USERS_DB = <?= json_encode($allUsers ?? []) ?>;
+    const APT_TYPES_DB = <?= json_encode($apartmentTypes ?? []) ?>;
+
     function initPage() {
+      // 1. Start with tenants who have active/approved applications
+      APPROVED_TENANTS = APPROVED_FROM_DB.map(r => {
+        const apt = APT_TYPES_DB.find(a => a.type_key === r.roomtype || a.label === r.roomtype);
+        const rentAmount = apt ? parseFloat(apt.price) : 5000;
+        
+        return {
+          id: r.tenant_id,
+          app_id: r.id,
+          name: `${r.first_name} ${r.last_name}`.trim(),
+          room: r.roomtype || 'Unassigned',
+          current: { water: 350, rent: rentAmount, parking: 0, contribution: 100 },
+          prev: { water: 0, rent: 0, parking: 0, contribution: 0 },
+          payments: { water: 0, rent: 0, parking: 0, contribution: 0 }
+        };
+      });
+
+      // 2. Merge all other real users from the database who don't have applications yet
+      ALL_USERS_DB.forEach(u => {
+        const exists = APPROVED_TENANTS.some(t => t.id === u.tenant_id);
+        if (!exists) {
+          APPROVED_TENANTS.push({
+            id: u.tenant_id,
+            app_id: 'N/A',
+            name: `${u.first_name} ${u.last_name}`.trim(),
+            room: 'General Account',
+            current: { water: 0, rent: 0, parking: 0, contribution: 100 },
+            prev: { water: 0, rent: 0, parking: 0, contribution: 0 },
+            payments: { water: 0, rent: 0, parking: 0, contribution: 0 }
+          });
+        }
+      });
+
+      // 3. (Fallback removed per request - showing only real users)
+      if (APPROVED_TENANTS.length === 0) {
+        console.warn("No real users found in database for billing dropdown.");
+      }
+
       // UI Adaptation based on roles
       const isAdmin = (activeRole === ROLES.MIS_ADMIN || activeRole === ROLES.STAFF_ADMIN);
 
@@ -611,15 +653,14 @@
       if (isAdmin) {
         // Setup Admin View
         setupAdminSidebar();
-        document.getElementById('admin-selector-ui').style.display = 'flex';
+        const selectorUi = document.getElementById('admin-selector-ui');
+        if (selectorUi) selectorUi.style.display = 'flex';
 
         const sel = document.getElementById('tenant-dropdown');
-        MOCK_DB.forEach(t => {
-          let opt = document.createElement('option');
-          opt.value = t.id;
-          opt.textContent = `${t.name} (Room: ${t.room})`;
-          sel.appendChild(opt);
-        });
+        if (sel) {
+          // Dropdown is already populated by PHP for reliability.
+          // We just need to make sure the internal APPROVED_TENANTS list is ready for SOA logic.
+        }
 
       } else {
         // Setup User View Constraints
@@ -627,7 +668,7 @@
         document.getElementById('admin-selector-ui').style.display = 'none';
 
         // Simulate User session targeting
-        CURRENT_TARGET = MOCK_DB[0];
+        CURRENT_TARGET = APPROVED_TENANTS[0];
         document.getElementById('billing-wrapper').style.display = 'block';
         renderUnifiedModule();
       }
@@ -685,7 +726,7 @@
         CURRENT_TARGET = null;
       } else {
         wrapper.style.display = 'block';
-        CURRENT_TARGET = MOCK_DB.find(x => x.id === val);
+        CURRENT_TARGET = APPROVED_TENANTS.find(x => x.id === val);
         renderUnifiedModule();
       }
     }
