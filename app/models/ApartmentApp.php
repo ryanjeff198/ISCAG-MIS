@@ -170,10 +170,13 @@ class ApartmentApp {
                 a.updated_at,
                 a.assigned_at,
                 a.accepted_at,
-                t.* 
+                t.*,
+                au.room_number,
+                au.building
             FROM apartmentsapp a
             JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
             LEFT JOIN tenant_addinfo t ON a.tenant_id = t.tenant_id
+            LEFT JOIN apartment_units au ON a.unit_id = au.unit_id
             ORDER BY a.application_id DESC
         ";
         $stmt = $this->db->query($sql);

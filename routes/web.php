@@ -89,6 +89,7 @@ $routes = [
     '/admin/mis_admin/damayan_records'     => ['AdminController', 'damayanRecords'],
     '/admin/mis_admin/notifications'       => ['AdminController', 'notificationBroadcast'],
     '/admin/mis_admin/records'             => ['AdminController', 'userRecords'],
+    '/admin/mis_admin/toggle_user_status'  => ['AdminController', 'toggleUserStatus'],
     '/admin/mis_admin/audit_logs'          => ['AdminController', 'auditLogs'],
     '/admin/mis_admin/notification'        => ['AdminController', 'notificationInbox'],
     '/admin/mis_admin/tenant_image'        => ['AdminController', 'serveTenantImage'],

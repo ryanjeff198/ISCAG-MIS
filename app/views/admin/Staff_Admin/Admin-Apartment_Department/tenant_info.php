@@ -271,7 +271,7 @@
               </div>
             </div>
             <div style="position:relative; min-width:220px;">
-              <input type="text" id="tenant-search" placeholder="Search name, ID, or contact..."
+              <input type="text" id="tenant-search" placeholder="Search name, room number,"
                 style="width:100%; padding:8px 14px 8px 36px; border:1.5px solid var(--border); border-radius:8px; font-size:0.85rem; font-family:inherit; outline:none; transition: all 0.2s; background: #f8f9fa;"
                 oninput="filterTable()" onfocus="this.style.borderColor='var(--primary)'; this.style.background='white'; this.style.boxShadow='0 0 0 3px rgba(46,125,85,0.1)';" onblur="this.style.borderColor='var(--border)'; this.style.background='#f8f9fa'; this.style.boxShadow='none';">
               <svg viewBox="0 0 24 24" style="position:absolute; width:16px; height:16px; left:12px; top:50%; transform:translateY(-50%); fill:var(--text-muted);"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
@@ -283,7 +283,7 @@
                 <tr>
                   <th>Tenant ID</th>
                   <th>Full Name</th>
-                  <th>Contact</th>
+                  <th>Room No.</th>
                   <th>Room Type</th>
                   <th>App Status</th>
                   <th>Role</th>
@@ -308,6 +308,8 @@
                       $appStatus = $app ? strtolower($app['status'] ?? '') : 'no-app';
                       $appStatusLabel = $app ? ($app['status'] ?? '—') : 'No Application';
                       $roomtype = $app['roomtype'] ?? '—';
+                      $roomNumber = $app['room_number'] ?? '—';
+                      
                       $dateApplied = $app ? date('M d, Y', strtotime($app['submitted_at'])) : '—';
                       $role = $t['role'] ?? 'Guest';
                       $fullName = trim(($t['first_name'] ?? '') . ' ' . ($t['last_name'] ?? ''));
@@ -320,7 +322,7 @@
                     <tr data-status="<?= $appStatus ?>">
                       <td class="td-id"><?= htmlspecialchars($t['tenant_id']) ?></td>
                       <td class="td-name"><?= htmlspecialchars($fullName) ?></td>
-                      <td class="td-contact"><?= htmlspecialchars($t['contactnum'] ?? $t['email'] ?? '—') ?></td>
+                      <td style="font-family:monospace; font-weight:700; color:var(--text-main);"><?= htmlspecialchars($roomNumber) ?></td>
                       <td style="color:var(--primary); font-weight:600;"><?= htmlspecialchars($roomtype) ?></td>
                       <td><span class="badge <?= $badgeClass ?>"><?= htmlspecialchars($appStatusLabel) ?></span></td>
                       <td><span class="badge <?= $roleBadge ?>"><?= htmlspecialchars($role) ?></span></td>

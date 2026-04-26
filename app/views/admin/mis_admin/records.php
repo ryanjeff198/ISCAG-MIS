@@ -187,7 +187,37 @@
   <script>
     standardizePage('admin');
 
-    let allUsers = getAllUsers();
+    <?php
+    $jsUsers = [];
+    foreach ($users ?? [] as $u) {
+        $sex = $u['addinfo_sex'] ?: $u['account_sex'];
+        // Evaluate rough profile completion
+        $profilePct = 30; 
+        if (!empty($sex)) $profilePct += 70; 
+        
+        $fullName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+        if (!$fullName) $fullName = 'Unknown';
+
+        $isActive = true;
+        // Check if is_verified exists, defaulting to true if not set since old test rows might lack it
+        if (isset($u['is_verified']) && $u['is_verified'] == 0) {
+            $isActive = false;
+        }
+
+        $jsUsers[] = [
+            'id' => $u['tenant_id'] ?? '',
+            'name' => $fullName,
+            'email' => $u['email'] ?? '',
+            'gender' => strtolower($sex ?? 'none'),
+            'phone' => $u['contactnum'] ?? '',
+            'role' => $u['role'] ?? 'User',
+            'status' => $isActive ? 'active' : 'inactive',
+            'joined' => $u['date_applied'] ?? date('Y-m-d'),
+            'profilePct' => $profilePct
+        ];
+    }
+    ?>
+    let allUsers = <?= json_encode($jsUsers, JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
     // Stats
     function updateStats(users) {
@@ -316,20 +346,31 @@
 
     // Toggle user status
     function toggleStatus(id) {
-      const users = getAllUsers();
-      const u = users.find(usr => usr.id === id);
-      if (!u) return;
-      u.status = u.status === 'active' ? 'inactive' : 'active';
-      saveAllUsers(users);
-      allUsers = users;
-      addActivityEntry(
-        'User ' + (u.status === 'active' ? 'activated' : 'deactivated'),
-        u.id + ' — ' + u.name + ' ' + u.status,
-        'MIS Admin', 'user'
-      );
-      showToast((u.status === 'active' ? '✅ ' : '⛔ ') + u.name + ' is now ' + u.status, u.status === 'active' ? 'var(--success)' : 'var(--danger)');
-      updateStats(allUsers);
-      applyFilters();
+      if (!confirm('Are you sure you want to change the status of this user?')) return;
+      
+      fetch('<?= url("/admin/mis_admin/toggle_user_status") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+      })
+      .then(r => r.json())
+      .then(data => {
+          if (data.success) {
+              const u = allUsers.find(usr => usr.id === id);
+              if (u) {
+                  u.status = data.newStatus;
+                  showToast((u.status === 'active' ? '✅ ' : '⛔ ') + u.name + ' is now ' + u.status, u.status === 'active' ? 'var(--success)' : 'var(--danger)');
+                  updateStats(allUsers);
+                  applyFilters();
+              }
+          } else {
+              showToast(data.message || 'Error updating status', 'var(--danger)');
+          }
+      })
+      .catch(e => {
+          console.error(e);
+          showToast('Network error', 'var(--danger)');
+      });
     }
 
     setupModalClose('user-detail-modal');
