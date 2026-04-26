@@ -18,7 +18,7 @@
           <!-- Facebook -->
           <a href="#" class="social-btn" title="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
           <!-- Google -->
-          <a href="mailto:info@iscag.org.ph" class="social-btn" title="Google"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h4.74c-.2 1.04-1.2 3.05-4.74 3.05-3.09 0-5.62-2.56-5.62-5.71s2.53-5.71 5.62-5.71c1.76 0 2.94.75 3.61 1.39l2.58-2.48C17.02 3.14 14.93 2.11 12.48 2.11 7.15 2.11 2.83 6.44 2.83 11.78s4.32 9.67 9.65 9.67c5.57 0 9.27-3.91 9.27-9.44 0-.64-.07-1.12-.15-1.6l-9.12-.49z"/></svg></a>
+          <a href="mailto:iscagphilippines@gmail.com" class="social-btn" title="Google"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h4.74c-.2 1.04-1.2 3.05-4.74 3.05-3.09 0-5.62-2.56-5.62-5.71s2.53-5.71 5.62-5.71c1.76 0 2.94.75 3.61 1.39l2.58-2.48C17.02 3.14 14.93 2.11 12.48 2.11 7.15 2.11 2.83 6.44 2.83 11.78s4.32 9.67 9.65 9.67c5.57 0 9.27-3.91 9.27-9.44 0-.64-.07-1.12-.15-1.6l-9.12-.49z"/></svg></a>
         </div>
       </div>
 
@@ -54,11 +54,11 @@
         </div>
         <div class="footer-contact-item">
           <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.18-2.18a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          <span class="contact-text">+63 (046) 123 4567</span>
+          <span class="contact-text">(046) 4161589</span>
         </div>
         <div class="footer-contact-item">
           <svg class="contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <span class="contact-text"><a href="mailto:info@iscag.org.ph" style="color: inherit; text-decoration: none;">info@iscag.org.ph</a></span>
+          <span class="contact-text"><a href="mailto:iscagphilippines@gmail.com" style="color: inherit; text-decoration: none;">iscagphilippines@gmail.com</a></span>
         </div>
       </div>
 

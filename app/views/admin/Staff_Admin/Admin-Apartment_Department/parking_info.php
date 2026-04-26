@@ -222,6 +222,7 @@
                     <th>Parking ID</th>
                     <th>Applicant</th>
                     <th>Vehicle</th>
+                    <th>Type</th>
                     <th>Plate No.</th>
                     <th>Submitted</th>
                     <th>Actions</th>
@@ -239,6 +240,7 @@
                           <td class="td-id">#PKG-<?= str_pad($a['id'], 4, '0', STR_PAD_LEFT) ?></td>
                           <td class="td-applicant"><?= htmlspecialchars(($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') ?: ($a['ownername'] ?? '—')) ?></td>
                           <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
+                          <td style="font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase;"><?= htmlspecialchars($a['typeofvehicle'] ?? '—') ?></td>
                           <td><span class="td-plate"><?= htmlspecialchars($a['plateno'] ?? '—') ?></span></td>
                           <td><?= date('M d, Y', strtotime($a['submitted_at'])) ?></td>
                           <td>
