@@ -417,7 +417,7 @@
             </div>
             <div class="info-text">
               <h4>Phone Number</h4>
-              <p>+63 912 345 6789<br>Tue-Sun, 9am - 5pm</p>
+              <p>(046) 4161589<br>Tue-Sun, 9am - 5pm</p>
             </div>
           </div>
           <div class="info-item">
@@ -427,8 +427,7 @@
             <div class="info-text">
               <h4>Email Support</h4>
               <p>
-                <a href="mailto:info@iscag.org" class="info-link">info@iscag.org</a><br>
-                <a href="mailto:support@iscag.org" class="info-link">support@iscag.org</a>
+                <a href="mailto:iscagphilippines@gmail.com" class="info-link">iscagphilippines@gmail.com</a>
               </p>
             </div>
           </div>
@@ -440,7 +439,7 @@
             <a href="#" class="social-link" title="Facebook">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
             </a>
-            <a href="mailto:info@iscag.org" class="social-link" title="Google">
+            <a href="mailto:iscagphilippines@gmail.com" class="social-link" title="Google">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h4.74c-.2 1.04-1.2 3.05-4.74 3.05-3.09 0-5.62-2.56-5.62-5.71s2.53-5.71 5.62-5.71c1.76 0 2.94.75 3.61 1.39l2.58-2.48C17.02 3.14 14.93 2.11 12.48 2.11 7.15 2.11 2.83 6.44 2.83 11.78s4.32 9.67 9.65 9.67c5.57 0 9.27-3.91 9.27-9.44 0-.64-.07-1.12-.15-1.6l-9.12-.49z"/></svg>
             </a>
           </div>
