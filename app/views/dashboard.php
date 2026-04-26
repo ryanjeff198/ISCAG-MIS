@@ -12,7 +12,13 @@ $display_name = trim(($account['first_name'] ?? '') . ' ' . ($account['last_name
 $dbUser = [
     'name' => $display_name,
     'email' => $info['email'] ?? ($account['email'] ?? ''),
-    'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
+    'sex' => (function() use ($info, $account) {
+        $s = !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? $account['gender'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
+        $ls = strtolower($s);
+        if ($ls === 'female' || $ls === 'f') return 'Female';
+        if ($ls === 'male' || $ls === 'm') return 'Male';
+        return $s;
+    })(),
     'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
     'dob' => $info['birthdate'] ?? '',
     'civil' => $info['civil_status'] ?? '',
@@ -465,19 +471,30 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       $account = $userModel->findById($userId);
       $info = $userModel->getAdditionalInfo($userId);
       
-      $dbUser = [
-          'name' => $info['full_name'] ?? trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
-          'email' => $info['email'] ?? ($account['email'] ?? ''),
-          'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
-          'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
-          'dob' => $info['birthdate'] ?? '',
-          'civil' => $info['civil_status'] ?? '',
-          'address' => $info['address'] ?? '',
-          'occupation' => $info['occupation'] ?? '',
-          'arabicName' => $info['muslimname'] ?? '',
-          'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
-      ];
-  }
+        $dbUser = [
+            'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
+            'email' => $info['email'] ?? ($account['email'] ?? ''),
+            'sex' => (function() use ($info, $account) {
+                $s = !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? $account['gender'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
+                $ls = strtolower($s);
+                if ($ls === 'female' || $ls === 'f') return 'Female';
+                if ($ls === 'male' || $ls === 'm') return 'Male';
+                return $s;
+            })(),
+            'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
+            'dob' => $info['birthdate'] ?? '',
+            'civil' => $info['civil_status'] ?? '',
+            'address' => $info['address'] ?? '',
+            'occupation' => $info['occupation'] ?? '',
+            'arabicName' => $info['muslimname'] ?? '',
+            'revertYear' => !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '',
+        ];
+
+        // Fetch apartment application status for announcement modal
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        $aptModel = new ApartmentApp();
+        $application = $aptModel->getApplication($userId);
+    }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -648,48 +665,9 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
           </div>
         </div>
 
-        <?php if (($_SESSION['role'] ?? '') === 'Guest'): ?>
-        <!-- SERVICE CARDS (APPLICANT ONLY) -->
-        <h6
-          style="font-family:'Lora',serif;font-size:0.9rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">
-          Available Services</h6>
-
-        <div class="service-grid" id="service-grid">
-          <!-- Populated by JS -->
-        </div>
-
-        <!-- MY REQUESTS HISTORY -->
-        <div class="section-card">
-          <div class="section-card-header">
-            <h6>
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9z" />
-              </svg>
-              My Recent Requests
-            </h6>
-            <span style="font-size:0.75rem;color:var(--text-muted);" id="req-count">Your submission history</span>
-          </div>
-          <div class="section-card-body" style="padding:0;">
-            <div class="table-wrapper">
-              <table class="mis-table">
-                <thead>
-                  <tr>
-                    <th>Reference No.</th>
-                    <th>Service Type</th>
-                    <th>Date Submitted</th>
-                    <th>Status</th>
-                    <th>Last Updated</th>
-                  </tr>
-                </thead>
-                <tbody id="req-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <?php else: ?>
+        <?php if (($account['role'] ?? '') === 'Tenant'): ?>
         <!-- TENANT DASHBOARD (TENANT ONLY) -->
-        <div class="section-card">
+        <div class="section-card" style="margin-bottom: 24px;">
             <div class="section-card-header" style="background: linear-gradient(135deg, #0f5c3a, #176b45); color: white;">
                 <h6 style="color: white; margin: 0; display: flex; align-items: center; gap: 8px;">
                     <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;">
@@ -764,12 +742,55 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                     modal.style.opacity = '0';
                     content.style.transform = 'translateY(30px)';
                     setTimeout(() => modal.style.display = 'none', 400);
+                    // Sync to localStorage for sidebar and dashboard
+                    let updated = getUser();
+                    updated.profileComplete = true;
+                    localStorage.setItem('mis_user', JSON.stringify(updated));
                     localStorage.setItem('tenant_onboarding_completed', 'true');
                 });
             }
         });
         </script>
         <?php endif; ?>
+
+        <!-- SERVICE CARDS (ALL USERS) -->
+        <h6
+          style="font-family:'Lora',serif;font-size:0.9rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">
+          Available Services</h6>
+
+        <div class="service-grid" id="service-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- MY REQUESTS HISTORY -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9z" />
+              </svg>
+              My Recent Requests
+            </h6>
+            <span style="font-size:0.75rem;color:var(--text-muted);" id="req-count">Your submission history</span>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Reference No.</th>
+                    <th>Service Type</th>
+                    <th>Date Submitted</th>
+                    <th>Status</th>
+                    <th>Last Updated</th>
+                  </tr>
+                </thead>
+                <tbody id="req-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
@@ -778,15 +799,15 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
   <script>
     // ── Inlined data helpers (no module imports — works from file://) ──
     const STORAGE_KEYS = { user: 'mis_user', requests: 'mis_requests', apartments: 'mis_apartments', initialized: 'mis_data_init' };
-    const DB_USER = <?= json_encode($dbUser) ?>;
-    const PROFILE_FIELDS = ['name', 'email', 'gender', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
-    const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', gender: 'Gender', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
+    let DB_USER = <?= json_encode($dbUser) ?>;
+    const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
+    const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', sex: 'Sex', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
     const DEFAULT_USER = {
       id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>',
       name: '<?= addslashes($_SESSION['name'] ?? "User") ?>',
       email: '<?= addslashes($_SESSION['email'] ?? "") ?>',
-      gender: '<?= addslashes($_SESSION['gender'] ?? "") ?>',
-      phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', membership: '', revertYear: '', apartment: '', profileComplete: false
+      sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>',
+      phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', revertYear: '', apartment: '', profileComplete: false
     };
     const DEFAULT_REQUESTS = [
       { id: 'BUR-001', user: 'USR-001', type: 'burial_service', status: 'pending', date: '2026-03-15', updatedAt: '2026-03-15' },
@@ -817,9 +838,28 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       // Synchronize with DB data — DB is the source of truth.
       if (typeof DB_USER !== 'undefined' && DB_USER !== null) {
         Object.keys(DB_USER).forEach(key => {
-          user[key] = DB_USER[key] || '';
+          let val = DB_USER[key] || '';
+          // Normalize sex values for consistent comparison
+          if (key === 'sex' && val) {
+            const v = val.toLowerCase();
+            if (v === 'f' || v === 'female') val = 'Female';
+            if (v === 'm' || v === 'male') val = 'Male';
+          }
+          // Always overwrite with DB value to prevent stale localStorage data leakage
+          user[key] = val;
         });
       }
+
+      // Final fallback: Use session data if still missing (helps with legacy sync issues)
+      const SESSION_FALLBACKS = {
+        sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>',
+        email: '<?= addslashes($_SESSION['email'] ?? "") ?>',
+        name: '<?= addslashes($_SESSION['name'] ?? "") ?>'
+      };
+      Object.entries(SESSION_FALLBACKS).forEach(([key, val]) => {
+        if (!user[key] && val) user[key] = val;
+      });
+
       return user;
     }
     function getRequests() {
@@ -920,21 +960,18 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       });
     }
 
+
     // ══════════════════════════════════════
     //  INIT
     // ══════════════════════════════════════
     initData();
-
     const user = getUser();
     const { percentage, missingFields } = getProfileCompletion();
-    const isComplete = percentage === 100;
+    const isComplete = (percentage === 100);
 
-    // Sync completion status to localStorage so the sidebar knows to unlock
-    const storedUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.user) || '{}');
-    if (storedUser.profileComplete !== isComplete) {
-        storedUser.profileComplete = isComplete;
-        localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(storedUser));
-    }
+    // Sync all fields to localStorage so other pages have fresh data from DB
+    user.profileComplete = isComplete;
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
 
     // ── Load user nav ──
     const navAvatar = document.getElementById('nav-avatar');
@@ -989,15 +1026,15 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
     // ── Da'wah dropdown — link handling ──
     const dawahTrigger = document.getElementById('dawah-trigger');
     if (dawahTrigger) {
-        const SESSION_GENDER = '<?= strtolower($_SESSION['gender'] ?? "") ?>';
-        const dawahHref = SESSION_GENDER === 'female' ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
+        const SESSION_SEX = '<?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>';
+        const dawahHref = SESSION_SEX === 'female' ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
         dawahTrigger.setAttribute('data-href', dawahHref);
     }
 
     // ── Build service cards ──
     const serviceGrid = document.getElementById('service-grid');
 
-    const dawahHref = String(user.gender).toLowerCase() === 'female'
+    const dawahHref = String(user.sex).toLowerCase() === 'female'
       ? "<?= url('/user/services/counseling/female') ?>"
       : "<?= url('/user/services/counseling/male') ?>";
 
@@ -1006,7 +1043,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         id: 'damayan',
         title: 'Damayan — Burial Services',
         desc: 'Submit a formal request for burial services for the deceased. Fill in the necessary details about the deceased, family contact, and burial preferences.',
-        icon: '<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>',
+        icon: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>',
         iconClass: '',
         href: '<?= url('/user/services/burial-form') ?>',
         btnText: 'Request Service'
@@ -1014,19 +1051,32 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       {
         id: 'dawah',
         title: !isComplete ? "Da'wah — Counseling Services"
-          : String(user.gender).toLowerCase() === 'female' ? "Da'wah — Sisters' Counseling"
+          : String(user.sex).toLowerCase() === 'female' ? "Da'wah — Sisters' Counseling"
             : "Da'wah — Brothers' Counseling",
         desc: !isComplete
           ? 'Request a confidential counseling session for personal, family, or spiritual matters. Complete your profile to access gender-specific counseling services.'
-          : String(user.gender).toLowerCase() === 'female'
+          : String(user.sex).toLowerCase() === 'female'
             ? 'Request a confidential session with our female counselors. All sessions are conducted with utmost privacy and respect for Islamic values.'
             : 'Request a confidential counseling session with our male counselors for personal, family, or spiritual matters. Schedule your preferred appointment time.',
         icon: '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>',
-        iconClass: String(user.gender).toLowerCase() === 'female' ? 'purple' : 'teal',
+        iconClass: String(user.sex).toLowerCase() === 'female' ? 'purple' : 'teal',
         href: dawahHref,
         btnText: 'Request Service'
-      },
-      {
+      }
+    ];
+
+    if (user.role === 'Tenant') {
+      services.push({
+        id: 'parking',
+        title: 'Parking Rental',
+        desc: 'Register your vehicle and apply for a parking space within the residential premises. Manage your vehicle records and track your rental status.',
+        icon: '<path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>',
+        iconClass: 'gold',
+        href: '<?= url('/user/apartment/parking') ?>',
+        btnText: 'Apply for Parking'
+      });
+    } else {
+      services.push({
         id: 'apartment',
         title: 'Apartment Application',
         desc: 'Apply for a housing unit in the ISCAG apartment complex. Submit your family details and preferred unit type for review by the Apartment Management.',
@@ -1034,8 +1084,8 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         iconClass: 'green',
         href: '<?= url('/user/apartment/apply') ?>',
         btnText: 'Apply Now'
-      }
-    ];
+      });
+    }
 
     services.forEach(svc => {
       const card = document.createElement('div');

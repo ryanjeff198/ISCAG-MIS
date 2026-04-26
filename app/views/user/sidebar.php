@@ -88,14 +88,14 @@ $active_page = $active_page ?? 'dashboard';
             </button>
             <div class="nav-dropdown <?= $dawah_active ? 'open' : '' ?>" id="dawah-menu">
                 <?php 
-                $gender = strtolower($_SESSION['gender'] ?? '');
-                if ($gender !== 'female'): ?>
+                $sex = strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
+                if ($sex !== 'female'): ?>
                 <a href="<?= url('/user/services/counseling/male') ?>" class="<?= $active_page === 'counseling_male' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
                     Brothers' Counseling
                 </a>
                 <?php endif; ?>
-                <?php if ($gender !== 'male'): ?>
+                <?php if ($sex !== 'male'): ?>
                 <a href="<?= url('/user/services/counseling/female') ?>" class="<?= $active_page === 'counseling_female' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
                     Sisters' Counseling
@@ -185,11 +185,23 @@ $active_page = $active_page ?? 'dashboard';
             id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>',
             name: '<?= addslashes($_SESSION['name'] ?? "User") ?>',
             role: '<?= addslashes($_SESSION['role'] ?? "Guest") ?>',
-            gender: '<?= addslashes($_SESSION['gender'] ?? "") ?>'
+            sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>'
         };
         const raw = localStorage.getItem('mis_user');
         let stored = raw ? JSON.parse(raw) : {};
+        
+        // Detection: If user ID changed, reset relevant localStorage to avoid data leakage
+        if (stored.id && stored.id !== sessionUser.id) {
+            console.log('User change detected. Clearing stale data.');
+            stored = {};
+            localStorage.removeItem('mis_user_photo');
+            localStorage.removeItem('mis_member_since');
+            localStorage.removeItem('mis_last_login');
+        }
+
+        // Always prioritize and overwrite with session values
         Object.assign(stored, sessionUser);
+        
         localStorage.setItem('mis_user', JSON.stringify(stored));
 
         // ── 2. SIDEBAR TOGGLE & DROPDOWNS ──
@@ -240,8 +252,8 @@ $active_page = $active_page ?? 'dashboard';
         // ── 2b. Da'wah Trigger data-href Sync ──
         const dawahTrigger = document.getElementById('dawah-trigger');
         if (dawahTrigger) {
-            const gender = '<?= strtolower($_SESSION['gender'] ?? "") ?>';
-            const dawahHref = (gender === 'female') ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
+            const sex = '<?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>';
+            const dawahHref = (sex === 'female') ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
             dawahTrigger.setAttribute('data-href', dawahHref);
         }
         

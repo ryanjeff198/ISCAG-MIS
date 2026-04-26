@@ -279,17 +279,9 @@
                              <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
                              <td><span class="badge-status badge-pending"><?= $r['status'] ?></span></td>
                              <td>
-                                <div class="actions-cell">
-                                   <button class="btn-circle eye" onclick="openReview(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
-                                      <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                                   </button>
-                                   <button class="btn-circle check" onclick="approveApp(<?= $r['id'] ?>)" title="Approve">
-                                      <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                                   </button>
-                                   <button class="btn-circle reject" onclick="rejectApp(<?= $r['id'] ?>)" title="Reject">
-                                      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                                   </button>
-                                </div>
+                                <button class="btn-circle eye" onclick="openReview(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
+                                   <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                </button>
                              </td>
                           </tr>
                        <?php endforeach; ?>
@@ -628,43 +620,10 @@
         </div>
       `;
 
-      if (r.status.toLowerCase() === 'pending') {
-        document.getElementById('modal-footer').innerHTML = `
-          <button class="btn-topbar" onclick="closeModal('review-modal')">Close</button>
-          <div id="footer-actions" style="display:flex; gap:10px; align-items:center; margin-left:auto;">
-            <button class="btn-topbar" style="color:var(--danger);" onclick="showRejectReason(${r.id})">Reject Application</button>
-            <button class="btn-topbar primary" onclick="approveApp(${r.id})">Confirm & Approve Details</button>
-          </div>
-        `;
-      } else {
-        document.getElementById('modal-footer').innerHTML = `<button class="btn-topbar" onclick="closeModal('review-modal')">Close</button>`;
-      }
+      document.getElementById('modal-footer').innerHTML = `<button class="btn-topbar" onclick="closeModal('review-modal')">Close</button>`;
       openModal('review-modal');
     }
 
-    function showRejectReason(id) {
-      document.getElementById('footer-actions').innerHTML = `
-        <div class="reject-reason-wrap">
-          <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Select Reason:</span>
-          <select class="reject-select" id="reject-reason">
-            <option value="Incomplete Documents">Incomplete Documents</option>
-            <option value="Unmatched Information">Unmatched Information</option>
-            <option value="Invalid Identification">Invalid Identification</option>
-            <option value="Poor Credit/Income Proof">Poor Credit/Income Proof</option>
-            <option value="Other">Other</option>
-          </select>
-          <button class="btn-topbar" style="color:var(--danger); border-color:var(--danger);" onclick="rejectApp(${id})">Confirm Rejection</button>
-          <button class="btn-topbar" onclick="resetFooterActions(${id})">Cancel</button>
-        </div>
-      `;
-    }
-
-    function resetFooterActions(id) {
-       document.getElementById('footer-actions').innerHTML = `
-          <button class="btn-topbar" style="color:var(--danger);" onclick="showRejectReason(${id})">Reject Application</button>
-          <button class="btn-topbar primary" onclick="approveApp(${id})">Confirm & Approve Details</button>
-       `;
-    }
 
     function viewFullImage(src) {
       const overlay = document.createElement('div');
@@ -678,35 +637,6 @@
       document.body.appendChild(overlay);
       overlay.querySelector('.img-preview-close').addEventListener('click', () => overlay.remove());
       overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.remove(); });
-    }
-
-    function pushAuditLog(action, details) {
-      try {
-        let logs = JSON.parse(localStorage.getItem('mis_audit_logs') || '[]');
-        logs.unshift({
-          admin_id: '<?= addslashes($_SESSION['name'] ?? 'MIS-ADMIN') ?>',
-          module: 'APARTMENT',
-          action: action,
-          timestamp: new Date().toISOString(),
-          details: details
-        });
-        localStorage.setItem('mis_audit_logs', JSON.stringify(logs));
-      } catch(e) { console.warn('Audit log write failed:', e); }
-    }
-
-    function approveApp(id) {
-      if (confirm('Approve these application details?')) {
-        pushAuditLog('APPROVE_APP', 'Approved apartment application ID: ' + id + ' — role upgraded to Tenant');
-        window.location.href = '<?= url('/admin/mis_admin/apartment_confirmation/approve') ?>?id=' + id;
-      }
-    }
-    function rejectApp(id) {
-      const reasonEl = document.getElementById('reject-reason');
-      const reason = reasonEl ? reasonEl.value : 'Other';
-      if (confirm(`Reject this application for: "${reason}"?`)) {
-        pushAuditLog('REJECT_APP', 'Rejected apartment application ID: ' + id + ' — Reason: ' + reason);
-        window.location.href = `<?= url('/admin/mis_admin/apartment_confirmation/reject') ?>?id=${id}&reason=${encodeURIComponent(reason)}`;
-      }
     }
 
     setupModalClose('review-modal');

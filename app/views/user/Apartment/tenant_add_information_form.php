@@ -22,7 +22,7 @@ if ($userId) {
     $dbUser = [
         'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
         'email' => $profile['email'] ?? ($account['email'] ?? ''),
-        'gender' => !empty($profile['sex']) ? $profile['sex'] : ($account['sex'] ?? ''),
+        'sex' => !empty($profile['sex']) ? $profile['sex'] : ($_SESSION['sex'] ?? $_SESSION['gender'] ?? $account['sex'] ?? ''),
         'phone' => $profile['phone'] ?? ($account['contactnum'] ?? ''),
         'dob' => $profile['birthdate'] ?? '',
         'civil' => $profile['civil_status'] ?? '',
@@ -31,6 +31,13 @@ if ($userId) {
         'arabicName' => $profile['muslimname'] ?? '',
         'revertYear' => $profile['dateofshahadah'] ?? '',
     ];
+
+    // Check if application is already submitted
+    $application = $aptModel->getApplication($userId);
+    if ($application && in_array($application['status'], ['Pending', 'Assigned', 'Queued', 'VERIFIED'])) {
+        header('Location: ' . url('/user/apartment/status'));
+        exit;
+    }
 
     // appData is used to pre-fill the form (should be Application info)
     $appData = $appInfo;
@@ -45,6 +52,7 @@ if ($userId) {
   <title>ISCAG MIS — Tenant Application</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>" />
+  <script src="<?= asset('JS/room-preview.js') ?>" defer></script>
   <style>
     /* ═══════════════════════════════════════════
        HIDE NUMBER INPUT SCROLL ARROWS
@@ -1396,7 +1404,8 @@ if ($userId) {
     .doc-preview-img {
       width: 100%;
       height: 200px;
-      object-fit: contain;
+      object-fit: cover;
+      object-position: center top;
       border-radius: 10px;
       border: 1.5px solid var(--border);
       background: #fafdf9;
@@ -1785,7 +1794,7 @@ if ($userId) {
               <div class="form-doc-header-top">
                 <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo" class="form-doc-header-logo" />
                 <div class="form-doc-header-text">
-                  <div class="arabic-line">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+                  <div class="arabic-line">بِسْم. اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
                   <div class="org-name-ar">مركز البحوث الإسلامية و الدعوة و الإرشاد في الفلبين</div>
                   <div class="org-name-en">Islamic Studies, Call and Guidance of the Philippines</div>
                   <div class="sec-reg">SEC. REG. NO. 0000185967</div>
@@ -1893,9 +1902,9 @@ if ($userId) {
                       <option <?= ($appData['civil_status'] ?? '') == 'Divorced' ? 'selected' : '' ?>>Divorced</option>
                     </select>
                   </td>
-                  <td class="field-label">Gender:</td>
+                  <td class="field-label">Sex:</td>
                   <td class="field-value">
-                    <select id="gender">
+                    <select id="sex">
                       <option value="">— Select —</option>
                       <option <?= ($appData['sex'] ?? '') == 'Male' ? 'selected' : '' ?>>Male</option>
                       <option <?= ($appData['sex'] ?? '') == 'Female' ? 'selected' : '' ?>>Female</option>
@@ -1993,7 +2002,6 @@ if ($userId) {
                 </div>
               </div>
 
-              <!-- ══ REQUIRED DOCUMENTS & RESERVED FOR ══ -->
               <div class="docs-and-reserved">
                 <div>
                   <div class="doc-section-title" style="margin-top:0;">
@@ -2181,13 +2189,13 @@ if ($userId) {
       apartments: 'mis_apartments',
       initialized: 'mis_data_init'
     };
-    const PROFILE_FIELDS = ['name', 'email', 'gender', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
+    const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
     const DEFAULT_USER = {
       id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>',
       name: '<?= addslashes($_SESSION['name'] ?? "User") ?>',
       email: '<?= addslashes($_SESSION['email'] ?? "") ?>',
-      gender: '<?= addslashes($_SESSION['gender'] ?? "") ?>',
-      phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', membership: '', revertYear: '', apartment: '', profileComplete: false
+      sex: '<?= addslashes($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>',
+      phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', revertYear: '', apartment: '', profileComplete: false
     };
     const DEFAULT_REQUESTS = [{
         id: 'BUR-001',
@@ -2275,7 +2283,7 @@ if ($userId) {
       const labels = {
         name: 'Full Name',
         email: 'Email Address',
-        gender: 'Gender',
+        sex: 'Sex',
         phone: 'Contact Number',
         address: 'Complete Address',
         dob: 'Date of Birth',
@@ -2483,7 +2491,7 @@ if ($userId) {
           birthdate: v('dob'),
           age: parseInt(v('age')) || 0,
           pob: v('pob'),
-          sex: v('gender'),
+          sex: v('sex'),
           address: v('address'),
           dateofshahadah: v('shahadah-date'),
           tribalaffliation: v('tribal'),
@@ -2516,6 +2524,27 @@ if ($userId) {
       if (step === currentStep) return;
       // Validate Step 1 before moving to Step 2
       if (step === 2 && currentStep === 1) {
+        
+        // 1. Validate required text fields
+        const requiredFields = [
+          { id: 'family-name', name: 'Family Name' },
+          { id: 'given-name', name: 'Given Name' },
+          { id: 'dob', name: 'Date of Birth' },
+          { id: 'sex', name: 'Sex' },
+          { id: 'address', name: 'Address' },
+          { id: 'phone', name: 'Phone Number' }
+        ];
+
+        for (const field of requiredFields) {
+          const el = document.getElementById(field.id);
+          if (el && !el.value.trim()) {
+            showToast(`Please fill out the ${field.name} field before proceeding.`, '#8b2e2e');
+            el.focus();
+            return;
+          }
+        }
+
+        // 2. Validate declaration checkboxes
         const d1 = document.getElementById('decl1').checked;
         const d2 = document.getElementById('decl2').checked;
         if (!d1 || !d2) {
@@ -2813,6 +2842,7 @@ if ($userId) {
     }
 
     const DOC_STORAGE_KEY = 'mis_req_doc_uploads';
+    const inMemoryPreviews = {};
 
     function getUploadedDocs() {
       const raw = localStorage.getItem(DOC_STORAGE_KEY);
@@ -2822,16 +2852,38 @@ if ($userId) {
     function saveUploadedDoc(docId, dataUrl) {
       const docs = getUploadedDocs();
       docs[docId] = {
-        dataUrl,
         uploadedAt: new Date().toISOString()
       };
-      localStorage.setItem(DOC_STORAGE_KEY, JSON.stringify(docs));
+      inMemoryPreviews[docId] = dataUrl;
+      try {
+        localStorage.setItem(DOC_STORAGE_KEY, JSON.stringify(docs));
+      } catch(e) {
+        console.warn('localStorage quota exceeded for docs, saving in-memory only.', e);
+      }
     }
 
     function removeUploadedDoc(docId) {
       const docs = getUploadedDocs();
       delete docs[docId];
+      delete inMemoryPreviews[docId];
       localStorage.setItem(DOC_STORAGE_KEY, JSON.stringify(docs));
+    }
+
+    function getPreviewSrc(docId, docData) {
+      if (inMemoryPreviews[docId]) {
+        return inMemoryPreviews[docId];
+      }
+      const typeMap = {
+        'doc-income': 'proofofincome',
+        'doc-id-front': 'valididfront',
+        'doc-id-back': 'valididback',
+        'doc-birth': 'birthcert',
+        'doc-nbi': 'nbi',
+        'doc-photo': 'picture'
+      };
+      const serverType = typeMap[docId];
+      if (!serverType || !docData) return '';
+      return `<?= url('/user/apartment/serveImage') ?>?type=${serverType}&t=${new Date(docData.uploadedAt).getTime()}`;
     }
 
     // ═══ RENDER DOCUMENT CARDS ═══
@@ -2899,7 +2951,7 @@ if ($userId) {
                       </div>
                       <div class="doc-preview-wrap ${slotUploaded ? 'visible' : ''}" id="preview-${slot.key}">
                         ${slotUploaded
-                ? `<img class="doc-preview-img" src="${currentUploads[slot.key].dataUrl}" alt="${slot.label}" id="img-${slot.key}" />`
+                ? `<img class="doc-preview-img" src="${getPreviewSrc(slot.key, currentUploads[slot.key])}" alt="${slot.label}" id="img-${slot.key}" />`
                 : `<img class="doc-preview-img" src="" alt="${slot.label}" id="img-${slot.key}" style="display:none;" />`
               }
                         <div class="doc-preview-actions">
@@ -2979,7 +3031,7 @@ if ($userId) {
                 <input type="file" accept="image/*,.pdf" id="input-${doc.id}" />
               </div>
               <div class="doc-preview-wrap ${isUploaded ? 'visible' : ''}" id="preview-${doc.id}">
-                ${isUploaded ? `<img class="doc-preview-img" src="${currentUploads[doc.id].dataUrl}" alt="${doc.name}" id="img-${doc.id}" />` : `<img class="doc-preview-img" src="" alt="${doc.name}" id="img-${doc.id}" style="display:none;" />`}
+                ${isUploaded ? `<img class="doc-preview-img" src="${getPreviewSrc(doc.id, currentUploads[doc.id])}" alt="${doc.name}" id="img-${doc.id}" />` : `<img class="doc-preview-img" src="" alt="${doc.name}" id="img-${doc.id}" style="display:none;" />`}
                 <div class="doc-preview-actions">
                   <button class="doc-preview-btn view" onclick="viewFullImage('${doc.id}')" title="View full size">
                     <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
@@ -3090,13 +3142,15 @@ if ($userId) {
       const docData = docs[docId];
       if (!docData) return;
 
+      const src = getPreviewSrc(docId, docData);
+
       const overlay = document.createElement('div');
       overlay.className = 'img-preview-overlay';
       overlay.innerHTML = `
         <button class="img-preview-close" title="Close preview">
           <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
-        <img src="${docData.dataUrl}" alt="Document Preview" />
+        <img src="${src}" alt="Document Preview" />
       `;
       document.body.appendChild(overlay);
 
@@ -3237,7 +3291,7 @@ if ($userId) {
           id: 'NOT-' + String(notifs.length + 1).padStart(3, '0'),
           tenantId: user.id,
           title: 'Application Submitted',
-          message: 'Your apartment application ' + reportId + ' has been submitted and is pending MIS Admin review.',
+          message: 'Your apartment application ' + reportId + ' has been submitted and is pending Admin Review.',
           type: 'system',
           read: false,
           createdAt: new Date().toISOString()
@@ -3357,7 +3411,10 @@ if ($userId) {
             return;
           }
           container.innerHTML = types.map((t, idx) => {
-            const isFull = (t.available_count || 0) <= 0;
+            const typeId = t.type_id || idx;
+            const typeKey = t.type_key || `unit-${typeId}`;
+            const label = t.label || 'Apartment Unit';
+            const isFull = (parseInt(t.available_count) || 0) <= 0;
             const availText = isFull ? 'No Units Available' : `${t.available_count} Units Available`;
             const statusClass = isFull ? 'status-full' : (t.available_count < 5 ? 'status-low' : 'status-ok');
             const thumbUrl = t.thumbnail_id 
@@ -3365,25 +3422,26 @@ if ($userId) {
               : `<?= asset('assets/placeholder.png') ?>`;
 
             return `
-              <label class="unit-card ${idx === 0 && !isFull ? 'selected' : ''} ${isFull ? 'unit-full' : ''}" for="unit-${t.type_id}">
-                <input type="radio" name="unit" id="unit-${t.type_id}" value="${t.type_key}" 
+              <label class="unit-card ${idx === 0 && !isFull ? 'selected' : ''} ${isFull ? 'unit-full' : ''}" for="unit-${typeId}">
+                <input type="radio" name="unit" id="unit-${typeId}" value="${typeKey}" 
                   ${idx === 0 && !isFull ? 'checked' : ''} ${isFull ? 'disabled' : ''} />
                 <div class="unit-card-check">
                   <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
                 </div>
                 <div class="unit-card-thumb">
-                  <img src="${thumbUrl}" alt="${t.label}" />
-                  <span class="unit-card-thumb-overlay">${t.label.split(' ')[0]}</span>
+                  <img src="${thumbUrl}" alt="${label}" onerror="this.src='<?= asset('assets/placeholder.png') ?>'" />
+                  <span class="unit-card-thumb-overlay">${label.split(' ')[0] || 'Unit'}</span>
                 </div>
                 <div class="unit-card-body">
-                  <div class="unit-card-label">${t.label}</div>
+                  <div class="unit-card-label">${label}</div>
                   <div class="unit-card-sub" style="display:flex; justify-content:space-between; align-items:center;">
                     <span>${t.capacity || 'For residents'}</span>
                     <span class="avail-badge ${statusClass}">${availText}</span>
                   </div>
                 </div>
                 <button type="button" class="unit-card-view" 
-                  onclick='event.preventDefault();event.stopPropagation(); if(window.openRoomPreview) window.openRoomPreview(${JSON.stringify(t).replace(/'/g, "&apos;")})'>
+                  data-unit='${JSON.stringify(t).replace(/'/g, "&apos;")}'
+                  data-id="${typeId}">
                   <svg viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" /></svg>
                   View Gallery
                 </button>
@@ -3391,12 +3449,49 @@ if ($userId) {
             `;
           }).join('');
 
-          // Re-attach card selection effects
+          // Attach listeners
           container.querySelectorAll('.unit-card').forEach(card => {
-            card.addEventListener('click', function() {
+            // Radio selection logic
+            card.addEventListener('click', function(e) {
+              if (e.target.closest('.unit-card-view')) return;
+              if (this.classList.contains('unit-full')) return; // Don't select full units
+              
               container.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
               this.classList.add('selected');
+              const radio = this.querySelector('input[type="radio"]');
+              if (radio) {
+                radio.checked = true;
+                // Trigger change event if needed
+                radio.dispatchEvent(new Event('change', { bubbles: true }));
+              }
             });
+
+            // View Gallery logic
+            const viewBtn = card.querySelector('.unit-card-view');
+            if (viewBtn) {
+              viewBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const unitData = JSON.parse(this.getAttribute('data-unit'));
+                const typeId = this.getAttribute('data-id');
+                
+                if (window.openRoomPreview) {
+                  window.openRoomPreview(unitData, {
+                    basePath: '<?= asset("assets/") ?>',
+                    serveUrl: '<?= url("/api/apartment-types/serve-image") ?>',
+                    onSelect: function() {
+                      const radio = document.getElementById("unit-" + typeId);
+                      if (radio) {
+                        radio.checked = true;
+                        container.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+                        radio.closest('.unit-card').classList.add('selected');
+                        radio.dispatchEvent(new Event('change', { bubbles: true }));
+                      }
+                    }
+                  });
+                }
+              });
+            }
           });
         }
       } catch (err) {

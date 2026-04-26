@@ -137,6 +137,7 @@ body {
   width: 100%;
   max-width: 460px;
   box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+  margin-top: 50px;
 }
 
 /* TITLE */
@@ -295,7 +296,6 @@ body {
     <div class="auth-right">
       <a href="<?= url('/') ?>" class="auth-home-link"><i class="bi bi-arrow-left"></i> Home</a>
       <div class="auth-card register-card">
-
         <h1 class="auth-title">Create Account</h1>
 
         <?php if (isset($error)): ?>

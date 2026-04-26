@@ -72,7 +72,7 @@
               <input type="number" class="form-control" placeholder="Age" min="0" />
             </div>
             <div>
-              <label class="form-label">Gender <span class="required">*</span></label>
+              <label class="form-label">Sex <span class="required">*</span></label>
               <select class="form-select">
                 <option value="">— Select —</option>
                 <option>Male</option>
@@ -179,14 +179,14 @@
 <script>
   // ── Inlined data helpers ──
   const STORAGE_KEYS = { user: 'mis_user', requests: 'mis_requests', apartments: 'mis_apartments', initialized: 'mis_data_init' };
-  const PROFILE_FIELDS = ['name','email','gender','phone','address','dob','civil','occupation','arabicName','revertYear'];
+  const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
   const DEFAULT_USER = { 
     id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>', 
     name: '<?= addslashes($_SESSION['name'] ?? "User") ?>', 
     role: '<?= addslashes($_SESSION['role'] ?? "Tenant") ?>',
     email:'<?= $_SESSION['email'] ?? "" ?>', 
-    gender:'<?= $_SESSION['gender'] ?? "" ?>', 
-    phone:'', address:'', dob:'', civil:'', occupation:'', arabicName:'', membership:'', revertYear:'', apartment:'', profileComplete:false 
+    sex:'<?= $_SESSION['sex'] ?? $_SESSION['gender'] ?? "" ?>', 
+    phone:'', address:'', dob:'', civil:'', occupation:'', arabicName:'', revertYear:'', apartment:'', profileComplete:false 
   };
   const DEFAULT_REQUESTS = [
     { id:'BUR-001', user: DEFAULT_USER.id, type:'burial_service', status:'pending', date:'2026-03-15', updatedAt:'2026-03-15' },
@@ -211,8 +211,8 @@
   // ── Da'wah dropdown — link handling ──
   const dawahTrigger = document.getElementById('dawah-trigger');
   if (dawahTrigger) {
-    const sessionGender = '<?= strtolower($_SESSION['gender'] ?? "") ?>';
-    const dawahHref = sessionGender === 'female' ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
+    const sessionSex = '<?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? "") ?>';
+    const dawahHref = sessionSex === 'female' ? "<?= url('/user/services/counseling/female') ?>" : "<?= url('/user/services/counseling/male') ?>";
     dawahTrigger.setAttribute('data-href', dawahHref);
   }
 

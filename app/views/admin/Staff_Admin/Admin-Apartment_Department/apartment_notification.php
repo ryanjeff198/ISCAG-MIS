@@ -257,14 +257,18 @@
 
       <div class="page-body">
         <div class="section-card">
-          <div class="section-card-header">
-            <h6><svg viewBox="0 0 24 24">
-                <path
-                  d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-              </svg>Recent Notifications</h6>
-            <span id="unread-badge"
-              style="font-size:0.72rem;background:var(--danger);color:white;padding:2px 8px;border-radius:12px;font-weight:700;">0
-              New</span>
+          <div class="section-card-header" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h6><svg viewBox="0 0 24 24">
+                  <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+                </svg>Recent Notifications</h6>
+              <span id="unread-badge"
+                style="font-size:0.72rem;background:var(--danger);color:white;padding:2px 8px;border-radius:12px;font-weight:700;">0 New</span>
+            </div>
+            <div class="table-search-wrapper" style="min-width:220px; position:relative; margin:0;">
+               <input type="text" id="notif-search" class="table-search-input" placeholder="Search notifications..." style="padding: 8px 14px 8px 36px; font-size: 0.85rem;" oninput="filterNotifs()">
+               <svg viewBox="0 0 24 24" style="position:absolute; width:16px; height:16px; left:12px; top:50%; transform:translateY(-50%); fill:var(--text-muted);"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            </div>
           </div>
           <div class="section-card-body" id="notif-container" style="background:#f8f9fa;">
             <!-- RENDERED DYNAMICALLY -->
@@ -278,7 +282,7 @@
     </div>
   </div>
 
-  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
+  <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
     <?php
       $fullName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? ''));
@@ -292,17 +296,17 @@
     // Map activity log types to source pages for staff
     function getSourcePage(type) {
       const map = {
-        approve: 'apartments_info.html',
-        request: 'apartments_info.html',
-        payment: 'payment.html',
-        update: 'apartment_dashboard.html',
-        alert: 'payment.html',
-        schedule: 'apartments_info.html',
-        staff: 'apartment_profile.html',
-        system: 'apartment_dashboard.html',
-        user: 'apartments_info.html'
+        approve: '<?= url("/admin/apartment/info") ?>',
+        request: '<?= url("/admin/apartment/info") ?>',
+        payment: '<?= url("/admin/apartment/payment") ?>',
+        update: '<?= url("/admin/apartment/dashboard") ?>',
+        alert: '<?= url("/admin/apartment/payment") ?>',
+        schedule: '<?= url("/admin/apartment/info") ?>',
+        staff: '<?= url("/admin/apartment/profile") ?>',
+        system: '<?= url("/admin/apartment/dashboard") ?>',
+        user: '<?= url("/admin/apartment/info") ?>'
       };
-      return map[type] || 'apartment_dashboard.html';
+      return map[type] || '<?= url("/admin/apartment/dashboard") ?>';
     }
 
     function getSourceLabel(type) {
@@ -322,15 +326,19 @@
 
     function getStaffNotifications() {
       const activityLog = getActivityLog();
-      return activityLog.map((log, i) => ({
-        id: 'S-NOT-' + i,
-        title: log.action,
-        message: log.detail,
-        type: log.type,
-        createdAt: log.time,
-        read: i > 2,
-        link: getSourcePage(log.type)
-      }));
+      const markedReadTime = parseInt(localStorage.getItem('staff_notifs_read') || '0', 10);
+      return activityLog.map((log, i) => {
+        const logTime = new Date(log.time).getTime();
+        return {
+          id: 'S-NOT-' + i,
+          title: log.action,
+          message: log.detail,
+          type: log.type,
+          createdAt: log.time,
+          read: (logTime <= markedReadTime) || (i > 2 && markedReadTime === 0),
+          link: getSourcePage(log.type)
+        };
+      });
     }
 
     function getIconSvg(type) {
@@ -398,7 +406,7 @@
       const allNotifs = getStaffNotifications();
       const n = allNotifs.find(x => x.id === id);
 
-      if (!n) { window.location.href = 'apartment_notification.html'; return; }
+      if (!n) { window.location.href = '<?= url("/admin/apartment/notification") ?>'; return; }
 
       document.getElementById('notif-container').style.display = 'none';
       document.getElementById('unread-badge').style.display = 'none';
@@ -413,7 +421,7 @@
       ` : '';
 
       detailView.innerHTML = `
-        <button class="btn-back" onclick="window.location.href='apartment_notification.html'">
+        <button class="btn-back" onclick="window.location.href='<?= url("/admin/apartment/notification") ?>'">
           <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
           Back to all notifications
         </button>
@@ -452,11 +460,23 @@
     }
 
     function markAllRead() {
+      localStorage.setItem('staff_notifs_read', Date.now().toString());
       const container = document.getElementById('notif-container');
       container.querySelectorAll('.unread').forEach(node => node.classList.remove('unread'));
       document.getElementById('unread-badge').style.display = 'none';
       document.querySelectorAll('.notif-dot').forEach(d => d.remove());
       showToast('All notifications marked as read', 'var(--success)');
+      // Refresh the sidebar dot
+      initNotifBadge('staff');
+    }
+
+    function filterNotifs() {
+      const term = document.getElementById('notif-search').value.toLowerCase().trim();
+      const cards = document.querySelectorAll('.notif-card');
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(term) ? 'flex' : 'none';
+      });
     }
 
     // Route

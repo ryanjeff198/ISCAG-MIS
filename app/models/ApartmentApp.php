@@ -108,6 +108,17 @@ class ApartmentApp {
         return null;
     }
 
+    public function getUploadedDocTypes($userId) {
+        $stmt = $this->db->prepare("
+            SELECT i.doc_type 
+            FROM tenant_addinfo_images i
+            JOIN tenant_addinfo t ON i.addinfo_id = t.tenant_info
+            WHERE t.tenant_id = :uid
+        ");
+        $stmt->execute(['uid' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    }
+
 
     // ─── apartmentsapp (unit type) ────────────────────────
     public function getApplication($userId) {
@@ -157,6 +168,8 @@ class ApartmentApp {
                 a.status,
                 a.reject_reason,
                 a.updated_at,
+                a.assigned_at,
+                a.accepted_at,
                 t.* 
             FROM apartmentsapp a
             JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
@@ -251,6 +264,38 @@ class ApartmentApp {
 
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);
+    }
+
+    public function saveParkingApplication($userId, $data) {
+        $sql = "INSERT INTO tenant_parking (
+            tenant_id, parking_no, date, vehiclename, ownername, typeofvehicle, plateno, datestarted, status
+        ) VALUES (
+            :tenant_id, :parking_no, :date, :vehiclename, :ownername, :typeofvehicle, :plateno, :datestarted, 'Pending'
+        )";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'tenant_id' => $userId,
+            'parking_no' => $data['parking_no'] ?? null,
+            'date' => $data['date'] ?? date('Y-m-d'),
+            'vehiclename' => $data['vehicleName'] ?? $data['vehiclename'] ?? '',
+            'ownername' => $data['vehicleOwner'] ?? $data['ownername'] ?? '',
+            'typeofvehicle' => $data['vehicleType'] ?? $data['typeofvehicle'] ?? '',
+            'plateno' => $data['plateNo'] ?? $data['plateno'] ?? '',
+            'datestarted' => $data['dateStarted'] ?? $data['datestarted'] ?? ''
+        ]);
+    }
+
+    public function hasPendingParkingApplication($userId) {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM tenant_parking WHERE tenant_id = :uid AND status = 'Pending'");
+        $stmt->execute(['uid' => $userId]);
+        return $stmt->fetchColumn() > 0;
+    }
+
+    public function getParkingApplicationsByTenant($userId) {
+        $stmt = $this->db->prepare("SELECT * FROM tenant_parking WHERE tenant_id = :uid ORDER BY parking_id DESC");
+        $stmt->execute(['uid' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     // ─── TENANT SUBMISSION ──────────────────────────

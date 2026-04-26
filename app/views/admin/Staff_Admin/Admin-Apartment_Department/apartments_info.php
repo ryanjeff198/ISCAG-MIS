@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ISCAG MIS — Apartment Management</title>
     <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
-    <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+    <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #0f5c3a 0%, #1a8e5f 100%);
@@ -138,6 +138,34 @@
         .badge-maintenance { background: rgba(139, 46, 46, 0.1); color: var(--danger); }
 
         /* Image Gallery in Modal */
+        .btn-delete {
+            border-color: rgba(220, 53, 69, 0.3) !important;
+            color: var(--danger) !important;
+            background: rgba(220, 53, 69, 0.05) !important;
+        }
+        .btn-delete:hover {
+            background: var(--danger) !important;
+            color: white !important;
+            border-color: var(--danger) !important;
+        }
+        .btn-delete:hover svg {
+            fill: white !important;
+        }
+        
+        .btn-edit {
+            color: var(--primary) !important;
+            border-color: rgba(47, 138, 96, 0.3) !important;
+            background: rgba(47, 138, 96, 0.05) !important;
+        }
+        .btn-edit:hover {
+            background: var(--primary) !important;
+            color: white !important;
+            border-color: var(--primary) !important;
+        }
+        .btn-edit:hover svg {
+            fill: white !important;
+        }
+        
         .image-gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -454,7 +482,8 @@
         </div>
     </div>
 
-    <script src="<?= asset('JS/admin-shared.js') ?>"></script>
+    <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
     <script>
         standardizePage('staff');
         syncSessionUser("<?= addslashes(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>", "<?= addslashes($dbUser['email'] ?? '') ?>", "Staff Admin");
@@ -515,13 +544,36 @@
                     <div class="type-card-content" style="padding:16px;">
                         <h6 style="margin:0 0 4px; font-family:'Lora',serif; color:var(--primary-dark); font-weight:700;">${t.label}</h6>
                         <p style="color:var(--accent); font-weight:700; font-size:0.95rem; margin-bottom:12px;">₱${Number(t.price).toLocaleString()} / month</p>
-                        <div style="display:flex; gap:12px; font-size:0.78rem; color:var(--text-muted);">
+                        <div style="display:flex; gap:12px; font-size:0.78rem; color:var(--text-muted); margin-bottom:16px;">
                             <span style="display:flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:13px; fill:currentColor;"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg> ${t.capacity}</span>
                         </div>
+                        <button class="btn-topbar" style="width:100%; justify-content:center; gap:8px; background:var(--bg-light); color:var(--primary); border-color:var(--primary);" onclick="previewUnit(${t.type_id})">
+                            <svg viewBox="0 0 24 24" style="width:14px; fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                            Preview as User
+                        </button>
                     </div>
                 </div>
             `).join('');
             grid.innerHTML = html;
+        }
+
+        function previewUnit(id) {
+            const t = apartmentTypes.find(x => x.type_id == id);
+            if (!t) return;
+            
+            // Format data for room-preview.js
+            const unitData = {
+                ...t,
+                images: t.images || []
+            };
+
+            if (window.openRoomPreview) {
+                window.openRoomPreview(unitData, {
+                    basePath: '<?= asset("assets/") ?>',
+                    serveUrl: '<?= url("/api/apartment-types/serve-image") ?>',
+                    onSelect: () => showToast("Selection preview successful", "var(--info)")
+                });
+            }
         }
 
         function renderUnits() {
@@ -551,8 +603,9 @@
                                 <svg viewBox="0 0 24 24" style="width:14px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
                                 Edit
                             </button>
-                            <button class="btn-action btn-delete" style="padding:5px; border-radius:50%;" onclick="deleteUnit(${u.unit_id})" title="Delete Unit">
+                            <button class="btn-action btn-delete" style="padding:5px 12px; gap:6px;" onclick="deleteUnit(${u.unit_id})" title="Delete Unit">
                                 <svg viewBox="0 0 24 24" style="width:14px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                Delete
                             </button>
                         </div>
                     </td>

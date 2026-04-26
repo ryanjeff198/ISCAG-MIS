@@ -7,14 +7,20 @@ $display_name = trim(($account['first_name'] ?? '') . ' ' . ($account['last_name
 $phpUser = [
     'name' => $display_name,
     'email' => $info['email'] ?? ($account['email'] ?? ''),
-    'gender' => !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? ''),
+    'sex' => (function() use ($info, $account) {
+        $s = !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? $account['gender'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
+        $ls = strtolower($s);
+        if ($ls === 'female' || $ls === 'f') return 'Female';
+        if ($ls === 'male' || $ls === 'm') return 'Male';
+        return $s;
+    })(),
     'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
     'dob' => $info['birthdate'] ?? '',
     'civil' => $info['civil_status'] ?? '',
     'address' => $info['address'] ?? '',
     'occupation' => $info['occupation'] ?? '',
     'arabicName' => $info['muslimname'] ?? '',
-    'revertYear' => !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '',
+    'revertYear' => !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '',
 ];
 ?>
 <!DOCTYPE html>
@@ -601,8 +607,8 @@ $phpUser = [
         // The sidebar already rendered the correct PHP role; here we just
         // style it green. Lock state also comes from session, not localStorage.
         const DB_USER = <?= json_encode($phpUser) ?>;
-        const PROFILE_FIELDS = ['name', 'email', 'gender', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
-        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', gender: 'Gender', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
+        const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
+        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', sex: 'Sex', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
 
         // Calculate profile completion from DB data
         const missingFields = [];
@@ -618,11 +624,43 @@ $phpUser = [
             navRole.style.color = isComplete ? 'var(--success)' : 'var(--warning)';
         }
 
+        // ── Real Notifications Integration ──
+        const SERVER_NOTIFS = <?= json_encode($notifications ?? []) ?>;
+        
+        function renderServerNotifications() {
+            const container = document.getElementById('notif-container');
+            if (!SERVER_NOTIFS || SERVER_NOTIFS.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:var(--border);margin-bottom:12px;"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                        <h4 style="color:var(--text-muted);font-family:'Lora',serif;margin:0;">No notifications found</h4>
+                        <p style="font-size:0.85rem;color:var(--text-muted);">You'll see alerts here when your requests are updated.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = SERVER_NOTIFS.map(n => {
+                const isRead = parseInt(n.is_read) === 1;
+                return `
+                    <div class="notif-card ${isRead ? '' : 'unread'}" onclick="window.location.href='?view=${n.notification_id}'">
+                        <div class="notif-icon type-${n.type || 'system'}">
+                            <svg viewBox="0 0 24 24">${getIconSvg(n.type)}</svg>
+                        </div>
+                        <div class="notif-content">
+                            <div class="notif-header">
+                                <h5 class="notif-title">${n.title}</h5>
+                                <span class="notif-time">${new Date(n.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <p class="notif-message">${n.message}</p>
+                            <div style="font-size:0.75rem;color:var(--accent);font-weight:600;margin-top:4px;">Click to read full details</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        if (!viewId) renderServerNotifications();
     </script>
 </body>
-
-</html>
-    </script>
-</body>
-
 </html>

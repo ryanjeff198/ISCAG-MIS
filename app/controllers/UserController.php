@@ -14,6 +14,12 @@ class UserController extends Controller
         
         $userModel = new User();
         $account = $userModel->findById($userId);
+        
+        // Synchronize session role with database role (Real-time approval updates)
+        if ($account && isset($account['role']) && $account['role'] !== ($_SESSION['role'] ?? '')) {
+            $_SESSION['role'] = $account['role'];
+        }
+
         $info = $userModel->getAdditionalInfo($userId);
         
         $appModel = new ApartmentApp();
@@ -49,9 +55,14 @@ class UserController extends Controller
         $account = $userModel->findById($userId);
         $info = $userModel->getAdditionalInfo($userId);
 
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $notifModel = new Notification();
+        $notifications = $notifModel->getUserNotifications($userId);
+
         $this->view('user/tenant_notification', [
             'account' => $account,
-            'info' => $info
+            'info' => $info,
+            'notifications' => $notifications
         ]);
     }
 

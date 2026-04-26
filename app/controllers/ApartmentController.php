@@ -15,8 +15,13 @@ class ApartmentController extends Controller {
         $userId = $_SESSION['user_id'];
         $model = new ApartmentApp();
         $application = $model->getApplication($userId);
+        $uploadedDocs = $model->getUploadedDocTypes($userId);
+        $tenantInfo = $model->getInfo($userId);
+        
         $this->view('user/Apartment/tenant_status', [
-            'application' => $application
+            'application' => $application,
+            'uploadedDocs' => $uploadedDocs,
+            'tenantInfo' => $tenantInfo
         ]);
     }
 
@@ -25,8 +30,13 @@ class ApartmentController extends Controller {
         $userId = $_SESSION['user_id'];
         $model = new ApartmentApp();
         $application = $model->getApplication($userId);
+        $tenantInfo = $model->getInfo($userId);
+        $uploadedDocs = $model->getUploadedDocTypes($userId);
+        
         $this->view('user/Apartment/apartment_information', [
-            'application' => $application
+            'application' => $application,
+            'tenantInfo' => $tenantInfo,
+            'uploadedDocs' => $uploadedDocs
         ]);
     }
 

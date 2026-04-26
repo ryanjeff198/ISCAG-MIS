@@ -79,13 +79,63 @@ class AdminController extends Controller
         $this->view('admin/Staff_Admin/Admin-Apartment_Department/statement_of_account', ['dbUser' => $dbUser]);
     }
 
+    public function tenantInfo(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+
+        $userModel = new User();
+        $appModel = new ApartmentApp();
+
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        // Get all tenant accounts
+        $db = getDbConnection();
+        $stmt = $db->query("SELECT tenant_id, first_name, last_name, email, contactnum, role FROM tenant_accounts ORDER BY tenant_id DESC");
+        $tenants = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Get all applications (with addinfo data)
+        $applications = $appModel->getAllApplications();
+
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/tenant_info', [
+            'dbUser' => $dbUser,
+            'tenants' => $tenants,
+            'applications' => $applications
+        ]);
+    }
+
     public function payment(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        require_once BASE_PATH . '/app/models/ApartmentType.php';
+
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
-        $this->view('admin/Staff_Admin/Admin-Apartment_Department/payment', ['dbUser' => $dbUser]);
+
+        $appModel = new ApartmentApp();
+        $typeModel = new ApartmentType();
+
+        $applications = $appModel->getAllApplications();
+        $approvedTenants = array_values(array_filter($applications, function($app) {
+            $status = strtolower($app['status'] ?? '');
+            return $status === 'approved' || $status === 'assigned' || $status === 'queued';
+        }));
+
+        $db = getDbConnection();
+        $stmt = $db->query("SELECT tenant_id, first_name, last_name, email, role FROM tenant_accounts ORDER BY first_name ASC");
+        $allUsers = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $apartmentTypes = $typeModel->getAllTypes();
+
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/payment', [
+            'dbUser' => $dbUser,
+            'approvedTenants' => $approvedTenants,
+            'allUsers' => $allUsers,
+            'apartmentTypes' => $apartmentTypes
+        ]);
     }
 
     // MIS Admin Modules
@@ -104,6 +154,57 @@ class AdminController extends Controller
         ]);
     }
 
+    public function staffApproveApartmentApp(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        if ($id !== null && $id !== '') {
+            require_once BASE_PATH . '/app/models/ApartmentApp.php';
+            require_once BASE_PATH . '/app/models/User.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            
+            $appModel = new ApartmentApp();
+            $notifModel = new Notification();
+            
+            // Use the Room Assignment & Waitlist Engine
+            $result = $appModel->assignOrQueue((int) $id);
+            
+            $tenantId = $appModel->getTenantIdByApplicationId($id);
+            
+            if ($result['result'] === 'assigned') {
+                $notifModel->create(
+                    $tenantId,
+                    'Room Assigned!',
+                    'Congratulations! You have been assigned to Room ' . $result['room_number'] 
+                    . ' in ' . $result['building'] . '. Your account has been upgraded to Tenant.',
+                    'approval'
+                );
+            } elseif ($result['result'] === 'queued') {
+                $appModel->updateApplicationStatus($id, 'Queued');
+                $notifModel->create(
+                    $tenantId,
+                    'Application Accepted — Waitlisted',
+                    'Your application has been verified and accepted, but all rooms of your requested type are currently full. '
+                    . 'You are #' . $result['queue_position'] . ' in the waiting list. '
+                    . 'You will be notified when a room becomes available.',
+                    'info'
+                );
+            }
+        }
+        header('Location: ' . url('/admin/apartment/confirmation'));
+    }
+
+    public function staffRejectApartmentApp(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        $reason = $_GET['reason'] ?? null;
+        if ($id !== null && $id !== '') {
+            require_once BASE_PATH . '/app/models/ApartmentApp.php';
+            $model = new ApartmentApp();
+            $model->updateApplicationStatus($id, 'Rejected', $reason);
+        }
+        header('Location: ' . url('/admin/apartment/confirmation'));
+    }
+
     public function apartmentRecords(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         $this->view('admin/mis_admin/apartment_records', ['active_page' => 'apartment_records']);
@@ -118,59 +219,6 @@ class AdminController extends Controller
             'active_page' => 'apartment_confirmation',
             'reports' => $reports
         ]);
-    }
-
-    public function approveApartmentApp(): void {
-        Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $id = $_GET['id'] ?? null;
-        if ($id) {
-            require_once BASE_PATH . '/app/models/ApartmentApp.php';
-            require_once BASE_PATH . '/app/models/User.php';
-            require_once BASE_PATH . '/app/models/Notification.php';
-            
-            $appModel = new ApartmentApp();
-            $notifModel = new Notification();
-            
-            // Use the Room Assignment & Waitlist Engine
-            $result = $appModel->assignOrQueue((int) $id);
-            
-            $tenantId = $appModel->getTenantIdByApplicationId($id);
-            
-            if ($result['result'] === 'assigned') {
-                // Room was available — tenant got assigned immediately
-                $notifModel->create(
-                    $tenantId,
-                    'Room Assigned!',
-                    'Congratulations! You have been assigned to Room ' . $result['room_number'] 
-                    . ' in ' . $result['building'] . '. Your account has been upgraded to Tenant.',
-                    'approval'
-                );
-            } elseif ($result['result'] === 'queued') {
-                // No rooms available — tenant is waitlisted
-                $appModel->updateApplicationStatus($id, 'Queued');
-                $notifModel->create(
-                    $tenantId,
-                    'Application Accepted — Waitlisted',
-                    'Your application has been verified and accepted, but all rooms of your requested type are currently full. '
-                    . 'You are #' . $result['queue_position'] . ' in the waiting list. '
-                    . 'You will be notified when a room becomes available.',
-                    'info'
-                );
-            }
-        }
-        header('Location: ' . url('/admin/mis_admin/apartment_confirmation'));
-    }
-
-    public function rejectApartmentApp(): void {
-        Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $id = $_GET['id'] ?? null;
-        $reason = $_GET['reason'] ?? null;
-        if ($id) {
-            require_once BASE_PATH . '/app/models/ApartmentApp.php';
-            $model = new ApartmentApp();
-            $model->updateApplicationStatus($id, 'Rejected', $reason);
-        }
-        header('Location: ' . url('/admin/mis_admin/apartment_confirmation'));
     }
 
     public function parkingApproval(): void {
@@ -205,6 +253,41 @@ class AdminController extends Controller
             $model->updateParkingStatus($id, 'Rejected', $reason);
         }
         header('Location: ' . url('/admin/mis_admin/parking_approval'));
+    }
+
+    // ── Staff Parking Approval ──
+    public function staffParkingApproval(): void {
+        Auth::protectRole(['Staff_Tenant', 'Admin']);
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        $model = new ApartmentApp();
+        $reports = $model->getAllParkingApplications();
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/parking_info', [
+            'active_page' => 'parking_approval',
+            'reports' => $reports
+        ]);
+    }
+
+    public function staffApproveParking(): void {
+        Auth::protectRole(['Staff_Tenant', 'Admin']);
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            require_once BASE_PATH . '/app/models/ApartmentApp.php';
+            $model = new ApartmentApp();
+            $model->updateParkingStatus($id, 'Approved');
+        }
+        header('Location: ' . url('/admin/apartment/parking'));
+    }
+
+    public function staffRejectParking(): void {
+        Auth::protectRole(['Staff_Tenant', 'Admin']);
+        $id = $_GET['id'] ?? null;
+        $reason = $_GET['reason'] ?? null;
+        if ($id) {
+            require_once BASE_PATH . '/app/models/ApartmentApp.php';
+            $model = new ApartmentApp();
+            $model->updateParkingStatus($id, 'Rejected', $reason);
+        }
+        header('Location: ' . url('/admin/apartment/parking'));
     }
 
     public function billing(): void {

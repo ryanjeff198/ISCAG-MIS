@@ -7,7 +7,7 @@
   <title>ISCAG MIS — Apartment Staff Admin</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <meta name="description" content="Staff Admin dashboard for Apartment department management" />
-  <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+  <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
     .btn-action.btn-assign:disabled {
       opacity: 0.4;
@@ -373,7 +373,7 @@
   </div>
 
   <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
-  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
+  <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
     <?php
       $totalUnits = count($units);
@@ -584,8 +584,14 @@
     renderBilling();
 
     // ── Room Preview ──
-    function adminPreview(unitType, availCount) {
-      if (typeof openRoomPreview === 'function') {
+    async function adminPreview(unitType, availCount) {
+      if (typeof openRoomPreview !== 'function') {
+        showToast('ℹ️ Room preview module not loaded.', 'var(--info)');
+        return;
+      }
+
+      // If it's a legacy type in ROOM_DATA, just open it
+      if (typeof ROOM_DATA !== 'undefined' && ROOM_DATA[unitType]) {
         openRoomPreview(unitType, {
           availableCount: availCount,
           basePath: '<?= asset('assets/') ?>',
@@ -594,16 +600,39 @@
             showToast('📋 Unit details for ' + type.toUpperCase() + ' — view only in Staff Admin mode.', 'var(--info)');
           }
         });
-      } else {
-        showToast('ℹ️ Room preview module not loaded.', 'var(--info)');
+        return;
+      }
+
+      // Otherwise, it's a dynamic type, we need to fetch its details
+      try {
+        const res = await fetch('<?= url("/api/apartment-types") ?>').then(r => r.json());
+        if (res.success) {
+          const typeObj = res.data.find(t => t.type_key === unitType);
+          if (typeObj) {
+            // Also need to get full details for images
+            const detailRes = await fetch(`<?= url("/api/apartment-types/detail") ?>?id=${typeObj.type_id}`).then(r => r.json());
+            const fullTypeObj = detailRes.success ? detailRes.data : typeObj;
+            
+            openRoomPreview(fullTypeObj, {
+              availableCount: availCount,
+              serveUrl: '<?= url("/api/apartment-types/serve-image") ?>',
+              selectLabel: 'View Unit Details',
+              onSelect: function (type) {
+                showToast('📋 Unit details for ' + typeObj.label + ' — view only in Staff Admin mode.', 'var(--info)');
+              }
+            });
+            return;
+          }
+        }
+        showToast('⚠️ Could not load details for this unit type.', 'var(--warning)');
+      } catch (e) {
+        console.error(e);
+        showToast('⚠️ Error loading unit details.', 'var(--danger)');
       }
     }
 
-    // ── Sidebar & Modals ──
-    initSidebar();
     setupModalClose('assign-modal');
     setupModalClose('manage-modal');
-    refreshStats();
 
     // ── Manage Unit Logic ──
     function openManageUnit(aptId) {
