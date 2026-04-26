@@ -1,11 +1,15 @@
-<?php 
-// ═══════════════════════════════════════════
-//  LOAD SESSION & DATA
-// ═══════════════════════════════════════════
-$user_id = $_SESSION['user_id'] ?? null;
-// $parkingApp should be passed from controller
-?>
+<?php
+require_once BASE_PATH . '/app/models/ApartmentApp.php';
+$apaModel = new ApartmentApp();
+$userId = $_SESSION['user_id'];
+$appInfo = $apaModel->getApplication($userId);
+$userFullInfo = $apaModel->getInfo($userId);
 
+$assignedRoom = $appInfo['room_number'] ?? '';
+$assignedBldg = $appInfo['building'] ?? '';
+$fullName = ($userFullInfo['givenname'] ?? '') . ' ' . ($userFullInfo['familyname'] ?? '');
+$dob = $userFullInfo['birthdate'] ?? '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -230,24 +234,203 @@ $user_id = $_SESSION['user_id'] ?? null;
     </style>
 </head>
 
-<body>
-    <!-- ═══ PERMIT DETAILS MODAL ═══ -->
-    <div class="modal-overlay" id="permit-modal">
-        <div class="modal-container" style="max-width: 600px;">
-            <div class="modal-header">
-                <h3>Vehicle Permit Details</h3>
-                <button class="btn-close-modal" onclick="closePermitModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="print-area">
-                    <div class="permit-card-modal">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; border-bottom:1.5px solid #d1dbd8; padding-bottom:16px;">
-                            <img src="<?= asset('assets/logo.jpg') ?>" style="height:50px; border-radius:6px;" />
-                            <div style="text-align:right;">
-                                <div id="detail-status" class="status-pill approved">Verified Access</div>
-                                <div style="font-size:0.65rem; color:#999; margin-top:4px; font-weight:800;">PERMIT ID: <span id="detail-permit-id">#PKG-0000</span></div>
-                            </div>
-                        </div>
+        .reject-feedback h5 {
+            font-family: 'Lora', serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--danger);
+            margin: 0 0 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .reject-feedback h5 svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--danger);
+        }
+
+        .reject-feedback p {
+            font-size: 0.82rem;
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* ── Toast ── */
+        .toast-notification {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 14px 22px;
+            border-radius: 10px;
+            z-index: 99999;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+            max-width: 400px;
+            color: white;
+            animation: slideUp 0.3s ease;
+        }
+
+        /* ── Scrollbar ── */
+        .main-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .main-content::-webkit-scrollbar-thumb:hover {
+            background: #b0bcc8;
+        }
+
+        /* ── Success Modal ── */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .success-modal {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .success-modal {
+            transform: translateY(0) scale(1);
+        }
+        .success-modal-icon {
+            width: 72px;
+            height: 72px;
+            background: rgba(47, 138, 96, 0.1);
+            color: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+        .success-modal-icon svg {
+            width: 36px;
+            height: 36px;
+            fill: currentColor;
+        }
+        .success-modal h3 {
+            font-family: 'Lora', serif;
+            font-size: 1.4rem;
+            color: var(--primary-dark);
+            margin: 0 0 12px;
+        }
+        .success-modal p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin: 0 0 32px;
+            line-height: 1.5;
+        }
+        .success-modal-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+            color: white;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .success-modal-btn:hover {
+            box-shadow: 0 6px 20px rgba(23, 107, 69, 0.35);
+            transform: translateY(-2px);
+        }
+
+        /* ── Animations ── */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 220px;
+            }
+
+            .page-body {
+                padding: 18px;
+            }
+
+            .form-doc-header-top {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .date-row {
+                flex-direction: column;
+                gap: 12px;
+                padding: 16px 18px 12px;
+            }
+
+            .address-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .form-doc-body {
+                padding: 16px 18px 24px;
+            }
+
+            .form-submit-row {
+                padding: 16px 18px;
+                justify-content: center;
+            }
+
+            .signature-grid {
+                grid-template-columns: 1fr;
+            }
 
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
                             <div class="summary-item">
@@ -325,6 +508,20 @@ $user_id = $_SESSION['user_id'] ?? null;
         </div>
     </div>
 
+<body>
+    <?php if (isset($hasPendingParking) && $hasPendingParking): ?>
+    <div class="modal-overlay active" style="z-index: 999999; display: flex !important;">
+        <div class="success-modal">
+            <div class="success-modal-icon" style="background: rgba(246, 194, 62, 0.1); color: var(--warning);">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            </div>
+            <h3 style="color: var(--text-main);">Application is Pending</h3>
+            <p>You have a parking rental application that is currently awaiting administrative approval. Please wait for the admins to process your existing application before submitting a new one.</p>
+            <a href="<?= url('/user/apartment/info') ?>" class="success-modal-btn" style="background: linear-gradient(135deg, var(--text-main), var(--text-muted));">Return to Dashboard</a>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div class="app-wrapper">
         <!-- ═══ SIDEBAR ═══ -->
         <?php 
@@ -376,58 +573,140 @@ $user_id = $_SESSION['user_id'] ?? null;
                             </div>
                         </div>
 
-                        <div style="overflow-x: auto;">
-                            <table class="concept-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 60px;">No.</th>
-                                        <th>Vehicle Name</th>
-                                        <th>Plate Number</th>
-                                        <th>Type</th>
-                                        <th>Status</th>
-                                        <th style="text-align: center;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php $no = 1; foreach ($parkingApps as $app): ?>
-                                        <?php 
-                                            $s = strtoupper($app['status'] ?? 'PENDING');
-                                            $pillClass = ($s === 'APPROVED') ? 'approved' : (($s === 'REJECTED') ? 'rejected' : 'pending');
-                                            $appJson = htmlspecialchars(json_encode($app), ENT_QUOTES, 'UTF-8');
-                                        ?>
+                        <!-- FORM BODY -->
+                        <div class="form-doc-body">
+
+                            <!-- PERSONAL INFORMATION -->
+                            <div class="doc-section-title">
+                                <svg viewBox="0 0 24 24">
+                                    <path
+                                        d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                                </svg>
+                                Personal Information
+                            </div>
+
+                            <table class="info-table">
+                                <tr>
+                                    <td class="field-label">Full Name</td>
+                                    <td class="field-value" colspan="3">
+                                        <input type="text" id="full-name" placeholder="Enter your full name" value="<?= htmlspecialchars($fullName) ?>" readonly />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="field-label">Date of Birth</td>
+                                    <td class="field-value" colspan="3">
+                                        <input type="date" id="date-of-birth" value="<?= htmlspecialchars($dob) ?>" readonly />
+                                    </td>
+                                </tr>
+                            </table>
+
+                            
+                            
+                                    
+                                      
+                            </table>
+
+                            <div class="address-grid">
+                                <div class="addr-cell">
+                                    <div class="addr-label">Room No.</div>
+                                    <input type="text" id="room-no" placeholder="e.g. 101" value="<?= htmlspecialchars($assignedRoom) ?>" readonly />
+                                </div>
+                                <div class="addr-cell">
+                                    <div class="addr-label">Bldg. No.</div>
+                                    <input type="text" id="bldg-no" placeholder="e.g. A" value="<?= htmlspecialchars($assignedBldg) ?>" readonly />
+                                </div>
+                                <div class="addr-cell">
+                                    <div class="addr-label">Barangay</div>
+                                    <input type="text" id="brgy" value="Salitran I" readonly />
+                                </div>
+                                <div class="addr-cell">
+                                    <div class="addr-label">Municipality / City</div>
+                                    <input type="text" id="mun-city" value="Dasmariñas City" readonly />
+                                </div>
+                            </div>
+
+                            <!-- VEHICLE INFORMATION -->
+                            <div class="doc-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+                                    </svg>
+                                    Vehicle Information
+                                </div>
+                                <button type="button" id="btn-add-vehicle" style="font-size:0.85rem; padding:6px 14px; background:var(--primary); color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer; align-items:center; display:flex; gap:6px;">
+                                    <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Add Vehicle
+                                </button>
+                            </div>
+
+                            <div id="vehicles-container">
+                                <div class="vehicle-block" style="border: 1.5px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 20px; position:relative; background: #fafafa;">
+                                    <div class="vehicle-header" style="font-weight:800; margin-bottom:16px; font-size:1rem; color:var(--primary-dark); display:flex; align-items:center; gap:8px;">
+                                        <svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg> 
+                                        <span>Vehicle #1</span>
+                                    </div>
+                                    <table class="info-table" style="background:white;">
                                         <tr>
-                                            <td style="font-weight: 700; color: #999;"><?= $no++ ?>.</td>
-                                            <td style="font-weight: 700; color: var(--primary-dark);"><?= htmlspecialchars($app['vehiclename']) ?></td>
-                                            <td><code style="font-family: monospace; font-weight: 700; background: #f4f6f5; padding: 4px 10px; border-radius: 6px; color: #333;"><?= htmlspecialchars($app['plateno']) ?></code></td>
-                                            <td><?= htmlspecialchars($app['typeofvehicle']) ?></td>
-                                            <td>
-                                                <span class="status-pill <?= $pillClass ?>">
-                                                    <span style="width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
-                                                    <?= $s ?>
-                                                </span>
-                                            </td>
-                                            <td style="text-align: center; display: flex; justify-content: center; gap: 8px;">
-                                                <button class="btn-view" onclick='viewDetails(<?= $appJson ?>)'>
-                                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                                                    View Details
-                                                </button>
-                                                <button class="btn-download" onclick='downloadPermit(<?= $appJson ?>)'>
-                                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                                                    Download
-                                                </button>
+                                            <td class="field-label">Name of Vehicle</td>
+                                            <td class="field-value" colspan="3">
+                                                <input type="text" class="vehicle-name" placeholder="e.g. Toyota Vios" />
                                             </td>
                                         </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
+                                        <tr>
+                                            <td class="field-label">Name of Owner</td>
+                                            <td class="field-value" colspan="3">
+                                                <input type="text" class="vehicle-owner" placeholder="Enter vehicle owner's name" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="field-label">Type of Vehicle</td>
+                                            <td class="field-value">
+                                                <select class="vehicle-type">
+                                                    <option value="">Select type...</option>
+                                                    <option value="Sedan">Sedan</option>
+                                                    <option value="SUV">SUV</option>
+                                                    <option value="Van">Van</option>
+                                                    <option value="Motorcycle">Motorcycle</option>
+                                                    <option value="Pickup Truck">Pickup Truck</option>
+                                                    <option value="Hatchback">Hatchback</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </td>
+                                            <td class="field-label">Plate No.</td>
+                                            <td class="field-value">
+                                                <input type="text" class="plate-no" placeholder="e.g. ABC 1234" style="text-transform:uppercase;font-weight:600;" />
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- DATE STARTED -->
+                            <div class="doc-section-title">
+                                <svg viewBox="0 0 24 24">
+                                    <path
+                                        d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
+                                </svg>
+                                Rental Period
+                            </div>
+
+                            <table class="info-table">
+                                <tr>
+                                    <td class="field-label">Date Started</td>
+                                    <td class="field-value" colspan="3">
+                                        <input type="date" id="date-started" />
+                                    </td>
+                                </tr>
                             </table>
-                        </div>
-                    </div>
-                <?php else: ?>
-                    <!-- ═══ EMPTY STATE HERO (Not Registered) ═══ -->
-                    <div class="status-hero">
-                        <div class="status-hero-top" style="background: linear-gradient(135deg, #164e58, #237a8a); text-align: center; padding: 60px 40px;">
-                            <div class="hero-icon-box" style="margin: 0 auto 24px; width: 80px; height: 80px;">
-                                <svg viewBox="0 0 24 24" style="width: 40px; height: 40px;"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+
+                            <!-- SUBMIT ROW -->
+                            <div class="form-submit-row">
+                                
+                                <button class="btn-submit" id="btn-submit" type="button">
+                                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;">
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                                    </svg>
+                                    Submit Application
+                                </button>
                             </div>
                             <h3 class="hero-title" style="font-size: 1.8rem;">No Vehicle Registered</h3>
                             <p style="color: rgba(255,255,255,0.8); max-width: 500px; margin: 12px auto 32px; line-height: 1.6;">Register your vehicle to secure a parking permit and gain authorized access to the apartment parking areas.</p>
@@ -499,22 +778,50 @@ $user_id = $_SESSION['user_id'] ?? null;
                                 <div class="status-pill ${app.status.toLowerCase()}">${app.status.toUpperCase() === 'APPROVED' ? 'Approved' : (app.status.toUpperCase() === 'REJECTED' ? 'Rejected' : 'Under Review')}</div>
                                 <div style="font-size:0.65rem; color:#999; margin-top:4px; font-weight:800;">PERMIT ID: #PKG-${String(app.parking_id).padStart(4, '0')}</div>
                             </div>
-                        </div>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
-                            <div class="summary-item"><label>Vehicle Name</label><span style="font-size:1.2rem; font-weight:700; color:#333;">${app.vehiclename}</span></div>
-                            <div class="summary-item"><label>Plate Number</label><span style="font-family:monospace; background:#fff; padding:4px 12px; border:1px solid #d1dbd8; border-radius:6px; letter-spacing:0.1em; font-weight:700; color:#333;">${app.plateno}</span></div>
-                            <div class="summary-item"><label>Authorized Holder</label><span style="font-weight:700; color:#333;">${app.ownername || 'Registered Tenant'}</span></div>
-                            <div class="summary-item"><label>Vehicle Type</label><span style="font-weight:700; color:#333;">${app.typeofvehicle}</span></div>
-                        </div>
-                        <div style="margin-top:32px; padding-top:16px; border-top:1px dashed #d1dbd8; font-size:0.7rem; color:#888; line-height:1.5;">
-                            This permit authorizes the vehicle above to access the ISCAG Apartment parking facilities. Non-transferable and must be presented upon request.
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(ghostContainer);
-                targetArea = ghostContainer;
-            } else {
-                targetArea = document.getElementById('print-area');
+
+                    </div><!-- /.form-document -->
+
+                </div><!-- /.page-body -->
+            </div><!-- /.main-content -->
+        <!-- Success Modal -->
+        <div class="modal-overlay" id="success-modal">
+            <div class="success-modal">
+                <div class="success-modal-icon">
+                    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
+                </div>
+                <h3>Application Submitted!</h3>
+                <p>Your parking rental application has been successfully submitted and is now queued for administrative review. You can track its status in your tenant portal.</p>
+                <a href="<?= url('/user/apartment/info') ?>" class="success-modal-btn">Continue to Dashboard</a>
+            </div>
+        </div>
+
+        </div><!-- /.app-wrapper -->
+
+        <script>
+            // ══════════════════════════════════════════
+            // DATA HELPERS
+            // ══════════════════════════════════════════
+            const STORAGE_KEYS = { user: 'mis_user', parking: 'mis_parking_applications' };
+            const DEFAULT_USER = { id: 'USR-001', name: 'Muhammad Usman', email: 'musman@example.com', gender: '', phone: '', address: '', dob: '', civil: '', occupation: '', arabicName: '', membership: '', revertYear: '', apartment: '', profileComplete: false };
+
+            function getUser() {
+                const raw = localStorage.getItem(STORAGE_KEYS.user);
+                return raw ? JSON.parse(raw) : { ...DEFAULT_USER };
+            }
+
+            function getParkingApps() {
+                const raw = localStorage.getItem(STORAGE_KEYS.parking);
+                return raw ? JSON.parse(raw) : [];
+            }
+
+            function saveParkingApps(apps) {
+                localStorage.setItem(STORAGE_KEYS.parking, JSON.stringify(apps));
+            }
+
+            function generateParkingId() {
+                const apps = getParkingApps();
+                const num = apps.length + 1;
+                return 'PKG-' + String(num).padStart(4, '0');
             }
 
             const btn = document.querySelector('.btn-download');
@@ -573,30 +880,138 @@ $user_id = $_SESSION['user_id'] ?? null;
                 return;
             }
 
-            const btn = document.getElementById('btn-submit');
-            btn.disabled = true;
-            btn.textContent = 'Submitting...';
 
-            fetch('<?= url("/user/apartment/parking/save") ?>', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(fields)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.reload();
-                } else {
-                    alert(data.message || 'Error submitting application.');
-                    btn.disabled = false;
-                    btn.textContent = 'Submit Registration';
+
+            // ── Auto-fill form date ──
+            document.getElementById('form-date').valueAsDate = new Date();
+            document.getElementById('parking-no').value = generateParkingId();
+
+            // Pre-fill user data removed (Handled by PHP)
+
+            // ── Dynamic Vehicles ──
+            const vehiclesContainer = document.getElementById('vehicles-container');
+            const btnAddVehicle = document.getElementById('btn-add-vehicle');
+            let vehicleCount = 1;
+
+            btnAddVehicle.addEventListener('click', () => {
+                vehicleCount++;
+                const block = document.createElement('div');
+                block.className = 'vehicle-block';
+                block.style.cssText = 'border: 1.5px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 20px; position:relative; background: #fafafa;';
+                block.innerHTML = `
+                    <button type="button" class="btn-remove-vehicle" style="position:absolute; top:20px; right:20px; background:rgba(220,53,69,0.1); border:none; color:var(--danger); font-size:1.2rem; cursor:pointer; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" title="Remove Vehicle">&times;</button>
+                    <div class="vehicle-header" style="font-weight:800; margin-bottom:16px; font-size:1rem; color:var(--primary-dark); display:flex; align-items:center; gap:8px;">
+                        <svg style="width:20px;height:20px;fill:currentColor;" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg> 
+                        <span>Vehicle #${vehicleCount}</span>
+                    </div>
+                    <table class="info-table" style="background:white;">
+                        <tr>
+                            <td class="field-label">Name of Vehicle</td>
+                            <td class="field-value" colspan="3"><input type="text" class="vehicle-name" placeholder="e.g. Honda Civic" /></td>
+                        </tr>
+                        <tr>
+                            <td class="field-label">Name of Owner</td>
+                            <td class="field-value" colspan="3"><input type="text" class="vehicle-owner" placeholder="Enter vehicle owner's name" /></td>
+                        </tr>
+                        <tr>
+                            <td class="field-label">Type of Vehicle</td>
+                            <td class="field-value">
+                                <select class="vehicle-type">
+                                    <option value="">Select type...</option>
+                                    <option value="Sedan">Sedan</option>
+                                    <option value="SUV">SUV</option>
+                                    <option value="Van">Van</option>
+                                    <option value="Motorcycle">Motorcycle</option>
+                                    <option value="Pickup Truck">Pickup Truck</option>
+                                    <option value="Hatchback">Hatchback</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </td>
+                            <td class="field-label">Plate No.</td>
+                            <td class="field-value"><input type="text" class="plate-no" placeholder="e.g. DEF 5678" style="text-transform:uppercase;font-weight:600;" /></td>
+                        </tr>
+                    </table>
+                `;
+                
+                block.querySelector('.btn-remove-vehicle').addEventListener('click', () => {
+                    block.remove();
+                    updateVehicleNumbers();
+                });
+                
+                vehiclesContainer.appendChild(block);
+            });
+
+            function updateVehicleNumbers() {
+                const headers = vehiclesContainer.querySelectorAll('.vehicle-header span');
+                headers.forEach((h, i) => {
+                    h.textContent = 'Vehicle #' + (i + 1);
+                });
+                vehicleCount = headers.length;
+            }
+
+            // ══════════════════════════════════════════
+            // FORM SUBMISSION
+            // ══════════════════════════════════════════
+            document.getElementById('btn-submit').addEventListener('click', () => {
+                const vehicleBlocks = document.querySelectorAll('.vehicle-block');
+                const vehicles = [];
+                let hasError = false;
+
+                vehicleBlocks.forEach((block, index) => {
+                    const name = block.querySelector('.vehicle-name').value.trim();
+                    const owner = block.querySelector('.vehicle-owner').value.trim();
+                    const type = block.querySelector('.vehicle-type').value;
+                    const plate = block.querySelector('.plate-no').value.trim().toUpperCase();
+
+                    if (!name || !owner || !type || !plate) {
+                        showToast('Please complete all fields for Vehicle #' + (index + 1), 'var(--danger)');
+                        hasError = true;
+                        return;
+                    }
+
+                    vehicles.push({ vehicleName: name, vehicleOwner: owner, vehicleType: type, plateNo: plate });
+                });
+
+                if (hasError) return;
+
+                const dateStarted = document.getElementById('date-started').value;
+                if (!dateStarted) {
+                    showToast('Please select Date Started', 'var(--danger)');
+                    return;
                 }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Network error.');
-                btn.disabled = false;
-                btn.textContent = 'Submit Application';
+
+                const fields = {
+                    date: document.getElementById('form-date').value,
+                    dateStarted: dateStarted,
+                    vehicles: vehicles
+                };
+
+                const btn = document.getElementById('btn-submit');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = 'Submitting...';
+                btn.disabled = true;
+
+                fetch('<?= url("/user/apartment/parking/submit") ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(fields)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('success-modal').classList.add('active');
+                    } else {
+                        showToast(data.message || 'Submission failed.', 'var(--danger)');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('Network error while submitting.', 'var(--danger)');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
             });
         });
     </script>

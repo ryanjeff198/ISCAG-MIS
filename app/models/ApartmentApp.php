@@ -202,6 +202,30 @@ class ApartmentApp {
     }
 
     // ─── PARKING METHODS ──────────────────────────
+    public function hasPendingParkingApplication($userId) {
+        $stmt = $this->db->prepare("SELECT 1 FROM tenant_parking WHERE tenant_id = :uid AND status = 'Pending' LIMIT 1");
+        $stmt->execute(['uid' => $userId]);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function saveParkingApplication($userId, $data) {
+        $sql = "INSERT INTO tenant_parking 
+                (tenant_id, date, vehiclename, ownername, typeofvehicle, plateno, datestarted, status) 
+                VALUES 
+                (:tenant_id, :date, :vehiclename, :ownername, :typeofvehicle, :plateno, :datestarted, 'Pending')";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'tenant_id' => $userId,
+            'date' => $data['date'] ?? date('Y-m-d'),
+            'vehiclename' => $data['vehicleName'] ?? '',
+            'ownername' => $data['vehicleOwner'] ?? '',
+            'typeofvehicle' => $data['vehicleType'] ?? '',
+            'plateno' => $data['plateNo'] ?? '',
+            'datestarted' => $data['dateStarted'] ?? ''
+        ]);
+    }
+
     public function getAllParkingApplications() {
         $sql = "
             SELECT 
@@ -216,7 +240,7 @@ class ApartmentApp {
                 p.plateno,
                 p.typeofvehicle,
                 p.datestarted,
-                p.datestarted as submitted_at,
+                p.date as submitted_at,
                 p.status,
                 p.remarks
             FROM tenant_parking p
