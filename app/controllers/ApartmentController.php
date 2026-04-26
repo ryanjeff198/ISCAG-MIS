@@ -156,17 +156,19 @@ class ApartmentController extends Controller {
 
     public function parking() {
         Auth::protectRole(['Tenant']);
-        $userId = $_SESSION['user_id'];
+        $model = new ApartmentApp();
+        // Repository logic: Check if user already has a pending application
+        $hasPending = $model->hasPendingParkingApplication($_SESSION['user_id']);
         
+        $userId = $_SESSION['user_id'];
         require_once BASE_PATH . '/app/models/User.php';
         $userModel = new User();
         $account = $userModel->findById($userId);
         $info = $userModel->getAdditionalInfo($userId);
-
-        $model = new ApartmentApp();
         $parkingApps = $model->getParkingApplicationsByTenant($userId);
-        
+
         $this->view('user/Apartment/tenant_parking', [
+            'hasPendingParking' => $hasPending,
             'parkingApps' => $parkingApps,
             'account' => $account,
             'info' => $info
@@ -176,32 +178,36 @@ class ApartmentController extends Controller {
     public function saveParking() {
         Auth::protectRole(['Tenant']);
         header('Content-Type: application/json');
-        
+        $userId = $_SESSION['user_id'];
         $body = json_decode(file_get_contents('php://input'), true);
+
         if (!$body) {
             echo json_encode(['success' => false, 'message' => 'No data received']);
             return;
         }
 
-        $userId = $_SESSION['user_id'];
         $model = new ApartmentApp();
-        
-        $data = [
-            'tenant_id' => $userId,
-            'parking_no' => $body['parkingNo'] ?? '',
-            'date' => date('Y-m-d'),
-            'vehiclename' => $body['vehicleName'] ?? '',
-            'ownername' => $body['ownerName'] ?? '',
-            'typeofvehicle' => $body['vehicleType'] ?? '',
-            'plateno' => $body['plateNo'] ?? '',
-            'datestarted' => $body['dateStarted'] ?? ''
-        ];
+        $allSuccess = true;
 
-        if ($model->saveParkingApplication($data)) {
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Database error']);
+        // Repository logic: Handle multiple vehicles if provided, otherwise handle single
+        $vehicles = $body['vehicles'] ?? [$body]; 
+
+        foreach ($vehicles as $vehicle) {
+            $payload = [
+                'date' => $body['date'] ?? date('Y-m-d'),
+                'dateStarted' => $body['dateStarted'] ?? $vehicle['dateStarted'] ?? '',
+                'vehicleName' => $vehicle['vehicleName'] ?? $vehicle['vehiclename'] ?? '',
+                'vehicleOwner' => $vehicle['vehicleOwner'] ?? $vehicle['ownerName'] ?? '',
+                'vehicleType' => $vehicle['vehicleType'] ?? $vehicle['typeofvehicle'] ?? '',
+                'plateNo' => $vehicle['plateNo'] ?? $vehicle['plateno'] ?? ''
+            ];
+
+            if (!$model->saveParkingApplication($userId, $payload)) {
+                $allSuccess = false;
+            }
         }
+
+        echo json_encode(['success' => $allSuccess]);
     }
 
     public function finalizeSubmission() {
