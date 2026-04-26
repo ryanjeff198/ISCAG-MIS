@@ -150,21 +150,162 @@ $assignedBldg = $appInfo['building'] ?? 'N/A';
         .btn-close-modal { background: none; border: none; font-size: 1.8rem; color: #ccc; cursor: pointer; transition: color 0.2s; }
         .btn-close-modal:hover { color: #666; }
 
-        /* ── Permit Card ── */
-        .permit-card {
-            background: #f8faf9; border: 2px dashed #d1dbd8; border-radius: 12px;
-            padding: 32px; margin: 32px; position: relative;
+        /* ═══════════════════════════════════════════
+           FORM DOCUMENT STYLES (Modern UI/UX)
+           ═══════════════════════════════════════════ */
+        .form-document {
+            background: white; max-width: 900px; margin: 32px auto 0;
+            border-radius: 12px; box-shadow: 0 2px 24px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
         }
-        .permit-watermark {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg);
-            font-size: 4rem; font-weight: 900; color: rgba(47, 138, 96, 0.03); pointer-events: none;
+        .form-doc-header {
+            background: linear-gradient(135deg, #fafdf9 0%, #f0f5f2 100%);
+            padding: 28px 32px 20px; border-bottom: 3px solid var(--primary);
         }
+        .form-doc-header-top { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
+        .form-doc-header-logo {
+            width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--primary); flex-shrink: 0;
+        }
+        .form-doc-header-text { flex: 1; text-align: center; }
+        .form-doc-header-text .arabic-line { font-size: 1rem; color: var(--primary-dark); margin-bottom: 2px; direction: rtl; font-weight: 600; }
+        .form-doc-header-text .org-name-ar { font-size: 0.9rem; color: var(--primary-dark); direction: rtl; margin-bottom: 4px; font-weight: 600; }
+        .form-doc-header-text .org-name-en { font-size: 0.82rem; font-weight: 700; color: var(--primary-dark); text-transform: uppercase; letter-spacing: 0.06em; }
+        .form-doc-header-text .sec-reg { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
+        .form-doc-title-bar { text-align: center; margin-top: 12px; }
+        .form-doc-title {
+            font-family: 'Lora', serif; font-size: 1.1rem; font-weight: 700; color: white;
+            background: var(--primary-dark); padding: 8px 32px; border-radius: 6px;
+            letter-spacing: 0.08em; text-transform: uppercase; display: inline-block;
+        }
+        .form-doc-body { padding: 24px 40px 32px; }
+        .doc-section-title {
+            font-family: 'Lora', serif; font-size: 0.9rem; font-weight: 700; color: var(--primary-dark);
+            text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 0 8px;
+            border-bottom: 2px solid #e8e2d0; margin: 24px 0 16px;
+        }
+        .doc-section-title:first-child { margin-top: 0; }
+
+        .align-row { display: flex; align-items: center; margin-bottom: 16px; gap: 16px; }
+        .align-label { width: 180px; font-weight: 700; color: var(--primary-dark); font-size: 0.95rem; white-space: nowrap; flex-shrink: 0; }
+        .align-input { flex: 1; }
+
+        /* ── Parking Form Document (For Print Modal) ── */
+        .parking-form-doc {
+            width: 100%; max-width: 1000px; margin: 0 auto;
+            background: #fffef8; position: relative; font-family: 'Segoe UI', 'Inter', sans-serif;
+        }
+        .parking-form-doc .doc-header {
+            padding: 32px 48px 24px; display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;
+        }
+        .parking-form-doc .doc-header-left { flex: 1; }
+        .parking-form-doc .doc-header-left .arabic-line {
+            font-size: 1rem; color: #555; text-align: left; direction: rtl; margin-bottom: 4px;
+        }
+        .parking-form-doc .doc-header-left .org-name-ar {
+            font-size: 1.15rem; font-weight: 700; color: #1a3a2a; direction: rtl; text-align: left; margin-bottom: 4px;
+        }
+        .parking-form-doc .doc-header-left .org-name-en {
+            font-size: 1rem; font-weight: 800; color: #1a3a2a; text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .parking-form-doc .doc-header-left .sec-reg {
+            font-size: 0.85rem; color: #888; font-weight: 600; margin-top: 6px;
+        }
+        .parking-form-doc .doc-header-logo {
+            width: 90px; height: 90px; border-radius: 50%; object-fit: cover;
+            border: 2px solid #e8e2d0; flex-shrink: 0;
+        }
+        .parking-form-doc .doc-title-bar {
+            text-align: center; padding: 12px 48px 8px;
+        }
+        .parking-form-doc .doc-title-bar h2 {
+            font-family: 'Lora', serif; font-size: 1.25rem; font-weight: 700;
+            color: #1a3a2a; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        .parking-form-doc .doc-title-bar .form-subtitle {
+            display: inline-block; border: 1.5px solid #1a3a2a; padding: 6px 36px;
+            font-size: 1.1rem; font-weight: 800; color: #1a3a2a; text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+        .parking-form-doc .doc-title-bar .form-date {
+            text-align: right; font-size: 1rem; color: #555; margin-top: 12px;
+        }
+        .parking-form-doc .doc-body { padding: 24px 48px 32px; }
+        .parking-form-doc .pf-row {
+            display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .parking-form-doc .pf-label {
+            font-size: 1rem; font-weight: 700; color: #333; white-space: nowrap;
+        }
+        .parking-form-doc .pf-value {
+            flex: 1; min-width: 100px; border-bottom: 1.5px solid #999; padding: 4px 8px;
+            font-size: 1rem; font-weight: 600; color: #1a3a2a; min-height: 24px;
+        }
+        .parking-form-doc .pf-addr-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;
+        }
+        .parking-form-doc .pf-addr-grid .pf-addr-item { text-align: center; }
+        .parking-form-doc .pf-addr-grid .pf-addr-item .pf-value { text-align: center; display: block; }
+        .parking-form-doc .pf-addr-grid .pf-addr-item .pf-sub-label {
+            font-size: 0.85rem; color: #777; font-weight: 600; margin-top: 4px;
+        }
+        .parking-form-doc .pf-date-box {
+            display: inline-block; border: 1.5px solid #333; padding: 10px 24px; margin: 24px 0;
+        }
+        .parking-form-doc .pf-date-box .pf-label { margin-right: 8px; }
+        .parking-form-doc .pf-sig-section { margin-top: 48px; }
+        .parking-form-doc .pf-sig-line {
+            border-bottom: 1.5px solid #555; width: 280px; margin-bottom: 6px; min-height: 36px;
+        }
+        .parking-form-doc .pf-sig-label { font-size: 0.95rem; font-weight: 600; color: #555; }
+        .parking-form-doc .pf-sig-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 50px;
+        }
+        .parking-form-doc .pf-sig-grid .pf-sig-sublabel {
+            font-size: 0.85rem; color: #777; font-weight: 600; margin-top: 4px;
+        }
+        .parking-form-doc .pf-revised {
+            text-align: right; font-size: 0.8rem; color: #aaa; font-style: italic; margin-top: 32px;
+        }
+        .parking-form-doc .doc-footer {
+            background: linear-gradient(135deg, #1a3a2a, #2d6b4d); color: white;
+            padding: 16px 48px 14px; text-align: center;
+        }
+        .parking-form-doc .doc-footer .footer-addr {
+            font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9;
+        }
+        .parking-form-doc .doc-footer .footer-contacts {
+            display: flex; justify-content: center; gap: 28px; flex-wrap: wrap;
+            font-size: 0.85rem; opacity: 0.8;
+        }
+        .parking-form-doc .doc-footer .footer-contacts span { display: flex; align-items: center; gap: 6px; }
+        .parking-form-doc .doc-footer .footer-contacts svg { width: 14px; height: 14px; fill: currentColor; }
+
+        .doc-input {
+            border: none; border-bottom: 1.5px solid #999; border-radius: 0;
+            background: transparent; padding: 4px 8px; font-size: 1rem;
+            font-weight: 600; color: #1a3a2a; box-shadow: none; outline: none;
+            font-family: inherit;
+        }
+        .doc-input:focus { border-bottom-color: var(--primary); background: #f0f4f3; }
+        select.doc-input { appearance: none; -webkit-appearance: none; }
 
         /* ── Toast ── */
         .toast {
             position: fixed; top: 24px; right: 24px; padding: 16px 24px; border-radius: 12px;
             background: #333; color: white; z-index: 3000; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             font-weight: 600; display: none; animation: slideUp 0.3s ease;
+        }
+
+        /* ── Print Styles ── */
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .parking-form-doc { max-width: 100%; box-shadow: none; }
+            .modal-overlay { position: static; background: none; }
+            .modal-container { box-shadow: none; max-width: 100%; }
+            .modal-header, .modal-actions-bar { display: none !important; }
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -175,30 +316,133 @@ $assignedBldg = $appInfo['building'] ?? 'N/A';
 <body>
     <!-- ═══ PERMIT DETAILS MODAL ═══ -->
     <div class="modal-overlay" id="permit-modal">
-        <div class="modal-container">
+        <div class="modal-container" style="max-width:1060px;">
             <div class="modal-header">
-                <h3>Vehicle Permit Details</h3>
+                <h3>Parking Rental Application Form</h3>
                 <button class="btn-close-modal" onclick="closeModal('permit-modal')">&times;</button>
             </div>
-            <div id="print-area">
-                <div class="permit-card">
-                    <div class="permit-watermark">ISCAG OFFICIAL</div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; border-bottom:1.5px solid #d1dbd8; padding-bottom:16px;">
-                        <img src="<?= asset('assets/logo.jpg') ?>" style="height:50px; border-radius:6px;" />
-                        <div style="text-align:right;">
-                            <div id="p-status" class="status-pill approved">Verified</div>
-                            <div style="font-size:0.65rem; color:#999; margin-top:4px; font-weight:800;">PERMIT ID: <span id="p-id">#PKG-0000</span></div>
+            <div id="print-area" style="padding:24px; background:#f4f4f0;">
+                <div class="parking-form-doc">
+                    <!-- ── HEADER ── -->
+                    <div class="doc-header">
+                        <div class="doc-header-left">
+                            <div class="arabic-line">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+                            <div class="org-name-ar">مركز البحوث الإسلامية و الدعوة و الإرشاد في الفلبين</div>
+                            <div class="org-name-en">Islamic Studies, Call and Guidance of the Philippines</div>
+                            <div class="sec-reg">SEC. REG. NO. 0000185967</div>
                         </div>
+                        <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo" class="doc-header-logo" />
                     </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                        <div><label style="display:block; font-size:0.7rem; color:#999; font-weight:800; text-transform:uppercase;">Vehicle</label><span id="p-vehicle" style="font-weight:700; color:#333;">Toyota Vios</span></div>
-                        <div><label style="display:block; font-size:0.7rem; color:#999; font-weight:800; text-transform:uppercase;">Plate No.</label><span id="p-plate" class="plate-badge">ABC 1234</span></div>
-                        <div><label style="display:block; font-size:0.7rem; color:#999; font-weight:800; text-transform:uppercase;">Owner</label><span id="p-owner" style="font-weight:700; color:#333;">Muhammad Usman</span></div>
-                        <div><label style="display:block; font-size:0.7rem; color:#999; font-weight:800; text-transform:uppercase;">Type</label><span id="p-type" style="font-weight:700; color:#333;">Sedan</span></div>
+
+                    <!-- ── TITLE ── -->
+                    <div class="doc-title-bar">
+                        <h2>Application Form</h2>
+                        <div class="form-subtitle">Parking Rental</div>
+                        <div class="form-date">Date: <span id="p-date" style="border-bottom:1.5px solid #999; padding:0 20px;">—</span></div>
+                    </div>
+
+                    <!-- ── BODY ── -->
+                    <div class="doc-body">
+                        <!-- Parking No -->
+                        <div class="pf-row">
+                            <span class="pf-label">PARKING NO.:</span>
+                            <span class="pf-value" id="p-id" style="max-width:140px;">—</span>
+                        </div>
+
+                        <!-- Name -->
+                        <div class="pf-row">
+                            <span class="pf-label">Name:</span>
+                            <span class="pf-value" id="p-name">—</span>
+                        </div>
+
+                        <!-- DOB -->
+                        <div class="pf-row">
+                            <span class="pf-label">Date of Birth:</span>
+                            <span class="pf-value" id="p-dob">—</span>
+                        </div>
+
+                        <!-- Complete Address -->
+                        <div class="pf-row" style="margin-bottom:6px;">
+                            <span class="pf-label">Complete Address:</span>
+                            <span class="pf-value" id="p-address">—</span>
+                        </div>
+                        <div class="pf-addr-grid">
+                            <div class="pf-addr-item">
+                                <span class="pf-value" id="p-room">—</span>
+                                <div class="pf-sub-label">Room No.</div>
+                            </div>
+                            <div class="pf-addr-item">
+                                <span class="pf-value" id="p-bldg">—</span>
+                                <div class="pf-sub-label">Bldg. No.</div>
+                            </div>
+                            <div class="pf-addr-item">
+                                <span class="pf-value">Salitran I</span>
+                                <div class="pf-sub-label">Brgy.</div>
+                            </div>
+                            <div class="pf-addr-item">
+                                <span class="pf-value">Dasmariñas City</span>
+                                <div class="pf-sub-label">Mun/City</div>
+                            </div>
+                        </div>
+
+                        <!-- Vehicle Info -->
+                        <div class="pf-row">
+                            <span class="pf-label">Name of Vehicle:</span>
+                            <span class="pf-value" id="p-vehicle">—</span>
+                        </div>
+                        <div class="pf-row">
+                            <span class="pf-label">Name of Owner:</span>
+                            <span class="pf-value" id="p-owner">—</span>
+                        </div>
+                        <div class="pf-row">
+                            <span class="pf-label">Type of Vehicle:</span>
+                            <span class="pf-value" id="p-type">—</span>
+                        </div>
+                        <div class="pf-row">
+                            <span class="pf-label">Plate No.:</span>
+                            <span class="pf-value" id="p-plate">—</span>
+                        </div>
+
+                        <!-- Date Started -->
+                        <div class="pf-date-box">
+                            <span class="pf-label">DATE STARTED:</span>
+                            <span class="pf-value" id="p-datestarted" style="border-bottom:none; min-width:140px;">—</span>
+                        </div>
+
+                        <!-- Signatures -->
+                        <div class="pf-sig-section">
+                            <div class="pf-sig-line"></div>
+                            <div class="pf-sig-label">Owner's Signature</div>
+                        </div>
+
+                        <div class="pf-sig-grid">
+                            <div>
+                                <div class="pf-sig-label" style="margin-bottom:4px;">Reviewed by:</div>
+                                <div class="pf-sig-line"></div>
+                                <div class="pf-sig-sublabel">OIC - Apartment Billing</div>
+                            </div>
+                            <div>
+                                <div class="pf-sig-label" style="margin-bottom:4px;">Approved by:</div>
+                                <div class="pf-sig-line"></div>
+                                <div class="pf-sig-sublabel">Operations Manager/Authorized Person</div>
+                            </div>
+                        </div>
+
+                        <div class="pf-revised">Revised Since 2025</div>
+                    </div>
+
+                    <!-- ── FOOTER ── -->
+                    <div class="doc-footer">
+                        <div class="footer-addr">Jose Abad Santos Street, Salitran I, City of Dasmariñas City, Cavite, Philippines -4114</div>
+                        <div class="footer-contacts">
+                            <span><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> iscagphilippines@gmail.com</span>
+                            <span><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg> (046) 4161589</span>
+                            <span><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg> /iscagphilippines</span>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div style="padding: 0 32px 32px; display:flex; gap:12px; justify-content:center;">
+            <div class="modal-actions-bar" style="padding: 16px 32px; display:flex; gap:12px; justify-content:center; border-top:1.5px solid #f0f0f0;">
                 <button class="btn-action-sm" onclick="window.print()"><svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print</button>
                 <button class="btn-action-sm" onclick="downloadPermit()"><svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Download</button>
             </div>
@@ -288,59 +532,107 @@ $assignedBldg = $appInfo['building'] ?? 'N/A';
 
                 <!-- ═══ REGISTRATION FORM ═══ -->
                 <?php if (!$hasPending): ?>
-                <form id="parking-form" class="form-doc">
-                    <div class="section-title">Personal Information</div>
-                    
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" class="form-control" value="<?= htmlspecialchars($fullName) ?>" readonly />
+                <form id="parking-form" class="form-document">
+                    <!-- ── HEADER ── -->
+                    <div class="form-doc-header">
+                        <div class="form-doc-header-top">
+                            <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo" class="form-doc-header-logo" />
+                            <div class="form-doc-header-text">
+                                <div class="arabic-line">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+                                <div class="org-name-ar">مركز البحوث الإسلامية و الدعوة و الإرشاد في الفلبين</div>
+                                <div class="org-name-en">Islamic Studies, Call and Guidance of the Philippines</div>
+                                <div class="sec-reg">SEC. REG. NO. 0000185967</div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Date of Birth</label>
-                            <input type="text" class="form-control" value="<?= htmlspecialchars($dob) ?>" readonly />
-                        </div>
-                    </div>
-
-                    <div class="section-title">Address Details</div>
-                    <div class="form-grid" style="grid-template-columns: repeat(4, 1fr);">
-                        <div class="form-group">
-                            <label>Room No.</label>
-                            <input type="text" class="form-control" value="<?= htmlspecialchars($assignedRoom) ?>" readonly />
-                        </div>
-                        <div class="form-group">
-                            <label>Bldg No.</label>
-                            <input type="text" class="form-control" value="<?= htmlspecialchars($assignedBldg) ?>" readonly />
-                        </div>
-                        <div class="form-group">
-                            <label>Barangay</label>
-                            <input type="text" class="form-control" value="Salitran I" readonly />
-                        </div>
-                        <div class="form-group">
-                            <label>City</label>
-                            <input type="text" class="form-control" value="Dasmariñas City" readonly />
+                        <div class="form-doc-title-bar">
+                            <span class="form-doc-title">Parking Rental Application</span>
                         </div>
                     </div>
 
-                    <div class="section-title">Parking Details</div>
-                    <div class="form-grid">
-                        <div class="form-group" style="grid-column: span 2;">
-                            <label>Date Started</label>
-                            <input type="date" id="date-started" class="form-control" value="<?= date('Y-m-d') ?>" />
+                    <!-- ── BODY ── -->
+                    <div class="form-doc-body">
+                        
+                        <div style="text-align: right; margin-bottom: 24px;">
+                            <span style="font-weight: 600; color: #555; margin-right: 8px;">Date:</span>
+                            <input type="text" class="form-control" style="width: 160px; display: inline-block; text-align: center;" value="<?= date('Y-m-d') ?>" readonly />
                         </div>
-                    </div>
 
-                    <div class="section-title" style="margin-top: 40px; display:flex; justify-content:space-between; align-items:center;">
-                        <span>Vehicle Details</span>
-                        <button type="button" onclick="addVehicleBlock()" class="btn-action-sm" style="background: var(--primary); color: white; border: none;">+ Add Vehicle</button>
-                    </div>
+                        <div class="align-row">
+                            <div class="align-label">PARKING NO.:</div>
+                            <input type="text" class="form-control align-input" style="color: #999; font-style: italic; max-width: 240px;" value="To be generated" readonly />
+                        </div>
 
-                    <div id="vehicles-container">
-                        <!-- Vehicle blocks injected here -->
-                    </div>
+                        <div class="align-row">
+                            <div class="align-label">Name:</div>
+                            <input type="text" class="form-control align-input" value="<?= htmlspecialchars($fullName) ?>" readonly />
+                        </div>
 
-                    <div style="margin-top: 40px; text-align: right; border-top: 1.5px solid #f0f0f0; padding-top: 32px;">
-                        <button type="submit" id="btn-submit" class="btn-action-sm" style="padding: 14px 40px; background: var(--primary-dark); color: white; border: none; font-size: 1rem;">Submit Application</button>
+                        <div class="align-row">
+                            <div class="align-label">Date of Birth:</div>
+                            <input type="text" class="form-control align-input" value="<?= htmlspecialchars($dob) ?>" readonly />
+                        </div>
+
+                        <div class="align-row" style="align-items: flex-start;">
+                            <div class="align-label" style="margin-top: 10px;">Complete Address:</div>
+                            <div class="align-input">
+                                <input type="text" class="form-control" value="ISCAG Apartment, Salitran I, Dasmariñas City" readonly style="margin-bottom: 12px;" />
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <input type="text" class="form-control" style="text-align: center;" value="<?= htmlspecialchars($assignedRoom) ?>" readonly />
+                                        <div style="font-size: 0.75rem; color: #777; text-align: center; margin-top: 4px; font-weight: 600;">Room No.</div>
+                                    </div>
+                                    <div>
+                                        <input type="text" class="form-control" style="text-align: center;" value="<?= htmlspecialchars($assignedBldg) ?>" readonly />
+                                        <div style="font-size: 0.75rem; color: #777; text-align: center; margin-top: 4px; font-weight: 600;">Bldg. No.</div>
+                                    </div>
+                                    <div>
+                                        <input type="text" class="form-control" style="text-align: center;" value="Salitran I" readonly />
+                                        <div style="font-size: 0.75rem; color: #777; text-align: center; margin-top: 4px; font-weight: 600;">Brgy.</div>
+                                    </div>
+                                    <div>
+                                        <input type="text" class="form-control" style="text-align: center;" value="Dasmariñas City" readonly />
+                                        <div style="font-size: 0.75rem; color: #777; text-align: center; margin-top: 4px; font-weight: 600;">Mun/City</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="vehicle-block-doc" style="margin-top: 32px;">
+                            <div class="align-row">
+                                <div class="align-label">Name of Vehicle:</div>
+                                <input type="text" class="form-control align-input v-name" placeholder="Enter vehicle name" required />
+                            </div>
+                            <div class="align-row">
+                                <div class="align-label">Name of Owner:</div>
+                                <input type="text" class="form-control align-input v-owner" placeholder="Enter owner's name" required />
+                            </div>
+                            <div class="align-row">
+                                <div class="align-label">Type of Vehicle:</div>
+                                <select class="form-control align-input v-type" required>
+                                    <option value="" disabled selected>Select vehicle type</option>
+                                    <option value="Sedan">Sedan</option>
+                                    <option value="SUV">SUV / AUV</option>
+                                    <option value="Pickup">Pickup Truck</option>
+                                    <option value="Van">Van / MPV</option>
+                                    <option value="Hatchback">Hatchback</option>
+                                    <option value="Wagon">Station Wagon</option>
+                                    <option value="Motorcycle">Motorcycle</option>
+                                </select>
+                            </div>
+                            <div class="align-row">
+                                <div class="align-label">Plate No.:</div>
+                                <input type="text" class="form-control align-input v-plate" style="text-transform: uppercase;" placeholder="Enter plate number" required />
+                            </div>
+                        </div>
+
+                        <div class="align-row" style="margin-top: 32px; padding: 24px; background: #f8faf9; border-radius: 8px; border: 1.5px solid #d1dbd8; width: max-content;">
+                            <div class="align-label" style="width: auto;">DATE STARTED:</div>
+                            <input type="date" id="date-started" class="form-control" style="width: 180px; margin-left: 12px;" value="<?= date('Y-m-d') ?>" required />
+                        </div>
+
+                        <div style="margin-top: 40px; text-align: right; border-top: 1.5px solid #f0f0f0; padding-top: 24px;">
+                            <button type="submit" id="btn-submit" class="btn-action-sm" style="padding: 14px 40px; background: var(--primary-dark); color: white; border: none; font-size: 1rem;">Submit Application</button>
+                        </div>
                     </div>
                 </form>
                 <?php endif; ?>
@@ -352,72 +644,6 @@ $assignedBldg = $appInfo['building'] ?? 'N/A';
     <div id="toast" class="toast"></div>
 
     <script>
-        // ── VEHICLE MANAGEMENT ──
-        let vehicleCount = 0;
-
-        function addVehicleBlock() {
-            vehicleCount++;
-            const container = document.getElementById('vehicles-container');
-            const block = document.createElement('div');
-            block.className = 'vehicle-block';
-            block.id = `v-block-${vehicleCount}`;
-            block.innerHTML = `
-                ${vehicleCount > 1 ? `<button type="button" class="btn-remove-vehicle" onclick="removeVehicleBlock(${vehicleCount})">&times;</button>` : ''}
-                <div class="vehicle-number" style="font-weight: 800; color: var(--primary-dark); margin-bottom: 20px; font-size: 0.9rem;">Vehicle #</div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Vehicle Name</label>
-                        <input type="text" class="form-control v-name" placeholder="e.g. Toyota Vios" required />
-                    </div>
-                    <div class="form-group">
-                        <label>Owner Name</label>
-                        <input type="text" class="form-control v-owner" placeholder="Enter owner's name" required />
-                    </div>
-                </div>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Vehicle Type</label>
-                        <select class="form-control v-type" required>
-                            <option value="Sedan">Sedan</option>
-                            <option value="SUV">SUV / AUV</option>
-                            <option value="Pickup">Pickup Truck</option>
-                            <option value="Van">Van / MPV</option>
-                            <option value="Hatchback">Hatchback</option>
-                            <option value="Wagon">Station Wagon</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Plate Number</label>
-                        <input type="text" class="form-control v-plate" placeholder="ABC 1234" style="text-transform: uppercase;" required />
-                    </div>
-                </div>
-            `;
-            container.appendChild(block);
-            resequenceVehicles();
-            if (vehicleCount > 1) {
-                showToast(`Vehicle fields added to form`, 'var(--primary-dark)');
-            }
-        }
-
-        function removeVehicleBlock(id) {
-            const block = document.getElementById(`v-block-${id}`);
-            if (block) block.remove();
-            resequenceVehicles();
-        }
-
-        function resequenceVehicles() {
-            const blocks = document.querySelectorAll('.vehicle-block');
-            blocks.forEach((block, index) => {
-                const num = index + 1;
-                block.querySelector('.vehicle-number').textContent = `Vehicle #${num}`;
-            });
-        }
-
-        // Initialize with one vehicle
-        if (document.getElementById('vehicles-container')) {
-            addVehicleBlock();
-        }
-
         // ── FORM SUBMISSION ──
         const form = document.getElementById('parking-form');
         if (form) {
@@ -428,7 +654,7 @@ $assignedBldg = $appInfo['building'] ?? 'N/A';
                 btn.textContent = 'Submitting...';
 
                 const vehicles = [];
-                document.querySelectorAll('.vehicle-block').forEach(block => {
+                document.querySelectorAll('.vehicle-block-doc').forEach(block => {
                     vehicles.push({
                         vehicleName: block.querySelector('.v-name').value,
                         vehicleOwner: block.querySelector('.v-owner').value,
@@ -469,16 +695,28 @@ $assignedBldg = $appInfo['building'] ?? 'N/A';
 
         // ── PERMIT MODAL ──
         function openPermit(app) {
+            // Parking No
             document.getElementById('p-id').textContent = '#PKG-' + String(app.parking_id).padStart(4, '0');
-            document.getElementById('p-vehicle').textContent = app.vehiclename;
-            document.getElementById('p-plate').textContent = app.plateno;
-            document.getElementById('p-owner').textContent = app.ownername || 'Registered Tenant';
-            document.getElementById('p-type').textContent = app.typeofvehicle;
             
-            const status = (app.status || 'PENDING').toUpperCase();
-            const pill = document.getElementById('p-status');
-            pill.textContent = status;
-            pill.className = 'status-pill ' + status.toLowerCase();
+            // Personal Info (from PHP session data)
+            document.getElementById('p-name').textContent = '<?= htmlspecialchars($fullName) ?>';
+            document.getElementById('p-dob').textContent = '<?= htmlspecialchars($dob) ?>';
+            document.getElementById('p-room').textContent = '<?= htmlspecialchars($assignedRoom) ?>';
+            document.getElementById('p-bldg').textContent = '<?= htmlspecialchars($assignedBldg) ?>';
+            document.getElementById('p-address').textContent = 'ISCAG Apartment, Salitran I, Dasmariñas City';
+            
+            // Vehicle Info
+            document.getElementById('p-vehicle').textContent = app.vehiclename || '—';
+            document.getElementById('p-owner').textContent = app.ownername || '—';
+            document.getElementById('p-type').textContent = app.typeofvehicle || '—';
+            document.getElementById('p-plate').textContent = app.plateno || '—';
+            
+            // Dates
+            const dateStarted = app.datestarted ? new Date(app.datestarted).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+            document.getElementById('p-datestarted').textContent = dateStarted;
+            
+            const submittedDate = app.date ? new Date(app.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+            document.getElementById('p-date').textContent = submittedDate;
             
             document.getElementById('permit-modal').classList.add('active');
         }
