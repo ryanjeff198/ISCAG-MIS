@@ -15,8 +15,13 @@ class ApartmentController extends Controller {
         $userId = $_SESSION['user_id'];
         $model = new ApartmentApp();
         $application = $model->getApplication($userId);
+        $uploadedDocs = $model->getUploadedDocTypes($userId);
+        $tenantInfo = $model->getInfo($userId);
+        
         $this->view('user/Apartment/tenant_status', [
-            'application' => $application
+            'application' => $application,
+            'uploadedDocs' => $uploadedDocs,
+            'tenantInfo' => $tenantInfo
         ]);
     }
 
@@ -26,9 +31,12 @@ class ApartmentController extends Controller {
         $model = new ApartmentApp();
         $application = $model->getApplication($userId);
         $tenantInfo = $model->getInfo($userId);
+        $uploadedDocs = $model->getUploadedDocTypes($userId);
+        
         $this->view('user/Apartment/apartment_information', [
             'application' => $application,
-            'tenantInfo' => $tenantInfo
+            'tenantInfo' => $tenantInfo,
+            'uploadedDocs' => $uploadedDocs
         ]);
     }
 
@@ -149,11 +157,19 @@ class ApartmentController extends Controller {
     public function parking() {
         Auth::protectRole(['Tenant']);
         $userId = $_SESSION['user_id'];
+        
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $account = $userModel->findById($userId);
+        $info = $userModel->getAdditionalInfo($userId);
+
         $model = new ApartmentApp();
         $parkingApps = $model->getParkingApplicationsByTenant($userId);
         
         $this->view('user/Apartment/tenant_parking', [
-            'parkingApps' => $parkingApps
+            'parkingApps' => $parkingApps,
+            'account' => $account,
+            'info' => $info
         ]);
     }
 
@@ -172,9 +188,10 @@ class ApartmentController extends Controller {
         
         $data = [
             'tenant_id' => $userId,
+            'parking_no' => $body['parkingNo'] ?? '',
             'date' => date('Y-m-d'),
             'vehiclename' => $body['vehicleName'] ?? '',
-            'ownername' => $body['vehicleOwner'] ?? '',
+            'ownername' => $body['ownerName'] ?? '',
             'typeofvehicle' => $body['vehicleType'] ?? '',
             'plateno' => $body['plateNo'] ?? '',
             'datestarted' => $body['dateStarted'] ?? ''

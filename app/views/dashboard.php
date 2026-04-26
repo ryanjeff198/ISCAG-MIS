@@ -471,25 +471,30 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       $account = $userModel->findById($userId);
       $info = $userModel->getAdditionalInfo($userId);
       
-      $dbUser = [
-          'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
-          'email' => $info['email'] ?? ($account['email'] ?? ''),
-          'sex' => (function() use ($info, $account) {
-              $s = !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? $account['gender'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
-              $ls = strtolower($s);
-              if ($ls === 'female' || $ls === 'f') return 'Female';
-              if ($ls === 'male' || $ls === 'm') return 'Male';
-              return $s;
-          })(),
-          'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
-          'dob' => $info['birthdate'] ?? '',
-          'civil' => $info['civil_status'] ?? '',
-          'address' => $info['address'] ?? '',
-          'occupation' => $info['occupation'] ?? '',
-          'arabicName' => $info['muslimname'] ?? '',
-          'revertYear' => !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '',
-      ];
-  }
+        $dbUser = [
+            'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
+            'email' => $info['email'] ?? ($account['email'] ?? ''),
+            'sex' => (function() use ($info, $account) {
+                $s = !empty($info['sex']) ? $info['sex'] : ($account['sex'] ?? $account['gender'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
+                $ls = strtolower($s);
+                if ($ls === 'female' || $ls === 'f') return 'Female';
+                if ($ls === 'male' || $ls === 'm') return 'Male';
+                return $s;
+            })(),
+            'phone' => $info['phone'] ?? ($account['contactnum'] ?? ''),
+            'dob' => $info['birthdate'] ?? '',
+            'civil' => $info['civil_status'] ?? '',
+            'address' => $info['address'] ?? '',
+            'occupation' => $info['occupation'] ?? '',
+            'arabicName' => $info['muslimname'] ?? '',
+            'revertYear' => !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '',
+        ];
+
+        // Fetch apartment application status for announcement modal
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+        $aptModel = new ApartmentApp();
+        $application = $aptModel->getApplication($userId);
+    }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -660,48 +665,9 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
           </div>
         </div>
 
-        <?php if (($_SESSION['role'] ?? '') === 'Guest'): ?>
-        <!-- SERVICE CARDS (APPLICANT ONLY) -->
-        <h6
-          style="font-family:'Lora',serif;font-size:0.9rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">
-          Available Services</h6>
-
-        <div class="service-grid" id="service-grid">
-          <!-- Populated by JS -->
-        </div>
-
-        <!-- MY REQUESTS HISTORY -->
-        <div class="section-card">
-          <div class="section-card-header">
-            <h6>
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9z" />
-              </svg>
-              My Recent Requests
-            </h6>
-            <span style="font-size:0.75rem;color:var(--text-muted);" id="req-count">Your submission history</span>
-          </div>
-          <div class="section-card-body" style="padding:0;">
-            <div class="table-wrapper">
-              <table class="mis-table">
-                <thead>
-                  <tr>
-                    <th>Reference No.</th>
-                    <th>Service Type</th>
-                    <th>Date Submitted</th>
-                    <th>Status</th>
-                    <th>Last Updated</th>
-                  </tr>
-                </thead>
-                <tbody id="req-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <?php else: ?>
+        <?php if (($account['role'] ?? '') === 'Tenant'): ?>
         <!-- TENANT DASHBOARD (TENANT ONLY) -->
-        <div class="section-card">
+        <div class="section-card" style="margin-bottom: 24px;">
             <div class="section-card-header" style="background: linear-gradient(135deg, #0f5c3a, #176b45); color: white;">
                 <h6 style="color: white; margin: 0; display: flex; align-items: center; gap: 8px;">
                     <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;">
@@ -787,6 +753,45 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         </script>
         <?php endif; ?>
 
+        <!-- SERVICE CARDS (ALL USERS) -->
+        <h6
+          style="font-family:'Lora',serif;font-size:0.9rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">
+          Available Services</h6>
+
+        <div class="service-grid" id="service-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- MY REQUESTS HISTORY -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9z" />
+              </svg>
+              My Recent Requests
+            </h6>
+            <span style="font-size:0.75rem;color:var(--text-muted);" id="req-count">Your submission history</span>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Reference No.</th>
+                    <th>Service Type</th>
+                    <th>Date Submitted</th>
+                    <th>Status</th>
+                    <th>Last Updated</th>
+                  </tr>
+                </thead>
+                <tbody id="req-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -840,9 +845,8 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
             if (v === 'f' || v === 'female') val = 'Female';
             if (v === 'm' || v === 'male') val = 'Male';
           }
-          if (val || !user[key]) {
-            user[key] = val;
-          }
+          // Always overwrite with DB value to prevent stale localStorage data leakage
+          user[key] = val;
         });
       }
 
@@ -956,12 +960,6 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       });
     }
 
-    function initData() {
-      if (!localStorage.getItem(STORAGE_KEYS.initialized)) {
-        localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(DEFAULT_USER));
-        localStorage.setItem(STORAGE_KEYS.initialized, 'true');
-      }
-    }
 
     // ══════════════════════════════════════
     //  INIT
@@ -1045,7 +1043,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         id: 'damayan',
         title: 'Damayan — Burial Services',
         desc: 'Submit a formal request for burial services for the deceased. Fill in the necessary details about the deceased, family contact, and burial preferences.',
-        icon: '<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>',
+        icon: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>',
         iconClass: '',
         href: '<?= url('/user/services/burial-form') ?>',
         btnText: 'Request Service'
@@ -1064,8 +1062,21 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         iconClass: String(user.sex).toLowerCase() === 'female' ? 'purple' : 'teal',
         href: dawahHref,
         btnText: 'Request Service'
-      },
-      {
+      }
+    ];
+
+    if (user.role === 'Tenant') {
+      services.push({
+        id: 'parking',
+        title: 'Parking Rental',
+        desc: 'Register your vehicle and apply for a parking space within the residential premises. Manage your vehicle records and track your rental status.',
+        icon: '<path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>',
+        iconClass: 'gold',
+        href: '<?= url('/user/apartment/parking') ?>',
+        btnText: 'Apply for Parking'
+      });
+    } else {
+      services.push({
         id: 'apartment',
         title: 'Apartment Application',
         desc: 'Apply for a housing unit in the ISCAG apartment complex. Submit your family details and preferred unit type for review by the Apartment Management.',
@@ -1073,8 +1084,8 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         iconClass: 'green',
         href: '<?= url('/user/apartment/apply') ?>',
         btnText: 'Apply Now'
-      }
-    ];
+      });
+    }
 
     services.forEach(svc => {
       const card = document.createElement('div');

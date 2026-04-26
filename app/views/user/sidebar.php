@@ -190,12 +190,17 @@ $active_page = $active_page ?? 'dashboard';
         const raw = localStorage.getItem('mis_user');
         let stored = raw ? JSON.parse(raw) : {};
         
-        // Defensive merge: Only overwrite if session has a value
-        Object.entries(sessionUser).forEach(([key, val]) => {
-            if (val || !stored[key]) {
-                stored[key] = val || stored[key] || '';
-            }
-        });
+        // Detection: If user ID changed, reset relevant localStorage to avoid data leakage
+        if (stored.id && stored.id !== sessionUser.id) {
+            console.log('User change detected. Clearing stale data.');
+            stored = {};
+            localStorage.removeItem('mis_user_photo');
+            localStorage.removeItem('mis_member_since');
+            localStorage.removeItem('mis_last_login');
+        }
+
+        // Always prioritize and overwrite with session values
+        Object.assign(stored, sessionUser);
         
         localStorage.setItem('mis_user', JSON.stringify(stored));
 

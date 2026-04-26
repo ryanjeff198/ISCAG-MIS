@@ -527,9 +527,8 @@ $phpUser = [
                         if (v === 'f' || v === 'female') val = 'Female';
                         if (v === 'm' || v === 'male') val = 'Male';
                     }
-                    if (val || !user[key]) {
-                        user[key] = val;
-                    }
+                    // Always overwrite with DB value to prevent stale localStorage data leakage
+                    user[key] = val;
                 });
             }
 
@@ -567,6 +566,20 @@ $phpUser = [
                 if (user[k] && String(user[k]).trim() !== '') { filled++; } else { missing.push(FIELD_LABELS[k] || k); }
             });
             return { percentage: Math.round((filled / PROFILE_FIELDS.length) * 100), filled, total: PROFILE_FIELDS.length, missingFields: missing };
+        }
+
+        function updateBadgeUI(isComplete) {
+            const badge = document.getElementById('profile-badge');
+            if (!badge) return;
+            if (isComplete) {
+                badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Profile Complete';
+                badge.style.background = 'rgba(46,125,85,0.1)';
+                badge.style.color = 'var(--success)';
+            } else {
+                badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg> Incomplete';
+                badge.style.background = 'rgba(139,46,46,0.1)';
+                badge.style.color = 'var(--danger)';
+            }
         }
 
         function showAccessModal(config) {
@@ -626,6 +639,9 @@ $phpUser = [
         loadUserNav();
 
         const user = getUser();
+        const { percentage: initialPct } = getProfileCompletion();
+        user.profileComplete = (initialPct === 100);
+        updateBadgeUI(user.profileComplete);
 
         // ── Da'wah dropdown — link handling ──
         const dawahTrigger = document.getElementById('dawah-trigger');
@@ -879,12 +895,7 @@ $phpUser = [
         const allFields = Object.values(fields).map(id => document.getElementById(id)).filter(Boolean);
         let snapshot = {};
 
-        if (user.profileComplete) {
-            badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Profile Complete';
-            badge.style.background = 'rgba(46,125,85,0.1)';
-            badge.style.color = 'var(--success)';
-            badge.style.marginLeft = 'auto';
-        }
+        updateBadgeUI(user.profileComplete);
 
         function openModal() {
             snapshot = {};
@@ -991,6 +1002,7 @@ $phpUser = [
                         // Sync to localStorage for sidebar and dashboard
                         updated.profileComplete = (pct2 === 100);
                         localStorage.setItem('mis_user', JSON.stringify(updated));
+                        updateBadgeUI(updated.profileComplete);
                         
                         // Update the snapshot so reopening the modal shows current data
                         Object.entries(fields).forEach(([key, id]) => {

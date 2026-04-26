@@ -32,6 +32,13 @@ if ($userId) {
         'revertYear' => $profile['dateofshahadah'] ?? '',
     ];
 
+    // Check if application is already submitted
+    $application = $aptModel->getApplication($userId);
+    if ($application && in_array($application['status'], ['Pending', 'Assigned', 'Queued', 'VERIFIED'])) {
+        header('Location: ' . url('/user/apartment/status'));
+        exit;
+    }
+
     // appData is used to pre-fill the form (should be Application info)
     $appData = $appInfo;
 }
@@ -1787,7 +1794,7 @@ if ($userId) {
               <div class="form-doc-header-top">
                 <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo" class="form-doc-header-logo" />
                 <div class="form-doc-header-text">
-                  <div class="arabic-line">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+                  <div class="arabic-line">بِسْم. اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
                   <div class="org-name-ar">مركز البحوث الإسلامية و الدعوة و الإرشاد في الفلبين</div>
                   <div class="org-name-en">Islamic Studies, Call and Guidance of the Philippines</div>
                   <div class="sec-reg">SEC. REG. NO. 0000185967</div>
@@ -1995,7 +2002,6 @@ if ($userId) {
                 </div>
               </div>
 
-              <!-- ══ REQUIRED DOCUMENTS & RESERVED FOR ══ -->
               <div class="docs-and-reserved">
                 <div>
                   <div class="doc-section-title" style="margin-top:0;">
@@ -3285,7 +3291,7 @@ if ($userId) {
           id: 'NOT-' + String(notifs.length + 1).padStart(3, '0'),
           tenantId: user.id,
           title: 'Application Submitted',
-          message: 'Your apartment application ' + reportId + ' has been submitted and is pending MIS Admin review.',
+          message: 'Your apartment application ' + reportId + ' has been submitted and is pending Admin Review.',
           type: 'system',
           read: false,
           createdAt: new Date().toISOString()

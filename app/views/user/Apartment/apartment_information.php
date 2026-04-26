@@ -1071,15 +1071,37 @@
 
         const user = getUser();
 
+        // ── Get data from server ──
+        const dbApp = <?= json_encode($application ?? null) ?>;
+        const aptApp = (dbApp && Object.keys(dbApp).length > 0) ? dbApp : null;
+        const tenantInfo = <?= json_encode($tenantInfo ?? null) ?>;
+        const serverDocs = <?= json_encode($uploadedDocs ?? []) ?>;
+
+        // Merge database info into user object for display
+        if (tenantInfo && Object.keys(tenantInfo).length > 0) {
+            if (tenantInfo.familyname) user.name = (tenantInfo.givenname || '') + ' ' + (tenantInfo.familyname || '');
+            if (tenantInfo.muslimname) user.arabicName = tenantInfo.muslimname;
+            if (tenantInfo.birthdate) user.dob = tenantInfo.birthdate;
+            if (tenantInfo.sex) user.sex = tenantInfo.sex;
+            if (tenantInfo.civil_status) user.civil = tenantInfo.civil_status;
+            if (tenantInfo.occupation) user.occupation = tenantInfo.occupation;
+            if (tenantInfo.address) user.address = tenantInfo.address;
+            if (tenantInfo.email) user.email = tenantInfo.email;
+            if (tenantInfo.contactnum) user.phone = tenantInfo.contactnum;
+        }
+
+        const hasServerPhoto = serverDocs.includes('picture');
+
         // ── Load user nav ──
         const navName = document.getElementById('nav-name');
         const navAvatar = document.getElementById('nav-avatar');
         if (navName) navName.textContent = user.name;
         if (navAvatar) {
             const photo = localStorage.getItem('mis_user_photo');
-            if (photo) {
+            if (photo || hasServerPhoto) {
+                const imgUrl = photo || '<?= url("/user/apartment/serve-image") ?>?type=picture';
                 navAvatar.textContent = '';
-                navAvatar.style.backgroundImage = 'url(' + photo + ')';
+                navAvatar.style.backgroundImage = 'url(' + imgUrl + ')';
                 navAvatar.style.backgroundSize = 'cover';
                 navAvatar.style.backgroundPosition = 'center';
             } else {
@@ -1095,8 +1117,6 @@
             navRole.style.color = isComplete ? 'var(--success)' : 'var(--warning)';
         }
 
-
-
         // ═══════════════════════════════════════════
         //  LOAD APARTMENT DATA
         // ═══════════════════════════════════════════
@@ -1109,11 +1129,8 @@
         ];
         
         let assignedApt = null;
-
-        // Determine if they have an active assigned apartment.
-        const dbApp = <?= json_encode($application ?? null) ?>;
-        const tenantInfo = <?= json_encode($tenantInfo ?? null) ?>;
         let familyMembers = [];
+
         if (tenantInfo && tenantInfo.family_data) {
             try {
                 const parsed = JSON.parse(tenantInfo.family_data);
@@ -1121,33 +1138,63 @@
             } catch (e) { }
         }
         
-        if (dbApp && dbApp.status.toLowerCase() === 'assigned') {
-             assignedApt = DEFAULT_APARTMENTS.find(a => a.type === dbApp.roomtype) || DEFAULT_APARTMENTS[0];
+        if (aptApp && aptApp.status.toLowerCase() === 'assigned') {
+             assignedApt = DEFAULT_APARTMENTS.find(a => a.type === aptApp.roomtype) || DEFAULT_APARTMENTS[0];
         }
 
         if (!assignedApt) {
-            root.innerHTML = `
-        <div class="empty-state-card">
-          <div class="empty-state-hero">
-            <svg viewBox="0 0 24 24"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z"/></svg>
-            <h3>No Apartment Assigned</h3>
-            <p>You do not currently have an active apartment unit assigned to you. Once your application is approved and finalized, your unit details will appear here.</p>
-          </div>
-          <div class="empty-state-body">
-            <a href="<?= url('/user/apartment/apply') ?>" class="btn-action primary" style="display:inline-flex;">
-              <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
-              View Application
-            </a>
-          </div>
-        </div>`;
+            if (aptApp) {
+                // ── APPLICATION PENDING/QUEUED STATE ──
+                const appStatus = aptApp.status;
+                const isQueued = appStatus === 'Queued';
+                
+                root.innerHTML = `
+                <div class="empty-state-card">
+                    <div class="empty-state-hero" style="background: linear-gradient(135deg, var(--accent), #d4a83a);">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        <h3>${isQueued ? 'Waitlisted' : 'Application in Review'}</h3>
+                        <p>${isQueued 
+                            ? `You are currently <strong>Position #${aptApp.queue_position}</strong> on the waitlist for a ${aptApp.roomtype}. We will notify you once a unit becomes available.` 
+                            : 'Your application has been submitted and is currently under Admin Review. Once a room is assigned, you will see the details here.'}</p>
+                    </div>
+                    <div class="empty-state-body">
+                        <div style="display:flex; gap:12px; justify-content:center;">
+                            <a href="<?= url('/user/apartment/status') ?>" class="btn-action primary">
+                                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                View Status Tracker
+                            </a>
+                        </div>
+                    </div>
+                </div>`;
+            } else {
+                // ── NO APPLICATION AT ALL ──
+                root.innerHTML = `
+                <div class="empty-state-card">
+                    <div class="empty-state-hero">
+                        <svg viewBox="0 0 24 24"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z"/></svg>
+                        <h3>No Apartment Assigned</h3>
+                        <p>You do not currently have an active apartment unit assigned to you. Once your application is approved and finalized, your unit details will appear here.</p>
+                    </div>
+                    <div class="empty-state-body">
+                        <a href="<?= url('/user/apartment/apply') ?>" class="btn-action primary" style="display:inline-flex;">
+                            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
+                            Apply Now
+                        </a>
+                    </div>
+                </div>`;
+            }
         } else {
             root.innerHTML = `
         <!-- ═══ TENANT ACCOUNT INFO ═══ -->
         <div class="section-card" style="margin-bottom: 24px; animation: slideUp 0.4s ease;">
           <div class="section-card-body" style="display: flex; align-items: center; gap: 16px; padding: 20px 24px;">
-            <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 700; color: white;">
-              ${user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-            </div>
+            ${(serverDocs.includes('picture')) ? `
+              <div style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--accent); background-image: url('<?= url("/user/apartment/serve-image") ?>?type=picture'); background-size: cover; background-position: center; flex-shrink: 0;"></div>
+            ` : `
+              <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 700; color: white;">
+                ${user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+            `}
             <div>
               <h3 style="margin: 0 0 4px; font-family: 'Lora', serif; font-size: 1.15rem; color: var(--primary-dark); font-weight: 700;">${user.name}</h3>
               <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">

@@ -1236,15 +1236,39 @@
 
         const user = getUser();
 
+        // ── Get latest data from database ──
+        const dbApp = <?= json_encode($application ?? null) ?>;
+        const aptApp = (dbApp && Object.keys(dbApp).length > 0) ? dbApp : null;
+        const report = aptApp; 
+        const serverDocs = <?= json_encode($uploadedDocs ?? []) ?>;
+        const dbTenantInfo = <?= json_encode($tenantInfo ?? []) ?>;
+
+        // Merge database info into user object for display
+        if (dbTenantInfo && Object.keys(dbTenantInfo).length > 0) {
+            if (dbTenantInfo.familyname) user.name = (dbTenantInfo.givenname || '') + ' ' + (dbTenantInfo.familyname || '');
+            if (dbTenantInfo.muslimname) user.arabicName = dbTenantInfo.muslimname;
+            if (dbTenantInfo.birthdate) user.dob = dbTenantInfo.birthdate;
+            if (dbTenantInfo.sex) user.sex = dbTenantInfo.sex;
+            if (dbTenantInfo.civil_status) user.civil = dbTenantInfo.civil_status;
+            if (dbTenantInfo.occupation) user.occupation = dbTenantInfo.occupation;
+            if (dbTenantInfo.address) user.address = dbTenantInfo.address;
+            if (dbTenantInfo.email) user.email = dbTenantInfo.email;
+            if (dbTenantInfo.contactnum) user.phone = dbTenantInfo.contactnum;
+        }
+
+        const hasServerPhoto = serverDocs.includes('picture');
+
         // ── Load user nav ──
         const navName = document.getElementById('nav-name');
         const navAvatar = document.getElementById('nav-avatar');
         if (navName) navName.textContent = user.name;
+        
         if (navAvatar) {
             const photo = localStorage.getItem('mis_user_photo');
-            if (photo) {
+            if (photo || hasServerPhoto) {
+                const imgUrl = photo || '<?= url("/user/apartment/serve-image") ?>?type=picture';
                 navAvatar.textContent = '';
-                navAvatar.style.backgroundImage = 'url(' + photo + ')';
+                navAvatar.style.backgroundImage = 'url(' + imgUrl + ')';
                 navAvatar.style.backgroundSize = 'cover';
                 navAvatar.style.backgroundPosition = 'center';
             } else {
@@ -1268,16 +1292,27 @@
         // ═══════════════════════════════════════════
         const root = document.getElementById('tenant-info-root');
 
-        // Get latest application from database
-        const dbApp = <?= json_encode($application ?? null) ?>;
-        const aptApp = dbApp;
-        const report = dbApp; // In this schema, apartmentsapp acts as the report
+        // Map server doc types to form keys
+        const docUploads = {};
+        const typeMapRev = {
+            'proofofincome': 'doc-income',
+            'valididfront': 'doc-id-front',
+            'valididback': 'doc-id-back',
+            'birthcert': 'doc-birth',
+            'nbi': 'doc-nbi',
+            'picture': 'doc-photo'
+        };
+        serverDocs.forEach(t => {
+            if (typeMapRev[t]) docUploads[typeMapRev[t]] = true;
+        });
 
-        // Get uploaded docs
-        const docUploads = JSON.parse(localStorage.getItem('mis_req_doc_uploads') || '{}');
-
-        // Saved form data
-        const formData = JSON.parse(localStorage.getItem('mis_tenant_form_data') || '{}');
+        // Family members from database
+        let famData = [];
+        if (dbTenantInfo && dbTenantInfo.family_data) {
+            try {
+                famData = JSON.parse(dbTenantInfo.family_data);
+            } catch(e) { console.warn("Failed to parse family_data", e); }
+        }
 
         // Helper
         function val(v) { return (v && String(v).trim()) ? v : null; }
@@ -1310,7 +1345,7 @@
             const appStatus = report ? report.status : (aptApp ? aptApp.status : 'pending');
             const statusMap = {
                 'pending': { label: 'Pending Review', cls: 'pending', icon: '⏳' },
-                'PENDING_MIS': { label: 'Pending Admin Review', cls: 'pending', icon: '⏳' },
+                'PENDING_MIS': { label: 'Admin Review', cls: 'pending', icon: '⏳' },
                 'VERIFIED': { label: 'Verified', cls: 'approved', icon: '✓' },
                 'approved': { label: 'Approved', cls: 'approved', icon: '✓' },
                 'Assigned': { label: 'Room Assigned', cls: 'approved', icon: '🏠' },
@@ -1329,7 +1364,7 @@
             const submittedDate = report ? report.submittedAt : (aptApp ? aptApp.date : null);
 
             // Photo
-            const userPhoto = localStorage.getItem('mis_user_photo');
+            const userPhoto = hasServerPhoto ? '<?= url("/user/apartment/serve-image") ?>?type=picture' : null;
 
             // Docs status
             const docItems = [
@@ -1341,9 +1376,6 @@
             ];
             const docsUploaded = docItems.filter(d => !!docUploads[d.key]).length;
             const docsTotal = docItems.length;
-
-            // Family members from localStorage
-            const famData = JSON.parse(localStorage.getItem('mis_tenant_family') || '[]');
 
             // Timeline stages
             const stages = [

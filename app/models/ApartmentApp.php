@@ -108,6 +108,17 @@ class ApartmentApp {
         return null;
     }
 
+    public function getUploadedDocTypes($userId) {
+        $stmt = $this->db->prepare("
+            SELECT i.doc_type 
+            FROM tenant_addinfo_images i
+            JOIN tenant_addinfo t ON i.addinfo_id = t.tenant_info
+            WHERE t.tenant_id = :uid
+        ");
+        $stmt->execute(['uid' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    }
+
 
     // ─── apartmentsapp (unit type) ────────────────────────
     public function getApplication($userId) {
@@ -233,14 +244,15 @@ class ApartmentApp {
 
     public function saveParkingApplication($data) {
         $sql = "INSERT INTO tenant_parking (
-            tenant_id, date, vehiclename, ownername, typeofvehicle, plateno, datestarted, status
+            tenant_id, parking_no, date, vehiclename, ownername, typeofvehicle, plateno, datestarted, status
         ) VALUES (
-            :tenant_id, :date, :vehiclename, :ownername, :typeofvehicle, :plateno, :datestarted, 'Pending'
+            :tenant_id, :parking_no, :date, :vehiclename, :ownername, :typeofvehicle, :plateno, :datestarted, 'Pending'
         )";
         
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             'tenant_id' => $data['tenant_id'],
+            'parking_no' => $data['parking_no'] ?? null,
             'date' => $data['date'] ?? date('Y-m-d'),
             'vehiclename' => $data['vehiclename'],
             'ownername' => $data['ownername'],

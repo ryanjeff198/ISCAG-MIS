@@ -14,6 +14,12 @@ class UserController extends Controller
         
         $userModel = new User();
         $account = $userModel->findById($userId);
+        
+        // Synchronize session role with database role (Real-time approval updates)
+        if ($account && isset($account['role']) && $account['role'] !== ($_SESSION['role'] ?? '')) {
+            $_SESSION['role'] = $account['role'];
+        }
+
         $info = $userModel->getAdditionalInfo($userId);
         
         $appModel = new ApartmentApp();
