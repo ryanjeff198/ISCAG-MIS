@@ -209,13 +209,6 @@
 
     let currentTab = 'all';
 
-  <script>
-    // ══ INIT ══
-    standardizePage('admin');
-    setCurrentRole(ROLES.MIS_ADMIN);
-
-    let currentTab = 'all';
-
     // Bridge PHP data to JavaScript
     const allInvoices = <?= json_encode(array_map(function($i) {
         return [

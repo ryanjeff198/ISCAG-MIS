@@ -23,7 +23,8 @@ if (!function_exists('url')) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ISCAG MIS — Admin Notifications</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
-  <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+  <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
+  <link rel="stylesheet" href="<?= asset('css/notifications.css') ?>?v=<?= time() ?>" />
 </head>
 
 <body>
@@ -82,7 +83,7 @@ if (!function_exists('url')) {
             <!-- RENDERED DYNAMICALLY -->
           </div>
 
-          <div class="notif-detail-view" id="notif-detail-view">
+          <div class="notif-detail-view section-card-body" id="notif-detail-view">
             <!-- RENDERED DYNAMICALLY -->
           </div>
         </div>
@@ -90,53 +91,36 @@ if (!function_exists('url')) {
     </main>
   </div>
 
-  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
+  <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
     standardizePage('admin');
-    initReportsData();
-
-    // Map activity log types to admin source pages
-    function getSourcePage(type) {
+    
+    function getSourceLink(type) {
       const map = {
-        approve: '<?= url('/admin/mis_admin/tenant_confirmation') ?>',
-        request: '<?= url('/admin/mis_admin/reports') ?>',
+        approve: '<?= url('/admin/mis_admin/apartment_confirmation') ?>?tab=approved',
+        request: '<?= url('/admin/mis_admin/apartment_confirmation') ?>?tab=pending',
         payment: '<?= url('/admin/mis_admin/billing') ?>',
-        update: '<?= url('/admin/dashboard') ?>',
         alert: '<?= url('/admin/mis_admin/billing') ?>',
+        staff: '<?= url('/admin/mis_admin/records') ?>',
+        user: '<?= url('/admin/mis_admin/records') ?>',
         schedule: '<?= url('/admin/mis_admin/reports') ?>',
-        staff: '<?= url('/admin/mis_admin/profile') ?>',
-        system: '<?= url('/admin/dashboard') ?>',
-        user: '<?= url('/admin/mis_admin/records') ?>'
+        system: '<?= url('/admin/dashboard') ?>'
       };
       return map[type] || '<?= url('/admin/dashboard') ?>';
     }
 
     function getSourceLabel(type) {
       const map = {
-        approve: 'Go to Tenant Verification',
-        request: 'Go to Tenant Reports',
-        payment: 'Go to Billing & Payments',
-        update: 'Go to Dashboard',
-        alert: 'Go to Billing & Payments',
-        schedule: 'Go to Tenant Reports',
-        staff: 'Go to Profile',
-        system: 'Go to Dashboard',
-        user: 'Go to User Management'
+        approve: 'View Applications',
+        request: 'View Applications',
+        payment: 'Manage Billing',
+        alert: 'Check Payments',
+        staff: 'User Records',
+        user: 'User Management',
+        schedule: 'Revenue Reports',
+        system: 'Go to Dashboard'
       };
-      return map[type] || 'Go to Dashboard';
-    }
-
-    function getAdminNotifications() {
-      const activityLog = getActivityLog();
-      return activityLog.map((log, i) => ({
-        id: 'A-NOT-' + i,
-        title: log.action,
-        message: log.detail,
-        type: log.type,
-        createdAt: log.time,
-        read: i > 4,
-        link: getSourcePage(log.type)
-      }));
+      return map[type] || 'Go to Section';
     }
 
     function getIconSvg(type) {
@@ -154,124 +138,157 @@ if (!function_exists('url')) {
       return icons[type] || '<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>';
     }
 
-    function renderNotifications() {
+    function renderActivityLog() {
+      const log = getActivityLog();
       const container = document.getElementById('notif-container');
-      const notifs = getAdminNotifications();
+      const badge = document.getElementById('unread-badge');
+      const unreadCount = log.filter(l => !l.read).length;
 
-      if (notifs.length === 0) {
+      // Update Sidebar & KPIs
+      if (typeof initNotifBadge === 'function') initNotifBadge('admin');
+      
+      const statUnread = document.getElementById('stat-unread-val');
+      if (statUnread) statUnread.textContent = unreadCount;
+
+      if (unreadCount > 0) {
+        badge.textContent = `${unreadCount} New`;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+
+      if (log.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
-            <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:var(--border);margin-bottom:12px;"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
-            <h4 style="color:var(--text-muted);font-family:'Lora',serif;margin:0;">No notifications</h4>
-            <p style="font-size:0.85rem;color:var(--text-muted);">You're all caught up!</p>
+            <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:var(--text-muted);opacity:0.3;margin-bottom:16px;">
+              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <p style="color:var(--text-muted);">No notifications yet.</p>
           </div>
         `;
-        document.getElementById('unread-badge').style.display = 'none';
         return;
       }
 
-      const unreadCount = notifs.filter(n => !n.read).length;
-      const b = document.getElementById('unread-badge');
-      if (unreadCount > 0) { b.textContent = unreadCount + ' New'; b.style.display = 'inline-block'; }
-      else { b.style.display = 'none'; }
-
-      container.innerHTML = notifs.map(n => {
-        const shortMsg = n.message.length > 80 ? n.message.substring(0, 80) + '...' : n.message;
-
-        return `
-          <div class="notif-card ${n.read ? '' : 'unread'}" onclick="viewNotification('${n.id}')">
-            <div class="notif-icon type-${n.type || 'system'}">
-              <svg viewBox="0 0 24 24">${getIconSvg(n.type)}</svg>
-            </div>
-            <div class="notif-content">
-              <div class="notif-header">
-                <h5 class="notif-title">${n.title}</h5>
-                <span class="notif-time">${timeAgo(n.createdAt)}</span>
-              </div>
-              <p class="notif-message">${shortMsg}</p>
-              <div style="font-size:0.75rem;color:var(--primary);font-weight:600;margin-top:4px;">Click to read full details &rarr;</div>
-            </div>
+      container.innerHTML = log.map((n) => `
+        <div class="notif-card ${n.read ? '' : 'unread'}" onclick="markAsRead('${n.id}')">
+          <div class="notif-icon type-${n.type || 'system'}">
+            <svg viewBox="0 0 24 24">${getIconSvg(n.type)}</svg>
           </div>
-        `;
-      }).join('');
+          <div class="notif-content">
+            <div class="notif-header">
+              <h4 class="notif-title">${n.action}</h4>
+              <span class="notif-time">${timeAgo(n.time)}</span>
+            </div>
+            <p class="notif-message">${n.detail}</p>
+            <div style="font-size:0.75rem;color:var(--primary);font-weight:600;margin-top:4px;">Click to read full details &rarr;</div>
+          </div>
+        </div>
+      `).join('');
     }
 
-    function viewNotification(id) {
-      window.location.href = '?view=' + id;
-    }
+    // Listen for storage updates (tab sync)
+    window.addEventListener('activityLogUpdated', () => {
+      renderActivityLog();
+      const urlParams = new URLSearchParams(window.location.search);
+      const viewId = urlParams.get('view');
+      if (viewId) renderDetailView(viewId);
+    });
 
-    function renderDetailView(id) {
-      const allNotifs = getAdminNotifications();
-      const n = allNotifs.find(x => x.id === id);
-
-      if (!n) { window.location.href = '<?= url('/admin/mis_admin/notification') ?>'; return; }
-
-      document.getElementById('notif-container').style.display = 'none';
-      document.getElementById('unread-badge').style.display = 'none';
-      const detailView = document.getElementById('notif-detail-view');
-      detailView.style.display = 'block';
-
-      const sourceLink = n.link ? `
-        <a href="${n.link}" class="btn-go-source">
-          <svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-          ${getSourceLabel(n.type)}
-        </a>
-      ` : '';
-
-      detailView.innerHTML = `
-        <button class="btn-back" onclick="window.location.href='<?= url('/admin/mis_admin/notification') ?>'">
-          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-          Back to all notifications
-        </button>
-        
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
-          <div class="notif-icon type-${n.type || 'system'}" style="width:48px;height:48px;">
-            <svg viewBox="0 0 24 24" style="width:24px;height:24px;">${getIconSvg(n.type)}</svg>
-          </div>
-          <div style="flex:1;">
-            <h3 style="margin:0; font-family:'Lora',serif; color:var(--primary-dark); font-size:1.2rem;">${n.title}</h3>
-            <span style="color:var(--text-muted); font-size:0.82rem;">${new Date(n.createdAt).toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
-          </div>
-        </div>
-        
-        <div style="border-top:1px solid var(--border); padding-top:20px; margin-bottom:20px;">
-          <div style="font-size:1rem; color:var(--text-main); line-height:1.7; white-space:pre-wrap;">${n.message}</div>
-        </div>
-        
-        <div class="detail-meta">
-          <div class="detail-meta-item">
-            <div class="label">Notification ID</div>
-            <div class="value" style="font-family:monospace;">${n.id}</div>
-          </div>
-          <div class="detail-meta-item">
-            <div class="label">Category</div>
-            <div class="value">${(n.type || 'system').toUpperCase()}</div>
-          </div>
-          <div class="detail-meta-item">
-            <div class="label">Source</div>
-            <div class="value">${getSourceLabel(n.type)}</div>
-          </div>
-        </div>
-        
-        ${sourceLink}
-      `;
+    function markAsRead(id) {
+      const log = getActivityLog();
+      const idx = log.findIndex(l => l.id === id);
+      if (idx !== -1) {
+        log[idx].read = true;
+        saveActivityLog(log);
+        renderActivityLog();
+        window.location.href = '?view=' + id;
+      }
     }
 
     function markAllRead() {
-      const container = document.getElementById('notif-container');
-      container.querySelectorAll('.unread').forEach(node => node.classList.remove('unread'));
-      document.getElementById('unread-badge').style.display = 'none';
-      document.querySelectorAll('.notif-dot').forEach(d => d.remove());
+      const log = getActivityLog();
+      log.forEach(l => l.read = true);
+      saveActivityLog(log);
+      renderActivityLog();
       showToast('All notifications marked as read', 'var(--success)');
     }
 
-    // Route: detail view or list
+    function renderDetailView(id) {
+      const log = getActivityLog();
+      const n = log.find(l => l.id === id);
+      if (!n) { window.location.href = '<?= url('/admin/mis_admin/notification') ?>'; return; }
+
+      document.getElementById('page-title').textContent = 'Notification Detail';
+      document.getElementById('notif-container').style.display = 'none';
+      const detailView = document.getElementById('notif-detail-view');
+      detailView.style.display = 'block';
+
+      detailView.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 24px;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="notif-detail-icon type-${n.type || 'system'}">
+              <svg viewBox="0 0 24 24">${getIconSvg(n.type)}</svg>
+            </div>
+            <div>
+              <h3 class="notif-detail-title">${n.action}</h3>
+              <span class="notif-detail-meta-text">${new Date(n.time).toLocaleString()}</span>
+            </div>
+          </div>
+          
+        </div>
+        
+        <div class="notif-detail-body" style="border-top: none; padding-top: 0;">
+          <div class="notif-detail-content">${n.detail}</div>
+          
+          <div class="detail-meta">
+            <div class="detail-meta-item">
+              <div class="label">Reference ID</div>
+              <div class="value" style="font-family:monospace;">${n.id}</div>
+            </div>
+            <div class="detail-meta-item">
+              <div class="label">Actor</div>
+              <div class="value">${n.actor}</div>
+            </div>
+            <div class="detail-meta-item">
+              <div class="label">Category</div>
+              <div class="value">${(n.type || 'system').toUpperCase()}</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <button class="btn-back" onclick="window.location.href='<?= url('/admin/mis_admin/notification') ?>'">
+              <svg viewBox="0 0 24 24" style="fill:currentColor;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+              Back to Inbox
+            </button>
+            <button class="btn-action" onclick="window.location.href='${getSourceLink(n.type)}'">
+              ${getSourceLabel(n.type)}
+              <svg viewBox="0 0 24 24" style="fill:currentColor; margin-left: 8px;"><path d="M14 3h7v7h-2V6.41l-9 9L8.59 14l9-9H14V3zM5 5h5v2H5v12h12v-5h2v7H3V3h7v2H5z"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const viewId = urlParams.get('view');
-    if (viewId) { renderDetailView(viewId); } else { renderNotifications(); }
+    if (viewId) {
+      renderDetailView(viewId);
+    } else {
+      renderActivityLog();
+    }
 
-    loadUserNav();
-    initNotifBadge('admin');
+    function timeAgo(date) {
+      const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+      let interval = seconds / 86400;
+      if (interval > 1) return Math.floor(interval) + " days ago";
+      interval = seconds / 3600;
+      if (interval > 1) return Math.floor(interval) + " hours ago";
+      interval = seconds / 60;
+      if (interval > 1) return Math.floor(interval) + " minutes ago";
+      return "Just now";
+    }
+
+    if (typeof loadUserNav === 'function') loadUserNav();
   </script>
 </body>
 

@@ -1,0 +1,334 @@
+/* ── Notification Inbox & Activity Log Styles ── */
+
+.notif-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  position: relative;
+  transition: all 0.2s;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.notif-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.notif-card.unread {
+  background: rgba(46, 125, 85, 0.03);
+  border-color: rgba(46, 125, 85, 0.3);
+}
+
+.notif-card.unread::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 16px;
+  bottom: 16px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: var(--success);
+}
+
+.notif-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notif-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: white;
+}
+
+.notif-content {
+  flex: 1;
+}
+
+.notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.notif-title {
+  font-weight: 700;
+  color: var(--primary-dark);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.notif-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.notif-message {
+  font-size: 0.85rem;
+  color: var(--text-color);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+/* Icon Types */
+.type-system { background: var(--border); }
+.type-system svg { fill: var(--text-main) !important; }
+.type-approve { background: var(--success); }
+.type-reject, .type-alert { background: var(--danger); }
+.type-assign { background: var(--accent); }
+.type-request { background: var(--primary); }
+.type-payment { background: #2e5a8a; }
+.type-user { background: var(--info); }
+.type-update { background: var(--accent); }
+.type-schedule { background: #5a2e7a; }
+.type-staff { background: var(--primary-dark); }
+
+/* Detail View */
+.notif-detail-view {
+  display: none;
+  padding: 10px 0;
+}
+
+.notif-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.notif-detail-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notif-detail-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.notif-detail-title {
+  margin: 0;
+  font-family: 'Lora', serif;
+  color: var(--primary-dark);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.notif-detail-meta-text {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+.notif-detail-body {
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+  margin-bottom: 30px;
+}
+
+.notif-detail-content {
+  font-size: 1rem;
+  color: var(--text-main);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.btn-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #f8faf9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-back:hover {
+  background: white;
+  border-color: #cbd5e1;
+  color: #1e293b;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.btn-back svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s;
+}
+.btn-back:hover svg {
+  transform: translateX(-3px);
+}
+
+.btn-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: var(--primary);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(23, 107, 69, 0.2);
+}
+.btn-action:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(23, 107, 69, 0.3);
+}
+.btn-action svg {
+  width: 18px;
+  height: 18px;
+}
+
+.notif-dot {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: #ef4444; /* Danger red */
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  pointer-events: none;
+  z-index: 5;
+}
+.sidebar.collapsed .notif-dot {
+  right: 8px;
+  top: 8px;
+  transform: none;
+}
+
+.detail-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.detail-meta-item {
+  padding: 14px 18px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  flex: 1;
+  min-width: 140px;
+}
+
+.detail-meta-item .label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.detail-meta-item .value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.btn-go-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+  color: white;
+  border: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 24px;
+  transition: all 0.18s;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(23, 107, 69, 0.25);
+}
+
+.btn-go-source:hover {
+  box-shadow: 0 6px 20px rgba(23, 107, 69, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-go-source svg {
+  width: 16px;
+  height: 16px;
+  fill: white;
+}
+
+/* ── Admin Insights Ribbon ── */
+.admin-insights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.insight-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.insight-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.insight-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Lora', serif;
+}
+
+.insight-value.success { color: var(--success); }
+.insight-value.danger { color: var(--danger); }
+.insight-value.warning { color: var(--warning); }
+.insight-value.info { color: var(--info); }
+
+/* ── Section Card Body Padding Fix ── */
+.section-card-body {
+  padding: 24px;
+}

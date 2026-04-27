@@ -583,6 +583,7 @@ class AdminController extends Controller
     }
 
     public function notificationInbox(): void {
+        // die('DEBUG: notificationInbox called');
         Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
         $this->view('admin/mis_admin/notification_inbox', ['active_page' => 'notification']);
     }
