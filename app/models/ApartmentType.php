@@ -141,7 +141,7 @@ class ApartmentType
     /**
      * Add an image to a type (BLOB storage).
      */
-    public function addImage(int $typeId, string $binaryData, string $mimeType, string $caption = '', bool $isThumbnail = false): int
+    public function addImage(int $typeId, ?string $binaryData, string $mimeType, string $caption = '', bool $isThumbnail = false, ?string $filePath = null): int
     {
         // If marking as thumbnail, unmark all others for this type
         if ($isThumbnail) {
@@ -154,15 +154,16 @@ class ApartmentType
         $nextSort = $maxSort->fetchColumn();
 
         $stmt = $this->db->prepare(
-            "INSERT INTO apartment_type_images (type_id, image_data, mime_type, caption, is_thumbnail, sort_order) 
-             VALUES (:tid, :data, :mime, :cap, :thumb, :sort)"
+            "INSERT INTO apartment_type_images (type_id, image_data, mime_type, caption, is_thumbnail, sort_order, file_path) 
+             VALUES (:tid, :data, :mime, :cap, :thumb, :sort, :path)"
         );
         $stmt->bindValue(':tid', $typeId, PDO::PARAM_INT);
-        $stmt->bindValue(':data', $binaryData, PDO::PARAM_LOB);
+        $stmt->bindValue(':data', $binaryData, $binaryData === null ? PDO::PARAM_NULL : PDO::PARAM_LOB);
         $stmt->bindValue(':mime', $mimeType, PDO::PARAM_STR);
         $stmt->bindValue(':cap', $caption, PDO::PARAM_STR);
         $stmt->bindValue(':thumb', $isThumbnail ? 1 : 0, PDO::PARAM_INT);
         $stmt->bindValue(':sort', $nextSort, PDO::PARAM_INT);
+        $stmt->bindValue(':path', $filePath, $filePath === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->execute();
         return (int) $this->db->lastInsertId();
     }
@@ -172,11 +173,15 @@ class ApartmentType
      */
     public function getImageData(int $imageId): ?array
     {
-        $stmt = $this->db->prepare("SELECT image_data, mime_type FROM apartment_type_images WHERE image_id = :id");
+        $stmt = $this->db->prepare("SELECT image_data, mime_type, file_path FROM apartment_type_images WHERE image_id = :id");
         $stmt->execute(['id' => $imageId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && !empty($row['image_data'])) {
-            return ['data' => $row['image_data'], 'mime' => $row['mime_type'] ?: 'image/jpeg'];
+        if ($row) {
+            return [
+                'data' => $row['image_data'], 
+                'mime' => $row['mime_type'] ?: 'image/jpeg',
+                'file_path' => $row['file_path']
+            ];
         }
         return null;
     }
@@ -296,11 +301,32 @@ class ApartmentType
      */
     public function getAvailableCountByType(int $typeId): int
     {
-        $stmt = $this->db->prepare(
-            "SELECT COUNT(*) FROM apartment_units WHERE type_id = :tid AND status = 'Available'"
-        );
-        $stmt->execute(['tid' => $typeId]);
-        return (int) $stmt->fetchColumn();
+        // First check if this type is Transient
+        $stmtType = $this->db->prepare("SELECT label FROM apartment_types WHERE type_id = :tid");
+        $stmtType->execute(['tid' => $typeId]);
+        $label = $stmtType->fetchColumn();
+        
+        $isTransient = $label && stripos($label, 'Transient') !== false;
+
+        if ($isTransient) {
+            // Transient has 10 pax per room, but UI expects 'number of physical units'
+            // We return the number of units that have NOT reached max capacity (10)
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) FROM apartment_units u
+                WHERE u.type_id = :tid 
+                  AND u.status IN ('Available', 'Occupied')
+                  AND (SELECT COUNT(*) FROM apartmentsapp a WHERE a.unit_id = u.unit_id AND a.status = 'Assigned') < 10
+            ");
+            $stmt->execute(['tid' => $typeId]);
+            return (int) $stmt->fetchColumn();
+        } else {
+            // Normal behavior: just count 'Available' status rooms directly
+            $stmt = $this->db->prepare(
+                "SELECT COUNT(*) FROM apartment_units WHERE type_id = :tid AND status = 'Available'"
+            );
+            $stmt->execute(['tid' => $typeId]);
+            return (int) $stmt->fetchColumn();
+        }
     }
 
     /**
@@ -342,6 +368,33 @@ class ApartmentType
         foreach ($types as &$type) {
             $type['images'] = $this->getImagesByType($type['type_id']);
             $type['available_count'] = $this->getAvailableCountByType($type['type_id']);
+            
+            $isTransient = stripos($type['label'], 'Transient') !== false;
+            $type['is_transient'] = $isTransient;
+            
+            if ($isTransient && $type['available_count'] > 0) {
+                // Find the EXACT next physical unit that an applicant would be assigned to
+                $stmt = $this->db->prepare("
+                    SELECT u.unit_id,
+                           (SELECT COUNT(*) FROM apartmentsapp a WHERE a.unit_id = u.unit_id AND a.status = 'Assigned') as occupant_count
+                    FROM apartment_units u 
+                    WHERE u.type_id = :tid 
+                      AND u.status IN ('Available', 'Occupied')
+                    HAVING occupant_count < 10
+                    ORDER BY occupant_count DESC, u.building, u.room_number 
+                    LIMIT 1
+                ");
+                $stmt->execute(['tid' => $type['type_id']]);
+                $nextUnit = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($nextUnit) {
+                    $type['current_slots_left'] = 10 - (int)$nextUnit['occupant_count'];
+                } else {
+                    $type['current_slots_left'] = 0;
+                }
+            } else {
+                $type['current_slots_left'] = 0;
+            }
         }
         return $types;
     }

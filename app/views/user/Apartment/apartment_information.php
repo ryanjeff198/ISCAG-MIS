@@ -1114,7 +1114,7 @@
         if (navRole) {
             const isComplete = user.profileComplete;
             navRole.textContent = isComplete ? "<?= $_SESSION['role'] ?? 'Verified User' ?>" : 'Guest';
-            navRole.style.color = isComplete ? 'var(--success)' : 'var(--warning)';
+            navRole.style.color = isComplete ? 'var(--warning)' : 'var(--success)';
         }
 
         // ═══════════════════════════════════════════

@@ -375,7 +375,11 @@ function loadUserNav() {
   const navAvatar = document.getElementById('nav-avatar');
 
   if (navName) navName.textContent = user.name;
-  if (navRole) navRole.textContent = roleLabel;
+  
+  // Prevent older local JS storage from overwriting real PHP roles like 'Admin' with 'Staff_Tenant'
+  if (navRole && !navRole.hasAttribute('data-preserve-role')) {
+      navRole.textContent = roleLabel;
+  }
   
   if (navAvatar) {
     const photo = localStorage.getItem('mis_apartment_photo') || localStorage.getItem('mis_user_photo');
