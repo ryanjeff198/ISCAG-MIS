@@ -363,6 +363,33 @@ class ApartmentType
         foreach ($types as &$type) {
             $type['images'] = $this->getImagesByType($type['type_id']);
             $type['available_count'] = $this->getAvailableCountByType($type['type_id']);
+            
+            $isTransient = stripos($type['label'], 'Transient') !== false;
+            $type['is_transient'] = $isTransient;
+            
+            if ($isTransient && $type['available_count'] > 0) {
+                // Find the EXACT next physical unit that an applicant would be assigned to
+                $stmt = $this->db->prepare("
+                    SELECT u.unit_id,
+                           (SELECT COUNT(*) FROM apartmentsapp a WHERE a.unit_id = u.unit_id AND a.status = 'Assigned') as occupant_count
+                    FROM apartment_units u 
+                    WHERE u.type_id = :tid 
+                      AND u.status IN ('Available', 'Occupied')
+                    HAVING occupant_count < 10
+                    ORDER BY occupant_count DESC, u.building, u.room_number 
+                    LIMIT 1
+                ");
+                $stmt->execute(['tid' => $type['type_id']]);
+                $nextUnit = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($nextUnit) {
+                    $type['current_slots_left'] = 10 - (int)$nextUnit['occupant_count'];
+                } else {
+                    $type['current_slots_left'] = 0;
+                }
+            } else {
+                $type['current_slots_left'] = 0;
+            }
         }
         return $types;
     }

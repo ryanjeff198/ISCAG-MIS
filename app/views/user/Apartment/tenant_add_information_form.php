@@ -2460,12 +2460,16 @@ if ($userId) {
         return el ? el.value.trim() : '';
       };
       const unitRadio = document.querySelector('input[name="unit"]:checked');
-      const unitMap = {
-        unit1: 'Studio',
-        unit2: 'One-Bedroom',
-        unit3: 'Two-Bedroom'
-      };
-      const roomtype = unitRadio ? (unitMap[unitRadio.id] || 'Studio') : 'Studio';
+      let roomtype = 'Studio';
+      if (unitRadio) {
+        const card = unitRadio.closest('.unit-card');
+        if (card) {
+          const labelEl = card.querySelector('.unit-card-label');
+          if (labelEl) roomtype = labelEl.textContent.trim();
+        } else {
+          roomtype = unitRadio.value; // fallback
+        }
+      }
 
       const familyRows = document.querySelectorAll('#family-members-body tr');
       const familyData = [];
@@ -3415,7 +3419,13 @@ if ($userId) {
             const typeKey = t.type_key || `unit-${typeId}`;
             const label = t.label || 'Apartment Unit';
             const isFull = (parseInt(t.available_count) || 0) <= 0;
-            const availText = isFull ? 'No Units Available' : `${t.available_count} Units Available`;
+            
+            let availText = isFull ? 'No Units Available' : `${t.available_count} Units Available`;
+            if (t.is_transient && !isFull) {
+                // E.g. "3 Units Available (9/10 Slots)"
+                availText = `${t.available_count} Units Available (${t.current_slots_left}/10 Slots)`;
+            }
+
             const statusClass = isFull ? 'status-full' : (t.available_count < 5 ? 'status-low' : 'status-ok');
             const thumbUrl = t.thumbnail_id 
               ? `<?= url('/api/apartment-types/serve-image') ?>?id=${t.thumbnail_id}`
