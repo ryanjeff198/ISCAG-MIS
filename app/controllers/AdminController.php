@@ -369,6 +369,7 @@ class AdminController extends Controller
         }
     }
 
+
     public function auditLogs(): void {
         Auth::protectRole(['Admin']);
         $this->view('admin/mis_admin/audit_logs', ['active_page' => 'audit_logs']);
@@ -417,9 +418,26 @@ class AdminController extends Controller
             return;
         }
 
-        header("Content-Type: " . $result['mime']);
-        header("Content-Length: " . strlen($result['data']));
-        header("Cache-Control: private, max-age=3600");
-        echo $result['data'];
+        // Check filesystem first
+        if (!empty($result['file_path'])) {
+            $fullPath = BASE_PATH . "/public/" . $result['file_path'];
+            if (file_exists($fullPath)) {
+                header('Content-Type: ' . $result['mime']);
+                header('Content-Length: ' . filesize($fullPath));
+                readfile($fullPath);
+                return;
+            }
+        }
+
+        // Fallback to BLOB
+        if (!empty($result['data'])) {
+            header("Content-Type: " . $result['mime']);
+            header("Content-Length: " . strlen($result['data']));
+            echo $result['data'];
+            return;
+        }
+
+        http_response_code(404);
+        echo 'Image not found';
     }
 }

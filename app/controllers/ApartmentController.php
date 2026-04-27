@@ -95,9 +95,14 @@ class ApartmentController extends Controller {
             return;
         }
 
-        $binaryData = file_get_contents($file['tmp_name']);
-        if ($binaryData === false) {
-            echo json_encode(['success' => false, 'message' => 'Failed to read file']);
+        // Logic for saving to filesystem
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
+        $fileName = "doc_{$userId}_{$type}_" . time() . "." . $ext;
+        $relPath = "uploads/tenants/" . $fileName;
+        $fullPath = BASE_PATH . "/public/" . $relPath;
+
+        if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
+            echo json_encode(['success' => false, 'message' => 'Failed to save file to disk']);
             return;
         }
 
@@ -105,17 +110,17 @@ class ApartmentController extends Controller {
         $info = $model->getInfo($userId);
         
         if (empty($info)) {
-            // Need a dummy record or they should have completed Step 1
-            $infoId = $model->saveInfo($userId, []); // Creates an empty addinfo record
+            $infoId = $model->saveInfo($userId, []);
             $infoId = $infoId ?: $model->getInfo($userId)['tenant_info']; 
         } else {
              $infoId = $info['tenant_info'];
         }
 
-        if ($model->saveInfoImage($infoId, $type, $binaryData, $mime)) {
-            echo json_encode(['success' => true, 'type' => $type]);
+        // Save path to DB, and set binaryData to NULL to save space
+        if ($model->saveInfoImage($infoId, $type, null, $mime, $relPath)) {
+            echo json_encode(['success' => true, 'type' => $type, 'path' => $relPath]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to store in database']);
+            echo json_encode(['success' => false, 'message' => 'Failed to update database record']);
         }
     }
 
@@ -142,16 +147,32 @@ class ApartmentController extends Controller {
         $result = $model->getAddInfoImage($infoId, $type);
 
         if (!$result) {
-            // Fallback to legacy tenant_requirements if needed? No, let's just 404
             http_response_code(404);
             echo 'Image not found';
             return;
         }
 
-        header('Content-Type: ' . $result['mime']);
-        header('Content-Length: ' . strlen($result['data']));
-        header('Cache-Control: private, max-age=3600');
-        echo $result['data'];
+        // Logic: Check filesystem first
+        if (!empty($result['file_path'])) {
+            $fullPath = BASE_PATH . "/public/" . $result['file_path'];
+            if (file_exists($fullPath)) {
+                header('Content-Type: ' . $result['mime']);
+                header('Content-Length: ' . filesize($fullPath));
+                readfile($fullPath);
+                return;
+            }
+        }
+
+        // Fallback to BLOB if file not on disk
+        if (!empty($result['data'])) {
+            header('Content-Type: ' . $result['mime']);
+            header('Content-Length: ' . strlen($result['data']));
+            echo $result['data'];
+            return;
+        }
+
+        http_response_code(404);
+        echo 'Image not found';
     }
 
     public function parking() {

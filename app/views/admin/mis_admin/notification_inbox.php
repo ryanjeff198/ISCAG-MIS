@@ -23,7 +23,8 @@ if (!function_exists('url')) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ISCAG MIS — Admin Notifications</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
-  <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+  <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
+  <link rel="stylesheet" href="<?= asset('css/notifications.css') ?>?v=<?= time() ?>" />
 </head>
 
 <body>

@@ -163,13 +163,9 @@ class User
 
             // 1. Update core fields in tenant_accounts
             $sql1 = "UPDATE {$this->table} SET email = :email, contactnum = :phone";
-            $params1 = [
-                'email'  => $data['email'],
-                'phone'  => $data['phone'],
-                'userId' => $userId
-            ];
-
-            if (!empty($data['profile_picture'])) {
+            if (!empty($data['profile_picture_path'])) {
+                $sql1 .= ", profile_picture_path = :profile_picture_path, profile_picture = NULL";
+            } else if (!empty($data['profile_picture'])) {
                 $sql1 .= ", profile_picture = :profile_picture, profile_picture_mime = :profile_picture_mime";
             }
 
@@ -180,7 +176,9 @@ class User
             $stmt1->bindValue(':phone', $data['phone']);
             $stmt1->bindValue(':userId', $userId, PDO::PARAM_INT);
 
-            if (!empty($data['profile_picture'])) {
+            if (!empty($data['profile_picture_path'])) {
+                $stmt1->bindValue(':profile_picture_path', $data['profile_picture_path']);
+            } else if (!empty($data['profile_picture'])) {
                 $stmt1->bindValue(':profile_picture', $data['profile_picture'], PDO::PARAM_LOB);
                 $stmt1->bindValue(':profile_picture_mime', $data['profile_picture_mime']);
             }
