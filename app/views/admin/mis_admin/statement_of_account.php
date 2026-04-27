@@ -207,8 +207,8 @@
         <!-- Admin Insights Ribbon -->
         <div class="admin-insights">
           <div class="insight-card">
-            <div class="insight-label">Statements Generated</div>
-            <div class="insight-value">84</div>
+            <div class="insight-label">Active Tenants</div>
+            <div class="insight-value"><?= count($tenants) ?></div>
           </div>
           <div class="insight-card">
             <div class="insight-label">System Accuracy</div>
@@ -216,11 +216,17 @@
           </div>
           <div class="insight-card">
             <div class="insight-label">Last Generated</div>
-            <div class="insight-value success">Today</div>
+            <div class="insight-value success"><?= date('M d') ?></div>
           </div>
           <div class="insight-card">
+            <?php
+              $totalOutstanding = 0;
+              foreach($transactions as $t) {
+                if ($t['status'] !== 'Paid') $totalOutstanding += $t['amount'];
+              }
+            ?>
             <div class="insight-label">Outstanding Bal.</div>
-            <div class="insight-value danger">₱42,500</div>
+            <div class="insight-value danger">₱<?= number_format($totalOutstanding) ?></div>
           </div>
         </div>
         
@@ -230,9 +236,9 @@
             <label>Select Tenant</label>
             <select id="tenant-select" onchange="generateSOA()">
               <option value="">— Select a Tenant —</option>
-              <option value="USR-001">Muhammad Usman</option>
-              <option value="USR-002">Aisha Fatima</option>
-              <option value="USR-003">Omar Khan</option>
+              <?php foreach($tenants as $t): ?>
+                <option value="<?= $t['tenant_id'] ?>"><?= htmlspecialchars($t['first_name'] . ' ' . $t['last_name']) ?> (<?= $t['room_number'] ? $t['building'].'-'.$t['room_number'] : 'No Unit' ?>)</option>
+              <?php endforeach; ?>
             </select>
           </div>
           <div class="form-group">
@@ -332,21 +338,8 @@
   <script>
     standardizePage('admin');
 
-    const mockTransactions = [
-      { tenantId: 'USR-001', date: '2026-03-01', desc: 'Monthly Rent - March', ref: 'INV-2026-004', charge: 3500, payment: 0 },
-      { tenantId: 'USR-001', date: '2026-03-10', desc: 'Payment Received', ref: 'PAY-00102', charge: 0, payment: 3500 },
-      { tenantId: 'USR-001', date: '2026-04-01', desc: 'Monthly Rent - April', ref: 'INV-2026-001', charge: 3500, payment: 0 },
-      { tenantId: 'USR-002', date: '2026-03-01', desc: 'Monthly Rent - March', ref: 'INV-2026-00A', charge: 7500, payment: 0 },
-      { tenantId: 'USR-002', date: '2026-04-01', desc: 'Monthly Rent - April', ref: 'INV-2026-002', charge: 7500, payment: 0 },
-      { tenantId: 'USR-003', date: '2026-03-01', desc: 'Monthly Rent - March', ref: 'INV-2026-00B', charge: 5000, payment: 0 },
-      { tenantId: 'USR-003', date: '2026-03-05', desc: 'Payment Received', ref: 'PAY-00311', charge: 0, payment: 5000 },
-    ];
-
-    const tenantInfo = {
-      'USR-001': { name: 'Muhammad Usman', unit: 'APT-A1', contact: '0912-345-6789' },
-      'USR-002': { name: 'Aisha Fatima', unit: 'APT-B1', contact: '0918-765-4321' },
-      'USR-003': { name: 'Omar Khan', unit: 'APT-A2', contact: '0922-111-2222' }
-    };
+    const transactions = <?= json_encode($transactions) ?>;
+    const tenants = <?= json_encode($tenants) ?>;
 
     function generateSOA() {
       const tenantId = document.getElementById('tenant-select').value;
@@ -359,13 +352,15 @@
         return;
       }
 
+      const info = tenants.find(t => t.tenant_id == tenantId);
+      if (!info) return;
+
       document.getElementById('soa-empty-state').style.display = 'none';
       document.getElementById('soa-document').style.display = 'block';
 
-      const info = tenantInfo[tenantId];
-      document.getElementById('soa-tenant-name').textContent = info.name;
-      document.getElementById('soa-tenant-unit').textContent = info.unit;
-      document.getElementById('soa-tenant-contact').textContent = info.contact;
+      document.getElementById('soa-tenant-name').textContent = info.first_name + ' ' + info.last_name;
+      document.getElementById('soa-tenant-unit').textContent = info.room_number ? (info.building + '-' + info.room_number) : 'No Unit Assigned';
+      document.getElementById('soa-tenant-contact').textContent = info.contactnum || 'N/A';
 
       const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       document.getElementById('soa-date-generated').textContent = today;
@@ -376,12 +371,34 @@
       else if(dateTo) periodText = `Up to ${dateTo}`;
       document.getElementById('soa-period').textContent = periodText;
 
-      let filtered = mockTransactions.filter(t => t.tenantId === tenantId);
+      // Filter and expand transactions
+      let expanded = [];
+      transactions.filter(t => t.tenant_id == tenantId).forEach(t => {
+        // Charge entry
+        expanded.push({
+          date: t.due_date,
+          desc: 'Apartment Rent Charge',
+          ref: 'INV-' + t.billing_id.toString().padStart(4,'0'),
+          charge: parseFloat(t.amount),
+          payment: 0
+        });
+        
+        // Payment entry if Paid
+        if (t.status === 'Paid') {
+          expanded.push({
+            date: t.created_at.split(' ')[0], // Use creation date or a payment date if we had one
+            desc: 'Payment Received',
+            ref: 'PAY-' + t.billing_id.toString().padStart(4,'0'),
+            charge: 0,
+            payment: parseFloat(t.amount)
+          });
+        }
+      });
       
-      if(dateFrom) filtered = filtered.filter(t => new Date(t.date) >= new Date(dateFrom));
-      if(dateTo) filtered = filtered.filter(t => new Date(t.date) <= new Date(dateTo));
+      if(dateFrom) expanded = expanded.filter(t => new Date(t.date) >= new Date(dateFrom));
+      if(dateTo) expanded = expanded.filter(t => new Date(t.date) <= new Date(dateTo));
 
-      filtered.sort((a,b) => new Date(a.date) - new Date(b.date));
+      expanded.sort((a,b) => new Date(a.date) - new Date(b.date));
 
       const tbody = document.getElementById('soa-tbody');
       tbody.innerHTML = '';
@@ -390,10 +407,10 @@
       let totalCharges = 0;
       let totalPayments = 0;
 
-      if (filtered.length === 0) {
+      if (expanded.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No transactions found for the selected period.</td></tr>`;
       } else {
-        filtered.forEach(t => {
+        expanded.forEach(t => {
           runningBalance += t.charge;
           runningBalance -= t.payment;
           totalCharges += t.charge;

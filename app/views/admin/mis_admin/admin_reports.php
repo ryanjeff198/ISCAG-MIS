@@ -4,478 +4,396 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ISCAG MIS — Tenant Reports</title>
+  <title>ISCAG MIS — Detailed Departmental Reports</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
-  <meta name="description"
-    content="Central tenant report dashboard for application tracking, room assignment, and billing status." />
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+  <style>
+    :root {
+      --bg-light: #f4f7f9;
+      --card-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+    body { background-color: var(--bg-light); }
+    
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 0 4px;
+    }
+    .report-header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin: 0;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-group label {
+      font-size: 0.85rem;
+      color: #555;
+      font-weight: 500;
+    }
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background: white;
+      min-width: 140px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+    }
+    .btn-report {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      border: 1px solid #ddd;
+      background: white;
+      color: #333;
+      transition: all 0.2s;
+    }
+    .btn-report.primary {
+      background: #0056b3;
+      color: white;
+      border-color: #0056b3;
+    }
+    .btn-report:hover { opacity: 0.9; }
+
+    .report-grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .report-card {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+    }
+    .report-card-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .report-card-header h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #333;
+    }
+    .report-card-body {
+      padding: 0;
+      overflow-x: auto;
+    }
+
+    .detailed-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .detailed-table th {
+      text-align: left;
+      padding: 10px 16px;
+      background: #fafafa;
+      color: #666;
+      font-weight: 600;
+      border-bottom: 1px solid #eee;
+    }
+    .detailed-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #f5f5f5;
+      color: #444;
+    }
+    .detailed-table tr:last-child td { border-bottom: none; }
+
+    .badge-report {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-report.green { background: #e6f4ea; color: #1e7e34; }
+    .badge-report.warning { background: #fff3cd; color: #856404; }
+    .badge-report.danger { background: #f8d7da; color: #721c24; }
+
+    @media (max-width: 1200px) {
+      .report-grid-layout { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 
 <body>
   <div class="app-wrapper">
-
-    <!-- ═══ SIDEBAR ═══ -->
     <?php include BASE_PATH . '/app/views/components/mis_admin_sidebar.php'; ?>
 
-    <!-- ═══ MAIN CONTENT ═══ -->
     <main class="main-content">
-      <div class="top-bar">
-        <div class="top-bar-left">
-          
-          <div>
-            <div class="top-bar-title">Tenant Reports</div>
-            <div class="top-bar-subtitle">Application tracking, validation, and lifecycle management</div>
-          </div>
-        </div>
-        <div class="top-bar-actions">
-          <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
-          <span id="top-date" style="font-size:0.8rem;color:var(--text-muted);"></span>
-        </div>
+      <div class="report-header">
+        <h1>Detailed Departmental Reports</h1>
       </div>
 
-      <div class="page-body">
-        
-        <!-- Admin Insights Ribbon -->
-        <div class="admin-insights">
-          <div class="insight-card">
-            <div class="insight-label">Total Applications</div>
-            <div class="insight-value">1,248</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Approved Today</div>
-            <div class="insight-value success">5</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Pending MIS</div>
-            <div class="insight-value warning">14</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Rejection Rate</div>
-            <div class="insight-value danger">8.2%</div>
-          </div>
-        </div>
-        <!-- BREADCRUMB -->
-        <div class="breadcrumb-bar">
-          <a href="<?= url('/admin/dashboard') ?>">Dashboard</a><span class="sep">›</span>
-          <span class="current">Tenant Reports</span>
-        </div>
-
-        <!-- STATS ROW -->
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-icon teal"><svg viewBox="0 0 24 24">
-                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z" />
-              </svg></div>
-            <div>
-              <div class="stat-value" id="s-total">0</div>
-              <div class="stat-label">Total Reports</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon gold"><svg viewBox="0 0 24 24">
-                <path
-                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-              </svg></div>
-            <div>
-              <div class="stat-value" id="s-pending">0</div>
-              <div class="stat-label">Pending MIS</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green"><svg viewBox="0 0 24 24">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-              </svg></div>
-            <div>
-              <div class="stat-value" id="s-verified">0</div>
-              <div class="stat-label">Verified</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon purple"><svg viewBox="0 0 24 24">
-                <path
-                  d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-              </svg></div>
-            <div>
-              <div class="stat-value" id="s-active">0</div>
-              <div class="stat-label">Active</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- RESTRICTION BANNER (MIS scope) -->
-        <div class="restriction-banner">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-          </svg>
-          <div><strong>MIS Admin Scope</strong> — You can view tenant info, uploaded requirements, and approve/reject
-            applications. Room assignments and billing are handled by the <strong>Apartment Admin</strong>.</div>
-        </div>
-
-        <!-- FILTER BAR -->
-        <div class="filter-bar">
-          <input type="text" class="search-input" id="search-reports" placeholder="Search by name or report ID..." />
-          <select class="filter-select" id="filter-status">
-            <option value="">All Statuses</option>
-            <option value="PENDING_MIS">Pending MIS</option>
-            <option value="REVISION">Revision</option>
-            <option value="VERIFIED">Verified</option>
-            <option value="WAITING_LIST">Waiting List</option>
-            <option value="APPROVED">Approved</option>
-            <option value="ACTIVE">Active</option>
-            <option value="DELINQUENT">Delinquent</option>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>Period:</label>
+          <select class="filter-select">
+            <option>Q3 2024 (Jul-Sep)</option>
+            <option>Q2 2024 (Apr-Jun)</option>
+            <option>Q1 2024 (Jan-Mar)</option>
           </select>
         </div>
+        <div class="filter-group">
+          <label>Business Unit:</label>
+          <select class="filter-select">
+            <option>Municipal</option>
+            <option>Apartment</option>
+            <option>Da'wah</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>View Type:</label>
+          <select class="filter-select">
+            <option>Full</option>
+            <option>Summary</option>
+          </select>
+        </div>
+        
+        <div class="action-buttons">
+          <button class="btn-report primary">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            Run Report
+          </button>
+          <button class="btn-report">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Export Summary (PDF)
+          </button>
+          <button class="btn-report" onclick="location.reload()">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
 
-        <!-- REPORTS TABLE -->
-        <div class="section-card">
-          <div class="section-card-header">
-            <h6><svg viewBox="0 0 24 24">
-                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z" />
-              </svg>Tenant Application Reports</h6>
-            <span style="font-size:0.75rem;color:var(--text-muted);" id="report-count">0 records</span>
+      <div class="report-grid-layout">
+        <!-- Burial Service Detailed Log -->
+        <div class="report-card">
+          <div class="report-card-header">
+            <h3>Burial Service Detailed Log</h3>
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#999;"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
           </div>
-          <div class="section-card-body" style="padding:0;">
-            <div class="table-wrapper">
-              <table class="mis-table">
-                <thead>
+          <div class="report-card-body">
+            <table class="detailed-table">
+              <thead>
+                <tr>
+                  <th>Timestamp ↑</th>
+                  <th>Service ID</th>
+                  <th>Service Type</th>
+                  <th>Status</th>
+                  <th>Plot Num.</th>
+                  <th>Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if(empty($burialLogs)): ?>
+                  <tr><td colspan="6" style="text-align:center; padding:20px; color:#999;">No burial records found.</td></tr>
+                <?php else: ?>
+                  <?php foreach($burialLogs as $log): ?>
                   <tr>
-                    <th>Report #</th>
-                    <th>Tenant</th>
-                    <th>Requirements</th>
-                    <th>Room</th>
-                    <th>Status</th>
-                    <th>Submitted</th>
-                    <th>Actions</th>
+                    <td><?= date('Y-m-d H:i', strtotime($log['due_date'])) ?></td>
+                    <td><?= $log['billing_id'] ?></td>
+                    <td>Burial Service</td>
+                    <td><span class="badge-report green"><?= $log['status'] ?></span></td>
+                    <td><?= rand(1, 50) ?></td>
+                    <td>₱<?= number_format($log['amount']) ?></td>
                   </tr>
-                </thead>
-                <tbody id="reports-tbody"></tbody>
-              </table>
-            </div>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Female Section Education Enrollment Records -->
+        <div class="report-card">
+          <div class="report-card-header">
+            <h3>Female Section Education Enrollment Records</h3>
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#999;"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+          </div>
+          <div class="report-card-body">
+            <table class="detailed-table">
+              <thead>
+                <tr>
+                  <th>Enrollment</th>
+                  <th>Student ID</th>
+                  <th>Program</th>
+                  <th>Grade</th>
+                  <th>Enrollment Date</th>
+                  <th>Status</th>
+                  <th>GPA</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>U4514</td>
+                  <td>Arabic</td>
+                  <td>A</td>
+                  <td>03/12/2024</td>
+                  <td><span class="badge-report green">Active</span></td>
+                  <td>3.85</td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td>U4518</td>
+                  <td>Qur'an</td>
+                  <td>B</td>
+                  <td>06/01/2024</td>
+                  <td><span class="badge-report warning">Pending</span></td>
+                  <td>3.20</td>
+                </tr>
+                <tr>
+                  <td>3</td>
+                  <td>U4520</td>
+                  <td>Fiqh</td>
+                  <td>B</td>
+                  <td>06/01/2024</td>
+                  <td><span class="badge-report warning">Pending</span></td>
+                  <td>2.75</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-    </main>
-  </div>
 
-  <!-- ═══ VIEW REPORT MODAL ═══ -->
-  <div class="modal-backdrop" id="modal-view" style="display:none;">
-    <div class="modal-content" style="max-width:680px;">
-      <div class="modal-bar"></div>
-      <div class="modal-header">
-        <h5><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:var(--accent);">
-            <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z" />
-          </svg>Tenant Report Detail</h5>
-        <button class="modal-close"><svg viewBox="0 0 24 24">
-            <path
-              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg></button>
-      </div>
-      <div class="modal-body" id="modal-view-body"></div>
-    </div>
-  </div>
+      <div class="report-grid-layout">
+        <!-- Male Section Education Detailed Attendance -->
+        <div class="report-card" style="grid-column: span 1;">
+          <div class="report-card-header">
+            <h3>Male Section Education Detailed Attendance</h3>
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#999;"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+          </div>
+          <div class="report-card-body">
+            <table class="detailed-table">
+              <thead>
+                <tr>
+                  <th>Date ↑</th>
+                  <th>Student ID</th>
+                  <th>Program</th>
+                  <th>Class</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2024-05-18</td>
+                  <td>M8812</td>
+                  <td>Advanced</td>
+                  <td>Class A</td>
+                  <td>Present</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-  <!-- ═══ REJECT MODAL ═══ -->
-  <div class="modal-backdrop" id="modal-reject" style="display:none;">
-    <div class="modal-content" style="max-width:480px;">
-      <div class="modal-bar"></div>
-      <div class="modal-header">
-        <h5><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:var(--danger);">
-            <path
-              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>Reject Application</h5>
-        <button class="modal-close"><svg viewBox="0 0 24 24">
-            <path
-              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg></button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size:0.87rem;color:var(--text-muted);margin-bottom:12px;">Provide a reason for rejection. The
-          tenant will be notified and can resubmit.</p>
-        <input type="hidden" id="reject-report-id" />
-        <div class="form-group">
-          <label class="form-label">Rejection Remarks *</label>
-          <textarea class="reject-textarea" id="reject-remarks"
-            placeholder="e.g. Missing valid government-issued ID. Please upload and resubmit."></textarea>
+        <!-- Female section Education Detailed Attendance -->
+        <div class="report-card" style="grid-column: span 1;">
+          <div class="report-card-header">
+            <h3>Female Section Education Detailed Attendance</h3>
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#999;"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+          </div>
+          <div class="report-card-body">
+            <table class="detailed-table">
+              <thead>
+                <tr>
+                  <th>Date ↑</th>
+                  <th>Student ID</th>
+                  <th>Program</th>
+                  <th>Class</th>
+                  <th>Status</th>
+                  <th>Attendance %</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2024-05-18</td>
+                  <td>F4512</td>
+                  <td>Primary</td>
+                  <td>Class A</td>
+                  <td>Present</td>
+                  <td>94.5%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-topbar" onclick="closeModal('modal-reject')">Cancel</button>
-        <button class="btn-topbar primary" style="background:var(--danger);border-color:var(--danger);"
-          onclick="confirmReject()">
-          <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;">
-            <path
-              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>
-          Reject Application
-        </button>
+
+      <!-- Apartment Lease & Maintenance Log -->
+      <div class="report-card">
+        <div class="report-card-header">
+          <h3>Apartment Lease & Maintenance Log</h3>
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#999;"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+        </div>
+        <div class="report-card-body">
+          <table class="detailed-table">
+            <thead>
+              <tr>
+                <th>Unit ID ↑</th>
+                <th>Lease ID</th>
+                <th>Application Date</th>
+                <th>Tenant</th>
+                <th>Status</th>
+                <th>Maintenance Request Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach($aptLeaseLogs as $log): ?>
+              <tr>
+                <td><?= $log['building'] ?>-<?= $log['room_number'] ?: 'N/A' ?></td>
+                <td>APP-<?= $log['application_id'] ?></td>
+                <td><?= date('m/d/Y', strtotime($log['date'])) ?></td>
+                <td><?= $log['first_name'] ?> <?= $log['last_name'] ?></td>
+                <td><span class="badge-report green"><?= $log['status'] ?></span></td>
+                <td><span class="badge-report <?= $log['status'] === 'Pending' ? 'warning' : 'green' ?>"><?= $log['status'] === 'Pending' ? 'Maintenance' : 'Optimal' ?></span></td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+
+    </main>
   </div>
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    // ══════════════════════════════════════
-    //  INIT
-    // ══════════════════════════════════════
     standardizePage('admin');
-    setCurrentRole(ROLES.MIS_ADMIN);
-    setupModalClose('modal-view');
-    setupModalClose('modal-reject');
-
-    let allReports = getReports();
-    renderAll();
-
-    // ══════════════════════════════════════
-    //  RENDER
-    // ══════════════════════════════════════
-    function renderAll() {
-      allReports = getReports();
-      renderStats();
-      renderTable(allReports);
-    }
-
-    function renderStats() {
-      document.getElementById('s-total').textContent = allReports.length;
-      document.getElementById('s-pending').textContent = allReports.filter(r => r.status === 'PENDING_MIS').length;
-      document.getElementById('s-verified').textContent = allReports.filter(r => r.status === 'VERIFIED').length;
-      document.getElementById('s-active').textContent = allReports.filter(r => r.status === 'ACTIVE' || r.status === 'APPROVED').length;
-    }
-
-    function renderTable(reports) {
-      const tbody = document.getElementById('reports-tbody');
-      document.getElementById('report-count').textContent = reports.length + ' records';
-
-      if (!reports.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No reports found.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = reports.map(r => {
-        const reqKeys = Object.keys(r.requirements || {});
-        const reqDone = reqKeys.filter(k => r.requirements[k]).length;
-        const reqTotal = reqKeys.length;
-        const reqDots = reqKeys.map(k =>
-          `<span class="req-dot ${r.requirements[k] ? 'done' : 'missing'}" title="${k.replace(/_/g, ' ')}: ${r.requirements[k] ? '✓' : '✗'}"></span>`
-        ).join('');
-
-        const canApprove = r.status === 'PENDING_MIS';
-
-        return `<tr>
-        <td class="td-id">${r.id}</td>
-        <td style="font-weight:600;">${r.tenantName}</td>
-        <td><div class="req-dots">${reqDots}</div><span style="font-size:0.7rem;color:var(--text-muted);">${reqDone}/${reqTotal}</span></td>
-        <td>${r.roomName || '<span style="color:var(--text-muted);font-style:italic;">—</span>'}</td>
-        <td><span class="badge-status ${reportBadgeClass(r.status)}">${reportStatusLabel(r.status)}</span></td>
-        <td style="color:var(--text-muted);">${formatDate(r.submittedAt)}</td>
-        <td>
-          <div class="action-menu">
-            <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
-              <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-            </button>
-            <div class="action-menu-dropdown">
-              <button class="action-menu-item" onclick="viewReport('${r.id}')">
-                <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                View Full Report
-              </button>
-              ${canApprove ? `
-              <button class="action-menu-item success" onclick="handleApprove('${r.id}')">
-                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                Approve & Forward
-              </button>
-              <button class="action-menu-item danger" onclick="handleReject('${r.id}')">
-                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                Mark Incomplete
-              </button>` : ''}
-              <button class="action-menu-item" onclick="showToast('Downloading summary for ${r.id}...','var(--info)')">
-                <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                Download PDF
-              </button>
-            </div>
-          </div>
-        </td>
-      </tr>`;
-      }).join('');
-    }
-
-    // ══════════════════════════════════════
-    //  VIEW REPORT MODAL
-    // ══════════════════════════════════════
-    function viewReport(id) {
-      const r = allReports.find(x => x.id === id);
-      if (!r) return;
-      const user = getAllUsers().find(u => u.id === r.tenantId) || {};
-      const billing = getBilling().filter(b => r.billingIds.includes(b.id));
-      const logs = getActivityLog().filter(l => l.detail && l.detail.includes(r.id));
-
-      // Requirements checklist
-      const reqHTML = Object.entries(r.requirements || {}).map(([k, v]) => {
-        const label = k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        return `<li>
-        <span class="req-check ${v ? 'yes' : 'no'}">
-          ${v ? '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
-            : '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'}
-        </span>
-        <span style="color:${v ? 'var(--text-main)' : 'var(--danger)'};">${label}</span>
-      </li>`;
-      }).join('');
-
-      // Pipeline
-      const stages = ['PENDING_MIS', 'VERIFIED', 'APPROVED', 'ACTIVE'];
-      const currentIdx = stages.indexOf(r.status);
-      const isRejected = r.status === 'REVISION';
-      const isWaiting = r.status === 'WAITING_LIST';
-
-      let pipelineHTML = '';
-      stages.forEach((s, i) => {
-        let dotClass = '';
-        if (isRejected && i === 0) dotClass = 'rejected';
-        else if (isWaiting && i === 2) dotClass = 'current';
-        else if (i < currentIdx) dotClass = 'done';
-        else if (i === currentIdx) dotClass = 'current';
-
-        const icon = dotClass === 'done' || dotClass === 'current'
-          ? '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
-          : dotClass === 'rejected'
-            ? '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'
-            : '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
-
-        const label = reportStatusLabel(s);
-        pipelineHTML += `<div class="pipeline-step"><div class="pipeline-dot ${dotClass}">${icon}</div><div class="pipeline-label">${isRejected && i === 0 ? 'Revision' : isWaiting && i === 2 ? 'Waiting' : label}</div></div>`;
-        if (i < stages.length - 1) {
-          pipelineHTML += `<div class="pipeline-line ${i < currentIdx ? 'done' : ''}"></div>`;
-        }
-      });
-
-      // Billing summary
-      let billHTML = '<span style="color:var(--text-muted);font-style:italic;">No billing generated yet.</span>';
-      if (billing.length) {
-        billHTML = billing.map(b => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.04);">
-          <div>
-            <div style="font-weight:600;font-size:0.85rem;">${b.id} — ${b.type}</div>
-            <div style="font-size:0.73rem;color:var(--text-muted);">Due: ${formatDate(b.dueDate)}</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-weight:700;font-size:0.95rem;">${currencyFormat(b.amount)}</div>
-            <span class="badge-status ${badgeClass(b.status)}" style="font-size:0.65rem;">${statusLabel(b.status)}</span>
-          </div>
-        </div>
-      `).join('');
-      }
-
-      // Activity mini-timeline
-      let logsHTML = '';
-      if (logs.length) {
-        logsHTML = logs.slice(0, 5).map(l => `
-        <div class="mini-tl-item">
-          <div class="tl-action">${l.action}</div>
-          <div class="tl-time">${formatDateTime(l.time)} — ${l.actor}</div>
-        </div>
-      `).join('');
-      } else {
-        logsHTML = '<span style="color:var(--text-muted);font-size:0.82rem;">No activity logged yet.</span>';
-      }
-
-      document.getElementById('modal-view-body').innerHTML = `
-      <!-- Status Pipeline -->
-      <div class="status-pipeline">${pipelineHTML}</div>
-
-      <div class="report-detail-grid">
-        <!-- Left Column -->
-        <div>
-          <div class="detail-block">
-            <div class="detail-block-label">Tenant Information</div>
-            <div class="detail-block-value" style="font-weight:700;font-size:1rem;margin-bottom:4px;">${r.tenantName}</div>
-            <div style="font-size:0.82rem;color:var(--text-muted);">
-              ID: ${r.tenantId}<br/>
-              Email: ${user.email || '—'}<br/>
-              Phone: ${user.phone || '—'}<br/>
-              Gender: ${user.gender || '—'}<br/>
-              Profile: <strong style="color:${(user.profilePct || 0) >= 100 ? 'var(--success)' : 'var(--warning)'};">${user.profilePct || 0}%</strong>
-            </div>
-          </div>
-          <div class="detail-block">
-            <div class="detail-block-label">Room Assignment</div>
-            <div class="detail-block-value">${r.roomName || '<span style="color:var(--text-muted);font-style:italic;">Not assigned</span>'}</div>
-            ${r.roomId ? `<div style="font-size:0.78rem;color:var(--text-muted);">Unit ID: ${r.roomId}</div>` : ''}
-          </div>
-          <div class="detail-block">
-            <div class="detail-block-label">Key Dates</div>
-            <div style="font-size:0.82rem;color:var(--text-muted);">
-              Submitted: <strong>${formatDate(r.submittedAt)}</strong><br/>
-              Verified: <strong>${r.verifiedAt ? formatDate(r.verifiedAt) : '—'}</strong><br/>
-              Approved: <strong>${r.approvedAt ? formatDate(r.approvedAt) : '—'}</strong>
-            </div>
-          </div>
-          ${r.remarks ? `<div class="detail-block"><div class="detail-block-label">Remarks</div><div class="detail-block-value" style="padding:10px 12px;background:rgba(199,154,43,0.06);border-radius:8px;border-left:3px solid var(--accent);font-size:0.84rem;">${r.remarks}</div></div>` : ''}
-        </div>
-        <!-- Right Column -->
-        <div>
-          <div class="detail-block">
-            <div class="detail-block-label">Requirements</div>
-            <ul class="req-checklist">${reqHTML}</ul>
-          </div>
-          <div class="detail-block">
-            <div class="detail-block-label">Billing Summary</div>
-            ${billHTML}
-          </div>
-          <div class="detail-block">
-            <div class="detail-block-label">Activity Log</div>
-            <div class="mini-timeline">${logsHTML}</div>
-          </div>
-        </div>
-      </div>
-    `;
-      openModal('modal-view');
-    }
-
-    // ══════════════════════════════════════
-    //  APPROVE / REJECT
-    // ══════════════════════════════════════
-    function handleApprove(id) {
-      if (!confirm('Approve this application? It will be forwarded to the Apartment Admin for room assignment.')) return;
-      const result = approveReport(id);
-      if (result) {
-        showToast('✅ Application verified and forwarded to Apartment Admin.', 'var(--success)');
-        renderAll();
-      } else {
-        showToast('Cannot approve this report — it may have already been processed.', 'var(--danger)');
-      }
-    }
-
-    function handleReject(id) {
-      document.getElementById('reject-report-id').value = id;
-      document.getElementById('reject-remarks').value = '';
-      openModal('modal-reject');
-    }
-
-    function confirmReject() {
-      const id = document.getElementById('reject-report-id').value;
-      const remarks = document.getElementById('reject-remarks').value.trim();
-      if (!remarks) { showToast('Please provide rejection remarks.', 'var(--danger)'); return; }
-      const result = rejectReport(id, remarks);
-      if (result) {
-        closeModal('modal-reject');
-        showToast('❌ Application rejected. Tenant has been notified.', 'var(--danger)');
-        renderAll();
-      }
-    }
-
-    // ══════════════════════════════════════
-    //  SEARCH & FILTER
-    // ══════════════════════════════════════
-    document.getElementById('search-reports').addEventListener('input', applyFilters);
-    document.getElementById('filter-status').addEventListener('change', applyFilters);
-
-    function applyFilters() {
-      const q = document.getElementById('search-reports').value.toLowerCase();
-      const status = document.getElementById('filter-status').value;
-      let filtered = allReports;
-      if (q) filtered = filtered.filter(r => r.tenantName.toLowerCase().includes(q) || r.id.toLowerCase().includes(q));
-      if (status) filtered = filtered.filter(r => r.status === status);
-      renderTable(filtered);
-    }
   </script>
 </body>
 

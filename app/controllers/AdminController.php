@@ -439,17 +439,122 @@ class AdminController extends Controller
 
     public function billing(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/mis_admin/billing_and_payment', ['active_page' => 'billing']);
+        $db = getDbConnection();
+
+        // 1. Fetch Stats
+        $billingStats = $db->query("SELECT status, COUNT(*) as count, COALESCE(SUM(amount),0) as total FROM billing GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        $totalRevenue = 0; $pendingBilling = 0; $overdueBilling = 0; $paidCount = 0;
+        foreach ($billingStats as $stat) {
+            if ($stat['status'] === 'Paid') {
+                $totalRevenue = (float) $stat['total'];
+                $paidCount = (int) $stat['count'];
+            }
+            if ($stat['status'] === 'Pending') $pendingBilling = (int) $stat['count'];
+            if ($stat['status'] === 'Overdue') $overdueBilling = (int) $stat['count'];
+        }
+
+        // 2. Fetch Detailed Records
+        $sql = "
+            SELECT 
+                b.*, 
+                u.first_name, 
+                u.last_name, 
+                au.room_number, 
+                au.building 
+            FROM billing b 
+            JOIN tenant_accounts u ON b.tenant_id = u.tenant_id 
+            LEFT JOIN apartmentsapp a ON u.tenant_id = a.tenant_id AND (a.status = 'Assigned' OR a.status = 'Accepted')
+            LEFT JOIN apartment_units au ON a.unit_id = au.unit_id
+            ORDER BY b.created_at DESC
+        ";
+        $invoices = $db->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->view('admin/mis_admin/billing_and_payment', [
+            'active_page' => 'billing',
+            'invoices' => $invoices,
+            'stats' => [
+                'totalRevenue' => $totalRevenue,
+                'pendingCount' => $pendingBilling,
+                'overdueCount' => $overdueBilling,
+                'paidCount' => $paidCount
+            ]
+        ]);
     }
 
     public function soa(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/mis_admin/statement_of_account', ['active_page' => 'soa']);
+        $db = getDbConnection();
+
+        // 1. Fetch Tenants for selection
+        $tenants = $db->query("
+            SELECT 
+                u.tenant_id, 
+                u.first_name, 
+                u.last_name, 
+                u.contactnum, 
+                au.room_number, 
+                au.building 
+            FROM tenant_accounts u 
+            LEFT JOIN apartmentsapp a ON u.tenant_id = a.tenant_id AND (a.status = 'Assigned' OR a.status = 'Accepted')
+            LEFT JOIN apartment_units au ON a.unit_id = au.unit_id
+            WHERE u.role IN ('Tenant', 'Guest')
+            ORDER BY u.last_name ASC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 2. Fetch all billing transactions
+        $transactions = $db->query("SELECT * FROM billing ORDER BY due_date ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->view('admin/mis_admin/statement_of_account', [
+            'active_page' => 'soa',
+            'tenants' => $tenants,
+            'transactions' => $transactions
+        ]);
     }
 
     public function reports(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/mis_admin/admin_reports', ['active_page' => 'reports']);
+        $db = getDbConnection();
+
+        // 1. Apartment Department Stats
+        $aptStats = $db->query("SELECT status, COUNT(*) as count FROM apartmentsapp GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $totalApts = 0;
+        foreach($aptStats as $s) $totalApts += $s['count'];
+
+        // 2. Billing / Finance Stats
+        $billingStats = $db->query("SELECT status, COUNT(*) as count, COALESCE(SUM(amount),0) as total FROM billing GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $totalRevenue = 0;
+        foreach($billingStats as $s) if($s['status'] === 'Paid') $totalRevenue = (float)$s['total'];
+
+        // 3. User / Tenant Stats
+        $userStats = $db->query("SELECT role, COUNT(*) as count FROM tenant_accounts GROUP BY role")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $totalUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
+
+        // 4. Detailed Logs for the new design
+        $burialLogs = $db->query("SELECT * FROM billing ORDER BY billing_id DESC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $aptLeaseLogs = $db->query("
+            SELECT a.*, u.first_name, u.last_name, au.room_number, au.building 
+            FROM apartmentsapp a
+            JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
+            LEFT JOIN apartment_units au ON a.unit_id = au.unit_id
+            ORDER BY a.application_id DESC LIMIT 10
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 5. Activity Logs (latest 50)
+        $logs = $db->query("SELECT * FROM notifications ORDER BY created_at DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->view('admin/mis_admin/admin_reports', [
+            'active_page' => 'reports',
+            'aptStats' => $aptStats,
+            'totalApts' => $totalApts,
+            'billingStats' => $billingStats,
+            'totalRevenue' => $totalRevenue,
+            'userStats' => $userStats,
+            'totalUsers' => $totalUsers,
+            'recentLogs' => $logs,
+            'burialLogs' => $burialLogs,
+            'aptLeaseLogs' => $aptLeaseLogs
+        ]);
     }
 
     public function daawahRecords(): void {
