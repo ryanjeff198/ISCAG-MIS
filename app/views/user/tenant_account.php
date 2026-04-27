@@ -687,7 +687,7 @@ $phpUser = [
         const SESSION_ROLE = '<?= htmlspecialchars($_SESSION['role'] ?? '') ?>';
         const navRole = document.getElementById('nav-role');
         if (navRole) {
-            navRole.style.color = 'var(--success)';
+            navRole.style.color = 'var(--warning)';
         }
         const roleBadge = document.getElementById('role-badge');
         if (roleBadge && SESSION_ROLE) {
