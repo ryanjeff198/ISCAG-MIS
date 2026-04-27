@@ -311,14 +311,32 @@ class ApartmentApp {
         $typeId = $this->getTypeIdByLabel($app['roomtype']);
         if (!$typeId) return ['result' => 'error', 'message' => 'Unknown room type: ' . $app['roomtype']];
 
-        // Find an available room of this type (first come first serve — pick first available)
-        $stmt = $this->db->prepare("
-            SELECT unit_id, room_number, building 
-            FROM apartment_units 
-            WHERE type_id = :tid AND status = 'Available' 
-            ORDER BY building, room_number 
-            LIMIT 1
-        ");
+        // Check if the requested type is Transient
+        $isTransient = stripos($app['roomtype'], 'Transient') !== false;
+
+        if ($isTransient) {
+            // For Transient, find an Available room OR an Occupied room with less than 10 active occupants
+            $stmt = $this->db->prepare("
+                SELECT u.unit_id, u.room_number, u.building,
+                       (SELECT COUNT(*) FROM apartmentsapp a WHERE a.unit_id = u.unit_id AND a.status = 'Assigned') as occupant_count
+                FROM apartment_units u 
+                WHERE u.type_id = :tid 
+                  AND u.status IN ('Available', 'Occupied')
+                HAVING occupant_count < 10
+                ORDER BY occupant_count DESC, u.building, u.room_number 
+                LIMIT 1
+            ");
+        } else {
+            // Find an available room of this type (first come first serve, normal 1 pax)
+            $stmt = $this->db->prepare("
+                SELECT unit_id, room_number, building 
+                FROM apartment_units 
+                WHERE type_id = :tid AND status = 'Available' 
+                ORDER BY building, room_number 
+                LIMIT 1
+            ");
+        }
+        
         $stmt->execute(['tid' => $typeId]);
         $room = $stmt->fetch(PDO::FETCH_ASSOC);
 

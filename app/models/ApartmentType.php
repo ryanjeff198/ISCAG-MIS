@@ -296,11 +296,32 @@ class ApartmentType
      */
     public function getAvailableCountByType(int $typeId): int
     {
-        $stmt = $this->db->prepare(
-            "SELECT COUNT(*) FROM apartment_units WHERE type_id = :tid AND status = 'Available'"
-        );
-        $stmt->execute(['tid' => $typeId]);
-        return (int) $stmt->fetchColumn();
+        // First check if this type is Transient
+        $stmtType = $this->db->prepare("SELECT label FROM apartment_types WHERE type_id = :tid");
+        $stmtType->execute(['tid' => $typeId]);
+        $label = $stmtType->fetchColumn();
+        
+        $isTransient = $label && stripos($label, 'Transient') !== false;
+
+        if ($isTransient) {
+            // Transient has 10 pax per room, but UI expects 'number of physical units'
+            // We return the number of units that have NOT reached max capacity (10)
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) FROM apartment_units u
+                WHERE u.type_id = :tid 
+                  AND u.status IN ('Available', 'Occupied')
+                  AND (SELECT COUNT(*) FROM apartmentsapp a WHERE a.unit_id = u.unit_id AND a.status = 'Assigned') < 10
+            ");
+            $stmt->execute(['tid' => $typeId]);
+            return (int) $stmt->fetchColumn();
+        } else {
+            // Normal behavior: just count 'Available' status rooms directly
+            $stmt = $this->db->prepare(
+                "SELECT COUNT(*) FROM apartment_units WHERE type_id = :tid AND status = 'Available'"
+            );
+            $stmt->execute(['tid' => $typeId]);
+            return (int) $stmt->fetchColumn();
+        }
     }
 
     /**
