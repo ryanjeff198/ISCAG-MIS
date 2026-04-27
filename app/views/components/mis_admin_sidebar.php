@@ -31,7 +31,7 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
         </div>
         <div class="user-info">
             <strong style="font-size:0.85rem;"><?= htmlspecialchars($_SESSION['name'] ?? 'Admin') ?></strong>
-            <span style="color:var(--accent); font-size: 0.68rem; font-weight: 700; text-transform: uppercase;"><?= htmlspecialchars($_SESSION['role'] ?? 'Administrator') ?></span>
+            <span style="color:var(--accent); font-size: 0.68rem; font-weight: 700; text-transform: uppercase;">Super Admin</span>
         </div>
     </div>
 
