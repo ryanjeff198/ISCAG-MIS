@@ -1094,20 +1094,7 @@
 
         // ── Load user nav ──
         const navName = document.getElementById('nav-name');
-        const navAvatar = document.getElementById('nav-avatar');
         if (navName) navName.textContent = user.name;
-        if (navAvatar) {
-            const photo = localStorage.getItem('mis_user_photo');
-            if (photo || hasServerPhoto) {
-                const imgUrl = photo || '<?= url("/user/apartment/serve-image") ?>?type=picture';
-                navAvatar.textContent = '';
-                navAvatar.style.backgroundImage = 'url(' + imgUrl + ')';
-                navAvatar.style.backgroundSize = 'cover';
-                navAvatar.style.backgroundPosition = 'center';
-            } else {
-                navAvatar.textContent = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-            }
-        }
 
         // ── Set role label ──
         const navRole = document.getElementById('nav-role');
@@ -1188,13 +1175,16 @@
         <!-- ═══ TENANT ACCOUNT INFO ═══ -->
         <div class="section-card" style="margin-bottom: 24px; animation: slideUp 0.4s ease;">
           <div class="section-card-body" style="display: flex; align-items: center; gap: 16px; padding: 20px 24px;">
-            ${(serverDocs.includes('picture')) ? `
-              <div style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--accent); background-image: url('<?= url("/user/apartment/serve-image") ?>?type=picture'); background-size: cover; background-position: center; flex-shrink: 0;"></div>
-            ` : `
-              <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 700; color: white;">
-                ${user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-              </div>
-            `}
+            <div style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--accent); overflow:hidden; background:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <?php 
+                    $initials = strtoupper(substr($_SESSION['name'] ?? 'U', 0, 1));
+                    $avatar_url = url('/user/profile/avatar/serve');
+                ?>
+                <img src="<?= $avatar_url ?>?t=<?= time() ?>" 
+                     style="width:100%; height:100%; object-fit:cover; display:block;" 
+                     onerror="this.style.display='none'; this.parentElement.innerHTML='<?= $initials ?>';"
+                     alt="Profile" />
+            </div>
             <div>
               <h3 style="margin: 0 0 4px; font-family: 'Lora', serif; font-size: 1.15rem; color: var(--primary-dark); font-weight: 700;">${user.name}</h3>
               <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">

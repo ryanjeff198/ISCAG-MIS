@@ -192,7 +192,7 @@ class UserController extends Controller
 
     public function serveAvatar(): void
     {
-        Auth::protectRole(['Guest', 'Tenant']);
+        Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant', 'Guest', 'Tenant']);
         $userId = $_SESSION['user_id'] ?? null;
 
         $db = getDbConnection();

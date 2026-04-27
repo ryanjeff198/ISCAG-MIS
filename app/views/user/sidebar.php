@@ -19,8 +19,16 @@ $active_page = $active_page ?? 'dashboard';
         </div>
     </div>
     <div class="sidebar-user">
-        <div class="user-avatar" id="nav-avatar" style="background:var(--accent);">
-            <?= htmlspecialchars($initials) ?>
+        <div class="user-avatar" id="nav-avatar" style="background:var(--accent); overflow:hidden;">
+            <?php 
+                $avatar_url = url('/user/profile/avatar/serve'); 
+                // We show the image. If serveAvatar returns 404, it might look broken unless we add JS fallback, 
+                // but at least it tries to show the real one now.
+            ?>
+            <img src="<?= $avatar_url ?>?t=<?= time() ?>" 
+                 style="width:100%; height:100%; object-fit:cover; display:block;" 
+                 onerror="this.style.display='none'; this.parentElement.innerHTML='<?= $initials ?>';"
+                 alt="Profile" />
         </div>
         <div class="user-info">
             <strong id="nav-name"><?= htmlspecialchars($_SESSION['name'] ?? 'User') ?></strong>

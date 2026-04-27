@@ -133,8 +133,16 @@ $phpUser = [
                             style="display:flex;align-items:center;gap:20px;margin-bottom:16px;flex-wrap:wrap;">
                             <div style="flex-shrink:0;text-align:center;position:relative;z-index:2;">
                                 <div class="profile-avatar-lg" id="profile-avatar-lg"
-                                    style="overflow:hidden;margin:0 auto 8px;width:88px;height:88px;font-size:2rem;border:3px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-                                    MU</div>
+                                    style="overflow:hidden;margin:0 auto 8px;width:88px;height:88px;font-size:2rem;border:3px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.05); display:flex; align-items:center; justify-content:center; background:var(--accent);">
+                                    <?php 
+                                        $initials = strtoupper(substr($account['first_name'] ?? 'U', 0, 1) . substr($account['last_name'] ?? 'S', 0, 1));
+                                        $avatar_url = url('/user/profile/avatar/serve');
+                                    ?>
+                                    <img src="<?= $avatar_url ?>?t=<?= time() ?>" 
+                                         style="width:100%; height:100%; object-fit:cover; display:block;" 
+                                         onerror="this.style.display='none'; this.parentElement.innerHTML='<?= $initials ?>';"
+                                         alt="Profile" />
+                                </div>
                                 <input type="file" id="avatar-input" accept="image/*" style="display:none;" />
                                 <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
                                     <button id="avatar-upload-label" type="button"
