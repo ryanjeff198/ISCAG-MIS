@@ -141,7 +141,7 @@ class ApartmentType
     /**
      * Add an image to a type (BLOB storage).
      */
-    public function addImage(int $typeId, string $binaryData, string $mimeType, string $caption = '', bool $isThumbnail = false): int
+    public function addImage(int $typeId, ?string $binaryData, string $mimeType, string $caption = '', bool $isThumbnail = false, ?string $filePath = null): int
     {
         // If marking as thumbnail, unmark all others for this type
         if ($isThumbnail) {
@@ -154,15 +154,16 @@ class ApartmentType
         $nextSort = $maxSort->fetchColumn();
 
         $stmt = $this->db->prepare(
-            "INSERT INTO apartment_type_images (type_id, image_data, mime_type, caption, is_thumbnail, sort_order) 
-             VALUES (:tid, :data, :mime, :cap, :thumb, :sort)"
+            "INSERT INTO apartment_type_images (type_id, image_data, mime_type, caption, is_thumbnail, sort_order, file_path) 
+             VALUES (:tid, :data, :mime, :cap, :thumb, :sort, :path)"
         );
         $stmt->bindValue(':tid', $typeId, PDO::PARAM_INT);
-        $stmt->bindValue(':data', $binaryData, PDO::PARAM_LOB);
+        $stmt->bindValue(':data', $binaryData, $binaryData === null ? PDO::PARAM_NULL : PDO::PARAM_LOB);
         $stmt->bindValue(':mime', $mimeType, PDO::PARAM_STR);
         $stmt->bindValue(':cap', $caption, PDO::PARAM_STR);
         $stmt->bindValue(':thumb', $isThumbnail ? 1 : 0, PDO::PARAM_INT);
         $stmt->bindValue(':sort', $nextSort, PDO::PARAM_INT);
+        $stmt->bindValue(':path', $filePath, $filePath === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->execute();
         return (int) $this->db->lastInsertId();
     }
@@ -172,11 +173,15 @@ class ApartmentType
      */
     public function getImageData(int $imageId): ?array
     {
-        $stmt = $this->db->prepare("SELECT image_data, mime_type FROM apartment_type_images WHERE image_id = :id");
+        $stmt = $this->db->prepare("SELECT image_data, mime_type, file_path FROM apartment_type_images WHERE image_id = :id");
         $stmt->execute(['id' => $imageId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && !empty($row['image_data'])) {
-            return ['data' => $row['image_data'], 'mime' => $row['mime_type'] ?: 'image/jpeg'];
+        if ($row) {
+            return [
+                'data' => $row['image_data'], 
+                'mime' => $row['mime_type'] ?: 'image/jpeg',
+                'file_path' => $row['file_path']
+            ];
         }
         return null;
     }

@@ -68,7 +68,7 @@ class ApartmentApp {
         }
     }
 
-    public function saveInfoImage($infoId, $docType, $binaryData, $mimeType) {
+    public function saveInfoImage($infoId, $docType, $binaryData, $mimeType, $filePath = null) {
         $this->db->beginTransaction();
         try {
             // Upsert logic for tenant_addinfo_images based on addinfo_id and doc_type
@@ -77,17 +77,20 @@ class ApartmentApp {
             $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($existing) {
-                $sql = "UPDATE tenant_addinfo_images SET image = :data, mime_type = :mime WHERE id = :id";
+                // If we have a filePath, we usually want to clear the old binary data to save space
+                $sql = "UPDATE tenant_addinfo_images SET image = :data, mime_type = :mime, file_path = :path WHERE id = :id";
                 $stmt = $this->db->prepare($sql);
                 $stmt->bindValue(':id', $existing['id'], PDO::PARAM_INT);
             } else {
-                $sql = "INSERT INTO tenant_addinfo_images (addinfo_id, doc_type, image, mime_type) VALUES (:info_id, :doc_type, :data, :mime)";
+                $sql = "INSERT INTO tenant_addinfo_images (addinfo_id, doc_type, image, mime_type, file_path) VALUES (:info_id, :doc_type, :data, :mime, :path)";
                 $stmt = $this->db->prepare($sql);
                 $stmt->bindValue(':info_id', $infoId, PDO::PARAM_INT);
                 $stmt->bindValue(':doc_type', $docType, PDO::PARAM_STR);
             }
-            $stmt->bindValue(':data', $binaryData, PDO::PARAM_LOB);
+            // If filePath is set, we can set data to NULL (optional, but good for space)
+            $stmt->bindValue(':data', $binaryData, $binaryData === null ? PDO::PARAM_NULL : PDO::PARAM_LOB);
             $stmt->bindValue(':mime', $mimeType, PDO::PARAM_STR);
+            $stmt->bindValue(':path', $filePath, $filePath === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
             $result = $stmt->execute();
             $this->db->commit();
             return $result;
@@ -99,11 +102,15 @@ class ApartmentApp {
     }
 
     public function getAddInfoImage($infoId, $docType) {
-        $stmt = $this->db->prepare("SELECT image, mime_type FROM tenant_addinfo_images WHERE addinfo_id = :info_id AND doc_type = :doc_type LIMIT 1");
+        $stmt = $this->db->prepare("SELECT image, mime_type, file_path FROM tenant_addinfo_images WHERE addinfo_id = :info_id AND doc_type = :doc_type LIMIT 1");
         $stmt->execute(['info_id' => $infoId, 'doc_type' => $docType]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && !empty($row['image'])) {
-            return ['data' => $row['image'], 'mime' => $row['mime_type'] ?: 'image/jpeg'];
+        if ($row) {
+            return [
+                'data' => $row['image'], 
+                'mime' => $row['mime_type'] ?: 'image/jpeg',
+                'file_path' => $row['file_path']
+            ];
         }
         return null;
     }

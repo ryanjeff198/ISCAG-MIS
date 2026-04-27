@@ -108,9 +108,14 @@ class UserController extends Controller
                 return;
             }
 
-            $binaryData = file_get_contents($file['tmp_name']);
-            if ($binaryData !== false) {
-                $data['profile_picture'] = $binaryData;
+            // Save to filesystem
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
+            $fileName = "profile_{$userId}_" . time() . "." . $ext;
+            $relPath = "uploads/profiles/" . $fileName;
+            $fullPath = BASE_PATH . "/public/" . $relPath;
+
+            if (move_uploaded_file($file['tmp_name'], $fullPath)) {
+                $data['profile_picture_path'] = $relPath;
                 $data['profile_picture_mime'] = $mime;
             }
         }
@@ -158,16 +163,21 @@ class UserController extends Controller
             return;
         }
 
-        $binaryData = file_get_contents($file['tmp_name']);
-        if ($binaryData === false) {
+        // Save to filesystem
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
+        $fileName = "avatar_{$userId}_" . time() . "." . $ext;
+        $relPath = "uploads/profiles/" . $fileName;
+        $fullPath = BASE_PATH . "/public/" . $relPath;
+
+        if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => 'Failed to read file.']);
+            echo json_encode(['success' => false, 'message' => 'Failed to save to disk.']);
             return;
         }
 
         $db = getDbConnection();
-        $stmt = $db->prepare("UPDATE tenant_accounts SET profile_picture = :pic, profile_picture_mime = :mime WHERE tenant_id = :id");
-        $stmt->bindValue(':pic', $binaryData, PDO::PARAM_LOB);
+        $stmt = $db->prepare("UPDATE tenant_accounts SET profile_picture_path = :path, profile_picture = NULL, profile_picture_mime = :mime WHERE tenant_id = :id");
+        $stmt->bindValue(':path', $relPath);
         $stmt->bindValue(':mime', $mime);
         $stmt->bindValue(':id', $userId);
         $success = $stmt->execute();
@@ -176,6 +186,7 @@ class UserController extends Controller
         echo json_encode([
             'success' => $success,
             'message' => $success ? 'Avatar uploaded.' : 'Failed',
+            'path' => $relPath
         ]);
     }
 
@@ -185,20 +196,38 @@ class UserController extends Controller
         $userId = $_SESSION['user_id'] ?? null;
 
         $db = getDbConnection();
-        $stmt = $db->prepare("SELECT profile_picture, profile_picture_mime FROM tenant_accounts WHERE tenant_id = :id LIMIT 1");
+        $stmt = $db->prepare("SELECT profile_picture, profile_picture_mime, profile_picture_path FROM tenant_accounts WHERE tenant_id = :id LIMIT 1");
         $stmt->bindValue(':id', $userId);
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($row && !empty($row['profile_picture'])) {
+        if (!$row) {
+            http_response_code(404);
+            echo 'User not found';
+            return;
+        }
+
+        // Check filesystem first
+        if (!empty($row['profile_picture_path'])) {
+            $fullPath = BASE_PATH . "/public/" . $row['profile_picture_path'];
+            if (file_exists($fullPath)) {
+                header('Content-Type: ' . ($row['profile_picture_mime'] ?: 'image/jpeg'));
+                header('Content-Length: ' . filesize($fullPath));
+                readfile($fullPath);
+                return;
+            }
+        }
+
+        // Fallback to BLOB
+        if (!empty($row['profile_picture'])) {
             header('Content-Type: ' . ($row['profile_picture_mime'] ?: 'image/jpeg'));
             header('Content-Length: ' . strlen($row['profile_picture']));
-            header('Cache-Control: private, max-age=3600');
             echo $row['profile_picture'];
-        } else {
-            http_response_code(404);
-            echo 'Image not found';
+            return;
         }
+
+        http_response_code(404);
+        echo 'Avatar not found';
     }
 
     public function burialForm(): void

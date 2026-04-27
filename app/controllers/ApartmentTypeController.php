@@ -146,19 +146,25 @@ class ApartmentTypeController
             $this->json(['success' => false, 'error' => 'Invalid file type. Allowed: JPG, PNG, GIF, WebP'], 400);
         }
 
-        // Read binary data from upload
-        $binaryData = file_get_contents($file['tmp_name']);
-        if ($binaryData === false) {
-            $this->json(['success' => false, 'error' => 'Failed to read uploaded file'], 500);
+        // Logic for saving to filesystem
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
+        $fileName = "type_{$typeId}_" . time() . "." . $ext;
+        $relPath = "uploads/apartments/" . $fileName;
+        $fullPath = BASE_PATH . "/public/" . $relPath;
+
+        if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
+            $this->json(['success' => false, 'error' => 'Failed to save file to disk'], 500);
         }
 
         $caption = $_POST['caption'] ?? '';
         $isThumbnail = !empty($_POST['is_thumbnail']);
 
-        $imageId = $this->model->addImage($typeId, $binaryData, $mime, $caption, $isThumbnail);
+        // We pass null for binaryData to save space
+        $imageId = $this->model->addImage($typeId, null, $mime, $caption, $isThumbnail, $relPath);
         $this->json(['success' => true, 'data' => [
             'image_id'  => $imageId,
-            'caption'   => $caption
+            'caption'   => $caption,
+            'path'      => $relPath
         ]]);
     }
 
@@ -272,10 +278,27 @@ class ApartmentTypeController
             return;
         }
 
-        header('Content-Type: ' . $result['mime']);
-        header('Content-Length: ' . strlen($result['data']));
-        header('Cache-Control: public, max-age=86400');
-        echo $result['data'];
+        // Check filesystem first
+        if (!empty($result['file_path'])) {
+            $fullPath = BASE_PATH . "/public/" . $result['file_path'];
+            if (file_exists($fullPath)) {
+                header('Content-Type: ' . $result['mime']);
+                header('Content-Length: ' . filesize($fullPath));
+                readfile($fullPath);
+                exit;
+            }
+        }
+
+        // Fallback to BLOB
+        if (!empty($result['data'])) {
+            header('Content-Type: ' . $result['mime']);
+            header('Content-Length: ' . strlen($result['data']));
+            echo $result['data'];
+            exit;
+        }
+
+        http_response_code(404);
+        echo 'Image not found';
         exit;
     }
 }
