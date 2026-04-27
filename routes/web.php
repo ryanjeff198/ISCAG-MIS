@@ -32,6 +32,7 @@ $routes = [
 
     // Admin
     '/admin/dashboard'  => ['AdminController', 'dashboard'],
+    '/admin/analytics'  => ['AdminController', 'analytics'],
 
     // User
     '/user/dashboard'   => ['UserController',  'dashboard'],

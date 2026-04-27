@@ -409,6 +409,16 @@
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     standardizePage('admin');
+    
+    // Handle deep-linking to tabs via URL parameter
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tab = urlParams.get('tab');
+      if (tab) {
+        const btn = document.querySelector(`.tab-btn[onclick*="'${tab}'"]`);
+        if (btn) switchTab(tab, btn);
+      }
+    });
 
     // ── Tab Switching Logic ──
     function switchTab(tabName, btn) {

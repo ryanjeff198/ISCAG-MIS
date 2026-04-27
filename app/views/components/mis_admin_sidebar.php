@@ -39,7 +39,11 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
         <div class="nav-section-label">Main</div>
         <a href="<?= url('/admin/dashboard') ?>" class="nav-item <?= $active_page === 'admin_dashboard' ? 'active' : '' ?>">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-            <span class="nav-item-label">Hub Overview</span>
+            <span class="nav-item-label">Dashboard</span>
+        </a>
+        <a href="<?= url('/admin/analytics') ?>" class="nav-item <?= $active_page === 'analytics' ? 'active' : '' ?>">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            <span class="nav-item-label">Analytics</span>
         </a>
 
         <!-- PENDING REQUESTS -->
@@ -74,7 +78,7 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
         <div class="nav-dropdown-wrap" id="comm-wrap">
             <button class="nav-dropdown-trigger <?= $is_comm_open ? 'open' : '' ?>" id="comm-trigger" data-href="<?= url('/admin/mis_admin/daawah_records') ?>">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                <span class="nav-item-label">Community Hub</span>
+                <span class="nav-item-label">Departments</span>
                 <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
             </button>
             <div class="nav-dropdown <?= $is_comm_open ? 'open' : '' ?>" id="comm-menu">
@@ -94,11 +98,15 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
                 <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
             </button>
             <div class="nav-dropdown <?= $is_gov_open ? 'open' : '' ?>" id="gov-menu">
-                <a href="<?= url('/admin/mis_admin/records') ?>" class="<?= $active_page === 'records' ? 'active-submenu' : '' ?>">User Management</a>
+                <a href="<?= url('/admin/mis_admin/records') ?>" class="<?= $active_page === 'records' ? 'active-submenu' : '' ?>">User Account Info</a>
                 <a href="<?= url('/admin/mis_admin/audit_logs') ?>" class="<?= $active_page === 'audit_logs' ? 'active-submenu' : '' ?>">Audit Trails</a>
-                <a href="<?= url('/admin/mis_admin/notification') ?>" class="<?= $active_page === 'notification' ? 'active-submenu' : '' ?>">Admin Inbox</a>
             </div>
         </div>
+
+        <a href="<?= url('/admin/mis_admin/notification') ?>" class="nav-item <?= $active_page === 'notification' ? 'active' : '' ?>">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+            <span class="nav-item-label">Notifications</span>
+        </a>
     </nav>
 
     <div class="sidebar-footer">

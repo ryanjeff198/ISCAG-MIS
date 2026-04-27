@@ -209,25 +209,21 @@
 
     let currentTab = 'all';
 
-    // Generate mock billing data if it doesn't exist
-    function initBillingData() {
-      if (!localStorage.getItem('mis_billing_records')) {
-        const mockBilling = [
-          { id: 'INV-2026-001', tenantId: 'USR-001', tenantName: 'Muhammad Usman', unit: 'APT-A1', amount: 3500, dueDate: '2026-04-10', status: 'pending', month: 4, year: 2026 },
-          { id: 'INV-2026-002', tenantId: 'USR-002', tenantName: 'Aisha Fatima', unit: 'APT-B1', amount: 7500, dueDate: '2026-04-05', status: 'overdue', month: 4, year: 2026 },
-          { id: 'INV-2026-003', tenantId: 'USR-003', tenantName: 'Omar Khan', unit: 'APT-A2', amount: 5000, dueDate: '2026-03-05', status: 'paid', month: 3, year: 2026 },
-          { id: 'INV-2026-004', tenantId: 'USR-001', tenantName: 'Muhammad Usman', unit: 'APT-A1', amount: 3500, dueDate: '2026-03-10', status: 'paid', month: 3, year: 2026 }
+    // Bridge PHP data to JavaScript
+    const allInvoices = <?= json_encode(array_map(function($i) {
+        return [
+            'id' => 'INV-' . str_pad($i['billing_id'], 4, '0', STR_PAD_LEFT),
+            'tenantId' => $i['tenant_id'],
+            'tenantName' => $i['first_name'] . ' ' . $i['last_name'],
+            'unit' => ($i['room_number'] ? $i['building'] . '-' . $i['room_number'] : 'Unassigned'),
+            'amount' => (float)$i['amount'],
+            'dueDate' => $i['due_date'],
+            'status' => strtolower($i['status']),
+            'month' => (int)date('n', strtotime($i['due_date'])),
+            'year' => (int)date('Y', strtotime($i['due_date']))
         ];
-        localStorage.setItem('mis_billing_records', JSON.stringify(mockBilling));
-      }
-    }
-    initBillingData();
+    }, $invoices)) ?>;
 
-    function getBillingRecords() {
-      return JSON.parse(localStorage.getItem('mis_billing_records') || '[]');
-    }
-
-    // Tab switching — just updates the filter and re-renders
     function switchTab(tabId) {
       currentTab = tabId;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -236,9 +232,10 @@
     }
 
     function statusBadge(status) {
-      if (status === 'paid') return '<span class="badge-status badge-approved">Paid</span>';
-      if (status === 'overdue') return '<span class="badge-status badge-rejected">Overdue</span>';
-      if (status === 'pending') return '<span class="badge-status badge-pending">Pending</span>';
+      const s = status.toLowerCase();
+      if (s === 'paid') return '<span class="badge-status badge-approved">Paid</span>';
+      if (s === 'overdue') return '<span class="badge-status badge-rejected">Overdue</span>';
+      if (s === 'pending') return '<span class="badge-status badge-pending">Pending</span>';
       return '<span class="badge-status">' + status + '</span>';
     }
 
@@ -246,14 +243,12 @@
 
     // ══ RENDER ══
     function renderAll() {
-      const records = getBillingRecords();
-
       // Filter handling
       const term = document.getElementById('search-input').value.toLowerCase();
       const m = document.getElementById('filter-month').value;
       const y = document.getElementById('filter-year').value;
 
-      let filtered = records.filter(r => {
+      let filtered = allInvoices.filter(r => {
         if (term && !r.tenantName.toLowerCase().includes(term) && !r.id.toLowerCase().includes(term)) return false;
         if (m && r.month != m) return false;
         if (y && r.year != y) return false;
@@ -265,27 +260,34 @@
         filtered = filtered.filter(r => r.status === currentTab);
       }
 
-      // Stats (always from unfiltered records)
-      document.getElementById('stat-pending').textContent = records.filter(r => r.status === 'pending').length;
-      document.getElementById('stat-overdue').textContent = records.filter(r => r.status === 'overdue').length;
+      // Stats (from allInvoices)
+      const counts = { pending: 0, overdue: 0, paid: 0 };
+      allInvoices.forEach(r => counts[r.status]++);
 
-      const paidThisMonth = records.filter(r => r.status === 'paid' && r.month == (new Date().getMonth() + 1));
+      document.getElementById('stat-pending').textContent = counts.pending;
+      document.getElementById('stat-overdue').textContent = counts.overdue;
+
+      const thisMonth = new Date().getMonth() + 1;
+      const paidThisMonth = allInvoices.filter(r => r.status === 'paid' && r.month === thisMonth);
       document.getElementById('stat-paid').textContent = paidThisMonth.length;
 
-      const totalRev = paidThisMonth.reduce((sum, r) => sum + r.amount, 0);
-      document.getElementById('stat-revenue').textContent = '₱' + totalRev.toLocaleString();
+      const totalRevThisMonth = paidThisMonth.reduce((sum, r) => sum + r.amount, 0);
+      document.getElementById('stat-revenue').textContent = '₱' + totalRevThisMonth.toLocaleString();
 
       // Insight ribbon stats
       const pendEl = document.getElementById('stat-pending-val');
       const overdueEl = document.getElementById('stat-overdue-val');
       const revEl = document.getElementById('stat-revenue-val');
-      if (pendEl) pendEl.textContent = records.filter(r => r.status === 'pending').length;
-      if (overdueEl) overdueEl.textContent = records.filter(r => r.status === 'overdue').length;
-      if (revEl) revEl.textContent = '₱' + records.filter(r => r.status === 'paid').reduce((s, r) => s + r.amount, 0).toLocaleString();
+      if (pendEl) pendEl.textContent = counts.pending;
+      if (overdueEl) overdueEl.textContent = counts.overdue;
+      if (revEl) {
+          const totalRevOverall = allInvoices.filter(r => r.status === 'paid').reduce((s, r) => s + r.amount, 0);
+          revEl.textContent = '₱' + totalRevOverall.toLocaleString();
+      }
 
       // Tab counts
-      document.getElementById('tab-pending-count').textContent = records.filter(r => r.status === 'pending').length;
-      document.getElementById('tab-overdue-count').textContent = records.filter(r => r.status === 'overdue').length;
+      document.getElementById('tab-pending-count').textContent = counts.pending;
+      document.getElementById('tab-overdue-count').textContent = counts.overdue;
 
       // Table header
       document.getElementById('table-title').textContent = tabTitles[currentTab] || 'All Invoices';

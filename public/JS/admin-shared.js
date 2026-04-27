@@ -90,16 +90,16 @@ const DEFAULT_BILLING = [
 ];
 
 const DEFAULT_ACTIVITY_LOG = [
-  { action:'Application approved',       detail:'APT-001 — Muhammad Usman apartment application approved', actor:'MIS Admin',  time:'2026-04-10T06:30:00Z', type:'approve' },
-  { action:'New user registered',        detail:'Maryam Tan (USR-009) completed registration',             actor:'System',     time:'2026-04-09T14:20:00Z', type:'user' },
-  { action:'Payment received',           detail:'BIL-001 — ₱5,000 rent payment from Muhammad Usman',       actor:'System',     time:'2026-04-08T09:15:00Z', type:'payment' },
-  { action:'Burial request submitted',   detail:'BUR-001 — New burial service request from Muhammad Usman', actor:'Muhammad Usman', time:'2026-04-07T11:00:00Z', type:'request' },
-  { action:'Unit status updated',        detail:'APT-B1 marked as occupied',                                actor:'Staff Admin', time:'2026-04-06T16:45:00Z', type:'update' },
-  { action:'Counseling session scheduled', detail:'COU-001 — Sisters counseling for Aisha Rahman',          actor:'Staff Admin', time:'2026-04-05T08:30:00Z', type:'schedule' },
-  { action:'Staff account created',      detail:'STF-004 — Amira Lucman assigned to Da\'wah (M)',          actor:'MIS Admin',  time:'2026-04-04T10:00:00Z', type:'staff' },
-  { action:'Payment overdue',            detail:'BIL-003 — Ahmad Saleh rent payment overdue',               actor:'System',     time:'2026-04-03T00:00:00Z', type:'alert' },
-  { action:'Application submitted',      detail:'APT-003 — Ahmad Saleh applied for apartment',             actor:'Ahmad Saleh', time:'2026-04-02T13:22:00Z', type:'request' },
-  { action:'System backup completed',    detail:'Automated daily backup completed successfully',            actor:'System',     time:'2026-04-01T02:00:00Z', type:'system' }
+  { id: 'AL-001', action:'Application approved',       detail:'APT-001 — Muhammad Usman apartment application approved', actor:'MIS Admin',  time:'2026-04-10T06:30:00Z', type:'approve', read: false },
+  { id: 'AL-002', action:'New user registered',        detail:'Maryam Tan (USR-009) completed registration',             actor:'System',     time:'2026-04-09T14:20:00Z', type:'user', read: false },
+  { id: 'AL-003', action:'Payment received',           detail:'BIL-001 — ₱5,000 rent payment from Muhammad Usman',       actor:'System',     time:'2026-04-08T09:15:00Z', type:'payment', read: false },
+  { id: 'AL-004', action:'Burial request submitted',   detail:'BUR-001 — New burial service request from Muhammad Usman', actor:'Muhammad Usman', time:'2026-04-07T11:00:00Z', type:'request', read: false },
+  { id: 'AL-005', action:'Unit status updated',        detail:'APT-B1 marked as occupied',                                actor:'Staff Admin', time:'2026-04-06T16:45:00Z', type:'update', read: false },
+  { id: 'AL-006', action:'Counseling session scheduled', detail:'COU-001 — Sisters counseling for Aisha Rahman',          actor:'Staff Admin', time:'2026-04-05T08:30:00Z', type:'schedule', read: false },
+  { id: 'AL-007', action:'Staff account created',      detail:'STF-004 — Amira Lucman assigned to Da\'wah (M)',          actor:'MIS Admin',  time:'2026-04-04T10:00:00Z', type:'staff', read: false },
+  { id: 'AL-008', action:'Payment overdue',            detail:'BIL-003 — Ahmad Saleh rent payment overdue',               actor:'System',     time:'2026-04-03T00:00:00Z', type:'alert', read: false },
+  { id: 'AL-009', action:'Application submitted',      detail:'APT-003 — Ahmad Saleh applied for apartment',             actor:'Ahmad Saleh', time:'2026-04-02T13:22:00Z', type:'request', read: false },
+  { id: 'AL-010', action:'System backup completed',    detail:'Automated daily backup completed successfully',            actor:'System',     time:'2026-04-01T02:00:00Z', type:'system', read: false }
 ];
 
 
@@ -124,8 +124,25 @@ function initAdminData() {
   if (!localStorage.getItem(STORAGE_KEYS.billing)) {
     localStorage.setItem(STORAGE_KEYS.billing, JSON.stringify(DEFAULT_BILLING));
   }
-  if (!localStorage.getItem(STORAGE_KEYS.activityLog)) {
+  const rawLog = localStorage.getItem(STORAGE_KEYS.activityLog);
+  if (!rawLog) {
     localStorage.setItem(STORAGE_KEYS.activityLog, JSON.stringify(DEFAULT_ACTIVITY_LOG));
+  } else {
+    // Migration: Ensure all existing log entries have IDs and read status
+    try {
+      const existing = JSON.parse(rawLog);
+      if (Array.isArray(existing)) {
+        let changed = false;
+        existing.forEach((entry, i) => {
+          if (!entry.id) { entry.id = 'AL-MIG-' + i; changed = true; }
+          if (entry.read === undefined) { entry.read = false; changed = true; }
+        });
+        if (changed) localStorage.setItem(STORAGE_KEYS.activityLog, JSON.stringify(existing));
+      }
+    } catch(e) {
+      console.error('Error parsing activity log:', e);
+      localStorage.setItem(STORAGE_KEYS.activityLog, JSON.stringify(DEFAULT_ACTIVITY_LOG));
+    }
   }
 }
 
@@ -169,12 +186,28 @@ function saveAllUsers(data) { localStorage.setItem(STORAGE_KEYS.allUsers, JSON.s
 function saveApartments(data) { localStorage.setItem(STORAGE_KEYS.apartments, JSON.stringify(data)); }
 function saveBilling(data) { localStorage.setItem(STORAGE_KEYS.billing, JSON.stringify(data)); }
 function saveStaffList(data) { localStorage.setItem(STORAGE_KEYS.staffList, JSON.stringify(data)); }
+function saveActivityLog(data) { 
+  localStorage.setItem(STORAGE_KEYS.activityLog, JSON.stringify(data)); 
+  // Dispatch event for current tab components
+  window.dispatchEvent(new CustomEvent('activityLogUpdated'));
+  // Update badges in current tab
+  initNotifBadge('admin');
+}
 
 function addActivityEntry(action, detail, actor, type) {
   const log = getActivityLog();
-  log.unshift({ action, detail, actor, time: new Date().toISOString(), type: type || 'update' });
+  const newEntry = { 
+    id: 'AL-' + Date.now(), 
+    action, 
+    detail, 
+    actor: actor || 'System', 
+    time: new Date().toISOString(), 
+    type: type || 'update',
+    read: false 
+  };
+  log.unshift(newEntry);
   if (log.length > 50) log.length = 50;
-  localStorage.setItem(STORAGE_KEYS.activityLog, JSON.stringify(log));
+  saveActivityLog(log);
 }
 
 function getProfileCompletion(user) {
@@ -362,12 +395,14 @@ function initDropdowns() {
 function loadUserNav() {
   // Check for staff profile first if in staff mode
   let user = getUser();
-  let roleLabel = 'Staff Admin';
+  let roleLabel = 'Super Admin';
   const staffProfileRaw = localStorage.getItem('mis_apartment_staff_profile');
   if (staffProfileRaw) {
     const staff = JSON.parse(staffProfileRaw);
     if (staff.name) user.name = staff.name;
-    if (staff.occupation) roleLabel = staff.occupation;
+    if (staff.occupation) {
+      roleLabel = (staff.occupation === 'Property Manager' || staff.occupation === 'Administrator') ? 'Super Admin' : staff.occupation;
+    }
   }
 
   const navName = document.getElementById('nav-name');
@@ -427,7 +462,7 @@ function syncSessionUser(sessionName, sessionEmail, sessionRole) {
       phone: '', 
       gender: '', 
       arabic: sessionName, 
-      occupation: sessionRole || 'Apartment Manager', 
+      occupation: sessionRole || 'Super Admin', 
       since: new Date().toISOString().split('T')[0] 
     };
     localStorage.setItem('mis_apartment_staff_profile', JSON.stringify(newStaff));
@@ -527,27 +562,36 @@ function initNotifBadge(role) {
     const notifs = getNotifications();
     unread = notifs.filter(n => n.tenantId === user.id && !n.read).length;
   } else {
-    // Admin/Staff sees activity-log-based notifications by convention
+    // Admin/Staff sees activity-log-based notifications
     const log = getActivityLog();
-    const markedReadTime = parseInt(localStorage.getItem('staff_notifs_read') || '0', 10);
-    unread = log.filter((l, i) => {
-      const logTime = new Date(l.time).getTime();
-      return logTime > markedReadTime && (markedReadTime > 0 || i <= 2);
-    }).length;
+    unread = log.filter(l => !l.read).length;
   }
   
+  // Update sidebar badge if it exists (legacy selector)
+  const badge = document.querySelector('.notif-dot');
+  if (badge) {
+    if (unread > 0) {
+      badge.textContent = unread > 99 ? '99+' : unread;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  // Also update based on label (new selector)
   document.querySelectorAll('.nav-item').forEach(link => {
     const label = link.querySelector('.nav-item-label');
     if (label && (label.textContent.trim() === 'Notifications' || label.textContent.trim() === 'Admin Inbox')) {
-      // Remove existing dot first
-      const existingDot = link.querySelector('.notif-dot');
+      // Avoid duplicating the dot if it was already handled by the .notif-dot selector
+      if (link.querySelector('.notif-dot')) return;
+
+      const existingDot = link.querySelector('.dynamic-notif-dot');
       if (existingDot) existingDot.remove();
 
-      // Add if there are unread
       if (unread > 0) {
         const dot = document.createElement('span');
-        dot.className = 'notif-dot';
-        dot.textContent = unread;
+        dot.className = 'notif-dot dynamic-notif-dot';
+        dot.textContent = unread > 99 ? '99+' : unread;
         link.style.position = 'relative';
         link.appendChild(dot);
       }
@@ -858,13 +902,27 @@ window.addEventListener('click', () => {
   document.querySelectorAll('.action-menu-dropdown').forEach(d => d.classList.remove('show'));
 });
 
+// Removed redundant initNotifBadge
+
+// Real-time synchronization across tabs
+window.addEventListener('storage', (e) => {
+  if (e.key === STORAGE_KEYS.activityLog) {
+    window.dispatchEvent(new CustomEvent('activityLogUpdated'));
+    initNotifBadge('admin');
+  }
+});
+
 // Auto-init for cases where script is loaded after DOM
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
+  initAdminData();
   initLogoutModal();
   initTableSearch();
+  initNotifBadge('admin');
 } else {
   document.addEventListener('DOMContentLoaded', () => {
+    initAdminData();
     initLogoutModal();
     initTableSearch();
+    initNotifBadge('admin');
   });
 }
