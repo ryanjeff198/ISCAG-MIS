@@ -98,7 +98,7 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
                 <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
             </button>
             <div class="nav-dropdown <?= $is_gov_open ? 'open' : '' ?>" id="gov-menu">
-                <a href="<?= url('/admin/mis_admin/records') ?>" class="<?= $active_page === 'records' ? 'active-submenu' : '' ?>">User Management</a>
+                <a href="<?= url('/admin/mis_admin/records') ?>" class="<?= $active_page === 'records' ? 'active-submenu' : '' ?>">User Account Info</a>
                 <a href="<?= url('/admin/mis_admin/audit_logs') ?>" class="<?= $active_page === 'audit_logs' ? 'active-submenu' : '' ?>">Audit Trails</a>
             </div>
         </div>

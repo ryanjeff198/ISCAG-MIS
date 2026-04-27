@@ -285,37 +285,41 @@
         </div>
 
         <div class="report-grid">
-          <!-- Burial Service Detailed Log -->
+          <!-- D'awah Female Education Enrollment -->
           <div class="section-card">
             <div class="section-card-header">
-              <h3>Damayan (Burial Service)</h3>
-              <span style="font-size:0.75rem; color:var(--text-muted);">Last 30 Days</span>
+              <h3>D'awah Female</h3>
+              <span style="font-size:0.75rem; color:var(--text-muted);">Enrollment Records</span>
             </div>
             <div class="report-card-body">
               <table class="report-table">
                 <thead>
                   <tr>
-                    <th>Timestamp</th>
-                    <th>Service ID</th>
+                    <th>Student ID</th>
+                    <th>Program</th>
+                    <th>Attendance</th>
                     <th>Status</th>
-                    <th>Plot</th>
-                    <th>Cost</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <?php if(empty($burialLogs)): ?>
-                    <tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-muted);">No burial records found for this period.</td></tr>
-                  <?php else: ?>
-                    <?php foreach($burialLogs as $log): ?>
-                    <tr>
-                      <td style="color:var(--text-muted); font-size:0.75rem;"><?= date('M d, Y H:i', strtotime($log['due_date'])) ?></td>
-                      <td style="font-weight:700; color:var(--primary-dark);"><?= $log['billing_id'] ?></td>
-                      <td><span class="badge-status badge-paid"><?= $log['status'] ?></span></td>
-                      <td>P-<?= rand(1, 99) ?></td>
-                      <td style="font-weight:600;">₱<?= number_format($log['amount']) ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                  <?php endif; ?>
+                  <tr>
+                    <td style="font-weight:700;">F4512</td>
+                    <td>Arabic Primary</td>
+                    <td>94.5%</td>
+                    <td><span class="badge-status badge-paid">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:700;">F4518</td>
+                    <td>Qur'an (Tajweed)</td>
+                    <td>88.0%</td>
+                    <td><span class="badge-status badge-pending">Pending</span></td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:700;">F4520</td>
+                    <td>Hadith Studies</td>
+                    <td>95.2%</td>
+                    <td><span class="badge-status badge-pending">Pending</span></td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -361,41 +365,37 @@
             </div>
           </div>
 
-          <!-- Female Section Education Enrollment -->
-          <div class="section-card">
+          <!-- Damayan Detailed Log -->
+          <div class="section-card full-width">
             <div class="section-card-header">
-              <h3>D'awah Female</h3>
-              <span style="font-size:0.75rem; color:var(--text-muted);">Enrollment Records</span>
+              <h3>Damayan (Burial Service)</h3>
+              <span style="font-size:0.75rem; color:var(--text-muted);">Last 30 Days</span>
             </div>
             <div class="report-card-body">
               <table class="report-table">
                 <thead>
                   <tr>
-                    <th>Student ID</th>
-                    <th>Program</th>
-                    <th>Attendance</th>
+                    <th>Timestamp</th>
+                    <th>Service ID</th>
                     <th>Status</th>
+                    <th>Plot</th>
+                    <th>Cost</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td style="font-weight:700;">F4512</td>
-                    <td>Arabic Primary</td>
-                    <td>94.5%</td>
-                    <td><span class="badge-status badge-paid">Active</span></td>
-                  </tr>
-                  <tr>
-                    <td style="font-weight:700;">F4518</td>
-                    <td>Qur'an (Tajweed)</td>
-                    <td>88.0%</td>
-                    <td><span class="badge-status badge-pending">Pending</span></td>
-                  </tr>
-                  <tr>
-                    <td style="font-weight:700;">F4520</td>
-                    <td>Hadith Studies</td>
-                    <td>95.2%</td>
-                    <td><span class="badge-status badge-pending">Pending</span></td>
-                  </tr>
+                  <?php if(empty($burialLogs)): ?>
+                    <tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-muted);">No burial records found for this period.</td></tr>
+                  <?php else: ?>
+                    <?php foreach($burialLogs as $log): ?>
+                    <tr>
+                      <td style="color:var(--text-muted); font-size:0.75rem;"><?= date('M d, Y H:i', strtotime($log['due_date'])) ?></td>
+                      <td style="font-weight:700; color:var(--primary-dark);"><?= $log['billing_id'] ?></td>
+                      <td><span class="badge-status badge-paid"><?= $log['status'] ?></span></td>
+                      <td>P-<?= rand(1, 99) ?></td>
+                      <td style="font-weight:600;">₱<?= number_format($log['amount']) ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
                 </tbody>
               </table>
             </div>
