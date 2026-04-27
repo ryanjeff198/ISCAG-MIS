@@ -990,7 +990,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
     if (navRole && navRole.textContent === 'Guest') {
       navRole.style.color = 'var(--warning)';
     } else if (navRole) {
-      navRole.style.color = 'var(--success)';
+      
     }
 
     // ── Date in top bar ──
