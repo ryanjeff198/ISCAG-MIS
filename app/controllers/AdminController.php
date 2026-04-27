@@ -574,8 +574,53 @@ class AdminController extends Controller
 
     public function userRecords(): void {
         Auth::protectRole(['Admin']);
-        $this->view('admin/mis_admin/records', ['active_page' => 'records']);
+        
+        $db = getDbConnection();
+        $sql = "SELECT a.tenant_id, a.first_name, a.last_name, a.email, a.role, a.contactnum, a.is_verified, a.sex as account_sex,
+                       b.sex as addinfo_sex, b.birthdate, b.date_applied 
+                FROM tenant_accounts a 
+                LEFT JOIN tenant_addinfo b ON a.tenant_id = b.tenant_id 
+                ORDER BY a.tenant_id DESC";
+        $stmt = $db->query($sql);
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->view('admin/mis_admin/records', [
+            'active_page' => 'records',
+            'users' => $users
+        ]);
     }
+
+    public function toggleUserStatus(): void {
+        Auth::protectRole(['Admin']);
+        header('Content-Type: application/json');
+        
+        $body = json_decode(file_get_contents('php://input'), true);
+        $id = $body['id'] ?? null;
+        
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'User ID is required']);
+            return;
+        }
+
+        $db = getDbConnection();
+        $stmt = $db->prepare("SELECT is_verified FROM tenant_accounts WHERE tenant_id = :id");
+        $stmt->execute(['id' => $id]);
+        $verified = $stmt->fetchColumn();
+
+        if ($verified === false) {
+            echo json_encode(['success' => false, 'message' => 'User not found']);
+            return;
+        }
+
+        $newVerified = $verified == 1 ? 0 : 1;
+        $upd = $db->prepare("UPDATE tenant_accounts SET is_verified = :v WHERE tenant_id = :id");
+        if ($upd->execute(['v' => $newVerified, 'id' => $id])) {
+            echo json_encode(['success' => true, 'newStatus' => $newVerified ? 'active' : 'inactive']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to update database']);
+        }
+    }
+
 
     public function auditLogs(): void {
         Auth::protectRole(['Admin']);
@@ -626,9 +671,26 @@ class AdminController extends Controller
             return;
         }
 
-        header("Content-Type: " . $result['mime']);
-        header("Content-Length: " . strlen($result['data']));
-        header("Cache-Control: private, max-age=3600");
-        echo $result['data'];
+        // Check filesystem first
+        if (!empty($result['file_path'])) {
+            $fullPath = BASE_PATH . "/public/" . $result['file_path'];
+            if (file_exists($fullPath)) {
+                header('Content-Type: ' . $result['mime']);
+                header('Content-Length: ' . filesize($fullPath));
+                readfile($fullPath);
+                return;
+            }
+        }
+
+        // Fallback to BLOB
+        if (!empty($result['data'])) {
+            header("Content-Type: " . $result['mime']);
+            header("Content-Length: " . strlen($result['data']));
+            echo $result['data'];
+            return;
+        }
+
+        http_response_code(404);
+        echo 'Image not found';
     }
 }

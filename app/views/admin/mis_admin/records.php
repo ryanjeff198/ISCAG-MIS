@@ -187,7 +187,37 @@
   <script>
     standardizePage('admin');
 
-    let allUsers = getAllUsers();
+    <?php
+    $jsUsers = [];
+    foreach ($users ?? [] as $u) {
+        $sex = $u['addinfo_sex'] ?: $u['account_sex'];
+        // Evaluate rough profile completion
+        $profilePct = 30; 
+        if (!empty($sex)) $profilePct += 70; 
+        
+        $fullName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+        if (!$fullName) $fullName = 'Unknown';
+
+        $isActive = true;
+        // Check if is_verified exists, defaulting to true if not set since old test rows might lack it
+        if (isset($u['is_verified']) && $u['is_verified'] == 0) {
+            $isActive = false;
+        }
+
+        $jsUsers[] = [
+            'id' => $u['tenant_id'] ?? '',
+            'name' => $fullName,
+            'email' => $u['email'] ?? '',
+            'gender' => strtolower($sex ?? 'none'),
+            'phone' => $u['contactnum'] ?? '',
+            'role' => $u['role'] ?? 'User',
+            'status' => $isActive ? 'active' : 'inactive',
+            'joined' => $u['date_applied'] ?? date('Y-m-d'),
+            'profilePct' => $profilePct
+        ];
+    }
+    ?>
+    let allUsers = <?= json_encode($jsUsers, JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
     // Stats
     function updateStats(users) {
@@ -241,9 +271,12 @@
                 <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                 View Details
               </button>
-              <button class="action-menu-item ${u.status === 'active' ? 'danger' : ''}" onclick="toggleStatus('${u.id}')">
-                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 ${u.status === 'active' ? 'Deactivate User' : 'Activate User'}
+              </button>
+              <hr style="border:0;border-top:1px solid #eee;margin:4px 0;">
+              <button class="action-menu-item danger" onclick="deleteUser('${u.id}')">
+                <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                Delete Permanently
               </button>
             </div>
           </div>
@@ -316,20 +349,60 @@
 
     // Toggle user status
     function toggleStatus(id) {
-      const users = getAllUsers();
-      const u = users.find(usr => usr.id === id);
-      if (!u) return;
-      u.status = u.status === 'active' ? 'inactive' : 'active';
-      saveAllUsers(users);
-      allUsers = users;
-      addActivityEntry(
-        'User ' + (u.status === 'active' ? 'activated' : 'deactivated'),
-        u.id + ' — ' + u.name + ' ' + u.status,
-        'MIS Admin', 'user'
-      );
-      showToast((u.status === 'active' ? '✅ ' : '⛔ ') + u.name + ' is now ' + u.status, u.status === 'active' ? 'var(--success)' : 'var(--danger)');
-      updateStats(allUsers);
-      applyFilters();
+      if (!confirm('Are you sure you want to change the status of this user?')) return;
+      
+      fetch('<?= url("/admin/mis_admin/toggle_user_status") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+      })
+      .then(r => r.json())
+      .then(data => {
+          if (data.success) {
+              const u = allUsers.find(usr => usr.id === id);
+              if (u) {
+                  u.status = data.newStatus;
+                  showToast((u.status === 'active' ? '✅ ' : '⛔ ') + u.name + ' is now ' + u.status, u.status === 'active' ? 'var(--success)' : 'var(--danger)');
+                  updateStats(allUsers);
+                  applyFilters();
+              }
+          } else {
+              showToast(data.message || 'Error updating status', 'var(--danger)');
+          }
+      })
+      .catch(e => {
+          console.error(e);
+          showToast('Network error', 'var(--danger)');
+      });
+    }
+
+    // Delete user permanently (with disk cleanup)
+    function deleteUser(id) {
+      if (!confirm('🛑 WARNING: This will permanently delete this account AND all their uploaded files (Portrait/Documents) from your disk. This cannot be undone.\n\nAre you sure you want to proceed?')) return;
+      
+      const reason = prompt('Please type the word "DELETE" to confirm:');
+      if (reason !== 'DELETE') return;
+
+      fetch('<?= url("/admin/mis_admin/delete_user") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+      })
+      .then(r => r.json())
+      .then(data => {
+          if (data.success) {
+              showToast('🗑️ Account and files deleted successfully.', 'var(--success)');
+              allUsers = allUsers.filter(u => u.id !== id);
+              updateStats(allUsers);
+              applyFilters();
+          } else {
+              showToast(data.message || 'Error deleting account', 'var(--danger)');
+          }
+      })
+      .catch(e => {
+          console.error(e);
+          showToast('Network error', 'var(--danger)');
+      });
     }
 
     setupModalClose('user-detail-modal');
