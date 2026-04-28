@@ -2939,14 +2939,34 @@ if ($userId) {
 
         setVal('family-name', u.lastName);
         setVal('given-name', u.firstName);
-        setVal('muslim-name', u.arabicName);
+        
+        // Muslim Name Logic
+        const muslimNameEl = document.getElementById('muslim-name');
+        if (muslimNameEl) {
+            const isNA = (u.arabicName === 'N/A');
+            muslimNameEl.value = isNA ? '' : (u.arabicName || '');
+            muslimNameEl.disabled = isNA;
+            muslimNameEl.style.opacity = isNA ? '0.5' : '1';
+            muslimNameEl.style.backgroundColor = isNA ? 'rgba(0,0,0,0.02)' : 'white';
+        }
+
         setVal('dob', u.dob);
         setVal('sex', u.sex);
         setVal('address', u.address);
         setVal('phone', u.phone);
         setVal('civil-status', u.civil);
         setVal('occupation', u.occupation);
-        setVal('shahadah-date', u.revertYear);
+
+        // Date of Shahadah Logic
+        const shahadahDateEl = document.getElementById('shahadah-date');
+        if (shahadahDateEl) {
+            const isNA = (u.revertYear === 'N/A' || u.revertYear === '0000-00-00');
+            shahadahDateEl.value = isNA ? '' : (u.revertYear || '');
+            shahadahDateEl.disabled = isNA;
+            shahadahDateEl.style.opacity = isNA ? '0.5' : '1';
+            shahadahDateEl.style.backgroundColor = isNA ? 'rgba(0,0,0,0.02)' : 'white';
+        }
+
         setVal('tribal', u.tribal);
         setVal('pob', u.pob);
 
@@ -3726,6 +3746,21 @@ if ($userId) {
       const aptReq = requests.find(r => r.type === 'apartment_application' && r.user === user.id && (r.status === 'pending' || r.status === 'approved'));
       return aptReq || null;
     }
+
+    // Auto-disable N/A fields on load based on existing data
+    window.addEventListener('DOMContentLoaded', () => {
+        const lockNA = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && (val === 'N/A' || val === '0000-00-00')) {
+                el.value = '';
+                el.disabled = true;
+                el.style.opacity = '0.5';
+                el.style.backgroundColor = 'rgba(0,0,0,0.02)';
+            }
+        };
+        lockNA('muslim-name', '<?= addslashes($appData['muslimname'] ?? '') ?>');
+        lockNA('shahadah-date', '<?= addslashes($appData['dateofshahadah'] ?? '') ?>');
+    });
 
     const existingApp = checkExistingApplication();
     if (existingApp && existingApp.status !== 'approved') {
