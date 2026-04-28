@@ -2018,9 +2018,20 @@ if ($userId) {
               </table>
 
               <!-- ══ ISCAG STUDENTS ══ -->
-              <div class="students-row">
-                <label for="iscag-students"><strong>How many students who enroll in ISCAG School?</strong></label>
-                <input type="number" id="iscag-students" min="0" value="0" />
+              <div class="students-row" style="flex-direction:column; align-items:flex-start; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px; width:100%;">
+                  <label for="iscag-students" style="margin:0;"><strong>How many members of the family are students in ISCAG School?</strong></label>
+                  <input type="number" id="iscag-students" min="0" max="7" value="<?= htmlspecialchars($appData['iscag_students'] ?? '0') ?>" style="width:70px;" />
+                </div>
+                <div id="iscag-student-names-container" style="display:none; width:100%;">
+                  <div style="background:rgba(15,92,58,0.03); border:1.5px solid rgba(15,92,58,0.12); border-radius:10px; padding:14px 16px;">
+                    <p style="font-size:0.78rem; color:#0f5c3a; font-weight:700; margin:0 0 10px; display:flex; align-items:center; gap:6px;">
+                      <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:#0f5c3a;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                      Please provide the name(s) of the student(s) enrolled in ISCAG School for reference.
+                    </p>
+                    <div id="iscag-names-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+                  </div>
+                </div>
               </div>
 
               <!-- ══ CHARACTER REFERENCE ══ -->
@@ -2549,6 +2560,7 @@ if ($userId) {
           ref_name: v('ref-name'),
           ref_contact: v('ref-contact'),
           iscag_students: parseInt(v('iscag-students')) || 0,
+          iscag_student_names: getIscagStudentNames(),
           date_applied: v('date-application'),
           family_data: JSON.stringify(familyData)
         },
@@ -2791,6 +2803,61 @@ if ($userId) {
           ageInput.value = age >= 0 ? age : 0;
         }
       });
+    }
+
+    // ── ISCAG Students names toggle ──
+    const studentsInput = document.getElementById('iscag-students');
+    const namesContainer = document.getElementById('iscag-student-names-container');
+    const namesList = document.getElementById('iscag-names-list');
+
+    function updateStudentNameFields(count, existingNames = []) {
+      if (!namesList) return;
+      namesList.innerHTML = '';
+      if (count > 0) {
+        namesContainer.style.display = 'block';
+        for (let i = 0; i < count; i++) {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'iscag-student-name-input';
+          input.placeholder = `Full Name of Student #${i + 1}`;
+          input.style.width = '100%';
+          input.style.padding = '8px 12px';
+          input.style.borderRadius = '6px';
+          input.style.border = '1px solid rgba(15,92,58,0.2)';
+          input.style.fontSize = '0.85rem';
+          input.value = existingNames[i] || '';
+          namesList.appendChild(input);
+        }
+      } else {
+        namesContainer.style.display = 'none';
+      }
+    }
+
+    if (studentsInput) {
+      studentsInput.addEventListener('input', function() {
+        let count = parseInt(this.value) || 0;
+        if (count > 7) {
+          count = 7;
+          this.value = 7;
+        }
+        updateStudentNameFields(count);
+      });
+      
+      // Initialize if there's already data
+      const initialCount = parseInt(studentsInput.value) || 0;
+      if (initialCount > 0) {
+        let existing = [];
+        try {
+            existing = JSON.parse('<?= addslashes($appData['iscag_student_names'] ?? '[]') ?>');
+        } catch(e) {}
+        updateStudentNameFields(initialCount, Array.isArray(existing) ? existing : []);
+      }
+    }
+
+    function getIscagStudentNames() {
+      const inputs = document.querySelectorAll('.iscag-student-name-input');
+      const names = Array.from(inputs).map(i => i.value.trim()).filter(v => v !== '');
+      return JSON.stringify(names);
     }
 
     // ── Unit card selection ──
