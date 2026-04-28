@@ -77,6 +77,11 @@ $routes = [
     '/admin/apartment/tenants'       => ['AdminController', 'tenantInfo'],
     '/admin/payment'                 => ['AdminController', 'payment'],
 
+    // Department Dashboards
+    '/admin/damayan'                 => ['AdminController', 'damayanDashboard'],
+    '/admin/dawah/male'              => ['AdminController', 'dawahMaleDashboard'],
+    '/admin/dawah/female'            => ['AdminController', 'dawahFemaleDashboard'],
+
     // MIS Admin Hub Routes
     '/admin/mis_admin/apartment_records'   => ['AdminController', 'apartmentRecords'],
     '/admin/mis_admin/apartment_confirmation' => ['AdminController', 'apartmentConfirmation'],

@@ -186,6 +186,63 @@ class AdminController extends Controller
         ]);
     }
 
+    public function damayanDashboard(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        $db = getDbConnection();
+        // Placeholder stats - replace with actual table queries if available
+        $totalBurials = 0;
+        try { $totalBurials = (int) $db->query("SELECT COUNT(*) FROM burial_requests")->fetchColumn(); } catch(Exception $e) {}
+        
+        $pendingBurials = 0;
+        try { $pendingBurials = (int) $db->query("SELECT COUNT(*) FROM burial_requests WHERE status = 'Pending'")->fetchColumn(); } catch(Exception $e) {}
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/damayan_dashboard', [
+            'dbUser' => $dbUser,
+            'totalBurials' => $totalBurials,
+            'pendingBurials' => $pendingBurials,
+            'recentActivity' => [] // Add recent logs if needed
+        ]);
+    }
+
+    public function dawahMaleDashboard(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Male']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        $db = getDbConnection();
+        $totalConversions = 0;
+        try { $totalConversions = (int) $db->query("SELECT COUNT(*) FROM counseling_requests WHERE sex = 'Male'")->fetchColumn(); } catch(Exception $e) {}
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Male_Department/dawah_male_dashboard', [
+            'dbUser' => $dbUser,
+            'totalConversions' => $totalConversions
+        ]);
+    }
+
+    public function dawahFemaleDashboard(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        $db = getDbConnection();
+        $totalConversions = 0;
+        try { $totalConversions = (int) $db->query("SELECT COUNT(*) FROM counseling_requests WHERE sex = 'Female'")->fetchColumn(); } catch(Exception $e) {}
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Female_Department/dawah_female_dashboard', [
+            'dbUser' => $dbUser,
+            'totalConversions' => $totalConversions
+        ]);
+    }
+
     public function apartmentInfo(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
