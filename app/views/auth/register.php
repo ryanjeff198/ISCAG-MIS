@@ -193,6 +193,12 @@ body {
   font-size: 13px;
   margin: 16px 0;
   align-items: flex-start;
+  cursor: pointer; /* Makes the whole row area feel interactive */
+}
+
+.check-row input,
+.check-row label {
+  cursor: pointer;
 }
 
 .check-row input {
