@@ -135,7 +135,6 @@ function openRoomPreview(unitData, options = {}) {
     if (Array.isArray(unitData.images) && unitData.images.length > 0) {
       imageUrls = unitData.images.map(img => {
         if (typeof img === 'string') {
-          // Already a full URL or path
           if (img.startsWith('http') || img.startsWith('/')) return img;
           return img;
         }
@@ -145,7 +144,6 @@ function openRoomPreview(unitData, options = {}) {
         return null;
       }).filter(Boolean);
     }
-    // Fallback: use the thumbnail_id from the list endpoint
     if (imageUrls.length === 0 && unitData.thumbnail_id) {
       imageUrls = [serveUrl ? serveUrl + '?id=' + unitData.thumbnail_id : '/api/apartment-types/serve-image?id=' + unitData.thumbnail_id];
     }
@@ -161,7 +159,7 @@ function openRoomPreview(unitData, options = {}) {
     room = {
       label: unitData.label || 'Apartment Unit',
       price: '₱' + (Number(unitData.price) || 0).toLocaleString() + ' / month',
-      description: unitData.description || 'A modern living space designed for comfort and convenience in the heart of the community.',
+      description: unitData.description || 'A modern living space designed for comfort and convenience.',
       images: imageUrls,
       features: features.map(f => ({ ...f, icon: mapFeatureIcon(f.label) }))
     };
@@ -182,13 +180,7 @@ function openRoomPreview(unitData, options = {}) {
     ? room.images.map(img => {
         let src = img;
         if (!img.startsWith('http') && !img.startsWith('/') && !img.startsWith('data:')) {
-          // If it starts with uploads/, it's relative to public/
-          // Otherwise, it might be relative to assets/
-          if (img.startsWith('uploads/')) {
-            src = basePath.replace('/assets/', '/') + img;
-          } else {
-            src = basePath + img;
-          }
+          src = img.startsWith('uploads/') ? basePath.replace('/assets/', '/') + img : basePath + img;
         }
         return `<div class="rp-slide"><img src="${src}" alt="Room" /></div>`;
       }).join('')
@@ -196,25 +188,71 @@ function openRoomPreview(unitData, options = {}) {
 
   const html = `
     <div class="rp-overlay" id="rp-overlay">
-      <div class="rp-modal">
+      <div class="rp-modal" style="max-width: 800px;">
         <div class="rp-header">
-          <h3>${room.label}</h3>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <h3 style="font-family: 'Lora', serif;">${room.label}</h3>
+            ${room.queue ? `<span style="background:rgba(255,255,255,0.2); padding:2px 10px; border-radius:20px; font-size:0.7rem; font-weight:700;">${room.queue}</span>` : ''}
+          </div>
           <button class="rp-close" id="rp-close-x">&times;</button>
         </div>
-        <div class="rp-body">
-          <div class="rp-carousel">
-            <div class="rp-track" id="rp-track">${slides}</div>
-            ${room.images && room.images.length > 1 ? `
-              <div class="rp-nav">
-                <button id="rp-prev" type="button">&lt;</button>
-                <button id="rp-next" type="button">&gt;</button>
-              </div>
-            ` : ''}
+        <div class="rp-body" style="display:grid; grid-template-columns: 1fr 300px; gap:0;">
+          <div style="border-right: 1px solid #eee;">
+            <div class="rp-carousel">
+              <div class="rp-track" id="rp-track">${slides}</div>
+              ${room.images && room.images.length > 1 ? `<div class="rp-nav"><button id="rp-prev" type="button">&lt;</button><button id="rp-next" type="button">&gt;</button></div>` : ''}
+            </div>
+            <div style="padding:20px;">
+                <div class="rp-price-row">
+                  <span class="rp-price">${room.price}</span>
+                  <span style="font-size:0.8rem; color:#666; font-weight:600;">${availableCount} Units Available</span>
+                </div>
+                <p style="font-size:0.88rem; line-height:1.6; color:#475569; margin:0 0 20px;">${room.description}</p>
+                
+                <h4 style="font-size:0.85rem; text-transform:uppercase; color:#0f5c3a; margin-bottom:12px; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <svg viewBox="0 0 24 24" style="width:16px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    Room Inclusions
+                </h4>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px;">
+                    ${room.inclusions.length ? room.inclusions.map(inc => `<div style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#64748b;"><span style="color:#0f5c3a; font-weight:bold;">•</span> ${inc}</div>`).join('') : '<div style="color:#94a3b8; font-size:0.8rem; font-style:italic;">No inclusions specified</div>'}
+                </div>
+
+                <h4 style="font-size:0.85rem; text-transform:uppercase; color:#c79a2b; margin-bottom:12px; font-weight:800; display:flex; align-items:center; gap:8px;">
+                    <svg viewBox="0 0 24 24" style="width:16px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    House Rules
+                </h4>
+                <div style="display:grid; gap:8px;">
+                    ${room.rules.length ? room.rules.map(r => `<div style="display:flex; align-items:start; gap:8px; font-size:0.85rem; color:#64748b;"><span style="color:#e11d48; font-size:0.75rem; margin-top:2px;">⚠</span> ${r}</div>`).join('') : '<div style="color:#94a3b8; font-size:0.8rem; font-style:italic;">No rules specified</div>'}
+                </div>
+            </div>
           </div>
-          <div class="rp-details">
-            <div class="rp-price-row">
-              <span class="rp-price">${room.price}</span>
-              <span style="font-size:0.8rem; color:#666; font-weight:600;">${availableCount} Units Available</span>
+          <div style="background:#f8faf9; padding:20px; display:flex; flex-direction:column; gap:20px;">
+            <div>
+                <h5 style="font-size:0.7rem; text-transform:uppercase; color:#64748b; margin-bottom:10px; letter-spacing:0.05em;">Payment Configuration</h5>
+                <div style="display:grid; gap:10px;">
+                    <div style="background:white; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                        <div style="font-size:0.65rem; color:#94a3b8; text-transform:uppercase;">Advance Rent</div>
+                        <div style="font-size:0.85rem; font-weight:700; color:#1e293b;">${room.payment.advance}</div>
+                    </div>
+                    <div style="background:white; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                        <div style="font-size:0.65rem; color:#94a3b8; text-transform:uppercase;">Security Deposit</div>
+                        <div style="font-size:0.85rem; font-weight:700; color:#1e293b;">${room.payment.deposit}</div>
+                    </div>
+                    ${room.payment.fees ? `<div style="background:white; padding:10px; border-radius:8px; border:1px solid #e2e8f0;"><div style="font-size:0.65rem; color:#94a3b8; text-transform:uppercase;">Other Fees</div><div style="font-size:0.85rem; font-weight:700; color:#1e293b;">${room.payment.fees}</div></div>` : ''}
+                </div>
+            </div>
+            <div>
+                <h5 style="font-size:0.7rem; text-transform:uppercase; color:#64748b; margin-bottom:10px; letter-spacing:0.05em;">Lease Terms</h5>
+                <div style="display:grid; gap:10px;">
+                    <div style="background:white; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                        <div style="font-size:0.65rem; color:#94a3b8; text-transform:uppercase;">Minimum Lease</div>
+                        <div style="font-size:0.85rem; font-weight:700; color:#1e293b;">${room.lease.min}</div>
+                    </div>
+                    <div style="background:white; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                        <div style="font-size:0.65rem; color:#94a3b8; text-transform:uppercase;">Notice Period</div>
+                        <div style="font-size:0.85rem; font-weight:700; color:#1e293b;">${room.lease.notice}</div>
+                    </div>
+                </div>
             </div>
             <p style="font-size:0.88rem; line-height:1.6; color:#333; margin:0 0 15px;">${room.description}</p>
             <div class="rp-features-grid">
@@ -226,7 +264,6 @@ function openRoomPreview(unitData, options = {}) {
                   <span class="rp-feature-label">${f.label}</span>
                   <span class="rp-feature-value">${f.value}</span>
                 </div>
-              `).join('')}
             </div>
           </div>
         </div>

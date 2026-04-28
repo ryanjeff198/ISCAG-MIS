@@ -37,7 +37,8 @@ body {
 /* ─── SPLIT LAYOUT ─── */
 .auth-split {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* LEFT SIDE (IMAGE + TEXT) */
@@ -123,10 +124,11 @@ body {
   flex: 1;
   position: relative;
   display: flex;
+  flex-direction: column; /* Changed from center to allow better scrolling */
   align-items: center;
-  justify-content: center;
   background: var(--gray-bg);
-  padding: 40px;
+  padding: 60px 20px; /* Better padding for scrollable area */
+  overflow-y: auto;
 }
 
 /* CARD */
@@ -137,7 +139,7 @@ body {
   width: 100%;
   max-width: 460px;
   box-shadow: 0 6px 25px rgba(0,0,0,0.08);
-  margin-top: 50px;
+  margin-bottom: 40px; /* Space at bottom for scrolling */
 }
 
 /* TITLE */
@@ -191,6 +193,12 @@ body {
   font-size: 13px;
   margin: 16px 0;
   align-items: flex-start;
+  cursor: pointer; /* Makes the whole row area feel interactive */
+}
+
+.check-row input,
+.check-row label {
+  cursor: pointer;
 }
 
 .check-row input {
@@ -241,36 +249,197 @@ body {
   margin-top: 16px;
 }
 
-/* PASSWORD STRENGTH */
-.strength-label {
-  font-size: 12px;
-  margin-top: 4px;
-  display: block;
+/* PASSWORD VALIDATION ENHANCEMENTS */
+.password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.strength-label.weak { color: var(--danger); }
-.strength-label.medium { color: orange; }
-.strength-label.strong { color: green; }
+.password-input-group input {
+  padding-right: 40px !important; /* Space for the eye icon */
+}
 
-/* ERROR */
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  cursor: pointer;
+  color: var(--txt-2);
+  font-size: 1.1rem;
+  transition: color 0.2s;
+  z-index: 5;
+}
+
+.toggle-password:hover {
+  color: var(--green);
+}
+
 .error-msg {
   font-size: 12px;
   color: var(--danger);
   margin-top: 4px;
+  display: block;
 }
 
-/* ─── RESPONSIVE ─── */
+.password-info-btn {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  cursor: pointer;
+  color: var(--txt-2);
+  transition: color 0.2s;
+}
+
+.password-info-btn:hover {
+  color: var(--green);
+}
+
+.password-info-icon {
+  font-size: 0.85rem; /* Smaller size */
+}
+
+.password-info-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Dynamic Borders */
+.field input.valid-pass {
+  border-color: #198754 !important;
+  box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1) !important;
+}
+
+.field input.invalid-pass {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
+}
+
+/* Tooltip/Requirements Box (Smooth & Accurate) */
+.requirements-container {
+  position: absolute;
+  top: 30px; 
+  right: 0;
+  width: 280px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  z-index: 120;
+  
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+  pointer-events: none;
+}
+
+.requirements-container.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.requirements-container::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 8px; /* Perfectly aligned with the info icon */
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+
+.password-info-btn {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  cursor: pointer;
+  color: var(--txt-2);
+  position: relative; /* Anchor for the tooltip */
+  
+  /* Hidden by default, appears on input */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+.password-info-btn.show-info {
+  opacity: 1;
+  visibility: visible;
+}
+
+.requirements-container.show {
+  display: block;
+}
+
+.requirements-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--txt);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.requirement-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.requirement-item {
+  font-size: 12px;
+  color: var(--txt-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  transition: all 0.2s;
+}
+
+.requirement-item i {
+  font-size: 14px;
+}
+
+.requirement-item.met {
+  color: #198754;
+}
+
+.requirement-item.not-met {
+  color: #dc3545;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 768px) {
   .auth-split {
     flex-direction: column;
+    height: auto;
+    overflow: visible;
   }
 
   .auth-left {
-    height: 200px;
+    height: 250px;
+    flex: none;
   }
 
   .auth-right {
     padding: 20px;
+    height: auto;
+    overflow: visible;
   }
 
   .name-row {
@@ -335,15 +504,50 @@ body {
           <input type="tel" name="contactnum" id="phone" placeholder="+63 9XX XXX XXXX" value="<?= e($data['contactnum'] ?? '') ?>"/>
         </div>
 
-        <div class="field">
+        <div class="field" style="position: relative;">
           <label for="password">Password</label>
-          <input type="password" name="password" id="password" placeholder="Create a password" required/>
-          <span class="strength-label" id="strengthLabel"></span>
+          <div class="password-input-group">
+            <input type="password" name="password" id="password" placeholder="Create a password" required/>
+            <i class="bi bi-eye-slash toggle-password" id="togglePassword"></i>
+          </div>
+          
+          <div class="password-info-btn" id="infoButtonWrapper">
+            <div id="passwordInfoBtn" style="position: relative; display: inline-flex; align-items: center; cursor: pointer;">
+              <i class="bi bi-info-circle password-info-icon"></i>
+              
+              <div class="requirements-container" id="requirementsContainer">
+                <div class="requirements-title">
+                  <i class="bi bi-shield-lock"></i> Password Requirements
+                </div>
+                <ul class="requirement-list">
+                  <li class="requirement-item" id="req-length">
+                    <i class="bi bi-x-circle-fill"></i> Minimum 8 characters
+                  </li>
+                  <li class="requirement-item" id="req-upper">
+                    <i class="bi bi-x-circle-fill"></i> At least one uppercase letter
+                  </li>
+                  <li class="requirement-item" id="req-lower">
+                    <i class="bi bi-x-circle-fill"></i> At least one lowercase letter
+                  </li>
+                  <li class="requirement-item" id="req-number">
+                    <i class="bi bi-x-circle-fill"></i> At least one number
+                  </li>
+                  <li class="requirement-item" id="req-special">
+                    <i class="bi bi-x-circle-fill"></i> At least one special character
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <span class="password-info-label">Password Requirements</span>
+          </div>
         </div>
 
         <div class="field">
           <label for="confirmPassword">Confirm Password</label>
-          <input type="password" name="confirmpass" id="confirmPassword" placeholder="Repeat password" required/>
+          <div class="password-input-group">
+            <input type="password" name="confirmpass" id="confirmPassword" placeholder="Repeat password" required/>
+            <i class="bi bi-eye-slash toggle-password" id="toggleConfirmPassword"></i>
+          </div>
           <span class="error-msg" id="confirmError"></span>
         </div>
 
@@ -370,6 +574,125 @@ body {
   <div id="footer-placeholder"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const passwordInput = document.getElementById('password');
+      const infoBtn = document.getElementById('passwordInfoBtn');
+      const requirementsBox = document.getElementById('requirementsContainer');
+      
+      const reqs = {
+        length: { el: document.getElementById('req-length'), regex: /.{8,}/ },
+        upper: { el: document.getElementById('req-upper'), regex: /[A-Z]/ },
+        lower: { el: document.getElementById('req-lower'), regex: /[a-z]/ },
+        number: { el: document.getElementById('req-number'), regex: /[0-9]/ },
+        special: { el: document.getElementById('req-special'), regex: /[!@#$%^&*(),.?":{}|<>]/ }
+      };
+
+      // Toggle requirements box ONLY on icon or label hover
+      const infoWrapper = document.getElementById('infoButtonWrapper');
+      infoWrapper.addEventListener('mouseenter', () => requirementsBox.classList.add('show'));
+      infoWrapper.addEventListener('mouseleave', () => {
+        requirementsBox.classList.remove('show');
+      });
+      
+      passwordInput.addEventListener('focus', () => {
+        // Do not show on focus
+      });
+      passwordInput.addEventListener('blur', () => {
+        // Do not hide on blur as it's hover-only now
+      });
+
+      passwordInput.addEventListener('input', function() {
+        const value = passwordInput.value;
+        const infoWrapper = document.getElementById('infoButtonWrapper');
+        let allMet = true;
+
+        // Show the i icon and label only when inputting and NOT yet valid
+        if (value.length > 0 && !allMet) {
+          infoWrapper.classList.add('show-info');
+        } else {
+          infoWrapper.classList.remove('show-info');
+          requirementsBox.classList.remove('show');
+        }
+
+        // Validate each requirement
+        for (const key in reqs) {
+          const met = reqs[key].regex.test(value);
+          const el = reqs[key].el;
+          const icon = el.querySelector('i');
+
+          if (met) {
+            el.classList.remove('not-met');
+            el.classList.add('met');
+            icon.className = 'bi bi-check-circle-fill';
+          } else {
+            el.classList.remove('met');
+            el.classList.add('not-met');
+            icon.className = 'bi bi-x-circle-fill';
+            allMet = false;
+          }
+        }
+
+        // Show/Hide info guidance based on validation status
+        if (value.length > 0 && !allMet) {
+          infoWrapper.classList.add('show-info');
+        } else {
+          infoWrapper.classList.remove('show-info');
+          requirementsBox.classList.remove('show');
+        }
+
+        // Update border color
+        if (value.length === 0) {
+          passwordInput.classList.remove('valid-pass', 'invalid-pass');
+        } else if (allMet) {
+          passwordInput.classList.remove('invalid-pass');
+          passwordInput.classList.add('valid-pass');
+        } else {
+          passwordInput.classList.remove('valid-pass');
+          passwordInput.classList.add('invalid-pass');
+        }
+      });
+
+      // Confirm Password Validation
+      const confirmInput = document.getElementById('confirmPassword');
+      const confirmError = document.getElementById('confirmError');
+
+      confirmInput.addEventListener('input', function() {
+        if (confirmInput.value === passwordInput.value) {
+          confirmError.textContent = '';
+          confirmInput.style.borderColor = '#198754';
+        } else {
+          confirmError.textContent = 'Passwords do not match';
+          confirmInput.style.borderColor = '#dc3545';
+        }
+      });
+      
+      // Password Visibility Toggle
+      function setupPasswordToggle(inputId, toggleId) {
+        const input = document.getElementById(inputId);
+        const toggle = document.getElementById(toggleId);
+        
+        toggle.addEventListener('click', function() {
+          const isPassword = input.getAttribute('type') === 'password';
+          input.setAttribute('type', isPassword ? 'text' : 'password');
+          
+          if (isPassword) {
+            // Now showing (Text)
+            this.classList.remove('bi-eye-slash');
+            this.classList.add('bi-eye');
+          } else {
+            // Now hiding (Dots)
+            this.classList.remove('bi-eye');
+            this.classList.add('bi-eye-slash');
+          }
+        });
+      }
+
+      setupPasswordToggle('password', 'togglePassword');
+      setupPasswordToggle('confirmPassword', 'toggleConfirmPassword');
+    });
+  </script>
 
 </body>
 </html>

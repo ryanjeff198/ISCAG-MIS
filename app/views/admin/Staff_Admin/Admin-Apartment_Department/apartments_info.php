@@ -383,6 +383,78 @@
                         <div class="form-group"><label class="form-label">Bathroom</label><input type="text" class="form-control" name="bathroom" id="t-bathroom"></div>
                     </div>
 
+                    <!-- 📜 DYNAMIC CONFIGURATION SECTIONS -->
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f1f5f9;">
+                        <h6 style="font-family:'Lora',serif; color:var(--primary-dark); font-weight:700; margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+                            <svg viewBox="0 0 24 24" style="width:18px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                            Detailed Configuration
+                        </h6>
+
+                        <div class="form-row">
+                            <!-- Inclusions Management -->
+                            <div class="form-group">
+                                <label class="form-label">Room Inclusions</label>
+                                <div id="inclusions-container" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
+                                    <!-- Dynamic Inputs -->
+                                </div>
+                                <button type="button" class="btn-topbar" style="font-size:0.75rem; width:100%; border-style:dashed;" onclick="addDynamicInput('inclusions')">
+                                    + Add Inclusion (e.g. Wi-Fi)
+                                </button>
+                            </div>
+
+                            <!-- Rules Management -->
+                            <div class="form-group">
+                                <label class="form-label">Apartment Rules</label>
+                                <div id="rules-container" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
+                                    <!-- Dynamic Inputs -->
+                                </div>
+                                <button type="button" class="btn-topbar" style="font-size:0.75rem; width:100%; border-style:dashed;" onclick="addDynamicInput('rules')">
+                                    + Add Rule (e.g. No Pets)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="margin-top:20px;">
+                            <!-- Payment Configuration -->
+                            <div class="form-group">
+                                <label class="form-label">Payment & Deposit Settings</label>
+                                <div style="background:#f8fafc; padding:15px; border-radius:12px; border:1px solid #e2e8f0;">
+                                    <div style="margin-bottom:12px;">
+                                        <label style="font-size:0.7rem; font-weight:700; color:#64748b; text-transform:uppercase;">Security Deposit</label>
+                                        <input type="text" class="form-control" name="security_deposit" id="t-deposit" placeholder="e.g. 1 Month Deposit">
+                                    </div>
+                                    <div style="margin-bottom:12px;">
+                                        <label style="font-size:0.7rem; font-weight:700; color:#64748b; text-transform:uppercase;">Advance Payment</label>
+                                        <input type="text" class="form-control" name="advance_rent" id="t-advance" placeholder="e.g. 1 Month Advance">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:0.7rem; font-weight:700; color:#64748b; text-transform:uppercase;">Other Initial Fees</label>
+                                        <input type="text" class="form-control" name="other_fees" id="t-fees" placeholder="e.g. Utility Deposit (P500)">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lease & Occupancy -->
+                            <div class="form-group">
+                                <label class="form-label">Lease & Availability Info</label>
+                                <div style="background:#f8fafc; padding:15px; border-radius:12px; border:1px solid #e2e8f0;">
+                                    <div style="margin-bottom:12px;">
+                                        <label style="font-size:0.7rem; font-weight:700; color:#64748b; text-transform:uppercase;">Minimum Stay</label>
+                                        <input type="text" class="form-control" name="min_lease" id="t-min-lease" placeholder="e.g. 6 Months">
+                                    </div>
+                                    <div style="margin-bottom:12px;">
+                                        <label style="font-size:0.7rem; font-weight:700; color:#64748b; text-transform:uppercase;">Notice Period</label>
+                                        <input type="text" class="form-control" name="notice_period" id="t-notice" placeholder="e.g. 30 Days before moving">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:0.7rem; font-weight:700; color:#64748b; text-transform:uppercase;">Queue / Occupancy Label</label>
+                                        <input type="text" class="form-control" name="queue_label" id="t-queue" placeholder="e.g. 3 slots remaining">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Thumbnail Section -->
                     <div class="form-group full" style="margin-top:20px;">
                         <label class="form-label">Primary Thumbnail</label>
@@ -651,6 +723,23 @@
                         document.getElementById('t-bedrooms').value = type.bedrooms;
                         document.getElementById('t-bathroom').value = type.bathroom;
 
+                        // Modern Detailed Fields
+                        document.getElementById('t-deposit').value = type.security_deposit || '';
+                        document.getElementById('t-advance').value = type.advance_rent || '';
+                        document.getElementById('t-fees').value = type.other_fees || '';
+                        document.getElementById('t-min-lease').value = type.min_lease || '';
+                        document.getElementById('t-notice').value = type.notice_period || '';
+                        document.getElementById('t-queue').value = type.queue_label || '';
+
+                        // Inclusions & Rules (JSON strings or arrays)
+                        const inclusions = type.inclusions ? (typeof type.inclusions === 'string' ? JSON.parse(type.inclusions) : type.inclusions) : [];
+                        const rules = type.rules ? (typeof type.rules === 'string' ? JSON.parse(type.rules) : type.rules) : [];
+                        
+                        document.getElementById('inclusions-container').innerHTML = '';
+                        document.getElementById('rules-container').innerHTML = '';
+                        inclusions.forEach(inc => addDynamicInput('inclusions', inc));
+                        rules.forEach(rule => addDynamicInput('rules', rule));
+
                         // Handle thumbnail preview
                         const thumb = (type.images || []).find(img => img.is_thumbnail);
                         const thumbPreview = document.getElementById('t-thumb-preview');
@@ -669,13 +758,45 @@
                     showToast("Network error while fetching details", "var(--danger)");
                     return;
                 }
+            } else {
+                // For 'add' mode, ensure lists are empty
+                document.getElementById('inclusions-container').innerHTML = '';
+                document.getElementById('rules-container').innerHTML = '';
+                // Add one empty input by default
+                addDynamicInput('inclusions');
+                addDynamicInput('rules');
             }
             openModal('type-modal');
         }
 
+        function addDynamicInput(containerId, value = '') {
+            const container = document.getElementById(containerId + '-container');
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.gap = '8px';
+            div.innerHTML = `
+                <input type="text" class="form-control dynamic-input-${containerId}" value="${value}" placeholder="Enter text...">
+                <button type="button" class="btn-action btn-delete" style="padding:0 10px;" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(div);
+        }
+
         async function saveType() {
-            const formData = new FormData(document.getElementById('type-form'));
+            const form = document.getElementById('type-form');
+            const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
+            
+            // Gather Dynamic Lists
+            const inclusions = Array.from(document.querySelectorAll('.dynamic-input-inclusions'))
+                .map(input => input.value.trim())
+                .filter(val => val !== '');
+            const rules = Array.from(document.querySelectorAll('.dynamic-input-rules'))
+                .map(input => input.value.trim())
+                .filter(val => val !== '');
+            
+            data.inclusions = JSON.stringify(inclusions);
+            data.rules = JSON.stringify(rules);
+
             const id = data.type_id;
             const endpoint = id ? '<?= url("/api/apartment-types/update") ?>' : '<?= url("/api/apartment-types/create") ?>';
 

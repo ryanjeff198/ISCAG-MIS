@@ -105,29 +105,29 @@
 
         <!-- STATS ROW -->
         <div class="stats-row" id="stats-row">
-          <div class="stat-card">
+          <a href="<?= url('/admin/apartment/info') ?>" class="stat-card" style="text-decoration:none; cursor:pointer;">
             <div class="stat-icon teal">
               <svg viewBox="0 0 24 24">
                 <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z" />
               </svg>
             </div>
             <div>
-              <div class="stat-value" id="stat-total">5</div>
+              <div class="stat-value" id="stat-total">0</div>
               <div class="stat-label">Total Units</div>
             </div>
-          </div>
-          <div class="stat-card">
+          </a>
+          <a href="<?= url('/admin/apartment/info') ?>" class="stat-card" style="text-decoration:none; cursor:pointer;">
             <div class="stat-icon green">
               <svg viewBox="0 0 24 24">
                 <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
               </svg>
             </div>
             <div>
-              <div class="stat-value" id="stat-available">4</div>
+              <div class="stat-value" id="stat-available">0</div>
               <div class="stat-label">Available Slots</div>
             </div>
-          </div>
-          <div class="stat-card">
+          </a>
+          <a href="<?= url('/admin/apartment/info') ?>" class="stat-card" style="text-decoration:none; cursor:pointer;">
             <div class="stat-icon red">
               <svg viewBox="0 0 24 24">
                 <path
@@ -135,11 +135,11 @@
               </svg>
             </div>
             <div>
-              <div class="stat-value" id="stat-occupied">1</div>
+              <div class="stat-value" id="stat-occupied">0</div>
               <div class="stat-label">Fully Occupied</div>
             </div>
-          </div>
-          <div class="stat-card">
+          </a>
+          <a href="<?= url('/admin/apartment/info') ?>" class="stat-card" style="text-decoration:none; cursor:pointer;">
             <div class="stat-icon gold">
               <svg viewBox="0 0 24 24">
                 <path
@@ -147,10 +147,10 @@
               </svg>
             </div>
             <div>
-              <div class="stat-value" id="stat-reserved">1</div>
+              <div class="stat-value" id="stat-reserved">0</div>
               <div class="stat-label">Reserved</div>
             </div>
-          </div>
+          </a>
         </div>
 
         <!-- UNIT TABLE -->
@@ -188,8 +188,8 @@
 
         <!-- VERIFIED APPLICATIONS (from MIS Admin) -->
         <div class="section-card verified-glow" style="margin-bottom:24px;">
-          <div class="section-card-header">
-            <h6>
+          <div class="section-card-header" onclick="location.href='<?= url('/admin/apartment/confirmation') ?>'" style="cursor:pointer;">
+            <h6 style="display:flex; align-items:center; gap:10px;">
               <svg viewBox="0 0 24 24">
                 <path
                   d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
@@ -222,8 +222,8 @@
         <div class="grid-2">
           <!-- PENDING APPLICATIONS -->
           <div class="section-card">
-            <div class="section-card-header">
-              <h6>
+            <div class="section-card-header" onclick="location.href='<?= url('/admin/apartment/confirmation') ?>'" style="cursor:pointer;">
+              <h6 style="display:flex; align-items:center; gap:10px;">
                 <svg viewBox="0 0 24 24">
                   <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z" />
                 </svg>
@@ -249,8 +249,8 @@
 
           <!-- BILLING (Read-Only) -->
           <div class="section-card">
-            <div class="section-card-header">
-              <h6>
+            <div class="section-card-header" onclick="location.href='<?= url('/admin/payment') ?>'" style="cursor:pointer;">
+              <h6 style="display:flex; align-items:center; gap:10px;">
                 <svg viewBox="0 0 24 24">
                   <path
                     d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
@@ -258,7 +258,7 @@
                 Tenant Billing
               </h6>
               <span
-                style="font-size:0.72rem;color:var(--text-muted);background:rgba(199,154,43,0.1);padding:3px 10px;border-radius:12px;font-weight:600;">Read-Only</span>
+                style="font-size:0.72rem;color:var(--text-muted);background:rgba(199,154,43,0.1);padding:3px 10px;border-radius:12px;font-weight:600;">View Payments</span>
             </div>
             <div class="section-card-body" style="padding:0;">
               <div class="table-wrapper">
