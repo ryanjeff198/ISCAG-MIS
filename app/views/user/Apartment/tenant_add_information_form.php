@@ -21,15 +21,19 @@ if ($userId) {
     // dbUser is used by the Access Gate and Navigation (should be Profile info)
     $dbUser = [
         'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
+        'firstName' => $account['first_name'] ?? '',
+        'lastName' => $account['last_name'] ?? '',
         'email' => $profile['email'] ?? ($account['email'] ?? ''),
         'sex' => !empty($profile['sex']) ? $profile['sex'] : ($_SESSION['sex'] ?? $_SESSION['gender'] ?? $account['sex'] ?? ''),
         'phone' => $profile['phone'] ?? ($account['contactnum'] ?? ''),
         'dob' => $profile['birthdate'] ?? '',
         'civil' => $profile['civil_status'] ?? '',
         'address' => $profile['address'] ?? '',
+        'pob' => $profile['pob'] ?? ($profile['address'] ?? ''), // Fallback or new field if exists
         'occupation' => $profile['occupation'] ?? '',
         'arabicName' => $profile['muslimname'] ?? '',
         'revertYear' => $profile['dateofshahadah'] ?? '',
+        'tribal' => $profile['tribalaffliation'] ?? '',
     ];
 
     // Check if application is already submitted
@@ -1828,12 +1832,18 @@ if ($userId) {
             <div class="form-doc-body">
 
               <!-- ══ SECTION 1: APPLICANT'S INFORMATION ══ -->
-              <div class="doc-section-title">
-                <svg viewBox="0 0 24 24">
-                  <path
-                    d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-                </svg>
-                Guest's Information
+              <div class="doc-section-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                  </svg>
+                  Guest's Information
+                </div>
+                <button type="button" onclick="useMyDetails()" class="btn-topbar" style="font-size: 0.72rem; padding: 6px 14px; background: rgba(15, 92, 58, 0.05); color: #0f5c3a; border: 1.5px solid rgba(15, 92, 58, 0.15); border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                    <svg viewBox="0 0 24 24" style="width:14px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/></svg>
+                    Use my Details
+                </button>
               </div>
 
               <!-- Row 1 -->
@@ -1880,7 +1890,37 @@ if ($userId) {
                   <td class="field-label">Date of Shahadah:</td>
                   <td class="field-value"><input type="date" id="shahadah-date" value="<?= htmlspecialchars($appData['dateofshahadah'] ?? '') ?>" /></td>
                   <td class="field-label">Tribal Affiliation:</td>
-                  <td class="field-value"><input type="text" placeholder="e.g., Maranao, Tausug" id="tribal" value="<?= htmlspecialchars($appData['tribalaffliation'] ?? '') ?>" /></td>
+                  <td class="field-value">
+                    <select id="tribal">
+                      <option value="">— Select Tribe —</option>
+                      <optgroup label="Bangsamoro Tribes">
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Maranao' ? 'selected' : '' ?>>Maranao</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Tausug' ? 'selected' : '' ?>>Tausug</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Maguindanaon' ? 'selected' : '' ?>>Maguindanaon</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Sama' ? 'selected' : '' ?>>Sama</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Yakan' ? 'selected' : '' ?>>Yakan</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Iranun' ? 'selected' : '' ?>>Iranun</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Kalagan' ? 'selected' : '' ?>>Kalagan</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Kolibugan' ? 'selected' : '' ?>>Kolibugan</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Molbog' ? 'selected' : '' ?>>Molbog</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Palawani' ? 'selected' : '' ?>>Palawani</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Sangil' ? 'selected' : '' ?>>Sangil</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Jama Mapun' ? 'selected' : '' ?>>Jama Mapun</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Badjao' ? 'selected' : '' ?>>Badjao</option>
+                      </optgroup>
+                      <optgroup label="Other Ethnic Groups">
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Tagalog' ? 'selected' : '' ?>>Tagalog</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Visayan' ? 'selected' : '' ?>>Visayan</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Ilocano' ? 'selected' : '' ?>>Ilocano</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Bicolano' ? 'selected' : '' ?>>Bicolano</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Pampango' ? 'selected' : '' ?>>Pampango</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Pangasinense' ? 'selected' : '' ?>>Pangasinense</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Igorot' ? 'selected' : '' ?>>Igorot</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Lumad' ? 'selected' : '' ?>>Lumad</option>
+                        <option value="Other">Other / Not Listed</option>
+                      </optgroup>
+                    </select>
+                  </td>
                   <td class="field-label">Phone No.:</td>
                   <td class="field-value"><input type="tel" placeholder="09XX-XXX-XXXX" id="phone" value="<?= htmlspecialchars($appData['phone'] ?? '') ?>" /></td>
                 </tr>
@@ -2787,6 +2827,46 @@ if ($userId) {
           }
         }
       });
+    }
+
+    function useMyDetails() {
+        const u = DB_USER;
+        if (!u) return;
+
+        // Auto-fill fields
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val || '';
+        };
+
+        setVal('family-name', u.lastName);
+        setVal('given-name', u.firstName);
+        setVal('muslim-name', u.arabicName);
+        setVal('dob', u.dob);
+        setVal('sex', u.sex);
+        setVal('address', u.address);
+        setVal('phone', u.phone);
+        setVal('civil-status', u.civil);
+        setVal('occupation', u.occupation);
+        setVal('shahadah-date', u.revertYear);
+        setVal('tribal', u.tribal);
+        setVal('pob', u.pob);
+
+        // Trigger age calculation
+        if (u.dob) {
+            const dobEl = document.getElementById('dob');
+            if (dobEl) dobEl.dispatchEvent(new Event('change'));
+        }
+
+        showToast('Application form populated with your account details!', '#2f8a60');
+        
+        // Visual feedback on the button
+        const btn = event.currentTarget;
+        if (btn) {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px; fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Details Applied';
+            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+        }
     }
 
 
