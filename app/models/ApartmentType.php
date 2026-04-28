@@ -72,7 +72,9 @@ class ApartmentType
     public function createType(array $data): int
     {
         $fields = ['type_key', 'label', 'price', 'capacity', 'description',
-                    'floor_area', 'bedrooms', 'bathroom', 'kitchen', 'parking', 'sort_order'];
+                    'floor_area', 'bedrooms', 'bathroom', 'kitchen', 'parking', 'sort_order',
+                    'inclusions', 'rules', 'security_deposit', 'advance_rent', 'other_fees', 
+                    'min_lease', 'notice_period', 'queue_label'];
         $safe = [];
         foreach ($fields as $f) {
             if (array_key_exists($f, $data)) {
@@ -94,7 +96,9 @@ class ApartmentType
     public function updateType(int $id, array $data): bool
     {
         $fields = ['type_key', 'label', 'price', 'capacity', 'description',
-                    'floor_area', 'bedrooms', 'bathroom', 'kitchen', 'parking', 'sort_order', 'is_active'];
+                    'floor_area', 'bedrooms', 'bathroom', 'kitchen', 'parking', 'sort_order', 'is_active',
+                    'inclusions', 'rules', 'security_deposit', 'advance_rent', 'other_fees', 
+                    'min_lease', 'notice_period', 'queue_label'];
         $safe = [];
         foreach ($fields as $f) {
             if (array_key_exists($f, $data)) {

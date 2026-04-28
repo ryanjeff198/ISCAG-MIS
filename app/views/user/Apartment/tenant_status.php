@@ -1,3 +1,25 @@
+<?php
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__, 4));
+}
+require_once BASE_PATH . '/app/helpers/Auth.php';
+Auth::protect();
+
+$userId = $_SESSION['user_id'] ?? null;
+$tenantInfo = null;
+$application = null;
+$uploadedDocs = [];
+
+if ($userId) {
+    require_once BASE_PATH . '/app/models/ApartmentApp.php';
+    $aptModel = new ApartmentApp();
+    $tenantInfo = $aptModel->getInfo($userId);
+    $application = $aptModel->getApplication($userId);
+    
+    // Get uploaded doc types from database
+    $uploadedDocs = $aptModel->getUploadedDocTypes($userId);
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 

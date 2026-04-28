@@ -1,3 +1,21 @@
+<?php
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__, 4));
+}
+require_once BASE_PATH . '/app/helpers/Auth.php';
+Auth::protect();
+
+$userId = $_SESSION['user_id'] ?? null;
+$tenantInfo = null;
+$application = null;
+
+if ($userId) {
+    require_once BASE_PATH . '/app/models/ApartmentApp.php';
+    $aptModel = new ApartmentApp();
+    $tenantInfo = $aptModel->getInfo($userId);
+    $application = $aptModel->getApplication($userId);
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -254,6 +272,14 @@
         .apt-list-item.rule::before { content: "⚠"; color: var(--danger); font-size: 0.9rem; margin-top: 2px; }
 
         .m-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; border: 1px solid transparent; }
+
+        /* Empty State */
+        .empty-state-card { background: white; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+        .empty-state-hero { padding: 48px 32px; text-align: center; background: #f8fafc; }
+        .empty-state-hero svg { width: 64px; height: 64px; fill: var(--text-muted); opacity: 0.3; margin-bottom: 16px; }
+        .empty-state-hero h3 { font-family: 'Lora', serif; color: var(--primary-dark); margin: 0 0 8px; }
+        .empty-state-hero p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
+        .empty-state-body { padding: 24px; text-align: center; border-top: 1px solid var(--border); }
     </style>
 </head>
 
@@ -331,6 +357,7 @@
         let apartmentTypes = [];
 
         async function init() {
+            try {
                 const res = await fetch('<?= url("/api/apartment-types") ?>').then(r => r.json());
                 if (res.success) apartmentTypes = res.data;
 
