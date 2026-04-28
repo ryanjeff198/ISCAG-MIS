@@ -82,9 +82,9 @@ class ApartmentController extends Controller {
 
         $file = $_FILES['file'];
 
-        $maxSize = 5 * 1024 * 1024;
+        $maxSize = 2 * 1024 * 1024;
         if ($file['size'] > $maxSize) {
-            echo json_encode(['success' => false, 'message' => 'File too large (max 5 MB)']);
+            echo json_encode(['success' => false, 'message' => 'File too large (max 2 MB)']);
             return;
         }
 
@@ -122,6 +122,28 @@ class ApartmentController extends Controller {
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update database record']);
         }
+    }
+
+    public function removeImage() {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+        $userId = $_SESSION['user_id'];
+        $type = $_GET['type'] ?? '';
+
+        if (empty($type)) {
+            echo json_encode(['success' => false, 'message' => 'Type missing']);
+            return;
+        }
+
+        $model = new ApartmentApp();
+        $info  = $model->getInfo($userId);
+        if (!$info) {
+            echo json_encode(['success' => false, 'message' => 'No info record']);
+            return;
+        }
+
+        $ok = $model->deleteInfoImage($info['tenant_info'], $type);
+        echo json_encode(['success' => $ok]);
     }
 
     public function serveImage() {

@@ -7,6 +7,10 @@ Auth::protect();
 
 $userId = $_SESSION['user_id'] ?? null;
 $dbUser = [];
+$appData = [];
+$pictureUrl = null;
+$pictureRecordExists = false;
+
 if ($userId) {
     require_once BASE_PATH . '/app/models/User.php';
     require_once BASE_PATH . '/app/models/ApartmentApp.php';
@@ -44,7 +48,23 @@ if ($userId) {
     }
 
     // appData is used to pre-fill the form (should be Application info)
-    $appData = $appInfo;
+    $appData = $appInfo ?: [];
+    $appData['roomtype'] = $application['roomtype'] ?? '';
+
+    // Fetch 2x2 picture
+    $pictureInfo = $aptModel->getAddInfoImage($appInfo['tenant_info'] ?? 0, 'picture');
+    $pictureUrl = null;
+    $pictureRecordExists = false;
+    if ($pictureInfo) {
+         $pictureRecordExists = true;
+         if (!empty($pictureInfo['file_path'])) {
+             // Verify file actually exists on DISK
+             $fullPath = BASE_PATH . "/public/" . $pictureInfo['file_path'];
+             if (file_exists($fullPath)) {
+                 $pictureUrl = url($pictureInfo['file_path']);
+             }
+         }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -64,10 +84,12 @@ if ($userId) {
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
       -webkit-appearance: none;
+      appearance: none;
       margin: 0;
     }
     input[type=number] {
       -moz-appearance: textfield; /* Firefox */
+      appearance: textfield;
     }
 
     /* ═══════════════════════════════════════════
@@ -204,6 +226,31 @@ if ($userId) {
       border-radius: 50%;
       border: 2px solid rgba(23, 107, 69, 0.15);
       animation: stepperPulse 2s ease infinite;
+    }
+
+    /* PDF Placeholder Styles */
+    .doc-preview-pdf-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      color: #dc3545;
+      gap: 8px;
+    }
+
+    .doc-preview-pdf-placeholder svg {
+      width: 48px;
+      height: 48px;
+      fill: currentColor;
+    }
+
+    .doc-preview-pdf-placeholder span {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #6c757d;
     }
 
     @keyframes stepperPulse {
@@ -370,19 +417,24 @@ if ($userId) {
     }
 
     .form-doc-header-top {
-      display: flex;
+      display: grid;
+      grid-template-columns: 100px 1fr 100px;
       align-items: center;
-      gap: 20px;
       margin-bottom: 8px;
+      text-align: center;
     }
 
     .form-doc-header-logo {
       width: 72px;
       height: 72px;
       border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--primary);
-      flex-shrink: 0;
+      object-fit: contain;
+      background: white;
+      border: 3px solid #0f5c3a;
+      padding: 4px;
+      box-sizing: border-box;
+      justify-self: start; /* Pin to start of its 100px lane */
+      margin-left: 10px;
     }
 
     .form-doc-header-text {
@@ -489,6 +541,51 @@ if ($userId) {
 
     .photo-upload-box input {
       display: none;
+    }
+
+    .photo-controls {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+      border-radius: 6px;
+    }
+
+    .photo-upload-box:hover .photo-controls {
+      opacity: 1;
+    }
+
+    .photo-btn {
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      width: 80%;
+      text-align: center;
+      transition: transform 0.1s;
+    }
+
+    .photo-btn:active {
+      transform: scale(0.95);
+    }
+
+    .btn-edit-photo {
+      background: white;
+      color: #333;
+    }
+
+    .btn-remove-photo {
+      background: #dc3545;
+      color: white;
     }
 
     /* ── DATE + PHOTO ROW ── */
@@ -1798,11 +1895,12 @@ if ($userId) {
               <div class="form-doc-header-top">
                 <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo" class="form-doc-header-logo" />
                 <div class="form-doc-header-text">
-                  <div class="arabic-line">بِسْم. اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
-                  <div class="org-name-ar">مركز البحوث الإسلامية و الدعوة و الإرشاد في الفلبين</div>
-                  <div class="org-name-en">Islamic Studies, Call and Guidance of the Philippines</div>
-                  <div class="sec-reg">SEC. REG. NO. 0000185967</div>
+                  <div class="arabic-line" style="font-size:1.1rem; margin-bottom:5px;">بِسْم. اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+                  <div class="org-name-ar" style="font-size:1rem; font-weight:700; color:#0f5c3a;">مركز البحوث الإسلامية و الدعوة و الإرشاد في الفلبين</div>
+                  <div class="org-name-en" style="font-size:0.9rem; font-weight:700;">Islamic Studies, Call and Guidance of the Philippines</div>
+                  <div class="sec-reg" style="font-size:0.7rem; opacity:0.8;">SEC. REG. NO. 0000185967</div>
                 </div>
+                <div style="width: 100px;"></div> <!-- Spacer for perfect symmetry -->
               </div>
               <div class="form-doc-title-bar">
                 <span class="form-doc-title">Tenant Application Form</span>
@@ -1814,18 +1912,24 @@ if ($userId) {
               <!-- Date of Application (Left) -->
               <div class="date-group">
                 <label for="date-application">Date of Application:</label>
-                <input type="date" id="date-application" />
+                <input type="date" id="date-application" value="<?= htmlspecialchars($appData['date_applied'] ?? date('Y-m-d')) ?>" />
               </div>
 
               <!-- 2x2 Photo Upload (right) -->
-              <label class="photo-upload-box" id="photo-upload-box" title="Upload 2x2 Photo">
+              <div class="photo-upload-box" id="photo-upload-box" title="View/Edit Photo" onclick="handlePhotoBoxClick(event)">
                 <svg viewBox="0 0 24 24" id="photo-placeholder-icon">
                   <path
                     d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
                 </svg>
                 <span id="photo-label-text">2x2 Photo</span>
                 <input type="file" accept="image/*" id="photo-input" />
-              </label>
+                
+                <!-- Controls that appear on hover if photo exists -->
+                <div class="photo-controls" id="photo-controls" style="display:none;">
+                   <button type="button" class="photo-btn btn-edit-photo" onclick="handleEditPhoto(event)">Edit Photo</button>
+                   <button type="button" class="photo-btn btn-remove-photo" onclick="handleRemovePhoto(event)">Remove</button>
+                </div>
+              </div>
             </div>
 
             <!-- ── FORM BODY ── -->
@@ -1858,7 +1962,7 @@ if ($userId) {
                   <td class="field-value"><input type="text" placeholder="Arabic / Muslim name" id="muslim-name" value="<?= htmlspecialchars($appData['muslimname'] ?? '') ?>" /></td>
                   <td class="field-label" style="min-width:40px;">M.I.</td>
                   <td class="field-value" style="width:60px;"><input type="text" placeholder="—" id="mi" maxlength="3"
-                      style="text-align:center;" /></td>
+                      style="text-align:center;" value="<?= htmlspecialchars($appData['middlename'] ?? '') ?>" /></td>
                 </tr>
               </table>
 
@@ -1957,10 +2061,10 @@ if ($userId) {
               <table class="info-table">
                 <tr>
                   <td class="field-label">Occupation:</td>
-                  <td class="field-value"><input type="text" placeholder="Current job or occupation" id="occupation" />
+                  <td class="field-value"><input type="text" placeholder="Current job or occupation" id="occupation" value="<?= htmlspecialchars($appData['occupation'] ?? '') ?>" />
                   </td>
                   <td class="field-label">Company Name:</td>
-                  <td class="field-value" colspan="3"><input type="text" placeholder="Employer / Company" id="company" /></td>
+                  <td class="field-value" colspan="3"><input type="text" placeholder="Employer / Company" id="company" value="<?= htmlspecialchars($appData['companyname'] ?? '') ?>" /></td>
                 </tr>
               </table>
 
@@ -1968,10 +2072,10 @@ if ($userId) {
               <table class="info-table">
                 <tr>
                   <td class="field-label">Company Business Address:</td>
-                  <td class="field-value"><input type="text" placeholder="Business address" id="company-address" /></td>
-                  <td class="field-label">Phone No.:</td>
+                  <td class="field-value"><input type="text" placeholder="Business address" id="company-address" value="<?= htmlspecialchars($appData['companyadd'] ?? '') ?>" /></td>
+                  <td class="field-label">Company Phone Number.:</td>
                   <td class="field-value" style="width:180px;"><input type="tel" placeholder="Office phone"
-                      id="company-phone" /></td>
+                      id="company-phone" value="<?= htmlspecialchars($appData['companyphone'] ?? '') ?>" /></td>
                 </tr>
               </table>
 
@@ -2023,7 +2127,14 @@ if ($userId) {
               <div class="students-row" style="flex-direction:column; align-items:flex-start; gap:12px;">
                 <div style="display:flex; align-items:center; gap:12px; width:100%;">
                   <label for="iscag-students" style="margin:0;"><strong>How many members of the family are students in ISCAG School?</strong></label>
-                  <input type="number" id="iscag-students" min="0" max="7" value="<?= htmlspecialchars($appData['iscag_students'] ?? '0') ?>" style="width:70px;" />
+                  <select id="iscag-students" style="width:100px;">
+                    <?php 
+                      $currentStudents = $appData['iscag_students'] ?? 0;
+                      for ($i=0; $i<=10; $i++): 
+                    ?>
+                      <option value="<?= $i ?>" <?= $currentStudents == $i ? 'selected' : '' ?>><?= $i ?></option>
+                    <?php endfor; ?>
+                  </select>
                 </div>
                 <div id="iscag-student-names-container" style="display:none; width:100%;">
                   <div style="background:rgba(15,92,58,0.03); border:1.5px solid rgba(15,92,58,0.12); border-radius:10px; padding:14px 16px;">
@@ -2063,11 +2174,11 @@ if ($userId) {
               <div class="char-ref-grid">
                 <div class="char-ref-field">
                   <label for="ref-name">Name:</label>
-                  <input type="text" id="ref-name" placeholder="Full name of reference person" />
+                  <input type="text" id="ref-name" placeholder="Full name of reference person" value="<?= htmlspecialchars($appData['ref_name'] ?? '') ?>" />
                 </div>
                 <div class="char-ref-field">
                   <label for="ref-contact">Contact No.:</label>
-                  <input type="tel" id="ref-contact" placeholder="09XX-XXX-XXXX" />
+                  <input type="tel" id="ref-contact" placeholder="09XX-XXX-XXXX" value="<?= htmlspecialchars($appData['ref_contact'] ?? '') ?>" />
                 </div>
               </div>
 
@@ -2529,7 +2640,7 @@ if ($userId) {
         return el ? el.value.trim() : '';
       };
       const unitRadio = document.querySelector('input[name="unit"]:checked');
-      let roomtype = 'Studio';
+      let roomtype = null;
       if (unitRadio) {
         const card = unitRadio.closest('.unit-card');
         if (card) {
@@ -2587,6 +2698,8 @@ if ($userId) {
         roomtype: roomtype
       };
 
+      console.log("Saving payload:", payload); // Debug log
+
       return fetch('<?= url("/user/apartment/save") ?>', {
         method: 'POST',
         headers: {
@@ -2595,6 +2708,30 @@ if ($userId) {
         body: JSON.stringify(payload)
       }).then(r => r.json());
     }
+    
+    // Quiet background auto-save (Debounced)
+    let autosaveTimer = null;
+    function triggerAutosave() {
+      if (currentStep !== 1) return;
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(() => {
+        saveStep1ToServer()
+          .then(res => { if (res.success) console.log("Progress auto-saved."); })
+          .catch(err => console.warn("Auto-save failed:", err));
+      }, 1000); // Save 1 second after last input
+    }
+
+    // Attach listeners to all Step 1 inputs for auto-saving
+    function initStep1Listeners() {
+      document.querySelectorAll('#step-panel-1 input, #step-panel-1 select').forEach(el => {
+        // Remove existing to avoid double-firing if called multiple times
+        el.removeEventListener('input', triggerAutosave);
+        el.removeEventListener('change', triggerAutosave);
+        el.addEventListener('input', triggerAutosave);
+        el.addEventListener('change', triggerAutosave);
+      });
+    }
+    initStep1Listeners();
 
     function goToStep(step) {
       if (step === currentStep) return;
@@ -2697,48 +2834,115 @@ if ($userId) {
       goToStep(1);
     });
 
-    // ═══ FAMILY MEMBERS TABLE (10 rows) ═══
     const familyBody = document.getElementById('family-members-body');
+    let savedFamily = [];
+    try {
+      // Use json_encode for safer transfer of structured data
+      savedFamily = <?= json_encode(json_decode($appData['family_data'] ?? '[]')) ?> || [];
+    } catch (e) {
+      console.error("Family data parse error:", e);
+    }
+
     for (let i = 1; i <= 10; i++) {
+      const data = savedFamily[i - 1] || {};
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${i}.</td>
-        <td><input type="text" placeholder="Full name" /></td>
+        <td><input type="text" placeholder="Full name" value="${data.name || ''}" /></td>
         <td><select>
             <option value="">— Select —</option>
-            <option>Spouse</option>
-            <option>Son</option>
-            <option>Daughter</option>
-            <option>Father</option>
-            <option>Mother</option>
-            <option>Sibling</option>
-            <option>Other</option>
+            <option ${data.relation === 'Spouse' ? 'selected' : ''}>Spouse</option>
+            <option ${data.relation === 'Son' ? 'selected' : ''}>Son</option>
+            <option ${data.relation === 'Daughter' ? 'selected' : ''}>Daughter</option>
+            <option ${data.relation === 'Father' ? 'selected' : ''}>Father</option>
+            <option ${data.relation === 'Mother' ? 'selected' : ''}>Mother</option>
+            <option ${data.relation === 'Sibling' ? 'selected' : ''}>Sibling</option>
+            <option ${data.relation === 'Other' ? 'selected' : ''}>Other</option>
           </select></td>
-        <td><input type="number" placeholder="—" min="0" style="text-align:center;" /></td>
+        <td><input type="number" placeholder="—" min="0" style="text-align:center;" value="${data.age || ''}" /></td>
         <td><select>
-            <option>Islam</option>
-            <option>Christian</option>
-            <option>Other</option>
+            <option ${data.religion === 'Islam' ? 'selected' : ''}>Islam</option>
+            <option ${data.religion === 'Christian' ? 'selected' : ''}>Christian</option>
+            <option ${data.religion === 'Other' ? 'selected' : ''}>Other</option>
           </select></td>
       `;
       familyBody.appendChild(tr);
     }
+    initStep1Listeners(); // Important: Attach auto-save listeners to newly created family rows
 
     // ── 2x2 Photo Upload + Preview ──
     const photoInput = document.getElementById('photo-input');
     const photoBox = document.getElementById('photo-upload-box');
     let uploadedPhotoSrc = null;
 
+    // ── GLOBAL FUNCTIONS (called from inline onclick) ──
+
+    // Called when the main photo box div is clicked
+    window.handlePhotoBoxClick = function(e) {
+      // If a button or control inside was clicked, do nothing here
+      if (e.target.closest('.photo-controls')) return;
+      
+      // If no photo exists, open file picker
+      if (!uploadedPhotoSrc || uploadedPhotoSrc === 'broken') {
+        photoInput.click();
+        return;
+      }
+      
+      // If photo exists and user clicked the image, show preview
+      if (e.target.tagName === 'IMG') {
+        showPhotoPreview(uploadedPhotoSrc);
+      }
+    };
+
+    // Called from "Edit Photo" button
+    window.handleEditPhoto = function(e) {
+      e.stopPropagation();
+      photoInput.click();
+    };
+
+    // Called from "Remove" button 
+    window.handleRemovePhoto = function(e) {
+      e.stopPropagation();
+      if (!confirm('Are you sure you want to remove your photo?')) return;
+
+      fetch('<?= url("/user/apartment/remove-image") ?>?type=picture', {
+        method: 'GET',
+        credentials: 'same-origin'
+      })
+        .then(function(r) {
+          if (!r.ok) throw new Error('Server error: ' + r.status);
+          return r.json();
+        })
+        .then(function(res) {
+          console.log('Remove response:', res);
+          if (res.success) {
+            uploadedPhotoSrc = null;
+            document.getElementById('photo-placeholder-icon').style.display = 'block';
+            document.getElementById('photo-label-text').style.display = 'block';
+            document.getElementById('photo-controls').style.display = 'none';
+            var img = photoBox.querySelector('img');
+            if (img) img.remove();
+            showToast('Photo removed successfully.', '#2f8a60');
+          } else {
+            showToast('Failed to remove photo: ' + (res.message || 'Unknown error'), '#8b2e2e');
+          }
+        })
+        .catch(function(err) {
+          console.error('Remove error:', err);
+          showToast('Network error while removing photo.', '#8b2e2e');
+        });
+    };
+
+    // Handle file selection (upload)
     photoInput.addEventListener('change', function() {
       const file = this.files[0];
       if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
           uploadedPhotoSrc = e.target.result;
-          const icon = document.getElementById('photo-placeholder-icon');
-          const label = document.getElementById('photo-label-text');
-          if (icon) icon.style.display = 'none';
-          if (label) label.style.display = 'none';
+          document.getElementById('photo-placeholder-icon').style.display = 'none';
+          document.getElementById('photo-label-text').style.display = 'none';
+          document.getElementById('photo-controls').style.display = 'flex';
           let img = photoBox.querySelector('img');
           if (!img) {
             img = document.createElement('img');
@@ -2748,7 +2952,7 @@ if ($userId) {
         };
         reader.readAsDataURL(file);
 
-        // Upload 2x2 picture to server → tenant_requirements.picture
+        // Upload to server
         const fd = new FormData();
         fd.append('file', file);
         fd.append('type', 'picture');
@@ -2759,19 +2963,37 @@ if ($userId) {
           .then(r => r.json())
           .then(res => {
             if (!res.success) console.warn('Photo upload failed:', res.message);
+            else showToast('Photo uploaded!', '#2f8a60');
           })
           .catch(err => console.error('Photo upload error:', err));
       }
     });
 
-    photoBox.addEventListener('click', function(e) {
-      if (!uploadedPhotoSrc) return;
-      e.preventDefault();
-      e.stopPropagation();
-      showPhotoPreview(uploadedPhotoSrc);
-    });
+    // Auto-load existing 2x2 photo from server on page load
+    (function() {
+      const savedPhotoUrl = '<?= $pictureUrl ?: '' ?>';
+      const recordExists = <?= $pictureRecordExists ? 'true' : 'false' ?>;
+      
+      if (!recordExists && !savedPhotoUrl) return;
+      
+      uploadedPhotoSrc = savedPhotoUrl || 'broken';
+      document.getElementById('photo-placeholder-icon').style.display = 'none';
+      document.getElementById('photo-label-text').style.display = 'none';
+      document.getElementById('photo-controls').style.display = 'flex';
+
+      if (savedPhotoUrl) {
+        let img = photoBox.querySelector('img');
+        if (!img) {
+          img = document.createElement('img');
+          photoBox.insertBefore(img, photoBox.firstChild);
+        }
+        img.src = savedPhotoUrl;
+        img.onerror = function() { this.style.display = 'none'; };
+      }
+    })();
 
     function showPhotoPreview(src) {
+      if (!src || src === 'broken') return;
       const existing = document.querySelector('.photo-preview-overlay');
       if (existing) existing.remove();
       const overlay = document.createElement('div');
@@ -2796,14 +3018,6 @@ if ($userId) {
         }
       });
     }
-
-    photoBox.addEventListener('dblclick', function(e) {
-      if (uploadedPhotoSrc) {
-        e.preventDefault();
-        e.stopPropagation();
-        photoInput.click();
-      }
-    });
 
     // ── Auto-fill date of application ──
     const dateInput = document.getElementById('date-application');
@@ -2848,6 +3062,8 @@ if ($userId) {
           input.style.textAlign = 'left';
           input.value = existingNames[i] || '';
           namesList.appendChild(input);
+          // Attach auto-save to new name inputs
+          input.addEventListener('input', triggerAutosave);
         }
       } else {
         namesContainer.style.display = 'none';
@@ -2855,12 +3071,8 @@ if ($userId) {
     }
 
     if (studentsInput) {
-      studentsInput.addEventListener('input', function() {
+      studentsInput.addEventListener('change', function() {
         let count = parseInt(this.value) || 0;
-        if (count > 7) {
-          count = 7;
-          this.value = 7;
-        }
         updateStudentNameFields(count);
       });
       
@@ -2869,8 +3081,11 @@ if ($userId) {
       if (initialCount > 0) {
         let existing = [];
         try {
-            existing = JSON.parse('<?= addslashes($appData['iscag_student_names'] ?? '[]') ?>');
-        } catch(e) {}
+            const raw = `<?= addslashes($appData['iscag_student_names'] ?? '[]') ?>`;
+            existing = JSON.parse(raw) || [];
+        } catch(e) {
+            console.error("Student names parse error:", e);
+        }
         updateStudentNameFields(initialCount, Array.isArray(existing) ? existing : []);
       }
     }
@@ -2977,6 +3192,7 @@ if ($userId) {
         }
 
         showToast('Application form populated with your account details!', '#2f8a60');
+        triggerAutosave();
         
         // Visual feedback on the button
         const btn = event.currentTarget;
@@ -3153,7 +3369,14 @@ if ($userId) {
                       </div>
                       <div class="doc-preview-wrap ${slotUploaded ? 'visible' : ''}" id="preview-${slot.key}">
                         ${slotUploaded
-                ? `<img class="doc-preview-img" src="${getPreviewSrc(slot.key, currentUploads[slot.key])}" alt="${slot.label}" id="img-${slot.key}" />`
+                ? (function() {
+                  const src = getPreviewSrc(slot.key, currentUploads[slot.key]);
+                  const isPDF = src.startsWith('data:application/pdf') || src.toLowerCase().includes('.pdf');
+                  if (isPDF) {
+                    return `<div class="doc-preview-pdf-placeholder"><svg viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3.5h-1v1h1V11h-1v2H18V7h2.5v1.5zM9 10h1V8H9v2zm5.5 2h1V8.5h-1V12z"/></svg><span>PDF Document</span></div>`;
+                  }
+                  return `<img class="doc-preview-img" src="${src}" alt="${slot.label}" id="img-${slot.key}" />`;
+                })()
                 : `<img class="doc-preview-img" src="" alt="${slot.label}" id="img-${slot.key}" style="display:none;" />`
               }
                         <div class="doc-preview-actions">
@@ -3233,7 +3456,14 @@ if ($userId) {
                 <input type="file" accept="image/*,.pdf" id="input-${doc.id}" />
               </div>
               <div class="doc-preview-wrap ${isUploaded ? 'visible' : ''}" id="preview-${doc.id}">
-                ${isUploaded ? `<img class="doc-preview-img" src="${getPreviewSrc(doc.id, currentUploads[doc.id])}" alt="${doc.name}" id="img-${doc.id}" />` : `<img class="doc-preview-img" src="" alt="${doc.name}" id="img-${doc.id}" style="display:none;" />`}
+                ${isUploaded ? (function() {
+                  const src = getPreviewSrc(doc.id, currentUploads[doc.id]);
+                  const isPDF = src.startsWith('data:application/pdf') || src.toLowerCase().includes('.pdf');
+                  if (isPDF) {
+                    return `<div class="doc-preview-pdf-placeholder"><svg viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3.5h-1v1h1V11h-1v2H18V7h2.5v1.5zM9 10h1V8H9v2zm5.5 2h1V8.5h-1V12z"/></svg><span>PDF Document</span></div>`;
+                  }
+                  return `<img class="doc-preview-img" src="${src}" alt="${doc.name}" id="img-${doc.id}" />`;
+                })() : `<img class="doc-preview-img" src="" alt="${doc.name}" id="img-${doc.id}" style="display:none;" />`}
                 <div class="doc-preview-actions">
                   <button class="doc-preview-btn view" onclick="viewFullImage('${doc.id}')" title="View full size">
                     <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
@@ -3345,14 +3575,21 @@ if ($userId) {
       if (!docData) return;
 
       const src = getPreviewSrc(docId, docData);
+      const isPDF = src.startsWith('data:application/pdf') || src.toLowerCase().includes('.pdf');
 
       const overlay = document.createElement('div');
       overlay.className = 'img-preview-overlay';
+      
+      let content = `<img src="${src}" alt="Document Preview" />`;
+      if (isPDF) {
+        content = `<iframe src="${src}" style="width:85%; height:92%; border:none; border-radius:12px; background-color:white; box-shadow:0 10px 40px rgba(0,0,0,0.3);"></iframe>`;
+      }
+
       overlay.innerHTML = `
         <button class="img-preview-close" title="Close preview">
           <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
-        <img src="${src}" alt="Document Preview" />
+        ${content}
       `;
       document.body.appendChild(overlay);
 
@@ -3629,10 +3866,20 @@ if ($userId) {
               ? `<?= url('/api/apartment-types/serve-image') ?>?id=${t.thumbnail_id}`
               : `<?= asset('assets/placeholder.png') ?>`;
 
+            const savedRoomType = '<?= addslashes(trim($appData['roomtype'] ?? '')) ?>'.trim();
+            const currentLabel = label.trim();
+            
+            // Flexible matching for labels vs keys
+            const isSelected = savedRoomType 
+              ? (currentLabel.toLowerCase() === savedRoomType.toLowerCase() || typeKey === savedRoomType) 
+              : (idx === 0);
+
+            if (isSelected) console.log("Matching unit found:", currentLabel);
+
             return `
-              <label class="unit-card ${idx === 0 && !isFull ? 'selected' : ''} ${isFull ? 'unit-full' : ''}" for="unit-${typeId}">
+              <label class="unit-card ${isSelected && !isFull ? 'selected' : ''} ${isFull ? 'unit-full' : ''}" for="unit-${typeId}">
                 <input type="radio" name="unit" id="unit-${typeId}" value="${typeKey}" 
-                  ${idx === 0 && !isFull ? 'checked' : ''} ${isFull ? 'disabled' : ''} />
+                  ${isSelected && !isFull ? 'checked' : ''} ${isFull ? 'disabled' : ''} />
                 <div class="unit-card-check">
                   <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
                 </div>
@@ -3669,6 +3916,8 @@ if ($userId) {
               const radio = this.querySelector('input[type="radio"]');
               if (radio) {
                 radio.checked = true;
+                // Trigger auto-save immediately on selection
+                triggerAutosave();
                 // Trigger change event if needed
                 radio.dispatchEvent(new Event('change', { bubbles: true }));
               }
@@ -3702,6 +3951,8 @@ if ($userId) {
             }
           });
         }
+        // Scan for new inputs (radios) to attach listeners
+        initStep1Listeners();
       } catch (err) {
         console.error("API Error:", err);
       }
@@ -3737,6 +3988,18 @@ if ($userId) {
     setTimeout(() => {
         const checked = document.querySelector('input[name="unit"]:checked');
         if (checked) checked.dispatchEvent(new Event('change', { bubbles: true }));
+
+        const dobEl = document.getElementById('dob');
+        if (dobEl && dobEl.value) dobEl.dispatchEvent(new Event('change', { bubbles: true }));
+
+        // Restore visibility toggles for ISCAG sections if count is 0 (otherwise already handled)
+        const studentsEl = document.getElementById('iscag-students');
+        if (studentsEl && studentsEl.value === '0') {
+            studentsEl.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        const employeeEl = document.getElementById('iscag-employee');
+        if (employeeEl) employeeEl.dispatchEvent(new Event('change', { bubbles: true }));
     }, 1500);
 
     // ── Check if user already has a pending/approved application ──

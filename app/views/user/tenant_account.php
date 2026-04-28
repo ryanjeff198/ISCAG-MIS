@@ -809,9 +809,26 @@ $phpUser = [
         syncSidebarAvatar(committedPhoto);
 
         // Show Save/Cancel when a file is selected
-        avatarInput.addEventListener('change', function() {
+        avatarInput.addEventListener('change', async function() {
             const file = this.files[0];
             if (!file) return;
+
+            // Size Check (Standard 2MB)
+            const MAX_SIZE = 2 * 1024 * 1024;
+            if (file.size > MAX_SIZE) {
+                showToast('Image is too large. Max limit is 2MB.', 'var(--danger)');
+                this.value = '';
+                return;
+            }
+
+            // Blur Detection
+            const isOK = await checkImageClarity(file);
+            if (!isOK) {
+                showToast('Image is too blurry. Please upload a clear photo.', 'var(--danger)');
+                this.value = '';
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = e => {
                 pendingPhoto = e.target.result;
@@ -1211,6 +1228,53 @@ $phpUser = [
 
         loadUserNav();
         initNotifBadge();
+
+        function showToast(msg, bg) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = msg;
+            toast.style.background = bg;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        async function checkImageClarity(file) {
+            if (file.type === 'application/pdf') return true;
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const size = 300;
+                    canvas.width = size;
+                    canvas.height = size * (img.height / img.width);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0,0, canvas.width, canvas.height);
+                    const data = imageData.data;
+                    const gray = new Float32Array(canvas.width * canvas.height);
+                    for(let i=0; i<data.length; i+=4) {
+                        gray[i/4] = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
+                    }
+                    let edgeSum = 0;
+                    for(let y=1; y<canvas.height-1; y++) {
+                        for(let x=1; x<canvas.width-1; x++) {
+                            const idx = y*canvas.width + x;
+                            const laplacian = gray[idx]*-4 + gray[idx-1] + gray[idx+1] + gray[idx-canvas.width] + gray[idx+canvas.width];
+                            edgeSum += Math.abs(laplacian);
+                        }
+                    }
+                    const score = edgeSum / (canvas.width * canvas.height);
+                    URL.revokeObjectURL(img.src);
+                    resolve(score >= 8); 
+                };
+                img.onerror = () => resolve(true);
+            });
+        }
     </script>
 </body>
 
