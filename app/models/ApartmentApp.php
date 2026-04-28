@@ -115,6 +115,20 @@ class ApartmentApp {
         return null;
     }
 
+    public function deleteInfoImage($infoId, $docType) {
+        // Fetch path to delete from disk if exists
+        $stmt = $this->db->prepare("SELECT file_path FROM tenant_addinfo_images WHERE addinfo_id = :iid AND doc_type = :dt");
+        $stmt->execute(['iid' => $infoId, 'dt' => $docType]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && !empty($row['file_path'])) {
+            $fullPath = BASE_PATH . "/public/" . $row['file_path'];
+            if (file_exists($fullPath)) @unlink($fullPath);
+        }
+
+        $stmt = $this->db->prepare("DELETE FROM tenant_addinfo_images WHERE addinfo_id = :iid AND doc_type = :dt");
+        return $stmt->execute(['iid' => $infoId, 'dt' => $docType]);
+    }
+
     public function getUploadedDocTypes($userId) {
         $stmt = $this->db->prepare("
             SELECT i.doc_type 
@@ -144,10 +158,12 @@ class ApartmentApp {
         try {
             $existing = $this->getApplication($userId);
             if (!$existing) {
-                $sql = "INSERT INTO apartmentsapp (tenant_id, roomtype, date, status) VALUES (:uid, :rt, CURDATE(), 'Pending')";
+                // Initial status is 'Draft' until documents are submitted
+                $sql = "INSERT INTO apartmentsapp (tenant_id, roomtype, date, status) VALUES (:uid, :rt, CURDATE(), 'Draft')";
                 $stmt = $this->db->prepare($sql);
                 $result = $stmt->execute(['uid' => $userId, 'rt' => $roomtype]);
             } else {
+                // Keep existing status if already submitted, or update if still in Draft
                 $sql = "UPDATE apartmentsapp SET roomtype = :rt WHERE application_id = :aid";
                 $stmt = $this->db->prepare($sql);
                 $result = $stmt->execute(['rt' => $roomtype, 'aid' => $existing['application_id']]);
@@ -184,6 +200,7 @@ class ApartmentApp {
             JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
             LEFT JOIN tenant_addinfo t ON a.tenant_id = t.tenant_id
             LEFT JOIN apartment_units au ON a.unit_id = au.unit_id
+            WHERE a.status != 'Draft'
             ORDER BY a.application_id DESC
         ";
         $stmt = $this->db->query($sql);
