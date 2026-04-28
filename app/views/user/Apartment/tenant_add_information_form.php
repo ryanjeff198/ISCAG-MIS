@@ -64,10 +64,12 @@ if ($userId) {
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
       -webkit-appearance: none;
+      appearance: none;
       margin: 0;
     }
     input[type=number] {
       -moz-appearance: textfield; /* Firefox */
+      appearance: textfield;
     }
 
     /* ═══════════════════════════════════════════
@@ -204,6 +206,31 @@ if ($userId) {
       border-radius: 50%;
       border: 2px solid rgba(23, 107, 69, 0.15);
       animation: stepperPulse 2s ease infinite;
+    }
+
+    /* PDF Placeholder Styles */
+    .doc-preview-pdf-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      color: #dc3545;
+      gap: 8px;
+    }
+
+    .doc-preview-pdf-placeholder svg {
+      width: 48px;
+      height: 48px;
+      fill: currentColor;
+    }
+
+    .doc-preview-pdf-placeholder span {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #6c757d;
     }
 
     @keyframes stepperPulse {
@@ -1969,7 +1996,7 @@ if ($userId) {
                 <tr>
                   <td class="field-label">Company Business Address:</td>
                   <td class="field-value"><input type="text" placeholder="Business address" id="company-address" /></td>
-                  <td class="field-label">Phone No.:</td>
+                  <td class="field-label">Company Phone Number.:</td>
                   <td class="field-value" style="width:180px;"><input type="tel" placeholder="Office phone"
                       id="company-phone" /></td>
                 </tr>
@@ -3153,7 +3180,14 @@ if ($userId) {
                       </div>
                       <div class="doc-preview-wrap ${slotUploaded ? 'visible' : ''}" id="preview-${slot.key}">
                         ${slotUploaded
-                ? `<img class="doc-preview-img" src="${getPreviewSrc(slot.key, currentUploads[slot.key])}" alt="${slot.label}" id="img-${slot.key}" />`
+                ? (function() {
+                  const src = getPreviewSrc(slot.key, currentUploads[slot.key]);
+                  const isPDF = src.startsWith('data:application/pdf') || src.toLowerCase().includes('.pdf');
+                  if (isPDF) {
+                    return `<div class="doc-preview-pdf-placeholder"><svg viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3.5h-1v1h1V11h-1v2H18V7h2.5v1.5zM9 10h1V8H9v2zm5.5 2h1V8.5h-1V12z"/></svg><span>PDF Document</span></div>`;
+                  }
+                  return `<img class="doc-preview-img" src="${src}" alt="${slot.label}" id="img-${slot.key}" />`;
+                })()
                 : `<img class="doc-preview-img" src="" alt="${slot.label}" id="img-${slot.key}" style="display:none;" />`
               }
                         <div class="doc-preview-actions">
@@ -3233,7 +3267,14 @@ if ($userId) {
                 <input type="file" accept="image/*,.pdf" id="input-${doc.id}" />
               </div>
               <div class="doc-preview-wrap ${isUploaded ? 'visible' : ''}" id="preview-${doc.id}">
-                ${isUploaded ? `<img class="doc-preview-img" src="${getPreviewSrc(doc.id, currentUploads[doc.id])}" alt="${doc.name}" id="img-${doc.id}" />` : `<img class="doc-preview-img" src="" alt="${doc.name}" id="img-${doc.id}" style="display:none;" />`}
+                ${isUploaded ? (function() {
+                  const src = getPreviewSrc(doc.id, currentUploads[doc.id]);
+                  const isPDF = src.startsWith('data:application/pdf') || src.toLowerCase().includes('.pdf');
+                  if (isPDF) {
+                    return `<div class="doc-preview-pdf-placeholder"><svg viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3.5h-1v1h1V11h-1v2H18V7h2.5v1.5zM9 10h1V8H9v2zm5.5 2h1V8.5h-1V12z"/></svg><span>PDF Document</span></div>`;
+                  }
+                  return `<img class="doc-preview-img" src="${src}" alt="${doc.name}" id="img-${doc.id}" />`;
+                })() : `<img class="doc-preview-img" src="" alt="${doc.name}" id="img-${doc.id}" style="display:none;" />`}
                 <div class="doc-preview-actions">
                   <button class="doc-preview-btn view" onclick="viewFullImage('${doc.id}')" title="View full size">
                     <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
@@ -3345,14 +3386,21 @@ if ($userId) {
       if (!docData) return;
 
       const src = getPreviewSrc(docId, docData);
+      const isPDF = src.startsWith('data:application/pdf') || src.toLowerCase().includes('.pdf');
 
       const overlay = document.createElement('div');
       overlay.className = 'img-preview-overlay';
+      
+      let content = `<img src="${src}" alt="Document Preview" />`;
+      if (isPDF) {
+        content = `<iframe src="${src}" style="width:85%; height:92%; border:none; border-radius:12px; background-color:white; box-shadow:0 10px 40px rgba(0,0,0,0.3);"></iframe>`;
+      }
+
       overlay.innerHTML = `
         <button class="img-preview-close" title="Close preview">
           <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
-        <img src="${src}" alt="Document Preview" />
+        ${content}
       `;
       document.body.appendChild(overlay);
 

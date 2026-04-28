@@ -82,9 +82,9 @@ class ApartmentController extends Controller {
 
         $file = $_FILES['file'];
 
-        $maxSize = 5 * 1024 * 1024;
+        $maxSize = 2 * 1024 * 1024;
         if ($file['size'] > $maxSize) {
-            echo json_encode(['success' => false, 'message' => 'File too large (max 5 MB)']);
+            echo json_encode(['success' => false, 'message' => 'File too large (max 2 MB)']);
             return;
         }
 
