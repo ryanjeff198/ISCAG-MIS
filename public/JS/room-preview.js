@@ -156,24 +156,31 @@ function openRoomPreview(unitData, options = {}) {
     if (unitData.kitchen) features.push({ label: 'Kitchen', value: unitData.kitchen });
     if (unitData.parking) features.push({ label: 'Parking', value: unitData.parking });
 
+    // Build new structured fields for the preview
+    const parseJSON = (val, fallback = []) => {
+      if (!val) return fallback;
+      if (Array.isArray(val)) return val;
+      try { return JSON.parse(val); } catch(e) { return fallback; }
+    };
+
     room = {
       label: unitData.label || 'Apartment Unit',
       price: '₱' + (Number(unitData.price) || 0).toLocaleString() + ' / month',
       description: unitData.description || 'A modern living space designed for comfort and convenience.',
       images: imageUrls,
       features: features.map(f => ({ ...f, icon: mapFeatureIcon(f.label) })),
-      inclusions: unitData.inclusions || [],
-      rules: unitData.rules || [],
+      inclusions: parseJSON(unitData.inclusions),
+      rules: parseJSON(unitData.rules),
       payment: {
-        advance: unitData.payment_advance || 'None',
-        deposit: unitData.payment_deposit || 'None',
-        fees: unitData.payment_fees || ''
+        advance: unitData.advance_rent || '1 Month Advance',
+        deposit: unitData.security_deposit || '1 Month Deposit',
+        fees: unitData.other_fees || ''
       },
       lease: {
-        min: unitData.lease_min || 'Not specified',
-        notice: unitData.lease_notice || 'Not specified'
+        min: unitData.min_lease || '6 Months',
+        notice: unitData.notice_period || '30 Days'
       },
-      queue: unitData.queue_count ? `Queue: ${unitData.queue_count}` : ''
+      queue: unitData.queue_label || ''
     };
     if (unitData.available_count !== undefined && options.availableCount === undefined) {
       options.availableCount = unitData.available_count;
@@ -181,6 +188,13 @@ function openRoomPreview(unitData, options = {}) {
   }
 
   if (!room) { console.error('Room Preview: Invalid unit data', unitData); return; }
+
+  // Ensure all sections exist with defaults for legacy compatibility
+  room.inclusions = room.inclusions || [];
+  room.rules = room.rules || [];
+  room.payment = room.payment || { advance: 'N/A', deposit: 'N/A', fees: '' };
+  room.lease = room.lease || { min: 'N/A', notice: 'N/A' };
+  room.features = room.features || [];
 
   const { availableCount = 0, basePath = 'assets/', onSelect = null, selectLabel = 'Select This Unit' } = options;
   const isAvailable = availableCount > 0;
