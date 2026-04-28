@@ -1994,28 +1994,30 @@ if ($userId) {
               </div>
 
               <!-- ══ SECTION 3: FAMILY MEMBERS ══ -->
-              <div class="doc-section-title">
-                <svg viewBox="0 0 24 24">
-                  <path
-                    d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-                </svg>
-                Complete List of Family Members to Occupy the Unit
-              </div>
+              <div id="family-members-section">
+                <div class="doc-section-title">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                  </svg>
+                  Complete List of Family Members to Occupy the Unit
+                </div>
 
-              <table class="family-doc-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Relation</th>
-                    <th style="width:80px;">Age</th>
-                    <th style="width:130px;">Religion</th>
-                  </tr>
-                </thead>
-                <tbody id="family-members-body">
-                  <!-- Rendered by JS -->
-                </tbody>
-              </table>
+                <table class="family-doc-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Relation</th>
+                      <th style="width:80px;">Age</th>
+                      <th style="width:130px;">Religion</th>
+                    </tr>
+                  </thead>
+                  <tbody id="family-members-body">
+                    <!-- Rendered by JS -->
+                  </tbody>
+                </table>
+              </div>
 
               <!-- ══ ISCAG STUDENTS ══ -->
               <div class="students-row" style="flex-direction:column; align-items:flex-start; gap:12px;">
@@ -3656,6 +3658,37 @@ if ($userId) {
       }
     }
     loadApartmentTypes();
+
+    // ── Logic for hiding Family Section for Transient units ──
+    document.addEventListener('change', function(e) {
+      if (e.target.name === 'unit') {
+        const card = e.target.closest('.unit-card');
+        if (!card) return;
+        
+        const labelEl = card.querySelector('.unit-card-label');
+        if (labelEl) {
+          const label = labelEl.textContent.trim().toLowerCase();
+          const familySection = document.getElementById('family-members-section');
+          if (!familySection) return;
+          
+          if (label.includes('transient')) {
+            // Hide and Reset Family Section
+            familySection.style.display = 'none';
+            // Clear inputs to avoid accidental submission of family data
+            document.querySelectorAll('#family-members-body input').forEach(input => input.value = '');
+            document.querySelectorAll('#family-members-body select').forEach(select => select.selectedIndex = 0);
+          } else {
+            familySection.style.display = 'block';
+          }
+        }
+      }
+    });
+
+    // Run on initial load after a delay to wait for API data
+    setTimeout(() => {
+        const checked = document.querySelector('input[name="unit"]:checked');
+        if (checked) checked.dispatchEvent(new Event('change', { bubbles: true }));
+    }, 1500);
 
     // ── Check if user already has a pending/approved application ──
     function checkExistingApplication() {
