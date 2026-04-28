@@ -82,12 +82,14 @@ const ROOM_DATA = {
     .rp-nav button { pointer-events: auto; background: rgba(255,255,255,0.8); border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 18px; color: #0f5c3a; display: flex; align-items: center; justify-content: center; }
 
     .rp-details { padding: 20px; }
-    .rp-price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .rp-price { font-size: 1.2rem; font-weight: 700; color: #0f5c3a; }
-    .rp-features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-    .rp-feature { background: #f4f7f5; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid #d9e3de; }
-    .rp-feature-label { font-size: 0.7rem; color: #666; text-transform: uppercase; margin-bottom: 2px; }
-    .rp-feature-value { font-weight: 700; font-size: 0.9rem; color: #1f2e2a; }
+    .rp-price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .rp-price { font-size: 1.25rem; font-weight: 700; color: #0f5c3a; }
+    .rp-features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 16px; }
+    .rp-feature { background: #f8faf9; padding: 12px 10px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; text-align: center; border: 1.5px solid #edf2f0; transition: all 0.2s; }
+    .rp-feature:hover { border-color: #2f8a60; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+    .rp-feature-icon { margin-bottom: 6px; color: #2f8a60; display: flex; align-items: center; justify-content: center; }
+    .rp-feature-label { font-size: 0.65rem; color: #889691; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 2px; }
+    .rp-feature-value { font-weight: 700; font-size: 0.88rem; color: #1f2e2a; }
 
     .rp-footer { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; background: #f8faf9; }
     .rp-btn { padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: inherit; }
@@ -116,6 +118,10 @@ function openRoomPreview(unitData, options = {}) {
       const l = label.toLowerCase();
       if (l.includes('area') || l.includes('sqm') || l.includes('size')) return '<path d="M7 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-2h-2v2H5V4h2V2zm14 8V4c0-1.1-.9-2-2-2h-6v2h6v6h2zM9 10h8v8H9v-8zm2 2v4h4v-4h-4z"/>';
       if (l.includes('capacity') || l.includes('person') || l.includes('people')) return '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5s-3 1.34-3 3 1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>';
+      if (l.includes('bedroom')) return '<path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/>';
+      if (l.includes('bath')) return '<path d="M7 7c0-2.76 2.24-5 5-5s5 2.24 5 5v3H7V7zm14 3h-2V7c0-3.87-3.13-7-7-7S5 3.13 5 7v3H3c-1.1 0-2 .9-2 2v2h22v-2c0-1.1-.9-2-2-2zM4 16h16v2H4v-2z"/>';
+      if (l.includes('kitchen')) return '<path d="M18 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7 17H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V7h2v2zm10 8h-2V7h2v10z"/>';
+      if (l.includes('parking')) return '<path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.27-3.82c.14-.4.52-.68.95-.68h9.56c.43 0 .81.28.95.68L19 11H5z"/>';
       return '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>';
     };
 
@@ -142,39 +148,20 @@ function openRoomPreview(unitData, options = {}) {
       imageUrls = [serveUrl ? serveUrl + '?id=' + unitData.thumbnail_id : '/api/apartment-types/serve-image?id=' + unitData.thumbnail_id];
     }
 
-    // Handle dynamic JSON fields
-    const inclusions = unitData.inclusions ? (typeof unitData.inclusions === 'string' ? JSON.parse(unitData.inclusions) : unitData.inclusions) : [];
-    const rules = unitData.rules ? (typeof unitData.rules === 'string' ? JSON.parse(unitData.rules) : unitData.rules) : [];
-
-    // Automatic Queue / Availability logic
-    let displayQueue = unitData.queue_label || '';
-    if (!displayQueue && unitData.available_count !== undefined) {
-      displayQueue = (Number(unitData.available_count) > 0) 
-        ? `${unitData.available_count} Units Available` 
-        : 'Waitlist Active';
-    }
+    const features = [];
+    if (unitData.floor_area) features.push({ label: 'Floor Area', value: unitData.floor_area });
+    if (unitData.capacity) features.push({ label: 'Capacity', value: unitData.capacity });
+    if (unitData.bedrooms) features.push({ label: 'Bedrooms', value: unitData.bedrooms });
+    if (unitData.bathroom) features.push({ label: 'Bathroom', value: unitData.bathroom });
+    if (unitData.kitchen) features.push({ label: 'Kitchen', value: unitData.kitchen });
+    if (unitData.parking) features.push({ label: 'Parking', value: unitData.parking });
 
     room = {
       label: unitData.label || 'Apartment Unit',
       price: '₱' + (Number(unitData.price) || 0).toLocaleString() + ' / month',
       description: unitData.description || 'A modern living space designed for comfort and convenience.',
       images: imageUrls,
-      inclusions: inclusions,
-      rules: rules,
-      payment: {
-        deposit: unitData.security_deposit || '1 Month',
-        advance: unitData.advance_rent || '1 Month',
-        fees: unitData.other_fees || ''
-      },
-      lease: {
-        min: unitData.min_lease || '6 Months',
-        notice: unitData.notice_period || '30 Days'
-      },
-      queue: displayQueue,
-      features: [
-        { icon: mapFeatureIcon('Area'), label: 'Floor Area', value: unitData.floor_area || '--' },
-        { icon: mapFeatureIcon('Capacity'), label: 'Capacity', value: unitData.capacity || '--' }
-      ]
+      features: features.map(f => ({ ...f, icon: mapFeatureIcon(f.label) }))
     };
     if (unitData.available_count !== undefined && options.availableCount === undefined) {
       options.availableCount = unitData.available_count;
@@ -267,9 +254,15 @@ function openRoomPreview(unitData, options = {}) {
                     </div>
                 </div>
             </div>
-            <div style="margin-top:auto;">
-                <div class="rp-features-grid" style="grid-template-columns: 1fr; gap:8px;">
-                  ${room.features.map(f => `<div class="rp-feature" style="flex-direction:row; justify-content:space-between; padding:8px 12px;"><span class="rp-feature-label" style="margin:0;">${f.label}</span><span class="rp-feature-value">${f.value}</span></div>`).join('')}
+            <p style="font-size:0.88rem; line-height:1.6; color:#333; margin:0 0 15px;">${room.description}</p>
+            <div class="rp-features-grid">
+              ${room.features.map(f => `
+                <div class="rp-feature">
+                  <div class="rp-feature-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;">${f.icon}</svg>
+                  </div>
+                  <span class="rp-feature-label">${f.label}</span>
+                  <span class="rp-feature-value">${f.value}</span>
                 </div>
             </div>
           </div>

@@ -55,6 +55,7 @@ $routes = [
     '/user/apartment/submit' => ['ApartmentController', 'finalizeSubmission'],
     '/user/apartment/upload' => ['ApartmentController', 'handleUpload'],
     '/user/apartment/image'  => ['ApartmentController', 'serveImage'],
+    '/user/apartment/remove-image' => ['ApartmentController', 'removeImage'],
     '/user/apartment/uploads/check' => ['ApartmentController', 'checkUploads'],
 
     // Service Modules

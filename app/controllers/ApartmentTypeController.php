@@ -137,6 +137,11 @@ class ApartmentTypeController
         }
 
         $file = $_FILES['image'];
+        $maxSize = 2 * 1024 * 1024;
+        if ($file['size'] > $maxSize) {
+            $this->json(['success' => false, 'error' => 'Image too large (max 2 MB)'], 400);
+        }
+
         $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $file['tmp_name']);

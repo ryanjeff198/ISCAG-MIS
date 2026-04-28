@@ -20,7 +20,7 @@ $phpUser = [
     'address' => $info['address'] ?? '',
     'occupation' => $info['occupation'] ?? '',
     'arabicName' => $info['muslimname'] ?? '',
-    'revertYear' => !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '',
+    'revertYear' => $info['dateofshahadah'] ?? '',
 ];
 ?>
 <!DOCTYPE html>
@@ -409,11 +409,22 @@ $phpUser = [
                 <div class="form-section-title">Islamic Information</div>
 
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
-                    <div><label class="form-label">Muslim / Arabic Name</label><input type="text" class="form-control"
-                            id="f-arabic-name" placeholder="e.g., Abdullah, Fatimah" value="<?= htmlspecialchars($info['muslimname'] ?? '') ?>" /></div>
+                    <div>
+                        <label class="form-label">Muslim / Arabic Name</label>
+                        <input type="text" class="form-control" id="f-arabic-name" placeholder="e.g., Abdullah, Fatimah" value="<?= htmlspecialchars($info['muslimname'] ?? '') ?>" />
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+                            <input type="checkbox" id="f-arabic-name-na" style="width:14px; height:14px; cursor:pointer;" onclick="toggleNA('f-arabic-name', this.checked)" <?= ($info['muslimname'] ?? '') === 'N/A' ? 'checked' : '' ?> />
+                            <label for="f-arabic-name-na" style="font-size:0.72rem; color:var(--text-muted); cursor:pointer; font-weight:600; text-transform:uppercase; letter-spacing:0.02em;">Not Applicable</label>
+                        </div>
+                    </div>
 
-                    <div><label class="form-label">Year Reverted / Born Muslim</label><input type="number"
-                            class="form-control" id="f-revert-year" placeholder="e.g., 2010" min="1900" max="2026" value="<?= !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '' ?>" />
+                    <div>
+                        <label class="form-label">Date Reverted / Born Muslim</label>
+                        <input type="date" class="form-control" id="f-revert-year" value="<?= $info['dateofshahadah'] ?? '' ?>" />
+                        <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+                            <input type="checkbox" id="f-revert-year-na" style="width:14px; height:14px; cursor:pointer;" onclick="toggleNA('f-revert-year', this.checked)" <?= ($info['dateofshahadah'] ?? '') === 'N/A' || ($info['dateofshahadah'] ?? '') === '0000-00-00' ? 'checked' : '' ?> />
+                            <label for="f-revert-year-na" style="font-size:0.72rem; color:var(--text-muted); cursor:pointer; font-weight:600; text-transform:uppercase; letter-spacing:0.02em;">Not Applicable</label>
+                        </div>
                     </div>
                 </div>
 
@@ -438,7 +449,7 @@ $phpUser = [
             initialized: 'mis_data_init'
         };
         const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
-        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', sex: 'Sex', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
+        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', sex: 'Sex', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Date Reverted' };
         const DEFAULT_USER = {
             id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>',
             name: '<?= addslashes($_SESSION['name'] ?? "User") ?>',
@@ -451,7 +462,7 @@ $phpUser = [
             occupation: '',
             arabicName: '',
             membership: '',
-            revertYear: '<?= !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '' ?>',
+            revertYear: '<?= $info['dateofshahadah'] ?? '' ?>',
             apartment: '',
             profileComplete: false
         };
@@ -798,9 +809,26 @@ $phpUser = [
         syncSidebarAvatar(committedPhoto);
 
         // Show Save/Cancel when a file is selected
-        avatarInput.addEventListener('change', function() {
+        avatarInput.addEventListener('change', async function() {
             const file = this.files[0];
             if (!file) return;
+
+            // Size Check (Standard 2MB)
+            const MAX_SIZE = 2 * 1024 * 1024;
+            if (file.size > MAX_SIZE) {
+                showToast('Image is too large. Max limit is 2MB.', 'var(--danger)');
+                this.value = '';
+                return;
+            }
+
+            // Blur Detection
+            const isOK = await checkImageClarity(file);
+            if (!isOK) {
+                showToast('Image is too blurry. Please upload a clear photo.', 'var(--danger)');
+                this.value = '';
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = e => {
                 pendingPhoto = e.target.result;
@@ -909,7 +937,21 @@ $phpUser = [
             snapshot = {};
             Object.entries(fields).forEach(([key, id]) => {
                 const el = document.getElementById(id);
-                if (el) snapshot[id] = el.value;
+                if (el) {
+                    snapshot[id] = el.value;
+                    // Sync N/A checkboxes on open using the source user object
+                    const val = user[key];
+                    if (id === 'f-arabic-name') {
+                        const naBox = document.getElementById('f-arabic-name-na');
+                        naBox.checked = (val === 'N/A');
+                        toggleNA(id, naBox.checked, false);
+                    }
+                    if (id === 'f-revert-year') {
+                        const naBox = document.getElementById('f-revert-year-na');
+                        naBox.checked = (val === 'N/A' || val === '0000-00-00');
+                        toggleNA(id, naBox.checked, false);
+                    }
+                }
             });
             profileModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
@@ -919,7 +961,21 @@ $phpUser = [
             if (discard) {
                 Object.entries(snapshot).forEach(([id, val]) => {
                     const el = document.getElementById(id);
-                    if (el) el.value = val;
+                    if (el) {
+                        el.value = val;
+                        // Restore checkbox states from the source user object
+                        const key = Object.keys(fields).find(k => fields[k] === id);
+                        if (id === 'f-arabic-name') {
+                            const naBox = document.getElementById('f-arabic-name-na');
+                            naBox.checked = (user.arabicName === 'N/A');
+                            toggleNA(id, naBox.checked, false);
+                        }
+                        if (id === 'f-revert-year') {
+                            const naBox = document.getElementById('f-revert-year-na');
+                            naBox.checked = (user.revertYear === 'N/A' || user.revertYear === '0000-00-00');
+                            toggleNA(id, naBox.checked, false);
+                        }
+                    }
                 });
             }
             profileModal.style.display = 'none';
@@ -955,7 +1011,15 @@ $phpUser = [
             const data = {};
             Object.entries(fields).forEach(([key, id]) => {
                 const el = document.getElementById(id);
-                if (el) data[key] = el.value;
+                if (el) {
+                    if (id === 'f-arabic-name' && document.getElementById('f-arabic-name-na').checked) {
+                        data[key] = 'N/A';
+                    } else if (id === 'f-revert-year' && document.getElementById('f-revert-year-na').checked) {
+                        data[key] = 'N/A'; // Backend User model handles varchar(10) revert_year
+                    } else {
+                        data[key] = el.value;
+                    }
+                }
             });
             data.name = data.name || user.name;
 
@@ -1151,8 +1215,66 @@ $phpUser = [
             }
         }
 
+        function toggleNA(fieldId, isChecked, clearValue = true) {
+            const el = document.getElementById(fieldId);
+            if (!el) return;
+            el.disabled = isChecked;
+            el.style.opacity = isChecked ? '0.5' : '1';
+            el.style.backgroundColor = isChecked ? '#f8f9fa' : 'white';
+            if (isChecked && clearValue) {
+                el.value = '';
+            }
+        }
+
         loadUserNav();
         initNotifBadge();
+
+        function showToast(msg, bg) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = msg;
+            toast.style.background = bg;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        async function checkImageClarity(file) {
+            if (file.type === 'application/pdf') return true;
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const size = 300;
+                    canvas.width = size;
+                    canvas.height = size * (img.height / img.width);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0,0, canvas.width, canvas.height);
+                    const data = imageData.data;
+                    const gray = new Float32Array(canvas.width * canvas.height);
+                    for(let i=0; i<data.length; i+=4) {
+                        gray[i/4] = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
+                    }
+                    let edgeSum = 0;
+                    for(let y=1; y<canvas.height-1; y++) {
+                        for(let x=1; x<canvas.width-1; x++) {
+                            const idx = y*canvas.width + x;
+                            const laplacian = gray[idx]*-4 + gray[idx-1] + gray[idx+1] + gray[idx-canvas.width] + gray[idx+canvas.width];
+                            edgeSum += Math.abs(laplacian);
+                        }
+                    }
+                    const score = edgeSum / (canvas.width * canvas.height);
+                    URL.revokeObjectURL(img.src);
+                    resolve(score >= 8); 
+                };
+                img.onerror = () => resolve(true);
+            });
+        }
     </script>
 </body>
 

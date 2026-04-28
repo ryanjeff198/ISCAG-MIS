@@ -148,10 +148,10 @@ class UserController extends Controller
         }
 
         $file = $_FILES['profile_picture'];
-        $maxSize = 5 * 1024 * 1024;
+        $maxSize = 2 * 1024 * 1024;
         if ($file['size'] > $maxSize) {
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => 'Profile picture too large (max 5 MB)']);
+            echo json_encode(['success' => false, 'message' => 'Profile picture too large (max 2 MB)']);
             return;
         }
 
