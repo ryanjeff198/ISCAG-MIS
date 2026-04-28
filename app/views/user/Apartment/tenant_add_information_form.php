@@ -640,7 +640,7 @@ if ($userId) {
       align-items: center;
       justify-content: center;
       padding: 24px;
-      animation: acmFadeIn 0.2s ease;
+      animation: fadeIn 0.2s ease;
     }
 
     .photo-preview-overlay img,
@@ -2888,10 +2888,8 @@ if ($userId) {
         return;
       }
       
-      // If photo exists and user clicked the image, show preview
-      if (e.target.tagName === 'IMG') {
-        showPhotoPreview(uploadedPhotoSrc);
-      }
+      // If photo exists, show preview (on image or box click)
+      showPhotoPreview(uploadedPhotoSrc);
     };
 
     // Called from "Edit Photo" button
@@ -3267,10 +3265,11 @@ if ($userId) {
       return raw ? JSON.parse(raw) : {};
     }
 
-    function saveUploadedDoc(docId, dataUrl) {
+    function saveUploadedDoc(docId, dataUrl, fileType) {
       const docs = getUploadedDocs();
       docs[docId] = {
-        uploadedAt: new Date().toISOString()
+        uploadedAt: new Date().toISOString(),
+        fileType: fileType
       };
       inMemoryPreviews[docId] = dataUrl;
       try {
@@ -3371,7 +3370,9 @@ if ($userId) {
                         ${slotUploaded
                 ? (function() {
                   const src = getPreviewSrc(slot.key, currentUploads[slot.key]);
-                  const isPDF = src.startsWith('data:application/pdf') || src.toLowerCase().includes('.pdf');
+                  const isPDF = (currentUploads[slot.key] && currentUploads[slot.key].fileType === 'application/pdf') || 
+                                src.startsWith('data:application/pdf') || 
+                                src.toLowerCase().includes('.pdf');
                   if (isPDF) {
                     return `<div class="doc-preview-pdf-placeholder"><svg viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3.5h-1v1h1V11h-1v2H18V7h2.5v1.5zM9 10h1V8H9v2zm5.5 2h1V8.5h-1V12z"/></svg><span>PDF Document</span></div>`;
                   }
@@ -3458,7 +3459,9 @@ if ($userId) {
               <div class="doc-preview-wrap ${isUploaded ? 'visible' : ''}" id="preview-${doc.id}">
                 ${isUploaded ? (function() {
                   const src = getPreviewSrc(doc.id, currentUploads[doc.id]);
-                  const isPDF = src.startsWith('data:application/pdf') || src.toLowerCase().includes('.pdf');
+                  const isPDF = (currentUploads[doc.id] && currentUploads[doc.id].fileType === 'application/pdf') || 
+                                src.startsWith('data:application/pdf') || 
+                                src.toLowerCase().includes('.pdf');
                   if (isPDF) {
                     return `<div class="doc-preview-pdf-placeholder"><svg viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3.5h-1v1h1V11h-1v2H18V7h2.5v1.5zM9 10h1V8H9v2zm5.5 2h1V8.5h-1V12z"/></svg><span>PDF Document</span></div>`;
                   }
@@ -3521,7 +3524,7 @@ if ($userId) {
       }
       const reader = new FileReader();
       reader.onload = function(e) {
-        saveUploadedDoc(docId, e.target.result);
+        saveUploadedDoc(docId, e.target.result, file.type);
         renderCards();
         showToast('Document uploaded successfully!', '#2f8a60');
       };
@@ -3575,7 +3578,9 @@ if ($userId) {
       if (!docData) return;
 
       const src = getPreviewSrc(docId, docData);
-      const isPDF = src.startsWith('data:application/pdf') || src.toLowerCase().includes('.pdf');
+      const isPDF = (docData && docData.fileType === 'application/pdf') || 
+                    src.startsWith('data:application/pdf') || 
+                    src.toLowerCase().includes('.pdf');
 
       const overlay = document.createElement('div');
       overlay.className = 'img-preview-overlay';
