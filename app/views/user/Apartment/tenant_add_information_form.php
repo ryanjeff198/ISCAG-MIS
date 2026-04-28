@@ -2036,6 +2036,22 @@ if ($userId) {
                 </div>
               </div>
 
+              <!-- ══ ISCAG EMPLOYMENT ══ -->
+              <div class="students-row" style="flex-direction:column; align-items:flex-start; gap:12px; margin-top: 20px;">
+                <div style="display:flex; align-items:center; gap:12px; width:100%;">
+                  <label for="iscag-employee" style="margin:0;"><strong>Are you working in ISCAG?</strong></label>
+                  <select id="iscag-employee" style="width:100px;">
+                    <option value="0" <?= ($appData['is_iscag_employee'] ?? 0) == 0 ? 'selected' : '' ?>>No</option>
+                    <option value="1" <?= ($appData['is_iscag_employee'] ?? 0) == 1 ? 'selected' : '' ?>>Yes</option>
+                  </select>
+                </div>
+                <div id="iscag-job-container" style="display:<?= ($appData['is_iscag_employee'] ?? 0) == 1 ? 'block' : 'none' ?>; width:100%;">
+                  <div style="background:rgba(201,154,43,0.03); border:1.5px solid rgba(201,154,43,0.12); border-radius:10px; padding:12px 16px;">
+                    <input type="text" id="iscag-job-role" placeholder="Specify your Job or Role in ISCAG" value="<?= htmlspecialchars($appData['iscag_job_role'] ?? '') ?>" style="width: 100%; border-color: rgba(15,92,58,0.2); font-size: 0.85rem; text-align: left;" />
+                  </div>
+                </div>
+              </div>
+
               <!-- ══ CHARACTER REFERENCE ══ -->
               <div class="doc-section-title">
                 <svg viewBox="0 0 24 24">
@@ -2563,6 +2579,8 @@ if ($userId) {
           ref_contact: v('ref-contact'),
           iscag_students: parseInt(v('iscag-students')) || 0,
           iscag_student_names: getIscagStudentNames(),
+          is_iscag_employee: parseInt(v('iscag-employee')) || 0,
+          iscag_job_role: v('iscag-job-role'),
           date_applied: v('date-application'),
           family_data: JSON.stringify(familyData)
         },
@@ -2827,6 +2845,7 @@ if ($userId) {
           input.style.borderRadius = '6px';
           input.style.border = '1px solid rgba(15,92,58,0.2)';
           input.style.fontSize = '0.85rem';
+          input.style.textAlign = 'left';
           input.value = existingNames[i] || '';
           namesList.appendChild(input);
         }
@@ -2860,6 +2879,16 @@ if ($userId) {
       const inputs = document.querySelectorAll('.iscag-student-name-input');
       const names = Array.from(inputs).map(i => i.value.trim()).filter(v => v !== '');
       return JSON.stringify(names);
+    }
+
+    // ── ISCAG Employment toggle ──
+    const empSelect = document.getElementById('iscag-employee');
+    const jobContainer = document.getElementById('iscag-job-container');
+    if (empSelect && jobContainer) {
+      empSelect.addEventListener('change', function() {
+        jobContainer.style.display = this.value === '1' ? 'block' : 'none';
+        if (this.value === '0') document.getElementById('iscag-job-role').value = '';
+      });
     }
 
     // ── Unit card selection ──

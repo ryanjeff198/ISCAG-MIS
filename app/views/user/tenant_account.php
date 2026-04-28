@@ -20,7 +20,7 @@ $phpUser = [
     'address' => $info['address'] ?? '',
     'occupation' => $info['occupation'] ?? '',
     'arabicName' => $info['muslimname'] ?? '',
-    'revertYear' => !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '',
+    'revertYear' => $info['dateofshahadah'] ?? '',
 ];
 ?>
 <!DOCTYPE html>
@@ -412,8 +412,8 @@ $phpUser = [
                     <div><label class="form-label">Muslim / Arabic Name</label><input type="text" class="form-control"
                             id="f-arabic-name" placeholder="e.g., Abdullah, Fatimah" value="<?= htmlspecialchars($info['muslimname'] ?? '') ?>" /></div>
 
-                    <div><label class="form-label">Year Reverted / Born Muslim</label><input type="number"
-                            class="form-control" id="f-revert-year" placeholder="e.g., 2010" min="1900" max="2026" value="<?= !empty($info['dateofshahadah']) ? date('Y', strtotime($info['dateofshahadah'])) : '' ?>" />
+                    <div><label class="form-label">Date Reverted / Born Muslim</label><input type="date"
+                            class="form-control" id="f-revert-year" value="<?= $info['dateofshahadah'] ?? '' ?>" />
                     </div>
                 </div>
 
@@ -438,7 +438,7 @@ $phpUser = [
             initialized: 'mis_data_init'
         };
         const PROFILE_FIELDS = ['name', 'email', 'sex', 'phone', 'address', 'dob', 'civil', 'occupation', 'arabicName', 'revertYear'];
-        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', sex: 'Sex', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Year Reverted' };
+        const FIELD_LABELS = { name: 'Full Name', email: 'Email Address', sex: 'Sex', phone: 'Contact Number', address: 'Complete Address', dob: 'Date of Birth', civil: 'Civil Status', occupation: 'Occupation', arabicName: 'Muslim / Arabic Name', revertYear: 'Date Reverted' };
         const DEFAULT_USER = {
             id: '<?= $_SESSION['user_id'] ?? "USR-001" ?>',
             name: '<?= addslashes($_SESSION['name'] ?? "User") ?>',
@@ -451,7 +451,7 @@ $phpUser = [
             occupation: '',
             arabicName: '',
             membership: '',
-            revertYear: '<?= !empty($info['dateofshahadah']) ? (is_numeric($info['dateofshahadah']) ? $info['dateofshahadah'] : date('Y', strtotime($info['dateofshahadah']))) : '' ?>',
+            revertYear: '<?= $info['dateofshahadah'] ?? '' ?>',
             apartment: '',
             profileComplete: false
         };
