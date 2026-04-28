@@ -684,7 +684,6 @@
             <option value="Incomplete Documents">Incomplete Documents</option>
             <option value="Unmatched Information">Unmatched Information</option>
             <option value="Invalid Identification">Invalid Identification</option>
-            <option value="Poor Credit/Income Proof">Poor Credit/Income Proof</option>
             <option value="Other">Other</option>
           </select>
           <button class="btn-topbar" style="color:var(--danger); border-color:var(--danger);" onclick="rejectApp(${id})">Confirm Rejection</button>
