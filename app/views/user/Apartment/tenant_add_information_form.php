@@ -21,15 +21,19 @@ if ($userId) {
     // dbUser is used by the Access Gate and Navigation (should be Profile info)
     $dbUser = [
         'name' => trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')),
+        'firstName' => $account['first_name'] ?? '',
+        'lastName' => $account['last_name'] ?? '',
         'email' => $profile['email'] ?? ($account['email'] ?? ''),
         'sex' => !empty($profile['sex']) ? $profile['sex'] : ($_SESSION['sex'] ?? $_SESSION['gender'] ?? $account['sex'] ?? ''),
         'phone' => $profile['phone'] ?? ($account['contactnum'] ?? ''),
         'dob' => $profile['birthdate'] ?? '',
         'civil' => $profile['civil_status'] ?? '',
         'address' => $profile['address'] ?? '',
+        'pob' => $profile['pob'] ?? ($profile['address'] ?? ''), // Fallback or new field if exists
         'occupation' => $profile['occupation'] ?? '',
         'arabicName' => $profile['muslimname'] ?? '',
         'revertYear' => $profile['dateofshahadah'] ?? '',
+        'tribal' => $profile['tribalaffliation'] ?? '',
     ];
 
     // Check if application is already submitted
@@ -1828,12 +1832,18 @@ if ($userId) {
             <div class="form-doc-body">
 
               <!-- ══ SECTION 1: APPLICANT'S INFORMATION ══ -->
-              <div class="doc-section-title">
-                <svg viewBox="0 0 24 24">
-                  <path
-                    d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-                </svg>
-                Guest's Information
+              <div class="doc-section-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                  </svg>
+                  Guest's Information
+                </div>
+                <button type="button" onclick="useMyDetails()" class="btn-topbar" style="font-size: 0.72rem; padding: 6px 14px; background: rgba(15, 92, 58, 0.05); color: #0f5c3a; border: 1.5px solid rgba(15, 92, 58, 0.15); border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                    <svg viewBox="0 0 24 24" style="width:14px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/></svg>
+                    Use my Details
+                </button>
               </div>
 
               <!-- Row 1 -->
@@ -1880,7 +1890,37 @@ if ($userId) {
                   <td class="field-label">Date of Shahadah:</td>
                   <td class="field-value"><input type="date" id="shahadah-date" value="<?= htmlspecialchars($appData['dateofshahadah'] ?? '') ?>" /></td>
                   <td class="field-label">Tribal Affiliation:</td>
-                  <td class="field-value"><input type="text" placeholder="e.g., Maranao, Tausug" id="tribal" value="<?= htmlspecialchars($appData['tribalaffliation'] ?? '') ?>" /></td>
+                  <td class="field-value">
+                    <select id="tribal">
+                      <option value="">— Select Tribe —</option>
+                      <optgroup label="Bangsamoro Tribes">
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Maranao' ? 'selected' : '' ?>>Maranao</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Tausug' ? 'selected' : '' ?>>Tausug</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Maguindanaon' ? 'selected' : '' ?>>Maguindanaon</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Sama' ? 'selected' : '' ?>>Sama</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Yakan' ? 'selected' : '' ?>>Yakan</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Iranun' ? 'selected' : '' ?>>Iranun</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Kalagan' ? 'selected' : '' ?>>Kalagan</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Kolibugan' ? 'selected' : '' ?>>Kolibugan</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Molbog' ? 'selected' : '' ?>>Molbog</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Palawani' ? 'selected' : '' ?>>Palawani</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Sangil' ? 'selected' : '' ?>>Sangil</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Jama Mapun' ? 'selected' : '' ?>>Jama Mapun</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Badjao' ? 'selected' : '' ?>>Badjao</option>
+                      </optgroup>
+                      <optgroup label="Other Ethnic Groups">
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Tagalog' ? 'selected' : '' ?>>Tagalog</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Visayan' ? 'selected' : '' ?>>Visayan</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Ilocano' ? 'selected' : '' ?>>Ilocano</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Bicolano' ? 'selected' : '' ?>>Bicolano</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Pampango' ? 'selected' : '' ?>>Pampango</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Pangasinense' ? 'selected' : '' ?>>Pangasinense</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Igorot' ? 'selected' : '' ?>>Igorot</option>
+                        <option <?= ($appData['tribalaffliation'] ?? '') == 'Lumad' ? 'selected' : '' ?>>Lumad</option>
+                        <option value="Other">Other / Not Listed</option>
+                      </optgroup>
+                    </select>
+                  </td>
                   <td class="field-label">Phone No.:</td>
                   <td class="field-value"><input type="tel" placeholder="09XX-XXX-XXXX" id="phone" value="<?= htmlspecialchars($appData['phone'] ?? '') ?>" /></td>
                 </tr>
@@ -1954,33 +1994,62 @@ if ($userId) {
               </div>
 
               <!-- ══ SECTION 3: FAMILY MEMBERS ══ -->
-              <div class="doc-section-title">
-                <svg viewBox="0 0 24 24">
-                  <path
-                    d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-                </svg>
-                Complete List of Family Members to Occupy the Unit
+              <div id="family-members-section">
+                <div class="doc-section-title">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                  </svg>
+                  Complete List of Family Members to Occupy the Unit
+                </div>
+
+                <table class="family-doc-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Relation</th>
+                      <th style="width:80px;">Age</th>
+                      <th style="width:130px;">Religion</th>
+                    </tr>
+                  </thead>
+                  <tbody id="family-members-body">
+                    <!-- Rendered by JS -->
+                  </tbody>
+                </table>
               </div>
 
-              <table class="family-doc-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Relation</th>
-                    <th style="width:80px;">Age</th>
-                    <th style="width:130px;">Religion</th>
-                  </tr>
-                </thead>
-                <tbody id="family-members-body">
-                  <!-- Rendered by JS -->
-                </tbody>
-              </table>
-
               <!-- ══ ISCAG STUDENTS ══ -->
-              <div class="students-row">
-                <label for="iscag-students"><strong>How many students who enroll in ISCAG School?</strong></label>
-                <input type="number" id="iscag-students" min="0" value="0" />
+              <div class="students-row" style="flex-direction:column; align-items:flex-start; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px; width:100%;">
+                  <label for="iscag-students" style="margin:0;"><strong>How many members of the family are students in ISCAG School?</strong></label>
+                  <input type="number" id="iscag-students" min="0" max="7" value="<?= htmlspecialchars($appData['iscag_students'] ?? '0') ?>" style="width:70px;" />
+                </div>
+                <div id="iscag-student-names-container" style="display:none; width:100%;">
+                  <div style="background:rgba(15,92,58,0.03); border:1.5px solid rgba(15,92,58,0.12); border-radius:10px; padding:14px 16px;">
+                    <p style="font-size:0.78rem; color:#0f5c3a; font-weight:700; margin:0 0 10px; display:flex; align-items:center; gap:6px;">
+                      <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:#0f5c3a;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                      Please provide the name(s) of the student(s) enrolled in ISCAG School for reference.
+                    </p>
+                    <div id="iscag-names-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ══ ISCAG EMPLOYMENT ══ -->
+              <div class="students-row" style="flex-direction:column; align-items:flex-start; gap:12px; margin-top: 20px;">
+                <div style="display:flex; align-items:center; gap:12px; width:100%;">
+                  <label for="iscag-employee" style="margin:0;"><strong>Are you working in ISCAG?</strong></label>
+                  <select id="iscag-employee" style="width:100px;">
+                    <option value="0" <?= ($appData['is_iscag_employee'] ?? 0) == 0 ? 'selected' : '' ?>>No</option>
+                    <option value="1" <?= ($appData['is_iscag_employee'] ?? 0) == 1 ? 'selected' : '' ?>>Yes</option>
+                  </select>
+                </div>
+                <div id="iscag-job-container" style="display:<?= ($appData['is_iscag_employee'] ?? 0) == 1 ? 'block' : 'none' ?>; width:100%;">
+                  <div style="background:rgba(201,154,43,0.03); border:1.5px solid rgba(201,154,43,0.12); border-radius:10px; padding:12px 16px;">
+                    <input type="text" id="iscag-job-role" placeholder="Specify your Job or Role in ISCAG" value="<?= htmlspecialchars($appData['iscag_job_role'] ?? '') ?>" style="width: 100%; border-color: rgba(15,92,58,0.2); font-size: 0.85rem; text-align: left;" />
+                  </div>
+                </div>
               </div>
 
               <!-- ══ CHARACTER REFERENCE ══ -->
@@ -2509,6 +2578,9 @@ if ($userId) {
           ref_name: v('ref-name'),
           ref_contact: v('ref-contact'),
           iscag_students: parseInt(v('iscag-students')) || 0,
+          iscag_student_names: getIscagStudentNames(),
+          is_iscag_employee: parseInt(v('iscag-employee')) || 0,
+          iscag_job_role: v('iscag-job-role'),
           date_applied: v('date-application'),
           family_data: JSON.stringify(familyData)
         },
@@ -2753,6 +2825,72 @@ if ($userId) {
       });
     }
 
+    // ── ISCAG Students names toggle ──
+    const studentsInput = document.getElementById('iscag-students');
+    const namesContainer = document.getElementById('iscag-student-names-container');
+    const namesList = document.getElementById('iscag-names-list');
+
+    function updateStudentNameFields(count, existingNames = []) {
+      if (!namesList) return;
+      namesList.innerHTML = '';
+      if (count > 0) {
+        namesContainer.style.display = 'block';
+        for (let i = 0; i < count; i++) {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'iscag-student-name-input';
+          input.placeholder = `Full Name of Student #${i + 1}`;
+          input.style.width = '100%';
+          input.style.padding = '8px 12px';
+          input.style.borderRadius = '6px';
+          input.style.border = '1px solid rgba(15,92,58,0.2)';
+          input.style.fontSize = '0.85rem';
+          input.style.textAlign = 'left';
+          input.value = existingNames[i] || '';
+          namesList.appendChild(input);
+        }
+      } else {
+        namesContainer.style.display = 'none';
+      }
+    }
+
+    if (studentsInput) {
+      studentsInput.addEventListener('input', function() {
+        let count = parseInt(this.value) || 0;
+        if (count > 7) {
+          count = 7;
+          this.value = 7;
+        }
+        updateStudentNameFields(count);
+      });
+      
+      // Initialize if there's already data
+      const initialCount = parseInt(studentsInput.value) || 0;
+      if (initialCount > 0) {
+        let existing = [];
+        try {
+            existing = JSON.parse('<?= addslashes($appData['iscag_student_names'] ?? '[]') ?>');
+        } catch(e) {}
+        updateStudentNameFields(initialCount, Array.isArray(existing) ? existing : []);
+      }
+    }
+
+    function getIscagStudentNames() {
+      const inputs = document.querySelectorAll('.iscag-student-name-input');
+      const names = Array.from(inputs).map(i => i.value.trim()).filter(v => v !== '');
+      return JSON.stringify(names);
+    }
+
+    // ── ISCAG Employment toggle ──
+    const empSelect = document.getElementById('iscag-employee');
+    const jobContainer = document.getElementById('iscag-job-container');
+    if (empSelect && jobContainer) {
+      empSelect.addEventListener('change', function() {
+        jobContainer.style.display = this.value === '1' ? 'block' : 'none';
+        if (this.value === '0') document.getElementById('iscag-job-role').value = '';
+      });
+    }
+
     // ── Unit card selection ──
     document.querySelectorAll('.unit-card').forEach(card => {
       card.addEventListener('click', () => {
@@ -2787,6 +2925,66 @@ if ($userId) {
           }
         }
       });
+    }
+
+    function useMyDetails() {
+        const u = DB_USER;
+        if (!u) return;
+
+        // Auto-fill fields
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val || '';
+        };
+
+        setVal('family-name', u.lastName);
+        setVal('given-name', u.firstName);
+        
+        // Muslim Name Logic
+        const muslimNameEl = document.getElementById('muslim-name');
+        if (muslimNameEl) {
+            const isNA = (u.arabicName === 'N/A');
+            muslimNameEl.value = isNA ? '' : (u.arabicName || '');
+            muslimNameEl.disabled = isNA;
+            muslimNameEl.style.opacity = isNA ? '0.5' : '1';
+            muslimNameEl.style.backgroundColor = isNA ? 'rgba(0,0,0,0.02)' : 'white';
+        }
+
+        setVal('dob', u.dob);
+        setVal('sex', u.sex);
+        setVal('address', u.address);
+        setVal('phone', u.phone);
+        setVal('civil-status', u.civil);
+        setVal('occupation', u.occupation);
+
+        // Date of Shahadah Logic
+        const shahadahDateEl = document.getElementById('shahadah-date');
+        if (shahadahDateEl) {
+            const isNA = (u.revertYear === 'N/A' || u.revertYear === '0000-00-00');
+            shahadahDateEl.value = isNA ? '' : (u.revertYear || '');
+            shahadahDateEl.disabled = isNA;
+            shahadahDateEl.style.opacity = isNA ? '0.5' : '1';
+            shahadahDateEl.style.backgroundColor = isNA ? 'rgba(0,0,0,0.02)' : 'white';
+        }
+
+        setVal('tribal', u.tribal);
+        setVal('pob', u.pob);
+
+        // Trigger age calculation
+        if (u.dob) {
+            const dobEl = document.getElementById('dob');
+            if (dobEl) dobEl.dispatchEvent(new Event('change'));
+        }
+
+        showToast('Application form populated with your account details!', '#2f8a60');
+        
+        // Visual feedback on the button
+        const btn = event.currentTarget;
+        if (btn) {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px; fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Details Applied';
+            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+        }
     }
 
 
@@ -3510,6 +3708,37 @@ if ($userId) {
     }
     loadApartmentTypes();
 
+    // ── Logic for hiding Family Section for Transient units ──
+    document.addEventListener('change', function(e) {
+      if (e.target.name === 'unit') {
+        const card = e.target.closest('.unit-card');
+        if (!card) return;
+        
+        const labelEl = card.querySelector('.unit-card-label');
+        if (labelEl) {
+          const label = labelEl.textContent.trim().toLowerCase();
+          const familySection = document.getElementById('family-members-section');
+          if (!familySection) return;
+          
+          if (label.includes('transient')) {
+            // Hide and Reset Family Section
+            familySection.style.display = 'none';
+            // Clear inputs to avoid accidental submission of family data
+            document.querySelectorAll('#family-members-body input').forEach(input => input.value = '');
+            document.querySelectorAll('#family-members-body select').forEach(select => select.selectedIndex = 0);
+          } else {
+            familySection.style.display = 'block';
+          }
+        }
+      }
+    });
+
+    // Run on initial load after a delay to wait for API data
+    setTimeout(() => {
+        const checked = document.querySelector('input[name="unit"]:checked');
+        if (checked) checked.dispatchEvent(new Event('change', { bubbles: true }));
+    }, 1500);
+
     // ── Check if user already has a pending/approved application ──
     function checkExistingApplication() {
       const raw = localStorage.getItem(STORAGE_KEYS.requests);
@@ -3517,6 +3746,21 @@ if ($userId) {
       const aptReq = requests.find(r => r.type === 'apartment_application' && r.user === user.id && (r.status === 'pending' || r.status === 'approved'));
       return aptReq || null;
     }
+
+    // Auto-disable N/A fields on load based on existing data
+    window.addEventListener('DOMContentLoaded', () => {
+        const lockNA = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && (val === 'N/A' || val === '0000-00-00')) {
+                el.value = '';
+                el.disabled = true;
+                el.style.opacity = '0.5';
+                el.style.backgroundColor = 'rgba(0,0,0,0.02)';
+            }
+        };
+        lockNA('muslim-name', '<?= addslashes($appData['muslimname'] ?? '') ?>');
+        lockNA('shahadah-date', '<?= addslashes($appData['dateofshahadah'] ?? '') ?>');
+    });
 
     const existingApp = checkExistingApplication();
     if (existingApp && existingApp.status !== 'approved') {
