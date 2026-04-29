@@ -92,6 +92,25 @@ if ($userId) {
       appearance: textfield;
     }
 
+    /* ── GLOBAL SELECT STYLES ── */
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f5c3a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 14px;
+      padding-right: 32px !important;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1);
+    }
+
     /* ═══════════════════════════════════════════
        STEPPER PROGRESS BAR
        ═══════════════════════════════════════════ */
@@ -768,13 +787,11 @@ if ($userId) {
     }
 
     .info-table .field-value select {
-      cursor: pointer;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 8px center;
-      background-size: 12px;
-      padding-right: 28px;
+      padding-right: 32px;
+    }
+
+    .info-table .field-value select:hover {
+      background-color: rgba(23, 107, 69, 0.04);
     }
 
     /* ── FAMILY TABLE ── */
@@ -839,13 +856,11 @@ if ($userId) {
     }
 
     .family-doc-table tbody td select {
-      cursor: pointer;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 8px center;
-      background-size: 12px;
-      padding-right: 28px;
+      padding-right: 32px;
+    }
+
+    .family-doc-table tbody td select:hover {
+      background-color: rgba(23, 107, 69, 0.04);
     }
 
     .family-doc-table tbody tr:hover td {
@@ -874,18 +889,26 @@ if ($userId) {
       color: var(--text-main);
     }
 
-    .students-row input {
-      width: 80px;
+    .students-row input,
+    .students-row select {
+      width: 100px;
       padding: 6px 10px;
       border: 1.5px solid var(--border);
       border-radius: 6px;
       font-size: 0.85rem;
       font-family: 'Source Sans 3', sans-serif;
       color: var(--text-main);
-      text-align: center;
+      text-align: left;
+      background-color: white;
     }
 
-    .students-row input:focus {
+    .students-row select {
+      padding-right: 32px !important;
+      text-align: left;
+    }
+
+    .students-row input:focus,
+    .students-row select:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1);

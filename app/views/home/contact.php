@@ -436,7 +436,7 @@
         <div>
           <h4>Follow Us</h4>
           <div class="social-links">
-            <a href="#" class="social-link" title="Facebook">
+                        <a href="https://www.facebook.com/share/1CiGL37My5/" class="social-link" title="Facebook">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
             </a>
             <a href="mailto:iscagphilippines@gmail.com" class="social-link" title="Google">
@@ -450,7 +450,7 @@
 </div>
 
 <!-- FAQ Section -->
-<section class="faq-section">
+<section class="faq-section" id="faq">
   <div class="container">
     <div class="faq-header reveal">
       <h2>Frequently Asked Questions</h2>

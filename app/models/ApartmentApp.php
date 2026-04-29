@@ -143,7 +143,7 @@ class ApartmentApp {
 
     // ─── apartmentsapp (unit type) ────────────────────────
     public function getApplication($userId) {
-        $sql = "SELECT a.*, u.room_number, u.building 
+        $sql = "SELECT a.*, a.application_id as id, u.room_number, u.building 
                 FROM apartmentsapp a 
                 LEFT JOIN apartment_units u ON a.unit_id = u.unit_id 
                 WHERE a.tenant_id = :uid 

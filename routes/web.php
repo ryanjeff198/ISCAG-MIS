@@ -28,6 +28,7 @@ $routes = [
     '/forgot-password'  => ['AuthController',  'forgotPassword'],
     '/verify-otp'       => ['AuthController',  'verifyOtp'],
     '/resend-otp'       => ['AuthController',  'resendOtp'],
+    '/change-registration-email' => ['AuthController', 'changeRegistrationEmail'],
     '/reset-password'   => ['AuthController',  'resetPassword'],
 
     // Admin
