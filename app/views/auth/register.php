@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ISCAG Philippines – Sign Up</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -551,17 +552,48 @@ body {
           <span class="error-msg" id="confirmError"></span>
         </div>
 
-        <div class="check-row">
-          <input type="checkbox" id="terms"/>
-          <label for="terms">
-            I agree to ISCAG Philippines'
-            <a href="#" class="auth-link">Terms of Service</a> and
-            <a href="#" class="auth-link">Privacy Policy</a>
+        <div class="check-row d-flex align-items-center gap-2">
+          <input type="checkbox" id="terms" required style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--green);"/>
+          <label for="terms" style="font-size: 13px; cursor: pointer;">
+            I agree to ISCAG Philippines' <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" class="auth-link">Terms & Conditions</a>
           </label>
         </div>
 
         <button type="submit" class="btn-auth" id="registerBtn">Create Account</button>
         </form>
+
+        <!-- Terms Modal -->
+        <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius: 20px; border: none; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.2);">
+              <div class="modal-header" style="background: var(--green); color: white; border: none; padding: 25px;">
+                <h5 class="modal-title" id="termsModalLabel" style="font-family: 'Poppins', sans-serif; font-weight: 700; letter-spacing: 1px;">TERMS & CONDITIONS</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body" style="padding: 40px; color: var(--txt-2); line-height: 1.8; font-size: 15px; max-height: 60vh; overflow-y: auto;">
+                <div class="terms-content">
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 15px;">1. Acceptance of Terms</h6>
+                  <p style="margin-bottom: 20px;">By accessing and using the ISCAG Philippines Management Information System (MIS), you agree to be bound by these Terms and Conditions. If you do not agree, please do not use the system.</p>
+                  
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 15px;">2. User Conduct</h6>
+                  <p style="margin-bottom: 20px;">You are responsible for maintaining the confidentiality of your account credentials. You agree to use the system only for its intended purposes and in accordance with Islamic values and Philippine laws.</p>
+                  
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 15px;">3. Privacy & Data Protection</h6>
+                  <p style="margin-bottom: 20px;">We respect your privacy. Any personal data collected through this system will be handled in accordance with our Privacy Policy and the Data Privacy Act of 2012. Your information will be used solely for administrative and spiritual guidance services.</p>
+                  
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 15px;">4. System Integrity</h6>
+                  <p style="margin-bottom: 20px;">Unauthorized attempts to modify, breach, or damage the system are strictly prohibited and may result in legal action and termination of account access.</p>
+                  
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 15px;">5. Amendments</h6>
+                  <p>ISCAG Philippines reserves the right to modify these terms at any time. Continued use of the system after such changes constitutes acceptance of the new terms.</p>
+                </div>
+              </div>
+              <div class="modal-footer" style="padding: 20px 40px; border: none; background: #f9f9f9;">
+                <button type="button" class="btn-auth" id="acceptTermsBtn" data-bs-dismiss="modal" style="width: auto; padding: 10px 30px;">I Understand</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <p class="auth-footer-text">
           Already have an account? <a href="<?= url('/login') ?>" class="auth-link">Log In</a>
@@ -691,6 +723,11 @@ body {
 
       setupPasswordToggle('password', 'togglePassword');
       setupPasswordToggle('confirmPassword', 'toggleConfirmPassword');
+
+      // Auto-check terms when modal 'I Understand' is clicked
+      document.getElementById('acceptTermsBtn').addEventListener('click', function() {
+        document.getElementById('terms').checked = true;
+      });
     });
   </script>
 

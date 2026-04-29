@@ -16,7 +16,7 @@
         </p>
         <div class="footer-social">
           <!-- Facebook -->
-          <a href="#" class="social-btn" title="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+                    <a href="https://www.facebook.com/share/1CiGL37My5/" class="social-btn" title="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
           <!-- Google -->
           <a href="mailto:iscagphilippines@gmail.com" class="social-btn" title="Google"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h4.74c-.2 1.04-1.2 3.05-4.74 3.05-3.09 0-5.62-2.56-5.62-5.71s2.53-5.71 5.62-5.71c1.76 0 2.94.75 3.61 1.39l2.58-2.48C17.02 3.14 14.93 2.11 12.48 2.11 7.15 2.11 2.83 6.44 2.83 11.78s4.32 9.67 9.65 9.67c5.57 0 9.27-3.91 9.27-9.44 0-.64-.07-1.12-.15-1.6l-9.12-.49z"/></svg></a>
         </div>
@@ -38,10 +38,10 @@
       <div class="footer-nav">
         <h4 class="footer-title">Resources</h4>
         <ul class="footer-links">
-          <li><a href="#">Islamic Guidance</a></li>
-          <li><a href="#">Community Programs</a></li>
-          <li><a href="#">Donations</a></li>
-          <li><a href="#">FAQ</a></li>
+          <li><a href="<?= url('/daawah') ?>">Islamic Guidance</a></li>
+          <li><a href="<?= url('/events') ?>">Community Events</a></li>
+          <li><a href="<?= url('/damayan') ?>#donations">Donations</a></li>
+          <li><a href="<?= url('/contact') ?>#faq">FAQ</a></li>
         </ul>
       </div>
 

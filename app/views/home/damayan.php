@@ -433,7 +433,7 @@
 </section>
 
 <!-- DONATION SECTION -->
-<section class="donation-section">
+<section class="donation-section" id="donations">
   <div class="container">
     <div class="donation-grid">
       <div class="donation-content reveal">

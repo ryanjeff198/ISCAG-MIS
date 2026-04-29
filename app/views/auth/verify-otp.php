@@ -291,7 +291,7 @@ body {
         </button>
       </form>
 
-      <a href="<?= url('/forgot-password') ?>" class="otp-back">
+      <a href="<?= url('/register') ?>" class="otp-back">
         <i class="bi bi-arrow-left"></i> Back to Email
       </a>
 
@@ -307,10 +307,21 @@ body {
     const userEmail = "<?= $_SESSION['temp_email'] ?? '' ?>";
     const expiryTime = "<?= $_SESSION['otp_expiry'] ?? '0' ?>";
 
+    <?php $isReset = isset($_SESSION['reset_mode']) && $_SESSION['reset_mode']; ?>
+    const backUrl = '<?= $isReset ? url('/forgot-password') : url('/change-registration-email') ?>';
+    const backText = 'Back to Email';
+
     if (!userEmail) {
       alert('Session expired or invalid. Please start over.');
-      window.location.href = '<?= url('/forgot-password') ?>';
+      window.location.href = backUrl;
       return;
+    }
+
+    // Update back link dynamically
+    const backBtn = document.querySelector('.otp-back');
+    if (backBtn) {
+      backBtn.href = backUrl;
+      backBtn.innerHTML = `<i class="bi bi-arrow-left"></i> ${backText}`;
     }
 
     document.getElementById('emailDisplay').textContent = userEmail;

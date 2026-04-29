@@ -57,7 +57,12 @@ class AuthController extends Controller
 
     public function register(): void
     {
+        unset($_SESSION['reset_mode']); // Clear any stale reset state
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Capture data for sticky form
+            $postedData = $_POST;
+            $_SESSION['temp_reg_data'] = $postedData; // Store for "Back to Email" flow
+
             if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
                 die("CSRF token validation failed.");
             }
@@ -139,7 +144,8 @@ class AuthController extends Controller
                 return;
             }
         }
-        $this->view('auth/register');
+        $data = $_SESSION['temp_reg_data'] ?? [];
+        $this->view('auth/register', ['data' => $data]);
     }
 
     /**
@@ -185,7 +191,8 @@ class AuthController extends Controller
             $otp = implode('', $_POST['otp'] ?? []);
 
             if (!$email) {
-                $error = "Session expired. Please register again.";
+                $isReset = isset($_SESSION['reset_mode']) && $_SESSION['reset_mode'];
+                $error = "Session expired. Please " . ($isReset ? "request a new reset link." : "register again.");
                 $this->view('auth/verify-otp', ['error' => $error]);
                 return;
             }
@@ -292,6 +299,72 @@ class AuthController extends Controller
         $this->view('auth/reset-password');
     }
 
+    public function changeRegistrationEmail(): void
+    {
+        $currentEmail = $_SESSION['temp_email'] ?? '';
+        if (!$currentEmail) {
+            header('Location: ' . url('/register'));
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
+                die("CSRF token validation failed.");
+            }
+
+            $newEmail = $_POST['email'] ?? '';
+            
+            // Check if new email is already taken by a verified user
+            $existing = $this->userModel->findByEmail($newEmail);
+            if ($existing && $existing['is_verified']) {
+                $this->view('auth/change-registration-email', [
+                    'error' => 'This email is already registered.',
+                    'current_email' => $newEmail
+                ]);
+                return;
+            }
+
+            // Update the email and generate new OTP
+            $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $expiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+
+            // We need a way to update the email of an unverified user
+            // I'll add a helper to User model or do it here.
+            $db = getDbConnection();
+            $stmt = $db->prepare("UPDATE tenant_accounts SET email = :new_email, otp_code = :otp, otp_expiry = :expiry WHERE email = :old_email AND is_verified = 0");
+            $success = $stmt->execute([
+                'new_email' => $newEmail,
+                'otp' => $otp,
+                'expiry' => $expiry,
+                'old_email' => $currentEmail
+            ]);
+
+            if ($success) {
+                if (Mailer::sendOTP($newEmail, $otp)) {
+                    $_SESSION['temp_email'] = $newEmail;
+                    $_SESSION['otp_expiry'] = strtotime($expiry) * 1000;
+                    
+                    // Update temp_reg_data if it exists
+                    if (isset($_SESSION['temp_reg_data'])) {
+                        $_SESSION['temp_reg_data']['email'] = $newEmail;
+                    }
+
+                    header('Location: ' . url('/verify-otp') . '?resend=success');
+                    exit;
+                } else {
+                    $error = "Email updated but failed to send OTP.";
+                }
+            } else {
+                $error = "Failed to update email. It might already be in use.";
+            }
+            
+            $this->view('auth/change-registration-email', ['error' => $error, 'current_email' => $newEmail]);
+            return;
+        }
+
+        $this->view('auth/change-registration-email', ['current_email' => $currentEmail]);
+    }
+
     public function resendOtp(): void
     {
         $email = $_SESSION['temp_email'] ?? '';
@@ -308,7 +381,8 @@ class AuthController extends Controller
                 exit;
             }
         }
-        header('Location: ' . url('/forgot-password'));
+        $redirect = (isset($_SESSION['reset_mode']) && $_SESSION['reset_mode']) ? '/forgot-password' : '/register';
+        header('Location: ' . url($redirect));
         exit;
     }
 
