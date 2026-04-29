@@ -156,20 +156,12 @@ function openRoomPreview(unitData, options = {}) {
     if (unitData.kitchen) features.push({ label: 'Kitchen', value: unitData.kitchen });
     if (unitData.parking) features.push({ label: 'Parking', value: unitData.parking });
 
-    const inclusions = [];
-    if (unitData.inclusions) {
-      try {
-        const parsed = typeof unitData.inclusions === 'string' ? JSON.parse(unitData.inclusions) : unitData.inclusions;
-        if (Array.isArray(parsed)) inclusions.push(...parsed);
-      } catch(e) {}
-    }
-    const rules = [];
-    if (unitData.rules) {
-      try {
-        const parsed = typeof unitData.rules === 'string' ? JSON.parse(unitData.rules) : unitData.rules;
-        if (Array.isArray(parsed)) rules.push(...parsed);
-      } catch(e) {}
-    }
+    // Build new structured fields for the preview
+    const parseJSON = (val, fallback = []) => {
+      if (!val) return fallback;
+      if (Array.isArray(val)) return val;
+      try { return JSON.parse(val); } catch(e) { return fallback; }
+    };
 
     room = {
       label: unitData.label || 'Apartment Unit',
@@ -177,17 +169,18 @@ function openRoomPreview(unitData, options = {}) {
       description: unitData.description || 'A modern living space designed for comfort and convenience.',
       images: imageUrls,
       features: features.map(f => ({ ...f, icon: mapFeatureIcon(f.label) })),
-      inclusions: inclusions,
-      rules: rules,
+      inclusions: parseJSON(unitData.inclusions),
+      rules: parseJSON(unitData.rules),
       payment: {
-        advance: '1 Month Rent (₱' + (Number(unitData.price) || 0).toLocaleString() + ')',
-        deposit: 'Fixed ₱1,000.00',
+        advance: unitData.advance_rent || '1 Month Advance',
+        deposit: unitData.security_deposit || '1 Month Deposit',
         fees: unitData.other_fees || ''
       },
       lease: {
-        min: unitData.min_lease || '3, 6, 12 Months',
+        min: unitData.min_lease || '6 Months',
         notice: unitData.notice_period || '30 Days'
-      }
+      },
+      queue: unitData.queue_label || ''
     };
     if (unitData.available_count !== undefined && options.availableCount === undefined) {
       options.availableCount = unitData.available_count;
@@ -195,6 +188,13 @@ function openRoomPreview(unitData, options = {}) {
   }
 
   if (!room) { console.error('Room Preview: Invalid unit data', unitData); return; }
+
+  // Ensure all sections exist with defaults for legacy compatibility
+  room.inclusions = room.inclusions || [];
+  room.rules = room.rules || [];
+  room.payment = room.payment || { advance: 'N/A', deposit: 'N/A', fees: '' };
+  room.lease = room.lease || { min: 'N/A', notice: 'N/A' };
+  room.features = room.features || [];
 
   const { availableCount = 0, basePath = 'assets/', onSelect = null, selectLabel = 'Select This Unit' } = options;
   const isAvailable = availableCount > 0;
