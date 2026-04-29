@@ -722,4 +722,69 @@ class AdminController extends Controller
         http_response_code(404);
         echo 'Image not found';
     }
+
+    // ═══ CONTRACT RENEWALS ══════════════════════════════════
+
+    public function renewals() {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        require_once BASE_PATH . '/app/models/LeaseRenewal.php';
+        $renewalModel = new LeaseRenewal();
+        
+        $renewals = $renewalModel->getAllRenewals();
+        
+        $this->view('admin/Apartment/renewals', ['renewals' => $renewals]);
+    }
+
+    public function approveRenewal() {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            require_once BASE_PATH . '/app/models/LeaseRenewal.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $renewalModel = new LeaseRenewal();
+            $notifModel = new Notification();
+            
+            // Need the tenant ID to send notification
+            $db = getDbConnection();
+            $stmt = $db->prepare("SELECT tenant_id FROM lease_renewals WHERE renewal_id = :id");
+            $stmt->execute(['id' => $id]);
+            $tenantId = $stmt->fetchColumn();
+
+            if ($renewalModel->approveRenewal((int)$id) && $tenantId) {
+                $notifModel->create(
+                    $tenantId,
+                    'Contract Renewal Approved',
+                    'Your lease contract has been successfully renewed and extended for another 12 months.',
+                    'approval'
+                );
+            }
+        }
+        header('Location: ' . url('/admin/apartment/renewals'));
+    }
+
+    public function rejectRenewal() {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            require_once BASE_PATH . '/app/models/LeaseRenewal.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $renewalModel = new LeaseRenewal();
+            $notifModel = new Notification();
+
+            $db = getDbConnection();
+            $stmt = $db->prepare("SELECT tenant_id FROM lease_renewals WHERE renewal_id = :id");
+            $stmt->execute(['id' => $id]);
+            $tenantId = $stmt->fetchColumn();
+
+            if ($renewalModel->rejectRenewal((int)$id) && $tenantId) {
+                $notifModel->create(
+                    $tenantId,
+                    'Contract Renewal Rejected',
+                    'Your recent lease renewal request was not approved. Please contact administration for details.',
+                    'warning'
+                );
+            }
+        }
+        header('Location: ' . url('/admin/apartment/renewals'));
+    }
 }

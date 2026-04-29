@@ -330,6 +330,31 @@
                             <a href="<?= url('/user/dashboard') ?>" class="btn-action outline">Back to Dashboard</a>
                         </div>
                     </div>
+<?php elseif ($lease['lease_status'] === 'Active' || $lease['lease_status'] === 'Renewed'): ?>
+                    <?php if (!empty($pendingRenewal)): ?>
+                        <div class="action-bar" style="border-color: rgba(199,154,43,0.3); background: rgba(199,154,43,0.03);">
+                            <div class="action-bar-text">
+                                <h4 style="color:#ca8a04;">⏳ Renewal Request Pending</h4>
+                                <p>Your request to renew and extend the lease contract for another 12 months is currently under review by the administrator.</p>
+                            </div>
+                            <div class="action-bar-btns">
+                                <button class="btn-action outline" disabled>Pending Approval</button>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="action-bar" style="border-color: rgba(47,138,96,0.3); background: rgba(47,138,96,0.03);">
+                            <div class="action-bar-text">
+                                <h4 style="color:#2f8a60;">✓ Lease Active</h4>
+                                <p>Your lease contract is fully active. You can request a contract renewal here to extend your stay by 12 months.</p>
+                            </div>
+                            <div class="action-bar-btns">
+                                <button class="btn-action primary" id="btn-renew-contract" type="button" data-lease-id="<?= $lease['lease_id'] ?>">
+                                    <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                                    Request Renewal
+                                </button>
+                            </div>
+                        </div>
+                    <?php endif; ?>
 <?php endif; ?>
 
 <?php endif; ?>
@@ -443,6 +468,41 @@
                 'Are you sure you want to reject this lease? You may need to contact admin to request a new one.',
                 true,
                 () => leaseAction('reject')
+            );
+        });
+    }
+
+    // ── Contract Renewal ──
+    const renewBtn = document.getElementById('btn-renew-contract');
+    if (renewBtn) {
+        renewBtn.addEventListener('click', () => {
+            showConfirm(
+                'Request Contract Renewal',
+                'This will send a request to the administrator to extend your lease contract for another 12 months. Do you want to proceed?',
+                false,
+                () => {
+                    const leaseId = renewBtn.getAttribute('data-lease-id');
+                    renewBtn.disabled = true;
+                    fetch('<?= url("/user/apartment/lease/renew") ?>', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ lease_id: leaseId })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            showToast('Renewal request sent successfully!', '#2f8a60');
+                            setTimeout(() => window.location.reload(), 1200);
+                        } else {
+                            showToast('Failed to send request.', '#8b2e2e');
+                            renewBtn.disabled = false;
+                        }
+                    })
+                    .catch(err => {
+                        showToast('Network error.', '#8b2e2e');
+                        renewBtn.disabled = false;
+                    });
+                }
             );
         });
     }

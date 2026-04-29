@@ -288,11 +288,20 @@ class ApartmentController extends Controller {
             }
         }
 
+        require_once BASE_PATH . '/app/models/LeaseRenewal.php';
+        $renewalModel = new LeaseRenewal();
+        $pendingRenewal = null;
+
+        if ($lease && $lease['lease_status'] === 'Active') {
+            $pendingRenewal = $renewalModel->getPendingRenewal((int) $lease['lease_id']);
+        }
+
         $this->view('user/Apartment/tenant_lease', [
-            'lease'       => $lease,
-            'application' => $application,
-            'tenantInfo'  => $tenantInfo,
-            'typeData'    => $typeData
+            'lease'          => $lease,
+            'application'    => $application,
+            'tenantInfo'     => $tenantInfo,
+            'typeData'       => $typeData,
+            'pendingRenewal' => $pendingRenewal
         ]);
     }
 
@@ -411,6 +420,30 @@ class ApartmentController extends Controller {
         $paymentModel = new Payment();
 
         $ok = $paymentModel->markAsPaid((int) $paymentId, $refNo);
+
+        echo json_encode(['success' => $ok]);
+    }
+
+    /**
+     * Request Contract Renewal (Tenant Action)
+     */
+    public function requestRenewal() {
+        Auth::protectRole(['Tenant']);
+        header('Content-Type: application/json');
+        
+        $body = json_decode(file_get_contents('php://input'), true);
+        $leaseId = $body['lease_id'] ?? 0;
+        $userId = $_SESSION['user_id'];
+
+        if (!$leaseId) {
+            echo json_encode(['success' => false, 'message' => 'Invalid lease ID']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/LeaseRenewal.php';
+        $renewalModel = new LeaseRenewal();
+
+        $ok = $renewalModel->requestRenewal((int) $leaseId, $userId);
 
         echo json_encode(['success' => $ok]);
     }

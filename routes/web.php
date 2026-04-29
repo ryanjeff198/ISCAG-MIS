@@ -59,6 +59,7 @@ $routes = [
     '/user/apartment/uploads/check' => ['ApartmentController', 'checkUploads'],
     '/user/apartment/lease'          => ['ApartmentController', 'lease'],
     '/user/apartment/lease/accept'   => ['ApartmentController', 'acceptLease'],
+    '/user/apartment/lease/renew'    => ['ApartmentController', 'requestRenewal'],
     '/user/apartment/payment'        => ['ApartmentController', 'payment'],
     '/user/apartment/payment/submit' => ['ApartmentController', 'submitPayment'],
 
@@ -80,6 +81,9 @@ $routes = [
     '/admin/apartment/parking/approve' => ['AdminController', 'staffApproveParking'],
     '/admin/apartment/parking/reject'=> ['AdminController', 'staffRejectParking'],
     '/admin/apartment/tenants'       => ['AdminController', 'tenantInfo'],
+    '/admin/apartment/renewals'      => ['AdminController', 'renewals'],
+    '/admin/apartment/renewals/approve' => ['AdminController', 'approveRenewal'],
+    '/admin/apartment/renewals/reject'  => ['AdminController', 'rejectRenewal'],
     '/admin/payment'                 => ['AdminController', 'payment'],
 
     // MIS Admin Hub Routes
