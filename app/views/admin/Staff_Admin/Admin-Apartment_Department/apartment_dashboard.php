@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ISCAG MIS — Apartment Staff Admin</title>
+  <title>ISCAG MIS — Apartment Manager</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
-  <meta name="description" content="Staff Admin dashboard for Apartment department management" />
+  <meta name="description" content="Management dashboard for the Apartment department" />
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
     .btn-action.btn-assign:disabled {
@@ -98,58 +98,28 @@
               d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
           </svg>
           <div>
-            <strong>Staff Admin View</strong> — You can view units and update room status. Tenant assignments and
+            <strong>Apartment Manager View</strong> — You can view units and update room status. Tenant assignments and
             billing modifications require <strong>MIS Admin</strong> approval.
           </div>
         </div>
 
-        <!-- STATS ROW -->
-        <div class="stats-row" id="stats-row">
-          <a href="<?= url('/admin/apartment/info') ?>" class="stat-card" style="text-decoration:none; cursor:pointer;">
-            <div class="stat-icon teal">
-              <svg viewBox="0 0 24 24">
-                <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z" />
-              </svg>
-            </div>
-            <div>
-              <div class="stat-value" id="stat-total">0</div>
-              <div class="stat-label">Total Units</div>
-            </div>
+        <!-- ADMIN INSIGHTS (Unified Style) -->
+        <div class="admin-insights">
+          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+            <div class="insight-label">Total Units</div>
+            <div class="insight-value info" id="stat-total">0</div>
           </a>
-          <a href="<?= url('/admin/apartment/info') ?>" class="stat-card" style="text-decoration:none; cursor:pointer;">
-            <div class="stat-icon green">
-              <svg viewBox="0 0 24 24">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-              </svg>
-            </div>
-            <div>
-              <div class="stat-value" id="stat-available">0</div>
-              <div class="stat-label">Available Slots</div>
-            </div>
+          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+            <div class="insight-label">Available Slots</div>
+            <div class="insight-value success" id="stat-available">0</div>
           </a>
-          <a href="<?= url('/admin/apartment/info') ?>" class="stat-card" style="text-decoration:none; cursor:pointer;">
-            <div class="stat-icon red">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
-              </svg>
-            </div>
-            <div>
-              <div class="stat-value" id="stat-occupied">0</div>
-              <div class="stat-label">Fully Occupied</div>
-            </div>
+          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+            <div class="insight-label">Fully Occupied</div>
+            <div class="insight-value danger" id="stat-occupied">0</div>
           </a>
-          <a href="<?= url('/admin/apartment/info') ?>" class="stat-card" style="text-decoration:none; cursor:pointer;">
-            <div class="stat-icon gold">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-              </svg>
-            </div>
-            <div>
-              <div class="stat-value" id="stat-reserved">0</div>
-              <div class="stat-label">Reserved</div>
-            </div>
+          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+            <div class="insight-label">Reserved</div>
+            <div class="insight-value warning" id="stat-reserved">0</div>
           </a>
         </div>
 
@@ -389,7 +359,7 @@
 
     standardizePage('staff');
     setCurrentRole(ROLES.STAFF_TENANT);
-    syncSessionUser("<?= addslashes(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>", "<?= addslashes($dbUser['email'] ?? '') ?>", "Staff Admin");
+    syncSessionUser("<?= addslashes(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>", "<?= addslashes($dbUser['email'] ?? '') ?>", "Apartment Manager");
 
     const dbUnits = <?= json_encode($units) ?>;
     const dbApplications = <?= json_encode($applications) ?>;
@@ -597,7 +567,7 @@
           basePath: '<?= asset('assets/') ?>',
           selectLabel: 'View Unit Details',
           onSelect: function (type) {
-            showToast('📋 Unit details for ' + type.toUpperCase() + ' — view only in Staff Admin mode.', 'var(--info)');
+            showToast('📋 Unit details for ' + type.toUpperCase() + ' — view only in Management mode.', 'var(--info)');
           }
         });
         return;
@@ -618,7 +588,7 @@
               serveUrl: '<?= url("/api/apartment-types/serve-image") ?>',
               selectLabel: 'View Unit Details',
               onSelect: function (type) {
-                showToast('📋 Unit details for ' + typeObj.label + ' — view only in Staff Admin mode.', 'var(--info)');
+                showToast('📋 Unit details for ' + typeObj.label + ' — view only in Management mode.', 'var(--info)');
               }
             });
             return;

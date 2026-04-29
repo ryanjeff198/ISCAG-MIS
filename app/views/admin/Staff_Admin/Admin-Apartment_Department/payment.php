@@ -45,109 +45,181 @@
       border-color: var(--primary);
     }
 
-    /* Printable SOA Card */
-    .soa-card {
+    /* Printable SOA Container (From statement_of_account.php) */
+    .soa-container {
       background: white;
       border-radius: 12px;
       border: 1px solid var(--border);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-      padding: 32px 40px;
+      padding: 40px;
+      width: 100%;
+      margin: 0 auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       position: relative;
-      overflow: hidden;
     }
-
-    .soa-header-print {
+    .soa-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-end;
+      align-items: flex-start;
       border-bottom: 2px solid var(--primary-dark);
-      padding-bottom: 16px;
-      margin-bottom: 24px;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
     }
-
-    .soa-title h2 {
+    .soa-brand {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .soa-brand img {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+    }
+    .soa-brand-text h2 {
       margin: 0;
-      font-size: 1.6rem;
       color: var(--primary-dark);
-      text-transform: uppercase;
-      font-weight: 800;
-      letter-spacing: 0.05em;
+      font-size: 1.5rem;
+      font-family: inherit;
+      font-weight: 700;
     }
-
-    .soa-title p {
-      margin: 4px 0 0;
+    .soa-brand-text p {
+      margin: 2px 0 0;
+      font-size: 0.85rem;
       color: var(--text-muted);
-      font-size: 0.9rem;
-      font-weight: 600;
     }
-
-    .soa-meta {
+    .soa-title {
       text-align: right;
     }
-
-    .soa-meta div {
-      font-size: 0.85rem;
-      margin-bottom: 4px;
-    }
-
-    .soa-meta strong {
+    .soa-title h1 {
+      margin: 0;
       color: var(--text-main);
+      font-size: 2rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 800;
     }
-
+    .soa-title p {
+      margin: 5px 0 0;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .soa-details {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .soa-details-left p, .soa-details-right p {
+      margin: 5px 0;
+      font-size: 0.95rem;
+    }
+    .soa-details strong {
+      color: var(--primary-dark);
+    }
     .soa-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 24px;
+      margin-bottom: 30px;
     }
-
     .soa-table th {
       background: var(--primary-dark);
       color: white;
       padding: 12px;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      text-align: right;
-    }
-
-    .soa-table th:first-child {
       text-align: left;
-    }
-
-    .soa-table td {
-      padding: 12px;
-      border: 1px solid #ddd;
-      text-align: right;
       font-size: 0.9rem;
     }
-
-    .soa-table td:first-child {
-      text-align: left;
-      font-weight: 700;
-      color: #333;
+    .soa-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
     }
-
-    .soa-total-box {
-      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-      border-radius: 8px;
-      padding: 20px 24px;
+    .soa-summary {
+      width: 100%;
+      max-width: 350px;
+      margin-left: auto;
+    }
+    .soa-summary-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      color: white;
-      box-shadow: 0 4px 12px rgba(23, 107, 69, 0.2);
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .soa-summary-row.total {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      border-bottom: none;
+      border-top: 2px solid var(--primary-dark);
+      margin-top: 10px;
+      padding-top: 15px;
     }
 
-    .soa-total-box span {
-      font-size: 1.1rem;
+    /* Controls Panel */
+    .controls-panel {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .form-group-control {
+      flex: 1;
+      min-width: 150px;
+    }
+    .form-group-control.flex-2 {
+      flex: 2;
+      min-width: 240px;
+    }
+    .form-group-control label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.75rem;
       font-weight: 700;
+      color: var(--primary-dark);
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-
-    .soa-total-box strong {
-      font-size: 2rem;
-      font-weight: 800;
-      line-height: 1;
+    .form-group-control select, .form-group-control input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s;
+      background: #f8f9fa;
+      height: 42px;
+      box-sizing: border-box;
+    }
+    .form-group-control select:focus, .form-group-control input:focus {
+      border-color: var(--primary);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(46,125,85,0.1);
+    }
+    .btn-filter-soa {
+      padding: 0 24px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-filter-soa:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
     }
 
     /* Layout for Form + History */
@@ -370,12 +442,12 @@
         visibility: hidden;
       }
 
-      #printable-soa,
-      #printable-soa * {
+      .soa-container,
+      .soa-container * {
         visibility: visible;
       }
 
-      #printable-soa {
+      .soa-container {
         position: absolute;
         left: 0;
         top: 0;
@@ -384,6 +456,10 @@
         box-shadow: none;
         padding: 0;
         margin: 0;
+      }
+      
+      .no-print {
+        display: none !important;
       }
     }
   </style>
@@ -406,44 +482,76 @@
           <div class="top-bar-title" id="page-title">Billing & Payment Gateway</div>
           <div class="top-bar-subtitle">Unified module for SOA, payment submission, and verification.</div>
         </div>
+        <div class="top-bar-actions">
+          <button class="btn-topbar primary" onclick="window.print()">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;">
+              <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+            </svg>
+            Print Statement
+          </button>
+        </div>
       </div>
 
       <div class="page-body">
         <!-- Admin Tenant Selector -->
-        <div class="admin-selector-bar" id="admin-selector-ui">
-          <label style="font-weight:700;color:var(--primary-dark);">Search / Select Tenant to Manage:</label>
-          <select id="tenant-dropdown" onchange="loadTenantData()">
-            <option value="">-- Choose Tenant --</option>
-            <?php foreach ($allUsers ?? [] as $u): ?>
-              <?php $uName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')); ?>
-              <option value="<?= $u['tenant_id'] ?>"><?= htmlspecialchars($uName ?: 'User '.$u['tenant_id']) ?> (ID: <?= $u['tenant_id'] ?>)</option>
-            <?php endforeach; ?>
-          </select>
+        <!-- Controls Panel -->
+        <div class="controls-panel no-print">
+          <div class="form-group-control flex-2">
+            <label>Select Tenant</label>
+            <select id="tenant-dropdown" onchange="loadTenantData()">
+              <option value="">— Select a Tenant to Manage —</option>
+              <?php foreach ($allUsers ?? [] as $u): ?>
+                <?php $uName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')); ?>
+                <option value="<?= $u['tenant_id'] ?>"><?= htmlspecialchars($uName ?: 'User '.$u['tenant_id']) ?> (ID: <?= $u['tenant_id'] ?>)</option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="form-group-control">
+            <label>Date From</label>
+            <input type="date" id="date-from" onchange="loadTenantData()" />
+          </div>
+          <div class="form-group-control">
+            <label>Date To</label>
+            <input type="date" id="date-to" onchange="loadTenantData()" />
+          </div>
+          <div class="form-group-control" style="flex: 0 0 auto;">
+            <label>&nbsp;</label>
+            <button class="btn-filter-soa" onclick="loadTenantData()">
+              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+              Filter
+            </button>
+          </div>
         </div>
 
         <div class="billing-wrapper" id="billing-wrapper" style="display:none;">
 
-          <!-- SOA SECTION -->
-          <div class="soa-card" id="printable-soa">
-            <!-- Action Overlays -->
-            <button
-              style="position:absolute;top:20px;right:20px; background:white;border:1px solid var(--border);padding:8px 16px;border-radius:8px;font-weight:700;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:6px;"
-              onclick="window.print()" class="no-print">
-              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;">
-                <path
-                  d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z" />
-              </svg> Print SOA
-            </button>
-
-            <div class="soa-header-print">
-              <div class="soa-title">
-                <h2>Statement of Account</h2>
-                <p id="soa-month">April 2026</p>
+          <!-- SOA SECTION (Official Layout) -->
+          <div class="soa-container" id="printable-soa">
+            <div class="soa-header">
+              <div class="soa-brand">
+                <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo" onerror="this.src='https://via.placeholder.com/80?text=Logo'">
+                <div class="soa-brand-text">
+                  <h2>ISCAG Management Information System</h2>
+                  <p>Darul Iman Apartment Complex</p>
+                  <p>Dasmariñas, Cavite, Philippines</p>
+                </div>
               </div>
-              <div class="soa-meta">
-                <div>Tenant: <strong id="soa-t-name">--</strong></div>
-                <div>Room: <strong id="soa-t-room">--</strong></div>
-                <div>App ID: <strong id="soa-t-app">--</strong></div>
+              <div class="soa-title">
+                <h1>Statement of Account</h1>
+                <p>Generated on: <span id="soa-date-generated">--</span></p>
+              </div>
+            </div>
+
+            <div class="soa-details">
+              <div class="soa-details-left">
+                <p>Bill To:</p>
+                <p><strong id="soa-t-name" style="font-size:1.2rem;">--</strong></p>
+                <p>Unit: <strong id="soa-t-room">--</strong></p>
+                <p>App ID: <span id="soa-t-app">--</span></p>
+              </div>
+              <div class="soa-details-right" style="text-align: right;">
+                <p>Statement Period:</p>
+                <p><strong id="soa-month">April 2026</strong></p>
               </div>
             </div>
 
@@ -451,47 +559,53 @@
               <thead>
                 <tr>
                   <th>Particulars</th>
-                  <th>Previous Balance</th>
-                  <th>Current Charges</th>
-                  <th>Payments</th>
-                  <th>Running Balance</th>
+                  <th style="text-align:right;">Previous Balance</th>
+                  <th style="text-align:right;">Current Charges</th>
+                  <th style="text-align:right;">Payments</th>
+                  <th style="text-align:right;">Balance</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Water</td>
-                  <td id="b-w-prev">₱0.00</td>
-                  <td id="b-w-curr">₱0.00</td>
-                  <td id="b-w-pay">₱0.00</td>
-                  <td id="b-w-bal" style="font-weight:700;">₱0.00</td>
+                  <td>Water Consumption</td>
+                  <td id="b-w-prev" style="text-align:right;">₱0.00</td>
+                  <td id="b-w-curr" style="text-align:right;">₱0.00</td>
+                  <td id="b-w-pay" style="text-align:right; color:var(--success);">₱0.00</td>
+                  <td id="b-w-bal" style="text-align:right; font-weight:600;">₱0.00</td>
                 </tr>
                 <tr>
-                  <td>Rent</td>
-                  <td id="b-r-prev">₱0.00</td>
-                  <td id="b-r-curr">₱0.00</td>
-                  <td id="b-r-pay">₱0.00</td>
-                  <td id="b-r-bal" style="font-weight:700;">₱0.00</td>
+                  <td>Monthly Rent</td>
+                  <td id="b-r-prev" style="text-align:right;">₱0.00</td>
+                  <td id="b-r-curr" style="text-align:right;">₱0.00</td>
+                  <td id="b-r-pay" style="text-align:right; color:var(--success);">₱0.00</td>
+                  <td id="b-r-bal" style="text-align:right; font-weight:600;">₱0.00</td>
                 </tr>
                 <tr>
-                  <td>Parking</td>
-                  <td id="b-p-prev">₱0.00</td>
-                  <td id="b-p-curr">₱0.00</td>
-                  <td id="b-p-pay">₱0.00</td>
-                  <td id="b-p-bal" style="font-weight:700;">₱0.00</td>
+                  <td>Parking Fee</td>
+                  <td id="b-p-prev" style="text-align:right;">₱0.00</td>
+                  <td id="b-p-curr" style="text-align:right;">₱0.00</td>
+                  <td id="b-p-pay" style="text-align:right; color:var(--success);">₱0.00</td>
+                  <td id="b-p-bal" style="text-align:right; font-weight:600;">₱0.00</td>
                 </tr>
                 <tr>
                   <td>Contribution</td>
-                  <td id="b-c-prev">₱0.00</td>
-                  <td id="b-c-curr">₱0.00</td>
-                  <td id="b-c-pay">₱0.00</td>
-                  <td id="b-c-bal" style="font-weight:700;">₱0.00</td>
+                  <td id="b-c-prev" style="text-align:right;">₱0.00</td>
+                  <td id="b-c-curr" style="text-align:right;">₱0.00</td>
+                  <td id="b-c-pay" style="text-align:right; color:var(--success);">₱0.00</td>
+                  <td id="b-c-bal" style="text-align:right; font-weight:600;">₱0.00</td>
                 </tr>
               </tbody>
             </table>
 
-            <div class="soa-total-box">
-              <span>Total Amount Due</span>
-              <strong id="soa-total-due">₱0.00</strong>
+            <div class="soa-summary">
+              <div class="soa-summary-row total">
+                <span>Outstanding Balance:</span>
+                <span id="soa-total-due">₱0.00</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 40px; text-align: center; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border); padding-top: 15px;" class="no-print">
+              <p>This is a system-generated document. For inquiries, please contact the ISCAG Apartment Department.</p>
             </div>
           </div>
 
@@ -550,6 +664,8 @@
                   <thead>
                     <tr>
                       <th>Date Uploaded</th>
+                      <th>Unit</th>
+                      <th>App ID</th>
                       <th>Amount</th>
                       <th>Method & Ref</th>
                       <th>Status</th>
@@ -740,6 +856,16 @@
       document.getElementById('soa-t-name').textContent = CURRENT_TARGET.name;
       document.getElementById('soa-t-room').textContent = CURRENT_TARGET.room;
       document.getElementById('soa-t-app').textContent = CURRENT_TARGET.app_id;
+      document.getElementById('soa-date-generated').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+      const dateFrom = document.getElementById('date-from').value;
+      const dateTo = document.getElementById('date-to').value;
+      let periodText = 'Current Billing Cycle';
+      if(dateFrom && dateTo) periodText = `${dateFrom} to ${dateTo}`;
+      else if(dateFrom) periodText = `From ${dateFrom}`;
+      else if(dateTo) periodText = `Up to ${dateTo}`;
+      
+      document.getElementById('soa-month').textContent = periodText;
 
       let subTotal = 0;
       const cat = ['water', 'rent', 'parking', 'contribution'];
@@ -831,6 +957,8 @@
         return `
         <tr>
           <td>${new Date(h.upload_date).toLocaleDateString()}</td>
+          <td style="font-weight:600; color:var(--primary-dark);">${CURRENT_TARGET.room}</td>
+          <td style="font-size:0.8rem;">${h.app_id || CURRENT_TARGET.app_id}</td>
           <td style="font-weight:700;">₱${parseFloat(h.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
           <td>
             <div style="font-weight:600;">${h.method}</div>

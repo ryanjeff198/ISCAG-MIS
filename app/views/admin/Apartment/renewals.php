@@ -43,7 +43,10 @@
 </head>
 <body>
     <div class="app-wrapper">
-        <?php $active_page = 'apartment_renewals'; include BASE_PATH . '/app/views/components/mis_admin_sidebar.php'; ?>
+        <?php 
+            $active_page = 'apartment_renewals'; 
+            include BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Apartment_Department/sidebar.php'; 
+        ?>
         
         <div class="main-content">
             <div class="page-header">
@@ -76,10 +79,26 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($renewals as $req): 
+                        <?php 
+                        $displayedLeaseIds = array_column($renewals, 'lease_id');
+                        $combinedData = $renewals;
+                        foreach ($allLeases as $lease) {
+                            if (!in_array($lease['lease_id'], $displayedLeaseIds) && $lease['lease_status'] === 'Accepted') {
+                                $lease['renewal_id'] = null;
+                                $lease['status'] = 'Active';
+                                $lease['requested_term_months'] = 0;
+                                $lease['created_at'] = $lease['start_date'];
+                                $combinedData[] = $lease;
+                            }
+                        }
+                        usort($combinedData, function($a, $b) {
+                            return strtotime($a['end_date']) - strtotime($b['end_date']);
+                        });
+                        foreach ($combinedData as $req): 
                             $tenantName = htmlspecialchars($req['first_name'] . ' ' . $req['last_name']);
                             $initial = strtoupper(substr($req['first_name'], 0, 1));
-                            $statusClass = strtolower($req['status']);
+                            $statusClass = strtolower($req['status'] ?? 'pending');
+                            if ($statusClass === 'active') $statusClass = 'approved';
                         ?>
                         <tr>
                             <td>
@@ -108,6 +127,10 @@
                                     <button class="btn-action btn-approve" onclick="showConfirmApprove(<?= $req['renewal_id'] ?>, '<?= $tenantName ?>', <?= (int)$req['requested_term_months'] ?>)">Approve</button>
                                     <button class="btn-action btn-reject" onclick="showConfirmReject(<?= $req['renewal_id'] ?>, '<?= $tenantName ?>')">Reject</button>
                                 </div>
+                                <?php elseif ($req['status'] === 'Active'): ?>
+                                    <span style="color:var(--success);font-size:0.75rem;font-weight:700;display:flex;align-items:center;gap:4px;">
+                                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Signed
+                                    </span>
                                 <?php else: ?>
                                     <span style="color:var(--text-muted);font-size:0.8rem;font-style:italic;">Resolved</span>
                                 <?php endif; ?>
@@ -134,7 +157,11 @@
         </div>
     </div>
 
+    <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
     <script>
+        standardizePage('staff');
+        syncSessionUser("<?= addslashes(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>", "<?= addslashes($dbUser['email'] ?? '') ?>", "Apartment Manager");
+
         function showConfirmApprove(id, name, term) {
             document.getElementById('confirmTitle').textContent = 'Approve Renewal';
             document.getElementById('confirmMsg').textContent = 'Extend the lease for ' + name + ' by exactly ' + term + ' months?';
@@ -154,6 +181,8 @@
         function closeConfirm() {
             document.getElementById('confirmModal').style.display = 'none';
         }
+
+        loadUserNav();
     </script>
 </body>
 </html>

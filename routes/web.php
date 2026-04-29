@@ -103,6 +103,7 @@ $routes = [
     '/admin/mis_admin/toggle_user_status'  => ['AdminController', 'toggleUserStatus'],
     '/admin/mis_admin/audit_logs'          => ['AdminController', 'auditLogs'],
     '/admin/mis_admin/notification'        => ['AdminController', 'notificationInbox'],
+    '/admin/mis_admin/renewal_records'     => ['AdminController', 'renewalRecords'],
     '/admin/mis_admin/tenant_image'        => ['AdminController', 'serveTenantImage'],
 
     // Apartment Type Management API

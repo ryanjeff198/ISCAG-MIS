@@ -10,7 +10,7 @@ $active_page = $active_page ?? 'admin_dashboard';
 // Determine which dropdowns should be open based on the active page
 $is_pending_open = in_array($active_page, ['apartment_confirmation', 'parking_approval']);
 $is_finance_open = in_array($active_page, ['billing', 'soa', 'reports']);
-$is_comm_open = in_array($active_page, ['apartment_records', 'daawah_records', 'damayan_records', 'notifications']);
+$is_comm_open = in_array($active_page, ['apartment_records', 'renewal_records', 'daawah_records', 'damayan_records', 'notifications']);
 $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification']);
 ?>
 <aside class="sidebar" id="sidebar">
@@ -83,6 +83,7 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
             </button>
             <div class="nav-dropdown <?= $is_comm_open ? 'open' : '' ?>" id="comm-menu">
                 <a href="<?= url('/admin/mis_admin/apartment_records') ?>" class="<?= $active_page === 'apartment_records' ? 'active-submenu' : '' ?>">Unit Inventory</a>
+                <a href="<?= url('/admin/mis_admin/renewal_records') ?>" class="<?= $active_page === 'renewal_records' ? 'active-submenu' : '' ?>">Renewal Records</a>
                 <a href="<?= url('/admin/mis_admin/daawah_records') ?>" class="<?= $active_page === 'daawah_records' ? 'active-submenu' : '' ?>">Da'wah Records</a>
                 <a href="<?= url('/admin/mis_admin/damayan_records') ?>" class="<?= $active_page === 'damayan_records' ? 'active-submenu' : '' ?>">Damayan Burial</a>
                 <a href="<?= url('/admin/mis_admin/notifications') ?>" class="<?= $active_page === 'notifications' ? 'active-submenu' : '' ?>">System Broadcast</a>

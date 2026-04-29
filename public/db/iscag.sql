@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 28, 2026 at 10:45 PM
+-- Generation Time: Apr 29, 2026 at 09:56 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -31,6 +31,7 @@ CREATE TABLE `apartmentsapp` (
   `application_id` int(11) NOT NULL,
   `tenant_id` int(11) NOT NULL,
   `roomtype` varchar(100) DEFAULT NULL,
+  `lease_term` int(11) NOT NULL DEFAULT 12,
   `date` date DEFAULT NULL,
   `duration` int(11) DEFAULT NULL,
   `status` varchar(50) DEFAULT NULL,
@@ -48,17 +49,17 @@ CREATE TABLE `apartmentsapp` (
 -- Dumping data for table `apartmentsapp`
 --
 
-INSERT INTO `apartmentsapp` (`application_id`, `tenant_id`, `roomtype`, `date`, `duration`, `status`, `reject_reason`, `updated_at`, `unit_id`, `queue_position`, `verified_at`, `accepted_at`, `assigned_at`, `status_seen`) VALUES
-(4, 27, 'One-Bedroom', '2026-04-19', NULL, 'Assigned', NULL, '2026-04-25 05:11:08', 30, NULL, NULL, '2026-04-25 13:11:08', '2026-04-25 13:11:08', 0),
-(5, 28, 'One-Bedroom', '2026-04-19', NULL, 'Rejected', 'Other', '2026-04-19 18:29:59', NULL, NULL, NULL, NULL, NULL, 0),
-(7, 32, 'Studio', '2026-04-24', NULL, 'Assigned', NULL, '2026-04-25 17:43:13', 16, NULL, NULL, '2026-04-26 01:43:13', '2026-04-26 01:43:13', 0),
-(8, 42, 'Studio', '2026-04-25', NULL, 'Assigned', NULL, '2026-04-25 18:13:00', 17, NULL, NULL, '2026-04-26 02:02:31', '2026-04-26 02:02:31', 0),
-(9, 44, 'Studio', '2026-04-26', NULL, 'Assigned', NULL, '2026-04-26 04:44:54', 18, NULL, NULL, '2026-04-26 12:44:54', '2026-04-26 12:44:54', 0),
-(10, 45, 'Studio', '2026-04-26', NULL, 'Assigned', NULL, '2026-04-26 11:20:17', 26, NULL, NULL, '2026-04-26 19:20:17', '2026-04-26 19:20:17', 0),
-(11, 47, 'Studio', '2026-04-27', NULL, 'Assigned', NULL, '2026-04-27 12:25:22', 42, NULL, NULL, '2026-04-27 20:20:20', '2026-04-27 20:20:20', 0),
-(12, 49, 'Transient', '2026-04-27', NULL, 'Assigned', NULL, '2026-04-27 12:25:22', 42, NULL, NULL, '2026-04-27 20:20:20', '2026-04-27 20:20:20', 0),
-(13, 51, 'Transient', '2026-04-27', NULL, 'Assigned', NULL, '2026-04-27 14:18:18', 71, NULL, NULL, '2026-04-27 22:18:18', '2026-04-27 22:18:18', 0),
-(17, 54, 'Bachelor', '2026-04-29', NULL, 'Draft', NULL, '2026-04-28 20:20:02', NULL, NULL, NULL, NULL, NULL, 0);
+INSERT INTO `apartmentsapp` (`application_id`, `tenant_id`, `roomtype`, `lease_term`, `date`, `duration`, `status`, `reject_reason`, `updated_at`, `unit_id`, `queue_position`, `verified_at`, `accepted_at`, `assigned_at`, `status_seen`) VALUES
+(4, 27, 'One-Bedroom', 12, '2026-04-19', NULL, 'Assigned', NULL, '2026-04-25 05:11:08', 30, NULL, NULL, '2026-04-25 13:11:08', '2026-04-25 13:11:08', 0),
+(5, 28, 'One-Bedroom', 12, '2026-04-19', NULL, 'Rejected', 'Other', '2026-04-19 18:29:59', NULL, NULL, NULL, NULL, NULL, 0),
+(7, 32, 'Studio', 12, '2026-04-24', NULL, 'Assigned', NULL, '2026-04-25 17:43:13', 16, NULL, NULL, '2026-04-26 01:43:13', '2026-04-26 01:43:13', 0),
+(8, 42, 'Studio', 12, '2026-04-25', NULL, 'Assigned', NULL, '2026-04-25 18:13:00', 17, NULL, NULL, '2026-04-26 02:02:31', '2026-04-26 02:02:31', 0),
+(9, 44, 'Studio', 12, '2026-04-26', NULL, 'Assigned', NULL, '2026-04-26 04:44:54', 18, NULL, NULL, '2026-04-26 12:44:54', '2026-04-26 12:44:54', 0),
+(10, 45, 'Studio', 12, '2026-04-26', NULL, 'Assigned', NULL, '2026-04-26 11:20:17', 26, NULL, NULL, '2026-04-26 19:20:17', '2026-04-26 19:20:17', 0),
+(11, 47, 'Studio', 12, '2026-04-27', NULL, 'Assigned', NULL, '2026-04-27 12:25:22', 42, NULL, NULL, '2026-04-27 20:20:20', '2026-04-27 20:20:20', 0),
+(12, 49, 'Transient', 12, '2026-04-27', NULL, 'Assigned', NULL, '2026-04-27 12:25:22', 42, NULL, NULL, '2026-04-27 20:20:20', '2026-04-27 20:20:20', 0),
+(13, 51, 'Transient', 12, '2026-04-27', NULL, 'Assigned', NULL, '2026-04-27 14:18:18', 71, NULL, NULL, '2026-04-27 22:18:18', '2026-04-27 22:18:18', 0),
+(21, 58, 'Guest Room', 12, '2026-04-30', NULL, 'Assigned', NULL, '2026-04-29 17:53:11', 24, NULL, NULL, '2026-04-30 01:53:11', '2026-04-30 01:53:11', 0);
 
 -- --------------------------------------------------------
 
@@ -181,8 +182,8 @@ CREATE TABLE `apartment_units` (
 INSERT INTO `apartment_units` (`unit_id`, `type_id`, `room_number`, `building`, `status`, `application_id`, `tenant_id`, `description`, `created_at`, `updated_at`) VALUES
 (12, 5, 'B1-01', 'Building 1', 'Occupied', NULL, NULL, 'Building 1, Floor 1 — Guest Room', '2026-04-23 13:34:56', '2026-04-25 17:39:35'),
 (13, 1, 'B1-02', 'Building 1', 'Occupied', 7, 32, 'Building 1, Floor 1 — Studio Unit', '2026-04-23 13:34:56', '2026-04-24 11:22:34'),
-(14, 5, 'B1-03', 'Building 1', 'Available', NULL, NULL, 'Building 1, Floor 1 — Transient', '2026-04-23 13:34:56', '2026-04-27 11:04:03'),
-(15, 5, 'B1-04', 'Building 1', 'Available', NULL, NULL, 'Building 1, Floor 1 — Guest Room', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
+(14, 5, 'B1-03', 'Building 1', 'Occupied', NULL, NULL, 'Building 1, Floor 1 — Transient', '2026-04-23 13:34:56', '2026-04-29 15:02:57'),
+(15, 5, 'B1-04', 'Building 1', 'Occupied', NULL, NULL, 'Building 1, Floor 1 — Guest Room', '2026-04-23 13:34:56', '2026-04-29 15:07:52'),
 (16, 1, 'B1-05', 'Building 1', 'Occupied', 7, 32, 'Building 1, Floor 1 — Studio Unit', '2026-04-23 13:34:56', '2026-04-25 17:43:12'),
 (17, 1, 'B1-06', 'Building 1', 'Occupied', 0, 0, 'Building 1, Floor 1 — Studio Unit', '2026-04-23 13:34:56', '2026-04-25 18:02:31'),
 (18, 1, 'B1-07', 'Building 1', 'Occupied', 9, 44, 'Building 1, Floor 1 — Studio Unit', '2026-04-23 13:34:56', '2026-04-26 04:44:54'),
@@ -190,8 +191,8 @@ INSERT INTO `apartment_units` (`unit_id`, `type_id`, `room_number`, `building`, 
 (20, 6, 'B1-09', 'Building 1', 'Available', NULL, NULL, 'Building 1, Floor 2 — Transient', '2026-04-23 13:34:56', '2026-04-27 11:10:21'),
 (21, 6, 'B1-10', 'Building 1', 'Available', NULL, NULL, 'Building 1, Floor 2 — Bachelor', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
 (22, 6, 'B1-11', 'Building 1', 'Available', NULL, NULL, 'Building 1, Floor 2 — Bachelor', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
-(23, 5, 'B1-12', 'Building 1', 'Available', NULL, NULL, 'Building 1, Floor 2 — Guest Room', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
-(24, 5, 'B2-01', 'Building 2', 'Available', NULL, NULL, 'Building 2, Floor 1 — Transient', '2026-04-23 13:34:56', '2026-04-27 11:04:03'),
+(23, 5, 'B1-12', 'Building 1', 'Occupied', NULL, NULL, 'Building 1, Floor 2 — Guest Room', '2026-04-23 13:34:56', '2026-04-29 15:58:48'),
+(24, 5, 'B2-01', 'Building 2', 'Occupied', 21, 58, 'Building 2, Floor 1 — Transient', '2026-04-23 13:34:56', '2026-04-29 17:53:11'),
 (25, 3, 'B2-02', 'Building 2', 'Available', NULL, NULL, 'Building 2, Floor 1 — Two-Bedroom Unit', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
 (26, 1, 'B2-03', 'Building 2', 'Occupied', 10, 45, 'Building 2, Floor 1 — Studio Unit', '2026-04-23 13:34:56', '2026-04-26 11:20:17'),
 (27, 5, 'B2-04', 'Building 2', 'Available', NULL, NULL, 'Building 2, Floor 1 — Transient', '2026-04-23 13:34:56', '2026-04-27 11:10:21'),
@@ -238,7 +239,7 @@ INSERT INTO `apartment_units` (`unit_id`, `type_id`, `room_number`, `building`, 
 (68, 3, 'B3-27', 'Building 3', 'Available', NULL, NULL, 'Building 3, Floor 4 — Two-Bedroom Unit', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
 (69, 3, 'B3-28', 'Building 3', 'Available', NULL, NULL, 'Building 3, Floor 4 — Two-Bedroom Unit', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
 (70, 1, 'B3-29', 'Building 3', 'Available', NULL, NULL, 'Building 3, Floor 4 — Studio Unit', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
-(71, 4, 'B3-30', 'Building 3', 'Occupied', 13, 51, 'Building 3, Floor 4 — Transient', '2026-04-23 13:34:56', '2026-04-27 14:18:18'),
+(71, 4, 'B3-30', 'Building 3', 'Occupied', NULL, NULL, 'Building 3, Floor 4 — Transient', '2026-04-23 13:34:56', '2026-04-29 17:46:49'),
 (72, 2, 'B3-31', 'Building 3', 'Available', NULL, NULL, 'Building 3, Floor 4 — One-Bedroom Unit', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
 (73, 5, 'B3-32', 'Building 3', 'Available', NULL, NULL, 'Building 3, Floor 4 — Guest Room', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
 (74, 1, 'B4-01', 'Building 4', 'Available', NULL, NULL, 'Building 4, Floor 1 — Studio Unit', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
@@ -714,6 +715,57 @@ CREATE TABLE `informant` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `leases`
+--
+
+CREATE TABLE `leases` (
+  `lease_id` int(11) NOT NULL,
+  `tenant_id` int(11) NOT NULL,
+  `application_id` int(11) NOT NULL,
+  `unit_type` varchar(100) DEFAULT NULL COMMENT 'Preferred room type from application',
+  `monthly_rent` decimal(10,2) DEFAULT 0.00,
+  `deposit_amount` decimal(10,2) DEFAULT 0.00,
+  `advance_amount` decimal(10,2) DEFAULT 0.00,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `lease_status` enum('Pending','Accepted','Rejected','Active','Expired') DEFAULT 'Pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `leases`
+--
+
+INSERT INTO `leases` (`lease_id`, `tenant_id`, `application_id`, `unit_type`, `monthly_rent`, `deposit_amount`, `advance_amount`, `start_date`, `end_date`, `lease_status`, `created_at`, `updated_at`) VALUES
+(5, 58, 21, 'Guest Room', 5000.00, 1000.00, 5000.00, '2026-04-29', '2027-10-29', 'Active', '2026-04-29 17:52:11', '2026-04-29 18:38:56');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `lease_renewals`
+--
+
+CREATE TABLE `lease_renewals` (
+  `renewal_id` int(11) NOT NULL,
+  `lease_id` int(11) NOT NULL,
+  `tenant_id` int(11) NOT NULL,
+  `requested_term_months` int(11) NOT NULL DEFAULT 12,
+  `status` enum('Pending','Approved','Rejected') DEFAULT 'Pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `lease_renewals`
+--
+
+INSERT INTO `lease_renewals` (`renewal_id`, `lease_id`, `tenant_id`, `requested_term_months`, `status`, `created_at`, `updated_at`) VALUES
+(2, 5, 58, 12, 'Approved', '2026-04-29 18:38:01', '2026-04-29 18:38:56');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `male_conversion`
 --
 
@@ -909,7 +961,10 @@ INSERT INTO `notifications` (`notification_id`, `tenant_id`, `title`, `message`,
 (19, 47, 'Room Assigned!', 'Congratulations! You have been assigned to Room B2-13 in Building 2. Your account has been upgraded to Tenant.', 'approval', 0, '2026-04-27 11:17:29'),
 (20, 47, 'Room Assigned!', 'Congratulations! You have been assigned to Room B2-14 in Building 2. Your account has been upgraded to Tenant.', 'approval', 0, '2026-04-27 12:04:46'),
 (21, 47, 'Room Assigned!', 'Congratulations! You have been assigned to Room B3-01 in Building 3. Your account has been upgraded to Tenant.', 'approval', 0, '2026-04-27 12:20:20'),
-(22, 51, 'Room Assigned!', 'Congratulations! You have been assigned to Room B3-30 in Building 3. Your account has been upgraded to Tenant.', 'approval', 0, '2026-04-27 14:18:18');
+(22, 51, 'Room Assigned!', 'Congratulations! You have been assigned to Room B3-30 in Building 3. Your account has been upgraded to Tenant.', 'approval', 0, '2026-04-27 14:18:18'),
+(29, 58, 'Application Approved!', 'Congratulations! Your apartment application has been approved. Please review and accept your Lease Contract to proceed to Initial Payments. A room will be assigned once payments are settled.', 'approval', 0, '2026-04-29 17:52:11'),
+(30, 58, 'Room Assigned!', 'Your payment is confirmed and your lease is now Active! You have been assigned to Room B2-01 in Building 2. Welcome to your new home!', 'payment', 0, '2026-04-29 17:53:11'),
+(31, 58, 'Contract Renewal Approved', 'Your lease contract has been successfully renewed and extended for another 12 months.', 'approval', 0, '2026-04-29 18:38:56');
 
 -- --------------------------------------------------------
 
@@ -924,6 +979,33 @@ CREATE TABLE `payment` (
   `date` date DEFAULT NULL,
   `assistedby` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `payments`
+--
+
+CREATE TABLE `payments` (
+  `payment_id` int(11) NOT NULL,
+  `lease_id` int(11) NOT NULL,
+  `tenant_id` int(11) NOT NULL,
+  `payment_type` enum('Deposit','Advance') NOT NULL,
+  `amount` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `payment_status` enum('Pending','Paid','Failed') DEFAULT 'Pending',
+  `payment_date` datetime DEFAULT NULL,
+  `reference_number` varchar(100) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `payments`
+--
+
+INSERT INTO `payments` (`payment_id`, `lease_id`, `tenant_id`, `payment_type`, `amount`, `payment_status`, `payment_date`, `reference_number`, `created_at`, `updated_at`) VALUES
+(5, 5, 58, 'Deposit', 1000.00, 'Paid', '2026-04-30 01:53:08', 'PAY-2227010', '2026-04-29 17:52:55', '2026-04-29 17:53:08'),
+(6, 5, 58, 'Advance', 5000.00, 'Paid', '2026-04-30 01:53:11', 'PAY-951471', '2026-04-29 17:52:55', '2026-04-29 17:53:11');
 
 -- --------------------------------------------------------
 
@@ -1021,7 +1103,7 @@ INSERT INTO `tenant_accounts` (`tenant_id`, `first_name`, `last_name`, `sex`, `e
 (44, 'Arden', 'Dacer', 'Male', 'pdacer2@gmail.com', '09653124891', '$2y$10$fzBdyJ2uJGdium1t/GnKeeWanFR1DJvyfIDpQgss25h5IjsHOiscy', '$2y$10$Ch4jyvyt2vHdCIZsiIOIGuV0/h28.wLkp3.4jFpanISxcYf8RmfH.', 'Tenant', NULL, NULL, 1, NULL, NULL, NULL),
 (45, 'Tenant', 'Dacer', 'Male', 'artdenverforbesdacer@gmail.com', '09485269633', '$2y$10$hGKGjS4v1hn3YFTpAxwBGOCWnz5SfkVRustMrcg3uvzf5IsBrKNmi', '$2y$10$dLggCsJM4TYKJ6jN69.rtObztlJCYUdjhDUnFSu6wd5og1RL.E8/O', 'Tenant', NULL, NULL, 1, NULL, NULL, NULL),
 (51, 'Ryan', 'Felizardo', 'Male', 'rjfelizardo25@gmail.com', '+639065740811', '$2y$10$soTmL52U70IKn0zv3w4bmexBhgDc29rfDlzHc5Gz7c.c.sEjA01v.', '$2y$10$It7T6UXmZAer1C1HMwqzHOLCawHiKZx2YOfrDVQs3ihTIOsqZZaGW', 'Tenant', NULL, NULL, 1, NULL, 'image/jpeg', 'uploads/profiles/avatar_51_1777303278.jpg'),
-(54, 'Norman', 'Scammer', 'Male', 'kizumikaze1@gmail.com', '+639065740819', '$2y$10$nARvXLFXX1mBBhPstWoPBOTAoAQdc6CszN5Sygdm80nnm5IWnCGtC', '$2y$10$nlxhdB8L/v3BNRb.caQdUOHUQmKaw2LhAqpmZ1g4UMCL1b/YfRSH2', 'Guest', NULL, NULL, 1, NULL, NULL, NULL);
+(58, 'Kizumi', 'Kaze', 'Male', 'kizumikaze1@gmail.com', '+639065740815', '$2y$10$AflaHf99VKjCPlCwn5cYZORMI09mwvTttJsCjKiyafnsjiKDHC6Ja', '$2y$10$xVLHc30qUSrIRo4KekUHSegJEmll1MhNcGJFdgmPVCZVnD5o1ufYa', 'Tenant', NULL, NULL, 1, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1088,7 +1170,7 @@ INSERT INTO `tenant_addinfo` (`tenant_info`, `tenant_id`, `familyname`, `givenna
 (23, 47, 'qweqwe', 'qweqeq', 'F', 'qweqe', 'Single', 'Blk 10 Lot 34', '2000-07-21', 'Albay', 25, 'Male', 'qweqeq', 2, '213131', '', 'Jollibee', 'Blk 10 Lot 34', '09065740819', '0000-00-00', '', '', 0, NULL, 0, NULL, '2026-04-27', '[{\"name\":\"Koy Koy\",\"relation\":\"Son\",\"age\":\"12\",\"religion\":\"Islam\"}]'),
 (24, 49, 'Felizardo', 'Ryan', 'Z', 'Hamza', 'Single', 'Blk 10 Lot 34', '1999-07-29', 'Albay', 26, 'Male', 'Maranao', 1, 'Tambay', '', 'Jollibee', 'Mcdo Corp', '09065740812', '2004-07-21', 'Fatima Salazar', '09194678123', 3, NULL, 0, NULL, '2026-04-27', '[{\"name\":\"Alhamdillah Salazar\",\"relation\":\"Son\",\"age\":\"22\",\"religion\":\"Islam\"}]'),
 (26, 51, 'Felizardo', 'Ryan', '', '', 'Single', 'Blk 10 Lot 34', '2026-04-22', 'Albay', 0, 'Male', 'Maranao', 12, 'Tambay', '', 'Jollibee', 'Mcdo', '09065740811', '2026-04-08', 'Auster Pineda', '123541515123', 0, NULL, 0, NULL, '2026-04-27', '[{\"name\":\"Kaze Kizumi\",\"relation\":\"Son\",\"age\":\"12\",\"religion\":\"Islam\"}]'),
-(30, 54, 'Scammer', 'Norman', '', '', 'Single', 'Blk 10 Lot 39', '2004-07-08', 'Blk 10 Lot 39', 21, 'Male', '', 17, 'N/A', '', 'Jollibee', 'qweqewq', '090657408123', '0000-00-00', 'eqweqeq', '09194678123', 10, '[\"ewqeq\",\"wqewqq\",\"qweqeq\",\"qweqeq\",\"qweqeq\",\"qweqe\",\"qweqe\",\"qweqwe\",\"eeeee\",\"eqqqqq\"]', 1, 'HINDI', '2026-04-28', '[]');
+(34, 58, 'Kaze', 'Kizumi', '', '', 'Single', 'Blk 10 Lot 39', '2004-07-14', 'Blk 10 Lot 39', 21, 'Male', '', 2, 'saddsadas', '', 'Milwaukee', 'afasdaasdfs', '2313131', '0000-00-00', 'qwewqewqeq', '1235415151231', 0, '[]', 0, '', '2026-04-29', '[{\"name\":\"Ryan Jeff Felizardo\",\"relation\":\"Daughter\",\"age\":\"12\",\"religion\":\"Islam\"}]');
 
 -- --------------------------------------------------------
 
@@ -1123,12 +1205,12 @@ INSERT INTO `tenant_addinfo_images` (`id`, `addinfo_id`, `image`, `mime_type`, `
 (65, 26, NULL, 'image/jpeg', '2026-04-27 14:16:53', 'valididback', 'uploads/tenants/doc_65_1777301970.jpg'),
 (66, 26, NULL, 'image/png', '2026-04-27 14:16:56', 'birthcert', 'uploads/tenants/doc_66_1777301970.png'),
 (67, 26, NULL, 'image/png', '2026-04-27 14:16:59', 'nbi', 'uploads/tenants/doc_67_1777301970.png'),
-(83, 30, NULL, 'image/jpeg', '2026-04-28 19:58:47', 'proofofincome', 'uploads/tenants/doc_54_proofofincome_1777406375.jpg'),
-(84, 30, NULL, 'image/jpeg', '2026-04-28 19:58:48', 'valididfront', 'uploads/tenants/doc_54_valididfront_1777406377.jpg'),
-(85, 30, NULL, 'image/jpeg', '2026-04-28 19:58:49', 'valididback', 'uploads/tenants/doc_54_valididback_1777406379.jpg'),
-(86, 30, NULL, 'image/jpeg', '2026-04-28 19:58:52', 'birthcert', 'uploads/tenants/doc_54_birthcert_1777406380.jpg'),
-(87, 30, NULL, 'image/jpeg', '2026-04-28 19:58:54', 'nbi', 'uploads/tenants/doc_54_nbi_1777406381.jpg'),
-(92, 30, NULL, 'image/jpeg', '2026-04-28 20:10:34', 'picture', 'uploads/tenants/doc_54_picture_1777407034.jpg');
+(113, 34, NULL, 'image/jpeg', '2026-04-29 17:50:15', 'picture', 'uploads/tenants/doc_58_picture_1777485015.jpg'),
+(114, 34, NULL, 'image/jpeg', '2026-04-29 17:51:02', 'proofofincome', 'uploads/tenants/doc_58_proofofincome_1777485062.jpg'),
+(115, 34, NULL, 'image/jpeg', '2026-04-29 17:51:05', 'valididfront', 'uploads/tenants/doc_58_valididfront_1777485065.jpg'),
+(116, 34, NULL, 'image/jpeg', '2026-04-29 17:51:08', 'valididback', 'uploads/tenants/doc_58_valididback_1777485068.jpg'),
+(117, 34, NULL, 'image/jpeg', '2026-04-29 17:51:10', 'birthcert', 'uploads/tenants/doc_58_birthcert_1777485070.jpg'),
+(118, 34, NULL, 'image/png', '2026-04-29 17:51:12', 'nbi', 'uploads/tenants/doc_58_nbi_1777485072.png');
 
 -- --------------------------------------------------------
 
@@ -1167,6 +1249,13 @@ CREATE TABLE `tenant_parking` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `tenant_parking`
+--
+
+INSERT INTO `tenant_parking` (`parking_id`, `tenant_id`, `date`, `vehiclename`, `ownername`, `typeofvehicle`, `plateno`, `datestarted`, `signature`, `status`, `remarks`, `updated_at`) VALUES
+(7, 58, '2026-04-29', 'Subaru', 'Basta', 'Hatchback', 'TXC-1234', '2026-04-29', NULL, 'Approved', NULL, '2026-04-29 18:42:32');
+
 -- --------------------------------------------------------
 
 --
@@ -1197,7 +1286,7 @@ INSERT INTO `tenant_user_profiles` (`id`, `tenant_id`, `muslim_name`, `birthdate
 (4, 47, 'Farhan', '2026-04-16', 'Single', 'Tambay', 'Blk 10 Lot 34', '2001', '2026-04-27 10:55:17', '2026-04-27 10:55:31'),
 (6, 49, 'Hamza', '0000-00-00', 'Single', 'N/A', 'Blk 10 Lot 34', '2000', '2026-04-27 11:59:49', '2026-04-27 11:59:49'),
 (9, 51, 'Farhan', '2004-07-15', 'Single', 'N/A', 'Blk 10 Lot 34', '2010', '2026-04-27 14:15:52', '2026-04-27 14:15:52'),
-(12, 54, 'N/A', '2004-07-08', 'Single', 'N/A', 'Blk 10 Lot 39', 'N/A', '2026-04-28 18:22:12', '2026-04-28 18:22:12');
+(16, 58, 'N/A', '2004-07-14', 'Single', 'saddsadas', 'Blk 10 Lot 39', 'N/A', '2026-04-29 17:49:59', '2026-04-29 17:50:04');
 
 --
 -- Indexes for dumped tables
@@ -1392,6 +1481,24 @@ ALTER TABLE `informant`
   ADD KEY `fk_informant_deceased` (`deceased_id`);
 
 --
+-- Indexes for table `leases`
+--
+ALTER TABLE `leases`
+  ADD PRIMARY KEY (`lease_id`),
+  ADD KEY `idx_tenant` (`tenant_id`),
+  ADD KEY `idx_app` (`application_id`),
+  ADD KEY `idx_status` (`lease_status`);
+
+--
+-- Indexes for table `lease_renewals`
+--
+ALTER TABLE `lease_renewals`
+  ADD PRIMARY KEY (`renewal_id`),
+  ADD KEY `idx_lease` (`lease_id`),
+  ADD KEY `idx_tenant` (`tenant_id`),
+  ADD KEY `idx_status` (`status`);
+
+--
 -- Indexes for table `male_conversion`
 --
 ALTER TABLE `male_conversion`
@@ -1476,6 +1583,15 @@ ALTER TABLE `payment`
   ADD KEY `fk_payment_tenant` (`tenant_id`);
 
 --
+-- Indexes for table `payments`
+--
+ALTER TABLE `payments`
+  ADD PRIMARY KEY (`payment_id`),
+  ADD KEY `idx_lease` (`lease_id`),
+  ADD KEY `idx_tenant` (`tenant_id`),
+  ADD KEY `idx_status` (`payment_status`);
+
+--
 -- Indexes for table `postmortem_certificate`
 --
 ALTER TABLE `postmortem_certificate`
@@ -1558,7 +1674,7 @@ ALTER TABLE `tenant_user_profiles`
 -- AUTO_INCREMENT for table `apartmentsapp`
 --
 ALTER TABLE `apartmentsapp`
-  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `apartments_info`
@@ -1717,6 +1833,18 @@ ALTER TABLE `informant`
   MODIFY `informant_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `leases`
+--
+ALTER TABLE `leases`
+  MODIFY `lease_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT for table `lease_renewals`
+--
+ALTER TABLE `lease_renewals`
+  MODIFY `renewal_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT for table `male_conversion`
 --
 ALTER TABLE `male_conversion`
@@ -1780,13 +1908,19 @@ ALTER TABLE `marriage_witness`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `payment`
 --
 ALTER TABLE `payment`
   MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `payments`
+--
+ALTER TABLE `payments`
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `postmortem_certificate`
@@ -1816,7 +1950,7 @@ ALTER TABLE `statementofacc`
 -- AUTO_INCREMENT for table `tenant_accounts`
 --
 ALTER TABLE `tenant_accounts`
-  MODIFY `tenant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
+  MODIFY `tenant_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
 
 --
 -- AUTO_INCREMENT for table `tenant_addfam`
@@ -1828,13 +1962,13 @@ ALTER TABLE `tenant_addfam`
 -- AUTO_INCREMENT for table `tenant_addinfo`
 --
 ALTER TABLE `tenant_addinfo`
-  MODIFY `tenant_info` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `tenant_info` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT for table `tenant_addinfo_images`
 --
 ALTER TABLE `tenant_addinfo_images`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=93;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=119;
 
 --
 -- AUTO_INCREMENT for table `tenant_family_members`
@@ -1846,13 +1980,13 @@ ALTER TABLE `tenant_family_members`
 -- AUTO_INCREMENT for table `tenant_parking`
 --
 ALTER TABLE `tenant_parking`
-  MODIFY `parking_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `parking_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `tenant_user_profiles`
 --
 ALTER TABLE `tenant_user_profiles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- Constraints for dumped tables
@@ -2011,6 +2145,20 @@ ALTER TABLE `informant`
   ADD CONSTRAINT `fk_informant_deceased` FOREIGN KEY (`deceased_id`) REFERENCES `death_records` (`deceased_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Constraints for table `leases`
+--
+ALTER TABLE `leases`
+  ADD CONSTRAINT `fk_lease_app` FOREIGN KEY (`application_id`) REFERENCES `apartmentsapp` (`application_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_lease_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `lease_renewals`
+--
+ALTER TABLE `lease_renewals`
+  ADD CONSTRAINT `fk_ren_lease` FOREIGN KEY (`lease_id`) REFERENCES `leases` (`lease_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_ren_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `male_conversion`
 --
 ALTER TABLE `male_conversion`
@@ -2081,6 +2229,13 @@ ALTER TABLE `notifications`
 --
 ALTER TABLE `payment`
   ADD CONSTRAINT `fk_payment_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `payments`
+--
+ALTER TABLE `payments`
+  ADD CONSTRAINT `fk_paym_lease` FOREIGN KEY (`lease_id`) REFERENCES `leases` (`lease_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_paym_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `postmortem_certificate`

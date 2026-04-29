@@ -395,13 +395,13 @@ function initDropdowns() {
 function loadUserNav() {
   // Check for staff profile first if in staff mode
   let user = getUser();
-  let roleLabel = 'Super Admin';
+  let roleLabel = 'Apartment Manager';
   const staffProfileRaw = localStorage.getItem('mis_apartment_staff_profile');
   if (staffProfileRaw) {
     const staff = JSON.parse(staffProfileRaw);
     if (staff.name) user.name = staff.name;
     if (staff.occupation) {
-      roleLabel = (staff.occupation === 'Property Manager' || staff.occupation === 'Administrator') ? 'Super Admin' : staff.occupation;
+      roleLabel = (staff.occupation === 'Property Manager' || staff.occupation === 'Administrator') ? 'Apartment Manager' : staff.occupation;
     }
   }
 
@@ -462,7 +462,7 @@ function syncSessionUser(sessionName, sessionEmail, sessionRole) {
       phone: '', 
       gender: '', 
       arabic: sessionName, 
-      occupation: sessionRole || 'Super Admin', 
+      occupation: sessionRole || 'Apartment Manager', 
       since: new Date().toISOString().split('T')[0] 
     };
     localStorage.setItem('mis_apartment_staff_profile', JSON.stringify(newStaff));
