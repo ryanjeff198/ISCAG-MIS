@@ -218,7 +218,6 @@ function openRoomPreview(unitData, options = {}) {
         <div class="rp-header">
           <div style="display:flex; align-items:center; gap:12px;">
             <h3 style="font-family: 'Lora', serif;">${room.label}</h3>
-            ${room.queue ? `<span style="background:rgba(255,255,255,0.2); padding:2px 10px; border-radius:20px; font-size:0.7rem; font-weight:700;">${room.queue}</span>` : ''}
           </div>
           <button class="rp-close" id="rp-close-x">&times;</button>
         </div>

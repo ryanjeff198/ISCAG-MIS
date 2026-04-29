@@ -302,30 +302,57 @@ class ApartmentType
     public function getAvailableCountByType(int $typeId): int
     {
         // First check if this type is Transient
-        $stmtType = $this->db->prepare("SELECT label FROM apartment_types WHERE type_id = :tid");
+        $stmtType = $this->db->prepare("SELECT type_key, label FROM apartment_types WHERE type_id = :tid");
         $stmtType->execute(['tid' => $typeId]);
-        $label = $stmtType->fetchColumn();
+        $typeInfo = $stmtType->fetch(PDO::FETCH_ASSOC);
+        if (!$typeInfo) return 0;
         
+        $label = $typeInfo['label'];
+        $typeKey = $typeInfo['type_key'];
         $isTransient = $label && stripos($label, 'Transient') !== false;
 
+        // Committed users: Approved (Lease sent) or Queued but not yet assigned to a physical unit_id
+        $stmtCommitted = $this->db->prepare("
+            SELECT COUNT(*) FROM apartmentsapp 
+            WHERE (roomtype = :key OR roomtype = :label)
+              AND status IN ('Approved', 'Verified', 'Queued')
+              AND unit_id IS NULL
+        ");
+        $stmtCommitted->execute(['key' => $typeKey, 'label' => $label]);
+        $committedCount = (int) $stmtCommitted->fetchColumn();
+
         if ($isTransient) {
-            // Transient has 10 pax per room, but UI expects 'number of physical units'
-            // We return the number of units that have NOT reached max capacity (10)
+            // Total capacity logic for Transient (10 slots per room)
             $stmt = $this->db->prepare("
-                SELECT COUNT(*) FROM apartment_units u
+                SELECT u.unit_id,
+                       (SELECT COUNT(*) FROM apartmentsapp a WHERE a.unit_id = u.unit_id AND a.status = 'Assigned') as occupant_count
+                FROM apartment_units u 
                 WHERE u.type_id = :tid 
                   AND u.status IN ('Available', 'Occupied')
-                  AND (SELECT COUNT(*) FROM apartmentsapp a WHERE a.unit_id = u.unit_id AND a.status = 'Assigned') < 10
             ");
             $stmt->execute(['tid' => $typeId]);
-            return (int) $stmt->fetchColumn();
+            $units = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $totalPhysicalSlots = 0;
+            $takenSlots = 0;
+            foreach ($units as $u) {
+                $totalPhysicalSlots += 10;
+                $takenSlots += (int)$u['occupant_count'];
+            }
+            
+            $availableSlots = max(0, $totalPhysicalSlots - $takenSlots - $committedCount);
+            // Return Concept of "Units" as whole blocks of 10 for basic display
+            // But usually the UI will use current_slots_left via getTypesForUserView
+            return (int) ceil($availableSlots / 10);
         } else {
-            // Normal behavior: just count 'Available' status rooms directly
+            // Normal behavior: physical Available rooms minus Committed applicants
             $stmt = $this->db->prepare(
                 "SELECT COUNT(*) FROM apartment_units WHERE type_id = :tid AND status = 'Available'"
             );
             $stmt->execute(['tid' => $typeId]);
-            return (int) $stmt->fetchColumn();
+            $physicalAvailable = (int) $stmt->fetchColumn();
+
+            return max(0, $physicalAvailable - $committedCount);
         }
     }
 
@@ -373,7 +400,17 @@ class ApartmentType
             $type['is_transient'] = $isTransient;
             
             if ($isTransient && $type['available_count'] > 0) {
-                // Find the EXACT next physical unit that an applicant would be assigned to
+                // Committed users: Approved but not yet assigned to a physical unit_id
+                $stmtCommitted = $this->db->prepare("
+                    SELECT COUNT(*) FROM apartmentsapp 
+                    WHERE (roomtype = :key OR roomtype = :label)
+                      AND status IN ('Approved', 'Verified')
+                      AND unit_id IS NULL
+                ");
+                $stmtCommitted->execute(['key' => $type['type_key'], 'label' => $type['label']]);
+                $committedCount = (int) $stmtCommitted->fetchColumn();
+
+                // Find the next physical unit that has space
                 $stmt = $this->db->prepare("
                     SELECT u.unit_id,
                            (SELECT COUNT(*) FROM apartmentsapp a WHERE a.unit_id = u.unit_id AND a.status = 'Assigned') as occupant_count
@@ -388,13 +425,23 @@ class ApartmentType
                 $nextUnit = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($nextUnit) {
-                    $type['current_slots_left'] = 10 - (int)$nextUnit['occupant_count'];
+                    $slotsInUnit = 10 - (int)$nextUnit['occupant_count'];
+                    $type['current_slots_left'] = max(0, $slotsInUnit - $committedCount);
                 } else {
                     $type['current_slots_left'] = 0;
                 }
             } else {
                 $type['current_slots_left'] = 0;
             }
+
+            // Calculate current queue count for this type
+            $stmtQ = $this->db->prepare("
+                SELECT COUNT(*) FROM apartmentsapp 
+                WHERE (roomtype = :key OR roomtype = :label)
+                  AND status = 'Queued'
+            ");
+            $stmtQ->execute(['key' => $type['type_key'], 'label' => $type['label']]);
+            $type['queue_count'] = (int) $stmtQ->fetchColumn();
         }
         return $types;
     }
