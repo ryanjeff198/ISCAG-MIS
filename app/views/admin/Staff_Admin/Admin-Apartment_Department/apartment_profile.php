@@ -212,7 +212,7 @@
                   <span class="info-badge" style="background:rgba(199,154,43,0.12);color:var(--accent);"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg> Apartment
                     Department</span>
                   <span class="info-badge" style="background:rgba(46,125,85,0.1);color:var(--success);"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Active</span>
-                  <span class="info-badge" style="background:rgba(30,95,139,0.1);color:var(--info);" id="p-occupation"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg> Staff Admin</span>
+                  <span class="info-badge" style="background:rgba(30,95,139,0.1);color:var(--info);" id="p-occupation"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg> Apartment Manager</span>
                   <span class="info-badge" style="background:rgba(30,95,139,0.1);color:var(--info);" id="p-since"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg> Staff Since —</span>
                 </div>
 
@@ -309,7 +309,7 @@
                 <p style="font-weight:600;font-family:monospace;color:var(--text-muted);" id="s-id">STF-001</p>
               </div>
               <div><label class="form-label">Role</label>
-                <p style="font-weight:600;" id="s-role">Apartment Staff Admin</p>
+                <p style="font-weight:600;" id="s-role">Apartment Manager</p>
               </div>
               <div><label class="form-label">Department</label>
                 <p style="font-weight:600;" id="s-dept">Apartments</p>
@@ -372,7 +372,7 @@
       $fullName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? ''));
       if (!$fullName) $fullName = $_SESSION['name'] ?? 'Apartment Staff';
       $email = $dbUser['email'] ?? $_SESSION['email'] ?? 'staff@iscag.org';
-      $role = $dbUser['role'] ?? $_SESSION['role'] ?? 'Staff Admin';
+      $role = $dbUser['role'] ?? $_SESSION['role'] ?? 'Apartment Manager';
       $occupation = $dbUser['occupation'] ?? $role;
     ?>
     standardizePage('staff');
@@ -426,9 +426,9 @@
       document.getElementById('p-name').textContent = p.name;
       document.getElementById('p-email').textContent = p.email;
       document.getElementById('p-since').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg> Staff Since ' + formatDate(p.since);
-      document.getElementById('p-occupation').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg> ' + (p.occupation || 'Staff Admin');
+      document.getElementById('p-occupation').innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg> ' + (p.occupation || 'Apartment Manager');
       document.getElementById('s-id').textContent = p.id;
-      document.getElementById('s-role').textContent = p.occupation || 'Apartment Staff Admin';
+      document.getElementById('s-role').textContent = p.occupation || 'Apartment Manager';
       document.getElementById('s-dept').textContent = p.department || 'Apartments';
       const navA = document.getElementById('nav-avatar');
       const navN = document.getElementById('nav-name');

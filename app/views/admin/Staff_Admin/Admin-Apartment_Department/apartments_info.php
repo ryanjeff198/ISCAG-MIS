@@ -558,7 +558,7 @@
     <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
     <script>
         standardizePage('staff');
-        syncSessionUser("<?= addslashes(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>", "<?= addslashes($dbUser['email'] ?? '') ?>", "Staff Admin");
+        syncSessionUser("<?= addslashes(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>", "<?= addslashes($dbUser['email'] ?? '') ?>", "Apartment Manager");
 
         let apartmentTypes = [];
         let roomUnits = [];

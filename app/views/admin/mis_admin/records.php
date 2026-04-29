@@ -246,7 +246,6 @@
         <td class="td-id">${u.id}</td>
         <td>
           <div class="user-cell">
-            <div class="mini-avatar" style="background:${avatarBg};">${initials}</div>
             <div>
               <div class="user-name">${u.name}</div>
               <div class="user-email">${u.email}</div>
@@ -271,12 +270,9 @@
                 <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                 View Details
               </button>
+              <button class="action-menu-item" onclick="toggleStatus('${u.id}')">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
                 ${u.status === 'active' ? 'Deactivate User' : 'Activate User'}
-              </button>
-              <hr style="border:0;border-top:1px solid #eee;margin:4px 0;">
-              <button class="action-menu-item danger" onclick="deleteUser('${u.id}')">
-                <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                Delete Permanently
               </button>
             </div>
           </div>
@@ -323,7 +319,6 @@
       document.getElementById('detail-title').textContent = 'User Details — ' + u.id;
       document.getElementById('detail-body').innerHTML = `
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-        <div class="mini-avatar" style="width:50px;height:50px;font-size:1.1rem;background:${u.gender === 'female' ? '#5a2e7a' : 'var(--primary-light)'};">${initials}</div>
         <div>
           <div style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);">${u.name}</div>
           <div style="font-size:0.82rem;color:var(--text-muted);">${u.email}</div>

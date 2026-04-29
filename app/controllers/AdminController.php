@@ -596,6 +596,30 @@ class AdminController extends Controller
         $this->view('admin/mis_admin/damayan_records', ['active_page' => 'damayan_records']);
     }
 
+    public function renewalRecords(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        require_once BASE_PATH . '/app/models/LeaseRenewal.php';
+        $renewalModel = new LeaseRenewal();
+        
+        $db = getDbConnection();
+        
+        // 1. Fetch Stats
+        $activeLeases = $db->query("SELECT COUNT(*) FROM leases WHERE lease_status IN ('Accepted', 'Active')")->fetchColumn();
+        $pendingRenewals = $db->query("SELECT COUNT(*) FROM lease_renewals WHERE status = 'Pending'")->fetchColumn();
+        
+        // 2. Fetch Detailed Records
+        $renewals = $renewalModel->getAllRenewals();
+        
+        $this->view('admin/mis_admin/renewal_records', [
+            'active_page' => 'renewal_records',
+            'renewals' => $renewals,
+            'stats' => [
+                'activeLeases' => (int)$activeLeases,
+                'pendingRenewals' => (int)$pendingRenewals
+            ]
+        ]);
+    }
+
     public function notificationBroadcast(): void {
         Auth::protectRole(['Admin']);
         $this->view('admin/mis_admin/notification_broadcast', ['active_page' => 'notifications']);
@@ -727,12 +751,23 @@ class AdminController extends Controller
 
     public function renewals() {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
+        require_once BASE_PATH . '/app/models/User.php';
         require_once BASE_PATH . '/app/models/LeaseRenewal.php';
+        require_once BASE_PATH . '/app/models/Lease.php';
+        
+        $userModel = new User();
         $renewalModel = new LeaseRenewal();
+        $leaseModel = new Lease();
         
+        $dbUser = $userModel->findById($_SESSION['user_id']);
         $renewals = $renewalModel->getAllRenewals();
+        $allLeases = $leaseModel->getAllLeases();
         
-        $this->view('admin/Apartment/renewals', ['renewals' => $renewals]);
+        $this->view('admin/Apartment/renewals', [
+            'dbUser' => $dbUser,
+            'renewals' => $renewals,
+            'allLeases' => $allLeases
+        ]);
     }
 
     public function approveRenewal() {

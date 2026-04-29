@@ -525,7 +525,7 @@ Auth::protect();
                         <div class="form-doc-header-text">
                             <div class="arabic-line">بسم الله الرحمن الرحيم</div>
                             <div class="org-name-ar">الجمعية الإسلامية للثقافة والرعاية الإجتماعية في غوام</div>
-                            <div class="org-name-en">Islamic Social & Cultural Association of Guam</div>
+                            <div class="org-name-en">Islamic Studies, Call and Guidance </div>
                             <div class="sec-reg">SEC Reg. No. 123456789</div>
                         </div>
                     </div>

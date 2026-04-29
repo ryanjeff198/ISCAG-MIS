@@ -5,7 +5,7 @@
   <div class="sidebar-header">
     <div class="sidebar-brand">
       <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
-      <div class="brand-text"><strong>ISCAG MIS</strong><span>Apartment Staff</span></div>
+      <div class="brand-text"><strong>ISCAG MIS</strong><span>Apartment Manager</span></div>
     </div>
   </div>
   <div class="sidebar-user">
@@ -14,7 +14,7 @@
     </div>
     <div class="user-info">
       <strong id="nav-name"><?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: 'Apartment Staff' ?></strong>
-      <span>Staff Admin</span>
+      <span>Apartment Manager</span>
     </div>
   </div>
   <nav class="sidebar-nav">

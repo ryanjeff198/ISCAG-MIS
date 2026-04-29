@@ -150,25 +150,61 @@
 }
 
 .btn-back {
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 8px;
-  border: 1px solid var(--border);
+  border: 1.5px solid #e2e8f0;
   background: white;
-  color: var(--text-muted);
+  color: #64748b;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 600;
+  gap: 8px;
+  font-weight: 700;
   font-family: inherit;
-  font-size: 0.85rem;
-  transition: all 0.18s;
+  font-size: 0.82rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .btn-back:hover {
-  background: #f0f2f1;
-  border-color: var(--primary);
-  color: var(--primary);
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--primary-dark);
+  transform: translateX(-3px);
+}
+
+.btn-back svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  color: white;
+  border: none;
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(23, 107, 69, 0.2);
+  text-decoration: none;
+}
+
+.btn-action:hover {
+  box-shadow: 0 6px 20px rgba(23, 107, 69, 0.3);
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.btn-action svg {
+  width: 16px;
+  height: 16px;
 }
 
 .detail-meta {
@@ -189,7 +225,7 @@
 
 .detail-meta-item .label {
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: #64748b;
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -197,39 +233,9 @@
 }
 
 .detail-meta-item .value {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--primary-dark);
-}
-
-.btn-go-source {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 22px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
-  color: white;
-  border: none;
-  font-weight: 700;
-  font-size: 0.85rem;
-  font-family: inherit;
-  cursor: pointer;
-  margin-top: 24px;
-  transition: all 0.18s;
-  text-decoration: none;
-  box-shadow: 0 4px 12px rgba(23, 107, 69, 0.25);
-}
-
-.btn-go-source:hover {
-  box-shadow: 0 6px 20px rgba(23, 107, 69, 0.35);
-  transform: translateY(-1px);
-}
-
-.btn-go-source svg {
-  width: 16px;
-  height: 16px;
-  fill: white;
 }
 
 /* ── Admin Insights Ribbon ── */

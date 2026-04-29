@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>ISCAG MIS — Analytics</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
-  <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>"/>
+  <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     /* Ultra-wide Analytics Layout */
@@ -18,29 +18,24 @@
     .an-section-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
 
     /* KPI Grid Scale */
-    .kpi-row { 
-        display: grid; 
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-        gap: 20px; 
+    /* KPI Grid - Unified Scale */
+    .admin-insights {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
     }
-    .kpi { 
-        background: var(--card-bg); 
-        border: 1px solid var(--border); 
-        border-radius: 12px; 
-        padding: 24px 20px; 
-        text-align: center; 
-        transition: all 0.2s ease; 
-        position: relative; 
-        overflow: hidden; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    
+    .kpi-trend {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin-top: 4px;
     }
-    .kpi:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.06); border-color: var(--primary-light); }
-    .kpi-accent { position: absolute; top: 0; left: 0; width: 100%; height: 4px; }
-    .kpi-label { font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-    .kpi-val { font-family: 'Lora', serif; font-size: 2.2rem; font-weight: 700; color: var(--text-main); }
-    .kpi-change { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-top: 10px; }
-    .kpi-change.up { background: rgba(47, 138, 96, 0.1); color: var(--success); }
-    .kpi-change.flat { background: #f0f4f1; color: var(--text-muted); }
+    .kpi-trend.up { color: var(--success); }
+    .kpi-trend.flat { color: var(--text-muted); }
 
     /* Charts Scaling */
     .chart-row { display: grid; gap: 20px; }
@@ -56,7 +51,15 @@
         .chart-row.two, .chart-row.three, .chart-row.equal { grid-template-columns: 1fr; }
     }
 
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.01); }
+    .card { 
+        background: var(--card-bg); 
+        border: 1px solid var(--border); 
+        border-radius: 16px; 
+        padding: 28px; 
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03); 
+        transition: all 0.3s ease;
+    }
+    .card:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
     .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .card-title { font-size: 1.05rem; font-weight: 700; color: var(--text-main); }
     .card-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 5px; }
@@ -104,15 +107,40 @@
 
         <!-- ═══ SECTION 1: KPI OVERVIEW ═══ -->
         <div class="an-section">
-          <div class="kpi-row">
-            <div class="kpi"><div class="kpi-accent" style="background:var(--primary)"></div><div class="kpi-label">Total Users</div><div class="kpi-val"><?=number_format($totalUsers)?></div><span class="kpi-change up">↑ Active</span></div>
-            <div class="kpi"><div class="kpi-accent" style="background:var(--warning)"></div><div class="kpi-label">Apartment Apps</div><div class="kpi-val"><?=number_format($totalApps)?></div><span class="kpi-change flat">All time</span></div>
-            <div class="kpi"><div class="kpi-accent" style="background:var(--info)"></div><div class="kpi-label">Parking Permits</div><div class="kpi-val"><?=number_format($totalParking)?></div><span class="kpi-change flat">All time</span></div>
-            <div class="kpi"><div class="kpi-accent" style="background:var(--danger)"></div><div class="kpi-label">Notifications</div><div class="kpi-val"><?=number_format($totalNotifs)?></div><span class="kpi-change up">↑ System</span></div>
+          <div class="admin-insights">
+            <div class="insight-card">
+              <div class="insight-label">Total Users</div>
+              <div class="insight-value" style="color:var(--primary)"><?=number_format($totalUsers)?></div>
+              <div class="kpi-trend up">↑ Active</div>
+              <div class="insight-icon-bg" style="color:var(--primary)"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-label">Apartment Apps</div>
+              <div class="insight-value" style="color:var(--warning)"><?=number_format($totalApps)?></div>
+              <div class="kpi-trend flat">All time</div>
+              <div class="insight-icon-bg" style="color:var(--warning)"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-label">Parking Permits</div>
+              <div class="insight-value" style="color:var(--info)"><?=number_format($totalParking)?></div>
+              <div class="kpi-trend flat">All time</div>
+              <div class="insight-icon-bg" style="color:var(--info)"><svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-label">Notifications</div>
+              <div class="insight-value" style="color:var(--danger)"><?=number_format($totalNotifs)?></div>
+              <div class="kpi-trend up">↑ System</div>
+              <div class="insight-icon-bg" style="color:var(--danger)"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div>
+            </div>
             <?php
               $billingTotal=0; foreach($billingDist as $b) $billingTotal+=$b['total'];
             ?>
-            <div class="kpi"><div class="kpi-accent" style="background:var(--success)"></div><div class="kpi-label">Total Billing</div><div class="kpi-val">₱<?=number_format($billingTotal,0)?></div><span class="kpi-change up">↑ Revenue</span></div>
+            <div class="insight-card">
+              <div class="insight-label">Total Billing</div>
+              <div class="insight-value" style="color:var(--success)">₱<?=number_format($billingTotal,0)?></div>
+              <div class="kpi-trend up">↑ Revenue</div>
+              <div class="insight-icon-bg" style="color:var(--success)"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></div>
+            </div>
           </div>
         </div>
 
