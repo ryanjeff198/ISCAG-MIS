@@ -138,14 +138,15 @@ class Lease
      * Accept lease — tenant action.
      * Changes status from Pending → Accepted.
      */
-    public function acceptLease(int $leaseId, int $tenantId): bool
+    public function acceptLease(int $leaseId, int $tenantId, int $term = 12): bool
     {
         $stmt = $this->db->prepare("
             UPDATE leases 
-            SET lease_status = 'Accepted' 
+            SET lease_status = 'Accepted',
+                end_date = DATE_ADD(start_date, INTERVAL :term MONTH)
             WHERE lease_id = :lid AND tenant_id = :tid AND lease_status = 'Pending'
         ");
-        return $stmt->execute(['lid' => $leaseId, 'tid' => $tenantId]);
+        return $stmt->execute(['lid' => $leaseId, 'tid' => $tenantId, 'term' => $term]);
     }
 
     /**

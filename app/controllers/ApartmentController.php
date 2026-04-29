@@ -315,6 +315,7 @@ class ApartmentController extends Controller {
 
         $body = json_decode(file_get_contents('php://input'), true);
         $action = $body['action'] ?? '';
+        $term = (int) ($body['term'] ?? 12);
 
         if (!in_array($action, ['accept', 'reject'])) {
             echo json_encode(['success' => false, 'message' => 'Invalid action']);
@@ -336,7 +337,7 @@ class ApartmentController extends Controller {
         }
 
         if ($action === 'accept') {
-            $ok = $leaseModel->acceptLease($lease['lease_id'], $userId);
+            $ok = $leaseModel->acceptLease($lease['lease_id'], $userId, $term);
             if ($ok) {
                 // Generate initial payments upon successful acceptance
                 require_once BASE_PATH . '/app/models/Payment.php';
@@ -433,6 +434,7 @@ class ApartmentController extends Controller {
         
         $body = json_decode(file_get_contents('php://input'), true);
         $leaseId = $body['lease_id'] ?? 0;
+        $term = (int) ($body['term'] ?? 12);
         $userId = $_SESSION['user_id'];
 
         if (!$leaseId) {
@@ -443,7 +445,7 @@ class ApartmentController extends Controller {
         require_once BASE_PATH . '/app/models/LeaseRenewal.php';
         $renewalModel = new LeaseRenewal();
 
-        $ok = $renewalModel->requestRenewal((int) $leaseId, $userId);
+        $ok = $renewalModel->requestRenewal((int) $leaseId, $userId, $term);
 
         echo json_encode(['success' => $ok]);
     }

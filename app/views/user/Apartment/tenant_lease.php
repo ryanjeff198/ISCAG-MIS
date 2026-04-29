@@ -299,7 +299,13 @@
                             <h4>Ready to Accept Your Lease?</h4>
                             <p>By accepting, you agree to all terms and conditions outlined above. This action cannot be undone.</p>
                         </div>
-                        <div class="action-bar-btns">
+                        <div class="action-bar-btns" style="align-items: center;">
+                            <select id="lease-term-select" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafc; font-weight: 600; color: var(--primary-dark); cursor: pointer;">
+                                <option value="12">12 Months (Standard)</option>
+                                <option value="9">9 Months</option>
+                                <option value="6">6 Months</option>
+                                <option value="3">3 Months</option>
+                            </select>
                             <button class="btn-action danger" id="btn-reject-lease" type="button">
                                 <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                                 Reject
@@ -347,7 +353,13 @@
                                 <h4 style="color:#2f8a60;">✓ Lease Active</h4>
                                 <p>Your lease contract is fully active. You can request a contract renewal here to extend your stay by 12 months.</p>
                             </div>
-                            <div class="action-bar-btns">
+                            <div class="action-bar-btns" style="align-items: center;">
+                                <select id="renew-term-select" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafc; font-weight: 600; color: var(--primary-dark); cursor: pointer; margin-right: 10px;">
+                                    <option value="12">12 Months</option>
+                                    <option value="9">9 Months</option>
+                                    <option value="6">6 Months</option>
+                                    <option value="3">3 Months</option>
+                                </select>
                                 <button class="btn-action primary" id="btn-renew-contract" type="button" data-lease-id="<?= $lease['lease_id'] ?>">
                                     <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
                                     Request Renewal
@@ -425,10 +437,16 @@
         const btns = document.querySelectorAll('.action-bar-btns .btn-action');
         btns.forEach(b => b.disabled = true);
 
+        let term = 12;
+        if (action === 'accept') {
+            const selectBox = document.getElementById('lease-term-select');
+            if (selectBox) term = parseInt(selectBox.value);
+        }
+
         fetch('<?= url("/user/apartment/lease/accept") ?>', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: action })
+            body: JSON.stringify({ action: action, term: term })
         })
         .then(r => r.json())
         .then(res => {
@@ -476,9 +494,11 @@
     const renewBtn = document.getElementById('btn-renew-contract');
     if (renewBtn) {
         renewBtn.addEventListener('click', () => {
+            const selectBox = document.getElementById('renew-term-select');
+            const term = selectBox ? parseInt(selectBox.value) : 12;
             showConfirm(
                 'Request Contract Renewal',
-                'This will send a request to the administrator to extend your lease contract for another 12 months. Do you want to proceed?',
+                `This will send a request to the administrator to extend your lease contract for another ${term} months. Do you want to proceed?`,
                 false,
                 () => {
                     const leaseId = renewBtn.getAttribute('data-lease-id');
@@ -486,7 +506,7 @@
                     fetch('<?= url("/user/apartment/lease/renew") ?>', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ lease_id: leaseId })
+                        body: JSON.stringify({ lease_id: leaseId, term: term })
                     })
                     .then(r => r.json())
                     .then(res => {

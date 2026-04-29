@@ -350,7 +350,7 @@ class AdminController extends Controller
                 'application_id' => (int) $id,
                 'unit_type'      => $appData['roomtype'] ?? null,
                 'monthly_rent'   => $monthlyRent,
-                'deposit_amount' => $monthlyRent, // 1 month deposit
+                'deposit_amount' => 1000, // Fixed 1000 deposit
                 'advance_amount' => $monthlyRent, // 1 month advance
                 'start_date'     => $startDate,
                 'end_date'       => $endDate,
@@ -744,17 +744,19 @@ class AdminController extends Controller
             $renewalModel = new LeaseRenewal();
             $notifModel = new Notification();
             
-            // Need the tenant ID to send notification
+            // Need the tenant ID and term to send correct notification
             $db = getDbConnection();
-            $stmt = $db->prepare("SELECT tenant_id FROM lease_renewals WHERE renewal_id = :id");
+            $stmt = $db->prepare("SELECT tenant_id, requested_term_months FROM lease_renewals WHERE renewal_id = :id");
             $stmt->execute(['id' => $id]);
-            $tenantId = $stmt->fetchColumn();
+            $renData = $stmt->fetch(PDO::FETCH_ASSOC);
+            $tenantId = $renData['tenant_id'] ?? null;
+            $term = $renData['requested_term_months'] ?? 12;
 
             if ($renewalModel->approveRenewal((int)$id) && $tenantId) {
                 $notifModel->create(
                     $tenantId,
                     'Contract Renewal Approved',
-                    'Your lease contract has been successfully renewed and extended for another 12 months.',
+                    'Your lease contract has been successfully renewed and extended for another ' . $term . ' months.',
                     'approval'
                 );
             }

@@ -17,7 +17,7 @@ class LeaseRenewal
     /**
      * Request a contract renewal.
      */
-    public function requestRenewal(int $leaseId, int $tenantId): bool
+    public function requestRenewal(int $leaseId, int $tenantId, int $term = 12): bool
     {
         // Check if there is already a pending renewal for this lease
         $check = $this->db->prepare("SELECT COUNT(*) FROM lease_renewals WHERE lease_id = :lid AND status = 'Pending'");
@@ -26,8 +26,8 @@ class LeaseRenewal
             return false; // Already requested
         }
 
-        $stmt = $this->db->prepare("INSERT INTO lease_renewals (lease_id, tenant_id, status) VALUES (:lid, :tid, 'Pending')");
-        return $stmt->execute(['lid' => $leaseId, 'tid' => $tenantId]);
+        $stmt = $this->db->prepare("INSERT INTO lease_renewals (lease_id, tenant_id, status, requested_term_months) VALUES (:lid, :tid, 'Pending', :term)");
+        return $stmt->execute(['lid' => $leaseId, 'tid' => $tenantId, 'term' => $term]);
     }
 
     /**
@@ -67,13 +67,13 @@ class LeaseRenewal
             $stmt->execute(['rid' => $renewalId]);
 
             if ($stmt->rowCount() > 0) {
-                // Extension logic: Add 1 year to the current lease end_date
+                // Extension logic: Add `requested_term_months` to the current lease end_date
                 $leaseStmt = $this->db->prepare("
                     UPDATE leases 
-                    SET end_date = DATE_ADD(end_date, INTERVAL 1 YEAR) 
+                    SET end_date = DATE_ADD(end_date, INTERVAL (SELECT requested_term_months FROM lease_renewals WHERE renewal_id = :rid2) MONTH) 
                     WHERE lease_id = (SELECT lease_id FROM lease_renewals WHERE renewal_id = :rid)
                 ");
-                $leaseStmt->execute(['rid' => $renewalId]);
+                $leaseStmt->execute(['rid' => $renewalId, 'rid2' => $renewalId]);
             }
             $this->db->commit();
             return true;

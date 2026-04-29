@@ -69,6 +69,7 @@
                             <th>Tenant details</th>
                             <th>Current Expiration</th>
                             <th>Unit Type</th>
+                            <th>Requested Term</th>
                             <th>Requested On</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -94,6 +95,7 @@
                                 <strong><?= date('M j, Y', strtotime($req['end_date'])) ?></strong>
                             </td>
                             <td><?= htmlspecialchars($req['unit_type']) ?></td>
+                            <td><strong>+<?= (int)$req['requested_term_months'] ?> Months</strong></td>
                             <td><?= date('M j, Y h:i A', strtotime($req['created_at'])) ?></td>
                             <td>
                                 <div class="badge <?= $statusClass ?>">
@@ -103,7 +105,7 @@
                             <td>
                                 <?php if ($req['status'] === 'Pending'): ?>
                                 <div class="action-btns">
-                                    <button class="btn-action btn-approve" onclick="showConfirmApprove(<?= $req['renewal_id'] ?>, '<?= $tenantName ?>')">Approve +1 Yr</button>
+                                    <button class="btn-action btn-approve" onclick="showConfirmApprove(<?= $req['renewal_id'] ?>, '<?= $tenantName ?>', <?= (int)$req['requested_term_months'] ?>)">Approve</button>
                                     <button class="btn-action btn-reject" onclick="showConfirmReject(<?= $req['renewal_id'] ?>, '<?= $tenantName ?>')">Reject</button>
                                 </div>
                                 <?php else: ?>
@@ -133,9 +135,9 @@
     </div>
 
     <script>
-        function showConfirmApprove(id, name) {
+        function showConfirmApprove(id, name, term) {
             document.getElementById('confirmTitle').textContent = 'Approve Renewal';
-            document.getElementById('confirmMsg').textContent = 'Extend the lease for ' + name + ' by exactly 12 months?';
+            document.getElementById('confirmMsg').textContent = 'Extend the lease for ' + name + ' by exactly ' + term + ' months?';
             const urlBtn = document.getElementById('confirmUrl');
             urlBtn.href = "<?= url('/admin/apartment/renewals/approve?id=') ?>" + id;
             urlBtn.style.background = '#166534';
