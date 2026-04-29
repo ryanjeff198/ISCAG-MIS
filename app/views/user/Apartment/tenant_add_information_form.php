@@ -1114,9 +1114,13 @@ if ($userId) {
     .avail-badge.status-full { background: rgba(139, 46, 46, 0.1); color: var(--danger); }
 
     .unit-card.unit-full {
-      opacity: 0.75;
-      cursor: not-allowed;
-      filter: grayscale(0.5);
+      opacity: 0.9;
+      cursor: pointer;
+      filter: none;
+      border-color: #fecaca;
+    }
+    .unit-card.unit-full .unit-card-label {
+      color: #7f1d1d;
     }
     .unit-card.unit-full:hover {
       border-color: var(--border) !important;
@@ -3854,11 +3858,13 @@ if ($userId) {
             const typeKey = t.type_key || `unit-${typeId}`;
             const label = t.label || 'Apartment Unit';
             const isFull = (parseInt(t.available_count) || 0) <= 0;
+            const hasQueue = (parseInt(t.queue_count) || 0) > 0;
             
             let availText = isFull ? 'No Units Available' : `${t.available_count} Units Available`;
-            if (t.is_transient && !isFull) {
-                // E.g. "3 Units Available (9/10 Slots)"
-                availText = `${t.available_count} Units Available (${t.current_slots_left}/10 Slots)`;
+            if (isFull && hasQueue) {
+                availText = `Waitlist: ${t.queue_count} Person(s)`;
+            } else if (isFull) {
+                availText = 'Waitlist Open';
             }
 
             const statusClass = isFull ? 'status-full' : (t.available_count < 5 ? 'status-low' : 'status-ok');
@@ -3877,9 +3883,9 @@ if ($userId) {
             if (isSelected) console.log("Matching unit found:", currentLabel);
 
             return `
-              <label class="unit-card ${isSelected && !isFull ? 'selected' : ''} ${isFull ? 'unit-full' : ''}" for="unit-${typeId}">
+              <label class="unit-card ${isSelected ? 'selected' : ''} ${isFull ? 'unit-full' : ''}" for="unit-${typeId}">
                 <input type="radio" name="unit" id="unit-${typeId}" value="${typeKey}" 
-                  ${isSelected && !isFull ? 'checked' : ''} ${isFull ? 'disabled' : ''} />
+                  ${isSelected ? 'checked' : ''} />
                 <div class="unit-card-check">
                   <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
                 </div>

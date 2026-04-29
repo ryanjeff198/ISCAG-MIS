@@ -408,7 +408,23 @@ class ApartmentApp {
                 'building' => $room['building']
             ];
         } else {
-            return ['result' => 'error', 'message' => 'No rooms available.'];
+            // ── QUEUE: No rooms available ──
+            // Get current max queue position FOR THIS ROOM TYPE (label or key)
+            $qStmt = $this->db->prepare("SELECT COALESCE(MAX(queue_position), 0) + 1 FROM apartmentsapp WHERE status = 'Queued'");
+            $qStmt->execute();
+            $nextPos = $qStmt->fetchColumn();
+
+            $this->db->prepare("
+                UPDATE apartmentsapp 
+                SET status = 'Queued', queue_position = :pos 
+                WHERE application_id = :aid
+            ")->execute(['pos' => $nextPos, 'aid' => $applicationId]);
+
+            return [
+                'result' => 'queued',
+                'queue_position' => $nextPos,
+                'message' => 'No rooms available. You have been placed in the queue.'
+            ];
         }
     }
 

@@ -156,12 +156,38 @@ function openRoomPreview(unitData, options = {}) {
     if (unitData.kitchen) features.push({ label: 'Kitchen', value: unitData.kitchen });
     if (unitData.parking) features.push({ label: 'Parking', value: unitData.parking });
 
+    const inclusions = [];
+    if (unitData.inclusions) {
+      try {
+        const parsed = typeof unitData.inclusions === 'string' ? JSON.parse(unitData.inclusions) : unitData.inclusions;
+        if (Array.isArray(parsed)) inclusions.push(...parsed);
+      } catch(e) {}
+    }
+    const rules = [];
+    if (unitData.rules) {
+      try {
+        const parsed = typeof unitData.rules === 'string' ? JSON.parse(unitData.rules) : unitData.rules;
+        if (Array.isArray(parsed)) rules.push(...parsed);
+      } catch(e) {}
+    }
+
     room = {
       label: unitData.label || 'Apartment Unit',
       price: '₱' + (Number(unitData.price) || 0).toLocaleString() + ' / month',
       description: unitData.description || 'A modern living space designed for comfort and convenience.',
       images: imageUrls,
-      features: features.map(f => ({ ...f, icon: mapFeatureIcon(f.label) }))
+      features: features.map(f => ({ ...f, icon: mapFeatureIcon(f.label) })),
+      inclusions: inclusions,
+      rules: rules,
+      payment: {
+        advance: '1 Month Rent (₱' + (Number(unitData.price) || 0).toLocaleString() + ')',
+        deposit: 'Fixed ₱1,000.00',
+        fees: unitData.other_fees || ''
+      },
+      lease: {
+        min: unitData.min_lease || '3, 6, 12 Months',
+        notice: unitData.notice_period || '30 Days'
+      }
     };
     if (unitData.available_count !== undefined && options.availableCount === undefined) {
       options.availableCount = unitData.available_count;
@@ -192,7 +218,6 @@ function openRoomPreview(unitData, options = {}) {
         <div class="rp-header">
           <div style="display:flex; align-items:center; gap:12px;">
             <h3 style="font-family: 'Lora', serif;">${room.label}</h3>
-            ${room.queue ? `<span style="background:rgba(255,255,255,0.2); padding:2px 10px; border-radius:20px; font-size:0.7rem; font-weight:700;">${room.queue}</span>` : ''}
           </div>
           <button class="rp-close" id="rp-close-x">&times;</button>
         </div>
@@ -214,7 +239,7 @@ function openRoomPreview(unitData, options = {}) {
                     Room Inclusions
                 </h4>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px;">
-                    ${room.inclusions.length ? room.inclusions.map(inc => `<div style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#64748b;"><span style="color:#0f5c3a; font-weight:bold;">•</span> ${inc}</div>`).join('') : '<div style="color:#94a3b8; font-size:0.8rem; font-style:italic;">No inclusions specified</div>'}
+                    ${room.inclusions && room.inclusions.length ? room.inclusions.map(inc => `<div style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#64748b;"><span style="color:#0f5c3a; font-weight:bold;">•</span> ${inc}</div>`).join('') : '<div style="color:#94a3b8; font-size:0.8rem; font-style:italic;">No inclusions specified</div>'}
                 </div>
 
                 <h4 style="font-size:0.85rem; text-transform:uppercase; color:#c79a2b; margin-bottom:12px; font-weight:800; display:flex; align-items:center; gap:8px;">
@@ -222,7 +247,7 @@ function openRoomPreview(unitData, options = {}) {
                     House Rules
                 </h4>
                 <div style="display:grid; gap:8px;">
-                    ${room.rules.length ? room.rules.map(r => `<div style="display:flex; align-items:start; gap:8px; font-size:0.85rem; color:#64748b;"><span style="color:#e11d48; font-size:0.75rem; margin-top:2px;">⚠</span> ${r}</div>`).join('') : '<div style="color:#94a3b8; font-size:0.8rem; font-style:italic;">No rules specified</div>'}
+                    ${room.rules && room.rules.length ? room.rules.map(r => `<div style="display:flex; align-items:start; gap:8px; font-size:0.85rem; color:#64748b;"><span style="color:#e11d48; font-size:0.75rem; margin-top:2px;">⚠</span> ${r}</div>`).join('') : '<div style="color:#94a3b8; font-size:0.8rem; font-style:italic;">No rules specified</div>'}
                 </div>
             </div>
           </div>
@@ -254,7 +279,6 @@ function openRoomPreview(unitData, options = {}) {
                     </div>
                 </div>
             </div>
-            <p style="font-size:0.88rem; line-height:1.6; color:#333; margin:0 0 15px;">${room.description}</p>
             <div class="rp-features-grid">
               ${room.features.map(f => `
                 <div class="rp-feature">
@@ -264,6 +288,7 @@ function openRoomPreview(unitData, options = {}) {
                   <span class="rp-feature-label">${f.label}</span>
                   <span class="rp-feature-value">${f.value}</span>
                 </div>
+              `).join('')}
             </div>
           </div>
         </div>
