@@ -43,7 +43,7 @@
 </head>
 <body>
     <div class="app-wrapper">
-        <?php $active_page = 'apartment_renewals'; include BASE_PATH . '/app/views/admin/sidebar.php'; ?>
+        <?php $active_page = 'apartment_renewals'; include BASE_PATH . '/app/views/components/mis_admin_sidebar.php'; ?>
         
         <div class="main-content">
             <div class="page-header">
