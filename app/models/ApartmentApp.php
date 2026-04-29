@@ -313,60 +313,75 @@ class ApartmentApp {
     // ═══════════════════════════════════════════════════
 
     /**
-     * Core logic: After acceptance, assign a room OR add to waitlist.
+     * Core logic: Assign a room ONLY if lease is ACTIVE.
      * 
-     * Flow: 
-     *   1. Look up the application's requested room type
-     *   2. Find an available room of that type
-     *   3a. If found → Assign room, mark unit Occupied, change role to Tenant
-     *   3b. If none  → Calculate queue position, set status to Queued
-     *
-     * @return array ['result' => 'assigned'|'queued', 'unit_id' => int|null, 'queue_position' => int|null, 'room_number' => string|null]
+     * Flow:
+     *   1. Validate lease_status == "Active"
+     *   2. Try to match preferred room type
+     *   3. Otherwise assign first available room globally
      */
-    public function assignOrQueue(int $applicationId): array
+    public function assignRoom(int $applicationId): array
     {
+        // 1. Validation Rule: DO NOT assign room if lease_status != "ACTIVE"
+        $leaseStmt = $this->db->prepare("SELECT lease_status FROM leases WHERE application_id = :id");
+        $leaseStmt->execute(['id' => $applicationId]);
+        $leaseStatus = $leaseStmt->fetchColumn();
+
+        if ($leaseStatus !== 'Active') {
+            return ['result' => 'error', 'message' => 'Payment not completed or lease not active.'];
+        }
+
         // Get the application
         $stmt = $this->db->prepare("SELECT * FROM apartmentsapp WHERE application_id = :id");
         $stmt->execute(['id' => $applicationId]);
         $app = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$app) return ['result' => 'error', 'message' => 'Application not found'];
 
-        // Map roomtype label → type_id
         $typeId = $this->getTypeIdByLabel($app['roomtype']);
-        if (!$typeId) return ['result' => 'error', 'message' => 'Unknown room type: ' . $app['roomtype']];
+        $room = null;
 
-        // Check if the requested type is Transient
-        $isTransient = stripos($app['roomtype'], 'Transient') !== false;
+        // 2. Match tenant preference if possible
+        if ($typeId) {
+            $isTransient = stripos($app['roomtype'], 'Transient') !== false;
 
-        if ($isTransient) {
-            // For Transient, find an Available room OR an Occupied room with less than 10 active occupants
-            $stmt = $this->db->prepare("
-                SELECT u.unit_id, u.room_number, u.building,
-                       (SELECT COUNT(*) FROM apartmentsapp a WHERE a.unit_id = u.unit_id AND a.status = 'Assigned') as occupant_count
-                FROM apartment_units u 
-                WHERE u.type_id = :tid 
-                  AND u.status IN ('Available', 'Occupied')
-                HAVING occupant_count < 10
-                ORDER BY occupant_count DESC, u.building, u.room_number 
-                LIMIT 1
-            ");
-        } else {
-            // Find an available room of this type (first come first serve, normal 1 pax)
-            $stmt = $this->db->prepare("
+            if ($isTransient) {
+                $stmtPref = $this->db->prepare("
+                    SELECT u.unit_id, u.room_number, u.building,
+                           (SELECT COUNT(*) FROM apartmentsapp a WHERE a.unit_id = u.unit_id AND a.status = 'Assigned') as occupant_count
+                    FROM apartment_units u 
+                    WHERE u.type_id = :tid 
+                      AND u.status IN ('Available', 'Occupied')
+                    HAVING occupant_count < 10
+                    ORDER BY occupant_count DESC, u.building, u.room_number 
+                    LIMIT 1
+                ");
+            } else {
+                $stmtPref = $this->db->prepare("
+                    SELECT unit_id, room_number, building 
+                    FROM apartment_units 
+                    WHERE type_id = :tid AND status = 'Available' 
+                    ORDER BY building, room_number 
+                    LIMIT 1
+                ");
+            }
+            $stmtPref->execute(['tid' => $typeId]);
+            $room = $stmtPref->fetch(PDO::FETCH_ASSOC);
+        }
+
+        // 3. Otherwise assign first available (FIFO)
+        if (!$room) {
+            $stmtFallback = $this->db->query("
                 SELECT unit_id, room_number, building 
                 FROM apartment_units 
-                WHERE type_id = :tid AND status = 'Available' 
-                ORDER BY building, room_number 
+                WHERE status = 'Available' 
+                ORDER BY unit_id ASC 
                 LIMIT 1
             ");
+            $room = $stmtFallback->fetch(PDO::FETCH_ASSOC);
         }
-        
-        $stmt->execute(['tid' => $typeId]);
-        $room = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($room) {
             // ── ASSIGN: Room is available ──
-            // Mark unit as Occupied
             $this->db->prepare("
                 UPDATE apartment_units SET status = 'Occupied', tenant_id = :tid, application_id = :aid 
                 WHERE unit_id = :uid
@@ -390,34 +405,10 @@ class ApartmentApp {
                 'result' => 'assigned',
                 'unit_id' => $room['unit_id'],
                 'room_number' => $room['room_number'],
-                'building' => $room['building'],
-                'queue_position' => null
+                'building' => $room['building']
             ];
         } else {
-            // ── QUEUE: No rooms available ──
-            // Get next queue position for this room type
-            $stmt = $this->db->prepare("
-                SELECT COALESCE(MAX(queue_position), 0) + 1 
-                FROM apartmentsapp 
-                WHERE roomtype = :rt AND status = 'Queued'
-            ");
-            $stmt->execute(['rt' => $app['roomtype']]);
-            $nextPos = (int) $stmt->fetchColumn();
-
-            // Update application to Queued
-            $this->db->prepare("
-                UPDATE apartmentsapp 
-                SET status = 'Queued', queue_position = :qp, accepted_at = NOW()
-                WHERE application_id = :aid
-            ")->execute(['qp' => $nextPos, 'aid' => $applicationId]);
-
-            return [
-                'result' => 'queued',
-                'unit_id' => null,
-                'room_number' => null,
-                'building' => null,
-                'queue_position' => $nextPos
-            ];
+            return ['result' => 'error', 'message' => 'No rooms available.'];
         }
     }
 
@@ -458,7 +449,7 @@ class ApartmentApp {
 
         if ($next) {
             // Auto-assign to next in queue
-            return $this->assignOrQueue($next['application_id']);
+            return $this->assignRoom($next['application_id']);
         }
 
         return ['result' => 'released', 'message' => 'Room released. No one in queue.'];

@@ -308,34 +308,63 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             require_once BASE_PATH . '/app/models/User.php';
             require_once BASE_PATH . '/app/models/Notification.php';
+            require_once BASE_PATH . '/app/models/Lease.php';
+            require_once BASE_PATH . '/app/models/ApartmentType.php';
             
             $appModel = new ApartmentApp();
             $notifModel = new Notification();
+            $leaseModel = new Lease();
             
-            // Use the Room Assignment & Waitlist Engine
-            $result = $appModel->assignOrQueue((int) $id);
+            // 1. Remove Room Assignment from Approval Step
+            // $result = $appModel->assignOrQueue((int) $id);
+            // Instead, just update application status to 'Approved'
+            $appModel->updateApplicationStatus((int) $id, 'Approved');
             
             $tenantId = $appModel->getTenantIdByApplicationId($id);
-            
-            if ($result['result'] === 'assigned') {
-                $notifModel->create(
-                    $tenantId,
-                    'Room Assigned!',
-                    'Congratulations! You have been assigned to Room ' . $result['room_number'] 
-                    . ' in ' . $result['building'] . '. Your account has been upgraded to Tenant.',
-                    'approval'
-                );
-            } elseif ($result['result'] === 'queued') {
-                $appModel->updateApplicationStatus($id, 'Queued');
-                $notifModel->create(
-                    $tenantId,
-                    'Application Accepted — Waitlisted',
-                    'Your application has been verified and accepted, but all rooms of your requested type are currently full. '
-                    . 'You are #' . $result['queue_position'] . ' in the waiting list. '
-                    . 'You will be notified when a room becomes available.',
-                    'info'
-                );
+
+            // ── Auto-Generate Lease Contract ──
+            // Fetch application to get roomtype
+            $db = getDbConnection();
+            $appStmt = $db->prepare("SELECT * FROM apartmentsapp WHERE application_id = :id");
+            $appStmt->execute(['id' => $id]);
+            $appData = $appStmt->fetch(PDO::FETCH_ASSOC);
+
+            // Get rent from apartment_types if possible
+            $monthlyRent = 0;
+            if ($appData) {
+                $typeModel = new ApartmentType();
+                $types = $typeModel->getAllTypes();
+                foreach ($types as $t) {
+                    if (stripos($t['label'], $appData['roomtype']) !== false || $t['type_key'] === $appData['roomtype']) {
+                        $monthlyRent = (float) ($t['price'] ?? 0);
+                        break;
+                    }
+                }
             }
+
+            $startDate = date('Y-m-d');
+            $endDate = date('Y-m-d', strtotime('+12 months'));
+
+            $leaseModel->createLease([
+                'tenant_id'      => $tenantId,
+                'application_id' => (int) $id,
+                'unit_type'      => $appData['roomtype'] ?? null,
+                'monthly_rent'   => $monthlyRent,
+                'deposit_amount' => $monthlyRent, // 1 month deposit
+                'advance_amount' => $monthlyRent, // 1 month advance
+                'start_date'     => $startDate,
+                'end_date'       => $endDate,
+            ]);
+            
+            // Notify tenant that application is approved and lease is ready
+            $notifModel->create(
+                $tenantId,
+                'Application Approved!',
+                'Congratulations! Your apartment application has been approved. '
+                . 'Please review and accept your Lease Contract to proceed to Initial Payments. '
+                . 'A room will be assigned once payments are settled.',
+                'approval'
+            );
         }
         header('Location: ' . url('/admin/apartment/confirmation'));
     }

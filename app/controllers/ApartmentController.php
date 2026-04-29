@@ -254,4 +254,164 @@ class ApartmentController extends Controller {
         
         echo json_encode(['success' => $ok]);
     }
+
+    // ═══ LEASE CONTRACT MODULE ═══════════════════════════
+
+    /**
+     * Lease Preview Page — shows lease details for the tenant.
+     */
+    public function lease() {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $userId = $_SESSION['user_id'];
+
+        require_once BASE_PATH . '/app/models/Lease.php';
+        require_once BASE_PATH . '/app/models/ApartmentApp.php';
+
+        $leaseModel = new Lease();
+        $appModel   = new ApartmentApp();
+
+        $lease       = $leaseModel->getLeaseByTenantId($userId);
+        $application = $appModel->getApplication($userId);
+        $tenantInfo  = $appModel->getInfo($userId);
+
+        // Fetch apartment type details for inclusions / rules
+        $typeData = null;
+        if ($lease && !empty($lease['unit_type'])) {
+            require_once BASE_PATH . '/app/models/ApartmentType.php';
+            $typeModel = new ApartmentType();
+            $types = $typeModel->getAllTypes();
+            foreach ($types as $t) {
+                if (stripos($t['label'], $lease['unit_type']) !== false || $t['type_key'] === $lease['unit_type']) {
+                    $typeData = $t;
+                    break;
+                }
+            }
+        }
+
+        $this->view('user/Apartment/tenant_lease', [
+            'lease'       => $lease,
+            'application' => $application,
+            'tenantInfo'  => $tenantInfo,
+            'typeData'    => $typeData
+        ]);
+    }
+
+    /**
+     * Accept or Reject Lease — tenant POST action.
+     */
+    public function acceptLease() {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+        $userId = $_SESSION['user_id'];
+
+        $body = json_decode(file_get_contents('php://input'), true);
+        $action = $body['action'] ?? '';
+
+        if (!in_array($action, ['accept', 'reject'])) {
+            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/Lease.php';
+        $leaseModel = new Lease();
+        $lease = $leaseModel->getLeaseByTenantId($userId);
+
+        if (!$lease) {
+            echo json_encode(['success' => false, 'message' => 'No lease found']);
+            return;
+        }
+
+        if ($lease['lease_status'] !== 'Pending') {
+            echo json_encode(['success' => false, 'message' => 'Lease is not in Pending status']);
+            return;
+        }
+
+        if ($action === 'accept') {
+            $ok = $leaseModel->acceptLease($lease['lease_id'], $userId);
+            if ($ok) {
+                // Generate initial payments upon successful acceptance
+                require_once BASE_PATH . '/app/models/Payment.php';
+                $paymentModel = new Payment();
+                $paymentModel->generateInitialPayments(
+                    (int) $lease['lease_id'],
+                    $userId,
+                    (float) $lease['deposit_amount'],
+                    (float) $lease['advance_amount']
+                );
+            }
+        } else {
+            $ok = $leaseModel->rejectLease($lease['lease_id'], $userId);
+        }
+
+        echo json_encode([
+            'success' => $ok,
+            'status'  => $action === 'accept' ? 'Accepted' : 'Rejected'
+        ]);
+    }
+
+    // ═══ PAYMENT MODULE ══════════════════════════════════
+
+    /**
+     * Payment Breakdown Page.
+     */
+    public function payment() {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $userId = $_SESSION['user_id'];
+
+        require_once BASE_PATH . '/app/models/Lease.php';
+        require_once BASE_PATH . '/app/models/Payment.php';
+
+        $leaseModel = new Lease();
+        $paymentModel = new Payment();
+
+        $lease = $leaseModel->getLeaseByTenantId($userId);
+        
+        // Validation Rule: DO NOT allow payment if lease_status != "ACCEPTED" or "ACTIVE"
+        // Active means they are paid already, but they can view it.
+        // We will pass the payments list to the view.
+        $payments = [];
+        if ($lease && in_array($lease['lease_status'], ['Accepted', 'Active'])) {
+            $payments = $paymentModel->getPaymentsByLease($lease['lease_id']);
+            
+            // Just in case they weren't generated during acceptance (backward compatibility)
+            if (empty($payments) && $lease['lease_status'] === 'Accepted') {
+                $paymentModel->generateInitialPayments(
+                    (int) $lease['lease_id'],
+                    $userId,
+                    (float) $lease['deposit_amount'],
+                    (float) $lease['advance_amount']
+                );
+                $payments = $paymentModel->getPaymentsByLease($lease['lease_id']);
+            }
+        }
+
+        $this->view('user/Apartment/tenant_payment', [
+            'lease'    => $lease,
+            'payments' => $payments
+        ]);
+    }
+
+    /**
+     * Submit a payment (simulate processing).
+     */
+    public function submitPayment() {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+        
+        $body = json_decode(file_get_contents('php://input'), true);
+        $paymentId = $body['payment_id'] ?? 0;
+        $refNo = $body['reference'] ?? '';
+
+        if (!$paymentId) {
+            echo json_encode(['success' => false, 'message' => 'Invalid payment ID']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/Payment.php';
+        $paymentModel = new Payment();
+
+        $ok = $paymentModel->markAsPaid((int) $paymentId, $refNo);
+
+        echo json_encode(['success' => $ok]);
+    }
 }

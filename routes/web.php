@@ -57,6 +57,10 @@ $routes = [
     '/user/apartment/image'  => ['ApartmentController', 'serveImage'],
     '/user/apartment/remove-image' => ['ApartmentController', 'removeImage'],
     '/user/apartment/uploads/check' => ['ApartmentController', 'checkUploads'],
+    '/user/apartment/lease'          => ['ApartmentController', 'lease'],
+    '/user/apartment/lease/accept'   => ['ApartmentController', 'acceptLease'],
+    '/user/apartment/payment'        => ['ApartmentController', 'payment'],
+    '/user/apartment/payment/submit' => ['ApartmentController', 'submitPayment'],
 
     // Service Modules
     '/user/services/burial-form'      => ['UserController', 'burialForm'],
