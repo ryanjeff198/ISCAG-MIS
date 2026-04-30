@@ -47,9 +47,9 @@
     </div>
 
     <div class="nav-section-label">Management</div>
-    <a href="<?= url('/admin/apartment/info') ?>" class="nav-item <?= ($active_page ?? '') == 'info' ? 'active' : '' ?>" data-tooltip="Apartment Info">
+    <a href="<?= url('/admin/apartment/info') ?>" class="nav-item <?= ($active_page ?? '') == 'info' ? 'active' : '' ?>" data-tooltip="Apartment Management">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z" /></svg>
-      <span class="nav-item-label">Apartment Info</span>
+      <span class="nav-item-label">Apartment Management</span>
     </a>
     <a href="<?= url('/admin/apartment/renewals') ?>" class="nav-item <?= ($active_page ?? '') == 'apartment_renewals' ? 'active' : '' ?>" data-tooltip="Contract Renewals">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
