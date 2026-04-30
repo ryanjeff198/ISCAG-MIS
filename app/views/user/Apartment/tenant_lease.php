@@ -204,7 +204,11 @@
                             </div>
                             <div class="summary-stat">
                                 <div class="summary-stat-label">Lease Term</div>
-                                <div class="summary-stat-value">12 Months</div>
+                                <div class="summary-stat-value" id="summary-term-display"><?= ($lease['lease_status'] === 'Pending') ? '12' : (
+                                    $lease['end_date'] && $lease['start_date'] 
+                                        ? round((strtotime($lease['end_date']) - strtotime($lease['start_date'])) / (30*24*3600)) 
+                                        : '12'
+                                ) ?> Months</div>
                             </div>
                         </div>
                     </div>
@@ -239,14 +243,31 @@
                         </div>
                         <div class="card-body">
                             <ol class="terms-list">
-                                <li><span class="term-num">1</span><span>The Lessee agrees to pay a monthly rental of <strong>₱<?= $monthlyRent ?></strong> due every 5th of the month. Late payment beyond 10 days will incur a penalty of 5% of the monthly rent.</span></li>
-                                <li><span class="term-num">2</span><span>A security deposit of <strong>₱<?= $deposit ?></strong> shall be collected upon signing. This is refundable upon lease termination, less any unpaid obligations or damages.</span></li>
-                                <li><span class="term-num">3</span><span>An advance rent of <strong>₱<?= $advance ?></strong> (equivalent to one month) is required upon move-in.</span></li>
-                                <li><span class="term-num">4</span><span>The lease term is <strong>12 months</strong> commencing <strong><?= $startDate ?></strong> and ending <strong><?= $endDate ?></strong>, renewable upon mutual agreement.</span></li>
-                                <li><span class="term-num">5</span><span>The Lessee shall not sub-lease, assign, or transfer any rights to the unit without prior written consent from ISCAG Management.</span></li>
-                                <li><span class="term-num">6</span><span>The Lessee shall maintain the unit in good condition and shall be responsible for any damage beyond normal wear and tear.</span></li>
-                                <li><span class="term-num">7</span><span>Either party may terminate this lease with a <strong>30-day written notice</strong>. Early termination by the Lessee shall result in forfeiture of the security deposit.</span></li>
-                                <li><span class="term-num">8</span><span>The Lessee agrees to abide by all ISCAG apartment house rules and community guidelines at all times.</span></li>
+                                <li><span class="term-num">1</span><span>This Lease Agreement (<em>Kasunduan sa Pagpapaupa</em>) is entered into between <strong>ISCAG – Philippines</strong> (Lessor/NAGPAPAUPA), located at #31 Jose Abad Santos St., Salitran I, Dasmariñas City, Cavite, Philippines 4114, and the Lessee/UMUUPA identified herein.</span></li>
+
+                                <li><span class="term-num">2</span><span>The Lessee agrees to pay a monthly rental of <strong>₱<?= $monthlyRent ?></strong> for the unit type <strong><?= $unitType ?></strong>. Rent shall be due every <strong>5th of each month</strong>. Failure to pay the full rent amount within two (2) consecutive months shall result in a <strong>"Notice to Vacate"</strong> with a one (1) month grace period to relocate.</span></li>
+
+                                <li><span class="term-num">3</span><span>Upon signing, the Lessee shall pay the following initial amounts:<br>
+                                    • <strong>Security Deposit: ₱<?= $deposit ?></strong> — refundable at the end of the lease, less any unpaid dues, utilities, lost items, or damages to the unit caused by negligence.<br>
+                                    • <strong>Advance Rent: ₱<?= $advance ?></strong> — equivalent to one (1) month's rent, payable upon move-in.</span></li>
+
+                                <li><span class="term-num">4</span><span>The lease term is <strong id="term-display"><?= ($lease['lease_status'] === 'Pending') ? '12' : (
+                                    $lease['end_date'] && $lease['start_date'] 
+                                        ? round((strtotime($lease['end_date']) - strtotime($lease['start_date'])) / (30*24*3600)) 
+                                        : '12'
+                                ) ?> months</strong>, commencing on <strong><?= $startDate ?></strong> and ending on <strong id="end-date-display"><?= $endDate ?></strong>. The contract is renewable upon mutual agreement of both parties — the Lessor retains the right to extend, terminate, or re-lease the unit per the agreed terms.</span></li>
+
+                                <li><span class="term-num">5</span><span>Occupancy of the unit shall not exceed <strong>two (2) persons</strong> as declared in this agreement. Any excess occupants beyond the registered count must be reported and approved by the Lessor. Unauthorized additional occupants may result in termination of the lease.</span></li>
+
+                                <li><span class="term-num">6</span><span>The unit shall be used <strong>strictly for residential purposes only</strong>. The Lessee shall not sub-lease, assign, or transfer any rights to the unit without prior written consent from ISCAG Management.</span></li>
+
+                                <li><span class="term-num">7</span><span>The Lessee shall maintain the unit in <strong>good and habitable condition</strong>. Any damage beyond normal wear and tear shall be charged to the Lessee and deducted from the Security Deposit upon lease termination.</span></li>
+
+                                <li><span class="term-num">8</span><span>Either party may terminate this lease with a <strong>thirty (30) day written notice</strong>. Early termination by the Lessee prior to the expiration of the agreed term shall result in <strong>forfeiture of the Security Deposit</strong>.</span></li>
+
+                                <li><span class="term-num">9</span><span><strong>Incitement of other tenants to withhold rent payment is strictly prohibited.</strong> Any tenant proven to have encouraged or persuaded others not to pay their monthly dues shall be subject to immediate termination of lease and eviction from the premises.</span></li>
+
+                                <li><span class="term-num">10</span><span>The Lessee agrees to abide by all <strong>ISCAG apartment house rules and community guidelines</strong> at all times. Violation of these rules may result in penalties or termination of the lease at the discretion of ISCAG Management.</span></li>
                             </ol>
                         </div>
                     </div>
@@ -431,6 +452,32 @@
         if (confirmCallback) confirmCallback();
         confirmCallback = null;
     });
+
+    // ── Dynamic Term Selector Updates ──
+    const leaseTermSelect = document.getElementById('lease-term-select');
+    if (leaseTermSelect) {
+        leaseTermSelect.addEventListener('change', function() {
+            const months = parseInt(this.value);
+            // Update the hero stat
+            const summaryEl = document.getElementById('summary-term-display');
+            if (summaryEl) summaryEl.textContent = months + ' Months';
+
+            // Update Term #4 in the agreement
+            const termEl = document.getElementById('term-display');
+            if (termEl) termEl.textContent = months + ' months';
+
+            // Calculate and update the end date
+            const startDateStr = '<?= $lease['start_date'] ?? '' ?>';
+            if (startDateStr) {
+                const start = new Date(startDateStr);
+                const end = new Date(start);
+                end.setMonth(end.getMonth() + months);
+                const endFormatted = end.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                const endDateEl = document.getElementById('end-date-display');
+                if (endDateEl) endDateEl.textContent = endFormatted;
+            }
+        });
+    }
 
     // ── Lease Actions ──
     function leaseAction(action) {
