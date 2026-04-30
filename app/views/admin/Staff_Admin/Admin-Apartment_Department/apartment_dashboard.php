@@ -62,6 +62,44 @@
 
     .tab-btn:hover { color: var(--accent) !important; }
     .tab-btn.active { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+
+    /* ── Pagination ── */
+    .pagination-container {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+      background: #fdfdfd;
+    }
+    .pagination-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-page {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text-muted);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-page:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(199, 154, 43, 0.05);
+    }
+    .btn-page.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .btn-page:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 
@@ -105,54 +143,134 @@
 
         <!-- ADMIN INSIGHTS (Unified Style) -->
         <div class="admin-insights">
-          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+          <a href="#total-section" class="insight-card" style="text-decoration:none;">
             <div class="insight-label">Total Units</div>
             <div class="insight-value info" id="stat-total">0</div>
           </a>
-          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+          <a href="#available-section" class="insight-card" style="text-decoration:none;">
             <div class="insight-label">Available Slots</div>
             <div class="insight-value success" id="stat-available">0</div>
           </a>
-          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+          <a href="#occupied-section" class="insight-card" style="text-decoration:none;">
             <div class="insight-label">Fully Occupied</div>
             <div class="insight-value danger" id="stat-occupied">0</div>
           </a>
-          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+          <a href="#reserved-section" class="insight-card" style="text-decoration:none;">
             <div class="insight-label">Reserved</div>
             <div class="insight-value warning" id="stat-reserved">0</div>
           </a>
         </div>
 
-        <!-- UNIT TABLE -->
-        <div class="section-card">
+        <!-- APARTMENT STATUS TABLES (Detailed Breakdown) -->
+        <div class="section-card" id="total-section">
           <div class="section-card-header">
-            <h6>
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2z" />
-              </svg>
-              All Apartment Units
+            <h6 style="display:flex; align-items:center; gap:10px;">
+              <svg viewBox="0 0 24 24"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2z" /></svg>
+              All Apartment Units Summary
             </h6>
-            <span style="font-size:0.75rem;color:var(--text-muted);">Data loaded from system</span>
           </div>
           <div class="section-card-body" style="padding:0;">
             <div class="table-wrapper">
-              <table class="mis-table" id="units-table">
+              <table class="mis-table">
                 <thead>
                   <tr>
-                    <th>Unit ID</th>
+                    <th>No.</th>
                     <th>Unit Name</th>
                     <th>Building</th>
                     <th>Type</th>
-                    <th>Price / mo</th>
-                    <th>Available</th>
+                    <th>Price</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody id="units-tbody"></tbody>
+                <tbody id="total-units-tbody"></tbody>
               </table>
             </div>
+            <div id="pagination-total" class="pagination-container"></div>
+          </div>
+        </div>
+
+        <div class="section-card" id="available-section" style="margin-bottom:24px;">
+          <div class="section-card-header">
+            <h6 style="display:flex; align-items:center; gap:10px;">
+              <div style="width:8px; height:8px; border-radius:50%; background:var(--success);"></div>
+              Available Units
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Unit Name</th>
+                    <th>Building</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="available-units-tbody"></tbody>
+              </table>
+            </div>
+            <div id="pagination-available" class="pagination-container"></div>
+          </div>
+        </div>
+
+        <div class="section-card" id="occupied-section" style="margin-bottom:24px;">
+          <div class="section-card-header">
+            <h6 style="display:flex; align-items:center; gap:10px;">
+              <div style="width:8px; height:8px; border-radius:50%; background:var(--danger);"></div>
+              Fully Occupied Units
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Unit Name</th>
+                    <th>Building</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="occupied-units-tbody"></tbody>
+              </table>
+            </div>
+            <div id="pagination-occupied" class="pagination-container"></div>
+          </div>
+        </div>
+
+        <div class="section-card" id="reserved-section" style="margin-bottom:24px;">
+          <div class="section-card-header">
+            <h6 style="display:flex; align-items:center; gap:10px;">
+              <div style="width:8px; height:8px; border-radius:50%; background:var(--warning);"></div>
+              Reserved Units
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Unit Name</th>
+                    <th>Building</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="reserved-units-tbody"></tbody>
+              </table>
+            </div>
+            <div id="pagination-reserved" class="pagination-container"></div>
           </div>
         </div>
 
@@ -382,37 +500,131 @@
       return null;
     }
 
-    // ── Units table ──
+    // ── Pagination State ──
+    let currentPages = {
+      total: 1,
+      available: 1,
+      occupied: 1,
+      reserved: 1
+    };
+    const rowsPerPage = 10;
+
+    // ── Units table rendering ──
     function renderUnitsTable() {
-      const unitsTbody = document.getElementById('units-tbody');
-      unitsTbody.innerHTML = dbUnits.map(u => {
+      // 1. Total Units
+      renderPagedTable('total', dbUnits, true);
+      
+      // 2. Available Units
+      const available = dbUnits.filter(u => u.status.toLowerCase() === 'available');
+      renderPagedTable('available', available, true);
+      
+      // 3. Occupied Units
+      const occupied = dbUnits.filter(u => u.status.toLowerCase() === 'occupied');
+      renderPagedTable('occupied', occupied, true);
+      
+      // 4. Reserved Units
+      const reserved = dbUnits.filter(u => u.status.toLowerCase() === 'reserved');
+      renderPagedTable('reserved', reserved, true);
+    }
+
+    function renderPagedTable(key, data, isFull) {
+      const targetTbodyId = `${key}-units-tbody`;
+      const targetPaginationId = `pagination-${key}`;
+      
+      const totalPages = Math.ceil(data.length / rowsPerPage) || 1;
+      if (currentPages[key] > totalPages) currentPages[key] = totalPages;
+
+      const start = (currentPages[key] - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      const pageData = data.slice(start, end);
+
+      renderTableRows(targetTbodyId, pageData, isFull, start);
+      renderPagination(targetPaginationId, totalPages, currentPages[key], (newPage) => {
+        currentPages[key] = newPage;
+        renderUnitsTable();
+      });
+    }
+
+    function renderTableRows(targetId, data, isFull, startIndex) {
+      const tbody = document.getElementById(targetId);
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${isFull ? 7 : 3}" style="text-align:center;padding:24px;color:var(--text-muted);">No units found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map((u, index) => {
+        const displayId = startIndex + index + 1;
         const statusClass = u.status.toLowerCase() === 'available' ? 'badge-available'
           : u.status.toLowerCase() === 'occupied' ? 'badge-occupied'
             : 'badge-reserved';
         
         const unitType = u.type_key;
 
-        const viewBtn = `<button class="btn-action btn-view" onclick="adminPreview('${unitType}', '${u.status}')">
-             <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-             View
-           </button>`;
+        const actions = `
+          <div class="actions-cell">
+            <button class="btn-action btn-view" onclick="adminPreview('${unitType}', '${u.status}')">
+              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              View
+            </button>
+            <button class="btn-action btn-manage" style="color:var(--accent);" onclick="location.href='<?= url("/admin/apartment/info") ?>'">
+              <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+              Edit
+            </button>
+          </div>`;
 
-        const manageBtn = `<button class="btn-action btn-manage" style="color:var(--accent);" onclick="location.href='<?= url("/admin/apartment/info") ?>'" title="Manage Unit">
-        <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-        Edit
-      </button>`;
-
-        return `<tr>
-        <td class="td-id">#${u.unit_id}</td>
-        <td style="font-weight:600;">Room ${u.room_number}</td>
-        <td>${u.building || '—'}</td>
-        <td>${u.type_label}</td>
-        <td>₱${Number(u.price).toLocaleString()}</td>
-        <td style="text-align:center;font-weight:700;color:${u.status.toLowerCase() === 'available' ? 'var(--success)' : 'var(--danger)'};">${u.status.toLowerCase() === 'available' ? '1' : '0'}</td>
-        <td><span class="badge-status ${statusClass}">${u.status}</span></td>
-        <td><div class="actions-cell">${viewBtn}${manageBtn}</div></td>
-      </tr>`;
+        if (isFull) {
+          return `<tr>
+            <td class="td-id">#${displayId}</td>
+            <td style="font-weight:600;">Room ${u.room_number}</td>
+            <td>${u.building || '—'}</td>
+            <td>${u.type_label}</td>
+            <td>₱${Number(u.price).toLocaleString()}</td>
+            <td><span class="badge-status ${statusClass}">${u.status}</span></td>
+            <td>${actions}</td>
+          </tr>`;
+        } else {
+          return `<tr>
+            <td style="font-weight:600;">Room ${u.room_number}</td>
+            <td>${u.type_label}</td>
+            <td><span class="badge-status ${statusClass}" style="font-size:0.65rem;">${u.status}</span></td>
+          </tr>`;
+        }
       }).join('');
+    }
+
+    function renderPagination(containerId, totalPages, currentPage, onPageChange) {
+      const container = document.getElementById(containerId);
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = `<div class="pagination-btns">`;
+      html += `<button class="btn-page" ${currentPage === 1 ? 'disabled' : ''} onclick="window.handlePageChange('${containerId}', ${currentPage - 1})">Prev</button>`;
+      
+      // Logic for 3-number window
+      let startPage = Math.max(1, currentPage - 1);
+      let endPage = Math.min(totalPages, startPage + 2);
+      
+      // Re-adjust start if we're near the end of the range
+      if (endPage - startPage < 2) {
+        startPage = Math.max(1, endPage - 2);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="btn-page ${i === currentPage ? 'active' : ''}" onclick="window.handlePageChange('${containerId}', ${i})">${i}</button>`;
+      }
+
+      html += `<button class="btn-page" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.handlePageChange('${containerId}', ${currentPage + 1})">Next</button>`;
+      html += `</div>`;
+      
+      container.innerHTML = html;
+      
+      window.handlePageChange = (cid, page) => {
+        const key = cid.replace('pagination-', '');
+        currentPages[key] = page;
+        renderUnitsTable();
+      };
     }
     renderUnitsTable();
 
