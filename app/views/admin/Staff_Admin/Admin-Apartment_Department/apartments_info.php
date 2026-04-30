@@ -256,6 +256,98 @@
         .form-label { display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: 700; color: var(--text-main); }
         .form-control { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.9rem; transition: all 0.2s; }
         .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1); }
+
+        /* Tabs System */
+        .management-tabs {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            padding: 0 4px;
+        }
+
+        .tab-btn {
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            border: none;
+            background: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Pagination */
+        .pagination-container {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            background: #fdfdfd;
+        }
+        .pagination-btns {
+            display: flex;
+            gap: 6px;
+        }
+        .btn-page {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text-muted);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-page:hover:not(:disabled) {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(23, 107, 69, 0.05);
+        }
+        .btn-page.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .btn-page:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 
@@ -292,49 +384,60 @@
                     <span class="current">Apartment Management</span>
                 </div>
 
-                <!-- Section: Apartment Types -->
-                <div class="section-header-row">
-                    <h5 style="font-family:'Lora',serif; font-weight:700; color:var(--primary-dark); margin:0;">Apartment Types & Gallery</h5>
+                <!-- Tabs Navigation -->
+                <div class="management-tabs">
+                    <button class="tab-btn active" onclick="switchTab('types')">Apartment Types</button>
+                    <button class="tab-btn" onclick="switchTab('units')">Registered Units</button>
                 </div>
-                <div class="types-grid" id="types-grid">
-                    <!-- Loaded via API -->
-                    <div style="grid-column:1/-1; text-align:center; padding:40px;">
-                        <div class="loader" style="margin:0 auto 20px;"></div>
-                        <p style="color:var(--text-muted);">Loading apartment types...</p>
+
+                <!-- Section: Apartment Types -->
+                <div id="types-tab" class="tab-content active">
+                    <div class="section-header-row">
+                        <h5 style="font-family:'Lora',serif; font-weight:700; color:var(--primary-dark); margin:0;">Apartment Types & Gallery</h5>
+                    </div>
+                    <div class="types-grid" id="types-grid">
+                        <!-- Loaded via API -->
+                        <div style="grid-column:1/-1; text-align:center; padding:40px;">
+                            <div class="loader" style="margin:0 auto 20px;"></div>
+                            <p style="color:var(--text-muted);">Loading apartment types...</p>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Section: Registered Units -->
-                <div class="section-card">
-                    <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                        <h6>
-                            <svg viewBox="0 0 24 24"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z" /></svg>
-                            Registered Room Units
-                        </h6>
-                        <div style="display:flex; gap:8px; align-items:center;">
-                            <select id="building-filter" class="form-control" style="width:auto; min-width:160px; font-size:0.82rem; padding:6px 12px;">
-                                <option value="">All Buildings</option>
-                            </select>
+                <div id="units-tab" class="tab-content">
+                    <div class="section-card">
+                        <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <h6>
+                                <svg viewBox="0 0 24 24"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z" /></svg>
+                                Registered Room Units
+                            </h6>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <select id="building-filter" class="form-control" style="width:auto; min-width:160px; font-size:0.82rem; padding:6px 12px;">
+                                    <option value="">All Buildings</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div class="section-card-body" style="padding:0;">
-                        <div class="table-wrapper">
-                            <table class="mis-table">
-                                <thead>
-                                    <tr>
-                                        <th>Unit / Room #</th>
-                                        <th>Building</th>
-                                        <th>Type</th>
-                                        <th>Price</th>
-                                        <th>Tenant</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="units-tbody">
-                                    <!-- Loaded via API -->
-                                </tbody>
-                            </table>
+                        <div class="section-card-body" style="padding:0;">
+                            <div class="table-wrapper">
+                                <table class="mis-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Unit ID</th>
+                                            <th>Floor</th>
+                                            <th>Type</th>
+                                            <th>Price</th>
+                                            <th>Tenant</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="units-tbody">
+                                        <!-- Loaded via API -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="pagination-units" class="pagination-container"></div>
                         </div>
                     </div>
                 </div>
@@ -507,7 +610,8 @@
             <div class="modal-body">
                 <form id="unit-form">
                     <input type="hidden" id="u-id" name="unit_id">
-                    <div class="form-row" style="grid-template-columns: repeat(2, 1fr);">
+                    
+                    <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Apartment Type</label>
                             <select class="form-control" name="type_id" id="u-type" required>
@@ -515,21 +619,38 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Room Number / ID</label>
-                            <input type="text" class="form-control" name="room_number" id="u-number" placeholder="e.g. B1-01" required>
-                        </div>
-                    </div>
-                    <div class="form-row" style="grid-template-columns: repeat(2, 1fr);">
-                        <div class="form-group">
                             <label class="form-label">Building</label>
-                            <select class="form-control" name="building" id="u-building">
-                                <option value="">— Select Building —</option>
+                            <select class="form-control" name="building" id="u-building" onchange="updateGeneratedCode()" required>
                                 <option value="Building 1">Building 1</option>
                                 <option value="Building 2">Building 2</option>
                                 <option value="Building 3">Building 3</option>
                                 <option value="Building 4">Building 4</option>
                                 <option value="Building 5">Building 5</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Floor</label>
+                            <select class="form-control" id="u-floor" onchange="updateGeneratedCode()" required>
+                                <option value="1">1st Floor</option>
+                                <option value="2">2nd Floor</option>
+                                <option value="3">3rd Floor</option>
+                                <option value="4">4th Floor</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Room Number (01-05)</label>
+                            <input type="number" class="form-control" id="u-room-only" placeholder="01" min="1" max="5" oninput="updateGeneratedCode()" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Generated Unit Code</label>
+                            <input type="text" class="form-control" id="u-preview" readonly style="background:#f1f5f9; font-weight:800; color:var(--primary); letter-spacing:1px; text-align:center; font-size:1.1rem;">
+                            <input type="hidden" name="room_number" id="u-number">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Status</label>
@@ -541,9 +662,10 @@
                             </select>
                         </div>
                     </div>
+
                     <div class="form-group full">
                         <label class="form-label">Description / Internal Notes</label>
-                        <textarea class="form-control" name="description" id="u-desc" style="height:80px;"></textarea>
+                        <textarea class="form-control" name="description" id="u-desc" style="height:60px;"></textarea>
                     </div>
                 </form>
             </div>
@@ -563,6 +685,39 @@
         let apartmentTypes = [];
         let roomUnits = [];
         let allBuildings = [];
+        let currentPage = 1;
+        const rowsPerPage = 10;
+
+        function switchTab(tab) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase().includes(tab));
+            });
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === tab + '-tab');
+            });
+            // Optional: Store in localStorage
+            localStorage.setItem('active_apartment_tab', tab);
+        }
+
+        // Initialize from storage
+        const savedTab = localStorage.getItem('active_apartment_tab') || 'types';
+        if (savedTab !== 'types') switchTab(savedTab);
+
+        function formatFloor(roomNum) {
+            if (!roomNum) return '—';
+            let rNumOnly = roomNum.toString().replace(/\D/g, '');
+            let floorDigit = '1';
+            if (rNumOnly.length >= 3) {
+                floorDigit = rNumOnly.charAt(0);
+            }
+            const n = parseInt(floorDigit);
+            const s = ["th", "st", "nd", "rd"],
+                  v = n % 100;
+            const suffix = (s[(v - 20) % 10] || s[v] || s[0]);
+            return n + suffix + " Floor";
+        }
 
         async function init() {
             await loadData();
@@ -581,7 +736,20 @@
                     populateTypeDropdowns();
                 }
                 if (unitsRes.success) {
-                    roomUnits = unitsRes.data.units;
+                    roomUnits = unitsRes.data.units.map(u => {
+                        // Calculate strict 4-digit Display ID: [BuildingDigit][FloorDigit][RoomDigits]
+                        const bMatch = u.building ? u.building.match(/\d+/) : null;
+                        const bDigit = (bMatch ? bMatch[0] : '1').charAt(0);
+                        let rDigits = u.room_number.toString().replace(/\D/g, '');
+                        
+                        let display_id = "";
+                        if (rDigits.length >= 3) {
+                            display_id = bDigit + rDigits.slice(-3);
+                        } else {
+                            display_id = bDigit + "1" + (rDigits || "0").padStart(2, '0').slice(-2);
+                        }
+                        return { ...u, display_id };
+                    });
                     allBuildings = unitsRes.data.buildings || [];
                     populateBuildingFilter();
                     renderUnits();
@@ -653,18 +821,29 @@
             const filterVal = document.getElementById('building-filter').value;
             const filtered = filterVal ? roomUnits.filter(u => u.building === filterVal) : roomUnits;
 
-            if (!filtered.length) {
+            const totalPages = Math.ceil(filtered.length / rowsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const pageData = filtered.slice(start, end);
+
+            if (!pageData.length) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">No units found.</td></tr>';
+                renderPagination(0, 0);
                 return;
             }
 
-            tbody.innerHTML = filtered.map(u => {
+            tbody.innerHTML = pageData.map(u => {
                 const statusClass = u.status.toLowerCase() === 'available' ? 'badge-available' 
                     : u.status.toLowerCase() === 'occupied' ? 'badge-occupied'
                     : 'badge-reserved';
+
+                const formattedName = u.display_id || u.room_number;
+
                 return `<tr>
-                    <td style="font-weight:600;">#${u.room_number}</td>
-                    <td>${u.building || '—'}</td>
+                    <td style="font-weight:600;">${formattedName}</td>
+                    <td>${formatFloor(u.room_number)}</td>
                     <td>${u.type_label}</td>
                     <td>₱${Number(u.price).toLocaleString()}</td>
                     <td>${u.tenant_id ? 'Assigned' : '—'}</td>
@@ -683,7 +862,37 @@
                     </td>
                 </tr>`;
             }).join('');
+
+            renderPagination(totalPages, currentPage);
         }
+
+        function renderPagination(totalPages, current) {
+            const container = document.getElementById('pagination-units');
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = `<div class="pagination-btns">`;
+            html += `<button class="btn-page" ${current === 1 ? 'disabled' : ''} onclick="handlePageChange(${current - 1})">Prev</button>`;
+            
+            let start = Math.max(1, current - 1);
+            let end = Math.min(totalPages, start + 2);
+            if (end - start < 2) start = Math.max(1, end - 2);
+
+            for (let i = start; i <= end; i++) {
+                html += `<button class="btn-page ${i === current ? 'active' : ''}" onclick="handlePageChange(${i})">${i}</button>`;
+            }
+
+            html += `<button class="btn-page" ${current === totalPages ? 'disabled' : ''} onclick="handlePageChange(${current + 1})">Next</button>`;
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        window.handlePageChange = (p) => {
+            currentPage = p;
+            renderUnits();
+        };
 
         function populateBuildingFilter() {
             const select = document.getElementById('building-filter');
@@ -691,7 +900,10 @@
             select.innerHTML = '<option value="">All Buildings</option>' +
                 allBuildings.map(b => `<option value="${b}">${b}</option>`).join('');
             select.value = current;
-            select.addEventListener('change', renderUnits);
+            select.addEventListener('change', () => {
+                currentPage = 1;
+                renderUnits();
+            });
         }
 
         function populateTypeDropdowns() {
@@ -928,10 +1140,32 @@
             }
         }
 
+        function updateGeneratedCode() {
+            const bVal = document.getElementById('u-building').value;
+            const fVal = document.getElementById('u-floor').value;
+            let rVal = parseInt(document.getElementById('u-room-only').value || 0);
+            
+            // Limit to 5 rooms per floor
+            if (rVal > 5) {
+                rVal = 5;
+                document.getElementById('u-room-only').value = 5;
+            }
+            
+            const bDigit = bVal.replace(/\D/g, '') || '1';
+            const roomPadded = rVal.toString().padStart(2, '0');
+            
+            const generated = bDigit + fVal + roomPadded;
+            document.getElementById('u-preview').value = generated;
+            // The actual room_number sent to DB is [Floor][Room] because the table logic adds Building
+            // Wait, the user said "Building 1 + Floor 2 + Room 01 = 1201"
+            // So the database room_number should store "201" and the UI logic adds the Building digit.
+            document.getElementById('u-number').value = fVal + roomPadded;
+        }
+
         // ══ MODALS: UNIT ══
         function openUnitModal(mode, id = null) {
             document.getElementById('unit-form').reset();
-            document.getElementById('u-id').value = ''; // Explicitly clear hidden ID
+            document.getElementById('u-id').value = '';
             document.getElementById('unit-modal-title').textContent = mode === 'add' ? 'Add New Room Unit' : 'Edit Room Unit';
             
             if (mode === 'edit' && id) {
@@ -939,16 +1173,31 @@
                 if (unit) {
                     document.getElementById('u-id').value = unit.unit_id;
                     document.getElementById('u-type').value = unit.type_id;
-                    document.getElementById('u-number').value = unit.room_number;
-                    document.getElementById('u-building').value = unit.building || '';
+                    document.getElementById('u-building').value = unit.building || 'Building 1';
                     document.getElementById('u-status').value = unit.status;
                     document.getElementById('u-desc').value = unit.description;
+
+                    const rn = unit.room_number.toString();
+                    if (rn.length >= 3) {
+                        document.getElementById('u-floor').value = rn.charAt(0);
+                        document.getElementById('u-room-only').value = rn.substring(1);
+                    } else {
+                        document.getElementById('u-floor').value = "1";
+                        document.getElementById('u-room-only').value = rn.padStart(2, '0');
+                    }
                 }
+            } else {
+                // Defaults for add mode
+                document.getElementById('u-building').value = 'Building 1';
+                document.getElementById('u-floor').value = '1';
+                document.getElementById('u-room-only').value = '';
             }
+            updateGeneratedCode();
             openModal('unit-modal');
         }
 
         async function saveUnit() {
+            updateGeneratedCode(); // Final sync
             const formData = new FormData(document.getElementById('unit-form'));
             const data = Object.fromEntries(formData.entries());
             const id = data.unit_id;

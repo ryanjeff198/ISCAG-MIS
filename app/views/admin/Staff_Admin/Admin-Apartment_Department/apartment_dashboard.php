@@ -100,6 +100,27 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+
+    /* ── Filter Select ── */
+    .filter-select {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+      background: #fff;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .filter-select:hover {
+      border-color: var(--accent);
+    }
+    .filter-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(199, 154, 43, 0.1);
+    }
   </style>
 </head>
 
@@ -163,11 +184,22 @@
 
         <!-- APARTMENT STATUS TABLES (Detailed Breakdown) -->
         <div class="section-card" id="total-section">
-          <div class="section-card-header">
-            <h6 style="display:flex; align-items:center; gap:10px;">
+          <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h6 style="display:flex; align-items:center; gap:10px; margin:0;">
               <svg viewBox="0 0 24 24"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2z" /></svg>
               All Apartment Units Summary
             </h6>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">Filter Building:</span>
+              <select class="filter-select" onchange="handleBuildingFilter(this.value)">
+                <option value="all">All Buildings</option>
+                <option value="1">Building 1</option>
+                <option value="2">Building 2</option>
+                <option value="3">Building 3</option>
+                <option value="4">Building 4</option>
+                <option value="5">Building 5</option>
+              </select>
+            </div>
           </div>
           <div class="section-card-body" style="padding:0;">
             <div class="table-wrapper">
@@ -175,8 +207,8 @@
                 <thead>
                   <tr>
                     <th>No.</th>
-                    <th>Unit Name</th>
-                    <th>Building</th>
+                    <th>Unit ID</th>
+                    <th>Floor</th>
                     <th>Type</th>
                     <th>Price</th>
                     <th>Status</th>
@@ -203,8 +235,8 @@
                 <thead>
                   <tr>
                     <th>No.</th>
-                    <th>Unit Name</th>
-                    <th>Building</th>
+                    <th>Unit ID</th>
+                    <th>Floor</th>
                     <th>Type</th>
                     <th>Price</th>
                     <th>Status</th>
@@ -231,8 +263,8 @@
                 <thead>
                   <tr>
                     <th>No.</th>
-                    <th>Unit Name</th>
-                    <th>Building</th>
+                    <th>Unit ID</th>
+                    <th>Floor</th>
                     <th>Type</th>
                     <th>Price</th>
                     <th>Status</th>
@@ -259,8 +291,8 @@
                 <thead>
                   <tr>
                     <th>No.</th>
-                    <th>Unit Name</th>
-                    <th>Building</th>
+                    <th>Unit ID</th>
+                    <th>Floor</th>
                     <th>Type</th>
                     <th>Price</th>
                     <th>Status</th>
@@ -468,11 +500,25 @@
       $availableSlots = 0;
       $fullyOccupied = 0;
       $reserved = 0;
-      foreach ($units as $u) {
+      $availableSlots = 0;
+      $fullyOccupied = 0;
+      $reserved = 0;
+      foreach ($units as &$u) {
           if (strtolower($u['status']) === 'available') $availableSlots++;
           if (strtolower($u['status']) === 'occupied') $fullyOccupied++;
           if (strtolower($u['status']) === 'reserved') $reserved++;
+
+          // Calculate strict 4-digit Display ID: [BuildingDigit][FloorDigit][RoomDigits]
+          preg_match('/\d+/', $u['building'], $bm);
+          $bDigit = isset($bm[0]) ? substr($bm[0], 0, 1) : '1';
+          $rDigits = preg_replace('/\D/', '', $u['room_number']);
+          if (strlen($rDigits) >= 3) {
+              $u['display_id'] = $bDigit . substr($rDigits, -3);
+          } else {
+              $u['display_id'] = $bDigit . '1' . str_pad($rDigits, 2, '0', STR_PAD_LEFT);
+          }
       }
+      unset($u);
     ?>
 
     standardizePage('staff');
@@ -500,7 +546,23 @@
       return null;
     }
 
+    // ── Floor formatting ──
+    function formatFloor(roomNum) {
+      if (!roomNum) return '—';
+      let rNumOnly = roomNum.toString().replace(/\D/g, '');
+      let floorDigit = '1';
+      if (rNumOnly.length >= 3) {
+        floorDigit = rNumOnly.charAt(0);
+      }
+      const n = parseInt(floorDigit);
+      const s = ["th", "st", "nd", "rd"],
+            v = n % 100;
+      const suffix = (s[(v - 20) % 10] || s[v] || s[0]);
+      return n + suffix + " Floor";
+    }
+
     // ── Pagination State ──
+    let currentBuildingFilter = 'all';
     let currentPages = {
       total: 1,
       available: 1,
@@ -509,21 +571,36 @@
     };
     const rowsPerPage = 10;
 
+    // ── Filter Handler ──
+    window.handleBuildingFilter = (val) => {
+      currentBuildingFilter = val;
+      // Reset all pages to 1 when filter changes
+      Object.keys(currentPages).forEach(k => currentPages[k] = 1);
+      renderUnitsTable();
+    };
+
     // ── Units table rendering ──
     function renderUnitsTable() {
+      const filtered = currentBuildingFilter === 'all' 
+        ? dbUnits 
+        : dbUnits.filter(u => {
+            const bMatch = u.building ? u.building.match(/\d+/) : null;
+            return bMatch && bMatch[0] === currentBuildingFilter;
+          });
+
       // 1. Total Units
-      renderPagedTable('total', dbUnits, true);
+      renderPagedTable('total', filtered, true);
       
       // 2. Available Units
-      const available = dbUnits.filter(u => u.status.toLowerCase() === 'available');
+      const available = filtered.filter(u => u.status.toLowerCase() === 'available');
       renderPagedTable('available', available, true);
       
       // 3. Occupied Units
-      const occupied = dbUnits.filter(u => u.status.toLowerCase() === 'occupied');
+      const occupied = filtered.filter(u => u.status.toLowerCase() === 'occupied');
       renderPagedTable('occupied', occupied, true);
       
       // 4. Reserved Units
-      const reserved = dbUnits.filter(u => u.status.toLowerCase() === 'reserved');
+      const reserved = filtered.filter(u => u.status.toLowerCase() === 'reserved');
       renderPagedTable('reserved', reserved, true);
     }
 
@@ -554,6 +631,8 @@
 
       tbody.innerHTML = data.map((u, index) => {
         const displayId = startIndex + index + 1;
+        const formattedName = u.display_id || u.room_number;
+
         const statusClass = u.status.toLowerCase() === 'available' ? 'badge-available'
           : u.status.toLowerCase() === 'occupied' ? 'badge-occupied'
             : 'badge-reserved';
@@ -575,8 +654,8 @@
         if (isFull) {
           return `<tr>
             <td class="td-id">#${displayId}</td>
-            <td style="font-weight:600;">Room ${u.room_number}</td>
-            <td>${u.building || '—'}</td>
+            <td style="font-weight:600;">${formattedName}</td>
+            <td>${formatFloor(u.room_number)}</td>
             <td>${u.type_label}</td>
             <td>₱${Number(u.price).toLocaleString()}</td>
             <td><span class="badge-status ${statusClass}">${u.status}</span></td>
@@ -584,7 +663,7 @@
           </tr>`;
         } else {
           return `<tr>
-            <td style="font-weight:600;">Room ${u.room_number}</td>
+            <td style="font-weight:600;">${formattedName}</td>
             <td>${u.type_label}</td>
             <td><span class="badge-status ${statusClass}" style="font-size:0.65rem;">${u.status}</span></td>
           </tr>`;
