@@ -515,29 +515,186 @@ class AdminController extends Controller
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         $db = getDbConnection();
 
-        // 1. Fetch Tenants for selection
+        // 1. Fetch Tenants with room info
         $tenants = $db->query("
             SELECT 
                 u.tenant_id, 
                 u.first_name, 
                 u.last_name, 
                 u.contactnum, 
+                u.email,
                 au.room_number, 
-                au.building 
+                au.building,
+                a.roomtype,
+                a.application_id,
+                a.status AS app_status
             FROM tenant_accounts u 
-            LEFT JOIN apartmentsapp a ON u.tenant_id = a.tenant_id AND (a.status = 'Assigned' OR a.status = 'Accepted')
+            LEFT JOIN apartmentsapp a ON u.tenant_id = a.tenant_id AND a.status = 'Assigned'
             LEFT JOIN apartment_units au ON a.unit_id = au.unit_id
             WHERE u.role IN ('Tenant', 'Guest')
             ORDER BY u.last_name ASC
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // 2. Fetch all billing transactions
-        $transactions = $db->query("SELECT * FROM billing ORDER BY due_date ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // 2. Fetch lease data per tenant
+        $leases = $db->query("
+            SELECT l.*, 
+                   u.first_name, u.last_name
+            FROM leases l
+            JOIN tenant_accounts u ON l.tenant_id = u.tenant_id
+            WHERE l.lease_status IN ('Active', 'Accepted', 'Expired')
+            ORDER BY l.lease_id ASC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 3. Fetch all lease payments (Deposit & Advance)
+        $payments = $db->query("
+            SELECT p.*, l.tenant_id
+            FROM payments p
+            JOIN leases l ON p.lease_id = l.lease_id
+            ORDER BY p.created_at ASC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 4. Fetch parking applications (Approved = ₱1,000 charge)
+        $parkingApps = $db->query("
+            SELECT parking_id, tenant_id, date, vehiclename, plateno, status, datestarted
+            FROM tenant_parking
+            WHERE status = 'Approved'
+            ORDER BY date ASC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 5. Fetch family member counts per tenant (for water bill: ₱100/member)
+        $memberCounts = $db->query("
+            SELECT tenant_id, COUNT(*) as member_count
+            FROM tenant_family_members
+            GROUP BY tenant_id
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $memberMap = [];
+        foreach ($memberCounts as $mc) {
+            $memberMap[$mc['tenant_id']] = (int)$mc['member_count'];
+        }
+
+        // 6. Fetch existing billing records
+        $billingRecords = $db->query("SELECT * FROM billing ORDER BY due_date ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // ── Build unified transactions array ──
+        $transactions = [];
+
+        // A) Monthly Rent charges from leases
+        foreach ($leases as $l) {
+            $transactions[] = [
+                'tenant_id'  => $l['tenant_id'],
+                'date'       => $l['start_date'],
+                'type'       => 'Monthly Rent',
+                'description'=> 'Monthly Rent — ' . ($l['unit_type'] ?: 'Apartment'),
+                'ref'        => 'LEASE-' . str_pad($l['lease_id'], 4, '0', STR_PAD_LEFT),
+                'charge'     => (float)$l['monthly_rent'],
+                'payment'    => 0,
+                'status'     => $l['lease_status']
+            ];
+        }
+
+        // B) Deposit & Advance payments
+        foreach ($payments as $p) {
+            $isPaid = $p['payment_status'] === 'Paid';
+            // Charge entry
+            $transactions[] = [
+                'tenant_id'  => $p['tenant_id'],
+                'date'       => date('Y-m-d', strtotime($p['created_at'])),
+                'type'       => $p['payment_type'] . ' (Charge)',
+                'description'=> $p['payment_type'] === 'Deposit' ? 'Security Deposit' : 'Advance Rent Payment',
+                'ref'        => 'PMT-' . str_pad($p['payment_id'], 4, '0', STR_PAD_LEFT),
+                'charge'     => (float)$p['amount'],
+                'payment'    => 0,
+                'status'     => $p['payment_status']
+            ];
+            // Payment entry if paid
+            if ($isPaid) {
+                $transactions[] = [
+                    'tenant_id'  => $p['tenant_id'],
+                    'date'       => $p['payment_date'] ? date('Y-m-d', strtotime($p['payment_date'])) : date('Y-m-d', strtotime($p['created_at'])),
+                    'type'       => $p['payment_type'] . ' (Payment)',
+                    'description'=> 'Payment Received — ' . $p['payment_type'],
+                    'ref'        => $p['reference_number'] ?: 'PAY-' . str_pad($p['payment_id'], 4, '0', STR_PAD_LEFT),
+                    'charge'     => 0,
+                    'payment'    => (float)$p['amount'],
+                    'status'     => 'Paid'
+                ];
+            }
+        }
+
+        // C) Parking Fee — Fixed ₱1,000 per approved parking
+        foreach ($parkingApps as $pa) {
+            $transactions[] = [
+                'tenant_id'  => $pa['tenant_id'],
+                'date'       => $pa['datestarted'] ?: $pa['date'],
+                'type'       => 'Parking Fee',
+                'description'=> 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle') . ' (' . ($pa['plateno'] ?: 'N/A') . ')',
+                'ref'        => 'PKG-' . str_pad($pa['parking_id'], 4, '0', STR_PAD_LEFT),
+                'charge'     => 1000.00,
+                'payment'    => 0,
+                'status'     => 'Approved'
+            ];
+        }
+
+        // D) Water Bill — ₱100 per member (including the tenant = +1)
+        // Generated monthly for active leases
+        foreach ($leases as $l) {
+            if ($l['lease_status'] !== 'Active') continue;
+            $membersListed = isset($memberMap[$l['tenant_id']]) ? $memberMap[$l['tenant_id']] : 0;
+            // +1 for the tenant themselves
+            $totalOccupants = $membersListed + 1;
+            $waterAmount = $totalOccupants * 100;
+
+            $transactions[] = [
+                'tenant_id'  => $l['tenant_id'],
+                'date'       => date('Y-m-d'), // Current billing period
+                'type'       => 'Water Bill',
+                'description'=> 'Water Consumption — ' . $totalOccupants . ' occupant(s) × ₱100',
+                'ref'        => 'WTR-' . str_pad($l['lease_id'], 4, '0', STR_PAD_LEFT),
+                'charge'     => (float)$waterAmount,
+                'payment'    => 0,
+                'status'     => 'Pending'
+            ];
+        }
+
+        // E) Existing billing records (monthly rent invoices from billing table)
+        foreach ($billingRecords as $b) {
+            $transactions[] = [
+                'tenant_id'  => $b['tenant_id'],
+                'date'       => $b['due_date'],
+                'type'       => 'Rent Invoice',
+                'description'=> 'Monthly Rent Invoice',
+                'ref'        => 'INV-' . str_pad($b['billing_id'], 4, '0', STR_PAD_LEFT),
+                'charge'     => (float)$b['amount'],
+                'payment'    => 0,
+                'status'     => $b['status']
+            ];
+            if ($b['status'] === 'Paid') {
+                $transactions[] = [
+                    'tenant_id'  => $b['tenant_id'],
+                    'date'       => $b['due_date'],
+                    'type'       => 'Rent Payment',
+                    'description'=> 'Payment Received — Rent',
+                    'ref'        => 'PAY-INV-' . str_pad($b['billing_id'], 4, '0', STR_PAD_LEFT),
+                    'charge'     => 0,
+                    'payment'    => (float)$b['amount'],
+                    'status'     => 'Paid'
+                ];
+            }
+        }
+
+        // F) Contribution — placeholder (empty for now)
+        // No charges generated
+
+        // Sort by date
+        usort($transactions, function($a, $b) {
+            return strtotime($a['date']) - strtotime($b['date']);
+        });
 
         $this->view('admin/mis_admin/statement_of_account', [
-            'active_page' => 'soa',
-            'tenants' => $tenants,
-            'transactions' => $transactions
+            'active_page'  => 'soa',
+            'tenants'      => $tenants,
+            'transactions' => $transactions,
+            'memberMap'    => $memberMap
         ]);
     }
 
