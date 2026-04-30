@@ -202,7 +202,7 @@
       background: var(--green-50);
       text-align: center;
       border-radius: 40px;
-      margin: 0 20px 100px;
+      margin: 0 auto 100px;
       border: 1px solid var(--border);
     }
     .cta-title {

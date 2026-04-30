@@ -21,7 +21,11 @@ class HomeController extends Controller
     
     public function apartment(): void
     {
-        $this->view('home/apartment');
+        require_once BASE_PATH . '/app/models/ApartmentType.php';
+        $model = new ApartmentType();
+        $apartmentTypes = $model->getTypesForUserView();
+        
+        $this->view('home/apartment', ['apartmentTypes' => $apartmentTypes]);
     }
 
     public function daawah(): void
