@@ -577,30 +577,66 @@ class AdminController extends Controller
 
         // ── Build unified transactions array ──
         $transactions = [];
+        $now = new DateTime();
 
-        // A) Monthly Rent charges from leases
+        // A) Recurring Charges: Monthly Rent & Water
         foreach ($leases as $l) {
-            $transactions[] = [
-                'tenant_id'  => $l['tenant_id'],
-                'date'       => $l['start_date'],
-                'type'       => 'Monthly Rent',
-                'description'=> 'Monthly Rent — ' . ($l['unit_type'] ?: 'Apartment'),
-                'ref'        => 'LEASE-' . str_pad($l['lease_id'], 4, '0', STR_PAD_LEFT),
-                'charge'     => (float)$l['monthly_rent'],
-                'payment'    => 0,
-                'status'     => $l['lease_status']
-            ];
+            $leaseStart = new DateTime($l['start_date']);
+            $currentDate = clone $leaseStart;
+            
+            // Limit to today or lease end
+            $leaseEnd = $l['end_date'] ? new DateTime($l['end_date']) : null;
+            $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
+
+            $monthCount = 0;
+            while ($currentDate <= $limitDate) {
+                $monthName = $currentDate->format('F Y');
+                
+                // 1. Monthly Rent Usage Charge
+                // SKIP generating this for the VERY FIRST MONTH (Month 0) 
+                // because it is already handled by the 'Advance Rent' in section B.
+                if ($monthCount > 0) {
+                    $transactions[] = [
+                        'tenant_id'  => $l['tenant_id'],
+                        'date'       => $currentDate->format('Y-m-d'),
+                        'type'       => 'Monthly Rent',
+                        'description'=> "Monthly Rent Usage — $monthName",
+                        'ref'        => 'LSE-R' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
+                        'charge'     => (float)$l['monthly_rent'],
+                        'payment'    => 0,
+                        'status'     => 'Unpaid'
+                    ];
+                }
+
+                // 2. Water Bill Charge (Monthly)
+                $occupancyCount = ($memberMap[$l['tenant_id']] ?? 0) + 1;
+                $transactions[] = [
+                    'tenant_id'  => $l['tenant_id'],
+                    'date'       => $currentDate->format('Y-m-d'),
+                    'type'       => 'Water',
+                    'description'=> "Water Consumption ($occupancyCount occupants) — $monthName",
+                    'ref'        => 'LSE-W' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
+                    'charge'     => (float)($occupancyCount * 100),
+                    'payment'    => 0,
+                    'status'     => 'Unpaid'
+                ];
+
+                $currentDate->modify('+1 month');
+                $monthCount++;
+                // Stop if we overshot the month by days
+                if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
+            }
         }
 
-        // B) Deposit & Advance payments
+        // B) Initial Payments (Deposit & Advance)
         foreach ($payments as $p) {
             $isPaid = $p['payment_status'] === 'Paid';
             // Charge entry
             $transactions[] = [
                 'tenant_id'  => $p['tenant_id'],
                 'date'       => date('Y-m-d', strtotime($p['created_at'])),
-                'type'       => $p['payment_type'] . ' (Charge)',
-                'description'=> $p['payment_type'] === 'Deposit' ? 'Security Deposit' : 'Advance Rent Payment',
+                'type'       => $p['payment_type'],
+                'description'=> $p['payment_type'] === 'Deposit' ? 'Security Deposit (Initial)' : 'Advance Rent (Month 1)',
                 'ref'        => 'PMT-' . str_pad($p['payment_id'], 4, '0', STR_PAD_LEFT),
                 'charge'     => (float)$p['amount'],
                 'payment'    => 0,
@@ -635,28 +671,7 @@ class AdminController extends Controller
             ];
         }
 
-        // D) Water Bill — ₱100 per member (including the tenant = +1)
-        // Generated monthly for active leases
-        foreach ($leases as $l) {
-            if ($l['lease_status'] !== 'Active') continue;
-            $membersListed = isset($memberMap[$l['tenant_id']]) ? $memberMap[$l['tenant_id']] : 0;
-            // +1 for the tenant themselves
-            $totalOccupants = $membersListed + 1;
-            $waterAmount = $totalOccupants * 100;
-
-            $transactions[] = [
-                'tenant_id'  => $l['tenant_id'],
-                'date'       => date('Y-m-d'), // Current billing period
-                'type'       => 'Water Bill',
-                'description'=> 'Water Consumption — ' . $totalOccupants . ' occupant(s) × ₱100',
-                'ref'        => 'WTR-' . str_pad($l['lease_id'], 4, '0', STR_PAD_LEFT),
-                'charge'     => (float)$waterAmount,
-                'payment'    => 0,
-                'status'     => 'Pending'
-            ];
-        }
-
-        // E) Existing billing records (monthly rent invoices from billing table)
+        // D) Existing billing records (manual invoices)
         foreach ($billingRecords as $b) {
             $transactions[] = [
                 'tenant_id'  => $b['tenant_id'],
@@ -681,6 +696,11 @@ class AdminController extends Controller
                 ];
             }
         }
+
+        // Global Sort by Date
+        usort($transactions, function($a, $b) {
+            return strtotime($a['date']) <=> strtotime($b['date']);
+        });
 
         // F) Contribution — placeholder (empty for now)
         // No charges generated
