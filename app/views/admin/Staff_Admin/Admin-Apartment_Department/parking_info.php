@@ -97,12 +97,62 @@
     }
 
     /* ── UI/UX Enhancements ── */
-    .insight-card { position: relative; overflow: hidden; }
-    .insight-card::after {
-      content: ''; position: absolute; right: -10px; bottom: -10px;
-      width: 60px; height: 60px; background: currentColor; opacity: 0.05;
-      border-radius: 50%;
+    /* ── Premium Insights Design ── */
+    .admin-insights {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
     }
+    .insight-card {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .insight-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+      border-color: var(--accent);
+    }
+    .insight-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--border);
+    }
+    .insight-card.pending::after { background: var(--warning); }
+    .insight-card.total::after { background: var(--primary); }
+    .insight-card.approved::after { background: var(--success); }
+    .insight-card.rejected::after { background: var(--danger); }
+    .insight-card.available::after { background: var(--info); }
+
+    .insight-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .insight-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      line-height: 1;
+    }
+    .insight-value.info { color: var(--primary); }
+    .insight-value.success { color: var(--success); }
+    .insight-value.danger { color: var(--danger); }
+    .insight-value.warning { color: var(--warning); }
+    
     .insight-card svg {
       position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
       width: 24px; height: 24px; opacity: 0.15;
@@ -160,29 +210,29 @@
 
         <!-- Admin Insights Ribbon -->
         <div class="admin-insights">
-          <div class="insight-card warning">
+          <div class="insight-card pending" onclick="switchTab('pending', document.querySelector('.tab-btn:nth-child(1)'))">
             <div class="insight-label">Pending Review</div>
-            <div class="insight-value" id="stat-pending"><?= count(array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'PENDING' || empty($r['status']))) ?></div>
+            <div class="insight-value warning" id="stat-pending"><?= count(array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'PENDING' || empty($r['status']))) ?></div>
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>
           </div>
-          <div class="insight-card success">
+          <div class="insight-card approved" onclick="switchTab('approved', document.querySelector('.tab-btn:nth-child(2)'))">
             <div class="insight-label">Approved</div>
-            <div class="insight-value" id="stat-approved"><?= count(array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'APPROVED')) ?></div>
+            <div class="insight-value success" id="stat-approved"><?= count(array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'APPROVED')) ?></div>
             <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
           </div>
-          <div class="insight-card danger">
+          <div class="insight-card rejected" onclick="switchTab('rejected', document.querySelector('.tab-btn:nth-child(3)'))">
             <div class="insight-label">Rejected</div>
-            <div class="insight-value" id="stat-rejected"><?= count(array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'REJECTED')) ?></div>
+            <div class="insight-value danger" id="stat-rejected"><?= count(array_filter($reports, fn($r) => strtoupper($r['status'] ?? '') === 'REJECTED')) ?></div>
             <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
           </div>
-          <div class="insight-card info">
+          <div class="insight-card total">
             <div class="insight-label">Total Applications</div>
-            <div class="insight-value" id="stat-total"><?= count($reports) ?></div>
+            <div class="insight-value info" id="stat-total"><?= count($reports) ?></div>
             <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" /></svg>
           </div>
-          <div class="insight-card info">
+          <div class="insight-card available">
             <div class="insight-label">Available Slots</div>
-            <div class="insight-value">15</div>
+            <div class="insight-value info">15</div>
             <svg viewBox="0 0 24 24"><path d="M21 16.5C21 16.88 20.79 17.21 20.47 17.38L12.57 21.82C12.41 21.94 12.21 22 12 22C11.79 22 11.59 21.94 11.43 21.82L3.53 17.38C3.21 17.21 3 16.88 3 16.5V7.5C3 7.12 3.21 6.79 3.53 6.62L11.43 2.18C11.59 2.06 11.79 2 12 2C12.21 2 12.41 2.06 12.57 2.18L20.47 6.62C20.79 6.79 21 7.12 21 7.5V16.5Z" /></svg>
           </div>
         </div>

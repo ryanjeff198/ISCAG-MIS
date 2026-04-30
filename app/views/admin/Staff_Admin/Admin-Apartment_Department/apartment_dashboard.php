@@ -60,8 +60,146 @@
     .btn-approve:hover { background: var(--accent) !important; color: white !important; }
     .btn-approve:hover svg { fill: white !important; }
 
-    .tab-btn:hover { color: var(--accent) !important; }
+    /* ── Premium Insights Design ── */
+    .admin-insights {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .insight-card {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .insight-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+      border-color: var(--accent);
+    }
+    .insight-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--border);
+    }
+    .insight-card.total::after { background: var(--primary); }
+    .insight-card.available::after { background: var(--success); }
+    .insight-card.occupied::after { background: var(--danger); }
+    .insight-card.reserved::after { background: var(--warning); }
+
+    .insight-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .insight-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      line-height: 1;
+    }
+    .insight-value.info { color: var(--primary); }
+    .insight-value.success { color: var(--success); }
+    .insight-value.danger { color: var(--danger); }
+    .insight-value.warning { color: var(--warning); }
+
+    /* ── Tabs Styling ── */
+    .tab-nav {
+      display: flex;
+      gap: 12px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tab-nav::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      padding: 12px 24px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+      font-family: 'Inter', sans-serif;
+    }
+    .tab-btn:hover { color: var(--accent) !important; background: rgba(199, 154, 43, 0.05); }
     .tab-btn.active { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+
+    /* ── Pagination ── */
+    .pagination-container {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: center;
+      background: #fdfdfd;
+    }
+    .pagination-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-page {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text-muted);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-page:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(199, 154, 43, 0.05);
+    }
+    .btn-page.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .btn-page:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── Filter Select ── */
+    .filter-select {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+      background: #fff;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .filter-select:hover {
+      border-color: var(--accent);
+    }
+    .filter-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(199, 154, 43, 0.1);
+    }
   </style>
 </head>
 
@@ -103,61 +241,162 @@
           </div>
         </div>
 
-        <!-- ADMIN INSIGHTS (Unified Style) -->
         <div class="admin-insights">
-          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+          <div onclick="switchTab('total', document.querySelector('.tab-btn:nth-child(1)'))" class="insight-card total">
             <div class="insight-label">Total Units</div>
             <div class="insight-value info" id="stat-total">0</div>
-          </a>
-          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+          </div>
+          <div onclick="switchTab('available', document.querySelector('.tab-btn:nth-child(2)'))" class="insight-card available">
             <div class="insight-label">Available Slots</div>
             <div class="insight-value success" id="stat-available">0</div>
-          </a>
-          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+          </div>
+          <div onclick="switchTab('occupied', document.querySelector('.tab-btn:nth-child(3)'))" class="insight-card occupied">
             <div class="insight-label">Fully Occupied</div>
             <div class="insight-value danger" id="stat-occupied">0</div>
-          </a>
-          <a href="<?= url('/admin/apartment/info') ?>" class="insight-card" style="text-decoration:none;">
+          </div>
+          <div onclick="switchTab('reserved', document.querySelector('.tab-btn:nth-child(4)'))" class="insight-card reserved">
             <div class="insight-label">Reserved</div>
             <div class="insight-value warning" id="stat-reserved">0</div>
-          </a>
+          </div>
         </div>
 
-        <!-- UNIT TABLE -->
-        <div class="section-card">
-          <div class="section-card-header">
-            <h6>
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2z" />
-              </svg>
-              All Apartment Units
+        <!-- Dashboard Navigation Tabs -->
+        <div class="tab-nav">
+          <button class="tab-btn active" onclick="switchTab('total', this)">All Units</button>
+          <button class="tab-btn" onclick="switchTab('available', this)">Available</button>
+          <button class="tab-btn" onclick="switchTab('occupied', this)">Occupied</button>
+          <button class="tab-btn" onclick="switchTab('reserved', this)">Reserved</button>
+          <button class="tab-btn" onclick="switchTab('verified', this)">Verified Apps</button>
+          <button class="tab-btn" onclick="switchTab('apps', this)">Recent Apps</button>
+          <button class="tab-btn" onclick="switchTab('billing', this)">Billing</button>
+        </div>
+
+        <!-- APARTMENT STATUS TABLES (Detailed Breakdown) -->
+        <div class="section-card tab-panel" id="total-section">
+          <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h6 style="display:flex; align-items:center; gap:10px; margin:0;">
+              <svg viewBox="0 0 24 24"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2z" /></svg>
+              All Apartment Units Summary
             </h6>
-            <span style="font-size:0.75rem;color:var(--text-muted);">Data loaded from system</span>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">Filter Building:</span>
+              <select class="filter-select" onchange="handleBuildingFilter(this.value)">
+                <option value="all">All Buildings</option>
+                <option value="1">Building 1</option>
+                <option value="2">Building 2</option>
+                <option value="3">Building 3</option>
+                <option value="4">Building 4</option>
+                <option value="5">Building 5</option>
+              </select>
+            </div>
           </div>
           <div class="section-card-body" style="padding:0;">
             <div class="table-wrapper">
-              <table class="mis-table" id="units-table">
+              <table class="mis-table">
                 <thead>
                   <tr>
+                    <th>No.</th>
                     <th>Unit ID</th>
-                    <th>Unit Name</th>
-                    <th>Building</th>
+                    <th>Floor</th>
                     <th>Type</th>
-                    <th>Price / mo</th>
-                    <th>Available</th>
+                    <th>Price</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody id="units-tbody"></tbody>
+                <tbody id="total-units-tbody"></tbody>
               </table>
             </div>
+            <div id="pagination-total" class="pagination-container"></div>
+          </div>
+        </div>
+
+        <div class="section-card tab-panel" id="available-section" style="margin-bottom:24px; display:none;">
+          <div class="section-card-header">
+            <h6 style="display:flex; align-items:center; gap:10px;">
+              <div style="width:8px; height:8px; border-radius:50%; background:var(--success);"></div>
+              Available Units
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Unit ID</th>
+                    <th>Floor</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="available-units-tbody"></tbody>
+              </table>
+            </div>
+            <div id="pagination-available" class="pagination-container"></div>
+          </div>
+        </div>
+
+        <div class="section-card tab-panel" id="occupied-section" style="margin-bottom:24px; display:none;">
+          <div class="section-card-header">
+            <h6 style="display:flex; align-items:center; gap:10px;">
+              <div style="width:8px; height:8px; border-radius:50%; background:var(--danger);"></div>
+              Fully Occupied Units
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Unit ID</th>
+                    <th>Floor</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="occupied-units-tbody"></tbody>
+              </table>
+            </div>
+            <div id="pagination-occupied" class="pagination-container"></div>
+          </div>
+        </div>
+
+        <div class="section-card tab-panel" id="reserved-section" style="margin-bottom:24px; display:none;">
+          <div class="section-card-header">
+            <h6 style="display:flex; align-items:center; gap:10px;">
+              <div style="width:8px; height:8px; border-radius:50%; background:var(--warning);"></div>
+              Reserved Units
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Unit ID</th>
+                    <th>Floor</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="reserved-units-tbody"></tbody>
+              </table>
+            </div>
+            <div id="pagination-reserved" class="pagination-container"></div>
           </div>
         </div>
 
         <!-- VERIFIED APPLICATIONS (from MIS Admin) -->
-        <div class="section-card verified-glow" style="margin-bottom:24px;">
+        <div class="section-card verified-glow tab-panel" id="verified-section" style="margin-bottom:24px; display:none;">
           <div class="section-card-header" onclick="location.href='<?= url('/admin/apartment/confirmation') ?>'" style="cursor:pointer;">
             <h6 style="display:flex; align-items:center; gap:10px;">
               <svg viewBox="0 0 24 24">
@@ -188,62 +427,59 @@
           </div>
         </div>
 
-        <!-- TWO-COLUMN: Applications + Billing -->
-        <div class="grid-2">
-          <!-- PENDING APPLICATIONS -->
-          <div class="section-card">
-            <div class="section-card-header" onclick="location.href='<?= url('/admin/apartment/confirmation') ?>'" style="cursor:pointer;">
-              <h6 style="display:flex; align-items:center; gap:10px;">
-                <svg viewBox="0 0 24 24">
-                  <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z" />
-                </svg>
-                Recent Applications
-              </h6>
-            </div>
-            <div class="section-card-body" style="padding:0;">
-              <div class="table-wrapper">
-                <table class="mis-table">
-                  <thead>
-                    <tr>
-                      <th>Ref #</th>
-                      <th>Applicant</th>
-                      <th>Date</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="apps-tbody"></tbody>
-                </table>
-              </div>
+        <!-- PENDING APPLICATIONS -->
+        <div class="section-card tab-panel" id="apps-section" style="margin-bottom:24px; display:none;">
+          <div class="section-card-header" onclick="location.href='<?= url('/admin/apartment/confirmation') ?>'" style="cursor:pointer;">
+            <h6 style="display:flex; align-items:center; gap:10px;">
+              <svg viewBox="0 0 24 24">
+                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z" />
+              </svg>
+              Recent Applications
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Applicant</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="apps-tbody"></tbody>
+              </table>
             </div>
           </div>
+        </div>
 
-          <!-- BILLING (Read-Only) -->
-          <div class="section-card">
-            <div class="section-card-header" onclick="location.href='<?= url('/admin/payment') ?>'" style="cursor:pointer;">
-              <h6 style="display:flex; align-items:center; gap:10px;">
-                <svg viewBox="0 0 24 24">
-                  <path
-                    d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
-                </svg>
-                Tenant Billing
-              </h6>
-              <span
-                style="font-size:0.72rem;color:var(--text-muted);background:rgba(199,154,43,0.1);padding:3px 10px;border-radius:12px;font-weight:600;">View Payments</span>
-            </div>
-            <div class="section-card-body" style="padding:0;">
-              <div class="table-wrapper">
-                <table class="mis-table">
-                  <thead>
-                    <tr>
-                      <th>Tenant</th>
-                      <th>Amount</th>
-                      <th>Due</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="billing-tbody"></tbody>
-                </table>
-              </div>
+        <!-- BILLING (Read-Only) -->
+        <div class="section-card tab-panel" id="billing-section" style="margin-bottom:24px; display:none;">
+          <div class="section-card-header" onclick="location.href='<?= url('/admin/payment') ?>'" style="cursor:pointer;">
+            <h6 style="display:flex; align-items:center; gap:10px;">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
+              </svg>
+              Tenant Billing Summary
+            </h6>
+            <span
+              style="font-size:0.72rem;color:var(--text-muted);background:rgba(199,154,43,0.1);padding:3px 10px;border-radius:12px;font-weight:600;">View Full Gateway</span>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Tenant</th>
+                    <th>Amount</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="billing-tbody"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -350,11 +586,25 @@
       $availableSlots = 0;
       $fullyOccupied = 0;
       $reserved = 0;
-      foreach ($units as $u) {
+      $availableSlots = 0;
+      $fullyOccupied = 0;
+      $reserved = 0;
+      foreach ($units as &$u) {
           if (strtolower($u['status']) === 'available') $availableSlots++;
           if (strtolower($u['status']) === 'occupied') $fullyOccupied++;
           if (strtolower($u['status']) === 'reserved') $reserved++;
+
+          // Calculate strict 4-digit Display ID: [BuildingDigit][FloorDigit][RoomDigits]
+          preg_match('/\d+/', $u['building'], $bm);
+          $bDigit = isset($bm[0]) ? substr($bm[0], 0, 1) : '1';
+          $rDigits = preg_replace('/\D/', '', $u['room_number']);
+          if (strlen($rDigits) >= 3) {
+              $u['display_id'] = $bDigit . substr($rDigits, -3);
+          } else {
+              $u['display_id'] = $bDigit . '1' . str_pad($rDigits, 2, '0', STR_PAD_LEFT);
+          }
       }
+      unset($u);
     ?>
 
     standardizePage('staff');
@@ -382,37 +632,164 @@
       return null;
     }
 
-    // ── Units table ──
+    // ── Floor formatting ──
+    function formatFloor(roomNum) {
+      if (!roomNum) return '—';
+      let rNumOnly = roomNum.toString().replace(/\D/g, '');
+      let floorDigit = '1';
+      if (rNumOnly.length >= 3) {
+        floorDigit = rNumOnly.charAt(0);
+      }
+      const n = parseInt(floorDigit);
+      const s = ["th", "st", "nd", "rd"],
+            v = n % 100;
+      const suffix = (s[(v - 20) % 10] || s[v] || s[0]);
+      return n + suffix + " Floor";
+    }
+
+    // ── Pagination State ──
+    let currentBuildingFilter = 'all';
+    let currentPages = {
+      total: 1,
+      available: 1,
+      occupied: 1,
+      reserved: 1
+    };
+    const rowsPerPage = 10;
+
+    // ── Filter Handler ──
+    window.handleBuildingFilter = (val) => {
+      currentBuildingFilter = val;
+      // Reset all pages to 1 when filter changes
+      Object.keys(currentPages).forEach(k => currentPages[k] = 1);
+      renderUnitsTable();
+    };
+
+    // ── Units table rendering ──
     function renderUnitsTable() {
-      const unitsTbody = document.getElementById('units-tbody');
-      unitsTbody.innerHTML = dbUnits.map(u => {
+      const filtered = currentBuildingFilter === 'all' 
+        ? dbUnits 
+        : dbUnits.filter(u => {
+            const bMatch = u.building ? u.building.match(/\d+/) : null;
+            return bMatch && bMatch[0] === currentBuildingFilter;
+          });
+
+      // 1. Total Units
+      renderPagedTable('total', filtered, true);
+      
+      // 2. Available Units
+      const available = filtered.filter(u => u.status.toLowerCase() === 'available');
+      renderPagedTable('available', available, true);
+      
+      // 3. Occupied Units
+      const occupied = filtered.filter(u => u.status.toLowerCase() === 'occupied');
+      renderPagedTable('occupied', occupied, true);
+      
+      // 4. Reserved Units
+      const reserved = filtered.filter(u => u.status.toLowerCase() === 'reserved');
+      renderPagedTable('reserved', reserved, true);
+    }
+
+    function renderPagedTable(key, data, isFull) {
+      const targetTbodyId = `${key}-units-tbody`;
+      const targetPaginationId = `pagination-${key}`;
+      
+      const totalPages = Math.ceil(data.length / rowsPerPage) || 1;
+      if (currentPages[key] > totalPages) currentPages[key] = totalPages;
+
+      const start = (currentPages[key] - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      const pageData = data.slice(start, end);
+
+      renderTableRows(targetTbodyId, pageData, isFull, start);
+      renderPagination(targetPaginationId, totalPages, currentPages[key], (newPage) => {
+        currentPages[key] = newPage;
+        renderUnitsTable();
+      });
+    }
+
+    function renderTableRows(targetId, data, isFull, startIndex) {
+      const tbody = document.getElementById(targetId);
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${isFull ? 7 : 3}" style="text-align:center;padding:24px;color:var(--text-muted);">No units found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map((u, index) => {
+        const displayId = startIndex + index + 1;
+        const formattedName = u.display_id || u.room_number;
+
         const statusClass = u.status.toLowerCase() === 'available' ? 'badge-available'
           : u.status.toLowerCase() === 'occupied' ? 'badge-occupied'
             : 'badge-reserved';
         
         const unitType = u.type_key;
 
-        const viewBtn = `<button class="btn-action btn-view" onclick="adminPreview('${unitType}', '${u.status}')">
-             <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-             View
-           </button>`;
+        const actions = `
+          <div class="actions-cell">
+            <button class="btn-action btn-view" onclick="adminPreview('${unitType}', '${u.status}')">
+              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              View
+            </button>
+            <button class="btn-action btn-manage" style="color:var(--accent);" onclick="location.href='<?= url("/admin/apartment/info") ?>'">
+              <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+              Edit
+            </button>
+          </div>`;
 
-        const manageBtn = `<button class="btn-action btn-manage" style="color:var(--accent);" onclick="location.href='<?= url("/admin/apartment/info") ?>'" title="Manage Unit">
-        <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-        Edit
-      </button>`;
-
-        return `<tr>
-        <td class="td-id">#${u.unit_id}</td>
-        <td style="font-weight:600;">Room ${u.room_number}</td>
-        <td>${u.building || '—'}</td>
-        <td>${u.type_label}</td>
-        <td>₱${Number(u.price).toLocaleString()}</td>
-        <td style="text-align:center;font-weight:700;color:${u.status.toLowerCase() === 'available' ? 'var(--success)' : 'var(--danger)'};">${u.status.toLowerCase() === 'available' ? '1' : '0'}</td>
-        <td><span class="badge-status ${statusClass}">${u.status}</span></td>
-        <td><div class="actions-cell">${viewBtn}${manageBtn}</div></td>
-      </tr>`;
+        if (isFull) {
+          return `<tr>
+            <td class="td-id">#${displayId}</td>
+            <td style="font-weight:600;">${formattedName}</td>
+            <td>${formatFloor(u.room_number)}</td>
+            <td>${u.type_label}</td>
+            <td>₱${Number(u.price).toLocaleString()}</td>
+            <td><span class="badge-status ${statusClass}">${u.status}</span></td>
+            <td>${actions}</td>
+          </tr>`;
+        } else {
+          return `<tr>
+            <td style="font-weight:600;">${formattedName}</td>
+            <td>${u.type_label}</td>
+            <td><span class="badge-status ${statusClass}" style="font-size:0.65rem;">${u.status}</span></td>
+          </tr>`;
+        }
       }).join('');
+    }
+
+    function renderPagination(containerId, totalPages, currentPage, onPageChange) {
+      const container = document.getElementById(containerId);
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = `<div class="pagination-btns">`;
+      html += `<button class="btn-page" ${currentPage === 1 ? 'disabled' : ''} onclick="window.handlePageChange('${containerId}', ${currentPage - 1})">Prev</button>`;
+      
+      // Logic for 3-number window
+      let startPage = Math.max(1, currentPage - 1);
+      let endPage = Math.min(totalPages, startPage + 2);
+      
+      // Re-adjust start if we're near the end of the range
+      if (endPage - startPage < 2) {
+        startPage = Math.max(1, endPage - 2);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="btn-page ${i === currentPage ? 'active' : ''}" onclick="window.handlePageChange('${containerId}', ${i})">${i}</button>`;
+      }
+
+      html += `<button class="btn-page" ${currentPage === totalPages ? 'disabled' : ''} onclick="window.handlePageChange('${containerId}', ${currentPage + 1})">Next</button>`;
+      html += `</div>`;
+      
+      container.innerHTML = html;
+      
+      window.handlePageChange = (cid, page) => {
+        const key = cid.replace('pagination-', '');
+        currentPages[key] = page;
+        renderUnitsTable();
+      };
     }
     renderUnitsTable();
 
@@ -432,7 +809,7 @@
         return `<tr>
         <td class="td-id">#${a.id}</td>
         <td style="font-weight:600;">${applicantName}</td>
-        <td>${formatDate(a.submitted_at || new Date())}</td>
+        <td>${formatDateTime(a.submitted_at || new Date())}</td>
         <td><span style="font-size:0.82rem;font-weight:600;color:var(--success);">Verified</span></td>
         <td>
           <div class="actions-cell">
@@ -528,7 +905,7 @@
           return `<tr>
           <td class="td-id">#${req.id}</td>
           <td style="font-weight:600;">${applicantName}</td>
-          <td>${formatDate(req.submitted_at || new Date())}</td>
+          <td>${formatDateTime(req.submitted_at || new Date())}</td>
           <td><span class="badge-status ${bc}">${status}</span></td>
         </tr>`;
         }).join('');
@@ -646,6 +1023,14 @@
     // Initialize notification badge
     initNotifBadge('staff');
 
+    // ── Tab Switching Logic ──
+    window.switchTab = function(tabName, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const panel = document.getElementById(tabName + '-section');
+      if (panel) panel.style.display = 'block';
+      if (btn) btn.classList.add('active');
+    };
   </script>
 </body>
 

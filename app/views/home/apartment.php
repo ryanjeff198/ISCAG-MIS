@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="<?= asset('css/site-shared.css') ?>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
       --green-900: #064e3b;
@@ -175,7 +176,7 @@
       background: var(--green-50);
       text-align: center;
       border-radius: 40px;
-      margin: 0 20px 100px;
+      margin: 0 auto 100px;
     }
     .cta-title {
       font-family: 'Lora', serif;
@@ -254,74 +255,63 @@
     </div>
 
     <div class="row g-4 reveal">
-      <!-- Studio Type -->
-      <div class="col-lg-4">
-        <div class="unit-card">
-          <div class="unit-img">
-            <img src="<?= asset('assets/Studio Type/Studio type front.jpg') ?>" alt="Studio Type">
-            <span class="unit-badge">Best for Individuals</span>
-          </div>
-          <div class="unit-info">
-            <h3>Studio Type</h3>
-            <p>An efficient and modern living space perfect for students or single professionals. Features an open-plan layout with integrated kitchen and living area.</p>
-            <ul class="unit-features">
-              <li><span></span> Open Floor Plan</li>
-              <li><span></span> Private Bathroom</li>
-              <li><span></span> Kitchenette Area</li>
-            </ul>
-            <div class="unit-footer">
-              <span class="unit-price">Studio Unit</span>
-              <a href="<?= url('/register') ?>" class="unit-btn">Apply Now</a>
-            </div>
-          </div>
-        </div>
-      </div>
+      <?php if (!empty($apartmentTypes)): ?>
+        <?php foreach ($apartmentTypes as $type): ?>
+          <?php 
+            $inclusions = [];
+            if (!empty($type['inclusions'])) {
+              $inclusions = is_string($type['inclusions']) ? json_decode($type['inclusions'], true) : $type['inclusions'];
+            }
+            
+            $thumbnailUrl = !empty($type['thumbnail_id']) 
+              ? url('/api/apartment-types/serve-image') . '?id=' . $type['thumbnail_id']
+              : asset('assets/hero-mosque.png');
 
-      <!-- 1-Bedroom -->
-      <div class="col-lg-4">
-        <div class="unit-card">
-          <div class="unit-img">
-            <img src="<?= asset('assets/1BR Type/1BR front.jpg') ?>" alt="1-Bedroom">
-            <span class="unit-badge">Best for Couples</span>
-          </div>
-          <div class="unit-info">
-            <h3>1-Bedroom Unit</h3>
-            <p>Spacious and private, our 1-bedroom units offer a separate bedroom area for enhanced privacy and comfort. Ideal for couples or small families.</p>
-            <ul class="unit-features">
-              <li><span></span> Separate Bedroom</li>
-              <li><span></span> Spacious Living Room</li>
-              <li><span></span> Full Kitchen Area</li>
-            </ul>
-            <div class="unit-footer">
-              <span class="unit-price">1-Bedroom Unit</span>
-              <a href="<?= url('/register') ?>" class="unit-btn">Apply Now</a>
+            // Custom badge logic based on type
+            $badge = $type['capacity'] ?? 'Available';
+            if ($type['type_key'] === 'studio') $badge = "Best for Individuals";
+            elseif ($type['type_key'] === '1br') $badge = "Best for Couples";
+            elseif ($type['type_key'] === '2br') $badge = "Best for Families";
+            elseif ($type['type_key'] === '1tr') $badge = "Short-term Stay";
+            elseif ($type['type_key'] === '1gr') $badge = "Premium Guest";
+            elseif ($type['type_key'] === '1bc') $badge = "Bachelor Living";
+          ?>
+          <div class="col-lg-4">
+            <div class="unit-card">
+              <div class="unit-img" onclick="openPreview(<?= htmlspecialchars(json_encode($type['images']), ENT_QUOTES, 'UTF-8') ?>)">
+                <img src="<?= $thumbnailUrl ?>" alt="<?= htmlspecialchars($type['label']) ?>">
+                <span class="unit-badge"><?= htmlspecialchars($badge) ?></span>
+              </div>
+              <div class="unit-info">
+                <h3><?= htmlspecialchars($type['label']) ?></h3>
+                <p><?= htmlspecialchars($type['description'] ?: 'Modern living space designed for comfort and tranquility.') ?></p>
+                <ul class="unit-features">
+                  <?php if (!empty($inclusions) && is_array($inclusions)): ?>
+                    <?php foreach (array_slice($inclusions, 0, 3) as $inc): ?>
+                      <li><span></span> <?= htmlspecialchars($inc) ?></li>
+                    <?php endforeach; ?>
+                  <?php else: ?>
+                    <li><span></span> Private Bathroom</li>
+                    <li><span></span> Kitchenette Area</li>
+                    <li><span></span> Secure Access</li>
+                  <?php endif; ?>
+                </ul>
+                <div class="unit-footer">
+                  <span class="unit-price">
+                    ₱<?= number_format($type['price'], 2) ?>
+                    <small style="font-size: 0.65rem; color: var(--text-muted); display: block; font-weight: 400;">Per Month</small>
+                  </span>
+                  <a href="<?= url('/register') ?>" class="unit-btn">Apply Now</a>
+                </div>
+              </div>
             </div>
           </div>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <div class="col-12 text-center py-5">
+          <p class="text-muted">No units available at the moment. Please check back later.</p>
         </div>
-      </div>
-
-      <!-- 2-Bedroom -->
-      <div class="col-lg-4">
-        <div class="unit-card">
-          <div class="unit-img">
-            <img src="<?= asset('assets/2BR Type/2BR front.png') ?>" alt="2-Bedroom">
-            <span class="unit-badge">Best for Families</span>
-          </div>
-          <div class="unit-info">
-            <h3>2-Bedroom Unit</h3>
-            <p>Our largest units, designed for growing families. Features two separate bedrooms, a generous living area, and premium finishes.</p>
-            <ul class="unit-features">
-              <li><span></span> 2 Private Bedrooms</li>
-              <li><span></span> Large Dining Area</li>
-              <li><span></span> Family-Sized Layout</li>
-            </ul>
-            <div class="unit-footer">
-              <span class="unit-price">2-Bedroom Unit</span>
-              <a href="<?= url('/register') ?>" class="unit-btn">Apply Now</a>
-            </div>
-          </div>
-        </div>
-      </div>
+      <?php endif; ?>
     </div>
 
     <style>
@@ -344,13 +334,79 @@
         height: 240px;
         position: relative;
         overflow: hidden;
+        cursor: pointer;
       }
       .unit-img img {
         width: 100%; height: 100%;
         object-fit: cover;
         transition: transform 0.6s ease;
       }
-      .unit-card:hover .unit-img img { transform: scale(1.05); }
+      .unit-card:hover .unit-img img { transform: scale(1.1); }
+      .unit-img::after {
+        content: "VIEW";
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 800;
+        position: absolute;
+        inset: 0;
+        background: rgba(6, 78, 59, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        opacity: 0;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(6px);
+        letter-spacing: 2px;
+      }
+      .carousel-control-prev, .carousel-control-next {
+        width: 64px;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-radius: 50%;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.8;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(8px);
+      }
+      .carousel-control-prev:hover, .carousel-control-next:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        opacity: 1;
+        transform: translateY(-50%) scale(1.1);
+      }
+      .carousel-control-prev { left: 40px; }
+      .carousel-control-next { right: 40px; }
+      
+      #imagePreviewModal .modal-content {
+        background-color: rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        overflow: hidden !important;
+        height: 100vh;
+      }
+      #imagePreviewModal {
+        overflow: hidden !important;
+      }
+      .carousel-item {
+        height: 100vh;
+        background: transparent;
+        display: none; /* Let Bootstrap handle basic show/hide */
+      }
+      .carousel-item.active,
+      .carousel-item-next,
+      .carousel-item-prev {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+      }
+      .carousel-item img {
+        max-height: 100vh;
+        max-width: 100vw;
+        object-fit: contain;
+      }
+      .unit-img:hover::after { opacity: 1; }
       .unit-badge {
         position: absolute;
         top: 15px; right: 15px;
@@ -468,7 +524,63 @@
 <?php include 'partials/footer.php'; ?>
 <?php include 'partials/scripts.php'; ?>
 
+<!-- Image Preview Modal -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen modal-dialog-centered">
+    <div class="modal-content bg-transparent border-0">
+      <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-4" data-bs-dismiss="modal" aria-label="Close" style="z-index: 1100;"></button>
+      <div class="modal-body p-0">
+        <div id="previewCarousel" class="carousel slide h-100" data-bs-ride="false">
+          <div class="carousel-inner" id="carouselInner">
+            <!-- Images injected here -->
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#previewCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#previewCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+function openPreview(images) {
+  const inner = document.getElementById('carouselInner');
+  inner.innerHTML = '';
+  
+  if (!images || images.length === 0) return;
+
+  images.forEach((img, idx) => {
+    const div = document.createElement('div');
+    div.className = `carousel-item ${idx === 0 ? 'active' : ''}`;
+    
+    const url = `<?= url('/api/apartment-types/serve-image') ?>?id=${img.image_id}`;
+    div.innerHTML = `<img src="${url}" class="d-block" alt="Unit View">`;
+    inner.appendChild(div);
+  });
+
+  const modalEl = document.getElementById('imagePreviewModal');
+  const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+  
+  const carouselEl = document.getElementById('previewCarousel');
+  let carousel = bootstrap.Carousel.getInstance(carouselEl);
+  if (!carousel) {
+    carousel = new bootstrap.Carousel(carouselEl, {
+      interval: false,
+      ride: false
+    });
+  } else {
+    carousel.to(0); // Reset to first slide
+  }
+  
+  modal.show();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   function reveal() {
     var reveals = document.querySelectorAll(".reveal");
@@ -485,6 +597,8 @@ document.addEventListener('DOMContentLoaded', function() {
   reveal();
 });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

@@ -197,6 +197,55 @@
     
     .btn-circle.check:hover { background: rgba(199, 154, 43, 0.1) !important; }
     .btn-circle.check:hover svg { fill: var(--accent) !important; }
+
+    /* ── Premium Insights Design ── */
+    .admin-insights {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .insight-card {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .insight-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--border);
+    }
+    .insight-card.pending::after { background: var(--warning); }
+    .insight-card.total::after { background: var(--primary); }
+    .insight-card.verified::after { background: var(--success); }
+    .insight-card.rejected::after { background: var(--danger); }
+
+    .insight-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .insight-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      line-height: 1;
+    }
+    .insight-value.info { color: var(--primary); }
+    .insight-value.success { color: var(--success); }
+    .insight-value.danger { color: var(--danger); }
+    .insight-value.warning { color: var(--warning); }
   </style>
 </head>
 
@@ -226,19 +275,19 @@
         
         <!-- Admin Insights Ribbon -->
         <div class="admin-insights">
-          <div class="insight-card">
+          <div class="insight-card pending">
             <div class="insight-label">Pending Review</div>
             <div class="insight-value warning"><?= count(array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'pending')) ?></div>
           </div>
-          <div class="insight-card">
+          <div class="insight-card total">
             <div class="insight-label">Total Applications</div>
             <div class="insight-value info"><?= count($reports) ?></div>
           </div>
-          <div class="insight-card">
+          <div class="insight-card verified">
             <div class="insight-label">Verified (Staff)</div>
             <div class="insight-value success"><?= count(array_filter($reports, fn($r) => in_array(strtolower($r['status'] ?? ''), ['approved', 'assigned', 'queued']))) ?></div>
           </div>
-          <div class="insight-card">
+          <div class="insight-card rejected">
             <div class="insight-label">Rejected</div>
             <div class="insight-value danger"><?= count(array_filter($reports, fn($r) => strtolower($r['status'] ?? '') === 'rejected')) ?></div>
           </div>
@@ -290,7 +339,7 @@
                              <td><?= htmlspecialchars($r['first_name'] ?? '—') ?></td>
                              <td><?= htmlspecialchars($r['last_name'] ?? '—') ?></td>
                              <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
-                             <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
+                             <td><?= date('M d, Y | h:i A', strtotime($r['submitted_at'])) ?></td>
                              <td><span class="badge-status badge-pending"><?= $r['status'] ?></span></td>
                              <td>
                                 <div class="actions-cell">
@@ -346,7 +395,7 @@
                              <td style="font-weight:600;"><?= $r['tenant_id'] ?></td>
                              <td><?= htmlspecialchars(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?></td>
                              <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
-                             <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
+                             <td><?= date('M d, Y | h:i A', strtotime($r['submitted_at'])) ?></td>
                               <td><?= !empty($r['accepted_at']) ? date('M d, Y', strtotime($r['accepted_at'])) : '---' ?></td>
                              <td><span class="badge-status badge-approved"><?= $r['status'] ?></span></td>
                              <td>
@@ -395,7 +444,7 @@
                              <td style="font-weight:600;"><?= $r['tenant_id'] ?></td>
                              <td><?= htmlspecialchars(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?></td>
                              <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
-                             <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
+                             <td><?= date('M d, Y | h:i A', strtotime($r['submitted_at'])) ?></td>
                              <td style="font-size:0.82rem;color:var(--danger);font-weight:600;"><?= htmlspecialchars($r['reject_reason'] ?? '—') ?></td>
                              <td><span class="badge-status badge-rejected"><?= $r['status'] ?></span></td>
                              <td>
