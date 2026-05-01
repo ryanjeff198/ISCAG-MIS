@@ -59,15 +59,15 @@
         </div>
 
         <div class="admin-insights">
-          <div class="insight-card">
+          <div class="insight-card" onclick="window.location.href='<?= url('/admin/dawah/counseling') ?>'">
             <div class="insight-label">Male Counseling</div>
             <div class="insight-value" id="stat-counseling">0</div>
           </div>
-          <div class="insight-card">
+          <div class="insight-card" onclick="window.location.href='<?= url('/admin/dawah/marriage') ?>'">
             <div class="insight-label">Marriage Files</div>
             <div class="insight-value" id="stat-marriage">0</div>
           </div>
-          <div class="insight-card">
+          <div class="insight-card" onclick="window.location.href='<?= url('/admin/dawah/education') ?>'">
             <div class="insight-label">Shahada Records</div>
             <div class="insight-value" id="stat-conversion">0</div>
           </div>

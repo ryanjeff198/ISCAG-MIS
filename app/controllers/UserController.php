@@ -239,13 +239,42 @@ class UserController extends Controller
     public function maleCounseling(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
-        $this->view('user/Da\'wah/Male/user_form-male-counseling');
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/DawahAvailability.php';
+        
+        $model = new CounselingRequest();
+        $availModel = new DawahAvailability();
+        
+        $history = $model->getByUser($_SESSION['user_id']);
+        $analytics = $model->getAnalytics('male');
+        $blockedDates = $availModel->getBlockedDates('male');
+        
+        $this->view('user/Da\'wah/Male/user_form-male-counseling', [
+            'history' => $history,
+            'analytics' => $analytics,
+            'blockedDates' => $blockedDates
+        ]);
     }
 
     public function femaleCounseling(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
-        $this->view('user/Da\'wah/Female/user_form-female-counseling');
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $model = new CounselingRequest();
+        $history = $model->getByUser($_SESSION['user_id']);
+        $analytics = $model->getAnalytics('female');
+
+        $this->view('user/Da\'wah/Female/user_form-female-counseling', [
+            'history' => $history,
+            'analytics' => $analytics
+        ]);
+    }
+
+    public function counselingResources(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        // Only allow if user has an approved request (optional check, but good for security)
+        $this->view('user/Da\'wah/Male/counseling_resources');
     }
 
     public function marriageForm(): void

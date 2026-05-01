@@ -1135,8 +1135,10 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
     } else {
       reqTbody.innerHTML = reqs.map(r => {
         let type = r.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        if (r.type === 'male_counseling' || r.type === 'female_counseling' || r.type === 'counseling_male' || r.type === 'counseling_female') {
-          type = 'Counseling';
+        if (r.type === 'male_counseling' || r.type === 'counseling_male') {
+          type = 'Counseling & Guidance';
+        } else if (r.type === 'female_counseling' || r.type === 'counseling_female' || r.type === 'female_education') {
+          type = 'Female Education';
         }
         return '<tr>' +
           '<td class="td-id">#' + r.id + '</td>' +
@@ -1201,16 +1203,24 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                   <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Nikah services and pre-marital consultation</p>
                 </div>
 
-                <!-- Counseling -->
+                <!-- Counseling / Education -->
                 <div class="dawah-opt-card" id="opt-counseling" style="
                   border:2px solid var(--primary-light);border-radius:20px;padding:24px 20px;text-align:center;
                   cursor:pointer;transition:all 0.3s ease;background:rgba(23,107,69,0.02);
                 ">
                   <div style="width:64px;height:64px;border-radius:18px;background:var(--primary-light);color:white;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 20px rgba(23,107,69,0.2);">
-                    <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                    <?php if (strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female'): ?>
+                        <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+                    <?php else: ?>
+                        <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                    <?php endif; ?>
                   </div>
-                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Counseling</h6>
-                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Personal, family, or spiritual guidance sessions</p>
+                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">
+                    <?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female' ? 'Female Education' : 'Counseling & Guidance' ?>
+                  </h6>
+                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">
+                    <?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female' ? 'Enrollment and Islamic classes for sisters' : 'Personal, family, or spiritual guidance sessions' ?>
+                  </p>
                 </div>
 
                 <!-- Islamic Studies -->

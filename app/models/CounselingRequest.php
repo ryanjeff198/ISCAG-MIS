@@ -63,4 +63,15 @@ class CounselingRequest
         $stmt->execute(['gender' => $gender]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getByUser(int $userId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT * FROM {$this->table}
+            WHERE tenant_id = :id
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute(['id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

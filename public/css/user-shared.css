@@ -845,46 +845,55 @@ body {
 .badge-status {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.badge-status::before {
-  content: '';
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.btn-view-doc {
+  padding: 7px 16px;
+  background: var(--primary);
+  color: white !important;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(23, 107, 69, 0.2);
 }
 
-.badge-pending { background: rgba(176,125,46,0.12); color: var(--warning); }
-.badge-pending::before { background: var(--warning); }
-
-.badge-approved, .badge-available, .badge-active, .badge-complete {
-  background: rgba(46,125,85,0.12); color: var(--success);
+.btn-view-doc:hover {
+  background: var(--primary-dark);
+  box-shadow: 0 4px 12px rgba(23, 107, 69, 0.3);
+  transform: translateY(-1px);
 }
-.badge-approved::before, .badge-available::before,
-.badge-active::before, .badge-complete::before { background: var(--success); }
 
-.badge-rejected, .badge-occupied, .badge-inactive {
-  background: rgba(139,46,46,0.12); color: var(--danger);
+.btn-view-doc svg {
+  fill: white !important;
 }
-.badge-rejected::before, .badge-occupied::before,
-.badge-inactive::before { background: var(--danger); }
 
-.badge-reserved, .badge-scheduled {
-  background: rgba(176,125,46,0.12); color: var(--warning);
+.badge-pending { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
+.badge-approved, .badge-available, .badge-active, .badge-complete { 
+  background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; 
 }
-.badge-reserved::before, .badge-scheduled::before { background: var(--warning); }
-
-.badge-completed, .badge-info {
-  background: rgba(30,95,139,0.12); color: var(--info);
+.badge-rejected, .badge-occupied, .badge-inactive { 
+  background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; 
 }
-.badge-completed::before, .badge-info::before { background: var(--info); }
+.badge-reserved, .badge-scheduled { 
+  background: #fff7ed; color: #9a3412; border: 1px solid #ffedd5; 
+}
+.badge-completed, .badge-info { 
+  background: #f0f9ff; color: #075985; border: 1px solid #e0f2fe; 
+}
 
 
 /* ═══════════════════════════════════════

@@ -926,7 +926,7 @@ class AdminController extends Controller
     }
 
     public function dawahRecords(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male']);
         $this->view('admin/mis_admin/dawah_records', ['active_page' => 'dawah_records']);
     }
 
@@ -1057,6 +1057,219 @@ class AdminController extends Controller
             'dawah_type' => $dawah_type,
             'dbUser' => $dbUser,
             'records' => $records
+        ]);
+    }
+
+    public function dawahCounseling(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        
+        $counselingModel = new CounselingRequest();
+        $records = $counselingModel->getByGender($dawah_type);
+
+        $viewPath = ($dawah_type === 'female') 
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/counseling'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/counseling';
+
+        $this->view($viewPath, [
+            'active_page' => 'counseling',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'records' => $records
+        ]);
+    }
+
+    public function dawahMarriage(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        
+        // Marriage records placeholder — in production would use a MarriageModel
+        $records = []; 
+
+        $viewPath = ($dawah_type === 'female') 
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/marriage'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/marriage';
+
+        $this->view($viewPath, [
+            'active_page' => 'marriage',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'records' => $records
+        ]);
+    }
+
+    public function dawahSchedule(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/MarriageRequest.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        
+        $counselingModel = new CounselingRequest();
+        $marriageModel = new MarriageRequest();
+
+        // 1. Fetch Counseling
+        $counselingRaw = $counselingModel->getByGender($dawah_type);
+        $counselingScheds = array_map(function($r) {
+            return [
+                'type' => 'Counseling',
+                'name' => $r['first_name'] . ' ' . $r['last_name'],
+                'date' => $r['preferred_date'],
+                'time' => $r['preferred_time'],
+                'desc' => 'Religious Guidance — ' . ($r['reason'] ?? 'General'),
+                'status' => $r['status']
+            ];
+        }, $counselingRaw);
+
+        // 2. Fetch Marriage
+        $marriageRaw = $marriageModel->getAll();
+        $marriageScheds = array_map(function($r) {
+            return [
+                'type' => 'Marriage Ceremony',
+                'name' => $r['groom_name'] . ' & ' . $r['bride_name'],
+                'date' => $r['marriage_date'],
+                'time' => $r['marriage_time'],
+                'desc' => 'Venue: ' . $r['marriage_venue'],
+                'status' => $r['status']
+            ];
+        }, $marriageRaw);
+
+        // 3. Consolidate & Sort by Date/Time
+        $schedules = array_merge($counselingScheds, $marriageScheds);
+        usort($schedules, function($a, $b) {
+            $dateA = strtotime($a['date'] . ' ' . $a['time']);
+            $dateB = strtotime($b['date'] . ' ' . $b['time']);
+            return $dateA <=> $dateB;
+        });
+
+        $viewPath = ($dawah_type === 'female') 
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/schedule'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/schedule';
+
+        require_once BASE_PATH . '/app/models/DawahAvailability.php';
+        $availModel = new DawahAvailability();
+        $blockedDates = $availModel->getBlockedDates($dawah_type);
+
+        $this->view($viewPath, [
+            'active_page' => 'schedule',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'schedules' => $schedules,
+            'blockedDates' => $blockedDates
+        ]);
+    }
+
+    public function toggleDawahAvailability(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $date = $input['date'] ?? '';
+            $status = $input['status'] ?? ''; // 'block' or 'unblock'
+            $reason = $input['reason'] ?? 'Administrator Blockout';
+            
+            $role = $_SESSION['role'] ?? '';
+            $dept = ($role === 'Staff_Female') ? 'female' : 'male';
+
+            require_once BASE_PATH . '/app/models/DawahAvailability.php';
+            $model = new DawahAvailability();
+            
+            $success = ($status === 'block') 
+                ? $model->blockDate($date, $dept, $reason)
+                : $model->unblockDate($date, $dept);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $success]);
+            exit;
+        }
+    }
+
+    public function approveCounseling(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $input['id'] ?? null;
+            
+            require_once BASE_PATH . '/app/models/CounselingRequest.php';
+            $model = new CounselingRequest();
+            $success = $model->updateStatus($id, 'approved');
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $success]);
+            exit;
+        }
+    }
+
+    public function rejectCounseling(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $input['id'] ?? null;
+            
+            require_once BASE_PATH . '/app/models/CounselingRequest.php';
+            $model = new CounselingRequest();
+            $success = $model->updateStatus($id, 'rejected');
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $success]);
+            exit;
+        }
+    }
+
+    public function dawahAnalytics(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        
+        $counselingModel = new CounselingRequest();
+        $eduModel = new IslamicEducation();
+
+        // 1. Counseling Stats
+        $counselingAnalytics = $counselingModel->getAnalytics($dawah_type);
+        $counselingRequests = $counselingModel->getByGender($dawah_type);
+        
+        // 2. Education Stats
+        $educationAnalytics = $eduModel->getAnalytics($dawah_type);
+        
+        // 3. Marriage Stats (Placeholder)
+        $marriageStats = ['total' => 0, 'pending' => 0, 'approved' => 0];
+
+        $viewPath = ($dawah_type === 'female') 
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/analytics'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/analytics';
+
+        $this->view($viewPath, [
+            'active_page' => 'analytics',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'counseling' => $counselingAnalytics,
+            'education' => $educationAnalytics,
+            'marriage' => $marriageStats,
+            'requests' => $counselingRequests
         ]);
     }
 
@@ -1439,6 +1652,44 @@ class AdminController extends Controller
             'overdueCount' => $overdueCount,
             'paidThisMonthCount' => $paidThisMonthCount
         ];
+    }
+    public function damayanProfile(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $user = $userModel->findById($_SESSION['user_id']);
+        $extra = $userModel->getAdditionalInfo($_SESSION['user_id']);
+        
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/profile', [
+            'dbUser' => array_merge($user ?: [], $extra ?: [])
+        ]);
+    }
+
+    public function dawahMaleProfile(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Male']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $user = $userModel->findById($_SESSION['user_id']);
+        $extra = $userModel->getAdditionalInfo($_SESSION['user_id']);
+        
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/profile', [
+            'dbUser' => array_merge($user ?: [], $extra ?: [])
+        ]);
+    }
+
+    public function dawahFemaleProfile(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $user = $userModel->findById($_SESSION['user_id']);
+        $extra = $userModel->getAdditionalInfo($_SESSION['user_id']);
+        
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/profile', [
+            'dbUser' => array_merge($user ?: [], $extra ?: [])
+        ]);
     }
 }
 

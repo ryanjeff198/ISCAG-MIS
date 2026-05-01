@@ -106,13 +106,13 @@ $active_page = $active_page ?? 'dashboard';
                 if ($sex !== 'female'): ?>
                 <a href="<?= url('/user/services/counseling/male') ?>" class="<?= $active_page === 'counseling_male' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-                    Counseling
+                    Counseling & Guidance
                 </a>
                 <?php endif; ?>
                 <?php if ($sex !== 'male'): ?>
-                <a href="<?= url('/user/services/counseling/female') ?>" class="<?= $active_page === 'counseling_female' ? 'active-submenu' : '' ?>">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-                    Counseling
+                <a href="<?= url('/user/services/counseling/female') ?>" class="<?= $active_page === 'female_education' ? 'active-submenu' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+                    Female Education Section
                 </a>
                 <?php endif; ?>
                 <a href="<?= url('/user/services/marriage-form') ?>" class="<?= $active_page === 'marriage_form' ? 'active-submenu' : '' ?>">
