@@ -363,6 +363,7 @@ class AdminController extends Controller
                 . 'A room will be assigned once payments are settled.',
                 'approval'
             );
+            $this->logAudit('APARTMENT', 'APPROVE_APP', "Approved application ID: $id for Tenant ID: $tenantId");
         }
         header('Location: ' . url('/admin/apartment/confirmation'));
     }
@@ -375,6 +376,7 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
             $model->updateApplicationStatus($id, 'Rejected', $reason);
+            $this->logAudit('APARTMENT', 'REJECT_APP', "Rejected application ID: $id. Reason: $reason");
         }
         header('Location: ' . url('/admin/apartment/confirmation'));
     }
@@ -413,6 +415,7 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
             $model->updateParkingStatus($id, 'Approved');
+            $this->logAudit('PARKING', 'APPROVE_PARKING', "Approved parking for Tenant ID: $tid");
         }
         header('Location: ' . url('/admin/mis_admin/parking_approval'));
     }
@@ -425,6 +428,7 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
             $model->updateParkingStatus($id, 'Rejected', $reason);
+            $this->logAudit('PARKING', 'REJECT_PARKING', "Rejected parking ID: $id. Reason: $reason");
         }
         header('Location: ' . url('/admin/mis_admin/parking_approval'));
     }
@@ -984,7 +988,8 @@ class AdminController extends Controller
         $db = getDbConnection();
         $stmt = $db->prepare("SELECT is_verified FROM tenant_accounts WHERE tenant_id = :id");
         $stmt->execute(['id' => $id]);
-        $verified = $stmt->fetchColumn();
+        $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+        $verified = $userData['is_verified'] ?? false;
 
         if ($verified === false) {
             echo json_encode(['success' => false, 'message' => 'User not found']);
@@ -994,7 +999,9 @@ class AdminController extends Controller
         $newVerified = $verified == 1 ? 0 : 1;
         $upd = $db->prepare("UPDATE tenant_accounts SET is_verified = :v WHERE tenant_id = :id");
         if ($upd->execute(['v' => $newVerified, 'id' => $id])) {
-            echo json_encode(['success' => true, 'newStatus' => $newVerified ? 'active' : 'inactive']);
+            $statusText = $newVerified == 1 ? 'Activated' : 'Deactivated';
+            $this->logAudit('GOVERNANCE', 'TOGGLE_USER', "$statusText user account ID: $id");
+            echo json_encode(['success' => true, 'newStatus' => $newVerified == 1 ? 'active' : 'inactive']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update database']);
         }
@@ -1003,7 +1010,12 @@ class AdminController extends Controller
 
     public function auditLogs(): void {
         Auth::protectRole(['Admin']);
-        $this->view('admin/mis_admin/audit_logs', ['active_page' => 'audit_logs']);
+        $db = getDbConnection();
+        $logs = $db->query("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 1000")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $this->view('admin/mis_admin/audit_logs', [
+            'active_page' => 'audit_logs',
+            'logs' => $logs
+        ]);
     }
 
     public function notificationInbox(): void {
@@ -1120,6 +1132,7 @@ class AdminController extends Controller
                     'Your lease contract has been successfully renewed and extended for another ' . $term . ' months.',
                     'approval'
                 );
+                $this->logAudit('RENEWAL', 'APPROVE_RENEWAL', "Approved renewal ID: $id for Tenant ID: $tenantId");
             }
         }
         header('Location: ' . url('/admin/apartment/renewals'));
@@ -1146,6 +1159,7 @@ class AdminController extends Controller
                     'Your recent lease renewal request was not approved. Please contact administration for details.',
                     'warning'
                 );
+                $this->logAudit('RENEWAL', 'REJECT_RENEWAL', "Rejected renewal ID: $id for Tenant ID: $tenantId");
             }
         }
         header('Location: ' . url('/admin/apartment/renewals'));
@@ -1267,6 +1281,26 @@ class AdminController extends Controller
             'overdueCount' => $overdueCount,
             'paidThisMonthCount' => $paidThisMonthCount
         ];
+    }
+
+    /**
+     * Private helper to log administrative actions for audit
+     */
+    private function logAudit(string $module, string $action, string $details): void {
+        try {
+            $db = getDbConnection();
+            $stmt = $db->prepare("INSERT INTO audit_logs (admin_id, admin_name, module, action, details) VALUES (:aid, :aname, :mod, :act, :det)");
+            $stmt->execute([
+                'aid'   => $_SESSION['user_id'] ?? 0,
+                'aname' => $_SESSION['name'] ?? ($_SESSION['role'] ?? 'System'),
+                'mod'   => $module,
+                'act'   => $action,
+                'det'   => $details
+            ]);
+        } catch (\Exception $e) {
+            // Silently fail to not block main operation
+            error_log("Audit Log Failure: " . $e->getMessage());
+        }
     }
 }
 

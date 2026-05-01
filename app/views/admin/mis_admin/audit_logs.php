@@ -60,19 +60,25 @@ if (!function_exists('url')) {
                 <div class="admin-insights">
                     <div class="insight-card">
                         <div class="insight-label">Total Entries</div>
-                        <div class="insight-value">542</div>
+                        <div class="insight-value"><?= count($logs ?? []) ?></div>
                     </div>
                     <div class="insight-card">
+                        <?php 
+                            $criticalCount = count(array_filter($logs ?? [], function($l) {
+                                $a = strtoupper($l['action'] ?? '');
+                                return str_contains($a, 'DELETE') || str_contains($a, 'REJECT') || str_contains($a, 'WARNING');
+                            }));
+                        ?>
                         <div class="insight-label">Critical Events</div>
-                        <div class="insight-value danger">2</div>
+                        <div class="insight-value <?= $criticalCount > 0 ? 'danger' : '' ?>"><?= $criticalCount ?></div>
                     </div>
                     <div class="insight-card">
                         <div class="insight-label">System Access</div>
-                        <div class="insight-value success">LOCKED</div>
+                        <div class="insight-value success">LIVE</div>
                     </div>
                     <div class="insight-card">
-                        <div class="insight-label">Storage Usage</div>
-                        <div class="insight-value info">12%</div>
+                        <div class="insight-label">Database Health</div>
+                        <div class="insight-value info">Active</div>
                     </div>
                 </div>
 
@@ -128,21 +134,17 @@ if (!function_exists('url')) {
     <script>
         standardizePage('admin');
 
-        // Generate mock audit logs if not present
-        function loadMockLogs() {
-            let logs = JSON.parse(localStorage.getItem('mis_audit_logs') || '[]');
-            if (logs.length === 0) {
-                logs = [
-                    { admin_id: "MIS-ADMIN", module: "SYSTEM", action: "LOGIN", timestamp: new Date(Date.now() - 3600000).toISOString(), details: "Logged in via MIS Admin portal" },
-                    { admin_id: "STAFF-APT", module: "BILLING", action: "UPDATE_PAYMENT", timestamp: new Date(Date.now() - 10000000).toISOString(), details: "Marked INV-2026-004 as PAID" },
-                    { admin_id: "MIS-ADMIN", module: "USER", action: "DELETE_RECORD", timestamp: new Date(Date.now() - 86400000).toISOString(), details: "Deleted duplicate account for USR-009" },
-                    { admin_id: "SYSTEM", module: "APARTMENT", action: "CREATE_APP", timestamp: new Date(Date.now() - 100000000).toISOString(), details: "Tenant submitted new application APT-REQ-02" },
-                    { admin_id: "STAFF-DAWAH", module: "DA'WAH", action: "APPROVE_REQ", timestamp: new Date(Date.now() - 200000000).toISOString(), details: "Approved counseling request #FC-001" },
-                ];
-                localStorage.setItem('mis_audit_logs', JSON.stringify(logs));
-            }
-            return logs;
-        }
+        // Inject REAL logs from PHP
+        let allLogs = <?= json_encode($logs ?? []) ?>;
+
+        // Map database fields to the UI expectation
+        allLogs = allLogs.map(l => ({
+            admin_id: l.admin_name + ' (' + l.admin_id + ')',
+            module: l.module,
+            action: l.action,
+            timestamp: l.timestamp,
+            details: l.details
+        }));
 
         function formatTime(isoStr) {
             const d = new Date(isoStr);
@@ -159,8 +161,6 @@ if (!function_exists('url')) {
             return `<span class="tag" style="background:#e0e0e0;color:#333;">${action}</span>`;
         }
 
-        let allLogs = loadMockLogs();
-
         function renderLogs() {
             const tbody = document.getElementById('logs-tbody');
             const empty = document.getElementById('empty-state');
@@ -176,7 +176,8 @@ if (!function_exists('url')) {
                 return true;
             });
 
-            filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Newest first
+            // Already sorted by PHP DESC
+            // filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); 
 
             tbody.innerHTML = '';
             if (filtered.length === 0) {
@@ -200,7 +201,7 @@ if (!function_exists('url')) {
         function downloadCSV() {
             let csvContent = "data:text/csv;charset=utf-8,Timestamp,User ID,Module,Action,Details\n";
             allLogs.forEach(function (rowArray) {
-                let row = [rowArray.timestamp, rowArray.admin_id, rowArray.module, rowArray.action, `"${rowArray.details || ''}"`];
+                let row = [rowArray.timestamp, `"${rowArray.admin_id}"`, rowArray.module, rowArray.action, `"${rowArray.details || ''}"`];
                 csvContent += row.join(",") + "\n";
             });
             var encodedUri = encodeURI(csvContent);
