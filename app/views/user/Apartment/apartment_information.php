@@ -15,6 +15,10 @@ if ($userId) {
     $tenantInfo = $aptModel->getInfo($userId);
     $application = $aptModel->getApplication($userId);
 }
+
+// Ensure variables from controller are handled
+$familyCount = $familyCount ?? 0;
+$hasParking = $hasParking ?? false;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -131,7 +135,7 @@ if ($userId) {
         .status-summary {
             padding: 18px 32px;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 16px;
         }
 
@@ -363,14 +367,16 @@ if ($userId) {
 
                 const tenantInfo = <?= json_encode($tenantInfo ?? null) ?>;
                 const aptApp = <?= json_encode($application ?? null) ?>;
+                const familyCount = <?= json_encode($familyCount ?? 0) ?>;
+                const hasParking = <?= json_encode($hasParking ?? false) ?>;
                 
                 // Determine logic for "Automatic Queue"
                 if (aptApp && (aptApp.status.toLowerCase() === 'assigned' || aptApp.status.toLowerCase() === 'verified' || aptApp.status.toLowerCase() === 'occupied')) {
                     const type = apartmentTypes.find(t => t.type_key === aptApp.roomtype) || apartmentTypes[0];
-                    assignedApt = { ...type, ...aptApp, displayStatus: 'Your Unit' };
+                    assignedApt = { ...type, ...aptApp, displayStatus: 'Your Unit', familyCount, hasParking };
                 } else if (aptApp && aptApp.status.toLowerCase() === 'queued') {
                     const type = apartmentTypes.find(t => t.type_key === aptApp.roomtype) || apartmentTypes[0];
-                    assignedApt = { ...type, ...aptApp, displayStatus: `Waitlisted (Pos #${aptApp.queue_position})` };
+                    assignedApt = { ...type, ...aptApp, displayStatus: `Waitlisted (Pos #${aptApp.queue_position})`, familyCount, hasParking };
                 }
 
                 renderDashboard(aptApp);
@@ -404,6 +410,7 @@ if ($userId) {
                     </div>
                     <div class="status-summary">
                         <div class="summary-stat"><div class="summary-stat-label">Monthly Rent</div><div class="summary-stat-value">₱${Number(assignedApt.price || assignedApt.rent).toLocaleString()}</div></div>
+                        <div class="summary-stat"><div class="summary-stat-label">Security Deposit</div><div class="summary-stat-value">₱1,000</div></div>
                         <div class="summary-stat">
                             <div class="summary-stat-label">Queue / Status</div>
                             <div class="summary-stat-value" style="color:var(--accent);">${assignedApt.displayStatus}</div>
@@ -423,7 +430,7 @@ if ($userId) {
         function openAptDetails() {
             if (!assignedApt) return;
             document.getElementById('m-unit-name').textContent = assignedApt.label;
-            document.getElementById('m-rent').textContent = `₱${Number(assignedApt.price).toLocaleString()}`;
+            document.getElementById('m-rent').textContent = `₱${Number(assignedApt.price).toLocaleString()} / Month`;
             
             const badge = document.getElementById('m-availability-badge');
             badge.textContent = assignedApt.displayStatus;
@@ -439,15 +446,18 @@ if ($userId) {
             const rules = assignedApt.rules ? (typeof assignedApt.rules === 'string' ? JSON.parse(assignedApt.rules) : assignedApt.rules) : [];
             document.getElementById('m-list-rules').innerHTML = rules.length ? rules.map(r => `<li class="apt-list-item rule">${r}</li>`).join('') : '<li class="apt-list-item" style="color:#94a3b8;">No rules specified</li>';
 
+            const formattedPrice = Number(assignedApt.price).toLocaleString();
             document.getElementById('m-list-payment').innerHTML = `
-                <li class="apt-list-item" style="color:white; opacity:0.9;">Advance: ${assignedApt.advance_rent || '1 Month'}</li>
-                <li class="apt-list-item" style="color:white; opacity:0.9;">Deposit: ${assignedApt.security_deposit || '1 Month'}</li>
-                ${assignedApt.other_fees ? `<li class="apt-list-item" style="color:white; opacity:0.9;">${assignedApt.other_fees}</li>` : ''}
+                <li class="apt-list-item" style="color:white; opacity:0.9;"><strong>Initial:</strong> Advance (₱${formattedPrice} — ${assignedApt.advance_rent || '1 Month'})</li>
+                <li class="apt-list-item" style="color:white; opacity:0.9;"><strong>Initial:</strong> Deposit (₱1,000)</li>
+                <li class="apt-list-item" style="color:white; opacity:0.9;"><strong>Monthly:</strong> Contribution (₱150)</li>
+                <li class="apt-list-item" style="color:white; opacity:0.9;"><strong>Monthly:</strong> Water (₱${(assignedApt.familyCount + 1) * 100})</li>
+                ${assignedApt.hasParking ? `<li class="apt-list-item" style="color:white; opacity:0.9;"><strong>Monthly:</strong> Parking (₱1,000)</li>` : ''}
             `;
 
             document.getElementById('m-list-lease').innerHTML = `
-                <li class="apt-list-item">Min Stay: ${assignedApt.min_lease || '6 Months'}</li>
-                <li class="apt-list-item">Notice: ${assignedApt.notice_period || '30 Days'}</li>
+                <li class="apt-list-item">Min Stay: 3 Months</li>
+                <li class="apt-list-item">Notice: 25th day</li>
             `;
 
             document.getElementById('aptDetailModal').classList.add('active');
