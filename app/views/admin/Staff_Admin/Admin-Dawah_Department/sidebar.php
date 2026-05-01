@@ -1,4 +1,4 @@
-<aside class="sidebar" id="sidebar" style="--active-accent: <?= ($dawah_type ?? '') == 'female' ? '#be185d' : 'var(--primary)' ?>;">
+<aside class="sidebar" id="sidebar" style="--active-accent: <?= ($dawah_type ?? '') == 'female' ? '#d4af37' : '#14532d' ?>;">
   <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
     <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
   </button>
@@ -12,7 +12,7 @@
     </div>
   </div>
   <div class="sidebar-user">
-    <div class="user-avatar" id="nav-avatar" data-preserve-avatar style="background:<?= ($dawah_type ?? '') == 'female' ? '#be185d' : 'var(--primary)' ?>;">
+    <div class="user-avatar" id="nav-avatar" data-preserve-avatar style="background:<?= ($dawah_type ?? '') == 'female' ? '#d4af37' : '#14532d' ?>;">
       <?= strtoupper(substr($dbUser['first_name'] ?? 'D', 0, 1) . substr($dbUser['last_name'] ?? 'A', 0, 1)) ?>
     </div>
     <div class="user-info">
@@ -32,6 +32,7 @@
     </a>
 
     <div class="nav-section-label">Services</div>
+    <?php if (($dawah_type ?? '') === 'male'): ?>
     <a href="<?= url('/admin/dawah/counseling') ?>" class="nav-item <?= ($active_page ?? '') == 'counseling' ? 'active' : '' ?>" data-tooltip="Counseling">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
       <span class="nav-item-label">Counseling</span>
@@ -40,6 +41,7 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
       <span class="nav-item-label">Marriage Services</span>
     </a>
+    <?php endif; ?>
     <a href="<?= url('/admin/dawah/education') ?>" class="nav-item <?= ($active_page ?? '') == 'education' ? 'active' : '' ?>" data-tooltip="Islamic Education">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
       <span class="nav-item-label">Islamic Education</span>

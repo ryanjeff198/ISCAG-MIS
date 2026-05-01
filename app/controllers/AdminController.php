@@ -195,24 +195,7 @@ class AdminController extends Controller
     }
 
 
-    public function damayanAdminDashboard(): void
-    {
-        Auth::protectRole(['Admin', 'Staff_Damayan']);
-        require_once BASE_PATH . '/app/models/User.php';
-        $userModel = new User();
-        $dbUser = $userModel->findById($_SESSION['user_id']);
-        
-        // Mock records
-        $records = [
-            ['id' => 'BS-9001', 'deceased_name' => 'Mustafa Al-Amin', 'requester_name' => 'Sarah Al-Amin', 'date' => '2024-05-02', 'status' => 'Pending', 'status_class' => 'badge-pending'],
-            ['id' => 'BS-8005', 'deceased_name' => 'Omar Farooq', 'requester_name' => 'Zainab Farooq', 'date' => '2024-04-25', 'status' => 'Completed', 'status_class' => 'badge-approved'],
-        ];
 
-        $this->view('admin/Staff_Admin/Admin-Damayan_Department/damayan_dashboard', [
-            'dbUser' => $dbUser,
-            'records' => $records
-        ]);
-    }
 
     public function apartmentInfo(): void
     {
@@ -1007,7 +990,7 @@ class AdminController extends Controller
     public function dawahFemaleDashboard(): void {
         Auth::protectRole(['Admin', 'Staff_Female']);
         require_once BASE_PATH . '/app/models/User.php';
-        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
         
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
@@ -1018,23 +1001,24 @@ class AdminController extends Controller
             $_SESSION['email'] = $dbUser['email'];
         }
         
-        $counselingModel = new CounselingRequest();
-        $rawRequests = $counselingModel->getByGender('female');
-        $analytics = $counselingModel->getAnalytics('female');
+        $eduModel = new IslamicEducation();
+        $rawRequests = $eduModel->getAllByGender('female');
+        $analytics = $eduModel->getAnalytics('female');
 
         // Transform raw DB rows into the shape the dashboard JS expects
         $requests = array_map(function($r) {
             $statusMap = [
-                'pending'  => ['label' => 'Pending',  'class' => 'pending'],
-                'approved' => ['label' => 'Approved', 'class' => 'success'],
-                'rejected' => ['label' => 'Rejected', 'class' => 'danger'],
+                'pending'   => ['label' => 'Pending',   'class' => 'pending'],
+                'active'    => ['label' => 'Active',    'class' => 'warning'],
+                'completed' => ['label' => 'Completed', 'class' => 'success'],
+                'dropped'   => ['label' => 'Dropped',   'class' => 'danger'],
             ];
             $s = $statusMap[$r['status']] ?? ['label' => ucfirst($r['status']), 'class' => 'pending'];
             return [
                 'id'            => $r['id'],
                 'name'          => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')),
-                'type'          => 'counseling',
-                'service_label' => 'Counseling — ' . ($r['reason'] ?? 'General'),
+                'type'          => 'education',
+                'service_label' => $r['program_name'] ?? 'Islamic Studies',
                 'date'          => date('M d, Y', strtotime($r['created_at'])),
                 'status'        => $s['label'],
                 'status_class'  => $s['class'],
@@ -1045,6 +1029,62 @@ class AdminController extends Controller
             'active_page' => 'dashboard',
             'dbUser' => $dbUser,
             'requests' => $requests,
+            'analytics' => $analytics
+        ]);
+    }
+
+    public function dawahEducation(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        // Determine department type based on role
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        
+        $eduModel = new IslamicEducation();
+        $records = $eduModel->getAllByGender($dawah_type);
+
+        $viewPath = ($dawah_type === 'female') 
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/female_education'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/male_education';
+
+        $this->view($viewPath, [
+            'active_page' => 'education',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'records' => $records
+        ]);
+    }
+
+    public function damayanAdminDashboard(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        // Sync session with live DB data
+        if ($dbUser) {
+            $_SESSION['name'] = trim($dbUser['first_name'] . ' ' . $dbUser['last_name']);
+            $_SESSION['email'] = $dbUser['email'];
+        }
+
+        // Analytics placeholder — will come from BurialRequest model when implemented
+        $analytics = [
+            'burial' => 0,
+            'charity' => 0,
+            'completed' => 0,
+            'pending' => 0
+        ];
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/damayan_dashboard', [
+            'active_page' => 'dashboard',
+            'dbUser' => $dbUser,
+            'records' => [],
             'analytics' => $analytics
         ]);
     }

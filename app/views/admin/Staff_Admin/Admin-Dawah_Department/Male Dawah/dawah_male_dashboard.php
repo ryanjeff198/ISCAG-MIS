@@ -25,13 +25,13 @@
       gap: 8px;
       cursor: pointer;
     }
-    .insight-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); border-color: var(--primary); }
+    .insight-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); border-color: #14532d; }
     .insight-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    .insight-value { font-size: 1.8rem; font-weight: 800; color: var(--primary-dark); line-height: 1; }
+    .insight-value { font-size: 1.8rem; font-weight: 800; color: #14532d; line-height: 1; }
     
     .tab-nav { display: flex; gap: 12px; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
     .tab-btn { padding: 12px 24px; font-size: 0.9rem; font-weight: 700; color: var(--text-muted); background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.25s ease; }
-    .tab-btn.active { color: var(--primary) !important; border-bottom-color: var(--primary) !important; }
+    .tab-btn.active { color: #14532d !important; border-bottom-color: #14532d !important; }
   </style>
 </head>
 <body>
@@ -44,7 +44,7 @@
     <div class="main-content">
       <div class="top-bar">
         <div style="display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; background: #e0f2fe; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0284c7;">
+          <div style="width: 48px; height: 48px; background: #f0fdf4; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #14532d;">
             <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
           </div>
           <div>
@@ -135,7 +135,7 @@
           <td>${r.date}</td>
           <td><span class="badge-status ${r.status_class}">${r.status}</span></td>
           <td>
-            <button class="btn-action" style="color:var(--primary);">Process Request</button>
+            <button class="btn-action" style="color:#14532d;">Process Request</button>
           </td>
         </tr>
       `).join('');

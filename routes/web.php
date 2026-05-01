@@ -94,6 +94,7 @@ $routes = [
     '/admin/dawah'                   => ['AdminController', 'dawahAdminDashboard'],
     '/admin/dawah/male'              => ['AdminController', 'dawahMaleDashboard'],
     '/admin/dawah/female'            => ['AdminController', 'dawahFemaleDashboard'],
+    '/admin/dawah/education'         => ['AdminController', 'dawahEducation'],
     '/admin/damayan'                 => ['AdminController', 'damayanAdminDashboard'],
     '/admin/payment'                 => ['AdminController', 'payment'],
 
