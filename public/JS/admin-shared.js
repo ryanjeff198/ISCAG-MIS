@@ -317,8 +317,8 @@ function typeLabel(type) {
   const map = {
     burial_service: 'Burial Service',
     apartment_application: 'Apartment',
-    counseling_female: "Sisters' Counseling",
-    counseling_male: "Brothers' Counseling",
+    counseling_female: "Counseling",
+    counseling_male: "Counseling",
     islamic_education: 'Islamic Education',
     marriage_service: 'Marriage Service'
   };

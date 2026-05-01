@@ -97,13 +97,13 @@
                 </span>
               </a>
 
-               <a href="<?= url('/daawah') ?>" class="dept-item"
-                  onmouseenter="swapLayout(true, '<?= asset("assets/da'wah logo.jpg") ?>', 'Daawah Programs')">
+               <a href="<?= url('/dawah') ?>" class="dept-item"
+                  onmouseenter="swapLayout(true, '<?= asset("assets/da'wah logo.jpg") ?>', 'Dawah Programs')">
                 <span class="dept-item-icon">
-                  <img src="<?= asset("assets/da'wah logo.jpg") ?>" alt="Daawah Logo" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">
+                  <img src="<?= asset("assets/da'wah logo.jpg") ?>" alt="Dawah Logo" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">
                 </span>
                 <span class="dept-item-body">
-                  <span class="dept-item-title">Daawah</span>
+                  <span class="dept-item-title">Dawah</span>
                   <span class="dept-item-desc">Islamic programs and guidance</span>
                 </span>
               </a>

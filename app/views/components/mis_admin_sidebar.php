@@ -10,7 +10,7 @@ $active_page = $active_page ?? 'admin_dashboard';
 // Determine which dropdowns should be open based on the active page
 $is_pending_open = in_array($active_page, ['apartment_confirmation', 'parking_approval']);
 $is_finance_open = in_array($active_page, ['billing', 'soa', 'reports']);
-$is_comm_open = in_array($active_page, ['apartment_records', 'renewal_records', 'daawah_records', 'damayan_records', 'notifications']);
+$is_comm_open = in_array($active_page, ['apartment_records', 'renewal_records', 'dawah_records', 'damayan_records', 'notifications']);
 $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification']);
 ?>
 <aside class="sidebar" id="sidebar">
@@ -76,7 +76,7 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
 
         <!-- COMMUNITY (Services) -->
         <div class="nav-dropdown-wrap" id="comm-wrap">
-            <button class="nav-dropdown-trigger <?= $is_comm_open ? 'open' : '' ?>" id="comm-trigger" data-href="<?= url('/admin/mis_admin/daawah_records') ?>">
+            <button class="nav-dropdown-trigger <?= $is_comm_open ? 'open' : '' ?>" id="comm-trigger" data-href="<?= url('/admin/mis_admin/dawah_records') ?>">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
                 <span class="nav-item-label">Departments</span>
                 <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
@@ -84,7 +84,7 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
             <div class="nav-dropdown <?= $is_comm_open ? 'open' : '' ?>" id="comm-menu">
                 <a href="<?= url('/admin/mis_admin/apartment_records') ?>" class="<?= $active_page === 'apartment_records' ? 'active-submenu' : '' ?>">Unit Inventory</a>
                 <a href="<?= url('/admin/mis_admin/renewal_records') ?>" class="<?= $active_page === 'renewal_records' ? 'active-submenu' : '' ?>">Renewal Records</a>
-                <a href="<?= url('/admin/mis_admin/daawah_records') ?>" class="<?= $active_page === 'daawah_records' ? 'active-submenu' : '' ?>">Da'wah Records</a>
+                <a href="<?= url('/admin/mis_admin/dawah_records') ?>" class="<?= $active_page === 'dawah_records' ? 'active-submenu' : '' ?>">Da'wah Records</a>
                 <a href="<?= url('/admin/mis_admin/damayan_records') ?>" class="<?= $active_page === 'damayan_records' ? 'active-submenu' : '' ?>">Damayan Burial</a>
                 <a href="<?= url('/admin/mis_admin/notifications') ?>" class="<?= $active_page === 'notifications' ? 'active-submenu' : '' ?>">System Broadcast</a>
             </div>

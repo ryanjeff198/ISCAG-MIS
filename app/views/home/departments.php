@@ -196,19 +196,18 @@
       </div>
     </a>
 
-    <!-- Daawah -->
-    <a href="<?= url('/daawah') ?>" class="dept-main-card reverse reveal">
+    <a href="<?= url('/dawah') ?>" class="dept-main-card reverse reveal">
       <div class="dept-img">
         <div id="deptDawahCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="4000">
           <div class="carousel-inner" style="height: 100%;">
             <div class="carousel-item active" style="height: 100%;">
-              <img src="<?= asset('assets/dawahFeatureImage4.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Daawah 4">
+              <img src="<?= asset('assets/dawahFeatureImage4.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Dawah 4">
             </div>
             <div class="carousel-item" style="height: 100%;">
-              <img src="<?= asset('assets/dawahFeatureImage3.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Daawah 3">
+              <img src="<?= asset('assets/dawahFeatureImage3.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Dawah 3">
             </div>
             <div class="carousel-item" style="height: 100%;">
-              <img src="<?= asset('assets/dawahFeatureImage2.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Daawah 2">
+              <img src="<?= asset('assets/dawahFeatureImage2.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Dawah 2">
             </div>
           </div>
         </div>

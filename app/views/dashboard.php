@@ -324,7 +324,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
               <a href="<?= url('/admin/mis_admin/apartment_records') ?>" class="hub-link">
                 Unit Inventory <span class="hub-link-arrow">→</span>
               </a>
-              <a href="<?= url('/admin/mis_admin/daawah_records') ?>" class="hub-link">
+              <a href="<?= url('/admin/mis_admin/dawah_records') ?>" class="hub-link">
                 Da'wah & Counseling Logs <span class="hub-link-arrow">→</span>
               </a>
               <a href="<?= url('/admin/mis_admin/damayan_records') ?>" class="hub-link">
@@ -1050,18 +1050,14 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       },
       {
         id: 'dawah',
-        title: !isComplete ? "Da'wah — Counseling Services"
-          : String(user.sex).toLowerCase() === 'female' ? "Da'wah — Sisters' Counseling"
-            : "Da'wah — Brothers' Counseling",
+        title: "Da'wah Department Services",
         desc: !isComplete
-          ? 'Request a confidential counseling session for personal, family, or spiritual matters. Complete your profile to access gender-specific counseling services.'
-          : String(user.sex).toLowerCase() === 'female'
-            ? 'Request a confidential session with our female counselors. All sessions are conducted with utmost privacy and respect for Islamic values.'
-            : 'Request a confidential counseling session with our male counselors for personal, family, or spiritual matters. Schedule your preferred appointment time.',
+          ? 'Access our department services including Marriage, Counseling, and Islamic Studies. Complete your profile to access full department features.'
+          : 'Access specialized services including Marriage, Counseling, and Islamic Studies. Our department is dedicated to providing spiritual and social support.',
         icon: '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>',
         iconClass: String(user.sex).toLowerCase() === 'female' ? 'purple' : 'teal',
-        href: dawahHref,
-        btnText: 'Request Service'
+        href: '#', // Handled by click listener
+        btnText: 'View Services'
       }
     ];
 
@@ -1114,7 +1110,13 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
             redirectUrl: '<?= url('/user/profile') ?>?edit=true'
           });
         } else {
-          window.location.href = svc.href;
+          if (svc.id === 'dawah') {
+            showDawahSelectionModal();
+          } else if (svc.id === 'damayan') {
+            showDamayanSelectionModal();
+          } else {
+            window.location.href = svc.href;
+          }
         }
       });
 
@@ -1161,85 +1163,206 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
           }
       }
 
-      function showStatusAnnouncement(app, dismissKey) {
-          const modal = document.createElement('div');
-          modal.id = 'status-announcement-modal';
-          
-          let theme = 'theme-warning';
-          let icon = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>';
-          let title = 'Application Update';
-          let desc = 'There is an update on your apartment application.';
-          let detail = '';
+      function showDawahSelectionModal() {
+        const existing = document.getElementById('dawah-selection-modal');
+        if (existing) existing.remove();
 
-          let statusLower = (app.status || '').toLowerCase();
+        const modalHtml = `
+          <div id="dawah-selection-modal" style="
+            position:fixed;inset:0;z-index:99999;
+            display:flex;align-items:center;justify-content:center;
+            background:rgba(15,30,22,0.65);backdrop-filter:blur(10px);
+            padding:24px;opacity:0;transition:opacity 0.3s ease;
+          ">
+            <div id="dawah-modal-content" style="
+              background:white;border-radius:24px;width:100%;max-width:800px;
+              box-shadow:0 30px 90px rgba(0,0,0,0.35);overflow:hidden;
+              transform:translateY(30px) scale(0.95);transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+              padding:40px 32px;
+            ">
+              <div style="text-align:center;margin-bottom:32px;">
+                <h4 style="font-family:'Lora',serif;font-size:1.6rem;font-weight:700;color:var(--primary-dark);margin:0 0 8px;">Da'wah Department Services</h4>
+                <p style="font-size:0.95rem;color:var(--text-muted);">Please select the service you wish to access</p>
+              </div>
 
-          if (statusLower === 'assigned' || statusLower === 'approved') {
-              theme = 'theme-success';
-              icon = '<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>';
-              title = 'Welcome Home!';
-              desc = 'Your apartment application has been approved and a room is ready for you.';
-              detail = `<div style="font-weight:700; color:var(--primary-dark); font-size:1.1rem;">Room ${app.room_number || 'TBD'}</div><div style="font-size:0.8rem; color:var(--text-muted);">${app.building || 'TBD'}</div>`;
-          } else if (statusLower === 'queued') {
-              theme = 'theme-warning';
-              icon = '<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>';
-              title = 'You are Waitlisted';
-              desc = 'Rooms are currently full, but you have been secured a spot in our waiting list.';
-              detail = `<div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Waitlist Position</div><div style="font-size:2rem; font-weight:800; color:var(--accent);">${app.queue_position}</div>`;
-          } else if (statusLower === 'rejected') {
-              theme = 'theme-danger';
-              icon = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 11c-.55 0-1-.45-1-1V8c0-.55.45-1 1-1s1 .45 1 1v4c0 .55-.45 1-1 1zm1 4h-2v-2h2v2z"/>';
-              title = 'Application Update';
-              desc = 'The administration has completed the review of your application.';
-              detail = `<div style="font-weight:600; font-size:0.9rem; color:#8b2e2e;">Please check your notifications for details.</div>`;
-          }
-
-          modal.innerHTML = `
-            <div id="announcement-content">
-                <div class="ann-header ${theme}">
-                    <div class="ann-icon"><svg viewBox="0 0 24 24">${icon}</svg></div>
-                    <h3 class="ann-title">${title}</h3>
-                    <p class="ann-desc">${desc}</p>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:32px;">
+                <!-- Marriage -->
+                <div class="dawah-opt-card" id="opt-marriage" style="
+                  border:2px solid #f0f2f1;border-radius:20px;padding:24px 20px;text-align:center;
+                  cursor:pointer;transition:all 0.3s ease;position:relative;overflow:hidden;
+                ">
+                  <div style="width:64px;height:64px;border-radius:18px;background:rgba(232,96,90,0.1);color:#e8605a;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;transition:all 0.3s;">
+                    <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  </div>
+                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Marriage</h6>
+                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Nikah services and pre-marital consultation</p>
                 </div>
-                <div class="ann-details">${detail}</div>
-                <div class="ann-footer">
-                    <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; color:var(--text-muted); cursor:pointer; margin-bottom:12px; justify-content:flex-end;">
-                        <input type="checkbox" id="ann-dont-show" style="accent-color:var(--primary-dark); cursor:pointer;" checked>
-                        Don't show this again
-                    </label>
-                    <button class="ann-btn primary" id="ann-dismiss-btn">Great, thanks!</button>
-                    <button class="ann-btn secondary" id="ann-status-btn">View My Application Status</button>
+
+                <!-- Counseling -->
+                <div class="dawah-opt-card" id="opt-counseling" style="
+                  border:2px solid var(--primary-light);border-radius:20px;padding:24px 20px;text-align:center;
+                  cursor:pointer;transition:all 0.3s ease;background:rgba(23,107,69,0.02);
+                ">
+                  <div style="width:64px;height:64px;border-radius:18px;background:var(--primary-light);color:white;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 20px rgba(23,107,69,0.2);">
+                    <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                  </div>
+                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Counseling</h6>
+                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Personal, family, or spiritual guidance sessions</p>
                 </div>
+
+                <!-- Islamic Studies -->
+                <div class="dawah-opt-card" id="opt-studies" style="
+                  border:2px solid #f0f2f1;border-radius:20px;padding:24px 20px;text-align:center;
+                  cursor:pointer;transition:all 0.3s ease;
+                ">
+                  <div style="width:64px;height:64px;border-radius:18px;background:rgba(199,154,43,0.1);color:#c79a2b;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+                  </div>
+                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Islamic Studies</h6>
+                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Quran, Hadith, and Fiqh educational programs</p>
+                </div>
+              </div>
+
+              <div style="text-align:center;">
+                <button id="close-dawah-modal" style="
+                  padding:12px 32px;border-radius:12px;border:1.5px solid var(--border);
+                  background:white;color:var(--text-muted);font-weight:700;font-size:0.9rem;
+                  cursor:pointer;transition:all 0.2s;
+                ">Close Selection</button>
+              </div>
             </div>
-          `;
+          </div>
 
-          document.body.appendChild(modal);
-          const content = document.getElementById('announcement-content');
+          <style>
+            .dawah-opt-card:hover {
+              border-color: var(--primary-light) !important;
+              transform: translateY(-8px);
+              box-shadow: 0 15px 40px rgba(15,92,58,0.12);
+            }
+            .dawah-opt-card:active { transform: translateY(-4px); }
+          </style>
+        `;
 
-          // Trigger animation
-          setTimeout(() => {
-              modal.style.opacity = '1';
-              content.style.transform = 'translateY(0) scale(1)';
-          }, 10);
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = document.getElementById('dawah-selection-modal');
+        const content = document.getElementById('dawah-modal-content');
 
-          const dismiss = () => {
-              const dontShow = document.getElementById('ann-dont-show').checked;
+        setTimeout(() => {
+          modal.style.opacity = '1';
+          content.style.transform = 'translateY(0) scale(1)';
+        }, 10);
+
+        const closeModal = () => {
+          modal.style.opacity = '0';
+          content.style.transform = 'translateY(20px) scale(0.95)';
+          setTimeout(() => modal.remove(), 300);
+        };
+
+        document.getElementById('close-dawah-modal').onclick = closeModal;
+        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+
+        document.getElementById('opt-counseling').onclick = () => {
+          window.location.href = dawahHref;
+        };
+
+        document.getElementById('opt-marriage').onclick = () => {
+          window.location.href = '<?= url('/user/services/marriage-form') ?>';
+        };
+
+        document.getElementById('opt-studies').onclick = () => {
+          window.location.href = '<?= url('/user/services/conversion-form') ?>';
+        };
+      }
+
+      function showDamayanSelectionModal() {
+        const modalHtml = `
+          <div id="damayan-selection-modal" style="
+            position:fixed;inset:0;z-index:999999;
+            background:rgba(15,30,22,0.65);backdrop-filter:blur(8px);
+            display:flex;align-items:center;justify-content:center;
+            opacity:0;transition:opacity 0.3s ease;
+          ">
+            <div id="damayan-modal-content" style="
+              background:white;border-radius:24px;width:100%;max-width:620px;
+              padding:40px;box-shadow:0 25px 70px rgba(0,0,0,0.3);
+              transform:translateY(20px) scale(0.95);transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            ">
+              <div style="text-align:center;margin-bottom:32px;">
+                <h5 style="font-family:'Lora',serif;font-size:1.6rem;font-weight:700;color:var(--primary-dark);margin:0 0 8px;">Damayan Services</h5>
+                <p style="font-size:0.95rem;color:var(--text-muted);">How can we assist you today?</p>
+              </div>
               
-              if (dontShow) {
-                  // Persist dismissal: client-side immediately + server-side
-                  localStorage.setItem(dismissKey, '1');
-                  fetch('<?= url("/user/mark-status-seen") ?>', { method: 'POST' });
-              }
-              
-              modal.style.opacity = '0';
-              content.style.transform = 'translateY(20px) scale(0.95)';
-              setTimeout(() => modal.remove(), 300);
-          };
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px;">
+                <!-- Burial Service -->
+                <div class="damayan-opt-card" id="opt-burial" style="
+                  border:2px solid var(--primary-light);border-radius:20px;padding:24px 20px;text-align:center;
+                  cursor:pointer;transition:all 0.3s ease;background:rgba(23,107,69,0.02);
+                ">
+                  <div style="width:64px;height:64px;border-radius:18px;background:var(--primary-light);color:white;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 20px rgba(23,107,69,0.2);">
+                    <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  </div>
+                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Burial Service</h6>
+                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Request assistance for funeral and burial arrangements</p>
+                </div>
 
-          document.getElementById('ann-dismiss-btn').onclick = dismiss;
-          document.getElementById('ann-status-btn').onclick = () => {
-              dismiss();
-              window.location.href = '<?= url("/user/apartment/status") ?>';
-          };
+                <!-- Charity -->
+                <div class="damayan-opt-card" id="opt-charity" style="
+                  border:2px solid #f0f2f1;border-radius:20px;padding:24px 20px;text-align:center;
+                  cursor:pointer;transition:all 0.3s ease;
+                ">
+                  <div style="width:64px;height:64px;border-radius:18px;background:rgba(224,184,74,0.1);color:#c79a2b;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  </div>
+                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Charity & Donation</h6>
+                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Sadaqah, Zakat, and benevolent community support</p>
+                </div>
+              </div>
+
+              <div style="text-align:center;">
+                <button id="close-damayan-modal" style="
+                  padding:12px 32px;border-radius:12px;border:1.5px solid var(--border);
+                  background:white;color:var(--text-muted);font-weight:700;font-size:0.9rem;
+                  cursor:pointer;transition:all 0.2s;
+                ">Close Selection</button>
+              </div>
+            </div>
+          </div>
+
+          <style>
+            .damayan-opt-card:hover {
+              border-color: var(--primary-light) !important;
+              transform: translateY(-8px);
+              box-shadow: 0 15px 40px rgba(15,92,58,0.12);
+            }
+            .damayan-opt-card:active { transform: translateY(-4px); }
+          </style>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = document.getElementById('damayan-selection-modal');
+        const content = document.getElementById('damayan-modal-content');
+
+        setTimeout(() => {
+          modal.style.opacity = '1';
+          content.style.transform = 'translateY(0) scale(1)';
+        }, 10);
+
+        const closeModal = () => {
+          modal.style.opacity = '0';
+          content.style.transform = 'translateY(20px) scale(0.95)';
+          setTimeout(() => modal.remove(), 300);
+        };
+
+        document.getElementById('close-damayan-modal').onclick = closeModal;
+        modal.onclick = (e) => { if (e.target === modal) closeModal(); };
+
+        document.getElementById('opt-burial').onclick = () => {
+          window.location.href = '<?= url('/user/services/burial-form') ?>';
+        };
+
+        document.getElementById('opt-charity').onclick = () => {
+          window.location.href = '<?= url('/user/services/charity') ?>';
+        };
       }
   </script>
 

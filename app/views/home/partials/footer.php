@@ -38,7 +38,7 @@
       <div class="footer-nav">
         <h4 class="footer-title">Resources</h4>
         <ul class="footer-links">
-          <li><a href="<?= url('/daawah') ?>">Islamic Guidance</a></li>
+          <li><a href="<?= url('/dawah') ?>">Islamic Guidance</a></li>
           <li><a href="<?= url('/events') ?>">Community Events</a></li>
           <li><a href="<?= url('/damayan') ?>#donations">Donations</a></li>
           <li><a href="<?= url('/contact') ?>#faq">FAQ</a></li>

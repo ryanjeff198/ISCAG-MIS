@@ -510,14 +510,53 @@ Auth::protect();
                 <div id="top-date" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;"></div>
             </div>
         </div>
-
+        
         <div class="page-body">
             <div class="breadcrumb-bar">
                 <a href="<?= url('/user/dashboard') ?>">Dashboard</a>
                 <span class="sep">›</span>
                 <span class="current">Burial Service Request</span>
             </div>
+            
+            <!-- REFINED UI/UX ORANGE WARNING -->
+            <div style="
+                background: linear-gradient(to right, rgba(255, 152, 0, 0.1), rgba(255, 152, 0, 0.05)); 
+                border-left: 5px solid #ff9800; 
+                padding: 16px 20px; 
+                margin-bottom: 28px; 
+                border-radius: 8px; 
+                display: flex; 
+                align-items: center; 
+                gap: 16px;
+                box-shadow: 0 4px 15px rgba(255, 152, 0, 0.08);
+                animation: slideInLeft 0.5s ease-out;
+            ">
+                <div style="
+                    background: #ff9800; 
+                    width: 36px; height: 36px; 
+                    border-radius: 10px; 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    flex-shrink: 0;
+                    box-shadow: 0 4px 10px rgba(255, 152, 0, 0.2);
+                ">
+                    <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 0.75rem; font-weight: 800; color: #e65100; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px;">Important Service Notice</div>
+                    <p style="margin: 0; color: #5d4037; font-size: 0.92rem; font-weight: 500; line-height: 1.4;">
+                        This burial service is <strong style="color: #bf360c; font-weight: 800;">Exclusive Only for Islam</strong>. Please ensure the deceased is a practicing Muslim before proceeding.
+                    </p>
+                </div>
+            </div>
 
+            <style>
+                @keyframes slideInLeft {
+                    from { opacity: 0; transform: translateX(-20px); }
+                    to { opacity: 1; transform: translateX(0); }
+                }
+            </style>
             <div class="form-document">
                 <div class="form-doc-header">
                     <div class="form-doc-header-top">
@@ -559,6 +598,7 @@ Auth::protect();
                 </div>
 
                 <div class="form-doc-body">
+                    
                     
                     <!-- ══ STEP 1: BASIC INFORMATION ══ -->
                     <div class="step-content active" id="step-1">

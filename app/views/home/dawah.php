@@ -246,7 +246,7 @@
 <header class="service-hero fade-in">
   <div class="container">
     <span class="hero-tag reveal">Guidance & Call</span>
-    <img src="<?= asset("assets/da'wah logo.jpg") ?>" alt="Daawah Logo" class="hero-logo reveal">
+    <img src="<?= asset("assets/da'wah logo.jpg") ?>" alt="Dawah Logo" class="hero-logo reveal">
     <h1 class="hero-title reveal">Da'wah Department</h1>
     <p class="hero-subtitle reveal">Spreading the message of Islam through knowledge, compassion, and authentic guidance for all seekers of truth.</p>
   </div>

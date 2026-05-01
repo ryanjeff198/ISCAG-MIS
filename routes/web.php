@@ -16,7 +16,7 @@ $routes = [
     '/history-organization' => ['HomeController',  'historyOrganization'],
     '/departments'          => ['HomeController',  'departments'],
     '/apartment'            => ['HomeController',  'apartment'],
-    '/daawah'               => ['HomeController',  'daawah'],
+    '/dawah'                => ['HomeController',  'dawah'],
     '/damayan'              => ['HomeController',  'damayan'],
     '/events'               => ['HomeController',  'events'],
     '/announcements'        => ['HomeController',  'announcements'],
@@ -69,6 +69,10 @@ $routes = [
     '/user/services/burial-form'      => ['UserController', 'burialForm'],
     '/user/services/counseling/male'   => ['UserController', 'maleCounseling'],
     '/user/services/counseling/female' => ['UserController', 'femaleCounseling'],
+    '/user/services/marriage-form' => ['UserController', 'marriageForm'],
+    '/user/services/conversion-form' => ['UserController', 'conversionForm'],
+    '/user/services/charity' => ['UserController', 'charity'],
+    '/user/apartment/apply' => ['UserController', 'apartmentApply'],
 
     // Admin Modules (New)
     '/admin/apartment'               => ['AdminController', 'apartment'],
@@ -86,6 +90,8 @@ $routes = [
     '/admin/apartment/renewals'      => ['AdminController', 'renewals'],
     '/admin/apartment/renewals/approve' => ['AdminController', 'approveRenewal'],
     '/admin/apartment/renewals/reject'  => ['AdminController', 'rejectRenewal'],
+    '/admin/dawah'                   => ['AdminController', 'dawahAdminDashboard'],
+    '/admin/damayan'                 => ['AdminController', 'damayanAdminDashboard'],
     '/admin/payment'                 => ['AdminController', 'payment'],
 
     // MIS Admin Hub Routes
@@ -97,7 +103,7 @@ $routes = [
     '/admin/mis_admin/billing'             => ['AdminController', 'billing'],
     '/admin/mis_admin/statement_of_account' => ['AdminController', 'soa'],
     '/admin/mis_admin/reports'             => ['AdminController', 'reports'],
-    '/admin/mis_admin/daawah_records'      => ['AdminController', 'daawahRecords'],
+    '/admin/mis_admin/dawah_records'      => ['AdminController', 'dawahRecords'],
     '/admin/mis_admin/damayan_records'     => ['AdminController', 'damayanRecords'],
     '/admin/mis_admin/notifications'       => ['AdminController', 'notificationBroadcast'],
     '/admin/mis_admin/records'             => ['AdminController', 'userRecords'],
