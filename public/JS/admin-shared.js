@@ -894,13 +894,56 @@ function toggleActionMenu(btn, e) {
   const dropdown = btn.nextElementSibling;
   if (!dropdown) return;
   const isShow = dropdown.classList.contains('show');
-  document.querySelectorAll('.action-menu-dropdown').forEach(d => d.classList.remove('show'));
-  if (!isShow) dropdown.classList.add('show');
+  
+  // Close all other menus first and move them back to their parents
+  document.querySelectorAll('.action-menu-dropdown').forEach(d => {
+    d.classList.remove('show');
+    d.style.top = '-9999px';
+    // If it was moved to body, we don't strictly need to move it back immediately,
+    // but we should ensure the style is clean.
+  });
+
+  if (!isShow) {
+    // 1. Move the dropdown to document.body to escape ALL overflow/spacing constraints
+    if (dropdown.parentElement !== document.body) {
+        document.body.appendChild(dropdown);
+    }
+
+    // 2. Position it relative to the button using fixed coords
+    const rect = btn.getBoundingClientRect();
+    dropdown.style.position = 'fixed';
+    dropdown.style.display = 'block'; // Ensure it's measurable
+    dropdown.style.zIndex = '99999';
+    dropdown.style.width = '180px';
+    
+    let top = rect.bottom + 8;
+    let left = rect.right - 180;
+    
+    // 3. Collision check
+    const dropdownHeight = dropdown.offsetHeight || 150;
+    if (top + dropdownHeight > window.innerHeight) {
+        top = rect.top - dropdownHeight - 8;
+    }
+    
+    dropdown.style.top = top + 'px';
+    dropdown.style.left = left + 'px';
+    dropdown.classList.add('show');
+  }
 }
 
 window.addEventListener('click', () => {
-  document.querySelectorAll('.action-menu-dropdown').forEach(d => d.classList.remove('show'));
+    document.querySelectorAll('.action-menu-dropdown').forEach(d => {
+        d.classList.remove('show');
+        d.style.top = '-9999px'; // Move out of view instead of just hiding
+    });
 });
+
+window.addEventListener('scroll', () => {
+    document.querySelectorAll('.action-menu-dropdown').forEach(d => {
+        d.classList.remove('show');
+        d.style.top = '-9999px';
+    });
+}, true);
 
 // Removed redundant initNotifBadge
 

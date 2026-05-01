@@ -450,6 +450,27 @@
       const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       document.getElementById('soa-date-generated').textContent = today;
       
+      renderSOA(tenantId, dateFrom, dateTo, info, totalOccupants);
+    }
+
+    // ══ AUTO-SELECT FROM URL ══
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tid = urlParams.get('tenant_id');
+      const shouldPrint = urlParams.get('print');
+
+      if (tid) {
+        const select = document.getElementById('tenant-select');
+        select.value = tid;
+        generateSOA();
+
+        if (shouldPrint === '1') {
+            setTimeout(() => window.print(), 800); // Small delay to let cards render
+        }
+      }
+    });
+
+    function renderSOA(tenantId, dateFrom, dateTo, info, totalOccupants) {
       let periodText = 'All Time';
       if(dateFrom && dateTo) periodText = `${dateFrom} to ${dateTo}`;
       else if(dateFrom) periodText = `From ${dateFrom}`;

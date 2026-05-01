@@ -60,10 +60,12 @@ class Lease
     {
         $stmt = $this->db->prepare("
             SELECT l.*, a.roomtype, a.status AS app_status,
-                   u.first_name, u.last_name, u.email, u.contactnum
+                   u.first_name, u.last_name, u.email, u.contactnum,
+                   au.building, au.room_number
             FROM leases l
             JOIN apartmentsapp a ON l.application_id = a.application_id
             JOIN tenant_accounts u ON l.tenant_id = u.tenant_id
+            LEFT JOIN apartment_units au ON l.tenant_id = au.tenant_id
             WHERE l.tenant_id = :tid
             ORDER BY l.lease_id DESC
             LIMIT 1

@@ -2,6 +2,7 @@
 require_once BASE_PATH . '/app/controllers/Controller.php';
 require_once BASE_PATH . '/app/models/ApartmentApp.php';
 require_once BASE_PATH . '/app/helpers/Auth.php';
+require_once BASE_PATH . '/config/database.php';
 
 class ApartmentController extends Controller {
 
@@ -376,14 +377,11 @@ class ApartmentController extends Controller {
 
         $lease = $leaseModel->getLeaseByTenantId($userId);
         
-        // Validation Rule: DO NOT allow payment if lease_status != "ACCEPTED" or "ACTIVE"
-        // Active means they are paid already, but they can view it.
-        // We will pass the payments list to the view.
+        // A) Initial Payments (Deposit & Advance)
         $payments = [];
         if ($lease && in_array($lease['lease_status'], ['Accepted', 'Active'])) {
             $payments = $paymentModel->getPaymentsByLease($lease['lease_id']);
             
-            // Just in case they weren't generated during acceptance (backward compatibility)
             if (empty($payments) && $lease['lease_status'] === 'Accepted') {
                 $paymentModel->generateInitialPayments(
                     (int) $lease['lease_id'],
@@ -395,24 +393,137 @@ class ApartmentController extends Controller {
             }
         }
 
+        // B) Recurring Charges (Monthly Rent, Water, Parking)
+        $recurringCharges = [];
+        if ($lease && $lease['lease_status'] === 'Active') {
+            $db = getDbConnection();
+            $simulationMonths = 0; // REAL TIME
+            $now = clone (new \DateTime());
+            if ($simulationMonths > 0) $now->modify("+$simulationMonths month");
+
+            // Family members for water bill
+            $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM tenant_family_members WHERE tenant_id = ?");
+            $stmt->execute([$userId]);
+            $memberCount = (int)($stmt->fetch(\PDO::FETCH_ASSOC)['cnt'] ?? 0);
+            $occupants = $memberCount + 1; // +1 for the tenant
+
+            // Parking
+            $stmt = $db->prepare("SELECT parking_id, vehiclename, plateno, datestarted, date FROM tenant_parking WHERE tenant_id = ? AND status = 'Approved'");
+            $stmt->execute([$userId]);
+            $parkingApps = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+            // Extract paid recurring keys so we can mark them as PAID
+            $paidRecurringKeys = [];
+            foreach ($payments as $p) {
+                if ($p['payment_status'] === 'Paid' && strpos($p['payment_type'], '-') !== false) {
+                    $paidRecurringKeys[] = strtolower($p['payment_type']);
+                }
+            }
+
+            // Generate monthly charges from lease start
+            $leaseStart = new \DateTime($lease['start_date']);
+            $leaseEnd = $lease['end_date'] ? new \DateTime($lease['end_date']) : null;
+            $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
+
+            $currentDate = clone $leaseStart;
+            $monthCount = 0;
+
+            while ($currentDate <= $limitDate) {
+                $monthName = $currentDate->format('F Y');
+                $monthKey = $currentDate->format('Y-m');
+
+                // Skip Month 0 (covered by Advance Rent)
+                if ($monthCount > 0) {
+                    // Monthly Rent
+                    $rentId = 'rent-' . $monthKey;
+                    $recurringCharges[] = [
+                        'id'          => $rentId,
+                        'date'        => $currentDate->format('Y-m-d'),
+                        'type'        => 'Monthly Rent',
+                        'description' => "Monthly Rent — $monthName",
+                        'amount'      => (float)$lease['monthly_rent'],
+                        'status'      => in_array(strtolower($rentId), $paidRecurringKeys) ? 'Paid' : 'Unpaid'
+                    ];
+
+                    // Water Bill
+                    $waterId = 'water-' . $monthKey;
+                    $recurringCharges[] = [
+                        'id'          => $waterId,
+                        'date'        => $currentDate->format('Y-m-d'),
+                        'type'        => 'Water Bill',
+                        'description' => "Water Consumption ($occupants occupants) — $monthName",
+                        'amount'      => (float)($occupants * 100),
+                        'status'      => in_array(strtolower($waterId), $paidRecurringKeys) ? 'Paid' : 'Unpaid'
+                    ];
+                    // temporarily disabled per user request
+                    // Contribution
+                    // $contribId = 'contribution-' . $monthKey;
+                    // $recurringCharges[] = [
+                    //     'id'          => $contribId,
+                    //     'date'        => $currentDate->format('Y-m-d'),
+                    //     'type'        => 'Contribution',
+                    //     'description' => "Monthly Contribution — $monthName",
+                    //     'amount'      => 100.00,
+                    //     'status'      => in_array(strtolower($contribId), $paidRecurringKeys) ? 'Paid' : 'Unpaid'
+                    // ];
+                }
+
+                $currentDate->modify('+1 month');
+                $monthCount++;
+                if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
+            }
+
+            // Recurring Parking Fees
+            foreach ($parkingApps as $pa) {
+                $parkStart = new \DateTime($pa['datestarted'] ?: $pa['date']);
+                $parkStart->modify('first day of this month'); // Align to month start 
+                
+                $pDate = clone $parkStart;
+                while ($pDate <= $limitDate) {
+                    $pMonthKey = $pDate->format('Y-m');
+                    $pMonthName = $pDate->format('F Y');
+                    $parkId = 'parking-' . $pa['parking_id'] . '-' . $pMonthKey;
+                    
+                    $recurringCharges[] = [
+                        'id'          => $parkId,
+                        'date'        => $pDate->format('Y-m-d'),
+                        'type'        => 'Parking Fee',
+                        'description' => 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle') . ' (' . ($pa['plateno'] ?: 'N/A') . ") — $pMonthName",
+                        'amount'      => 1000.00,
+                        'status'      => in_array(strtolower($parkId), $paidRecurringKeys) ? 'Paid' : 'Unpaid'
+                    ];
+                    
+                    $pDate->modify('+1 month');
+                    if ($pDate > $limitDate && $pDate->format('mY') === $limitDate->format('mY')) break;
+                }
+            }
+
+            // Sort by date
+            usort($recurringCharges, function($a, $b) {
+                return strtotime($a['date']) <=> strtotime($b['date']);
+            });
+        }
+
         $this->view('user/Apartment/tenant_payment', [
-            'lease'    => $lease,
-            'payments' => $payments
+            'lease'            => $lease,
+            'payments'         => $payments,
+            'recurringCharges' => $recurringCharges
         ]);
     }
 
     /**
-     * Submit a payment (simulate processing).
+     * Submit a payment (Initial or Recurring).
      */
     public function submitPayment() {
         Auth::protectRole(['Guest', 'Tenant']);
         header('Content-Type: application/json');
         
         $body = json_decode(file_get_contents('php://input'), true);
-        $paymentId = $body['payment_id'] ?? 0;
+        $paymentIdRaw = $body['payment_id'] ?? '';
         $refNo = $body['reference'] ?? '';
+        $userId = $_SESSION['user_id'];
 
-        if (!$paymentId) {
+        if (!$paymentIdRaw) {
             echo json_encode(['success' => false, 'message' => 'Invalid payment ID']);
             return;
         }
@@ -420,8 +531,49 @@ class ApartmentController extends Controller {
         require_once BASE_PATH . '/app/models/Payment.php';
         $paymentModel = new Payment();
 
-        $ok = $paymentModel->markAsPaid((int) $paymentId, $refNo);
+        // CASE 1: Recurring Charge (String ID like 'rent-2026-05')
+        if (is_string($paymentIdRaw) && strpos($paymentIdRaw, '-') !== false) {
+            // We need to create a new record for this recurring charge
+            $parts = explode('-', $paymentIdRaw);
+            $type = ucfirst($parts[0]); // Rent, Water, Parking
+            
+            // Get lease info to link payment
+            require_once BASE_PATH . '/app/models/Lease.php';
+            $lease = (new Lease())->getLeaseByTenantId($userId);
+            
+            if (!$lease) {
+                echo json_encode(['success' => false, 'message' => 'Active lease not found.']);
+                return;
+            }
 
+            $db = getDbConnection();
+            $amount = 0;
+            
+            // Determine amount based on type
+            if ($type === 'Rent') {
+                $amount = (float)$lease['monthly_rent'];
+            } elseif ($type === 'Water') {
+                $stmt = $db->prepare("SELECT COUNT(*) FROM tenant_family_members WHERE tenant_id = ?");
+                $stmt->execute([$userId]);
+                $occupants = (int)$stmt->fetchColumn() + 1;
+                $amount = (float)($occupants * 100);
+            } elseif ($type === 'Parking') {
+                $amount = 1000.00;
+            }
+            
+            // Make the payment_type exact like 'Rent-2026-05' to track EXACTLY which bill it was
+            $exactType = ucfirst(strtolower($paymentIdRaw)); 
+
+            // Create record
+            $stmt = $db->prepare("INSERT INTO payments (lease_id, tenant_id, amount, payment_type, reference_number, payment_status, payment_date) VALUES (?, ?, ?, ?, ?, 'Paid', NOW())");
+            $ok = $stmt->execute([$lease['lease_id'], $userId, $amount, $exactType, $refNo]);
+
+            echo json_encode(['success' => $ok]);
+            return;
+        }
+
+        // CASE 2: Initial Payment (Numeric ID)
+        $ok = $paymentModel->markAsPaid((int) $paymentIdRaw, $refNo);
         echo json_encode(['success' => $ok]);
     }
 
@@ -448,5 +600,217 @@ class ApartmentController extends Controller {
         $ok = $renewalModel->requestRenewal((int) $leaseId, $userId, $term);
 
         echo json_encode(['success' => $ok]);
+    }
+
+    /**
+     * Official Statement of Account (Tenant View)
+     */
+    public function soa() {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $userId = $_SESSION['user_id'];
+        $db = getDbConnection();
+
+        require_once BASE_PATH . '/app/models/Lease.php';
+        $leaseModel = new Lease();
+        $lease = $leaseModel->getLeaseByTenantId($userId);
+
+        if (!$lease) {
+            $this->view('user/Apartment/tenant_soa', [
+                'lease' => null, 
+                'transactions' => [],
+                'filterMonth' => 'all',
+                'availableMonths' => []
+            ]);
+            return;
+        }
+
+        // 1. Fetch needed data for billing engine
+        // Family members (for water)
+        $stmt = $db->prepare("SELECT COUNT(*) FROM tenant_family_members WHERE tenant_id = ?");
+        $stmt->execute([$userId]);
+        $memberCount = (int)$stmt->fetchColumn();
+        $occupants = $memberCount + 1;
+
+        // Parking
+        $stmt = $db->prepare("SELECT * FROM tenant_parking WHERE tenant_id = ? AND status = 'Approved'");
+        $stmt->execute([$userId]);
+        $parkingApps = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        // Payments
+        $stmt = $db->prepare("SELECT p.* FROM payments p JOIN leases l ON p.lease_id = l.lease_id WHERE l.tenant_id = ?");
+        $stmt->execute([$userId]);
+        $payments = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        // Manual Billing Records
+        $stmt = $db->prepare("SELECT * FROM billing WHERE tenant_id = ?");
+        $stmt->execute([$userId]);
+        $billingRecords = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+        // 2. Billing Engine (Reuse same logic as Admin SOA)
+        $transactions = [];
+        $simulationMonths = 0; // REAL TIME
+        $now = clone (new \DateTime());
+        if ($simulationMonths > 0) $now->modify("+$simulationMonths month"); 
+        $leaseStart = new \DateTime($lease['start_date']);
+        $leaseEnd = $lease['end_date'] ? (new \DateTime($lease['end_date'])) : null;
+        $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
+
+        // A) Recurring Timeline
+        $currentDate = clone $leaseStart;
+        $monthCount = 0;
+        while ($currentDate <= $limitDate) {
+            $monthName = $currentDate->format('F Y');
+            $monthKey = $currentDate->format('my');
+
+            if ($monthCount > 0) {
+                // Rent
+                $transactions[] = [
+                    'date' => $currentDate->format('Y-m-d'),
+                    'type' => 'Monthly Rent',
+                    'description' => "Monthly Rent Usage — $monthName",
+                    'ref' => 'LSE-R' . str_pad($lease['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $monthKey,
+                    'charge' => (float)$lease['monthly_rent'],
+                    'payment' => 0
+                ];
+                // Water
+                $transactions[] = [
+                    'date' => $currentDate->format('Y-m-d'),
+                    'type' => 'Water',
+                    'description' => "Water Consumption ($occupants occupants) — $monthName",
+                    'ref' => 'LSE-W' . str_pad($lease['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $monthKey,
+                    'charge' => (float)($occupants * 100),
+                    'payment' => 0
+                ];
+                // temporarily disabled per user request
+                // Contribution
+                // $transactions[] = [
+                //     'date' => $currentDate->format('Y-m-d'),
+                //     'type' => 'Contribution',
+                //     'description' => "Monthly Contribution — $monthName",
+                //     'ref' => 'LSE-C' . str_pad($lease['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $monthKey,
+                //     'charge' => 100.00,
+                //     'payment' => 0
+                // ];
+            }
+            $currentDate->modify('+1 month');
+            $monthCount++;
+            if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
+        }
+
+        // B) Process Payments (Initial Charges & Global Payments)
+        foreach ($payments as $p) {
+            $isInitial = in_array($p['payment_type'], ['Deposit', 'Advance']);
+
+            // 1. Only add a CHARGE row if it's an initial payment
+            if ($isInitial) {
+                $transactions[] = [
+                    'date' => date('Y-m-d', strtotime($p['created_at'])),
+                    'type' => $p['payment_type'],
+                    'description' => $p['payment_type'] === 'Deposit' ? 'Security Deposit (Initial)' : 'Advance Rent (Month 1)',
+                    'ref' => 'PMT-' . str_pad($p['payment_id'], 4, '0', STR_PAD_LEFT),
+                    'charge' => (float)$p['amount'],
+                    'payment' => 0
+                ];
+            }
+
+            // 2. Add a PAYMENT row for ANY paid transaction (Initial or Recurring)
+            if ($p['payment_status'] === 'Paid') {
+                $displayName = $isInitial ? $p['payment_type'] : str_replace('-', ' ', $p['payment_type']);
+                $transactions[] = [
+                    'date' => $p['payment_date'] ? date('Y-m-d', strtotime($p['payment_date'])) : date('Y-m-d', strtotime($p['created_at'])),
+                    'type' => 'Payment',
+                    'description' => "Payment Received — " . ucwords($displayName),
+                    'ref' => $p['reference_number'] ?: 'REF-PAY',
+                    'charge' => 0,
+                    'payment' => (float)$p['amount']
+                ];
+            }
+        }
+
+        // C) Recurring Parking
+        foreach ($parkingApps as $pa) {
+            $parkStart = new \DateTime($pa['datestarted'] ?: $pa['date']);
+            $parkStart->modify('first day of this month');
+            $pDate = clone $parkStart;
+
+            while ($pDate <= $limitDate) {
+                $pMonthName = $pDate->format('F Y');
+                $transactions[] = [
+                    'date' => $pDate->format('Y-m-d'),
+                    'type' => 'Parking Fee',
+                    'description' => 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle') . ' — ' . $pMonthName,
+                    'charge' => 1000.00,
+                    'payment' => 0,
+                    'ref' => 'PKG-' . str_pad($pa['parking_id'], 4, '0', STR_PAD_LEFT) . '-' . $pDate->format('my')
+                ];
+
+                $pDate->modify('+1 month');
+                if ($pDate > $limitDate && $pDate->format('mY') === $limitDate->format('mY')) break;
+            }
+        }
+
+        // D) Manual Invoices
+        foreach ($billingRecords as $b) {
+            $transactions[] = [
+                'date' => $b['due_date'],
+                'type' => 'Invoice',
+                'description' => 'Monthly Rent Invoice',
+                'charge' => (float)$b['amount'],
+                'payment' => 0,
+                'ref' => 'INV-' . str_pad($b['billing_id'], 4, '0', STR_PAD_LEFT)
+            ];
+            if ($b['status'] === 'Paid') {
+                $transactions[] = [
+                    'date' => $b['due_date'],
+                    'type' => 'Payment',
+                    'description' => 'Payment Received — Rent',
+                    'charge' => 0,
+                    'payment' => (float)$b['amount'],
+                    'ref' => 'PAY-INV-' . $b['billing_id']
+                ];
+            }
+        }
+
+        // Sort by date
+        usort($transactions, function($a, $b) {
+            return strtotime($a['date']) <=> strtotime($b['date']);
+        });
+
+        // Filter by month logically to maintain accurate Running Balance
+        $filterMonth = $_GET['month'] ?? 'all';
+        $balanceForwarded = 0;
+        $filteredTransactions = [];
+        $availableMonths = [];
+
+        foreach ($transactions as $t) {
+            $tMonth = substr($t['date'], 0, 7); // '2026-06'
+            if (!in_array($tMonth, $availableMonths)) {
+                $availableMonths[] = $tMonth;
+            }
+
+            if ($filterMonth !== 'all') {
+                if ($tMonth < $filterMonth) {
+                    $balanceForwarded += ($t['charge'] - $t['payment']);
+                } elseif ($tMonth === $filterMonth) {
+                    $filteredTransactions[] = $t;
+                }
+            }
+        }
+
+        if ($filterMonth === 'all') {
+            $filteredTransactions = $transactions;
+        }
+
+        // Sort available months descending for the dropdown
+        rsort($availableMonths);
+
+        $this->view('user/Apartment/tenant_soa', [
+            'lease' => $lease,
+            'transactions' => $filteredTransactions,
+            'balanceForwarded' => $balanceForwarded,
+            'filterMonth' => $filterMonth,
+            'availableMonths' => $availableMonths,
+            'occupants' => $occupants
+        ]);
     }
 }
