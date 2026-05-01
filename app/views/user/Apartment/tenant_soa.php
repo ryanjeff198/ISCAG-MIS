@@ -119,7 +119,7 @@
           </div>
         <?php else: 
           // Metrics same as Admin logic
-          $metrics = ['Rent' => 0, 'Deposit' => 0, 'Parking' => 0, 'Water' => 0, 'Payments' => 0];
+          $metrics = ['Rent' => 0, 'Deposit' => 0, 'Parking' => 0, 'Water' => 0, 'Contribution' => 0, 'Payments' => 0];
           foreach($transactions as $t) {
             if($t['payment'] > 0) $metrics['Payments'] += $t['payment'];
             else {
@@ -128,6 +128,7 @@
               elseif(strpos($type, 'deposit') !== false) $metrics['Deposit'] += $t['charge'];
               elseif(strpos($type, 'parking') !== false) $metrics['Parking'] += $t['charge'];
               elseif(strpos($type, 'water') !== false) $metrics['Water'] += $t['charge'];
+              elseif(strpos($type, 'contribution') !== false) $metrics['Contribution'] += $t['charge'];
             }
           }
         ?>
@@ -196,6 +197,10 @@
               <div class="bk-label">Water Bill</div>
               <div class="bk-value">₱<?= number_format($metrics['Water'], 2) ?></div>
             </div>
+            <div class="breakdown-card">
+              <div class="bk-label">Contribution</div>
+              <div class="bk-value">₱<?= number_format($metrics['Contribution'], 2) ?></div>
+            </div>
           </div>
 
           <table class="soa-table">
@@ -218,10 +223,10 @@
               $totalPayments = 0;
               $lastCat = '';
 
-              if (($filterMonth ?? 'all') !== 'all' && $runningBalance > 0): ?>
+              if (($filterMonth ?? 'all') !== 'all' && $runningBalance != 0): ?>
                 <tr>
-                  <td colspan="6"><strong>Balance Forwarded from Previous Months</strong></td>
-                  <td style="text-align:right; font-weight:700; color:<?= $runningBalance > 0 ? 'var(--danger)' : 'var(--success)' ?>">₱<?= number_format($runningBalance, 2) ?></td>
+                  <td colspan="6"><strong>Balance Forwarded from Previous Months (<?= $runningBalance < 0 ? 'Overpayment Credit' : 'Unpaid Balance' ?>)</strong></td>
+                  <td style="text-align:right; font-weight:700; color:<?= $runningBalance > 0 ? 'var(--danger)' : 'var(--success)' ?>"><?= $runningBalance < 0 ? '-' : '' ?>₱<?= number_format(abs($runningBalance), 2) ?></td>
                 </tr>
               <?php endif;
 

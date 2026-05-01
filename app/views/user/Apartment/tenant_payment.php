@@ -147,6 +147,30 @@
         }
     }
     $grandTotal = $initialDue + $recurringTotal;
+
+    // Calculate dynamic 1-Month Advance Package
+    $advPayload = ['Rent-Advance'];
+    $advCost = (float)($lease['monthly_rent'] ?? 0);
+    $advItems = [ ['name' => 'Monthly Rent (Advance)', 'amount' => $advCost] ];
+
+    if (isset($occupants) && $occupants > 0) {
+        $advPayload[] = 'Water-Advance';
+        $wAmt = ($occupants * 100);
+        $advCost += $wAmt;
+        $advItems[] = ['name' => 'Water Bill (Advance)', 'amount' => $wAmt];
+    }
+
+    $advPayload[] = 'Contribution-Advance';
+    $advCost += 150.00;
+    $advItems[] = ['name' => 'Contribution (Security/Garbage)', 'amount' => 150.00];
+
+    if (!empty($parkingApps)) {
+        foreach ($parkingApps as $pa) {
+            $advPayload[] = 'Parking-Advance';
+            $advCost += 1000.00;
+            $advItems[] = ['name' => 'Parking Fee (Advance)', 'amount' => 1000.00];
+        }
+    }
 ?>
                     <!-- Hero Banner -->
                     <div class="payment-banner">
@@ -161,15 +185,13 @@
                     </div>
 
                     <!-- ═══════════ SECTION A: INITIAL PAYMENTS ═══════════ -->
+<?php if (!$allInitialPaid || empty($recurringCharges)): ?>
                     <div class="payment-card">
                         <div class="payment-header">
                             <div class="payment-header-left">
                                 <div class="payment-icon green"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></div>
                                 <h3 class="payment-title">Initial Payments</h3>
                             </div>
-                            <?php if ($allInitialPaid): ?>
-                                <div class="payment-status-badge paid"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> SETTLED</div>
-                            <?php endif; ?>
                         </div>
 
                         <div class="payment-body">
@@ -178,15 +200,25 @@
                                     <tr>
                                         <th>Description</th>
                                         <th>Status</th>
-                                        <th class="text-right">Action</th>
                                         <th class="text-right">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($payments as $pay): 
+                                    <?php 
+                                    $unpaidIds = [];
+                                    $unpaidItems = [];
+                                    foreach ($payments as $pay): 
                                         if (!in_array($pay['payment_type'], ['Deposit', 'Advance'])) continue;
                                         $isPaid = $pay['payment_status'] === 'Paid';
                                         $isFailed = $pay['payment_status'] === 'Failed';
+                                        
+                                        if (!$isPaid) {
+                                            $unpaidIds[] = $pay['payment_id'];
+                                            $unpaidItems[] = [
+                                                'name' => $pay['payment_type'] === 'Deposit' ? 'Security Deposit' : 'Advance Rent',
+                                                'amount' => $pay['amount']
+                                            ];
+                                        }
                                     ?>
                                     <tr>
                                         <td>
@@ -203,11 +235,6 @@
                                                 <div class="payment-status-badge failed"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> FAILED</div>
                                             <?php else: ?>
                                                 <div class="payment-status-badge pending"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> PENDING</div>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="text-right">
-                                            <?php if (!$isPaid): ?>
-                                                <button class="btn-pay" onclick="openPaymentModal(<?= $pay['payment_id'] ?>, '<?= $pay['payment_type'] ?>', <?= $pay['amount'] ?>, 'initial')">Pay Now</button>
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-right">
@@ -231,7 +258,7 @@
                             <?php endif; ?>
                         </div>
                     </div>
-
+<?php endif; ?>
                     <!-- ═══════════ SECTION B: RECURRING MONTHLY CHARGES ═══════════ -->
 <?php if ($allInitialPaid): ?>
                     <div class="section-divider">
@@ -246,9 +273,24 @@
                             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                             <h4>You're All Caught Up!</h4>
                             <p>No outstanding monthly charges yet. Your next billing cycle will appear here automatically.</p>
+                            <div style="margin-top:24px; display:flex; justify-content:center; gap:12px;">
+                                <button class="btn-pay" style="padding: 10px 20px; font-size:0.9rem; background:white; color:var(--primary); border:2px solid var(--border); box-shadow:none;" onclick='openAdvancePaymentModal(<?= json_encode($advPayload) ?>, <?= json_encode($advItems) ?>, <?= $advCost ?>)'>
+                                    Pay 1 Month Advance Package
+                                </button>
+                                <a href="<?= url('/user/apartment/soa') ?>" class="btn-submit" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding: 10px 20px; margin:0; width:auto; border-radius:8px; font-size:0.9rem;">
+                                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                                    Download Receipt
+                                </a>
+                            </div>
                         </div>
                     </div>
     <?php else: ?>
+                    <div class="section-divider">
+                        <span class="divider-line"></span>
+                        <span class="divider-label">Monthly Charges & Utilities</span>
+                        <span class="divider-line"></span>
+                    </div>
+
                     <div class="payment-card" style="animation-delay:0.15s;">
                         <div class="payment-header">
                             <div class="payment-header-left">
@@ -265,7 +307,6 @@
                                         <th>Due Date</th>
                                         <th>Description</th>
                                         <th>Status</th>
-                                        <th class="text-right">Action</th>
                                         <th class="text-right">Amount</th>
                                     </tr>
                                 </thead>
@@ -275,6 +316,14 @@
                                         if (stripos($rc['type'], 'Water') !== false) $badgeClass = 'water';
                                         elseif (stripos($rc['type'], 'Parking') !== false) $badgeClass = 'parking';
                                         elseif (stripos($rc['type'], 'Contribution') !== false) $badgeClass = 'contribution';
+                                        
+                                        if ($rc['status'] !== 'Paid') {
+                                            $unpaidIds[] = $rc['id'];
+                                            $unpaidItems[] = [
+                                                'name' => $rc['type'] . ' (' . date('M Y', strtotime($rc['date'])) . ')',
+                                                'amount' => $rc['amount']
+                                            ];
+                                        }
                                     ?>
                                     <tr>
                                         <td style="font-size:0.85rem; color:var(--text-main); font-weight:600;">
@@ -289,11 +338,6 @@
                                                 <div class="payment-status-badge paid"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> PAID</div>
                                             <?php else: ?>
                                                 <div class="payment-status-badge pending"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> UNPAID</div>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="text-right">
-                                            <?php if ($rc['status'] !== 'Paid'): ?>
-                                                <button class="btn-pay" onclick="openPaymentModal('<?= $rc['id'] ?>', '<?= $rc['type'] ?>', <?= $rc['amount'] ?>, 'recurring')">Pay Now</button>
                                             <?php endif; ?>
                                         </td>
                                         <td class="text-right">
@@ -315,10 +359,30 @@
 
                     <!-- Grand Total (if both sections have balances) -->
 <?php if (!$allInitialPaid || $recurringTotal > 0): ?>
-                    <div class="total-row" style="border: 2px solid var(--primary-dark); background: rgba(15,92,58,0.04); border-radius: 14px; padding: 24px 32px; margin-top: 8px;">
-                        <div class="total-label" style="font-size: 1.05rem;">Grand Total Due</div>
-                        <div class="total-amount" style="font-size: 2rem;">₱<?= number_format($grandTotal, 2) ?></div>
+                    <div class="total-row" style="border: 2px solid var(--primary-dark); background: rgba(15,92,58,0.04); border-radius: 14px; padding: 24px 32px; margin-top: 8px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div class="total-label" style="font-size: 1.05rem;">Grand Total Due</div>
+                            <div class="total-amount" style="font-size: 2rem;">₱<?= number_format($grandTotal, 2) ?></div>
+                        </div>
+                        <div style="text-align:right;">
+                            <button class="btn-pay" style="padding: 12px 24px; font-size:1rem;" onclick="openBulkPaymentModal()">
+                                Checkout & Pay All (₱<?= number_format($grandTotal, 2) ?>)
+                            </button>
+                        </div>
                     </div>
+<?php else: ?>
+    <?php if (!empty($recurringCharges)): ?>
+                    <div style="text-align:center; padding:30px; margin-top:20px; display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+                        <a href="<?= url('/user/apartment/soa') ?>" class="btn-topbar" style="background:white; color:var(--primary); border:2px solid var(--border); display:inline-flex; align-items:center; gap:8px;">
+                            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                            Download Official Receipt (SOA)
+                        </a>
+                        <button class="btn-pay" style="padding: 12px 24px; font-size:0.95rem; display:inline-flex; align-items:center; gap:8px;" onclick='openAdvancePaymentModal(<?= json_encode($advPayload) ?>, <?= json_encode($advItems) ?>, <?= $advCost ?>)'>
+                            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                            Pay 1 Month Advance Package
+                        </button>
+                    </div>
+    <?php endif; ?>
 <?php endif; ?>
 
 <?php endif; ?>
@@ -336,7 +400,11 @@
             </div>
             <div class="modal-body">
                 <p style="margin: 0 0 4px; color: var(--text-muted); font-size: 0.85rem;">Payment For:</p>
-                <h2 style="margin: 0 0 20px; color: var(--primary-dark); font-family: 'Lora', serif;" id="modalPayType">Deposit</h2>
+                <h2 style="margin: 0 0 10px; color: var(--primary-dark); font-family: 'Lora', serif;" id="modalPayType">Deposit</h2>
+                
+                <div id="modalItemList" style="background:#f8f9fa; border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:20px; font-size:0.88rem; color:var(--text-main); display:none;">
+                    <!-- JS injects the list here -->
+                </div>
                 
                 <p style="margin: 0 0 10px; font-weight: 600; font-size: 0.88rem;">Select Payment Method</p>
                 <div class="payment-options">
@@ -362,9 +430,12 @@
     <div class="toast-msg" id="toastMsg">Payment Successful!</div>
 
     <script>
-        let currentPaymentId = 0;
-        let currentPaymentMode = 'initial'; // 'initial' or 'recurring'
+        const unpaidIds = <?= json_encode($unpaidIds ?? []) ?>;
+        const unpaidItems = <?= json_encode($unpaidItems ?? []) ?>;
+        const grandTotal = <?= $grandTotal ?? 0 ?>;
+        
         let selectedMethod = 'gcash';
+        let isAdvanceMode = false;
 
         function showToast(msg, isErr = false) {
             const t = document.getElementById('toastMsg');
@@ -374,20 +445,54 @@
             setTimeout(() => t.classList.remove('show'), 3000);
         }
 
-        function openPaymentModal(pid, typeName, amount, mode) {
-            currentPaymentId = pid;
-            currentPaymentMode = mode || 'initial';
-            const typeLabel = typeName === 'Deposit' ? 'Security Deposit' : 
-                              typeName === 'Advance' ? 'Advance Rent' : typeName;
-            document.getElementById('modalPayType').textContent = typeLabel;
-            document.getElementById('modalAmount').textContent = parseFloat(amount).toFixed(2);
-            document.getElementById('refNumber').value = 'PAY-' + Math.floor(Math.random() * 10000000);
+        function openBulkPaymentModal() {
+            if (unpaidIds.length === 0) {
+                showToast("You have no outstanding balances.", false);
+                return;
+            }
+            
+            isAdvanceMode = false;
+            document.getElementById('modalPayType').textContent = 'All Outstanding Balances';
+            document.getElementById('modalAmount').textContent = parseFloat(grandTotal).toFixed(2);
+            document.getElementById('refNumber').value = 'PAY-BLK-' + Math.floor(Math.random() * 10000000);
+            
+            // Build itemized list UI
+            const listDiv = document.getElementById('modalItemList');
+            listDiv.style.display = 'block';
+            let html = '<ul style="margin:0; padding-left:18px;">';
+            unpaidItems.forEach(item => {
+                html += `<li style="margin-bottom:6px;"><span style="font-weight:600;">${item.name}</span> <span style="float:right; font-family:monospace;">₱${parseFloat(item.amount).toFixed(2)}</span></li>`;
+            });
+            html += '</ul>';
+            listDiv.innerHTML = html;
+
+            document.getElementById('paymentModal').classList.add('show');
+        }
+
+        let advancePayloadData = ['Rent-Advance'];
+
+        function openAdvancePaymentModal(payloadArray, itemsArray, totalCost) {
+            isAdvanceMode = true;
+            advancePayloadData = payloadArray;
+            document.getElementById('modalPayType').textContent = 'Advance Payment (1 Month Package)';
+            document.getElementById('modalAmount').textContent = parseFloat(totalCost).toFixed(2);
+            document.getElementById('refNumber').value = 'PAY-ADV-' + Math.floor(Math.random() * 10000000);
+            
+            // Build itemized list UI using the passed items array
+            const listDiv = document.getElementById('modalItemList');
+            listDiv.style.display = 'block';
+            let html = '<ul style="margin:0; padding-left:18px;">';
+            itemsArray.forEach(item => {
+                html += `<li style="margin-bottom:6px;"><span style="font-weight:600;">${item.name}</span> <span style="float:right; font-family:monospace;">₱${parseFloat(item.amount).toFixed(2)}</span></li>`;
+            });
+            html += '</ul>';
+            listDiv.innerHTML = html;
+
             document.getElementById('paymentModal').classList.add('show');
         }
 
         function closeModal() {
             document.getElementById('paymentModal').classList.remove('show');
-            currentPaymentId = 0;
         }
 
         function selectMethod(method) {
@@ -408,10 +513,12 @@
             btn.disabled = true;
             btn.innerHTML = 'Processing...';
 
+            let paymentPayload = isAdvanceMode ? advancePayloadData : unpaidIds;
+
             fetch('<?= url("/user/apartment/payment/submit") ?>', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ payment_id: currentPaymentId, reference: refNo })
+                body: JSON.stringify({ payment_id: paymentPayload, reference: refNo })
             })
             .then(r => r.json())
             .then(res => {

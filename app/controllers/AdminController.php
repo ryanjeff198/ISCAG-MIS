@@ -500,6 +500,9 @@ class AdminController extends Controller
             if (!isset($tenantPayments[$tid])) $tenantPayments[$tid] = [];
             $tenantPayments[$tid][] = strtolower($p['payment_type']);
         }
+
+        // Group parking by tenant
+
         
         // Group parking by tenant
         $tenantParking = [];
@@ -515,13 +518,26 @@ class AdminController extends Controller
         // 3. Dynamic Timeline Engine (Run for all tenants)
         foreach ($leases as $lease) {
             $tid = $lease['tenant_id'];
-            $paidRecurringKeys = $tenantPayments[$tid] ?? [];
+            $paidKeys = $tenantPayments[$tid] ?? [];
             $myParkings = $tenantParking[$tid] ?? [];
             $occupants = ($memberMap[$tid] ?? 0) + 1; // +1 for the tenant
             
+            // Advance Counts
+            $advRent = 0; $advWater = 0; $advPark = 0; $advContrib = 0;
+            foreach ($paidKeys as $pk) {
+                if ($pk === 'rent-advance') $advRent++;
+                if ($pk === 'water-advance') $advWater++;
+                if ($pk === 'parking-advance') $advPark++;
+                if ($pk === 'contribution-advance') $advContrib++;
+            }
+
             $leaseStart = new \DateTime($lease['start_date']);
             $leaseEnd = $lease['end_date'] ? new \DateTime($lease['end_date']) : null;
-            $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
+            
+            // Extend timeline if they have advance rent
+            $simNow = clone $now;
+            if ($advRent > 0) $simNow->modify("+$advRent month");
+            $limitDate = ($leaseEnd && $leaseEnd < $simNow) ? $leaseEnd : $simNow;
             
             $currentDate = clone $leaseStart;
             $monthCount = 0;
@@ -535,9 +551,9 @@ class AdminController extends Controller
                     
                     if ($invoiceAmount > 0) {
                         // Check if paid in payments table
-                        $depPaid = in_array('deposit', $paidRecurringKeys);
+                        $depPaid = in_array('deposit', $paidKeys);
                         // Some systems might call it 'advance' or 'advance_rent'
-                        $advPaid = in_array('advance', $paidRecurringKeys) || in_array('advance_rent', $paidRecurringKeys);
+                        $advPaid = in_array('advance', $paidKeys) || in_array('advance_rent', $paidKeys);
                         
                         // We assume it's fully paid if both elements exist, or if the tenant is active, they probably paid it. 
                         // But let's check precisely based on payments table:
@@ -578,25 +594,37 @@ class AdminController extends Controller
                 
                 // Months 1+: Recurring Monthly Invoices (Rent + Water + Parking)
                 if ($monthCount > 0) {
+                    $monthSuffix = $currentDate->format('F Y');
+                    $monthKey = $currentDate->format('Y-m');
+
                     $rentId = 'rent-' . $monthKey;
                     $waterId = 'water-' . $monthKey;
+                    $contribId = 'contribution-' . $monthKey;
                     
-                    $rentPaid = in_array($rentId, $paidRecurringKeys);
-                    $waterPaid = in_array($waterId, $paidRecurringKeys);
+                    $rentPaid = in_array($rentId, $paidKeys);
+                    if (!$rentPaid && $advRent > 0) { $rentPaid = true; $advRent--; }
                     
-                    // Base Monthly Charge (Rent + Water)
-                    $invoiceAmount = (float)$lease['monthly_rent'] + ($occupants * 100);
-                    $itemsPaidCount = ($rentPaid ? 1 : 0) + ($waterPaid ? 1 : 0);
-                    $totItems = 2;
+                    $waterPaid = in_array($waterId, $paidKeys);
+                    if (!$waterPaid && $advWater > 0) { $waterPaid = true; $advWater--; }
+
+                    $contribPaid = in_array($contribId, $paidKeys);
+                    if (!$contribPaid && $advContrib > 0) { $contribPaid = true; $advContrib--; }
+                    
+                    // Monthly Charge: Rent + Water + Contribution
+                    $invoiceAmount = (float)$lease['monthly_rent'] + ($occupants * 100) + 150.00;
+                    $itemsPaidCount = ($rentPaid ? 1 : 0) + ($waterPaid ? 1 : 0) + ($contribPaid ? 1 : 0);
+                    $totItems = 3;
 
                     // Add Parking if applicable
                     foreach ($myParkings as $pa) {
                         $parkStart = new \DateTime($pa['datestarted'] ?: $pa['date']);
                         $parkStart->modify('first day of this month');
                         if ($currentDate >= $parkStart) {
-                            $parkId = 'parking-' . $monthKey;
-                            $parkingPaid = in_array($parkId, $paidRecurringKeys);
-                            $invoiceAmount += 1000;
+                            $parkId = 'parking-' . $pa['parking_id'] . '-' . $monthKey;
+                            $parkingPaid = in_array(strtolower($parkId), $paidKeys);
+                            if (!$parkingPaid && $advPark > 0) { $parkingPaid = true; $advPark--; }
+                            
+                            $invoiceAmount += 1000.00;
                             $totItems++;
                             if ($parkingPaid) $itemsPaidCount++;
                         }
@@ -729,14 +757,31 @@ class AdminController extends Controller
         $transactions = [];
         $now = new DateTime();
 
+        // Calculate advance payments per tenant to extend simulation horizon
+        $advancePaymentMap = [];
+        foreach ($payments as $p) {
+            $tid = $p['tenant_id'];
+            if (!isset($advancePaymentMap[$tid])) $advancePaymentMap[$tid] = 0;
+            if ($p['payment_status'] === 'Paid' && strtolower($p['payment_type']) === 'rent-advance') {
+                $advancePaymentMap[$tid]++;
+            }
+        }
+
         // A) Recurring Charges: Monthly Rent & Water
         foreach ($leases as $l) {
+            $tid = $l['tenant_id'];
             $leaseStart = new DateTime($l['start_date']);
             $currentDate = clone $leaseStart;
             
+            $myNow = clone $now;
+            $advCount = $advancePaymentMap[$tid] ?? 0;
+            if ($advCount > 0) {
+                $myNow->modify("+$advCount month");
+            }
+            
             // Limit to today or lease end
             $leaseEnd = $l['end_date'] ? new DateTime($l['end_date']) : null;
-            $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
+            $limitDate = ($leaseEnd && $leaseEnd < $myNow) ? $leaseEnd : $myNow;
 
             $monthCount = 0;
             while ($currentDate <= $limitDate) {
@@ -769,6 +814,18 @@ class AdminController extends Controller
                         'description'=> "Water Consumption ($occupancyCount occupants) — $monthName",
                         'ref'        => 'LSE-W' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
                         'charge'     => (float)($occupancyCount * 100),
+                        'payment'    => 0,
+                        'status'     => 'Unpaid'
+                    ];
+
+                    // 3. Contribution Fee (Monthly)
+                    $transactions[] = [
+                        'tenant_id'  => $l['tenant_id'],
+                        'date'       => $currentDate->format('Y-m-d'),
+                        'type'       => 'Contribution',
+                        'description'=> "Monthly Contribution (Security/Garbage) — $monthName",
+                        'ref'        => 'LSE-C' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
+                        'charge'     => 150.00,
                         'payment'    => 0,
                         'status'     => 'Unpaid'
                     ];
@@ -1202,15 +1259,31 @@ class AdminController extends Controller
         // 2. Run Simulation
         foreach ($leases as $lease) {
             $tid = $lease['tenant_id'];
-            $paidRecurringKeys = $tenantPayments[$tid] ?? [];
+            $paidKeys = $tenantPayments[$tid] ?? [];
             $myParkings = $tenantParking[$tid] ?? [];
             $occupants = ($memberMap[$tid] ?? 0) + 1;
             
+            // Advance Counts
+            $advRent = 0; $advWater = 0; $advPark = 0; $advContrib = 0;
+            foreach ($paidKeys as $pk) {
+                if ($pk === 'rent-advance') $advRent++;
+                if ($pk === 'water-advance') $advWater++;
+                if ($pk === 'parking-advance') $advPark++;
+                if ($pk === 'contribution-advance') $advContrib++;
+            }
+
             $leaseStart = new \DateTime($lease['start_date']);
+            $leaseEnd = $lease['end_date'] ? (new \DateTime($lease['end_date'])) : null;
+            
+            // Timeline extension for advances
+            $simLimit = clone $now;
+            if ($advRent > 0) $simLimit->modify("+$advRent month");
+            $limitDate = ($leaseEnd && $leaseEnd < $simLimit) ? $leaseEnd : $simLimit;
+
             $currentDate = clone $leaseStart;
             $monthCount = 0;
 
-            while ($currentDate <= $now) {
+            while ($currentDate <= $limitDate) {
                 $monthKey = $currentDate->format('Y-m');
                 $isThisMonth = ($monthKey === $thisMonthKey);
                 $isLastMonth = ($monthKey === $lastMonthKey);
@@ -1219,11 +1292,11 @@ class AdminController extends Controller
                 if ($monthCount === 0) {
                     $invoiceAmount = (float)($lease['deposit_amount'] ?? 0) + (float)($lease['advance_amount'] ?? 0);
                     if ($invoiceAmount > 0) {
-                        $isPaid = in_array('deposit', $paidRecurringKeys) || strtolower($lease['lease_status']) === 'active';
+                        $isPaid = in_array('deposit', $paidKeys) || strtolower($lease['lease_status']) === 'active';
                         if ($isPaid) {
                             $totalRevenue += $invoiceAmount;
-                            if ($isThisMonth) { $thisMonthRev += $invoiceAmount; $paidThisMonthCount++; }
-                            if ($isLastMonth) { $lastMonthRev += $invoiceAmount; }
+                            if ($isThisMonth) $thisMonthRev += $invoiceAmount;
+                            if ($isLastMonth) $lastMonthRev += $invoiceAmount;
                         } else {
                             if ($now > $leaseStart) $overdueCount++; else $pendingCount++;
                         }
@@ -1232,35 +1305,49 @@ class AdminController extends Controller
                 
                 // Months 1+ logic
                 if ($monthCount > 0) {
-                    $rentPaid = in_array('rent-' . $monthKey, $paidRecurringKeys);
-                    $waterPaid = in_array('water-' . $monthKey, $paidRecurringKeys);
+                    $rentPaid = in_array('rent-' . $monthKey, $paidKeys);
+                    if (!$rentPaid && $advRent > 0) { $rentPaid = true; $advRent--; }
                     
-                    $invoiceAmount = (float)$lease['monthly_rent'] + ($occupants * 100);
+                    $waterPaid = in_array('water-' . $monthKey, $paidKeys);
+                    if (!$waterPaid && $advWater > 0) { $waterPaid = true; $advWater--; }
+
+                    $contribPaid = in_array('contribution-' . $monthKey, $paidKeys);
+                    if (!$contribPaid && $advContrib > 0) { $contribPaid = true; $advContrib--; }
                     
+                    // Monthly Charge: Rent + Water + Contribution
+                    $invoiceAmount = (float)$lease['monthly_rent'] + ($occupants * 100) + 150.00;
+                    $itemsPaidCount = ($rentPaid ? 1 : 0) + ($waterPaid ? 1 : 0) + ($contribPaid ? 1 : 0);
+                    $totItems = 3;
+
                     // Add parking
                     foreach ($myParkings as $pa) {
                         $ps = new \DateTime($pa['datestarted'] ?: $pa['date']); $ps->modify('first day of this month');
                         if ($currentDate >= $ps) {
-                            $invoiceAmount += 1000;
-                            // Check if parking paid
-                            if (in_array('parking-' . $monthKey, $paidRecurringKeys)) {
-                                // Already handled implicitly if we just check combined status, 
-                                // but for dashboard aggregate we usually care if the RENT is paid.
-                            }
+                            $parkId = 'parking-' . $pa['parking_id'] . '-' . $monthKey;
+                            $parkingPaid = in_array(strtolower($parkId), $paidKeys);
+                            if (!$parkingPaid && $advPark > 0) { $parkingPaid = true; $advPark--; }
+                            
+                            $invoiceAmount += 1000.00;
+                            $totItems++;
+                            if ($parkingPaid) $itemsPaidCount++;
                         }
                     }
 
-                    if ($rentPaid && $waterPaid) {
+                    if ($itemsPaidCount === $totItems) {
                         $totalRevenue += $invoiceAmount;
                         if ($isThisMonth) { $thisMonthRev += $invoiceAmount; $paidThisMonthCount++; }
                         if ($isLastMonth) { $lastMonthRev += $invoiceAmount; }
                     } else {
-                        if ($now > $currentDate) $overdueCount++; else $pendingCount++;
+                        // Check if past 5th for overdue
+                        $dueDate = clone $currentDate; 
+                        $dueDate->modify('first day of this month')->modify('+4 days');
+                        if ($now > $dueDate) $overdueCount++; else $pendingCount++;
                     }
                 }
 
                 $currentDate->modify('+1 month');
                 $monthCount++;
+                if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
             }
         }
 
