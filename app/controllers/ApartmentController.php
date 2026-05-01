@@ -34,10 +34,22 @@ class ApartmentController extends Controller {
         $tenantInfo = $model->getInfo($userId);
         $uploadedDocs = $model->getUploadedDocTypes($userId);
         
+        // Fetch billing-related info
+        $db = getDbConnection();
+        $stmt = $db->prepare("SELECT COUNT(*) FROM tenant_family_members WHERE tenant_id = ?");
+        $stmt->execute([$userId]);
+        $familyCount = (int)$stmt->fetchColumn();
+        
+        $stmt = $db->prepare("SELECT COUNT(*) FROM tenant_parking WHERE tenant_id = ? AND status = 'Approved'");
+        $stmt->execute([$userId]);
+        $hasParking = ($stmt->fetchColumn() > 0);
+
         $this->view('user/Apartment/apartment_information', [
             'application' => $application,
             'tenantInfo' => $tenantInfo,
-            'uploadedDocs' => $uploadedDocs
+            'uploadedDocs' => $uploadedDocs,
+            'familyCount' => $familyCount,
+            'hasParking' => $hasParking
         ]);
     }
 
