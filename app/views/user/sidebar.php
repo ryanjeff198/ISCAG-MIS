@@ -113,7 +113,7 @@ $active_page = $active_page ?? 'dashboard';
         </div>
 
         <!-- APARTMENT DROPDOWN -->
-        <?php $apartment_active = in_array($active_page, ['apartment_apply', 'apartment_status', 'apartment_info', 'apartment_parking', 'apartment_lease', 'apartment_payment']); ?>
+        <?php $apartment_active = in_array($active_page, ['apartment_apply', 'apartment_status', 'apartment_info', 'apartment_parking', 'apartment_lease', 'apartment_payment', 'apartment_soa']); ?>
         <div class="nav-dropdown-wrap <?= $apartment_active ? 'open' : '' ?>" id="apartment-wrap">
             <button class="nav-dropdown-trigger <?= $apartment_active ? 'open' : '' ?>" id="apartment-trigger" data-tooltip="Apartment">
                 <svg viewBox="0 0 24 24" fill="currentColor">
@@ -151,7 +151,13 @@ $active_page = $active_page ?? 'dashboard';
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
                     </svg>
-                    Initial Payments
+                    Bills & Payments
+                </a>
+                <a href="<?= url('/user/apartment/soa') ?>" class="<?= $active_page === 'apartment_soa' ? 'active-submenu' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v2H7zm0 4h2v2H7zm4-4h6v2h-6zm0 4h6v2h-6z" />
+                    </svg>
+                    Statement of Account
                 </a>
                 <a href="<?= url('/user/apartment/info') ?>" class="<?= $active_page === 'apartment_info' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor">

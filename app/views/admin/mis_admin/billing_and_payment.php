@@ -8,6 +8,9 @@
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <meta name="description" content="Manage tenant billing, payments, and financial records" />
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+  <style>
+    .action-menu { position: relative; display: flex; justify-content: center; align-items: center; }
+  </style>
 </head>
 
 <body>
@@ -188,7 +191,6 @@
                     <th>Amount</th>
                     <th>Due Date</th>
                     <th>Status</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="billing-tbody"></tbody>
@@ -307,33 +309,6 @@
                 <td style="font-weight:700;">₱${r.amount.toLocaleString()}</td>
                 <td>${r.dueDate}</td>
                 <td>${statusBadge(r.status)}</td>
-                <td>
-                  <div class="action-menu">
-                    <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
-                      <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-                    </button>
-                    <div class="action-menu-dropdown">
-                      <button class="action-menu-item" onclick="showToast('Viewing ${r.id}','var(--info)')">
-                        <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                        Invoice Details
-                      </button>
-                      ${r.status === 'overdue' ? `
-                      <button class="action-menu-item danger" onclick="showToast('Reminder sent to ${r.tenantName}','var(--danger)')">
-                        <svg viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-11 5H9v-2h2v2zm0-4H9V7h2v6z"/></svg>
-                        Send Overdue Reminder
-                      </button>` : ''}
-                      ${r.status !== 'paid' ? `
-                      <button class="action-menu-item success" onclick="showToast('Receipt generated for ${r.id}','var(--success)')">
-                        <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                        Mark as Paid
-                      </button>` : ''}
-                      <button class="action-menu-item" onclick="showToast('Downloading PDF...','var(--info)')">
-                        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                        Download PDF
-                      </button>
-                    </div>
-                  </div>
-                </td>
               </tr>
             `).join('');
       }

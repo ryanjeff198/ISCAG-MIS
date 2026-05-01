@@ -24,30 +24,13 @@ class AdminController extends Controller
         $totalApplications = (int) $db->query("SELECT COUNT(*) FROM apartmentsapp")->fetchColumn();
         $totalParking = (int) $db->query("SELECT COUNT(*) FROM tenant_parking")->fetchColumn();
 
-        // ── Billing ──
-        $db->exec("CREATE TABLE IF NOT EXISTS billing (
-            billing_id INT AUTO_INCREMENT PRIMARY KEY,
-            tenant_id INT,
-            amount DECIMAL(10,2),
-            status ENUM('Paid', 'Pending', 'Overdue') DEFAULT 'Pending',
-            due_date DATE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )");
-        $billingStats = $db->query("SELECT status, COUNT(*) as count, COALESCE(SUM(amount),0) as total FROM billing GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        if (empty($billingStats)) {
-            $db->exec("INSERT INTO billing (tenant_id, amount, status, due_date) VALUES 
-                (1, 3500.00, 'Paid', '2026-04-01'), (2, 7500.00, 'Pending', '2026-05-01'),
-                (3, 5000.00, 'Overdue', '2026-03-15'), (1, 3500.00, 'Pending', '2026-05-01'),
-                (2, 4000.00, 'Paid', '2026-03-01'), (3, 6000.00, 'Paid', '2026-02-01')
-            ");
-            $billingStats = $db->query("SELECT status, COUNT(*) as count, COALESCE(SUM(amount),0) as total FROM billing GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        }
-        $totalRevenue = 0; $pendingBilling = 0; $overdueBilling = 0;
-        foreach ($billingStats as $stat) {
-            if ($stat['status'] === 'Paid') $totalRevenue = (float) $stat['total'];
-            if ($stat['status'] === 'Pending') $pendingBilling = (int) $stat['count'];
-            if ($stat['status'] === 'Overdue') $overdueBilling = (int) $stat['count'];
-        }
+        // ── Billing KPI Data (Real-Time Synchronized) ──
+        $billingKPIs = $this->getBillingAggregateMetrics();
+        $totalRevenue = $billingKPIs['totalRevenue'];
+        $pendingBilling = $billingKPIs['pendingCount'];
+        $overdueBilling = $billingKPIs['overdueCount'];
+        $paidThisMonth = $billingKPIs['paidThisMonthCount'];
+        $revenueGrowth = $billingKPIs['growth'];
 
         // ── Chart: System Activity (last 7 days) ──
         $stmtActivity = $db->query("
@@ -57,7 +40,8 @@ class AdminController extends Controller
             ORDER BY date DESC 
             LIMIT 7
         ");
-        $activityData = array_reverse($stmtActivity->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        $actualActivity = $stmtActivity->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $activityData = array_reverse($actualActivity);
 
         // ── Chart: Application Status Distribution ──
         $distData = $db->query("SELECT status, COUNT(*) as count FROM apartmentsapp GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -85,10 +69,16 @@ class AdminController extends Controller
             'auditFlags' => $auditFlags,
             'totalApplications' => $totalApplications,
             'totalParking' => $totalParking,
-            'billingStats' => $billingStats,
             'totalRevenue' => $totalRevenue,
+            'revenueGrowth' => $revenueGrowth,
             'pendingBilling' => $pendingBilling,
             'overdueBilling' => $overdueBilling,
+            'paidThisMonth' => $paidThisMonth,
+            'billingStats' => [
+                ['status' => 'Paid', 'count' => $paidThisMonth, 'total' => $totalRevenue],
+                ['status' => 'Pending', 'count' => $pendingBilling, 'total' => 0],
+                ['status' => 'Overdue', 'count' => $overdueBilling, 'total' => 0]
+            ],
             'activityData' => $activityData,
             'distData' => $distData,
             'occupancyData' => $occupancyData,
@@ -138,9 +128,17 @@ class AdminController extends Controller
         // ── Apartment Occupancy ──
         $occupancyDist = $db->query("SELECT status, COUNT(*) as count FROM apartment_units GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // ── Billing ──
-        $db->exec("CREATE TABLE IF NOT EXISTS billing (billing_id INT AUTO_INCREMENT PRIMARY KEY, tenant_id INT, amount DECIMAL(10,2), status ENUM('Paid','Pending','Overdue') DEFAULT 'Pending', due_date DATE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
-        $billingDist = $db->query("SELECT status, COUNT(*) as count, COALESCE(SUM(amount),0) as total FROM billing GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // ── Billing KPI Data (Real-Time Synchronized) ──
+        $billingKPIs = $this->getBillingAggregateMetrics();
+        $totalRevenue = $billingKPIs['totalRevenue'];
+        $pendingBilling = $billingKPIs['pendingCount'];
+        $overdueBilling = $billingKPIs['overdueCount'];
+        $paidThisMonth = $billingKPIs['paidThisMonthCount'];
+        $billingDist = [
+            ['status' => 'Paid', 'count' => $paidThisMonth, 'total' => $totalRevenue],
+            ['status' => 'Pending', 'count' => $pendingBilling, 'total' => 0],
+            ['status' => 'Overdue', 'count' => $overdueBilling, 'total' => 0]
+        ];
 
         // ── Activity Timeline ──
         $activityTimeline = $db->query("SELECT DATE(created_at) as date, COUNT(*) as count FROM notifications GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 14")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -469,35 +467,183 @@ class AdminController extends Controller
     public function billing(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         $db = getDbConnection();
+        $now = clone (new \DateTime());
 
-        // 1. Fetch Stats
-        $billingStats = $db->query("SELECT status, COUNT(*) as count, COALESCE(SUM(amount),0) as total FROM billing GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        
-        $totalRevenue = 0; $pendingBilling = 0; $overdueBilling = 0; $paidCount = 0;
-        foreach ($billingStats as $stat) {
-            if ($stat['status'] === 'Paid') {
-                $totalRevenue = (float) $stat['total'];
-                $paidCount = (int) $stat['count'];
-            }
-            if ($stat['status'] === 'Pending') $pendingBilling = (int) $stat['count'];
-            if ($stat['status'] === 'Overdue') $overdueBilling = (int) $stat['count'];
-        }
-
-        // 2. Fetch Detailed Records
-        $sql = "
-            SELECT 
-                b.*, 
-                u.first_name, 
-                u.last_name, 
-                au.room_number, 
-                au.building 
-            FROM billing b 
-            JOIN tenant_accounts u ON b.tenant_id = u.tenant_id 
+        // 1. Fetch Tenants with active/accepted leases
+        $leases = $db->query("
+            SELECT l.*, 
+                   u.first_name, u.last_name, u.email,
+                   a.roomtype, au.room_number, au.building
+            FROM leases l
+            JOIN tenant_accounts u ON l.tenant_id = u.tenant_id
             LEFT JOIN apartmentsapp a ON u.tenant_id = a.tenant_id AND (a.status = 'Assigned' OR a.status = 'Accepted')
             LEFT JOIN apartment_units au ON a.unit_id = au.unit_id
-            ORDER BY b.created_at DESC
-        ";
-        $invoices = $db->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            WHERE l.lease_status IN ('Active', 'Accepted', 'Pending')
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 2. Fetch dependencies
+        $payments = $db->query("SELECT payment_type, payment_status, tenant_id FROM payments WHERE payment_status = 'Paid'")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $parkingApps = $db->query("SELECT tenant_id, datestarted, date FROM tenant_parking WHERE status = 'Approved'")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $memberCounts = $db->query("SELECT tenant_id, COUNT(*) as cnt FROM tenant_family_members GROUP BY tenant_id")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $memberMap = []; 
+        foreach($memberCounts as $mc) $memberMap[$mc['tenant_id']] = (int)$mc['cnt'];
+
+        // Group payments by tenant
+        $tenantPayments = [];
+        foreach ($payments as $p) {
+            $tid = $p['tenant_id'];
+            if (!isset($tenantPayments[$tid])) $tenantPayments[$tid] = [];
+            $tenantPayments[$tid][] = strtolower($p['payment_type']);
+        }
+        
+        // Group parking by tenant
+        $tenantParking = [];
+        foreach ($parkingApps as $pa) {
+            $tid = $pa['tenant_id'];
+            if (!isset($tenantParking[$tid])) $tenantParking[$tid] = [];
+            $tenantParking[$tid][] = $pa;
+        }
+
+        $invoices = [];
+        $totalRevenue = 0; $pendingBilling = 0; $overdueBilling = 0; $paidCount = 0;
+
+        // 3. Dynamic Timeline Engine (Run for all tenants)
+        foreach ($leases as $lease) {
+            $tid = $lease['tenant_id'];
+            $paidRecurringKeys = $tenantPayments[$tid] ?? [];
+            $myParkings = $tenantParking[$tid] ?? [];
+            $occupants = ($memberMap[$tid] ?? 0) + 1; // +1 for the tenant
+            
+            $leaseStart = new \DateTime($lease['start_date']);
+            $leaseEnd = $lease['end_date'] ? new \DateTime($lease['end_date']) : null;
+            $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
+            
+            $currentDate = clone $leaseStart;
+            $monthCount = 0;
+
+            while ($currentDate <= $limitDate) {
+                $monthKey = $currentDate->format('Y-m');
+
+                // Month 0: Move-In Invoice (Deposit + Advance)
+                if ($monthCount === 0) {
+                    $invoiceAmount = (float)($lease['deposit_amount'] ?? 0) + (float)($lease['advance_amount'] ?? 0);
+                    
+                    if ($invoiceAmount > 0) {
+                        // Check if paid in payments table
+                        $depPaid = in_array('deposit', $paidRecurringKeys);
+                        // Some systems might call it 'advance' or 'advance_rent'
+                        $advPaid = in_array('advance', $paidRecurringKeys) || in_array('advance_rent', $paidRecurringKeys);
+                        
+                        // We assume it's fully paid if both elements exist, or if the tenant is active, they probably paid it. 
+                        // But let's check precisely based on payments table:
+                        $itemsPaidCount = ($depPaid ? 1 : 0) + ($advPaid ? 1 : 0);
+                        $totItems = 2;
+
+                        $status = 'Pending';
+                        if ($itemsPaidCount >= $totItems || strtolower($lease['lease_status']) === 'active') {
+                            // If they are Active, they are officially moved in and paid!
+                            $status = 'Paid';
+                            $totalRevenue += $invoiceAmount;
+                            $paidCount++;
+                        } else {
+                            $dueDate = clone $leaseStart;
+                            if ($now > $dueDate) {
+                                $status = 'Overdue';
+                                $overdueBilling++;
+                            } else {
+                                $status = 'Pending';
+                                $pendingBilling++;
+                            }
+                        }
+
+                        $invoiceIdNum = crc32($tid . 'movein') & 0x7FFFFFFF;
+                        $invoices[] = [
+                            'billing_id' => 'INIT-' . substr(str_pad($invoiceIdNum, 4, '0', STR_PAD_LEFT), 0, 4),
+                            'tenant_id' => $tid,
+                            'first_name' => $lease['first_name'],
+                            'last_name' => $lease['last_name'],
+                            'room_number' => $lease['room_number'],
+                            'building' => $lease['building'],
+                            'amount' => $invoiceAmount,
+                            'due_date' => $leaseStart->format('Y-m-d'),
+                            'status' => $status
+                        ];
+                    }
+                }
+                
+                // Months 1+: Recurring Monthly Invoices (Rent + Water + Parking)
+                if ($monthCount > 0) {
+                    $rentId = 'rent-' . $monthKey;
+                    $waterId = 'water-' . $monthKey;
+                    
+                    $rentPaid = in_array($rentId, $paidRecurringKeys);
+                    $waterPaid = in_array($waterId, $paidRecurringKeys);
+                    
+                    // Base Monthly Charge (Rent + Water)
+                    $invoiceAmount = (float)$lease['monthly_rent'] + ($occupants * 100);
+                    $itemsPaidCount = ($rentPaid ? 1 : 0) + ($waterPaid ? 1 : 0);
+                    $totItems = 2;
+
+                    // Add Parking if applicable
+                    foreach ($myParkings as $pa) {
+                        $parkStart = new \DateTime($pa['datestarted'] ?: $pa['date']);
+                        $parkStart->modify('first day of this month');
+                        if ($currentDate >= $parkStart) {
+                            $parkId = 'parking-' . $monthKey;
+                            $parkingPaid = in_array($parkId, $paidRecurringKeys);
+                            $invoiceAmount += 1000;
+                            $totItems++;
+                            if ($parkingPaid) $itemsPaidCount++;
+                        }
+                    }
+
+                    // Determine single invoice status
+                    $status = 'Pending';
+                    if ($itemsPaidCount === $totItems) {
+                        $status = 'Paid';
+                        $totalRevenue += $invoiceAmount;
+                        $paidCount++;
+                    } else {
+                        // Not fully paid: Check if it's past the 5th
+                        $dueDate = clone $currentDate; 
+                        $dueDate->modify('first day of this month')->modify('+4 days'); // 5th of the month
+                        
+                        if ($now > $dueDate) {
+                            $status = 'Overdue';
+                            $overdueBilling++;
+                        } else {
+                            $status = 'Pending';
+                            $pendingBilling++;
+                        }
+                    }
+
+                    // Generate a consistent pseudo-ID for this invoice
+                    $invoiceIdNum = crc32($tid . $monthKey) & 0x7FFFFFFF;
+
+                    $invoices[] = [
+                        'billing_id' => substr($invoiceIdNum, 0, 6) . $monthCount, // Make a nice 6-8 digit ID
+                        'tenant_id' => $tid,
+                        'first_name' => $lease['first_name'],
+                        'last_name' => $lease['last_name'],
+                        'room_number' => $lease['room_number'],
+                        'building' => $lease['building'],
+                        'amount' => $invoiceAmount,
+                        'due_date' => $currentDate->format('Y-m-05'),
+                        'status' => $status
+                    ];
+                } // End if > 0
+
+                $currentDate->modify('+1 month');
+                $monthCount++;
+                if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
+            }
+        }
+        
+        // Sort newest invoices first
+        usort($invoices, function($a, $b) {
+            return strcmp($b['due_date'], $a['due_date']);
+        });
 
         $this->view('admin/mis_admin/billing_and_payment', [
             'active_page' => 'billing',
@@ -515,29 +661,209 @@ class AdminController extends Controller
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         $db = getDbConnection();
 
-        // 1. Fetch Tenants for selection
+        // 1. Fetch Tenants with room info
         $tenants = $db->query("
             SELECT 
                 u.tenant_id, 
                 u.first_name, 
                 u.last_name, 
                 u.contactnum, 
+                u.email,
                 au.room_number, 
-                au.building 
+                au.building,
+                a.roomtype,
+                a.application_id,
+                a.status AS app_status
             FROM tenant_accounts u 
-            LEFT JOIN apartmentsapp a ON u.tenant_id = a.tenant_id AND (a.status = 'Assigned' OR a.status = 'Accepted')
+            LEFT JOIN apartmentsapp a ON u.tenant_id = a.tenant_id AND a.status = 'Assigned'
             LEFT JOIN apartment_units au ON a.unit_id = au.unit_id
             WHERE u.role IN ('Tenant', 'Guest')
             ORDER BY u.last_name ASC
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // 2. Fetch all billing transactions
-        $transactions = $db->query("SELECT * FROM billing ORDER BY due_date ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // 2. Fetch lease data per tenant
+        $leases = $db->query("
+            SELECT l.*, 
+                   u.first_name, u.last_name
+            FROM leases l
+            JOIN tenant_accounts u ON l.tenant_id = u.tenant_id
+            WHERE l.lease_status IN ('Active', 'Accepted', 'Expired')
+            ORDER BY l.lease_id ASC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 3. Fetch all lease payments (Deposit & Advance)
+        $payments = $db->query("
+            SELECT p.*, l.tenant_id
+            FROM payments p
+            JOIN leases l ON p.lease_id = l.lease_id
+            ORDER BY p.created_at ASC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 4. Fetch parking applications (Approved = ₱1,000 charge)
+        $parkingApps = $db->query("
+            SELECT parking_id, tenant_id, date, vehiclename, plateno, status, datestarted
+            FROM tenant_parking
+            WHERE status = 'Approved'
+            ORDER BY date ASC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 5. Fetch family member counts per tenant (for water bill: ₱100/member)
+        $memberCounts = $db->query("
+            SELECT tenant_id, COUNT(*) as member_count
+            FROM tenant_family_members
+            GROUP BY tenant_id
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $memberMap = [];
+        foreach ($memberCounts as $mc) {
+            $memberMap[$mc['tenant_id']] = (int)$mc['member_count'];
+        }
+
+        // 6. Fetch existing billing records
+        $billingRecords = $db->query("SELECT * FROM billing ORDER BY due_date ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // ── Build unified transactions array ──
+        $transactions = [];
+        $now = new DateTime();
+
+        // A) Recurring Charges: Monthly Rent & Water
+        foreach ($leases as $l) {
+            $leaseStart = new DateTime($l['start_date']);
+            $currentDate = clone $leaseStart;
+            
+            // Limit to today or lease end
+            $leaseEnd = $l['end_date'] ? new DateTime($l['end_date']) : null;
+            $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
+
+            $monthCount = 0;
+            while ($currentDate <= $limitDate) {
+                $monthName = $currentDate->format('F Y');
+                
+                // 1. Monthly Rent Usage Charge
+                // SKIP generating this for the VERY FIRST MONTH (Month 0) 
+                // because it is already handled by the 'Advance Rent' in section B.
+                if ($monthCount > 0) {
+                    $transactions[] = [
+                        'tenant_id'  => $l['tenant_id'],
+                        'date'       => $currentDate->format('Y-m-d'),
+                        'type'       => 'Monthly Rent',
+                        'description'=> "Monthly Rent Usage — $monthName",
+                        'ref'        => 'LSE-R' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
+                        'charge'     => (float)$l['monthly_rent'],
+                        'payment'    => 0,
+                        'status'     => 'Unpaid'
+                    ];
+                }
+
+                // 2. Water Bill Charge (Monthly)
+                // Also SKIP for the very first month, as utilities are billed after usage.
+                if ($monthCount > 0) {
+                    $occupancyCount = ($memberMap[$l['tenant_id']] ?? 0) + 1;
+                    $transactions[] = [
+                        'tenant_id'  => $l['tenant_id'],
+                        'date'       => $currentDate->format('Y-m-d'),
+                        'type'       => 'Water',
+                        'description'=> "Water Consumption ($occupancyCount occupants) — $monthName",
+                        'ref'        => 'LSE-W' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
+                        'charge'     => (float)($occupancyCount * 100),
+                        'payment'    => 0,
+                        'status'     => 'Unpaid'
+                    ];
+                }
+
+                $currentDate->modify('+1 month');
+                $monthCount++;
+                // Stop if we overshot the month by days
+                if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
+            }
+        }
+
+        // B) Initial Payments (Deposit & Advance)
+        foreach ($payments as $p) {
+            $isPaid = $p['payment_status'] === 'Paid';
+            // Charge entry
+            $transactions[] = [
+                'tenant_id'  => $p['tenant_id'],
+                'date'       => date('Y-m-d', strtotime($p['created_at'])),
+                'type'       => $p['payment_type'],
+                'description'=> $p['payment_type'] === 'Deposit' ? 'Security Deposit (Initial)' : 'Advance Rent (Month 1)',
+                'ref'        => 'PMT-' . str_pad($p['payment_id'], 4, '0', STR_PAD_LEFT),
+                'charge'     => (float)$p['amount'],
+                'payment'    => 0,
+                'status'     => $p['payment_status']
+            ];
+            // Payment entry if paid
+            if ($isPaid) {
+                $transactions[] = [
+                    'tenant_id'  => $p['tenant_id'],
+                    'date'       => $p['payment_date'] ? date('Y-m-d', strtotime($p['payment_date'])) : date('Y-m-d', strtotime($p['created_at'])),
+                    'type'       => $p['payment_type'] . ' (Payment)',
+                    'description'=> 'Payment Received — ' . $p['payment_type'],
+                    'ref'        => $p['reference_number'] ?: 'PAY-' . str_pad($p['payment_id'], 4, '0', STR_PAD_LEFT),
+                    'charge'     => 0,
+                    'payment'    => (float)$p['amount'],
+                    'status'     => 'Paid'
+                ];
+            }
+        }
+
+        // C) Parking Fee — Fixed ₱1,000 per approved parking
+        foreach ($parkingApps as $pa) {
+            $transactions[] = [
+                'tenant_id'  => $pa['tenant_id'],
+                'date'       => $pa['datestarted'] ?: $pa['date'],
+                'type'       => 'Parking Fee',
+                'description'=> 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle') . ' (' . ($pa['plateno'] ?: 'N/A') . ')',
+                'ref'        => 'PKG-' . str_pad($pa['parking_id'], 4, '0', STR_PAD_LEFT),
+                'charge'     => 1000.00,
+                'payment'    => 0,
+                'status'     => 'Approved'
+            ];
+        }
+
+        // D) Existing billing records (manual invoices)
+        foreach ($billingRecords as $b) {
+            $transactions[] = [
+                'tenant_id'  => $b['tenant_id'],
+                'date'       => $b['due_date'],
+                'type'       => 'Rent Invoice',
+                'description'=> 'Monthly Rent Invoice',
+                'ref'        => 'INV-' . str_pad($b['billing_id'], 4, '0', STR_PAD_LEFT),
+                'charge'     => (float)$b['amount'],
+                'payment'    => 0,
+                'status'     => $b['status']
+            ];
+            if ($b['status'] === 'Paid') {
+                $transactions[] = [
+                    'tenant_id'  => $b['tenant_id'],
+                    'date'       => $b['due_date'],
+                    'type'       => 'Rent Payment',
+                    'description'=> 'Payment Received — Rent',
+                    'ref'        => 'PAY-INV-' . str_pad($b['billing_id'], 4, '0', STR_PAD_LEFT),
+                    'charge'     => 0,
+                    'payment'    => (float)$b['amount'],
+                    'status'     => 'Paid'
+                ];
+            }
+        }
+
+        // Global Sort by Date
+        usort($transactions, function($a, $b) {
+            return strtotime($a['date']) <=> strtotime($b['date']);
+        });
+
+        // F) Contribution — placeholder (empty for now)
+        // No charges generated
+
+        // Sort by date
+        usort($transactions, function($a, $b) {
+            return strtotime($a['date']) - strtotime($b['date']);
+        });
 
         $this->view('admin/mis_admin/statement_of_account', [
-            'active_page' => 'soa',
-            'tenants' => $tenants,
-            'transactions' => $transactions
+            'active_page'  => 'soa',
+            'tenants'      => $tenants,
+            'transactions' => $transactions,
+            'memberMap'    => $memberMap
         ]);
     }
 
@@ -824,4 +1150,123 @@ class AdminController extends Controller
         }
         header('Location: ' . url('/admin/apartment/renewals'));
     }
+    /**
+     * Private helper to run the financial simulation engine and return aggregated metrics
+     */
+    private function getBillingAggregateMetrics(): array {
+        $db = getDbConnection();
+        $now = new \DateTime();
+        $thisMonthKey = $now->format('Y-m');
+        $lastMonthKey = (clone $now)->modify('-1 month')->format('Y-m');
+
+        // 1. Fetch Data (Same as billing controller)
+        $leases = $db->query("
+            SELECT l.* FROM leases l WHERE l.lease_status IN ('Active', 'Accepted', 'Pending')
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $payments = $db->query("SELECT payment_type, tenant_id FROM payments WHERE payment_status = 'Paid'")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $parkingApps = $db->query("SELECT tenant_id, datestarted, date FROM tenant_parking WHERE status = 'Approved'")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $memberCounts = $db->query("SELECT tenant_id, COUNT(*) as cnt FROM tenant_family_members GROUP BY tenant_id")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $memberMap = []; foreach($memberCounts as $mc) $memberMap[$mc['tenant_id']] = (int)$mc['cnt'];
+        $tenantPayments = [];
+        foreach ($payments as $p) {
+            $tid = $p['tenant_id'];
+            if (!isset($tenantPayments[$tid])) $tenantPayments[$tid] = [];
+            $tenantPayments[$tid][] = strtolower($p['payment_type']);
+        }
+        $tenantParking = [];
+        foreach ($parkingApps as $pa) {
+            $tid = $pa['tenant_id'];
+            if (!isset($tenantParking[$tid])) $tenantParking[$tid] = [];
+            $tenantParking[$tid][] = $pa;
+        }
+
+        $totalRevenue = 0; $thisMonthRev = 0; $lastMonthRev = 0;
+        $pendingCount = 0; $overdueCount = 0; $paidThisMonthCount = 0;
+
+        // 2. Run Simulation
+        foreach ($leases as $lease) {
+            $tid = $lease['tenant_id'];
+            $paidRecurringKeys = $tenantPayments[$tid] ?? [];
+            $myParkings = $tenantParking[$tid] ?? [];
+            $occupants = ($memberMap[$tid] ?? 0) + 1;
+            
+            $leaseStart = new \DateTime($lease['start_date']);
+            $currentDate = clone $leaseStart;
+            $monthCount = 0;
+
+            while ($currentDate <= $now) {
+                $monthKey = $currentDate->format('Y-m');
+                $isThisMonth = ($monthKey === $thisMonthKey);
+                $isLastMonth = ($monthKey === $lastMonthKey);
+
+                // Month 0 logic
+                if ($monthCount === 0) {
+                    $invoiceAmount = (float)($lease['deposit_amount'] ?? 0) + (float)($lease['advance_amount'] ?? 0);
+                    if ($invoiceAmount > 0) {
+                        $isPaid = in_array('deposit', $paidRecurringKeys) || strtolower($lease['lease_status']) === 'active';
+                        if ($isPaid) {
+                            $totalRevenue += $invoiceAmount;
+                            if ($isThisMonth) { $thisMonthRev += $invoiceAmount; $paidThisMonthCount++; }
+                            if ($isLastMonth) { $lastMonthRev += $invoiceAmount; }
+                        } else {
+                            if ($now > $leaseStart) $overdueCount++; else $pendingCount++;
+                        }
+                    }
+                }
+                
+                // Months 1+ logic
+                if ($monthCount > 0) {
+                    $rentPaid = in_array('rent-' . $monthKey, $paidRecurringKeys);
+                    $waterPaid = in_array('water-' . $monthKey, $paidRecurringKeys);
+                    
+                    $invoiceAmount = (float)$lease['monthly_rent'] + ($occupants * 100);
+                    
+                    // Add parking
+                    foreach ($myParkings as $pa) {
+                        $ps = new \DateTime($pa['datestarted'] ?: $pa['date']); $ps->modify('first day of this month');
+                        if ($currentDate >= $ps) {
+                            $invoiceAmount += 1000;
+                            // Check if parking paid
+                            if (in_array('parking-' . $monthKey, $paidRecurringKeys)) {
+                                // Already handled implicitly if we just check combined status, 
+                                // but for dashboard aggregate we usually care if the RENT is paid.
+                            }
+                        }
+                    }
+
+                    if ($rentPaid && $waterPaid) {
+                        $totalRevenue += $invoiceAmount;
+                        if ($isThisMonth) { $thisMonthRev += $invoiceAmount; $paidThisMonthCount++; }
+                        if ($isLastMonth) { $lastMonthRev += $invoiceAmount; }
+                    } else {
+                        if ($now > $currentDate) $overdueCount++; else $pendingCount++;
+                    }
+                }
+
+                $currentDate->modify('+1 month');
+                $monthCount++;
+            }
+        }
+
+        // 3. Calculate Growth
+        $growth = 0;
+        if ($lastMonthRev > 0) {
+            $growth = (($thisMonthRev - $lastMonthRev) / $lastMonthRev) * 100;
+        } elseif ($thisMonthRev > 0) {
+            $growth = 100; 
+        }
+
+        return [
+            'totalRevenue' => $totalRevenue,
+            'thisMonthRev' => $thisMonthRev,
+            'lastMonthRev' => $lastMonthRev,
+            'growth' => round($growth, 1),
+            'pendingCount' => $pendingCount,
+            'overdueCount' => $overdueCount,
+            'paidThisMonthCount' => $paidThisMonthCount
+        ];
+    }
 }
+

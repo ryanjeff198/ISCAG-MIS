@@ -63,6 +63,7 @@ $routes = [
     '/user/apartment/lease/renew'    => ['ApartmentController', 'requestRenewal'],
     '/user/apartment/payment'        => ['ApartmentController', 'payment'],
     '/user/apartment/payment/submit' => ['ApartmentController', 'submitPayment'],
+    '/user/apartment/soa'            => ['ApartmentController', 'soa'],
 
     // Service Modules
     '/user/services/burial-form'      => ['UserController', 'burialForm'],
