@@ -43,7 +43,7 @@ $routes = [
     '/user/profile/avatar/serve' => ['UserController', 'serveAvatar'],
     '/user/notifications' => ['UserController', 'notifications'],
     '/user/status/check'  => ['UserController', 'checkStatus'],
-    '/user/notifications/mark-read' => ['UserController', 'markNotificationRead'],
+    '/user/notifications/mark-all-read' => ['UserController', 'markAllRead'],
     '/logout'           => ['AuthController', 'logout'],
 
     // User Apartment Module

@@ -25,13 +25,12 @@ class Auth
         
         // Live Role Check: Fetch from DB to allow instant updates from Admin
         $db = getDbConnection();
-        $stmt = $db->prepare("SELECT role FROM tenant_accounts WHERE tenant_id = :id");
+        $stmt = $db->prepare("SELECT role, first_name, last_name FROM tenant_accounts WHERE tenant_id = :id");
         $stmt->execute(['id' => $_SESSION['user_id']]);
-        $role = $stmt->fetchColumn();
-        
-        if ($role) {
-            $_SESSION['role'] = $role; // Sync session with latest DB value
-            return $role;
+        if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $_SESSION['role'] = $row['role']; 
+            $_SESSION['name'] = $row['first_name'] . ' ' . $row['last_name'];
+            return $row['role'];
         }
         
         return $_SESSION['role'] ?? null;

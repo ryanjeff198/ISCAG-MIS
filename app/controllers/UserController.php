@@ -46,7 +46,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function notifications(): void
+    public function notifications()
     {
         Auth::protectRole(['Guest', 'Tenant']);
         $userId = $_SESSION['user_id'] ?? null;
@@ -55,15 +55,51 @@ class UserController extends Controller
         $account = $userModel->findById($userId);
         $info = $userModel->getAdditionalInfo($userId);
 
+        // STRENGTHENED IDENTITY SYNC:
+        // Force the session to reflect the database state for THIS user ID.
+        // This prevents the "Setsuna/Admin" ghost bug where the sidebar is out of sync.
+        if ($account) {
+            $_SESSION['role'] = $account['role'];
+            $_SESSION['name'] = $account['first_name'] . ' ' . $account['last_name'];
+            $_SESSION['email'] = $account['email'];
+        }
+
         require_once BASE_PATH . '/app/models/Notification.php';
         $notifModel = new Notification();
         $notifications = $notifModel->getUserNotifications($userId);
 
+        $viewId = $_GET['view'] ?? null;
+        if ($viewId) {
+            $notifModel->markAsRead((int)$viewId, (int)$userId);
+        }
+
         $this->view('user/tenant_notification', [
+            'notifications' => $notifications,
             'account' => $account,
             'info' => $info,
-            'notifications' => $notifications
+            'viewId' => $viewId,
+            'active_page' => 'notifications'
         ]);
+    }
+
+    public function markAllRead()
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $userId = $_SESSION['user_id'] ?? null;
+
+        if (!$userId) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $notifModel = new Notification();
+        $success = $notifModel->markAllAsRead((int)$userId);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit;
     }
 
     public function updateProfile(): void

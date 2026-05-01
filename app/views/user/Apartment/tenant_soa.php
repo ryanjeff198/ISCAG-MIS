@@ -33,9 +33,9 @@
     .soa-details { display: flex; justify-content: space-between; margin-bottom: 30px; background: #f8f9fa; padding: 20px; border-radius: 8px; }
     .soa-details-left p, .soa-details-right p { margin: 5px 0; font-size: 0.95rem; }
     .soa-details strong { color: var(--primary-dark); }
-    .soa-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    .soa-table th { background: var(--primary-dark); color: white; padding: 12px; text-align: left; font-size: 0.85rem; }
-    .soa-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .soa-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 1px solid var(--border); }
+    .soa-table th { background: var(--primary-dark); color: white; padding: 12px; text-align: left; font-size: 0.85rem; border: 1px solid var(--border); }
+    .soa-table td { padding: 10px 12px; border: 1px solid var(--border); font-size: 0.9rem; }
     .soa-table tr:hover { background: #f8faf9; }
     .type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
     .type-badge.rent { background: rgba(23,107,69,0.1); color: #176b45; }
@@ -284,13 +284,13 @@
 <?php
 function getCategoryLabel($type) {
   $t = strtolower($type);
-  if (strpos($t, 'rent') !== false && strpos($t, 'payment') === false) return '🏠 Apartment Rent';
-  if (strpos($t, 'deposit') !== false || strpos($t, 'advance') !== false) return '💰 Initial Payments';
-  if (strpos($t, 'parking') !== false) return '🚗 Parking';
-  if (strpos($t, 'water') !== false) return '💧 Water Consumption';
-  if (strpos($t, 'contribution') !== false) return '🤝 Contribution';
-  if (strpos($t, 'payment') !== false) return '✅ Payment Records';
-  return '📋 Other';
+  if (strpos($t, 'rent') !== false && strpos($t, 'payment') === false) return 'Apartment Rent';
+  if (strpos($t, 'deposit') !== false || strpos($t, 'advance') !== false) return 'Initial Payments';
+  if (strpos($t, 'parking') !== false) return 'Parking';
+  if (strpos($t, 'water') !== false) return 'Water Consumption';
+  if (strpos($t, 'contribution') !== false) return 'Contribution';
+  if (strpos($t, 'payment') !== false) return 'Payment Records';
+  return 'Other';
 }
 function getBadgeClass($type) {
   $t = strtolower($type);

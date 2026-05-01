@@ -83,6 +83,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 30px;
+      border: 1px solid var(--border);
     }
     .soa-table th {
       background: var(--primary-dark);
@@ -90,10 +91,11 @@
       padding: 12px;
       text-align: left;
       font-size: 0.85rem;
+      border: 1px solid var(--border);
     }
     .soa-table td {
       padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
+      border: 1px solid var(--border);
       font-size: 0.9rem;
     }
     .soa-table tr:hover { background: #f8faf9; }
@@ -150,6 +152,28 @@
       padding: 12px;
       background: rgba(23,107,69,0.04);
       border-left: 3px solid var(--primary);
+    }
+    
+    .soa-stamp {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-15deg);
+      font-size: 5rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      pointer-events: none;
+      z-index: 10;
+      border: 8px solid;
+      padding: 10px 40px;
+      border-radius: 20px;
+      display: none;
+    }
+    .soa-stamp.paid {
+      color: rgba(22, 163, 74, 0.12); /* Green */
+      border-color: rgba(22, 163, 74, 0.12);
+      display: block;
     }
 
     .controls-panel {
@@ -379,6 +403,8 @@
             </div>
           </div>
           
+          <div id="admin-soa-stamp" class="soa-stamp paid" style="display:none;">FULLY SETTLED</div>
+
           <div style="margin-top: 50px; text-align: center; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 20px;">
             <p>If you have any questions regarding this statement, please contact the Apartment Admin.</p>
             <p>This is a system-generated document and acts as an official statement of account.</p>
@@ -578,18 +604,28 @@
       const outstandingEl = document.getElementById('soa-outstanding');
       outstandingEl.textContent = '₱' + runningBalance.toLocaleString(undefined, {minimumFractionDigits:2});
       outstandingEl.style.color = runningBalance > 0 ? 'var(--danger)' : 'var(--success)';
+
+      // Stamp logic
+      const stampEl = document.getElementById('admin-soa-stamp');
+      if (stampEl) {
+        if (runningBalance <= 0 && filtered.length > 0) {
+          stampEl.style.display = 'block';
+        } else {
+          stampEl.style.display = 'none';
+        }
+      }
     }
 
     function getCategoryGroup(type) {
       const t = (type || '').toLowerCase();
-      if (t.includes('rent') && !t.includes('payment')) return '🏠 Apartment Rent';
-      if (t.includes('deposit') || t.includes('advance')) return '💰 Initial Payments (Deposit & Advance)';
-      if (t.includes('parking')) return '🚗 Parking';
-      if (t.includes('water')) return '💧 Water Consumption';
-      if (t.includes('contribution')) return '🤝 Contribution';
-      if (t.includes('invoice')) return '📄 Billing Invoices';
-      if (t.includes('payment')) return '✅ Payment Records';
-      return '📋 Other';
+      if (t.includes('rent') && !t.includes('payment')) return 'Apartment Rent';
+      if (t.includes('deposit') || t.includes('advance')) return 'Initial Payments (Deposit & Advance)';
+      if (t.includes('parking')) return 'Parking';
+      if (t.includes('water')) return 'Water Consumption';
+      if (t.includes('contribution')) return 'Contribution';
+      if (t.includes('invoice')) return 'Billing Invoices';
+      if (t.includes('payment')) return 'Payment Records';
+      return 'Other';
     }
   </script>
 </body>

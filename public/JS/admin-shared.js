@@ -393,6 +393,7 @@ function initDropdowns() {
 }
 
 function loadUserNav() {
+  console.log('[DEBUG] loadUserNav triggered');
   // Check for staff profile first if in staff mode
   let user = getUser();
   let roleLabel = 'Apartment Manager';
@@ -409,12 +410,14 @@ function loadUserNav() {
   const navRole = document.querySelector('.sidebar-user .user-info span');
   const navAvatar = document.getElementById('nav-avatar');
 
-  if (navName) navName.textContent = user.name;
-  
-  // Prevent older local JS storage from overwriting real PHP roles like 'Admin' with 'Staff_Tenant'
-  if (navRole && !navRole.hasAttribute('data-preserve-role')) {
-      navRole.textContent = roleLabel;
+  // PROTECTION: If we are on a User/Tenant page with preserve attribute, DO NOT let localStorage overwrite
+  if (navName && (navName.hasAttribute('data-preserve') || navName.hasAttribute('data-force-sync'))) {
+    console.log('[DEBUG] loadUserNav ABORTED - Preservation attribute detected');
+    return; // Exit completely if we detect preservation intent
   }
+
+  if (navName) navName.textContent = user.name;
+  if (navRole) navRole.textContent = roleLabel;
   
   if (navAvatar) {
     const photo = localStorage.getItem('mis_apartment_photo') || localStorage.getItem('mis_user_photo');
@@ -882,7 +885,9 @@ function standardizePage(role) {
   initReportsData();
   initSidebar();
   initDropdowns();
-  loadUserNav();
+  if (role !== 'user' && role !== 'tenant') {
+    loadUserNav();
+  }
   setTopBarDate();
   initNotifBadge(role);
   initLogoutModal();
