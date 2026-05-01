@@ -69,11 +69,18 @@ class Auth
     {
         self::protect();
         if (!self::hasRole($roles)) {
-            // Redirect unauthorized roles back to their dashboard
-            // Admins go to admin dashboard, Users go to user dashboard
+            // Redirect unauthorized roles back to their own dashboard
             $role = self::role();
-            if ($role === 'Admin' || str_starts_with($role, 'Staff_')) {
+            if ($role === 'Admin') {
                 header('Location: ' . url('/admin/dashboard'));
+            } elseif ($role === 'Staff_Tenant') {
+                header('Location: ' . url('/admin/apartment'));
+            } elseif ($role === 'Staff_Male') {
+                header('Location: ' . url('/admin/dawah/male'));
+            } elseif ($role === 'Staff_Female') {
+                header('Location: ' . url('/admin/dawah/female'));
+            } elseif ($role === 'Staff_Damayan') {
+                header('Location: ' . url('/admin/damayan'));
             } else {
                 header('Location: ' . url('/user/dashboard'));
             }

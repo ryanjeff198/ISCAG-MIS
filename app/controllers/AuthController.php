@@ -42,6 +42,12 @@ class AuthController extends Controller
                     header('Location: ' . url('/admin/dashboard'));
                 } elseif ($user['role'] === 'Staff_Tenant') {
                     header('Location: ' . url('/admin/apartment'));
+                } elseif ($user['role'] === 'Staff_Male') {
+                    header('Location: ' . url('/admin/dawah/male'));
+                } elseif ($user['role'] === 'Staff_Female') {
+                    header('Location: ' . url('/admin/dawah/female'));
+                } elseif ($user['role'] === 'Staff_Damayan') {
+                    header('Location: ' . url('/admin/damayan'));
                 } else {
                     header('Location: ' . url('/user/dashboard'));
                 }
@@ -234,6 +240,12 @@ class AuthController extends Controller
                     header('Location: ' . url('/admin/dashboard'));
                 } elseif ($user['role'] === 'Staff_Tenant') {
                     header('Location: ' . url('/admin/apartment'));
+                } elseif ($user['role'] === 'Staff_Male') {
+                    header('Location: ' . url('/admin/dawah/male'));
+                } elseif ($user['role'] === 'Staff_Female') {
+                    header('Location: ' . url('/admin/dawah/female'));
+                } elseif ($user['role'] === 'Staff_Damayan') {
+                    header('Location: ' . url('/admin/damayan'));
                 } else {
                     header('Location: ' . url('/user/dashboard'));
                 }

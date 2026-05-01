@@ -419,7 +419,7 @@ function loadUserNav() {
   }
 
   const navName = document.getElementById('nav-name');
-  const navRole = document.querySelector('.sidebar-user .user-info span');
+  const navRole = document.getElementById('nav-role');
   const navAvatar = document.getElementById('nav-avatar');
 
   // PROTECTION: If we are on a User/Tenant page with preserve attribute, DO NOT let localStorage overwrite
@@ -432,57 +432,67 @@ function loadUserNav() {
   if (navRole && !navRole.hasAttribute('data-preserve-role')) {
     navRole.textContent = roleLabel;
   }
-  
+
+  // Avatar: never apply localStorage photos on pages that mark the avatar as PHP-controlled
   if (navAvatar) {
-    const photo = localStorage.getItem('mis_apartment_photo') || localStorage.getItem('mis_user_photo');
-    if (photo) {
-      navAvatar.textContent = '';
-      navAvatar.style.backgroundImage = 'url(' + photo + ')';
-      navAvatar.style.backgroundSize = 'cover';
-      navAvatar.style.backgroundPosition = 'center';
+    if (navAvatar.hasAttribute('data-preserve-avatar')) {
+      // PHP rendered the correct initials — do not touch at all
     } else {
-      navAvatar.textContent = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+      const photo = localStorage.getItem('mis_apartment_photo') || localStorage.getItem('mis_user_photo');
+      if (photo) {
+        navAvatar.textContent = '';
+        navAvatar.style.backgroundImage = 'url(' + photo + ')';
+        navAvatar.style.backgroundSize = 'cover';
+        navAvatar.style.backgroundPosition = 'center';
+      }
     }
   }
 }
 
 /**
- * syncSessionUser() — Syncs the PHP session name to localStorage to ensure
- * the UI reflects the actual logged-in account.
+ * syncSessionUser() — Syncs the PHP session to localStorage.
+ * Clears stale data from other departments when switching accounts.
  */
 function syncSessionUser(sessionName, sessionEmail, sessionRole) {
   if (!sessionName) return;
   
-  // Update main user
+  // Update main user in localStorage
   const user = getUser();
   if (user.name !== sessionName) {
     user.name = sessionName;
     if (sessionEmail) user.email = sessionEmail;
     localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+    
+    // Clear stale photos when user identity changes
+    localStorage.removeItem('mis_user_photo');
+    localStorage.removeItem('mis_apartment_photo');
   }
 
-  // Update staff profile
-  const staffRaw = localStorage.getItem('mis_apartment_staff_profile');
-  if (staffRaw) {
-    const staff = JSON.parse(staffRaw);
-    if (staff.name !== sessionName) {
-      staff.name = sessionName;
-      if (sessionEmail) staff.email = sessionEmail;
-      localStorage.setItem('mis_apartment_staff_profile', JSON.stringify(staff));
+  // Map role to human-readable occupation
+  const roleLabels = {
+    'Staff_Male': 'Male Da\'wah Manager',
+    'Staff_Female': 'Female Da\'wah Manager',
+    'Staff_Tenant': 'Apartment Manager',
+    'Staff_Damayan': 'Damayan Manager',
+    'Admin': 'System Administrator'
+  };
+
+  // Only update staff profile if in an apartment context
+  if (sessionRole === 'Staff_Tenant') {
+    const staffRaw = localStorage.getItem('mis_apartment_staff_profile');
+    if (staffRaw) {
+      const staff = JSON.parse(staffRaw);
+      if (staff.name !== sessionName) {
+        staff.name = sessionName;
+        if (sessionEmail) staff.email = sessionEmail;
+        staff.occupation = roleLabels[sessionRole] || staff.occupation;
+        localStorage.setItem('mis_apartment_staff_profile', JSON.stringify(staff));
+      }
     }
   } else {
-    // Initialize staff profile if missing
-    const newStaff = { 
-      id: 'STF-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0'), 
-      name: sessionName, 
-      email: sessionEmail || '', 
-      phone: '', 
-      gender: '', 
-      arabic: sessionName, 
-      occupation: sessionRole || 'Apartment Manager', 
-      since: new Date().toISOString().split('T')[0] 
-    };
-    localStorage.setItem('mis_apartment_staff_profile', JSON.stringify(newStaff));
+    // Not in apartment context — clear stale apartment data to prevent bleed
+    localStorage.removeItem('mis_apartment_photo');
+    localStorage.removeItem('mis_user_photo');
   }
 }
 

@@ -281,13 +281,42 @@ class UserController extends Controller
     public function maleCounseling(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
-        $this->view('user/Da\'wah/Male/user_form-male-counseling');
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/DawahAvailability.php';
+        
+        $model = new CounselingRequest();
+        $availModel = new DawahAvailability();
+        
+        $history = $model->getByUser($_SESSION['user_id']);
+        $analytics = $model->getAnalytics('male');
+        $blockedDates = $availModel->getBlockedDates('male');
+        
+        $this->view('user/Da\'wah/Male/user_form-male-counseling', [
+            'history' => $history,
+            'analytics' => $analytics,
+            'blockedDates' => $blockedDates
+        ]);
     }
 
     public function femaleCounseling(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
-        $this->view('user/Da\'wah/Female/user_form-female-counseling');
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $model = new CounselingRequest();
+        $history = $model->getByUser($_SESSION['user_id']);
+        $analytics = $model->getAnalytics('female');
+
+        $this->view('user/Da\'wah/Female/user_form-female-counseling', [
+            'history' => $history,
+            'analytics' => $analytics
+        ]);
+    }
+
+    public function counselingResources(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        // Only allow if user has an approved request (optional check, but good for security)
+        $this->view('user/Da\'wah/Male/counseling_resources');
     }
 
     public function marriageForm(): void
@@ -385,5 +414,44 @@ class UserController extends Controller
             }
         }
         echo json_encode(['success' => false]);
+    }
+
+    public function submitCounseling(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid method.']);
+            return;
+        }
+
+        $userId = $_SESSION['user_id'];
+        $gender = strtolower($_POST['gender'] ?? '');
+        $reason = $_POST['reason'] ?? '';
+        $date = $_POST['preferred_date'] ?? null;
+        $time = $_POST['preferred_time'] ?? null;
+
+        if (empty($reason)) {
+            echo json_encode(['success' => false, 'message' => 'Reason is required.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $model = new CounselingRequest();
+        
+        $success = $model->create([
+            'tenant_id' => $userId,
+            'gender' => $gender,
+            'reason' => $reason,
+            'preferred_date' => $date,
+            'preferred_time' => $time,
+            'status' => 'pending'
+        ]);
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? 'Request submitted successfully.' : 'Failed to save request.'
+        ]);
     }
 }
