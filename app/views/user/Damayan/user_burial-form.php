@@ -69,52 +69,52 @@ Auth::protect();
         /* ─── Header ─── */
         .form-doc-header {
             background: linear-gradient(135deg, #fafdf9 0%, #f0f5f2 100%);
-            padding: 36px 40px;
+            padding: 48px 40px;
             border-bottom: 3px solid var(--primary);
         }
         .form-doc-header-top {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 24px;
-            margin-bottom: 12px;
+            gap: 32px;
+            margin-bottom: 24px;
         }
         .form-doc-header-logo {
-            width: 72px;
-            height: 72px;
+            width: 84px;
+            height: 84px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid var(--primary);
             flex-shrink: 0;
         }
         .form-doc-header-text {
             text-align: center;
         }
         .form-doc-header-text .arabic-line {
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             color: var(--primary-dark);
-            margin-bottom: 4px;
-            font-weight: 600;
-            text-transform: uppercase;
+            margin-bottom: 8px;
+            font-weight: 700;
         }
         .form-doc-header-text .org-name-ar {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: var(--text-muted);
-            margin-bottom: 6px;
-            font-weight: 500;
+            margin-bottom: 8px;
+            font-weight: 600;
         }
         .form-doc-header-text .org-name-en {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             font-family: 'Lora', serif;
             font-weight: 800;
             color: var(--primary-dark);
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
+            line-height: 1.2;
         }
         .form-doc-header-text .sec-reg {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
-            margin-top: 4px;
+            margin-top: 6px;
+            font-weight: 500;
         }
         .form-doc-title-bar {
             text-align: center;
@@ -560,7 +560,7 @@ Auth::protect();
             <div class="form-document">
                 <div class="form-doc-header">
                     <div class="form-doc-header-top">
-                        <img src="<?= asset('images/iscag-logo.png') ?>" alt="ISCAG Logo" class="form-doc-header-logo" />
+                        <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo" class="form-doc-header-logo" />
                         <div class="form-doc-header-text">
                             <div class="arabic-line">بسم الله الرحمن الرحيم</div>
                             <div class="org-name-ar">الجمعية الإسلامية للثقافة والرعاية الإجتماعية في غوام</div>

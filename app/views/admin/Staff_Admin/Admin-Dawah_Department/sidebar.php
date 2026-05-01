@@ -1,25 +1,28 @@
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar" style="--active-accent: <?= ($dawah_type ?? '') == 'female' ? '#be185d' : 'var(--primary)' ?>;">
   <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
     <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
   </button>
   <div class="sidebar-header">
     <div class="sidebar-brand">
       <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
-      <div class="brand-text"><strong>ISCAG MIS</strong><span>Da'wah Department</span></div>
+      <div class="brand-text">
+        <strong>ISCAG MIS</strong>
+        <span><?= ($dawah_type ?? '') == 'female' ? 'Female Da\'wah' : 'Male Da\'wah' ?></span>
+      </div>
     </div>
   </div>
   <div class="sidebar-user">
-    <div class="user-avatar" id="nav-avatar" style="background:var(--primary);">
+    <div class="user-avatar" id="nav-avatar" data-preserve-avatar style="background:<?= ($dawah_type ?? '') == 'female' ? '#be185d' : 'var(--primary)' ?>;">
       <?= strtoupper(substr($dbUser['first_name'] ?? 'D', 0, 1) . substr($dbUser['last_name'] ?? 'A', 0, 1)) ?>
     </div>
     <div class="user-info">
       <strong id="nav-name"><?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: 'Da\'wah Staff' ?></strong>
-      <span>Da'wah Manager</span>
+      <span id="nav-role" data-preserve-role><?= ($dawah_type ?? '') == 'female' ? 'Female Da\'wah Manager' : 'Male Da\'wah Manager' ?></span>
     </div>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Admin</div>
-    <a href="<?= url('/admin/dawah') ?>" class="nav-item <?= ($active_page ?? '') == 'dashboard' ? 'active' : '' ?>" data-tooltip="Dashboard">
+    <a href="<?= url(($dawah_type ?? '') == 'female' ? '/admin/dawah/female' : '/admin/dawah/male') ?>" class="nav-item <?= ($active_page ?? '') == 'dashboard' ? 'active' : '' ?>" data-tooltip="Dashboard">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" /></svg>
       <span class="nav-item-label">Dashboard</span>
     </a>

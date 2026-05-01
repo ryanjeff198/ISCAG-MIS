@@ -1134,7 +1134,10 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       reqTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted);">No service requests yet. Submit your first request above.</td></tr>';
     } else {
       reqTbody.innerHTML = reqs.map(r => {
-        const type = r.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        let type = r.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        if (r.type === 'male_counseling' || r.type === 'female_counseling' || r.type === 'counseling_male' || r.type === 'counseling_female') {
+          type = 'Counseling';
+        }
         return '<tr>' +
           '<td class="td-id">#' + r.id + '</td>' +
           '<td>' + type + '</td>' +

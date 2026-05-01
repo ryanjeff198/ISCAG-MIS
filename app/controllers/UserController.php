@@ -344,4 +344,43 @@ class UserController extends Controller
         }
         echo json_encode(['success' => false]);
     }
+
+    public function submitCounseling(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid method.']);
+            return;
+        }
+
+        $userId = $_SESSION['user_id'];
+        $gender = strtolower($_POST['gender'] ?? '');
+        $reason = $_POST['reason'] ?? '';
+        $date = $_POST['preferred_date'] ?? null;
+        $time = $_POST['preferred_time'] ?? null;
+
+        if (empty($reason)) {
+            echo json_encode(['success' => false, 'message' => 'Reason is required.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $model = new CounselingRequest();
+        
+        $success = $model->create([
+            'tenant_id' => $userId,
+            'gender' => $gender,
+            'reason' => $reason,
+            'preferred_date' => $date,
+            'preferred_time' => $time,
+            'status' => 'pending'
+        ]);
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? 'Request submitted successfully.' : 'Failed to save request.'
+        ]);
+    }
 }

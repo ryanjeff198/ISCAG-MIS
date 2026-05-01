@@ -71,6 +71,7 @@ $routes = [
     '/user/services/counseling/female' => ['UserController', 'femaleCounseling'],
     '/user/services/marriage-form' => ['UserController', 'marriageForm'],
     '/user/services/conversion-form' => ['UserController', 'conversionForm'],
+    '/user/services/counseling/submit' => ['UserController', 'submitCounseling'],
     '/user/services/charity' => ['UserController', 'charity'],
     '/user/apartment/apply' => ['UserController', 'apartmentApply'],
 
@@ -91,6 +92,8 @@ $routes = [
     '/admin/apartment/renewals/approve' => ['AdminController', 'approveRenewal'],
     '/admin/apartment/renewals/reject'  => ['AdminController', 'rejectRenewal'],
     '/admin/dawah'                   => ['AdminController', 'dawahAdminDashboard'],
+    '/admin/dawah/male'              => ['AdminController', 'dawahMaleDashboard'],
+    '/admin/dawah/female'            => ['AdminController', 'dawahFemaleDashboard'],
     '/admin/damayan'                 => ['AdminController', 'damayanAdminDashboard'],
     '/admin/payment'                 => ['AdminController', 'payment'],
 

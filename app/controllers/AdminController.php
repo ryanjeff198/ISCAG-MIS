@@ -194,25 +194,6 @@ class AdminController extends Controller
         ]);
     }
 
-    public function dawahAdminDashboard(): void
-    {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
-        require_once BASE_PATH . '/app/models/User.php';
-        $userModel = new User();
-        $dbUser = $userModel->findById($_SESSION['user_id']);
-        
-        // Mock data for now - in production this would fetch from service tables
-        $requests = [
-            ['id' => 'MC-1001', 'name' => 'Ahmed Ali', 'type' => 'counseling', 'service_label' => 'Counseling (Male)', 'date' => '2024-05-01', 'status' => 'Pending', 'status_class' => 'badge-pending'],
-            ['id' => 'MS-2002', 'name' => 'Zaid Khan', 'type' => 'marriage', 'service_label' => 'Marriage Service', 'date' => '2024-04-28', 'status' => 'Approved', 'status_class' => 'badge-approved'],
-            ['id' => 'CI-3003', 'name' => 'John Doe', 'type' => 'conversion', 'service_label' => 'Conversion Registration', 'date' => '2024-04-30', 'status' => 'Pending', 'status_class' => 'badge-pending'],
-        ];
-
-        $this->view('admin/Staff_Admin/Admin-Dawah_Department/dawah_dashboard', [
-            'dbUser' => $dbUser,
-            'requests' => $requests
-        ]);
-    }
 
     public function damayanAdminDashboard(): void
     {
@@ -964,6 +945,108 @@ class AdminController extends Controller
     public function dawahRecords(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
         $this->view('admin/mis_admin/dawah_records', ['active_page' => 'dawah_records']);
+    }
+
+    public function dawahAdminDashboard(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        $role = $_SESSION['role'] ?? '';
+        if ($role === 'Staff_Female') {
+            header('Location: ' . url('/admin/dawah/female'));
+            exit;
+        } else {
+            header('Location: ' . url('/admin/dawah/male'));
+            exit;
+        }
+    }
+
+    public function dawahMaleDashboard(): void {
+        Auth::protectRole(['Admin', 'Staff_Male']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        // Sync session with live DB data
+        if ($dbUser) {
+            $_SESSION['name'] = trim($dbUser['first_name'] . ' ' . $dbUser['last_name']);
+            $_SESSION['email'] = $dbUser['email'];
+        }
+        
+        $counselingModel = new CounselingRequest();
+        $rawRequests = $counselingModel->getByGender('male');
+        $analytics = $counselingModel->getAnalytics('male');
+
+        // Transform raw DB rows into the shape the dashboard JS expects
+        $requests = array_map(function($r) {
+            $statusMap = [
+                'pending'  => ['label' => 'Pending',  'class' => 'pending'],
+                'approved' => ['label' => 'Approved', 'class' => 'success'],
+                'rejected' => ['label' => 'Rejected', 'class' => 'danger'],
+            ];
+            $s = $statusMap[$r['status']] ?? ['label' => ucfirst($r['status']), 'class' => 'pending'];
+            return [
+                'id'            => $r['id'],
+                'name'          => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')),
+                'type'          => 'counseling',
+                'service_label' => 'Counseling — ' . ($r['reason'] ?? 'General'),
+                'date'          => date('M d, Y', strtotime($r['created_at'])),
+                'status'        => $s['label'],
+                'status_class'  => $s['class'],
+            ];
+        }, $rawRequests);
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/dawah_male_dashboard', [
+            'active_page' => 'dashboard',
+            'dbUser' => $dbUser,
+            'requests' => $requests,
+            'analytics' => $analytics
+        ]);
+    }
+
+    public function dawahFemaleDashboard(): void {
+        Auth::protectRole(['Admin', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        // Sync session with live DB data
+        if ($dbUser) {
+            $_SESSION['name'] = trim($dbUser['first_name'] . ' ' . $dbUser['last_name']);
+            $_SESSION['email'] = $dbUser['email'];
+        }
+        
+        $counselingModel = new CounselingRequest();
+        $rawRequests = $counselingModel->getByGender('female');
+        $analytics = $counselingModel->getAnalytics('female');
+
+        // Transform raw DB rows into the shape the dashboard JS expects
+        $requests = array_map(function($r) {
+            $statusMap = [
+                'pending'  => ['label' => 'Pending',  'class' => 'pending'],
+                'approved' => ['label' => 'Approved', 'class' => 'success'],
+                'rejected' => ['label' => 'Rejected', 'class' => 'danger'],
+            ];
+            $s = $statusMap[$r['status']] ?? ['label' => ucfirst($r['status']), 'class' => 'pending'];
+            return [
+                'id'            => $r['id'],
+                'name'          => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')),
+                'type'          => 'counseling',
+                'service_label' => 'Counseling — ' . ($r['reason'] ?? 'General'),
+                'date'          => date('M d, Y', strtotime($r['created_at'])),
+                'status'        => $s['label'],
+                'status_class'  => $s['class'],
+            ];
+        }, $rawRequests);
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/dawah_female_dashboard', [
+            'active_page' => 'dashboard',
+            'dbUser' => $dbUser,
+            'requests' => $requests,
+            'analytics' => $analytics
+        ]);
     }
 
     public function damayanRecords(): void {
