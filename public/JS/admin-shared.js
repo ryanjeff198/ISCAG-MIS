@@ -375,13 +375,14 @@ function initSidebar() {
 
 function initDropdowns() {
   const sidebar = document.getElementById('sidebar');
-  // Avoid conflict with User Sidebar which has its own dropdown logic
-  if (sidebar && sidebar.id === 'sidebar' && !sidebar.querySelector('.nav-dropdown-trigger[id$="-trigger"]')) {
-    // This looks like the Admin sidebar (no -trigger IDs on items)
-  } else if (sidebar) {
-    // If it's a user portal sidebar, we usually skip admin-level dropdown init
-    return;
-  }
+  if (!sidebar) return;
+
+  const brandText = sidebar.querySelector('.brand-text span')?.textContent || '';
+  const isAdmin = brandText.includes('Admin');
+  const isTenant = brandText.includes('User');
+
+  // If it's a User/Tenant sidebar, it already has its own logic in sidebar.php
+  if (isTenant) return;
 
   document.querySelectorAll('.nav-dropdown-trigger').forEach(trigger => {
     const menuId = trigger.getAttribute('data-menu');
