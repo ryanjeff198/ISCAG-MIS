@@ -238,6 +238,29 @@ class ApartmentController extends Controller {
         }
 
         if ($allSuccess) {
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $adminNotif = new AdminNotification();
+            $tenantName = $_SESSION['name'] ?? 'A tenant';
+            $vc = count($body['vehicles']);
+            $adminNotif->create(
+                'Parking Application Received',
+                $tenantName . ' has submitted a parking application for ' . $vc . ' vehicle(s).',
+                'request',
+                $tenantName,
+                $userId,
+                '/admin/mis_admin/parking_approval'
+            );
+
+            // Notify the tenant
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $tenantNotif = new Notification();
+            $tenantNotif->create(
+                $userId,
+                'Parking Request Submitted',
+                'Your parking application for ' . $vc . ' vehicle(s) has been successfully submitted and is under review.',
+                'system'
+            );
+
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Some applications failed to save']);
@@ -252,6 +275,30 @@ class ApartmentController extends Controller {
         require_once BASE_PATH . '/app/models/ApartmentApp.php';
         $model = new ApartmentApp();
         $ok = $model->updateStatusByTenant($userId, 'Pending');
+        
+        if ($ok) {
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $adminNotif = new AdminNotification();
+            $tenantName = $_SESSION['name'] ?? 'A user';
+            $adminNotif->create(
+                'New Application Received',
+                $tenantName . ' has submitted a new apartment application.',
+                'request',
+                $tenantName,
+                $userId,
+                '/admin/apartment/confirmation'
+            );
+
+            // Notify the tenant
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $tenantNotif = new Notification();
+            $tenantNotif->create(
+                $userId,
+                'Application Under Review',
+                'Your apartment application has been submitted successfully and is currently undergoing administrative review.',
+                'system'
+            );
+        }
         
         echo json_encode(['success' => $ok]);
     }
@@ -644,6 +691,19 @@ class ApartmentController extends Controller {
                 'payment'
             );
 
+            // ── Admin Notification ──
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $adminNotif = new AdminNotification();
+            $tenantName = $_SESSION['name'] ?? 'A tenant';
+            $adminNotif->create(
+                'Payment Received',
+                $tenantName . ' submitted a payment for: ' . $itemsText . ' (Ref: ' . htmlspecialchars($refNo, ENT_QUOTES) . ').',
+                'payment',
+                $tenantName,
+                $userId,
+                '/admin/mis_admin/billing'
+            );
+
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Some payments could not be processed.']);
@@ -671,6 +731,31 @@ class ApartmentController extends Controller {
         $renewalModel = new LeaseRenewal();
 
         $ok = $renewalModel->requestRenewal((int) $leaseId, $userId, $term);
+
+        if ($ok) {
+            // Notify admin about the renewal request
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $adminNotif = new AdminNotification();
+            $tenantName = $_SESSION['name'] ?? 'A tenant';
+            $adminNotif->create(
+                'Contract Renewal Requested',
+                $tenantName . ' has requested a lease renewal for ' . $term . ' months.',
+                'request',
+                $tenantName,
+                $userId,
+                '/admin/apartment/renewals'
+            );
+
+            // Notify the tenant
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $tenantNotif = new Notification();
+            $tenantNotif->create(
+                $userId,
+                'Renewal Request Submitted',
+                'Your request to renew your contract for ' . $term . ' months has been submitted to the admin for review.',
+                'system'
+            );
+        }
 
         echo json_encode(['success' => $ok]);
     }

@@ -20,7 +20,7 @@ class AdminController extends Controller
         // ── KPI Data ──
         $totalUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
         $pendingApprovals = (int) $db->query("SELECT COUNT(*) FROM apartmentsapp WHERE status = 'Pending'")->fetchColumn();
-        $auditFlags = (int) $db->query("SELECT COUNT(*) FROM notifications WHERE is_read = 0")->fetchColumn();
+        $auditFlags = (int) $db->query("SELECT COUNT(*) FROM admin_notifications WHERE is_read = 0")->fetchColumn();
         $totalApplications = (int) $db->query("SELECT COUNT(*) FROM apartmentsapp")->fetchColumn();
         $totalParking = (int) $db->query("SELECT COUNT(*) FROM tenant_parking")->fetchColumn();
 
@@ -35,7 +35,7 @@ class AdminController extends Controller
         // ── Chart: System Activity (last 7 days) ──
         $stmtActivity = $db->query("
             SELECT DATE(created_at) as date, COUNT(*) as count 
-            FROM notifications 
+            FROM admin_notifications 
             GROUP BY DATE(created_at) 
             ORDER BY date DESC 
             LIMIT 7
@@ -54,10 +54,8 @@ class AdminController extends Controller
 
         // ── Recent Activity ──
         $stmtLogs = $db->query("
-            SELECT n.*, t.first_name, t.last_name, t.email 
-            FROM notifications n
-            LEFT JOIN tenant_accounts t ON n.tenant_id = t.tenant_id
-            ORDER BY n.created_at DESC 
+            SELECT * FROM admin_notifications 
+            ORDER BY created_at DESC 
             LIMIT 8
         ");
         $recentLogs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -96,7 +94,7 @@ class AdminController extends Controller
         $totalUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
         $totalApps = (int) $db->query("SELECT COUNT(*) FROM apartmentsapp")->fetchColumn();
         $totalParking = (int) $db->query("SELECT COUNT(*) FROM tenant_parking")->fetchColumn();
-        $totalNotifs = (int) $db->query("SELECT COUNT(*) FROM notifications")->fetchColumn();
+        $totalNotifs = (int) $db->query("SELECT COUNT(*) FROM admin_notifications")->fetchColumn();
 
         // ── User Growth (simulated monthly distribution) ──
         $userGrowth = [];
@@ -141,7 +139,7 @@ class AdminController extends Controller
         ];
 
         // ── Activity Timeline ──
-        $activityTimeline = $db->query("SELECT DATE(created_at) as date, COUNT(*) as count FROM notifications GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 14")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $activityTimeline = $db->query("SELECT DATE(created_at) as date, COUNT(*) as count FROM admin_notifications GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 14")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $activityTimeline = array_reverse($activityTimeline);
 
         $this->view('admin/mis_admin/admin_analytics', [
@@ -376,6 +374,17 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
             $model->updateApplicationStatus($id, 'Rejected', $reason);
+            $tenantId = $model->getTenantIdByApplicationId($id);
+
+            // Notify tenant about rejection
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $notifModel = new Notification();
+            $notifModel->create(
+                $tenantId,
+                'Application Status Update',
+                'Your apartment application has been reviewed. Unfortunately, it was rejected. Reason: ' . htmlspecialchars($reason),
+                'alert'
+            );
             $this->logAudit('APARTMENT', 'REJECT_APP', "Rejected application ID: $id. Reason: $reason");
         }
         header('Location: ' . url('/admin/apartment/confirmation'));
@@ -1076,9 +1085,45 @@ class AdminController extends Controller
     }
 
     public function notificationInbox(): void {
-        // die('DEBUG: notificationInbox called');
         Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
-        $this->view('admin/mis_admin/notification_inbox', ['active_page' => 'notification']);
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
+        $model = new AdminNotification();
+        $notifications = $model->getAll(100);
+        $unreadCount = $model->getUnreadCount();
+
+        $this->view('admin/mis_admin/notification_inbox', [
+            'active_page'   => 'notification',
+            'notifications' => $notifications,
+            'unreadCount'   => $unreadCount
+        ]);
+    }
+
+    /**
+     * AJAX: Mark a single admin notification as read.
+     */
+    public function markAdminNotifRead(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
+        header('Content-Type: application/json');
+        $body = json_decode(file_get_contents('php://input'), true);
+        $id = (int)($body['id'] ?? 0);
+        if (!$id) { echo json_encode(['success' => false]); return; }
+
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
+        $model = new AdminNotification();
+        $ok = $model->markAsRead($id);
+        echo json_encode(['success' => $ok, 'unread' => $model->getUnreadCount()]);
+    }
+
+    /**
+     * AJAX: Mark ALL admin notifications as read.
+     */
+    public function markAllAdminNotifsRead(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
+        header('Content-Type: application/json');
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
+        $model = new AdminNotification();
+        $ok = $model->markAllAsRead();
+        echo json_encode(['success' => $ok, 'unread' => 0]);
     }
 
     public function serveTenantImage(): void {

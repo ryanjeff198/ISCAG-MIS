@@ -218,14 +218,16 @@
           </div>
           <div class="card" id="activity-feed-container" style="padding:12px 16px">
             <?php if(!empty($recentLogs)): foreach($recentLogs as $log):
-              $ini=strtoupper(substr($log['first_name']??'S',0,1).substr($log['last_name']??'Y',0,1));
-              $nm=htmlspecialchars(($log['first_name']??'System').' '.($log['last_name']??''));
-              $act=htmlspecialchars($log['title']??'System Action');
-              $tm=date('M d, g:i A',strtotime($log['created_at']));
-              $tc='n';
-              if(stripos($act,'approv')!==false||stripos($act,'assign')!==false)$tc='s';
-              elseif(stripos($act,'pend')!==false||stripos($act,'wait')!==false)$tc='w';
-              elseif(stripos($act,'reject')!==false||stripos($act,'delete')!==false)$tc='d';
+              $actor = $log['actor_name'] ?? 'System';
+              $actorParts = explode(' ', trim($actor));
+              $ini = strtoupper(substr($actorParts[0], 0, 1) . (count($actorParts) > 1 ? substr(end($actorParts), 0, 1) : ''));
+              $nm = htmlspecialchars($actor);
+              $act = htmlspecialchars($log['title'] ?? 'System Action');
+              $tm = date('M d, g:i A', strtotime($log['created_at']));
+              $tc = 'n';
+              if (stripos($act, 'approv') !== false || stripos($act, 'assign') !== false || stripos($act, 'paid') !== false) $tc = 's';
+              elseif (stripos($act, 'pend') !== false || stripos($act, 'wait') !== false || stripos($act, 'receiv') !== false) $tc = 'w';
+              elseif (stripos($act, 'reject') !== false || stripos($act, 'delete') !== false) $tc = 'd';
             ?>
             <div class="feed-item">
               <div class="feed-av"><?=$ini?></div>
@@ -267,46 +269,10 @@ document.addEventListener("DOMContentLoaded",function(){
   const bR=<?=json_encode($billingStats??[])?>;
   new Chart(document.getElementById('billingChart'),{type:'bar',data:{labels:bR.map(d=>d.status),datasets:[{label:'Invoices',data:bR.map(d=>+d.count),backgroundColor:bR.map(d=>sc(d.status)),borderRadius:6,barThickness:28}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:c=>'₱'+Number(bR[c.dataIndex]?.total||0).toLocaleString()}}},scales:{x:{beginAtZero:true,grid:{color:'#e8ece9',drawBorder:false},ticks:{stepSize:1}},y:{grid:{display:false}}}}});
 
-  updateDashboardKPIs();
-  renderActivityFeedJS();
-  window.addEventListener('activityLogUpdated', () => {
-    updateDashboardKPIs();
-    renderActivityFeedJS();
-  });
+  // 4. Unit Occupancy
+  const oR=<?=json_encode($occupancyData??[])?>;
+  new Chart(document.getElementById('occupancyChart'),{type:'doughnut',data:{labels:oR.map(d=>d.status),datasets:[{data:oR.map(d=>+d.count),backgroundColor:oR.map(d=>sc(d.status)),borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
 });
-
-function renderActivityFeedJS() {
-  const container = document.getElementById('activity-feed-container');
-  if (!container) return;
-  const log = getActivityLog().slice(0, 5); // Show latest 5
-  
-  if (log.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:.85rem">No recent activity found.</div>';
-    return;
-  }
-
-  container.innerHTML = log.map(l => {
-    const ini = (l.actor || 'System').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-    const act = l.action || 'System Action';
-    const tm = timeAgo(l.time);
-    let tc = 'n';
-    const low = act.toLowerCase();
-    if (low.includes('approv') || low.includes('assign')) tc = 's';
-    else if (low.includes('pend') || low.includes('wait')) tc = 'w';
-    else if (low.includes('reject') || low.includes('delete')) tc = 'd';
-
-    return `
-      <div class="feed-item" style="${l.read ? 'opacity: 0.7;' : 'border-left: 3px solid var(--primary); padding-left: 10px;'}">
-        <div class="feed-av">${ini}</div>
-        <div class="feed-body">
-          <div class="feed-text"><strong>${l.actor || 'System'}</strong> — ${act}</div>
-          <div class="feed-time">${tm}</div>
-        </div>
-        <span class="feed-tag ${tc}">${(l.type || 'info').charAt(0).toUpperCase() + (l.type || 'info').slice(1)}</span>
-      </div>
-    `;
-  }).join('');
-}
 
 function timeAgo(date) {
   const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -317,31 +283,6 @@ function timeAgo(date) {
   interval = seconds / 60;
   if (interval > 1) return Math.floor(interval) + " minutes ago";
   return "Just now";
-}
-
-function updateDashboardKPIs() {
-  const log = getActivityLog();
-  const unreadCount = log.filter(l => !l.read).length;
-  
-  const unreadVal = document.getElementById('kpi-unread-val');
-  const unreadSub = document.getElementById('kpi-unread-subtext');
-  const unreadTrend = document.getElementById('kpi-unread-trend');
-  
-  if (unreadVal) unreadVal.textContent = unreadCount;
-  if (unreadSub) unreadSub.textContent = unreadCount > 0 ? unreadCount + ' unread' : 'All clear';
-  
-    if (unreadTrend) {
-      if (unreadCount === 0) {
-        unreadTrend.className = 'kpi-trend up';
-        unreadTrend.querySelector('.trend-icon').textContent = '↑';
-      } else if (unreadCount > 5) {
-        unreadTrend.className = 'kpi-trend down';
-        unreadTrend.querySelector('.trend-icon').textContent = '↓';
-      } else {
-        unreadTrend.className = 'kpi-trend flat';
-        unreadTrend.querySelector('.trend-icon').textContent = '—';
-      }
-    }
 }
 </script>
 </body>

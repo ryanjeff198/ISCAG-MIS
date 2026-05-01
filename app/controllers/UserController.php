@@ -24,6 +24,12 @@ class UserController extends Controller
         
         $appModel = new ApartmentApp();
         $application = $appModel->getApplication($userId);
+
+        // Run automated billing reminder check
+        try {
+            require_once BASE_PATH . '/app/helpers/BillingReminder.php';
+            BillingReminder::checkAndNotify($userId);
+        } catch (\Exception $e) { /* silently continue */ }
         
         $this->view('dashboard', [
             'account' => $account,
