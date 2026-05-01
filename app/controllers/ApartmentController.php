@@ -238,6 +238,29 @@ class ApartmentController extends Controller {
         }
 
         if ($allSuccess) {
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $adminNotif = new AdminNotification();
+            $tenantName = $_SESSION['name'] ?? 'A tenant';
+            $vc = count($body['vehicles']);
+            $adminNotif->create(
+                'Parking Application Received',
+                $tenantName . ' has submitted a parking application for ' . $vc . ' vehicle(s).',
+                'request',
+                $tenantName,
+                $userId,
+                '/admin/mis_admin/parking_approval'
+            );
+
+            // Notify the tenant
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $tenantNotif = new Notification();
+            $tenantNotif->create(
+                $userId,
+                'Parking Request Submitted',
+                'Your parking application for ' . $vc . ' vehicle(s) has been successfully submitted and is under review.',
+                'system'
+            );
+
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Some applications failed to save']);
@@ -252,6 +275,30 @@ class ApartmentController extends Controller {
         require_once BASE_PATH . '/app/models/ApartmentApp.php';
         $model = new ApartmentApp();
         $ok = $model->updateStatusByTenant($userId, 'Pending');
+        
+        if ($ok) {
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $adminNotif = new AdminNotification();
+            $tenantName = $_SESSION['name'] ?? 'A user';
+            $adminNotif->create(
+                'New Application Received',
+                $tenantName . ' has submitted a new apartment application.',
+                'request',
+                $tenantName,
+                $userId,
+                '/admin/apartment/confirmation'
+            );
+
+            // Notify the tenant
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $tenantNotif = new Notification();
+            $tenantNotif->create(
+                $userId,
+                'Application Under Review',
+                'Your apartment application has been submitted successfully and is currently undergoing administrative review.',
+                'system'
+            );
+        }
         
         echo json_encode(['success' => $ok]);
     }
@@ -399,8 +446,7 @@ class ApartmentController extends Controller {
             $db = getDbConnection();
             $simulationMonths = 0; // REAL TIME
             $now = clone (new \DateTime());
-            if ($simulationMonths > 0) $now->modify("+$simulationMonths month");
-
+            
             // Family members for water bill
             $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM tenant_family_members WHERE tenant_id = ?");
             $stmt->execute([$userId]);
@@ -414,10 +460,25 @@ class ApartmentController extends Controller {
 
             // Extract paid recurring keys so we can mark them as PAID
             $paidRecurringKeys = [];
+            $advancePaymentCount = 0;
+            $advanceWaterCount = 0;
+            $advanceParkingCount = 0;
+            $advanceContributionCount = 0;
             foreach ($payments as $p) {
                 if ($p['payment_status'] === 'Paid' && strpos($p['payment_type'], '-') !== false) {
                     $paidRecurringKeys[] = strtolower($p['payment_type']);
+                    if (strtolower($p['payment_type']) === 'rent-advance') {
+                        $advancePaymentCount++;
+                        $simulationMonths++;
+                    }
+                    if (strtolower($p['payment_type']) === 'water-advance') $advanceWaterCount++;
+                    if (strtolower($p['payment_type']) === 'parking-advance') $advanceParkingCount++;
+                    if (strtolower($p['payment_type']) === 'contribution-advance') $advanceContributionCount++;
                 }
+            }
+
+            if ($simulationMonths > 0) {
+                $now->modify("+$simulationMonths month");
             }
 
             // Generate monthly charges from lease start
@@ -436,36 +497,55 @@ class ApartmentController extends Controller {
                 if ($monthCount > 0) {
                     // Monthly Rent
                     $rentId = 'rent-' . $monthKey;
+                    $isPaid = in_array(strtolower($rentId), $paidRecurringKeys);
+                    
+                    // Consume floating advance payments to mark future unpaid rents as paid
+                    if (!$isPaid && $advancePaymentCount > 0) {
+                        $isPaid = true;
+                        $advancePaymentCount--;
+                    }
+
                     $recurringCharges[] = [
                         'id'          => $rentId,
                         'date'        => $currentDate->format('Y-m-d'),
                         'type'        => 'Monthly Rent',
                         'description' => "Monthly Rent — $monthName",
                         'amount'      => (float)$lease['monthly_rent'],
-                        'status'      => in_array(strtolower($rentId), $paidRecurringKeys) ? 'Paid' : 'Unpaid'
+                        'status'      => $isPaid ? 'Paid' : 'Unpaid'
                     ];
 
                     // Water Bill
                     $waterId = 'water-' . $monthKey;
+                    $isWaterPaid = in_array(strtolower($waterId), $paidRecurringKeys);
+                    if (!$isWaterPaid && $advanceWaterCount > 0) {
+                        $isWaterPaid = true;
+                        $advanceWaterCount--;
+                    }
+                    
                     $recurringCharges[] = [
                         'id'          => $waterId,
                         'date'        => $currentDate->format('Y-m-d'),
                         'type'        => 'Water Bill',
                         'description' => "Water Consumption ($occupants occupants) — $monthName",
                         'amount'      => (float)($occupants * 100),
-                        'status'      => in_array(strtolower($waterId), $paidRecurringKeys) ? 'Paid' : 'Unpaid'
+                        'status'      => $isWaterPaid ? 'Paid' : 'Unpaid'
                     ];
-                    // temporarily disabled per user request
                     // Contribution
-                    // $contribId = 'contribution-' . $monthKey;
-                    // $recurringCharges[] = [
-                    //     'id'          => $contribId,
-                    //     'date'        => $currentDate->format('Y-m-d'),
-                    //     'type'        => 'Contribution',
-                    //     'description' => "Monthly Contribution — $monthName",
-                    //     'amount'      => 100.00,
-                    //     'status'      => in_array(strtolower($contribId), $paidRecurringKeys) ? 'Paid' : 'Unpaid'
-                    // ];
+                    $contribId = 'contribution-' . $monthKey;
+                    $isContribPaid = in_array(strtolower($contribId), $paidRecurringKeys);
+                    if (!$isContribPaid && $advanceContributionCount > 0) {
+                        $isContribPaid = true;
+                        $advanceContributionCount--;
+                    }
+                    
+                    $recurringCharges[] = [
+                        'id'          => $contribId,
+                        'date'        => $currentDate->format('Y-m-d'),
+                        'type'        => 'Contribution Fee',
+                        'description' => "Contribution (Security/Garbage) — $monthName",
+                        'amount'      => 150.00,
+                        'status'      => $isContribPaid ? 'Paid' : 'Unpaid'
+                    ];
                 }
 
                 $currentDate->modify('+1 month');
@@ -484,13 +564,19 @@ class ApartmentController extends Controller {
                     $pMonthName = $pDate->format('F Y');
                     $parkId = 'parking-' . $pa['parking_id'] . '-' . $pMonthKey;
                     
+                    $isParkPaid = in_array(strtolower($parkId), $paidRecurringKeys);
+                    if (!$isParkPaid && $advanceParkingCount > 0) {
+                        $isParkPaid = true;
+                        $advanceParkingCount--;
+                    }
+
                     $recurringCharges[] = [
                         'id'          => $parkId,
                         'date'        => $pDate->format('Y-m-d'),
                         'type'        => 'Parking Fee',
                         'description' => 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle') . ' (' . ($pa['plateno'] ?: 'N/A') . ") — $pMonthName",
                         'amount'      => 1000.00,
-                        'status'      => in_array(strtolower($parkId), $paidRecurringKeys) ? 'Paid' : 'Unpaid'
+                        'status'      => $isParkPaid ? 'Paid' : 'Unpaid'
                     ];
                     
                     $pDate->modify('+1 month');
@@ -507,74 +593,121 @@ class ApartmentController extends Controller {
         $this->view('user/Apartment/tenant_payment', [
             'lease'            => $lease,
             'payments'         => $payments,
-            'recurringCharges' => $recurringCharges
+            'recurringCharges' => $recurringCharges,
+            'occupants'        => $occupants ?? 1,
+            'parkingApps'      => $parkingApps ?? []
         ]);
     }
 
     /**
-     * Submit a payment (Initial or Recurring).
+     * Submit single or bulk payment (Initial or Recurring).
      */
     public function submitPayment() {
         Auth::protectRole(['Guest', 'Tenant']);
         header('Content-Type: application/json');
         
         $body = json_decode(file_get_contents('php://input'), true);
-        $paymentIdRaw = $body['payment_id'] ?? '';
+        $paymentIds = $body['payment_id'] ?? []; // Now accepts array or single string/int
+        if (!is_array($paymentIds)) {
+            $paymentIds = [$paymentIds]; // Normalize to array
+        }
+        
         $refNo = $body['reference'] ?? '';
         $userId = $_SESSION['user_id'];
 
-        if (!$paymentIdRaw) {
-            echo json_encode(['success' => false, 'message' => 'Invalid payment ID']);
+        if (empty($paymentIds) || empty($paymentIds[0])) {
+            echo json_encode(['success' => false, 'message' => 'No payment items selected']);
             return;
         }
 
         require_once BASE_PATH . '/app/models/Payment.php';
+        require_once BASE_PATH . '/app/models/Lease.php';
+        
         $paymentModel = new Payment();
-
-        // CASE 1: Recurring Charge (String ID like 'rent-2026-05')
-        if (is_string($paymentIdRaw) && strpos($paymentIdRaw, '-') !== false) {
-            // We need to create a new record for this recurring charge
-            $parts = explode('-', $paymentIdRaw);
-            $type = ucfirst($parts[0]); // Rent, Water, Parking
-            
-            // Get lease info to link payment
-            require_once BASE_PATH . '/app/models/Lease.php';
-            $lease = (new Lease())->getLeaseByTenantId($userId);
-            
-            if (!$lease) {
-                echo json_encode(['success' => false, 'message' => 'Active lease not found.']);
-                return;
-            }
-
-            $db = getDbConnection();
-            $amount = 0;
-            
-            // Determine amount based on type
-            if ($type === 'Rent') {
-                $amount = (float)$lease['monthly_rent'];
-            } elseif ($type === 'Water') {
-                $stmt = $db->prepare("SELECT COUNT(*) FROM tenant_family_members WHERE tenant_id = ?");
-                $stmt->execute([$userId]);
-                $occupants = (int)$stmt->fetchColumn() + 1;
-                $amount = (float)($occupants * 100);
-            } elseif ($type === 'Parking') {
-                $amount = 1000.00;
-            }
-            
-            // Make the payment_type exact like 'Rent-2026-05' to track EXACTLY which bill it was
-            $exactType = ucfirst(strtolower($paymentIdRaw)); 
-
-            // Create record
-            $stmt = $db->prepare("INSERT INTO payments (lease_id, tenant_id, amount, payment_type, reference_number, payment_status, payment_date) VALUES (?, ?, ?, ?, ?, 'Paid', NOW())");
-            $ok = $stmt->execute([$lease['lease_id'], $userId, $amount, $exactType, $refNo]);
-
-            echo json_encode(['success' => $ok]);
+        $lease = (new Lease())->getLeaseByTenantId($userId);
+        
+        if (!$lease) {
+            echo json_encode(['success' => false, 'message' => 'Active lease not found.']);
             return;
         }
 
-        // CASE 2: Initial Payment (Numeric ID)
-        $ok = $paymentModel->markAsPaid((int) $paymentIdRaw, $refNo);
-        echo json_encode(['success' => $ok]);
+        $db = getDbConnection();
+        $allOk = true;
+
+        foreach ($paymentIds as $pid) {
+            // CASE 1: Recurring Charge (String ID like 'rent-2026-05')
+            if (is_string($pid) && strpos($pid, '-') !== false) {
+                $parts = explode('-', $pid);
+                $type = ucfirst($parts[0]); // Rent, Water, Parking
+                $amount = 0;
+                
+                // Determine amount based on type
+                if ($type === 'Rent') {
+                    $amount = (float)$lease['monthly_rent'];
+                } elseif ($type === 'Water') {
+                    $stmt = $db->prepare("SELECT COUNT(*) FROM tenant_family_members WHERE tenant_id = ?");
+                    $stmt->execute([$userId]);
+                    $occupants = (int)$stmt->fetchColumn() + 1;
+                    $amount = (float)($occupants * 100);
+                } elseif ($type === 'Parking') {
+                    $amount = 1000.00;
+                } elseif ($type === 'Contribution') {
+                    $amount = 150.00;
+                }
+                
+                $exactType = ucfirst(strtolower($pid)); 
+
+                // Create record
+                $stmt = $db->prepare("INSERT INTO payments (lease_id, tenant_id, amount, payment_type, reference_number, payment_status, payment_date) VALUES (?, ?, ?, ?, ?, 'Paid', NOW())");
+                $ok = $stmt->execute([$lease['lease_id'], $userId, $amount, $exactType, $refNo]);
+                if (!$ok) $allOk = false;
+            } 
+            // CASE 2: Initial Payment (Numeric ID)
+            else {
+                $ok = $paymentModel->markAsPaid((int) $pid, $refNo);
+                if (!$ok) $allOk = false;
+            }
+        }
+
+        if ($allOk) {
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $notifModel = new Notification();
+            
+            $items = array_map(function($pid) {
+                if (is_string($pid) && strpos($pid, '-') !== false) {
+                    $parts = explode('-', $pid);
+                    return implode(" ", array_map('ucfirst', $parts));
+                }
+                return "Initial Payment";
+            }, $paymentIds);
+            
+            // Limit summary string if bulk paying many things
+            $itemsText = count($items) > 3 ? $items[0] . ' + ' . (count($items)-1) . ' other items' : implode(', ', $items);
+            
+            $notifModel->create(
+                $userId,
+                'Payment Received',
+                'Your payment for ' . $itemsText . ' has been recorded (Ref: ' . htmlspecialchars($refNo, ENT_QUOTES) . '). Thank you for settling your dues!',
+                'payment'
+            );
+
+            // ── Admin Notification ──
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $adminNotif = new AdminNotification();
+            $tenantName = $_SESSION['name'] ?? 'A tenant';
+            $adminNotif->create(
+                'Payment Received',
+                $tenantName . ' submitted a payment for: ' . $itemsText . ' (Ref: ' . htmlspecialchars($refNo, ENT_QUOTES) . ').',
+                'payment',
+                $tenantName,
+                $userId,
+                '/admin/mis_admin/billing'
+            );
+
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Some payments could not be processed.']);
+        }
     }
 
     /**
@@ -598,6 +731,31 @@ class ApartmentController extends Controller {
         $renewalModel = new LeaseRenewal();
 
         $ok = $renewalModel->requestRenewal((int) $leaseId, $userId, $term);
+
+        if ($ok) {
+            // Notify admin about the renewal request
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $adminNotif = new AdminNotification();
+            $tenantName = $_SESSION['name'] ?? 'A tenant';
+            $adminNotif->create(
+                'Contract Renewal Requested',
+                $tenantName . ' has requested a lease renewal for ' . $term . ' months.',
+                'request',
+                $tenantName,
+                $userId,
+                '/admin/apartment/renewals'
+            );
+
+            // Notify the tenant
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $tenantNotif = new Notification();
+            $tenantNotif->create(
+                $userId,
+                'Renewal Request Submitted',
+                'Your request to renew your contract for ' . $term . ' months has been submitted to the admin for review.',
+                'system'
+            );
+        }
 
         echo json_encode(['success' => $ok]);
     }
@@ -646,9 +804,17 @@ class ApartmentController extends Controller {
         $stmt->execute([$userId]);
         $billingRecords = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
+        // Count Advance Payments for Simulation
+        $advancePaymentCount = 0;
+        foreach ($payments as $p) {
+            if ($p['payment_status'] === 'Paid' && strtolower($p['payment_type']) === 'rent-advance') {
+                $advancePaymentCount++;
+            }
+        }
+
         // 2. Billing Engine (Reuse same logic as Admin SOA)
         $transactions = [];
-        $simulationMonths = 0; // REAL TIME
+        $simulationMonths = $advancePaymentCount; // Extend SOA time horizon based on advance payments
         $now = clone (new \DateTime());
         if ($simulationMonths > 0) $now->modify("+$simulationMonths month"); 
         $leaseStart = new \DateTime($lease['start_date']);
@@ -681,16 +847,15 @@ class ApartmentController extends Controller {
                     'charge' => (float)($occupants * 100),
                     'payment' => 0
                 ];
-                // temporarily disabled per user request
                 // Contribution
-                // $transactions[] = [
-                //     'date' => $currentDate->format('Y-m-d'),
-                //     'type' => 'Contribution',
-                //     'description' => "Monthly Contribution — $monthName",
-                //     'ref' => 'LSE-C' . str_pad($lease['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $monthKey,
-                //     'charge' => 100.00,
-                //     'payment' => 0
-                // ];
+                $transactions[] = [
+                    'date' => $currentDate->format('Y-m-d'),
+                    'type' => 'Contribution',
+                    'description' => "Monthly Contribution (Security/Garbage) — $monthName",
+                    'ref' => 'LSE-C' . str_pad($lease['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $monthKey,
+                    'charge' => 150.00,
+                    'payment' => 0
+                ];
             }
             $currentDate->modify('+1 month');
             $monthCount++;

@@ -31,8 +31,8 @@ $active_page = $active_page ?? 'dashboard';
                  alt="Profile" />
         </div>
         <div class="user-info">
-            <strong id="nav-name"><?= htmlspecialchars($_SESSION['name'] ?? 'User') ?></strong>
-            <span id="nav-role"><?= htmlspecialchars($_SESSION['role'] ?? 'Verified User') ?></span>
+            <strong id="nav-name" data-preserve="true" data-force-sync="true"><?= htmlspecialchars($_SESSION['name'] ?? 'User') ?></strong>
+            <span id="nav-role" data-preserve="true"><?= htmlspecialchars($_SESSION['role'] ?? 'Verified User') ?></span>
         </div>
     </div>
     <nav class="sidebar-nav">

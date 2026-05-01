@@ -30,7 +30,7 @@ class AdminController extends Controller
         // ── KPI Data ──
         $totalUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
         $pendingApprovals = (int) $db->query("SELECT COUNT(*) FROM apartmentsapp WHERE status = 'Pending'")->fetchColumn();
-        $auditFlags = (int) $db->query("SELECT COUNT(*) FROM notifications WHERE is_read = 0")->fetchColumn();
+        $auditFlags = (int) $db->query("SELECT COUNT(*) FROM admin_notifications WHERE is_read = 0")->fetchColumn();
         $totalApplications = (int) $db->query("SELECT COUNT(*) FROM apartmentsapp")->fetchColumn();
         $totalParking = (int) $db->query("SELECT COUNT(*) FROM tenant_parking")->fetchColumn();
 
@@ -45,7 +45,7 @@ class AdminController extends Controller
         // ── Chart: System Activity (last 7 days) ──
         $stmtActivity = $db->query("
             SELECT DATE(created_at) as date, COUNT(*) as count 
-            FROM notifications 
+            FROM admin_notifications 
             GROUP BY DATE(created_at) 
             ORDER BY date DESC 
             LIMIT 7
@@ -64,10 +64,8 @@ class AdminController extends Controller
 
         // ── Recent Activity ──
         $stmtLogs = $db->query("
-            SELECT n.*, t.first_name, t.last_name, t.email 
-            FROM notifications n
-            LEFT JOIN tenant_accounts t ON n.tenant_id = t.tenant_id
-            ORDER BY n.created_at DESC 
+            SELECT * FROM admin_notifications 
+            ORDER BY created_at DESC 
             LIMIT 8
         ");
         $recentLogs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -106,7 +104,7 @@ class AdminController extends Controller
         $totalUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
         $totalApps = (int) $db->query("SELECT COUNT(*) FROM apartmentsapp")->fetchColumn();
         $totalParking = (int) $db->query("SELECT COUNT(*) FROM tenant_parking")->fetchColumn();
-        $totalNotifs = (int) $db->query("SELECT COUNT(*) FROM notifications")->fetchColumn();
+        $totalNotifs = (int) $db->query("SELECT COUNT(*) FROM admin_notifications")->fetchColumn();
 
         // ── User Growth (simulated monthly distribution) ──
         $userGrowth = [];
@@ -151,7 +149,7 @@ class AdminController extends Controller
         ];
 
         // ── Activity Timeline ──
-        $activityTimeline = $db->query("SELECT DATE(created_at) as date, COUNT(*) as count FROM notifications GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 14")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $activityTimeline = $db->query("SELECT DATE(created_at) as date, COUNT(*) as count FROM admin_notifications GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 14")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $activityTimeline = array_reverse($activityTimeline);
 
         $this->view('admin/mis_admin/admin_analytics', [
@@ -412,6 +410,7 @@ class AdminController extends Controller
                 . 'A room will be assigned once payments are settled.',
                 'approval'
             );
+            $this->logAudit('APARTMENT', 'APPROVE_APP', "Approved application ID: $id for Tenant ID: $tenantId");
         }
         header('Location: ' . url('/admin/apartment/confirmation'));
     }
@@ -424,6 +423,18 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
             $model->updateApplicationStatus($id, 'Rejected', $reason);
+            $tenantId = $model->getTenantIdByApplicationId($id);
+
+            // Notify tenant about rejection
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $notifModel = new Notification();
+            $notifModel->create(
+                $tenantId,
+                'Application Status Update',
+                'Your apartment application has been reviewed. Unfortunately, it was rejected. Reason: ' . htmlspecialchars($reason),
+                'alert'
+            );
+            $this->logAudit('APARTMENT', 'REJECT_APP', "Rejected application ID: $id. Reason: $reason");
         }
         header('Location: ' . url('/admin/apartment/confirmation'));
     }
@@ -462,6 +473,7 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
             $model->updateParkingStatus($id, 'Approved');
+            $this->logAudit('PARKING', 'APPROVE_PARKING', "Approved parking for Tenant ID: $tid");
         }
         header('Location: ' . url('/admin/mis_admin/parking_approval'));
     }
@@ -474,6 +486,7 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
             $model->updateParkingStatus($id, 'Rejected', $reason);
+            $this->logAudit('PARKING', 'REJECT_PARKING', "Rejected parking ID: $id. Reason: $reason");
         }
         header('Location: ' . url('/admin/mis_admin/parking_approval'));
     }
@@ -545,6 +558,9 @@ class AdminController extends Controller
             if (!isset($tenantPayments[$tid])) $tenantPayments[$tid] = [];
             $tenantPayments[$tid][] = strtolower($p['payment_type']);
         }
+
+        // Group parking by tenant
+
         
         // Group parking by tenant
         $tenantParking = [];
@@ -560,13 +576,26 @@ class AdminController extends Controller
         // 3. Dynamic Timeline Engine (Run for all tenants)
         foreach ($leases as $lease) {
             $tid = $lease['tenant_id'];
-            $paidRecurringKeys = $tenantPayments[$tid] ?? [];
+            $paidKeys = $tenantPayments[$tid] ?? [];
             $myParkings = $tenantParking[$tid] ?? [];
             $occupants = ($memberMap[$tid] ?? 0) + 1; // +1 for the tenant
             
+            // Advance Counts
+            $advRent = 0; $advWater = 0; $advPark = 0; $advContrib = 0;
+            foreach ($paidKeys as $pk) {
+                if ($pk === 'rent-advance') $advRent++;
+                if ($pk === 'water-advance') $advWater++;
+                if ($pk === 'parking-advance') $advPark++;
+                if ($pk === 'contribution-advance') $advContrib++;
+            }
+
             $leaseStart = new \DateTime($lease['start_date']);
             $leaseEnd = $lease['end_date'] ? new \DateTime($lease['end_date']) : null;
-            $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
+            
+            // Extend timeline if they have advance rent
+            $simNow = clone $now;
+            if ($advRent > 0) $simNow->modify("+$advRent month");
+            $limitDate = ($leaseEnd && $leaseEnd < $simNow) ? $leaseEnd : $simNow;
             
             $currentDate = clone $leaseStart;
             $monthCount = 0;
@@ -580,9 +609,9 @@ class AdminController extends Controller
                     
                     if ($invoiceAmount > 0) {
                         // Check if paid in payments table
-                        $depPaid = in_array('deposit', $paidRecurringKeys);
+                        $depPaid = in_array('deposit', $paidKeys);
                         // Some systems might call it 'advance' or 'advance_rent'
-                        $advPaid = in_array('advance', $paidRecurringKeys) || in_array('advance_rent', $paidRecurringKeys);
+                        $advPaid = in_array('advance', $paidKeys) || in_array('advance_rent', $paidKeys);
                         
                         // We assume it's fully paid if both elements exist, or if the tenant is active, they probably paid it. 
                         // But let's check precisely based on payments table:
@@ -623,25 +652,37 @@ class AdminController extends Controller
                 
                 // Months 1+: Recurring Monthly Invoices (Rent + Water + Parking)
                 if ($monthCount > 0) {
+                    $monthSuffix = $currentDate->format('F Y');
+                    $monthKey = $currentDate->format('Y-m');
+
                     $rentId = 'rent-' . $monthKey;
                     $waterId = 'water-' . $monthKey;
+                    $contribId = 'contribution-' . $monthKey;
                     
-                    $rentPaid = in_array($rentId, $paidRecurringKeys);
-                    $waterPaid = in_array($waterId, $paidRecurringKeys);
+                    $rentPaid = in_array($rentId, $paidKeys);
+                    if (!$rentPaid && $advRent > 0) { $rentPaid = true; $advRent--; }
                     
-                    // Base Monthly Charge (Rent + Water)
-                    $invoiceAmount = (float)$lease['monthly_rent'] + ($occupants * 100);
-                    $itemsPaidCount = ($rentPaid ? 1 : 0) + ($waterPaid ? 1 : 0);
-                    $totItems = 2;
+                    $waterPaid = in_array($waterId, $paidKeys);
+                    if (!$waterPaid && $advWater > 0) { $waterPaid = true; $advWater--; }
+
+                    $contribPaid = in_array($contribId, $paidKeys);
+                    if (!$contribPaid && $advContrib > 0) { $contribPaid = true; $advContrib--; }
+                    
+                    // Monthly Charge: Rent + Water + Contribution
+                    $invoiceAmount = (float)$lease['monthly_rent'] + ($occupants * 100) + 150.00;
+                    $itemsPaidCount = ($rentPaid ? 1 : 0) + ($waterPaid ? 1 : 0) + ($contribPaid ? 1 : 0);
+                    $totItems = 3;
 
                     // Add Parking if applicable
                     foreach ($myParkings as $pa) {
                         $parkStart = new \DateTime($pa['datestarted'] ?: $pa['date']);
                         $parkStart->modify('first day of this month');
                         if ($currentDate >= $parkStart) {
-                            $parkId = 'parking-' . $monthKey;
-                            $parkingPaid = in_array($parkId, $paidRecurringKeys);
-                            $invoiceAmount += 1000;
+                            $parkId = 'parking-' . $pa['parking_id'] . '-' . $monthKey;
+                            $parkingPaid = in_array(strtolower($parkId), $paidKeys);
+                            if (!$parkingPaid && $advPark > 0) { $parkingPaid = true; $advPark--; }
+                            
+                            $invoiceAmount += 1000.00;
                             $totItems++;
                             if ($parkingPaid) $itemsPaidCount++;
                         }
@@ -774,14 +815,31 @@ class AdminController extends Controller
         $transactions = [];
         $now = new DateTime();
 
+        // Calculate advance payments per tenant to extend simulation horizon
+        $advancePaymentMap = [];
+        foreach ($payments as $p) {
+            $tid = $p['tenant_id'];
+            if (!isset($advancePaymentMap[$tid])) $advancePaymentMap[$tid] = 0;
+            if ($p['payment_status'] === 'Paid' && strtolower($p['payment_type']) === 'rent-advance') {
+                $advancePaymentMap[$tid]++;
+            }
+        }
+
         // A) Recurring Charges: Monthly Rent & Water
         foreach ($leases as $l) {
+            $tid = $l['tenant_id'];
             $leaseStart = new DateTime($l['start_date']);
             $currentDate = clone $leaseStart;
             
+            $myNow = clone $now;
+            $advCount = $advancePaymentMap[$tid] ?? 0;
+            if ($advCount > 0) {
+                $myNow->modify("+$advCount month");
+            }
+            
             // Limit to today or lease end
             $leaseEnd = $l['end_date'] ? new DateTime($l['end_date']) : null;
-            $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
+            $limitDate = ($leaseEnd && $leaseEnd < $myNow) ? $leaseEnd : $myNow;
 
             $monthCount = 0;
             while ($currentDate <= $limitDate) {
@@ -814,6 +872,18 @@ class AdminController extends Controller
                         'description'=> "Water Consumption ($occupancyCount occupants) — $monthName",
                         'ref'        => 'LSE-W' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
                         'charge'     => (float)($occupancyCount * 100),
+                        'payment'    => 0,
+                        'status'     => 'Unpaid'
+                    ];
+
+                    // 3. Contribution Fee (Monthly)
+                    $transactions[] = [
+                        'tenant_id'  => $l['tenant_id'],
+                        'date'       => $currentDate->format('Y-m-d'),
+                        'type'       => 'Contribution',
+                        'description'=> "Monthly Contribution (Security/Garbage) — $monthName",
+                        'ref'        => 'LSE-C' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
+                        'charge'     => 150.00,
                         'payment'    => 0,
                         'status'     => 'Unpaid'
                     ];
@@ -1000,6 +1070,83 @@ class AdminController extends Controller
         $this->view('admin/mis_admin/notification_broadcast', ['active_page' => 'notifications']);
     }
 
+    public function getBroadcastUsers(): void {
+        Auth::protectRole(['Admin']);
+        header('Content-Type: application/json');
+        $db = getDbConnection();
+        // Fetch all verified users for targeting
+        $users = $db->query("SELECT tenant_id, first_name, last_name, role FROM tenant_accounts WHERE is_verified = 1 ORDER BY last_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($users);
+    }
+
+    public function processBroadcast(): void {
+        Auth::protectRole(['Admin']);
+        header('Content-Type: application/json');
+        
+        $body = json_decode(file_get_contents('php://input'), true);
+        $audience = $body['audience'] ?? '';
+        $specificUser = $body['specificUser'] ?? null;
+        $title = $body['title'] ?? '';
+        $message = $body['message'] ?? '';
+        $type = $body['type'] ?? 'system';
+
+        if (empty($audience) || empty($title) || empty($message)) {
+            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+            return;
+        }
+
+        $db = getDbConnection();
+        $targetIds = [];
+
+        if ($audience === 'SPECIFIC' && $specificUser) {
+            $targetIds[] = $specificUser;
+        } elseif ($audience === 'ALL') {
+            $targetIds = $db->query("SELECT tenant_id FROM tenant_accounts WHERE is_verified = 1")->fetchAll(PDO::FETCH_COLUMN);
+        } elseif ($audience === 'APARTMENT') {
+            $targetIds = $db->query("SELECT tenant_id FROM leases WHERE lease_status IN ('Active', 'Accepted')")->fetchAll(PDO::FETCH_COLUMN);
+        }
+
+        // De-duplicate
+        $targetIds = array_unique($targetIds);
+
+        if (empty($targetIds)) {
+            echo json_encode(['success' => false, 'message' => 'No target users found for this audience']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $notifModel = new Notification();
+
+        $successCount = 0;
+        foreach ($targetIds as $tid) {
+            if ($notifModel->create($tid, $title, $message, $type)) {
+                $successCount++;
+            }
+        }
+
+        // Log the broadcast
+        $stmt = $db->prepare("INSERT INTO broadcasts (title, message, target_group, type, sender_id) VALUES (:t, :m, :tg, :ty, :sid)");
+        $stmt->execute([
+            't' => $title,
+            'm' => $message,
+            'tg' => $audience === 'SPECIFIC' ? "User ID: $specificUser" : $audience,
+            'ty' => $type,
+            'sid' => $_SESSION['user_id']
+        ]);
+
+        $this->logAudit('BROADCAST', 'SEND_NOTIFICATION', "Sent '$title' to $successCount users ($audience)");
+
+        echo json_encode(['success' => true, 'count' => $successCount]);
+    }
+
+    public function getBroadcastHistory(): void {
+        Auth::protectRole(['Admin']);
+        header('Content-Type: application/json');
+        $db = getDbConnection();
+        $history = $db->query("SELECT * FROM broadcasts ORDER BY created_at DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($history);
+    }
+
     public function userRecords(): void {
         Auth::protectRole(['Admin']);
         
@@ -1033,7 +1180,8 @@ class AdminController extends Controller
         $db = getDbConnection();
         $stmt = $db->prepare("SELECT is_verified FROM tenant_accounts WHERE tenant_id = :id");
         $stmt->execute(['id' => $id]);
-        $verified = $stmt->fetchColumn();
+        $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+        $verified = $userData['is_verified'] ?? false;
 
         if ($verified === false) {
             echo json_encode(['success' => false, 'message' => 'User not found']);
@@ -1043,7 +1191,9 @@ class AdminController extends Controller
         $newVerified = $verified == 1 ? 0 : 1;
         $upd = $db->prepare("UPDATE tenant_accounts SET is_verified = :v WHERE tenant_id = :id");
         if ($upd->execute(['v' => $newVerified, 'id' => $id])) {
-            echo json_encode(['success' => true, 'newStatus' => $newVerified ? 'active' : 'inactive']);
+            $statusText = $newVerified == 1 ? 'Activated' : 'Deactivated';
+            $this->logAudit('GOVERNANCE', 'TOGGLE_USER', "$statusText user account ID: $id");
+            echo json_encode(['success' => true, 'newStatus' => $newVerified == 1 ? 'active' : 'inactive']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update database']);
         }
@@ -1052,13 +1202,54 @@ class AdminController extends Controller
 
     public function auditLogs(): void {
         Auth::protectRole(['Admin']);
-        $this->view('admin/mis_admin/audit_logs', ['active_page' => 'audit_logs']);
+        $db = getDbConnection();
+        $logs = $db->query("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 1000")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $this->view('admin/mis_admin/audit_logs', [
+            'active_page' => 'audit_logs',
+            'logs' => $logs
+        ]);
     }
 
     public function notificationInbox(): void {
-        // die('DEBUG: notificationInbox called');
         Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
-        $this->view('admin/mis_admin/notification_inbox', ['active_page' => 'notification']);
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
+        $model = new AdminNotification();
+        $notifications = $model->getAll(100);
+        $unreadCount = $model->getUnreadCount();
+
+        $this->view('admin/mis_admin/notification_inbox', [
+            'active_page'   => 'notification',
+            'notifications' => $notifications,
+            'unreadCount'   => $unreadCount
+        ]);
+    }
+
+    /**
+     * AJAX: Mark a single admin notification as read.
+     */
+    public function markAdminNotifRead(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
+        header('Content-Type: application/json');
+        $body = json_decode(file_get_contents('php://input'), true);
+        $id = (int)($body['id'] ?? 0);
+        if (!$id) { echo json_encode(['success' => false]); return; }
+
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
+        $model = new AdminNotification();
+        $ok = $model->markAsRead($id);
+        echo json_encode(['success' => $ok, 'unread' => $model->getUnreadCount()]);
+    }
+
+    /**
+     * AJAX: Mark ALL admin notifications as read.
+     */
+    public function markAllAdminNotifsRead(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
+        header('Content-Type: application/json');
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
+        $model = new AdminNotification();
+        $ok = $model->markAllAsRead();
+        echo json_encode(['success' => $ok, 'unread' => 0]);
     }
 
     public function serveTenantImage(): void {
@@ -1169,6 +1360,7 @@ class AdminController extends Controller
                     'Your lease contract has been successfully renewed and extended for another ' . $term . ' months.',
                     'approval'
                 );
+                $this->logAudit('RENEWAL', 'APPROVE_RENEWAL', "Approved renewal ID: $id for Tenant ID: $tenantId");
             }
         }
         header('Location: ' . url('/admin/apartment/renewals'));
@@ -1195,6 +1387,7 @@ class AdminController extends Controller
                     'Your recent lease renewal request was not approved. Please contact administration for details.',
                     'warning'
                 );
+                $this->logAudit('RENEWAL', 'REJECT_RENEWAL', "Rejected renewal ID: $id for Tenant ID: $tenantId");
             }
         }
         header('Location: ' . url('/admin/apartment/renewals'));
@@ -1237,15 +1430,31 @@ class AdminController extends Controller
         // 2. Run Simulation
         foreach ($leases as $lease) {
             $tid = $lease['tenant_id'];
-            $paidRecurringKeys = $tenantPayments[$tid] ?? [];
+            $paidKeys = $tenantPayments[$tid] ?? [];
             $myParkings = $tenantParking[$tid] ?? [];
             $occupants = ($memberMap[$tid] ?? 0) + 1;
             
+            // Advance Counts
+            $advRent = 0; $advWater = 0; $advPark = 0; $advContrib = 0;
+            foreach ($paidKeys as $pk) {
+                if ($pk === 'rent-advance') $advRent++;
+                if ($pk === 'water-advance') $advWater++;
+                if ($pk === 'parking-advance') $advPark++;
+                if ($pk === 'contribution-advance') $advContrib++;
+            }
+
             $leaseStart = new \DateTime($lease['start_date']);
+            $leaseEnd = $lease['end_date'] ? (new \DateTime($lease['end_date'])) : null;
+            
+            // Timeline extension for advances
+            $simLimit = clone $now;
+            if ($advRent > 0) $simLimit->modify("+$advRent month");
+            $limitDate = ($leaseEnd && $leaseEnd < $simLimit) ? $leaseEnd : $simLimit;
+
             $currentDate = clone $leaseStart;
             $monthCount = 0;
 
-            while ($currentDate <= $now) {
+            while ($currentDate <= $limitDate) {
                 $monthKey = $currentDate->format('Y-m');
                 $isThisMonth = ($monthKey === $thisMonthKey);
                 $isLastMonth = ($monthKey === $lastMonthKey);
@@ -1254,11 +1463,11 @@ class AdminController extends Controller
                 if ($monthCount === 0) {
                     $invoiceAmount = (float)($lease['deposit_amount'] ?? 0) + (float)($lease['advance_amount'] ?? 0);
                     if ($invoiceAmount > 0) {
-                        $isPaid = in_array('deposit', $paidRecurringKeys) || strtolower($lease['lease_status']) === 'active';
+                        $isPaid = in_array('deposit', $paidKeys) || strtolower($lease['lease_status']) === 'active';
                         if ($isPaid) {
                             $totalRevenue += $invoiceAmount;
-                            if ($isThisMonth) { $thisMonthRev += $invoiceAmount; $paidThisMonthCount++; }
-                            if ($isLastMonth) { $lastMonthRev += $invoiceAmount; }
+                            if ($isThisMonth) $thisMonthRev += $invoiceAmount;
+                            if ($isLastMonth) $lastMonthRev += $invoiceAmount;
                         } else {
                             if ($now > $leaseStart) $overdueCount++; else $pendingCount++;
                         }
@@ -1267,35 +1476,49 @@ class AdminController extends Controller
                 
                 // Months 1+ logic
                 if ($monthCount > 0) {
-                    $rentPaid = in_array('rent-' . $monthKey, $paidRecurringKeys);
-                    $waterPaid = in_array('water-' . $monthKey, $paidRecurringKeys);
+                    $rentPaid = in_array('rent-' . $monthKey, $paidKeys);
+                    if (!$rentPaid && $advRent > 0) { $rentPaid = true; $advRent--; }
                     
-                    $invoiceAmount = (float)$lease['monthly_rent'] + ($occupants * 100);
+                    $waterPaid = in_array('water-' . $monthKey, $paidKeys);
+                    if (!$waterPaid && $advWater > 0) { $waterPaid = true; $advWater--; }
+
+                    $contribPaid = in_array('contribution-' . $monthKey, $paidKeys);
+                    if (!$contribPaid && $advContrib > 0) { $contribPaid = true; $advContrib--; }
                     
+                    // Monthly Charge: Rent + Water + Contribution
+                    $invoiceAmount = (float)$lease['monthly_rent'] + ($occupants * 100) + 150.00;
+                    $itemsPaidCount = ($rentPaid ? 1 : 0) + ($waterPaid ? 1 : 0) + ($contribPaid ? 1 : 0);
+                    $totItems = 3;
+
                     // Add parking
                     foreach ($myParkings as $pa) {
                         $ps = new \DateTime($pa['datestarted'] ?: $pa['date']); $ps->modify('first day of this month');
                         if ($currentDate >= $ps) {
-                            $invoiceAmount += 1000;
-                            // Check if parking paid
-                            if (in_array('parking-' . $monthKey, $paidRecurringKeys)) {
-                                // Already handled implicitly if we just check combined status, 
-                                // but for dashboard aggregate we usually care if the RENT is paid.
-                            }
+                            $parkId = 'parking-' . $pa['parking_id'] . '-' . $monthKey;
+                            $parkingPaid = in_array(strtolower($parkId), $paidKeys);
+                            if (!$parkingPaid && $advPark > 0) { $parkingPaid = true; $advPark--; }
+                            
+                            $invoiceAmount += 1000.00;
+                            $totItems++;
+                            if ($parkingPaid) $itemsPaidCount++;
                         }
                     }
 
-                    if ($rentPaid && $waterPaid) {
+                    if ($itemsPaidCount === $totItems) {
                         $totalRevenue += $invoiceAmount;
                         if ($isThisMonth) { $thisMonthRev += $invoiceAmount; $paidThisMonthCount++; }
                         if ($isLastMonth) { $lastMonthRev += $invoiceAmount; }
                     } else {
-                        if ($now > $currentDate) $overdueCount++; else $pendingCount++;
+                        // Check if past 5th for overdue
+                        $dueDate = clone $currentDate; 
+                        $dueDate->modify('first day of this month')->modify('+4 days');
+                        if ($now > $dueDate) $overdueCount++; else $pendingCount++;
                     }
                 }
 
                 $currentDate->modify('+1 month');
                 $monthCount++;
+                if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
             }
         }
 
@@ -1316,6 +1539,26 @@ class AdminController extends Controller
             'overdueCount' => $overdueCount,
             'paidThisMonthCount' => $paidThisMonthCount
         ];
+    }
+
+    /**
+     * Private helper to log administrative actions for audit
+     */
+    private function logAudit(string $module, string $action, string $details): void {
+        try {
+            $db = getDbConnection();
+            $stmt = $db->prepare("INSERT INTO audit_logs (admin_id, admin_name, module, action, details) VALUES (:aid, :aname, :mod, :act, :det)");
+            $stmt->execute([
+                'aid'   => $_SESSION['user_id'] ?? 0,
+                'aname' => $_SESSION['name'] ?? ($_SESSION['role'] ?? 'System'),
+                'mod'   => $module,
+                'act'   => $action,
+                'det'   => $details
+            ]);
+        } catch (\Exception $e) {
+            // Silently fail to not block main operation
+            error_log("Audit Log Failure: " . $e->getMessage());
+        }
     }
 }
 

@@ -217,6 +217,18 @@ class AuthController extends Controller
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['sex'] = $user['sex'];
 
+                // Send a Welcome notification to the new tenant
+                try {
+                    require_once BASE_PATH . '/app/models/Notification.php';
+                    $notif = new Notification();
+                    $notif->create(
+                        $user['tenant_id'],
+                        'Welcome to ISCAG MIS',
+                        'Your account has been verified! We are excited to have you. You can now apply for an apartment or explore our services.',
+                        'info'
+                    );
+                } catch (\Exception $e) {}
+
                 // Redirect based on role
                 if ($user['role'] === 'Admin') {
                     header('Location: ' . url('/admin/dashboard'));

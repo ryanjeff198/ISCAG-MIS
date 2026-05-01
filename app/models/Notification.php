@@ -72,4 +72,15 @@ class Notification
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['tenant_id' => $tenantId]);
     }
+
+    /**
+     * Check if a specific notification title already exists for a tenant to avoid duplicates.
+     */
+    public function hasNotificationWithTitle(int $tenantId, string $title): bool
+    {
+        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE tenant_id = :tenant_id AND title = :title";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['tenant_id' => $tenantId, 'title' => $title]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
 }

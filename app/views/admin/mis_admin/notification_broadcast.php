@@ -149,6 +149,22 @@ if (!function_exists('url')) {
     <script>
         standardizePage('admin');
 
+        // Fetch users for the specific user dropdown
+        async function loadUsers() {
+            try {
+                const res = await fetch('<?= url("/admin/mis_admin/broadcast/users") ?>');
+                const users = await res.json();
+                const sel = document.getElementById('target-specific-user');
+                sel.innerHTML = '<option value="">— Choose a User —</option>';
+                users.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.tenant_id;
+                    opt.textContent = `${u.first_name} ${u.last_name} (${u.role})`;
+                    sel.appendChild(opt);
+                });
+            } catch (e) { console.error('Failed to load users:', e); }
+        }
+        loadUsers();
 
         function toggleSpecificUser() {
             const aud = document.getElementById('target-audience').value;
@@ -172,141 +188,94 @@ if (!function_exists('url')) {
             return map[type] || map['system'];
         }
 
-        // Mock DB for user mapping
-        const MOCK_USERS = [
-            { id: "USR-001", name: "Muhammad Usman", roles: ["APARTMENT", "DAMAYAN", "ALL"] },
-            { id: "USR-002", name: "Aisha Fatima", roles: ["DAWAH", "ALL"] },
-            { id: "USR-003", name: "Omar Khan", roles: ["DAMAYAN", "ALL"] }
-        ];
-
-        function sendBroadcast() {
-            const audienceGroup = document.getElementById('target-audience').value;
-            let specificUser = document.getElementById('target-specific-user').value;
-            const specificUserName = document.getElementById('target-specific-user').options[document.getElementById('target-specific-user').selectedIndex].text;
-            
+        async function sendBroadcast() {
+            const audience = document.getElementById('target-audience').value;
+            const specificUser = document.getElementById('target-specific-user').value;
             const type = document.getElementById('notif-type').value;
             const title = document.getElementById('notif-title').value;
-            const body = document.getElementById('notif-body').value;
+            const message = document.getElementById('notif-body').value;
 
-            // Load existing
-            let globalNotifs = JSON.parse(localStorage.getItem('mis_notifications') || '[]');
-            
-            let targets = [];
-            let targetLabel = audienceGroup;
+            const btn = document.querySelector('.btn-submit');
+            btn.disabled = true;
+            btn.innerHTML = 'Sending...';
 
-            if (audienceGroup === 'SPECIFIC') {
-                targets.push(specificUser);
-                targetLabel = specificUserName.split(' (')[0];
-            } else {
-                // Map the audience group to corresponding users
-                MOCK_USERS.forEach(u => {
-                    if (u.roles.includes(audienceGroup)) {
-                        targets.push(u.id);
-                    }
+            try {
+                const res = await fetch('<?= url("/admin/mis_admin/broadcast/send") ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ audience, specificUser, type, title, message })
                 });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast(`✅ Successfully broadcasted to ${data.count} user(s).`, 'var(--success)');
+                    document.getElementById('broadcast-form').reset();
+                    toggleSpecificUser();
+                    renderHistory();
+                } else {
+                    showToast(`❌ Error: ${data.message}`, 'var(--danger)');
+                }
+            } catch (e) {
+                showToast('❌ System failure. Check console.', 'var(--danger)');
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Send Notification Now';
             }
-
-            // Create individual notification records for each targeted user
-            targets.forEach(tId => {
-                const n = {
-                    id: 'N-' + Date.now() + Math.floor(Math.random()*100),
-                    tenantId: tId,
-                    title: title,
-                    message: body,
-                    type: type,
-                    createdAt: new Date().toISOString(),
-                    read: false
-                };
-                globalNotifs.push(n);
-            });
-
-            // Save back
-            localStorage.setItem('mis_notifications', JSON.stringify(globalNotifs));
-
-            // Log broadcast to admin side history
-            let broadcasts = JSON.parse(localStorage.getItem('mis_admin_broadcasts') || '[]');
-            broadcasts.push({
-                title: title,
-                body: body,
-                type: type,
-                target: targetLabel,
-                time: new Date().toISOString()
-            });
-            localStorage.setItem('mis_admin_broadcasts', JSON.stringify(broadcasts));
-
-            showToast(`✅ Successfully broadcasted to ${targets.length} user(s).`, 'var(--success)');
-            
-            // Reset
-            document.getElementById('broadcast-form').reset();
-            toggleSpecificUser();
-            
-            // Re-render
-            renderHistory();
         }
 
-        function renderHistory() {
-            const list = document.getElementById('sent-list');
-            let broadcasts = JSON.parse(localStorage.getItem('mis_admin_broadcasts') || '[]');
-            
-            if (broadcasts.length === 0) {
-                list.innerHTML = `<div style="padding:40px 20px; text-align:center; color:var(--text-muted);">
-                    <svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:var(--border);margin-bottom:10px;"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-11 5H9v-2h2v2zm0-4H9V7h2v6z"/></svg><br>
-                    No broadcasts sent yet.
-                </div>`;
-                return;
-            }
+        async function renderHistory() {
+            try {
+                const res = await fetch('<?= url("/admin/mis_admin/broadcast/history") ?>');
+                const broadcasts = await res.json();
+                const list = document.getElementById('sent-list');
+                
+                if (broadcasts.length === 0) {
+                    list.innerHTML = `<div style="padding:40px 20px; text-align:center; color:var(--text-muted);">
+                        <svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:var(--border);margin-bottom:10px;"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-11 5H9v-2h2v2zm0-4H9V7h2v6z"/></svg><br>
+                        No broadcasts sent yet.
+                    </div>`;
+                    return;
+                }
 
-            list.innerHTML = '';
-            // Newest first
-            broadcasts.sort((a,b) => new Date(b.time) - new Date(a.time)).forEach(b => {
-                let d = new Date(b.time).toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
-                const div = document.createElement('div');
-                div.className = 'sent-item';
-                div.innerHTML = `
-                    <div class="sent-icon">
-                        <svg viewBox="0 0 24 24">${getIconForType(b.type)}</svg>
-                    </div>
-                    <div class="sent-content">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                            <h5 style="margin:0;">${b.title}</h5>
-                            <div class="action-menu">
-                                <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
-                                    <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-                                </button>
-                                <div class="action-menu-dropdown">
-                                    <button class="action-menu-item" onclick="showToast('Resending broadcast...','var(--success)')">
-                                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-                                        Resend Broadcast
+                list.innerHTML = '';
+                broadcasts.forEach(b => {
+                    let d = new Date(b.created_at).toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+                    const div = document.createElement('div');
+                    div.className = 'sent-item';
+                    div.innerHTML = `
+                        <div class="sent-icon">
+                            <svg viewBox="0 0 24 24">${getIconForType(b.type)}</svg>
+                        </div>
+                        <div class="sent-content">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <h5 style="margin:0;">${b.title}</h5>
+                                <div class="action-menu">
+                                    <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
+                                        <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                                     </button>
-                                    <button class="action-menu-item danger" onclick="showToast('Broadcast deleted from history','var(--danger)')">
-                                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                                        Delete Forever
-                                    </button>
+                                    <div class="action-menu-dropdown">
+                                        <button class="action-menu-item" onclick="showToast('Resending broadcast...','var(--success)')">
+                                            <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                                            Resend Broadcast
+                                        </button>
+                                        <button class="action-menu-item danger" onclick="showToast('Broadcast deleted from history','var(--danger)')">
+                                            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                            Delete Forever
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+                            <p>${b.message.substring(0, 80)}${b.message.length > 80 ? '...' : ''}</p>
+                            <div class="sent-meta">
+                                <span class="target-badge">To: ${b.target_group}</span>
+                                <span>${d}</span>
+                            </div>
                         </div>
-                        <p>${b.body.substring(0, 80)}${b.body.length > 80 ? '...' : ''}</p>
-                        <div class="sent-meta">
-                            <span class="target-badge">To: ${b.target}</span>
-                            <span>${d}</span>
-                        </div>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        // Initialize empty mock history if needed
-        if (!localStorage.getItem('mis_admin_broadcasts')) {
-            localStorage.setItem('mis_admin_broadcasts', JSON.stringify([
-                {
-                    title: "Welcome to the New Portal",
-                    body: "Please complete your profile to access all features like Damayan, Da'wah, and Apartment services.",
-                    type: "system",
-                    target: "ALL",
-                    time: new Date(Date.now() - 86400000).toISOString()
-                }
-            ]));
+                    `;
+                    list.appendChild(div);
+                });
+            } catch(e) { console.error('Failed to render history:', e); }
         }
 
         renderHistory();

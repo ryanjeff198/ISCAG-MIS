@@ -90,16 +90,16 @@ const DEFAULT_BILLING = [
 ];
 
 const DEFAULT_ACTIVITY_LOG = [
-  { action:'Application approved',       detail:'APT-001 — Muhammad Usman apartment application approved', actor:'MIS Admin',  time:'2026-04-10T06:30:00Z', type:'approve' },
-  { action:'New user registered',        detail:'Maryam Tan (USR-009) completed registration',             actor:'System',     time:'2026-04-09T14:20:00Z', type:'user' },
-  { action:'Payment received',           detail:'BIL-001 — ₱5,000 rent payment from Muhammad Usman',       actor:'System',     time:'2026-04-08T09:15:00Z', type:'payment' },
-  { action:'Burial request submitted',   detail:'BUR-001 — New burial service request from Muhammad Usman', actor:'Muhammad Usman', time:'2026-04-07T11:00:00Z', type:'request' },
-  { action:'Unit status updated',        detail:'APT-B1 marked as occupied',                                actor:'Staff Admin', time:'2026-04-06T16:45:00Z', type:'update' },
-  { action:'Counseling session scheduled', detail:'COU-001 — Sisters counseling for Aisha Rahman',          actor:'Staff Admin', time:'2026-04-05T08:30:00Z', type:'schedule' },
-  { action:'Staff account created',      detail:'STF-004 — Amira Lucman assigned to Da\'wah (M)',          actor:'MIS Admin',  time:'2026-04-04T10:00:00Z', type:'staff' },
-  { action:'Payment overdue',            detail:'BIL-003 — Ahmad Saleh rent payment overdue',               actor:'System',     time:'2026-04-03T00:00:00Z', type:'alert' },
-  { action:'Application submitted',      detail:'APT-003 — Ahmad Saleh applied for apartment',             actor:'Ahmad Saleh', time:'2026-04-02T13:22:00Z', type:'request' },
-  { action:'System backup completed',    detail:'Automated daily backup completed successfully',            actor:'System',     time:'2026-04-01T02:00:00Z', type:'system' }
+  { id: 'AL-001', action:'Application approved',       detail:'APT-001 — Muhammad Usman apartment application approved', actor:'MIS Admin',  time:'2026-04-10T06:30:00Z', type:'approve', read: false },
+  { id: 'AL-002', action:'New user registered',        detail:'Maryam Tan (USR-009) completed registration',             actor:'System',     time:'2026-04-09T14:20:00Z', type:'user', read: false },
+  { id: 'AL-003', action:'Payment received',           detail:'BIL-001 — ₱5,000 rent payment from Muhammad Usman',       actor:'System',     time:'2026-04-08T09:15:00Z', type:'payment', read: false },
+  { id: 'AL-004', action:'Burial request submitted',   detail:'BUR-001 — New burial service request from Muhammad Usman', actor:'Muhammad Usman', time:'2026-04-07T11:00:00Z', type:'request', read: false },
+  { id: 'AL-005', action:'Unit status updated',        detail:'APT-B1 marked as occupied',                                actor:'Staff Admin', time:'2026-04-06T16:45:00Z', type:'update', read: false },
+  { id: 'AL-006', action:'Counseling session scheduled', detail:'COU-001 — Sisters counseling for Aisha Rahman',          actor:'Staff Admin', time:'2026-04-05T08:30:00Z', type:'schedule', read: false },
+  { id: 'AL-007', action:'Staff account created',      detail:'STF-004 — Amira Lucman assigned to Da\'wah (M)',          actor:'MIS Admin',  time:'2026-04-04T10:00:00Z', type:'staff', read: false },
+  { id: 'AL-008', action:'Payment overdue',            detail:'BIL-003 — Ahmad Saleh rent payment overdue',               actor:'System',     time:'2026-04-03T00:00:00Z', type:'alert', read: false },
+  { id: 'AL-009', action:'Application submitted',      detail:'APT-003 — Ahmad Saleh applied for apartment',             actor:'Ahmad Saleh', time:'2026-04-02T13:22:00Z', type:'request', read: false },
+  { id: 'AL-010', action:'System backup completed',    detail:'Automated daily backup completed successfully',            actor:'System',     time:'2026-04-01T02:00:00Z', type:'system', read: false }
 ];
 
 
@@ -124,8 +124,25 @@ function initAdminData() {
   if (!localStorage.getItem(STORAGE_KEYS.billing)) {
     localStorage.setItem(STORAGE_KEYS.billing, JSON.stringify(DEFAULT_BILLING));
   }
-  if (!localStorage.getItem(STORAGE_KEYS.activityLog)) {
+  const rawLog = localStorage.getItem(STORAGE_KEYS.activityLog);
+  if (!rawLog) {
     localStorage.setItem(STORAGE_KEYS.activityLog, JSON.stringify(DEFAULT_ACTIVITY_LOG));
+  } else {
+    // Migration: Ensure all existing log entries have IDs and read status
+    try {
+      const existing = JSON.parse(rawLog);
+      if (Array.isArray(existing)) {
+        let changed = false;
+        existing.forEach((entry, i) => {
+          if (!entry.id) { entry.id = 'AL-MIG-' + i; changed = true; }
+          if (entry.read === undefined) { entry.read = false; changed = true; }
+        });
+        if (changed) localStorage.setItem(STORAGE_KEYS.activityLog, JSON.stringify(existing));
+      }
+    } catch(e) {
+      console.error('Error parsing activity log:', e);
+      localStorage.setItem(STORAGE_KEYS.activityLog, JSON.stringify(DEFAULT_ACTIVITY_LOG));
+    }
   }
 }
 
@@ -169,12 +186,28 @@ function saveAllUsers(data) { localStorage.setItem(STORAGE_KEYS.allUsers, JSON.s
 function saveApartments(data) { localStorage.setItem(STORAGE_KEYS.apartments, JSON.stringify(data)); }
 function saveBilling(data) { localStorage.setItem(STORAGE_KEYS.billing, JSON.stringify(data)); }
 function saveStaffList(data) { localStorage.setItem(STORAGE_KEYS.staffList, JSON.stringify(data)); }
+function saveActivityLog(data) { 
+  localStorage.setItem(STORAGE_KEYS.activityLog, JSON.stringify(data)); 
+  // Dispatch event for current tab components
+  window.dispatchEvent(new CustomEvent('activityLogUpdated'));
+  // Update badges in current tab
+  initNotifBadge('admin');
+}
 
 function addActivityEntry(action, detail, actor, type) {
   const log = getActivityLog();
-  log.unshift({ action, detail, actor, time: new Date().toISOString(), type: type || 'update' });
+  const newEntry = { 
+    id: 'AL-' + Date.now(), 
+    action, 
+    detail, 
+    actor: actor || 'System', 
+    time: new Date().toISOString(), 
+    type: type || 'update',
+    read: false 
+  };
+  log.unshift(newEntry);
   if (log.length > 50) log.length = 50;
-  localStorage.setItem(STORAGE_KEYS.activityLog, JSON.stringify(log));
+  saveActivityLog(log);
 }
 
 function getProfileCompletion(user) {
@@ -198,8 +231,7 @@ function getProfileCompletion(user) {
 const ROLES = {
   MIS_ADMIN: 'mis_admin',
   STAFF_ADMIN: 'staff_admin',
-  APARTMENT_ADMIN: 'apartment_admin',
-  STAFF_TENANT: 'Staff_Tenant'
+  APARTMENT_ADMIN: 'apartment_admin'
 };
 
 const PERMISSIONS = {
@@ -207,17 +239,17 @@ const PERMISSIONS = {
   manage_users:         [ROLES.MIS_ADMIN],
   approve_applications: [ROLES.MIS_ADMIN],
   reject_applications:  [ROLES.MIS_ADMIN],
-  manage_availability:  [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN, ROLES.STAFF_TENANT],
-  view_billing:         [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN, ROLES.STAFF_TENANT],
+  manage_availability:  [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN],
+  view_billing:         [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN],
   modify_billing:       [ROLES.MIS_ADMIN],
   access_reports:       [ROLES.MIS_ADMIN],
   access_logs:          [ROLES.MIS_ADMIN],
   manage_staff:         [ROLES.MIS_ADMIN],
   edit_records:         [ROLES.MIS_ADMIN],
-  update_unit_status:   [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN, ROLES.STAFF_TENANT],
-  communicate:          [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN, ROLES.STAFF_TENANT],
+  update_unit_status:   [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN],
+  communicate:          [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN],
   system_settings:      [ROLES.MIS_ADMIN],
-  view_assigned:        [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN, ROLES.STAFF_TENANT]
+  view_assigned:        [ROLES.MIS_ADMIN, ROLES.STAFF_ADMIN]
 };
 
 function checkPermission(action, role) {
@@ -239,25 +271,7 @@ function setCurrentRole(role) {
 // ══════════════════════════════════════
 function showToast(msg, bg) {
   const toast = document.createElement('div');
-  let finalMsg = msg;
-  let iconSvg = '';
-
-  // Auto-detect icon based on common emojis or background color
-  if (msg.includes('✅')) {
-    iconSvg = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:white;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
-    finalMsg = msg.replace('✅', '').trim();
-  } else if (msg.includes('⚠️') || msg.includes('❌') || (bg && bg.includes('danger'))) {
-    iconSvg = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
-    finalMsg = msg.replace(/[⚠️❌]/g, '').trim();
-  } else if (msg.includes('ℹ️') || msg.includes('📋') || (bg && bg.includes('info'))) {
-    iconSvg = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:white;"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>';
-    finalMsg = msg.replace(/[ℹ️📋]/g, '').trim();
-  } else if (msg.includes('⏳')) {
-    iconSvg = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:white;"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zM12 11.5l-4-4V4h8v3.5l-4 4z"/></svg>';
-    finalMsg = msg.replace('⏳', '').trim();
-  }
-
-  toast.innerHTML = `<div style="display:flex;align-items:center;gap:12px;">${iconSvg}<span>${finalMsg}</span></div>`;
+  toast.textContent = msg;
   toast.style.cssText = 'position:fixed;top:24px;right:24px;background:' + (bg || 'var(--success)') +
     ';color:white;padding:14px 22px;border-radius:10px;z-index:99999;font-weight:600;' +
     'font-family:Source Sans 3,sans-serif;font-size:0.9rem;box-shadow:0 4px 16px rgba(0,0,0,0.18);' +
@@ -379,19 +393,28 @@ function initDropdowns() {
 }
 
 function loadUserNav() {
+  console.log('[DEBUG] loadUserNav triggered');
   // Check for staff profile first if in staff mode
   let user = getUser();
-  let roleLabel = 'Staff Admin';
+  let roleLabel = 'Apartment Manager';
   const staffProfileRaw = localStorage.getItem('mis_apartment_staff_profile');
   if (staffProfileRaw) {
     const staff = JSON.parse(staffProfileRaw);
     if (staff.name) user.name = staff.name;
-    if (staff.occupation) roleLabel = staff.occupation;
+    if (staff.occupation) {
+      roleLabel = (staff.occupation === 'Property Manager' || staff.occupation === 'Administrator') ? 'Apartment Manager' : staff.occupation;
+    }
   }
 
   const navName = document.getElementById('nav-name');
   const navRole = document.querySelector('.sidebar-user .user-info span');
   const navAvatar = document.getElementById('nav-avatar');
+
+  // PROTECTION: If we are on a User/Tenant page with preserve attribute, DO NOT let localStorage overwrite
+  if (navName && (navName.hasAttribute('data-preserve') || navName.hasAttribute('data-force-sync'))) {
+    console.log('[DEBUG] loadUserNav ABORTED - Preservation attribute detected');
+    return; // Exit completely if we detect preservation intent
+  }
 
   if (navName) navName.textContent = user.name;
   if (navRole) navRole.textContent = roleLabel;
@@ -447,9 +470,6 @@ function syncSessionUser(sessionName, sessionEmail, sessionRole) {
     };
     localStorage.setItem('mis_apartment_staff_profile', JSON.stringify(newStaff));
   }
-
-  // Ensure the sidebar reflects the newly synced data immediately
-  loadUserNav();
 }
 
 function setTopBarDate() {
@@ -545,25 +565,41 @@ function initNotifBadge(role) {
     const notifs = getNotifications();
     unread = notifs.filter(n => n.tenantId === user.id && !n.read).length;
   } else {
-    // Admin/Staff sees activity-log-based notifications by convention
+    // Admin/Staff sees activity-log-based notifications
     const log = getActivityLog();
-    unread = Math.min(5, log.length);
+    unread = log.filter(l => !l.read).length;
   }
   
-  if (unread > 0) {
-    document.querySelectorAll('.nav-item').forEach(link => {
-      const label = link.querySelector('.nav-item-label');
-      if (label && (label.textContent.trim() === 'Notifications' || label.textContent.trim() === 'Admin Inbox')) {
-        if (!link.querySelector('.notif-dot')) {
-          const dot = document.createElement('span');
-          dot.className = 'notif-dot';
-          dot.textContent = unread;
-          link.style.position = 'relative';
-          link.appendChild(dot);
-        }
-      }
-    });
+  // Update sidebar badge if it exists (legacy selector)
+  const badge = document.querySelector('.notif-dot');
+  if (badge) {
+    if (unread > 0) {
+      badge.textContent = unread > 99 ? '99+' : unread;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
   }
+
+  // Also update based on label (new selector)
+  document.querySelectorAll('.nav-item').forEach(link => {
+    const label = link.querySelector('.nav-item-label');
+    if (label && (label.textContent.trim() === 'Notifications' || label.textContent.trim() === 'Admin Inbox')) {
+      // Avoid duplicating the dot if it was already handled by the .notif-dot selector
+      if (link.querySelector('.notif-dot')) return;
+
+      const existingDot = link.querySelector('.dynamic-notif-dot');
+      if (existingDot) existingDot.remove();
+
+      if (unread > 0) {
+        const dot = document.createElement('span');
+        dot.className = 'notif-dot dynamic-notif-dot';
+        dot.textContent = unread > 99 ? '99+' : unread;
+        link.style.position = 'relative';
+        link.appendChild(dot);
+      }
+    }
+  });
 }
 
 // ── Workflow Logic ──
@@ -657,9 +693,8 @@ function initLogoutModal() {
       <div id="logout-confirm-modal" style="position:fixed;inset:0;background:rgba(15,30,22,0.6);backdrop-filter:blur(6px);z-index:99999;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;">
         <div style="background:white;border-radius:16px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;transform:translateY(20px);transition:transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
           <div style="height:4px;background:linear-gradient(90deg,#8b2e2e,#c79a2b);"></div>
-          <div style="padding:32px 28px 24px;text-align:center;">
-            <h4 style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:#1f2e2a;margin:0 0 10px;">Log Out</h4>
-            <p style="font-size:0.9rem;color:#6f7f78;margin:0;line-height:1.5;">Are you sure you want to log out of your account?</p>
+          <div style="padding:40px 28px 32px;text-align:center;">
+            <h4 style="font-family:'Lora',serif;font-size:1.25rem;font-weight:700;color:#1f2e2a;margin:0;">Log out of your account?</h4>
           </div>
           <div style="display:flex;gap:10px;padding:0 28px 24px;justify-content:center;">
             <button id="logout-cancel-btn" style="padding:10px 24px;border-radius:8px;border:1.5px solid #e8ece9;background:white;color:#6f7f78;font-weight:600;cursor:pointer;transition:background 0.2s;">Cancel</button>
@@ -705,6 +740,144 @@ function initLogoutModal() {
 
 
 // ══════════════════════════════════════
+//  GLOBAL TABLE SEARCH
+// ══════════════════════════════════════
+function initTableSearch() {
+  const attachSearch = (table) => {
+    if (table.classList.contains('info-table') || table.classList.contains('family-doc-table')) return;
+    if (table.hasAttribute('data-searchable') && table.getAttribute('data-searchable') === 'false') return;
+    
+    // UI/UX placement: put search inside the .section-card-header if available
+    const sectionCard = table.closest('.section-card');
+    let targetContainer = null;
+    let rightSideActions = null;
+
+    if (sectionCard) {
+      const header = sectionCard.querySelector('.section-card-header');
+      if (header) {
+        targetContainer = header;
+        // Ensure header is nicely flexed
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.flexWrap = 'wrap';
+        header.style.gap = '10px';
+        
+        // Find existing right-side actions div if it exists
+        const children = Array.from(header.children);
+        rightSideActions = children.find(child => child.tagName === 'DIV');
+      }
+    }
+    
+    // Fallback if not in a section-card
+    if (!targetContainer) {
+      const wrapper = table.closest('.table-wrapper') || table.closest('.section-card-body') || table.parentElement;
+      targetContainer = wrapper.parentNode;
+    }
+
+    // Ensure we don't add multiple search bars for the same table
+    if (targetContainer.querySelector('.table-search-container')) return;
+
+    // Create the search UI
+    const container = document.createElement('div');
+    container.className = 'table-search-container';
+    container.style.margin = '0'; // override margin-bottom for header placement
+    
+    const innerWrapper = document.createElement('div');
+    innerWrapper.className = 'table-search-wrapper';
+    innerWrapper.style.minWidth = '220px';
+    
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.innerHTML = '<path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>';
+    icon.style.width = '16px';
+    icon.style.height = '16px';
+    icon.style.left = '12px';
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'table-search-input';
+    input.placeholder = 'Search records...';
+    input.style.padding = '8px 14px 8px 36px';
+    input.style.fontSize = '0.85rem';
+    
+    innerWrapper.appendChild(input);
+    innerWrapper.appendChild(icon);
+    container.appendChild(innerWrapper);
+    
+    // Inject it!
+    if (rightSideActions) {
+      rightSideActions.style.display = 'flex';
+      rightSideActions.style.gap = '8px';
+      rightSideActions.style.alignItems = 'center';
+      rightSideActions.insertBefore(container, rightSideActions.firstChild);
+    } else if (targetContainer.classList.contains('section-card-header')) {
+      targetContainer.appendChild(container);
+    } else {
+      // Fallback injection
+      container.style.padding = '16px 20px 0 20px';
+      targetContainer.insertBefore(container, targetContainer.querySelector('.table-wrapper') || targetContainer.firstChild);
+    }
+    
+    input.addEventListener('input', function() {
+      const term = this.value.toLowerCase().trim();
+      const tbody = table.querySelector('tbody') || table;
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      
+      let visibleCount = 0;
+      let dataRows = 0;
+      
+      rows.forEach(row => {
+        if (row.querySelector('th')) return;
+        if (row.classList.contains('table-search-empty-row')) return;
+        // Skip rows that span the whole table and say "No data"
+        if (row.cells.length === 1 && row.cells[0].colSpan > 1) return;
+        
+        dataRows++;
+        const text = row.textContent.toLowerCase();
+        if (text.includes(term)) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      
+      let emptyRow = tbody.querySelector('.table-search-empty-row');
+      if (visibleCount === 0 && dataRows > 0) {
+        if (!emptyRow) {
+          emptyRow = document.createElement('tr');
+          emptyRow.className = 'table-search-empty-row';
+          const tdCount = Array.from(rows[0].cells).length || 1;
+          emptyRow.innerHTML = `<td colspan="${tdCount}" class="table-search-empty">No matching records found for "${term}"</td>`;
+          tbody.appendChild(emptyRow);
+        } else {
+          emptyRow.querySelector('td').textContent = `No matching records found for "${term}"`;
+          emptyRow.style.display = '';
+        }
+      } else if (emptyRow) {
+        emptyRow.style.display = 'none';
+      }
+    });
+  };
+
+  document.querySelectorAll('.mis-table, .audit-table, .soa-table').forEach(attachSearch);
+
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          if (node.matches && node.matches('.mis-table, .audit-table, .soa-table')) attachSearch(node);
+          if (node.querySelectorAll) node.querySelectorAll('.mis-table, .audit-table, .soa-table').forEach(attachSearch);
+        }
+      });
+    });
+  });
+  
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// ══════════════════════════════════════
 //  PAGE BOOTSTRAP
 // ══════════════════════════════════════
 function standardizePage(role) {
@@ -712,10 +885,13 @@ function standardizePage(role) {
   initReportsData();
   initSidebar();
   initDropdowns();
-  loadUserNav();
+  if (role !== 'user' && role !== 'tenant') {
+    loadUserNav();
+  }
   setTopBarDate();
   initNotifBadge(role);
   initLogoutModal();
+  initTableSearch();
 }
 
 function toggleActionMenu(btn, e) {
@@ -723,17 +899,78 @@ function toggleActionMenu(btn, e) {
   const dropdown = btn.nextElementSibling;
   if (!dropdown) return;
   const isShow = dropdown.classList.contains('show');
-  document.querySelectorAll('.action-menu-dropdown').forEach(d => d.classList.remove('show'));
-  if (!isShow) dropdown.classList.add('show');
+  
+  // Close all other menus first and move them back to their parents
+  document.querySelectorAll('.action-menu-dropdown').forEach(d => {
+    d.classList.remove('show');
+    d.style.top = '-9999px';
+    // If it was moved to body, we don't strictly need to move it back immediately,
+    // but we should ensure the style is clean.
+  });
+
+  if (!isShow) {
+    // 1. Move the dropdown to document.body to escape ALL overflow/spacing constraints
+    if (dropdown.parentElement !== document.body) {
+        document.body.appendChild(dropdown);
+    }
+
+    // 2. Position it relative to the button using fixed coords
+    const rect = btn.getBoundingClientRect();
+    dropdown.style.position = 'fixed';
+    dropdown.style.display = 'block'; // Ensure it's measurable
+    dropdown.style.zIndex = '99999';
+    dropdown.style.width = '180px';
+    
+    let top = rect.bottom + 8;
+    let left = rect.right - 180;
+    
+    // 3. Collision check
+    const dropdownHeight = dropdown.offsetHeight || 150;
+    if (top + dropdownHeight > window.innerHeight) {
+        top = rect.top - dropdownHeight - 8;
+    }
+    
+    dropdown.style.top = top + 'px';
+    dropdown.style.left = left + 'px';
+    dropdown.classList.add('show');
+  }
 }
 
 window.addEventListener('click', () => {
-  document.querySelectorAll('.action-menu-dropdown').forEach(d => d.classList.remove('show'));
+    document.querySelectorAll('.action-menu-dropdown').forEach(d => {
+        d.classList.remove('show');
+        d.style.top = '-9999px'; // Move out of view instead of just hiding
+    });
+});
+
+window.addEventListener('scroll', () => {
+    document.querySelectorAll('.action-menu-dropdown').forEach(d => {
+        d.classList.remove('show');
+        d.style.top = '-9999px';
+    });
+}, true);
+
+// Removed redundant initNotifBadge
+
+// Real-time synchronization across tabs
+window.addEventListener('storage', (e) => {
+  if (e.key === STORAGE_KEYS.activityLog) {
+    window.dispatchEvent(new CustomEvent('activityLogUpdated'));
+    initNotifBadge('admin');
+  }
 });
 
 // Auto-init for cases where script is loaded after DOM
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
+  initAdminData();
   initLogoutModal();
+  initTableSearch();
+  initNotifBadge('admin');
 } else {
-  document.addEventListener('DOMContentLoaded', initLogoutModal);
+  document.addEventListener('DOMContentLoaded', () => {
+    initAdminData();
+    initLogoutModal();
+    initTableSearch();
+    initNotifBadge('admin');
+  });
 }

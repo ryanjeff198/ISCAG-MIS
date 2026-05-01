@@ -33,9 +33,9 @@
     .soa-details { display: flex; justify-content: space-between; margin-bottom: 30px; background: #f8f9fa; padding: 20px; border-radius: 8px; }
     .soa-details-left p, .soa-details-right p { margin: 5px 0; font-size: 0.95rem; }
     .soa-details strong { color: var(--primary-dark); }
-    .soa-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    .soa-table th { background: var(--primary-dark); color: white; padding: 12px; text-align: left; font-size: 0.85rem; }
-    .soa-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .soa-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 1px solid var(--border); }
+    .soa-table th { background: var(--primary-dark); color: white; padding: 12px; text-align: left; font-size: 0.85rem; border: 1px solid var(--border); }
+    .soa-table td { padding: 10px 12px; border: 1px solid var(--border); font-size: 0.9rem; }
     .soa-table tr:hover { background: #f8faf9; }
     .type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
     .type-badge.rent { background: rgba(23,107,69,0.1); color: #176b45; }
@@ -119,7 +119,7 @@
           </div>
         <?php else: 
           // Metrics same as Admin logic
-          $metrics = ['Rent' => 0, 'Deposit' => 0, 'Parking' => 0, 'Water' => 0, 'Payments' => 0];
+          $metrics = ['Rent' => 0, 'Deposit' => 0, 'Parking' => 0, 'Water' => 0, 'Contribution' => 0, 'Payments' => 0];
           foreach($transactions as $t) {
             if($t['payment'] > 0) $metrics['Payments'] += $t['payment'];
             else {
@@ -128,6 +128,7 @@
               elseif(strpos($type, 'deposit') !== false) $metrics['Deposit'] += $t['charge'];
               elseif(strpos($type, 'parking') !== false) $metrics['Parking'] += $t['charge'];
               elseif(strpos($type, 'water') !== false) $metrics['Water'] += $t['charge'];
+              elseif(strpos($type, 'contribution') !== false) $metrics['Contribution'] += $t['charge'];
             }
           }
         ?>
@@ -196,6 +197,10 @@
               <div class="bk-label">Water Bill</div>
               <div class="bk-value">₱<?= number_format($metrics['Water'], 2) ?></div>
             </div>
+            <div class="breakdown-card">
+              <div class="bk-label">Contribution</div>
+              <div class="bk-value">₱<?= number_format($metrics['Contribution'], 2) ?></div>
+            </div>
           </div>
 
           <table class="soa-table">
@@ -218,10 +223,10 @@
               $totalPayments = 0;
               $lastCat = '';
 
-              if (($filterMonth ?? 'all') !== 'all' && $runningBalance > 0): ?>
+              if (($filterMonth ?? 'all') !== 'all' && $runningBalance != 0): ?>
                 <tr>
-                  <td colspan="6"><strong>Balance Forwarded from Previous Months</strong></td>
-                  <td style="text-align:right; font-weight:700; color:<?= $runningBalance > 0 ? 'var(--danger)' : 'var(--success)' ?>">₱<?= number_format($runningBalance, 2) ?></td>
+                  <td colspan="6"><strong>Balance Forwarded from Previous Months (<?= $runningBalance < 0 ? 'Overpayment Credit' : 'Unpaid Balance' ?>)</strong></td>
+                  <td style="text-align:right; font-weight:700; color:<?= $runningBalance > 0 ? 'var(--danger)' : 'var(--success)' ?>"><?= $runningBalance < 0 ? '-' : '' ?>₱<?= number_format(abs($runningBalance), 2) ?></td>
                 </tr>
               <?php endif;
 
@@ -284,13 +289,13 @@
 <?php
 function getCategoryLabel($type) {
   $t = strtolower($type);
-  if (strpos($t, 'rent') !== false && strpos($t, 'payment') === false) return '🏠 Apartment Rent';
-  if (strpos($t, 'deposit') !== false || strpos($t, 'advance') !== false) return '💰 Initial Payments';
-  if (strpos($t, 'parking') !== false) return '🚗 Parking';
-  if (strpos($t, 'water') !== false) return '💧 Water Consumption';
-  if (strpos($t, 'contribution') !== false) return '🤝 Contribution';
-  if (strpos($t, 'payment') !== false) return '✅ Payment Records';
-  return '📋 Other';
+  if (strpos($t, 'rent') !== false && strpos($t, 'payment') === false) return 'Apartment Rent';
+  if (strpos($t, 'deposit') !== false || strpos($t, 'advance') !== false) return 'Initial Payments';
+  if (strpos($t, 'parking') !== false) return 'Parking';
+  if (strpos($t, 'water') !== false) return 'Water Consumption';
+  if (strpos($t, 'contribution') !== false) return 'Contribution';
+  if (strpos($t, 'payment') !== false) return 'Payment Records';
+  return 'Other';
 }
 function getBadgeClass($type) {
   $t = strtolower($type);
