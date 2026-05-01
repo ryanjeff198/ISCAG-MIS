@@ -109,7 +109,9 @@ const DEFAULT_ACTIVITY_LOG = [
 function initAdminData() {
   // Seed shared data if not yet initialized
   if (!localStorage.getItem(STORAGE_KEYS.initialized)) {
-    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(DEFAULT_USER));
+    if (!localStorage.getItem(STORAGE_KEYS.user)) {
+        localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(DEFAULT_USER));
+    }
     localStorage.setItem(STORAGE_KEYS.apartments, JSON.stringify(DEFAULT_APARTMENTS));
     localStorage.setItem(STORAGE_KEYS.requests, JSON.stringify(DEFAULT_REQUESTS));
     localStorage.setItem(STORAGE_KEYS.initialized, '1');
@@ -372,6 +374,15 @@ function initSidebar() {
 }
 
 function initDropdowns() {
+  const sidebar = document.getElementById('sidebar');
+  // Avoid conflict with User Sidebar which has its own dropdown logic
+  if (sidebar && sidebar.id === 'sidebar' && !sidebar.querySelector('.nav-dropdown-trigger[id$="-trigger"]')) {
+    // This looks like the Admin sidebar (no -trigger IDs on items)
+  } else if (sidebar) {
+    // If it's a user portal sidebar, we usually skip admin-level dropdown init
+    return;
+  }
+
   document.querySelectorAll('.nav-dropdown-trigger').forEach(trigger => {
     const menuId = trigger.getAttribute('data-menu');
     const menu = menuId ? document.getElementById(menuId) : trigger.nextElementSibling;
