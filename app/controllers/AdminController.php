@@ -609,17 +609,20 @@ class AdminController extends Controller
                 }
 
                 // 2. Water Bill Charge (Monthly)
-                $occupancyCount = ($memberMap[$l['tenant_id']] ?? 0) + 1;
-                $transactions[] = [
-                    'tenant_id'  => $l['tenant_id'],
-                    'date'       => $currentDate->format('Y-m-d'),
-                    'type'       => 'Water',
-                    'description'=> "Water Consumption ($occupancyCount occupants) — $monthName",
-                    'ref'        => 'LSE-W' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
-                    'charge'     => (float)($occupancyCount * 100),
-                    'payment'    => 0,
-                    'status'     => 'Unpaid'
-                ];
+                // Also SKIP for the very first month, as utilities are billed after usage.
+                if ($monthCount > 0) {
+                    $occupancyCount = ($memberMap[$l['tenant_id']] ?? 0) + 1;
+                    $transactions[] = [
+                        'tenant_id'  => $l['tenant_id'],
+                        'date'       => $currentDate->format('Y-m-d'),
+                        'type'       => 'Water',
+                        'description'=> "Water Consumption ($occupancyCount occupants) — $monthName",
+                        'ref'        => 'LSE-W' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
+                        'charge'     => (float)($occupancyCount * 100),
+                        'payment'    => 0,
+                        'status'     => 'Unpaid'
+                    ];
+                }
 
                 $currentDate->modify('+1 month');
                 $monthCount++;
