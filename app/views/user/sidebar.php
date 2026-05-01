@@ -79,6 +79,12 @@ $active_page = $active_page ?? 'dashboard';
                     </svg>
                     Burial Service
                 </a>
+                <a href="<?= url('/user/services/charity') ?>" class="<?= $active_page === 'charity' ? 'active-submenu' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    </svg>
+                    Charity / Donation
+                </a>
             </div>
         </div>
 
@@ -99,16 +105,24 @@ $active_page = $active_page ?? 'dashboard';
                 $sex = strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '');
                 if ($sex !== 'female'): ?>
                 <a href="<?= url('/user/services/counseling/male') ?>" class="<?= $active_page === 'counseling_male' ? 'active-submenu' : '' ?>">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
-                    Brothers' Counseling
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                    Counseling
                 </a>
                 <?php endif; ?>
                 <?php if ($sex !== 'male'): ?>
                 <a href="<?= url('/user/services/counseling/female') ?>" class="<?= $active_page === 'counseling_female' ? 'active-submenu' : '' ?>">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
-                    Sisters' Counseling
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                    Counseling
                 </a>
                 <?php endif; ?>
+                <a href="<?= url('/user/services/marriage-form') ?>" class="<?= $active_page === 'marriage_form' ? 'active-submenu' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    Marriage Services
+                </a>
+                <a href="<?= url('/user/services/conversion-form') ?>" class="<?= $active_page === 'conversion_form' ? 'active-submenu' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+                    Islamic Studies
+                </a>
             </div>
         </div>
 

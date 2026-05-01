@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ISCAG MIS — Brothers' Counseling Request</title>
+  <title>ISCAG MIS — Counseling Request</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
     <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>" />
 </head>
@@ -12,7 +12,7 @@
 
   <!-- ═══ SIDEBAR ═══ -->
   <?php 
-    $active_page = 'counseling_male'; 
+    $active_page = 'counseling_female'; 
     include BASE_PATH . '/app/views/user/sidebar.php'; 
   ?>
 
@@ -20,8 +20,8 @@
   <div class="main-content">
     <div class="top-bar">
       <div>
-        <div class="top-bar-title">Brothers' Counseling Request</div>
-        <div class="top-bar-subtitle">Schedule a confidential counseling session with our male counselors</div>
+        <div class="top-bar-title">Counseling Request</div>
+        <div class="top-bar-subtitle">Schedule a confidential counseling session with our female counselors</div>
       </div>
       <div class="top-bar-actions">
         <a href="<?= url('/user/dashboard') ?>" class="btn-topbar">← Back to Dashboard</a>
@@ -32,13 +32,13 @@
       <div class="breadcrumb-bar">
         <a href="<?= url('/user/dashboard') ?>">Dashboard</a>
         <span class="sep">›</span>
-        <span class="current">Brothers' Counseling Request Form</span>
+        <span class="current">Counseling Request Form</span>
       </div>
 
       <!-- FORM HEADER BANNER -->
       <div class="section-card" style="margin-bottom:20px;">
         <div class="form-page-header">
-          <h4>Brothers' Counseling Request Form</h4>
+          <h4>Counseling Request Form</h4>
           <p>Da'wah Department — All information will be kept strictly confidential.</p>
         </div>
       </div>
@@ -46,7 +46,7 @@
       <!-- NOTICE -->
       <div class="notice-box">
         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-        <span>This form is exclusively for <strong>male clients</strong>. All sessions and details submitted are handled with complete confidentiality in accordance with Islamic ethical principles.</span>
+        <span>This form is exclusively for <strong>female clients</strong>. Sessions are conducted by female counselors in a private and respectful environment aligned with Islamic values.</span>
       </div>
 
       <!-- MAIN FORM CARD -->
@@ -54,9 +54,9 @@
         <div class="section-card-header">
           <h6>
             <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z"/></svg>
-            Counseling Request Form — Brothers' Department
+            Counseling Request Form
           </h6>
-          <span style="font-size:0.75rem;color:var(--text-muted);">Reference No.: <strong style="color:var(--primary);">#MC-AUTO</strong></span>
+          <span style="font-size:0.75rem;color:var(--text-muted);">Reference No.: <strong style="color:var(--primary);">#FC-AUTO</strong></span>
         </div>
         <div class="section-card-body">
 
@@ -77,7 +77,7 @@
                 <option value="">— Select —</option>
                 <option>Single</option>
                 <option>Married</option>
-                <option>Widower</option>
+                <option>Widow</option>
                 <option>Divorced</option>
               </select>
             </div>
@@ -101,13 +101,13 @@
               <option value="">— Select primary concern —</option>
               <option>Family / Marital Issues</option>
               <option>Personal / Spiritual Struggles</option>
-              <option>Youth / Academic Concerns</option>
+              <option>Youth / Parenting Concerns</option>
               <option>Financial Difficulties</option>
               <option>Grief and Loss</option>
-              <option>Anger Management</option>
+              <option>Domestic Issues</option>
               <option>Other</option>
             </select>
-            <textarea class="form-control" rows="4" placeholder="Please briefly describe your concern or reason for requesting counseling. This will remain confidential..."></textarea>
+            <textarea class="form-control" rows="4" placeholder="Please briefly describe your concern or reason for requesting counseling. All details are kept confidential..."></textarea>
           </div>
           <div class="form-grid cols-2">
             <div>
@@ -131,12 +131,12 @@
             <label class="form-label">Session Type</label>
             <div style="display:flex;gap:20px;margin-top:6px;">
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="session" id="session1" checked />
-                <label class="form-check-label" for="session1">In-Person</label>
+                <input class="form-check-input" type="radio" name="session" id="session1f" checked />
+                <label class="form-check-label" for="session1f">In-Person</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="radio" name="session" id="session2" />
-                <label class="form-check-label" for="session2">By Phone</label>
+                <input class="form-check-input" type="radio" name="session" id="session2f" />
+                <label class="form-check-label" for="session2f">By Phone</label>
               </div>
             </div>
           </div>
@@ -146,7 +146,7 @@
           <div class="form-check" style="margin-bottom:16px;">
             <input class="form-check-input" type="checkbox" id="decl1" />
             <label class="form-check-label" for="decl1">
-              I hereby declare that the information provided is true and correct. I understand that all counseling sessions are confidential and conducted in accordance with Islamic principles.
+              I hereby declare that the information provided is true and correct. I understand that all counseling sessions are confidential and conducted with respect for Islamic values and principles.
             </label>
           </div>
 
@@ -200,7 +200,7 @@
   function addRequest(req) {
     const raw = localStorage.getItem(STORAGE_KEYS.requests);
     const requests = raw ? JSON.parse(raw) : [];
-    if (!req.id) req.id = 'MC-' + String(requests.length + 1).padStart(3, '0');
+    if (!req.id) req.id = 'FC-' + String(requests.length + 1).padStart(3, '0');
     if (!req.date) req.date = new Date().toISOString().split('T')[0];
     if (!req.updatedAt) req.updatedAt = req.date;
     if (!req.status) req.status = 'pending';
@@ -213,7 +213,7 @@
 
   const user = getUser();
 
-  // ── Profile access gate ──
+  // ── Profile access gate + gender gate ──
   const { percentage, missingFields } = getProfileCompletion();
   const isComplete = percentage === 100;
 
@@ -240,14 +240,14 @@
     let primaryLabel = 'Go to Profile';
     let primaryUrl = '../../user_profile.html';
 
-    if (percentage >= 100 && String(user.sex).toLowerCase() !== 'male') {
+    if (percentage >= 100 && String(user.sex).toLowerCase() !== 'female') {
       title = 'Access Restricted';
-      message = 'This counseling service is exclusively available for brothers. You do not have access to this section.';
+      message = 'This counseling service is exclusively available for sisters. You do not have access to this section.';
       primaryLabel = 'Back to Dashboard';
       primaryUrl = '../../user-dashboard.html';
     }
 
-    const missingHtml = missingFields.length > 0
+    const missingHtml = (percentage < 100 && missingFields.length > 0)
       ? `<div style="margin-top:16px;text-align:left;">
            <p style="font-size:0.78rem;color:#6f7f78;margin:0 0 8px;font-weight:600;">The following information is still required:</p>
            <ul style="margin:0;padding:0 0 0 18px;font-size:0.8rem;color:#1f2e2a;line-height:1.8;">
@@ -316,7 +316,7 @@
       showToast('Please check the declaration box before submitting.', '#8b2e2e');
       return;
     }
-    addRequest({ type: 'male_counseling', user: user.id });
+    addRequest({ type: 'female_counseling', user: user.id });
 
     const pageBody = document.querySelector('.page-body');
     pageBody.innerHTML = `

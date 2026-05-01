@@ -28,9 +28,9 @@ class HomeController extends Controller
         $this->view('home/apartment', ['apartmentTypes' => $apartmentTypes]);
     }
 
-    public function daawah(): void
+    public function dawah(): void
     {
-        $this->view('home/daawah');
+        $this->view('home/dawah');
     }
 
     public function damayan(): void

@@ -239,13 +239,35 @@ class UserController extends Controller
     public function maleCounseling(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
-        $this->view('user/Da\'awah/Male/user_form-male-counseling');
+        $this->view('user/Da\'wah/Male/user_form-male-counseling');
     }
 
     public function femaleCounseling(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
-        $this->view('user/Da\'awah/Female/user_form-female-counseling');
+        $this->view('user/Da\'wah/Female/user_form-female-counseling');
+    }
+
+    public function marriageForm(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $this->view('user/Da\'wah/Male/user_form-marriage');
+    }
+
+    public function conversionForm(): void
+    {
+        Auth::protect();
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $this->view('user/Da\'wah/Male/user_form-conversion', ['dbUser' => $dbUser]);
+    }
+
+    public function charity(): void
+    {
+        Auth::protect();
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $this->view('user/Damayan/user_charity', ['dbUser' => $dbUser]);
     }
 
     public function checkStatus(): void

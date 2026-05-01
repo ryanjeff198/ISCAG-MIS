@@ -14,6 +14,16 @@ class AdminController extends Controller
             exit;
         }
 
+        if ($_SESSION['role'] === 'Staff_Male' || $_SESSION['role'] === 'Staff_Female') {
+            header('Location: ' . url('/admin/dawah'));
+            exit;
+        }
+
+        if ($_SESSION['role'] === 'Staff_Damayan') {
+            header('Location: ' . url('/admin/damayan'));
+            exit;
+        }
+
         // Load Real-time Data
         $db = getDbConnection();
 
@@ -183,6 +193,45 @@ class AdminController extends Controller
             'dbUser' => $dbUser,
             'units' => $units,
             'applications' => $applications
+        ]);
+    }
+
+    public function dawahAdminDashboard(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        // Mock data for now - in production this would fetch from service tables
+        $requests = [
+            ['id' => 'MC-1001', 'name' => 'Ahmed Ali', 'type' => 'counseling', 'service_label' => 'Counseling (Male)', 'date' => '2024-05-01', 'status' => 'Pending', 'status_class' => 'badge-pending'],
+            ['id' => 'MS-2002', 'name' => 'Zaid Khan', 'type' => 'marriage', 'service_label' => 'Marriage Service', 'date' => '2024-04-28', 'status' => 'Approved', 'status_class' => 'badge-approved'],
+            ['id' => 'CI-3003', 'name' => 'John Doe', 'type' => 'conversion', 'service_label' => 'Conversion Registration', 'date' => '2024-04-30', 'status' => 'Pending', 'status_class' => 'badge-pending'],
+        ];
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/dawah_dashboard', [
+            'dbUser' => $dbUser,
+            'requests' => $requests
+        ]);
+    }
+
+    public function damayanAdminDashboard(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        // Mock records
+        $records = [
+            ['id' => 'BS-9001', 'deceased_name' => 'Mustafa Al-Amin', 'requester_name' => 'Sarah Al-Amin', 'date' => '2024-05-02', 'status' => 'Pending', 'status_class' => 'badge-pending'],
+            ['id' => 'BS-8005', 'deceased_name' => 'Omar Farooq', 'requester_name' => 'Zainab Farooq', 'date' => '2024-04-25', 'status' => 'Completed', 'status_class' => 'badge-approved'],
+        ];
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/damayan_dashboard', [
+            'dbUser' => $dbUser,
+            'records' => $records
         ]);
     }
 
@@ -586,9 +635,9 @@ class AdminController extends Controller
         ]);
     }
 
-    public function daawahRecords(): void {
+    public function dawahRecords(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
-        $this->view('admin/mis_admin/daawah_records', ['active_page' => 'daawah_records']);
+        $this->view('admin/mis_admin/dawah_records', ['active_page' => 'dawah_records']);
     }
 
     public function damayanRecords(): void {
