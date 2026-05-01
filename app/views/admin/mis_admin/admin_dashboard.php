@@ -165,8 +165,18 @@
               <div style="margin-top:16px">
                 <?php foreach($distData as $d):
                   $c = stripos($d['status'],'pend')!==false?'var(--warning)':(stripos($d['status'],'approv')!==false||stripos($d['status'],'assign')!==false?'var(--success)':'var(--danger)');
+                  $pct = $totalApplications > 0 ? round(($d['count'] / $totalApplications) * 100, 1) : 0;
                 ?>
-                <div class="bl-row"><div class="bl-dot" style="background:<?=$c?>"></div><div><div class="bl-label"><?=$d['status']?></div><div class="bl-sub"><?=$d['count']?> applications</div></div></div>
+                <div class="bl-row" style="margin-bottom:12px;">
+                  <div class="bl-dot" style="background:<?=$c?>"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div class="bl-label"><?=$d['status']?></div>
+                      <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
+                    </div>
+                    <div class="bl-sub"><?=$d['count']?> applications</div>
+                  </div>
+                </div>
                 <?php endforeach; ?>
               </div>
             </div>
@@ -178,12 +188,48 @@
             <!-- Billing -->
             <div class="card">
               <div class="card-head"><div><div class="card-title">Billing Health</div><div class="card-sub">Invoice collection</div></div></div>
-              <div style="position:relative;height:180px"><canvas id="billingChart"></canvas></div>
+              <div style="position:relative;height:150px"><canvas id="billingChart"></canvas></div>
+              <div style="margin-top:10px">
+                <?php 
+                  $totalBills = array_sum(array_column($billingStats, 'count'));
+                  foreach($billingStats as $b):
+                    $bc = stripos($b['status'],'paid')!==false?'var(--success)':(stripos($b['status'],'overdue')!==false?'var(--danger)':'var(--warning)');
+                    $bpct = $totalBills > 0 ? round(($b['count'] / $totalBills) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:8px;">
+                  <div class="bl-dot" style="background:<?=$bc?>"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div class="bl-label" style="font-size:0.85rem;"><?=$b['status']?></div>
+                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$bpct?>%</div>
+                    </div>
+                  </div>
+                </div>
+                <?php endforeach; ?>
+              </div>
             </div>
             <!-- Unit Occupancy -->
             <div class="card">
               <div class="card-head"><div><div class="card-title">Unit Occupancy</div><div class="card-sub">Apartment availability</div></div></div>
-              <div style="position:relative;height:180px"><canvas id="occupancyChart"></canvas></div>
+              <div style="position:relative;height:140px;display:flex;justify-content:center"><canvas id="occupancyChart"></canvas></div>
+              <div style="margin-top:16px">
+                <?php 
+                  $totalUnits = array_sum(array_column($occupancyData, 'count'));
+                  foreach($occupancyData as $o):
+                    $oc = stripos($o['status'],'avail')!==false?'var(--info)':(stripos($o['status'],'occup')!==false?'var(--primary)':'var(--danger)');
+                    $opct = $totalUnits > 0 ? round(($o['count'] / $totalUnits) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:10px;">
+                  <div class="bl-dot" style="background:<?=$oc?>"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div class="bl-label" style="font-size:0.85rem;"><?=$o['status']?></div>
+                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$opct?>%</div>
+                    </div>
+                  </div>
+                </div>
+                <?php endforeach; ?>
+              </div>
             </div>
             <!-- Module Performance -->
             <div class="card">
@@ -197,11 +243,15 @@
                   ['Alerts',$auditFlags,'var(--danger)']
                 ];
               ?>
-              <?php foreach($mods as $m): ?>
+              <?php
+                $totalModCount = array_sum(array_column($mods, 1));
+                foreach($mods as $m): 
+                  $modPct = $totalModCount > 0 ? round(($m[1] / $totalModCount) * 100, 1) : 0;
+              ?>
               <div class="mod-item">
                 <div class="mod-head">
                   <span class="mod-name"><?=$m[0]?></span>
-                  <span class="mod-val" style="color:<?=$m[2]?>"><?=number_format($m[1])?></span>
+                  <span class="mod-val" style="color:<?=$m[2]?>"><?=number_format($m[1])?> <small style="font-size:0.65rem;opacity:0.7;margin-left:4px;">(<?=$modPct?>%)</small></span>
                 </div>
                 <div class="mod-bar"><div class="mod-fill" style="width:<?=min(100,($m[1]/max($maxM,1))*100)?>%;background:<?=$m[2]?>"></div></div>
               </div>
