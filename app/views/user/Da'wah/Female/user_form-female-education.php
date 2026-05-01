@@ -41,6 +41,39 @@ foreach ($history as $req) {
     .stat-card:hover { transform: translateY(-4px); border-color: var(--primary-female); }
     .stat-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
     .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--primary-female-dark); }
+
+    /* 📄 REGISTRATION SLIP STYLING */
+    .slip-modal {
+      display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center;
+    }
+    .slip-content {
+      background: #e2e8f0; width: 400px; padding: 30px; border-radius: 4px; position: relative;
+      border: 1px solid #94a3b8; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      font-family: 'Source Sans 3', sans-serif; color: #1e40af;
+    }
+    .slip-header { text-align: center; margin-bottom: 20px; }
+    .slip-logo { width: 60px; height: 60px; margin: 0 auto 10px; display: block; filter: grayscale(1) brightness(0.5) sepia(1) hue-rotate(190deg) saturate(3); }
+    .slip-title { font-size: 0.85rem; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
+    .slip-subtitle { font-size: 0.95rem; font-weight: 900; margin-bottom: 2px; }
+    .slip-batch { font-size: 0.85rem; font-weight: 800; }
+    
+    .slip-field { margin-bottom: 12px; display: flex; align-items: flex-end; gap: 8px; font-weight: 700; font-size: 0.9rem; }
+    .slip-label { white-space: nowrap; }
+    .slip-line { flex: 1; border-bottom: 1.5px solid #1e40af; height: 18px; }
+    
+    .slip-payment { margin-top: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .pay-item { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 0.85rem; }
+    .pay-box { width: 34px; height: 18px; border: 1.5px solid #1e40af; background: white; }
+    
+    .slip-footer { margin-top: 25px; border-top: 0px; }
+    .sig-row { display: flex; align-items: flex-end; gap: 8px; font-weight: 700; font-size: 0.85rem; margin-bottom: 5px; }
+    .approved-by { font-weight: 800; font-size: 0.8rem; margin-top: 5px; text-transform: uppercase; }
+
+    .btn-print-slip {
+      background: #1e40af; color: white; border: none; padding: 10px 20px; border-radius: 8px;
+      font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; margin-top: 20px; width: 100%; justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -266,14 +299,74 @@ foreach ($history as $req) {
         <td>${new Date(h.created_at).toLocaleDateString()}</td>
         <td><span class="badge-status badge-${h.status}">${h.status}</span></td>
         <td>
-          <button class="btn-view-doc" title="View Details">
-            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-            Details
+          <button class="btn-view-doc" onclick="openSlip()" title="View Registration Slip" style="background:rgba(212,175,55,0.1); color:#B8860B; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:700; display:flex; align-items:center; gap:6px;">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+            Print Slip
           </button>
         </td>
       </tr>
     `).join('');
   }
+
+  // 📄 Slip Functions
+  function openSlip() {
+    document.getElementById('slip-modal').style.display = 'flex';
+  }
+  function closeSlip() {
+    document.getElementById('slip-modal').style.display = 'none';
+  }
+  window.onclick = function(event) {
+    const modal = document.getElementById('slip-modal');
+    if (event.target == modal) closeSlip();
+  }
 </script>
+
+<!-- 📄 REGISTRATION SLIP MODAL -->
+<div id="slip-modal" class="slip-modal">
+  <div class="slip-content">
+    <div class="slip-header">
+      <div style="width:64px; height:64px; background:#fff; border-radius:50%; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; border:1px solid #cbd5e1;">
+        <svg viewBox="0 0 24 24" style="width:40px; height:40px; fill:#1e40af;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm1-13h-2v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+      </div>
+      <div class="slip-title">ISCAG PHILIPPINES – DAWAH FEMALE SECTION</div>
+      <div class="slip-subtitle">REGISTRATION FEE</div>
+      <div class="slip-batch">BATCH 08</div>
+    </div>
+    
+    <div class="slip-body">
+      <div class="slip-field">
+        <span class="slip-label">NAME :</span>
+        <div class="slip-line" id="slip-name"><?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?></div>
+      </div>
+      <div class="slip-field">
+        <span class="slip-label">DATE :</span>
+        <div class="slip-line" id="slip-date"><?= date('M d, Y') ?></div>
+      </div>
+      <div class="slip-field">
+        <span class="slip-label">LEVEL :</span>
+        <div class="slip-line" id="slip-level">Not Assigned</div>
+      </div>
+      
+      <div class="slip-payment">
+        <div class="pay-item">CASH <div class="pay-box"></div></div>
+        <div class="pay-item">GCASH <div class="pay-box"></div></div>
+      </div>
+    </div>
+    
+    <div class="slip-footer">
+      <div class="sig-row">
+        <span class="slip-label">RECEIVED BY :</span>
+        <div class="slip-line"></div>
+      </div>
+      <div class="approved-by">APPROVED BY : SISTER KHADIJAH DIMAANO</div>
+    </div>
+
+    <button class="btn-print-slip" onclick="window.print()">
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+      Print Official Slip
+    </button>
+    <button onclick="closeSlip()" style="margin-top:10px; background:none; border:none; color:#64748b; font-size:0.8rem; cursor:pointer; width:100%; text-align:center; font-weight:700;">Close Preview</button>
+  </div>
+</div>
 </body>
 </html>
