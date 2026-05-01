@@ -1513,3 +1513,37 @@ textarea.form-control { resize: vertical; }
   .form-grid.cols-2,
   .form-grid.cols-2-1 { grid-template-columns: 1fr; }
 }
+
+/* ── Sidebar Locked State ── */
+.nav-dropdown-wrap.locked .nav-dropdown-trigger {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.nav-dropdown-wrap.locked .nav-dropdown-trigger:hover {
+  background: rgba(139, 46, 46, 0.06);
+}
+.nav-dropdown-wrap.locked .nav-dropdown-arrow {
+  display: none;
+}
+.nav-dropdown-wrap.locked .nav-dropdown {
+  display: none !important;
+}
+.nav-lock-badge {
+  display: none;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--warning);
+  background: rgba(199, 154, 43, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.nav-dropdown-wrap.locked .nav-lock-badge {
+  display: inline-flex;
+}
+.sidebar.collapsed .nav-lock-badge {
+  display: none !important;
+}

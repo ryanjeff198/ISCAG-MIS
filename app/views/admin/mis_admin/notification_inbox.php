@@ -1,19 +1,7 @@
 <?php 
 $active_page = 'notification'; 
-if (!function_exists('asset')) {
-    function asset($path) { 
-        $baseUrl = str_replace('/public/index.php', '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
-        $baseUrl = rtrim($baseUrl, '/');
-        if (str_ends_with($baseUrl, '/public')) return $baseUrl . '/' . ltrim($path, '/');
-        return $baseUrl . "/public/" . ltrim($path, '/'); 
-    }
-}
-if (!function_exists('url')) {
-    function url($path) { 
-        $baseUrl = str_replace('/public/index.php', '', str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
-        return rtrim($baseUrl, '/') . "/" . ltrim($path, '/'); 
-    }
-}
+$notifications = $notifications ?? [];
+$unreadCount = $unreadCount ?? 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -36,10 +24,9 @@ if (!function_exists('url')) {
     <main class="main-content">
       <div class="top-bar">
         <div class="top-bar-left">
-          
           <div>
             <div class="top-bar-title" id="page-title">Admin Notifications</div>
-            <div class="top-bar-subtitle">System alerts, new requests, and system actions</div>
+            <div class="top-bar-subtitle">Real-time system alerts from tenant payments, applications, and renewals</div>
           </div>
         </div>
         <div class="top-bar-actions">
@@ -54,37 +41,75 @@ if (!function_exists('url')) {
         <div class="admin-insights">
           <div class="insight-card">
             <div class="insight-label">Unread Alerts</div>
-            <div class="insight-value danger" id="stat-unread-val">0</div>
+            <div class="insight-value danger" id="stat-unread-val"><?= $unreadCount ?></div>
           </div>
           <div class="insight-card">
-            <div class="insight-label">Pending Reviews</div>
-            <div class="insight-value warning">14</div>
+            <div class="insight-label">Total Notifications</div>
+            <div class="insight-value info"><?= count($notifications) ?></div>
           </div>
           <div class="insight-card">
             <div class="insight-label">System Health</div>
             <div class="insight-value success">EXCELLENT</div>
           </div>
           <div class="insight-card">
-            <div class="insight-label">Active Sessions</div>
-            <div class="insight-value info">3</div>
+            <div class="insight-label">Last Activity</div>
+            <div class="insight-value info"><?= !empty($notifications) ? date('M j, g:ia', strtotime($notifications[0]['created_at'])) : 'N/A' ?></div>
           </div>
         </div>
+
         <div class="section-card">
           <div class="section-card-header">
             <h6><svg viewBox="0 0 24 24">
                 <path
                   d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
               </svg>System Activity & Notifications</h6>
+            <?php if ($unreadCount > 0): ?>
             <span id="unread-badge"
-              style="font-size:0.72rem;background:var(--danger);color:white;padding:2px 8px;border-radius:12px;font-weight:700;">0
+              style="font-size:0.72rem;background:var(--danger);color:white;padding:2px 8px;border-radius:12px;font-weight:700;"><?= $unreadCount ?>
               New</span>
+            <?php endif; ?>
           </div>
+          
+          <!-- Notification List -->
           <div class="section-card-body" id="notif-container" style="background:#f8f9fa;">
-            <!-- RENDERED DYNAMICALLY -->
+            <?php if (empty($notifications)): ?>
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:var(--text-muted);opacity:0.3;margin-bottom:16px;">
+                  <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                </svg>
+                <p style="color:var(--text-muted);">No notifications yet. They will appear here when tenants submit payments, apply for apartments, or request renewals.</p>
+              </div>
+            <?php else: ?>
+              <?php foreach ($notifications as $n): ?>
+                <div class="notif-card <?= $n['is_read'] ? '' : 'unread' ?>" 
+                     onclick="markAsRead(<?= $n['id'] ?>)" 
+                     data-id="<?= $n['id'] ?>"
+                     style="cursor:pointer;">
+                  <div class="notif-icon type-<?= htmlspecialchars($n['type'] ?? 'system') ?>">
+                    <svg viewBox="0 0 24 24"><?= getAdminNotifIcon($n['type'] ?? 'system') ?></svg>
+                  </div>
+                  <div class="notif-content">
+                    <div class="notif-header">
+                      <h4 class="notif-title"><?= htmlspecialchars($n['title']) ?></h4>
+                      <span class="notif-time"><?= timeAgoAdmin($n['created_at']) ?></span>
+                    </div>
+                    <p class="notif-message"><?= htmlspecialchars($n['message']) ?></p>
+                    <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
+                      <span style="font-size:0.72rem;color:var(--text-muted);">By: <?= htmlspecialchars($n['actor_name'] ?? 'System') ?></span>
+                      <?php if (!empty($n['source_url'])): ?>
+                        <a href="<?= url($n['source_url']) ?>" 
+                           style="font-size:0.75rem;color:var(--primary);font-weight:600;text-decoration:none;"
+                           onclick="event.stopPropagation();">View Source →</a>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            <?php endif; ?>
           </div>
 
-          <div class="notif-detail-view section-card-body" id="notif-detail-view">
-            <!-- RENDERED DYNAMICALLY -->
+          <!-- Detail View (shown when clicking a notification) -->
+          <div class="notif-detail-view section-card-body" id="notif-detail-view" style="display:none;">
           </div>
         </div>
       </div>
@@ -94,16 +119,14 @@ if (!function_exists('url')) {
   <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
     standardizePage('admin');
-    
+
+    // Source link and label helpers
     function getSourceLink(type) {
       const map = {
-        approve: '<?= url('/admin/mis_admin/apartment_confirmation') ?>?tab=approved',
-        request: '<?= url('/admin/mis_admin/apartment_confirmation') ?>?tab=pending',
+        approve: '<?= url('/admin/mis_admin/apartment_confirmation') ?>',
+        request: '<?= url('/admin/apartment/renewals') ?>',
         payment: '<?= url('/admin/mis_admin/billing') ?>',
         alert: '<?= url('/admin/mis_admin/billing') ?>',
-        staff: '<?= url('/admin/mis_admin/records') ?>',
-        user: '<?= url('/admin/mis_admin/records') ?>',
-        schedule: '<?= url('/admin/mis_admin/reports') ?>',
         system: '<?= url('/admin/dashboard') ?>'
       };
       return map[type] || '<?= url('/admin/dashboard') ?>';
@@ -112,185 +135,93 @@ if (!function_exists('url')) {
     function getSourceLabel(type) {
       const map = {
         approve: 'View Applications',
-        request: 'View Applications',
+        request: 'View Renewals',
         payment: 'Manage Billing',
         alert: 'Check Payments',
-        staff: 'User Records',
-        user: 'User Management',
-        schedule: 'Revenue Reports',
         system: 'Go to Dashboard'
       };
       return map[type] || 'Go to Section';
     }
 
-    function getIconSvg(type) {
-      const icons = {
-        approve: '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>',
-        reject: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>',
-        request: '<path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>',
-        payment: '<path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>',
-        alert: '<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>',
-        update: '<path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zM12 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM8 6H6v4h10V6H8z"/>',
-        schedule: '<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>',
-        staff: '<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>',
-        user: '<path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>'
-      };
-      return icons[type] || '<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>';
-    }
-
-    function renderActivityLog() {
-      const log = getActivityLog();
-      const container = document.getElementById('notif-container');
-      const badge = document.getElementById('unread-badge');
-      const unreadCount = log.filter(l => !l.read).length;
-
-      // Update Sidebar & KPIs
-      if (typeof initNotifBadge === 'function') initNotifBadge('admin');
-      
-      const statUnread = document.getElementById('stat-unread-val');
-      if (statUnread) statUnread.textContent = unreadCount;
-
-      if (unreadCount > 0) {
-        badge.textContent = `${unreadCount} New`;
-        badge.style.display = 'inline-block';
-      } else {
-        badge.style.display = 'none';
-      }
-
-      if (log.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:var(--text-muted);opacity:0.3;margin-bottom:16px;">
-              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
-            </svg>
-            <p style="color:var(--text-muted);">No notifications yet.</p>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = log.map((n) => `
-        <div class="notif-card ${n.read ? '' : 'unread'}" onclick="markAsRead('${n.id}')">
-          <div class="notif-icon type-${n.type || 'system'}">
-            <svg viewBox="0 0 24 24">${getIconSvg(n.type)}</svg>
-          </div>
-          <div class="notif-content">
-            <div class="notif-header">
-              <h4 class="notif-title">${n.action}</h4>
-              <span class="notif-time">${timeAgo(n.time)}</span>
-            </div>
-            <p class="notif-message">${n.detail}</p>
-            <div style="font-size:0.75rem;color:var(--primary);font-weight:600;margin-top:4px;">Click to read full details &rarr;</div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // Listen for storage updates (tab sync)
-    window.addEventListener('activityLogUpdated', () => {
-      renderActivityLog();
-      const urlParams = new URLSearchParams(window.location.search);
-      const viewId = urlParams.get('view');
-      if (viewId) renderDetailView(viewId);
-    });
-
-    function markAsRead(id) {
-      const log = getActivityLog();
-      const idx = log.findIndex(l => l.id === id);
-      if (idx !== -1) {
-        log[idx].read = true;
-        saveActivityLog(log);
-        renderActivityLog();
-        window.location.href = '?view=' + id;
-      }
-    }
-
-    function markAllRead() {
-      const log = getActivityLog();
-      log.forEach(l => l.read = true);
-      saveActivityLog(log);
-      renderActivityLog();
-      showToast('All notifications marked as read', 'var(--success)');
-    }
-
-    function renderDetailView(id) {
-      const log = getActivityLog();
-      const n = log.find(l => l.id === id);
-      if (!n) { window.location.href = '<?= url('/admin/mis_admin/notification') ?>'; return; }
-
-      document.getElementById('page-title').textContent = 'Notification Detail';
-      document.getElementById('notif-container').style.display = 'none';
-      const detailView = document.getElementById('notif-detail-view');
-      detailView.style.display = 'block';
-
-      detailView.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 24px;">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <div class="notif-detail-icon type-${n.type || 'system'}">
-              <svg viewBox="0 0 24 24">${getIconSvg(n.type)}</svg>
-            </div>
-            <div>
-              <h3 class="notif-detail-title">${n.action}</h3>
-              <span class="notif-detail-meta-text">${new Date(n.time).toLocaleString()}</span>
-            </div>
-          </div>
+    // ── Mark single notification as read (AJAX) ──
+    async function markAsRead(id) {
+      try {
+        const resp = await fetch('<?= url('/admin/mis_admin/notification/read') ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          // Update UI
+          const card = document.querySelector(`.notif-card[data-id="${id}"]`);
+          if (card) card.classList.remove('unread');
           
-        </div>
-        
-        <div class="notif-detail-body" style="border-top: none; padding-top: 0;">
-          <div class="notif-detail-content">${n.detail}</div>
-          
-          <div class="detail-meta">
-            <div class="detail-meta-item">
-              <div class="label">Reference ID</div>
-              <div class="value" style="font-family:monospace;">${n.id}</div>
-            </div>
-            <div class="detail-meta-item">
-              <div class="label">Actor</div>
-              <div class="value">${n.actor}</div>
-            </div>
-            <div class="detail-meta-item">
-              <div class="label">Category</div>
-              <div class="value">${(n.type || 'system').toUpperCase()}</div>
-            </div>
-          </div>
-
-          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-            <button class="btn-back" onclick="window.location.href='<?= url('/admin/mis_admin/notification') ?>'">
-              <svg viewBox="0 0 24 24" style="fill:currentColor;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-              Back to Inbox
-            </button>
-            <button class="btn-action" onclick="window.location.href='${getSourceLink(n.type)}'">
-              ${getSourceLabel(n.type)}
-              <svg viewBox="0 0 24 24" style="fill:currentColor; margin-left: 8px;"><path d="M14 3h7v7h-2V6.41l-9 9L8.59 14l9-9H14V3zM5 5h5v2H5v12h12v-5h2v7H3V3h7v2H5z"/></svg>
-            </button>
-          </div>
-        </div>
-      `;
+          const badge = document.getElementById('unread-badge');
+          const statEl = document.getElementById('stat-unread-val');
+          if (badge) {
+            if (data.unread > 0) {
+              badge.textContent = data.unread + ' New';
+            } else {
+              badge.style.display = 'none';
+            }
+          }
+          if (statEl) statEl.textContent = data.unread;
+        }
+      } catch (e) {
+        console.error('Failed to mark notification:', e);
+      }
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const viewId = urlParams.get('view');
-    if (viewId) {
-      renderDetailView(viewId);
-    } else {
-      renderActivityLog();
-    }
-
-    function timeAgo(date) {
-      const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-      let interval = seconds / 86400;
-      if (interval > 1) return Math.floor(interval) + " days ago";
-      interval = seconds / 3600;
-      if (interval > 1) return Math.floor(interval) + " hours ago";
-      interval = seconds / 60;
-      if (interval > 1) return Math.floor(interval) + " minutes ago";
-      return "Just now";
+    // ── Mark ALL as read (AJAX) ──
+    async function markAllRead() {
+      try {
+        const resp = await fetch('<?= url('/admin/mis_admin/notification/read_all') ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await resp.json();
+        if (data.success) {
+          // Remove all unread styling
+          document.querySelectorAll('.notif-card.unread').forEach(c => c.classList.remove('unread'));
+          const badge = document.getElementById('unread-badge');
+          if (badge) badge.style.display = 'none';
+          const statEl = document.getElementById('stat-unread-val');
+          if (statEl) statEl.textContent = '0';
+          showToast('All notifications marked as read', 'var(--success)');
+        }
+      } catch (e) {
+        console.error('Failed to mark all:', e);
+      }
     }
 
     if (typeof loadUserNav === 'function') loadUserNav();
   </script>
 </body>
-
 </html>
 
+<?php
+// ── PHP Helper Functions ──
+function getAdminNotifIcon(string $type): string {
+    $icons = [
+        'payment'  => '<path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>',
+        'approve'  => '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>',
+        'approval' => '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>',
+        'request'  => '<path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>',
+        'alert'    => '<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>',
+        'warning'  => '<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>',
+        'system'   => '<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>',
+    ];
+    return $icons[$type] ?? $icons['system'];
+}
+
+function timeAgoAdmin(string $datetime): string {
+    $now = time();
+    $diff = $now - strtotime($datetime);
+    if ($diff < 60) return 'Just now';
+    if ($diff < 3600) return floor($diff / 60) . ' min ago';
+    if ($diff < 86400) return floor($diff / 3600) . ' hours ago';
+    if ($diff < 604800) return floor($diff / 86400) . ' days ago';
+    return date('M j, Y', strtotime($datetime));
+}
+?>

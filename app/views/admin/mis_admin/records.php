@@ -190,6 +190,9 @@
     <?php
     $jsUsers = [];
     foreach ($users ?? [] as $u) {
+        // Skip current logged-in user to prevent self-lockout
+        if (($u['tenant_id'] ?? '') == ($_SESSION['user_id'] ?? '')) continue;
+        
         $sex = $u['addinfo_sex'] ?: $u['account_sex'];
         // Evaluate rough profile completion
         $profilePct = 30; 
@@ -354,7 +357,7 @@
       .then(r => r.json())
       .then(data => {
           if (data.success) {
-              const u = allUsers.find(usr => usr.id === id);
+              const u = allUsers.find(usr => String(usr.id) === String(id));
               if (u) {
                   u.status = data.newStatus;
                   showToast((u.status === 'active' ? '✅ ' : '⛔ ') + u.name + ' is now ' + u.status, u.status === 'active' ? 'var(--success)' : 'var(--danger)');

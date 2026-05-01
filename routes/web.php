@@ -43,7 +43,7 @@ $routes = [
     '/user/profile/avatar/serve' => ['UserController', 'serveAvatar'],
     '/user/notifications' => ['UserController', 'notifications'],
     '/user/status/check'  => ['UserController', 'checkStatus'],
-    '/user/notifications/mark-read' => ['UserController', 'markNotificationRead'],
+    '/user/notifications/mark-all-read' => ['UserController', 'markAllRead'],
     '/logout'           => ['AuthController', 'logout'],
 
     // User Apartment Module
@@ -125,8 +125,13 @@ $routes = [
     '/admin/mis_admin/toggle_user_status'  => ['AdminController', 'toggleUserStatus'],
     '/admin/mis_admin/audit_logs'          => ['AdminController', 'auditLogs'],
     '/admin/mis_admin/notification'        => ['AdminController', 'notificationInbox'],
+    '/admin/mis_admin/notification/read'   => ['AdminController', 'markAdminNotifRead'],
+    '/admin/mis_admin/notification/read_all' => ['AdminController', 'markAllAdminNotifsRead'],
     '/admin/mis_admin/renewal_records'     => ['AdminController', 'renewalRecords'],
     '/admin/mis_admin/tenant_image'        => ['AdminController', 'serveTenantImage'],
+    '/admin/mis_admin/broadcast/users'     => ['AdminController', 'getBroadcastUsers'],
+    '/admin/mis_admin/broadcast/send'      => ['AdminController', 'processBroadcast'],
+    '/admin/mis_admin/broadcast/history'   => ['AdminController', 'getBroadcastHistory'],
 
     // Apartment Type Management API
     '/api/apartment-types'                 => ['ApartmentTypeController', 'listTypes'],

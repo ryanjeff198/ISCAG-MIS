@@ -109,7 +109,9 @@ const DEFAULT_ACTIVITY_LOG = [
 function initAdminData() {
   // Seed shared data if not yet initialized
   if (!localStorage.getItem(STORAGE_KEYS.initialized)) {
-    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(DEFAULT_USER));
+    if (!localStorage.getItem(STORAGE_KEYS.user)) {
+        localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(DEFAULT_USER));
+    }
     localStorage.setItem(STORAGE_KEYS.apartments, JSON.stringify(DEFAULT_APARTMENTS));
     localStorage.setItem(STORAGE_KEYS.requests, JSON.stringify(DEFAULT_REQUESTS));
     localStorage.setItem(STORAGE_KEYS.initialized, '1');
@@ -372,6 +374,16 @@ function initSidebar() {
 }
 
 function initDropdowns() {
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+
+  const brandText = sidebar.querySelector('.brand-text span')?.textContent || '';
+  const isAdmin = brandText.includes('Admin');
+  const isTenant = brandText.includes('User');
+
+  // If it's a User/Tenant sidebar, it already has its own logic in sidebar.php
+  if (isTenant) return;
+
   document.querySelectorAll('.nav-dropdown-trigger').forEach(trigger => {
     const menuId = trigger.getAttribute('data-menu');
     const menu = menuId ? document.getElementById(menuId) : trigger.nextElementSibling;
@@ -393,38 +405,32 @@ function initDropdowns() {
 }
 
 function loadUserNav() {
+  console.log('[DEBUG] loadUserNav triggered');
+  // Check for staff profile first if in staff mode
+  let user = getUser();
+  let roleLabel = 'Apartment Manager';
+  const staffProfileRaw = localStorage.getItem('mis_apartment_staff_profile');
+  if (staffProfileRaw) {
+    const staff = JSON.parse(staffProfileRaw);
+    if (staff.name) user.name = staff.name;
+    if (staff.occupation) {
+      roleLabel = (staff.occupation === 'Property Manager' || staff.occupation === 'Administrator') ? 'Apartment Manager' : staff.occupation;
+    }
+  }
+
   const navName = document.getElementById('nav-name');
   const navRole = document.getElementById('nav-role');
   const navAvatar = document.getElementById('nav-avatar');
 
-  // If PHP already rendered a real name, do NOT overwrite it from localStorage
-  const phpNameExists = navName && navName.textContent.trim() && 
-                         navName.textContent.trim() !== 'Da\'wah Staff' && 
-                         navName.textContent.trim() !== 'User';
-
-  if (!phpNameExists && navName) {
-    // Only fall back to localStorage if PHP didn't provide a name
-    let user = getUser();
-    const staffProfileRaw = localStorage.getItem('mis_apartment_staff_profile');
-    if (staffProfileRaw) {
-      const staff = JSON.parse(staffProfileRaw);
-      if (staff.name) user.name = staff.name;
-    }
-    navName.textContent = user.name;
+  // PROTECTION: If we are on a User/Tenant page with preserve attribute, DO NOT let localStorage overwrite
+  if (navName && (navName.hasAttribute('data-preserve') || navName.hasAttribute('data-force-sync'))) {
+    console.log('[DEBUG] loadUserNav ABORTED - Preservation attribute detected');
+    return; // Exit completely if we detect preservation intent
   }
 
-  // Never overwrite role if data-preserve-role is set (Da'wah pages set this)
+  if (navName) navName.textContent = user.name;
   if (navRole && !navRole.hasAttribute('data-preserve-role')) {
-      const currentRole = navRole.textContent.trim();
-      if (currentRole === 'Property Manager' || currentRole === 'Apartment Manager' || currentRole === 'Staff') {
-          const staffProfileRaw = localStorage.getItem('mis_apartment_staff_profile');
-          if (staffProfileRaw) {
-              const staff = JSON.parse(staffProfileRaw);
-              if (staff.occupation) {
-                  navRole.textContent = staff.occupation;
-              }
-          }
-      }
+    navRole.textContent = roleLabel;
   }
 
   // Avatar: never apply localStorage photos on pages that mark the avatar as PHP-controlled
@@ -583,9 +589,12 @@ function initNotifBadge(role) {
     const notifs = getNotifications();
     unread = notifs.filter(n => n.tenantId === user.id && !n.read).length;
   } else {
-    // Admin/Staff sees activity-log-based notifications
-    const log = getActivityLog();
-    unread = log.filter(l => !l.read).length;
+    const hasPhpBadge = document.querySelector('.notif-dot:not(.dynamic-notif-dot)');
+    if (hasPhpBadge) return;
+    
+    // In many modern admin pages, we handle notifications server-side.
+    // We only use the local activity log if explicitly needed.
+    unread = 0;
   }
   
   // Update sidebar badge if it exists (legacy selector)
@@ -903,7 +912,9 @@ function standardizePage(role) {
   initReportsData();
   initSidebar();
   initDropdowns();
-  loadUserNav();
+  if (role !== 'user' && role !== 'tenant') {
+    loadUserNav();
+  }
   setTopBarDate();
   initNotifBadge(role);
   initLogoutModal();

@@ -166,15 +166,65 @@
           <div class="chart-row three" style="margin-bottom:16px">
             <div class="card">
               <div class="card-head"><div><div class="card-title">Application Status</div><div class="card-sub">Apartment requests</div></div></div>
-              <div style="position:relative;height:220px"><canvas id="appChart"></canvas></div>
+              <div style="position:relative;height:140px"><canvas id="appChart"></canvas></div>
+              <div style="margin-top:16px">
+                <?php foreach($appStatusDist as $d):
+                  $c = stripos($d['status'],'pend')!==false?'var(--warning)':(stripos($d['status'],'approv')!==false||stripos($d['status'],'assign')!==false?'var(--success)':'var(--danger)');
+                  $pct = $totalApps > 0 ? round(($d['count'] / $totalApps) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:8px;">
+                  <div class="bl-dot" style="background:<?=$c?>"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div>
+                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
+                    </div>
+                  </div>
+                </div>
+                <?php endforeach; ?>
+              </div>
             </div>
             <div class="card">
               <div class="card-head"><div><div class="card-title">Parking Permits</div><div class="card-sub">Allocation breakdown</div></div></div>
-              <div style="position:relative;height:220px;display:flex;justify-content:center"><canvas id="parkChart"></canvas></div>
+              <div style="position:relative;height:140px;display:flex;justify-content:center"><canvas id="parkChart"></canvas></div>
+              <div style="margin-top:16px">
+                <?php foreach($parkingStatusDist as $d):
+                  $c = stripos($d['status'],'approv')!==false?'var(--success)':(stripos($d['status'],'pend')!==false?'var(--warning)':'var(--danger)');
+                  $pct = $totalParking > 0 ? round(($d['count'] / $totalParking) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:8px;">
+                  <div class="bl-dot" style="background:<?=$c?>"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div>
+                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
+                    </div>
+                  </div>
+                </div>
+                <?php endforeach; ?>
+              </div>
             </div>
             <div class="card">
               <div class="card-head"><div><div class="card-title">Billing Health</div><div class="card-sub">Invoice status</div></div></div>
-              <div style="position:relative;height:220px"><canvas id="billChart"></canvas></div>
+              <div style="position:relative;height:140px"><canvas id="billChart"></canvas></div>
+              <div style="margin-top:16px">
+                <?php 
+                  $totalBills = array_sum(array_column($billingDist, 'count'));
+                  foreach($billingDist as $d):
+                    $c = stripos($d['status'],'paid')!==false?'var(--success)':(stripos($d['status'],'overdue')!==false?'var(--danger)':'var(--warning)');
+                    $pct = $totalBills > 0 ? round(($d['count'] / $totalBills) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:8px;">
+                  <div class="bl-dot" style="background:<?=$c?>"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div>
+                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
+                    </div>
+                  </div>
+                </div>
+                <?php endforeach; ?>
+              </div>
             </div>
           </div>
 
@@ -182,15 +232,69 @@
           <div class="chart-row three" style="margin-bottom:16px">
             <div class="card">
               <div class="card-head"><div><div class="card-title">Demographics</div><div class="card-sub">Gender distribution</div></div></div>
-              <div style="position:relative;height:220px;display:flex;justify-content:center"><canvas id="genderChart"></canvas></div>
+              <div style="position:relative;height:140px;display:flex;justify-content:center"><canvas id="genderChart"></canvas></div>
+              <div style="margin-top:16px">
+                <?php 
+                  $totalDem = array_sum(array_column($genderDist, 'count'));
+                  foreach($genderDist as $d):
+                    $gc = ($d['gender'] === 'Male') ? 'var(--info)' : (($d['gender'] === 'Female') ? 'var(--warning)' : 'var(--danger)');
+                    $pct = $totalDem > 0 ? round(($d['count'] / $totalDem) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:8px;">
+                  <div class="bl-dot" style="background:<?=$gc?>"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['gender'] ?: 'Unknown'?></div>
+                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
+                    </div>
+                  </div>
+                </div>
+                <?php endforeach; ?>
+              </div>
             </div>
             <div class="card">
               <div class="card-head"><div><div class="card-title">Unit Occupancy</div><div class="card-sub">Apartment availability</div></div></div>
-              <div style="position:relative;height:220px"><canvas id="occChart"></canvas></div>
+              <div style="position:relative;height:140px"><canvas id="occChart"></canvas></div>
+              <div style="margin-top:16px">
+                <?php 
+                  $totalOcc = array_sum(array_column($occupancyDist, 'count'));
+                  foreach($occupancyDist as $d):
+                    $oc = stripos($d['status'],'avail')!==false?'var(--info)':(stripos($d['status'],'occup')!==false?'var(--primary)':'var(--danger)');
+                    $pct = $totalOcc > 0 ? round(($d['count'] / $totalOcc) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:8px;">
+                  <div class="bl-dot" style="background:<?=$oc?>"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div>
+                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
+                    </div>
+                  </div>
+                </div>
+                <?php endforeach; ?>
+              </div>
             </div>
             <div class="card">
               <div class="card-head"><div><div class="card-title">Account Verification</div><div class="card-sub">Verified vs unverified</div></div></div>
-              <div style="position:relative;height:220px;display:flex;justify-content:center"><canvas id="verifyChart"></canvas></div>
+              <div style="position:relative;height:140px;display:flex;justify-content:center"><canvas id="verifyChart"></canvas></div>
+              <div style="margin-top:16px">
+                <?php 
+                  $totalVer = array_sum(array_column($statusDist, 'count'));
+                  foreach($statusDist as $d):
+                    $vc = stripos($d['status'],'verif')!==false?'var(--success)':'var(--danger)';
+                    $pct = $totalVer > 0 ? round(($d['count'] / $totalVer) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:8px;">
+                  <div class="bl-dot" style="background:<?=$vc?>"></div>
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div>
+                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
+                    </div>
+                  </div>
+                </div>
+                <?php endforeach; ?>
+              </div>
             </div>
           </div>
 
@@ -209,7 +313,7 @@
           </div>
           <div class="card" style="padding:0;overflow:hidden;border-radius:12px">
             <table class="dt" id="dataTable">
-              <thead><tr><th onclick="sortTable(0)">Module ↕</th><th onclick="sortTable(1)">Records ↕</th><th>Category</th><th>Status</th></tr></thead>
+              <thead><tr><th onclick="sortTable(0)">Module ↕</th><th onclick="sortTable(1)">Records ↕</th><th>Percentage</th><th>Category</th><th>Status</th></tr></thead>
               <tbody>
                 <?php
                   $rows = [
@@ -219,11 +323,14 @@
                     ['System Notifications', $totalNotifs, 'Governance', 'var(--danger)'],
                     ['Registered Users', $totalUsers, 'Governance', 'var(--success)'],
                   ];
+                  $totalAllRecords = array_sum(array_column($rows, 1));
                   foreach($rows as $r):
+                    $rowPct = $totalAllRecords > 0 ? round(($r[1] / $totalAllRecords) * 100, 1) : 0;
                 ?>
                 <tr>
                   <td><span class="dt-dot" style="background:<?=$r[3]?>"></span><?=$r[0]?></td>
                   <td style="font-weight:700;font-family:'Lora',serif;font-size:1rem"><?=number_format($r[1])?></td>
+                  <td style="font-weight:600;color:var(--text-muted)"><?=$rowPct?>%</td>
                   <td><?=$r[2]?></td>
                   <td><span class="dt-tag active">Active</span></td>
                 </tr>
