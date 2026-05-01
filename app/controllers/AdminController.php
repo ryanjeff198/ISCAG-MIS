@@ -1021,6 +1021,83 @@ class AdminController extends Controller
         $this->view('admin/mis_admin/notification_broadcast', ['active_page' => 'notifications']);
     }
 
+    public function getBroadcastUsers(): void {
+        Auth::protectRole(['Admin']);
+        header('Content-Type: application/json');
+        $db = getDbConnection();
+        // Fetch all verified users for targeting
+        $users = $db->query("SELECT tenant_id, first_name, last_name, role FROM tenant_accounts WHERE is_verified = 1 ORDER BY last_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($users);
+    }
+
+    public function processBroadcast(): void {
+        Auth::protectRole(['Admin']);
+        header('Content-Type: application/json');
+        
+        $body = json_decode(file_get_contents('php://input'), true);
+        $audience = $body['audience'] ?? '';
+        $specificUser = $body['specificUser'] ?? null;
+        $title = $body['title'] ?? '';
+        $message = $body['message'] ?? '';
+        $type = $body['type'] ?? 'system';
+
+        if (empty($audience) || empty($title) || empty($message)) {
+            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+            return;
+        }
+
+        $db = getDbConnection();
+        $targetIds = [];
+
+        if ($audience === 'SPECIFIC' && $specificUser) {
+            $targetIds[] = $specificUser;
+        } elseif ($audience === 'ALL') {
+            $targetIds = $db->query("SELECT tenant_id FROM tenant_accounts WHERE is_verified = 1")->fetchAll(PDO::FETCH_COLUMN);
+        } elseif ($audience === 'APARTMENT') {
+            $targetIds = $db->query("SELECT tenant_id FROM leases WHERE lease_status IN ('Active', 'Accepted')")->fetchAll(PDO::FETCH_COLUMN);
+        }
+
+        // De-duplicate
+        $targetIds = array_unique($targetIds);
+
+        if (empty($targetIds)) {
+            echo json_encode(['success' => false, 'message' => 'No target users found for this audience']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $notifModel = new Notification();
+
+        $successCount = 0;
+        foreach ($targetIds as $tid) {
+            if ($notifModel->create($tid, $title, $message, $type)) {
+                $successCount++;
+            }
+        }
+
+        // Log the broadcast
+        $stmt = $db->prepare("INSERT INTO broadcasts (title, message, target_group, type, sender_id) VALUES (:t, :m, :tg, :ty, :sid)");
+        $stmt->execute([
+            't' => $title,
+            'm' => $message,
+            'tg' => $audience === 'SPECIFIC' ? "User ID: $specificUser" : $audience,
+            'ty' => $type,
+            'sid' => $_SESSION['user_id']
+        ]);
+
+        $this->logAudit('BROADCAST', 'SEND_NOTIFICATION', "Sent '$title' to $successCount users ($audience)");
+
+        echo json_encode(['success' => true, 'count' => $successCount]);
+    }
+
+    public function getBroadcastHistory(): void {
+        Auth::protectRole(['Admin']);
+        header('Content-Type: application/json');
+        $db = getDbConnection();
+        $history = $db->query("SELECT * FROM broadcasts ORDER BY created_at DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($history);
+    }
+
     public function userRecords(): void {
         Auth::protectRole(['Admin']);
         

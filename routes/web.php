@@ -108,6 +108,9 @@ $routes = [
     '/admin/mis_admin/notification/read_all' => ['AdminController', 'markAllAdminNotifsRead'],
     '/admin/mis_admin/renewal_records'     => ['AdminController', 'renewalRecords'],
     '/admin/mis_admin/tenant_image'        => ['AdminController', 'serveTenantImage'],
+    '/admin/mis_admin/broadcast/users'     => ['AdminController', 'getBroadcastUsers'],
+    '/admin/mis_admin/broadcast/send'      => ['AdminController', 'processBroadcast'],
+    '/admin/mis_admin/broadcast/history'   => ['AdminController', 'getBroadcastHistory'],
 
     // Apartment Type Management API
     '/api/apartment-types'                 => ['ApartmentTypeController', 'listTypes'],

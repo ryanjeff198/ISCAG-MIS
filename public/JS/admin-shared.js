@@ -429,7 +429,9 @@ function loadUserNav() {
   }
 
   if (navName) navName.textContent = user.name;
-  if (navRole) navRole.textContent = roleLabel;
+  if (navRole && !navRole.hasAttribute('data-preserve-role')) {
+    navRole.textContent = roleLabel;
+  }
   
   if (navAvatar) {
     const photo = localStorage.getItem('mis_apartment_photo') || localStorage.getItem('mis_user_photo');
@@ -577,9 +579,12 @@ function initNotifBadge(role) {
     const notifs = getNotifications();
     unread = notifs.filter(n => n.tenantId === user.id && !n.read).length;
   } else {
-    // Admin/Staff sees activity-log-based notifications
-    const log = getActivityLog();
-    unread = log.filter(l => !l.read).length;
+    const hasPhpBadge = document.querySelector('.notif-dot:not(.dynamic-notif-dot)');
+    if (hasPhpBadge) return;
+    
+    // In many modern admin pages, we handle notifications server-side.
+    // We only use the local activity log if explicitly needed.
+    unread = 0;
   }
   
   // Update sidebar badge if it exists (legacy selector)
