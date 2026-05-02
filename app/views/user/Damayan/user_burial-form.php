@@ -700,7 +700,10 @@ Auth::protect();
                                 </div>
                                 <div class="form-group col-3">
                                     <label class="form-label">Religion</label>
-                                    <input type="text" class="form-control" value="ISLAM" />
+                                    <select class="form-control">
+                                        <option value="Islam">Islam</option>
+                                        <option value="Christian">Christian</option>
+                                    </select>
                                 </div>
                                 <div class="form-group col-3">
                                     <label class="form-label">Citizenship</label>
@@ -1267,7 +1270,7 @@ Auth::protect();
             const toast = document.getElementById('toast');
             toast.textContent = 'Burial service request submitted successfully!';
             toast.style.display = 'block';
-            setTimeout(() => window.location.href = '<?= url("/user/dashboard") ?>', 2000);
+            setTimeout(() => window.location.href = '<?= url("/user/services/burial-dashboard") ?>', 2000);
         }, 1500);
     });
 

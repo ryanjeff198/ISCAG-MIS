@@ -67,11 +67,13 @@ $routes = [
 
     // Service Modules
     '/user/services/burial-form'      => ['UserController', 'burialForm'],
+    '/user/services/burial-dashboard' => ['UserController', 'burialDashboard'],
     '/user/services/counseling/male'   => ['UserController', 'maleCounseling'],
     '/user/services/counseling/female' => ['UserController', 'femaleCounseling'],
     '/user/services/education/female' => ['UserController', 'femaleEducation'],
     '/user/services/education/female/school' => ['UserController', 'femaleSchool'],
     '/user/services/education/female/subjects' => ['UserController', 'femaleSubjects'],
+    '/user/services/education/female/counseling' => ['UserController', 'femaleCounselingDashboard'],
     '/user/services/marriage-form' => ['UserController', 'marriageForm'],
     '/user/services/conversion-form' => ['UserController', 'conversionForm'],
     '/user/services/counseling/resources' => ['UserController', 'counselingResources'],

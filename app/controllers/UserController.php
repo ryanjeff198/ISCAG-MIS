@@ -278,6 +278,12 @@ class UserController extends Controller
         $this->view('user/Damayan/user_burial-form');
     }
 
+    public function burialDashboard(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $this->view('user/Damayan/user_burial-dashboard');
+    }
+
     public function maleCounseling(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
@@ -316,6 +322,12 @@ class UserController extends Controller
             'analytics' => $analytics,
             'blockedDates' => $blockedDates
         ]);
+    }
+
+    public function femaleCounselingDashboard(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $this->view('user/Da\'wah/Female/user_female-counseling');
     }
 
     public function femaleEducation(): void

@@ -187,7 +187,6 @@ foreach ($history as $req) {
         <span>This service is dedicated to sisters. All information is strictly confidential and handled by female professionals.</span>
       </div>
 
-      <?php if (!$hasPending && !$hasApproved): ?>
       <!-- MAIN FORM CARD -->
       <div class="section-card">
         <div class="section-card-header" style="border-bottom: 2px solid var(--primary-female-light);">
@@ -321,69 +320,7 @@ foreach ($history as $req) {
         </div>
       </div>
 
-      <?php else: ?>
-      <!-- 📢 PREMIUM STATUS HERO DASHBOARD (Consistency Sync) -->
-      <div class="section-card" style="border: 1px solid var(--border); overflow: hidden; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);">
-        <div style="background: linear-gradient(135deg, #D4AF37, #B8860B); padding: 32px 32px 28px; position: relative; overflow: hidden;">
-            <div style="position: absolute; right: -20px; bottom: -20px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.1);"></div>
-            <div style="position: absolute; right: 80px; bottom: -30px; width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.05);"></div>
-            
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; position: relative; z-index: 1;">
-                <div style="display: flex; align-items: center; gap: 20px;">
-                    <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.3);">
-                        <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                    </div>
-                    <div>
-                        <h4 style="margin: 0; color: #1a1a1a; font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 800;">Request Processing</h4>
-                        <p style="margin: 4px 0 0; font-size: 0.85rem; color: rgba(0,0,0,0.6);">
-                            Ref: <strong>#<?= $activeRequest['id'] ?? 'FC-AUTO' ?></strong> • 
-                            Status: <?= $hasPending ? 'Under Review' : 'Approved' ?>
-                        </p>
-                        <?php if(!empty($activeRequest['preferred_date'])): ?>
-                        <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #1a1a1a; font-weight: 700; background: rgba(255,255,255,0.3); padding: 4px 12px; border-radius: 8px; width: fit-content;">
-                            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: #1a1a1a;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg>
-                            Scheduled for: <?= date('M d, Y', strtotime($activeRequest['preferred_date'])) ?> at <?= $activeRequest['preferred_time'] ?? 'TBA' ?>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <div class="status-badge <?= $hasPending ? 'pending' : 'approved' ?>" style="background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4); color: #1a1a1a; padding: 8px 24px; border-radius: 24px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px;">
-                    <span class="status-badge-dot" style="background: #1a1a1a;"></span>
-                    <?= $hasPending ? 'Pending Review' : 'Session Ready' ?>
-                </div>
-            </div>
-        </div>
 
-        <div class="section-card-body" style="padding: 40px 32px;">
-            <div class="timeline" style="display: flex; align-items: flex-start; gap: 0; position: relative; margin-bottom: 40px;">
-                <div style="position: absolute; top: 18px; left: 0; right: 0; height: 3px; background: #e5e7eb; z-index: 1;"></div>
-                <div style="position: absolute; top: 18px; left: 0; width: <?= $hasApproved ? '100%' : '50%' ?>; height: 3px; background: var(--primary-female); z-index: 2; transition: width 1s ease;"></div>
-                
-                <div class="timeline-step completed" style="flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 3;">
-                    <div style="width: 36px; height: 36px; background: var(--primary-female); color: #1a1a1a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">✓</div>
-                    <span style="margin-top: 10px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--primary-female-dark);">Sent</span>
-                </div>
-                <div class="timeline-step <?= $hasPending ? 'active' : 'completed' ?>" style="flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 3;">
-                    <div style="width: 36px; height: 36px; background: <?= $hasPending ? '#f59e0b' : 'var(--primary-female)' ?>; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"><?= $hasPending ? '...' : '✓' ?></div>
-                    <span style="margin-top: 10px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: <?= $hasPending ? '#f59e0b' : 'var(--primary-female-dark)' ?>;">Review</span>
-                </div>
-                <div class="timeline-step <?= $hasApproved ? 'completed' : '' ?>" style="flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 3;">
-                    <div style="width: 36px; height: 36px; background: <?= $hasApproved ? 'var(--primary-female)' : '#e5e7eb' ?>; color: <?= $hasApproved ? '#1a1a1a' : '#fff' ?>; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"><?= $hasApproved ? '✓' : '' ?></div>
-                    <span style="margin-top: 10px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: <?= $hasApproved ? 'var(--primary-female-dark)' : '#9ca3af' ?>;">Booked</span>
-                </div>
-            </div>
-
-            <div style="text-align: center; max-width: 520px; margin: 0 auto;">
-                <?php if ($hasPending): ?>
-                    <p style="font-size: 0.95rem; color: #4b5563; line-height: 1.7; margin: 0;">Our female coordinators are reviewing your request. We will contact you shortly to finalize the session details.</p>
-                <?php else: ?>
-                    <p style="font-size: 0.95rem; color: #4b5563; line-height: 1.7; margin-bottom: 28px;">Your request has been approved. Please check your notifications for the session link or location details.</p>
-                    <button class="btn-submit" style="background: linear-gradient(135deg, #D4AF37, #B8860B); color: #1a1a1a; font-weight: 800; padding: 14px 40px; border-radius: 12px; box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3); border: none;">Access Session Info</button>
-                <?php endif; ?>
-            </div>
-        </div>
-      </div>
-      <?php endif; ?>
 
       <!-- HISTORY TABLE -->
       <div class="section-card" style="margin-top: 24px;">
@@ -476,7 +413,29 @@ foreach ($history as $req) {
 
     document.getElementById('counselingForm')?.addEventListener('submit', function(e) {
         e.preventDefault();
-        showNotification('Success!', 'Request submitted successfully. The dashboard will now reflect your pending status.');
+        
+        const formData = new FormData(this);
+        formData.append('gender', 'female');
+        
+        fetch('<?= url('/user/services/counseling/submit') ?>', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                showNotification('Success!', 'Request submitted successfully. The dashboard will now reflect your pending status.');
+                // Override closeNotif to redirect to the new dashboard
+                document.getElementById('notif-modal').querySelector('.btn-notif').onclick = function() {
+                    window.location.href = '<?= url('/user/services/education/female/counseling') ?>'; // Wait, what is the route to the new dashboard?
+                };
+            } else {
+                showNotification('Error', data.message || 'Failed to submit request.', 'error');
+            }
+        })
+        .catch(err => {
+            showNotification('Error', 'An unexpected error occurred.', 'error');
+        });
     });
 
     // ── Scheduling Logic ──
