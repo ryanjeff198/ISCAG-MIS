@@ -278,6 +278,12 @@ class UserController extends Controller
         $this->view('user/Damayan/user_burial-form');
     }
 
+    public function burialDashboard(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $this->view('user/Damayan/user_burial-dashboard');
+    }
+
     public function maleCounseling(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
@@ -302,14 +308,75 @@ class UserController extends Controller
     {
         Auth::protectRole(['Guest', 'Tenant']);
         require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/DawahAvailability.php';
+
         $model = new CounselingRequest();
+        $availModel = new DawahAvailability();
+
         $history = $model->getByUser($_SESSION['user_id']);
         $analytics = $model->getAnalytics('female');
+        $blockedDates = $availModel->getBlockedDates('female');
 
         $this->view('user/Da\'wah/Female/user_form-female-counseling', [
             'history' => $history,
+            'analytics' => $analytics,
+            'blockedDates' => $blockedDates
+        ]);
+    }
+
+    public function femaleCounselingDashboard(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $this->view('user/Da\'wah/Female/user_female-counseling');
+    }
+
+    public function femaleEducation(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        // Application status is now handled within the view via $hasPending/$hasApproved
+        // No redirect needed to allow viewing status on this page.
+
+        $history = [];
+        $analytics = ['total' => 0, 'pending' => 0, 'approved' => 0];
+
+        $this->view('user/Da\'wah/Female/user_form-female-education', [
+            'dbUser' => $dbUser,
+            'history' => $history,
             'analytics' => $analytics
         ]);
+    }
+
+    public function femaleSchool(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']) ?: [];
+        $extraInfo = $userModel->getAdditionalInfo($_SESSION['user_id']) ?: [];
+        $dbUser = array_merge($dbUser, $extraInfo);
+        $this->view('user/Da\'wah/Female/user_female-school', ['dbUser' => $dbUser, 'active_page' => 'female_school']);
+    }
+
+    public function femaleSubjects(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        // Check if enrolled - security gate
+        if (empty($_SESSION['female_education_enrolled'])) {
+            $this->redirect('/user/services/education/female');
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']) ?: [];
+        $extraInfo = $userModel->getAdditionalInfo($_SESSION['user_id']) ?: [];
+        $dbUser = array_merge($dbUser, $extraInfo);
+        
+        $this->view('user/Da\'wah/Female/user_female-subjects', ['dbUser' => $dbUser, 'active_page' => 'female_subjects']);
     }
 
     public function counselingResources(): void
@@ -453,5 +520,59 @@ class UserController extends Controller
             'success' => $success,
             'message' => $success ? 'Request submitted successfully.' : 'Failed to save request.'
         ]);
+    }
+    public function submitBurial(): void {
+        Auth::protect();
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false]); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        
+        $refId = 'BR-' . date('Ymd') . '-' . substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 4);
+        
+        $data = [
+            'ref_id' => $refId,
+            'tenant_id' => $_SESSION['user_id'],
+            'deceased_name' => ($input['firstName'] ?? '') . ' ' . ($input['lastName'] ?? ''),
+            'date_of_birth' => $input['dob'] ?? null,
+            'date_of_death' => $input['dod'] ?? date('Y-m-d'),
+            'place_of_death' => $input['pod'] ?? 'N/A',
+            'residence' => $input['residence'] ?? 'N/A',
+            'religion' => $input['religion'] ?? 'Islam',
+            'relationship' => $input['relationship'] ?? 'Relative'
+        ];
+
+        $success = $model->create($data);
+        echo json_encode(['success' => $success, 'ref_id' => $refId]);
+        exit;
+    }
+
+    public function submitDonation(): void {
+        Auth::protect();
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false]); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        require_once BASE_PATH . '/app/models/CharityDonation.php';
+        $model = new CharityDonation();
+        
+        $data = [
+            'tenant_id' => $_SESSION['user_id'],
+            'donor_name' => $_SESSION['name'] ?? 'Self',
+            'amount' => $input['amount'] ?? 0,
+            'program_id' => $input['program_id'] ?? 1
+        ];
+
+        $success = $model->create($data);
+        echo json_encode(['success' => $success]);
+        exit;
     }
 }

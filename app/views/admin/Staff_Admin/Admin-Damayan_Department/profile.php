@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
   <style>
     :root {
-      --damayan-accent: #dc2626;
-      --damayan-dark: #991b1b;
-      --damayan-light: #fef2f2;
+      --damayan-accent: #176b45;
+      --damayan-dark: #0f5c3a;
+      --damayan-light: #e8f5ed;
     }
     .profile-avatar-lg {
       width: 88px; height: 88px; border-radius: 50%;
@@ -23,17 +23,17 @@
     }
     .form-section-title {
       font-family: 'Lora', serif; font-size: 0.88rem; font-weight: 700; color: var(--damayan-dark);
-      padding-bottom: 10px; border-bottom: 2px solid rgba(220, 38, 38, 0.3); margin-bottom: 16px;
+      padding-bottom: 10px; border-bottom: 2px solid rgba(23, 107, 69, 0.3); margin-bottom: 16px;
     }
     .btn-submit {
       padding: 9px 20px; border-radius: 8px; border: none;
-      background: linear-gradient(135deg, #dc2626, #991b1b);
+      background: linear-gradient(135deg, #176b45, #0f5c3a);
       color: white; font-size: 0.85rem; font-weight: 700; cursor: pointer;
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); font-family: inherit;
+      box-shadow: 0 4px 12px rgba(23, 107, 69, 0.3); font-family: inherit;
     }
     .btn-submit:hover {
-      background: linear-gradient(135deg, #ef4444, #dc2626);
-      box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4); transform: translateY(-1px);
+      background: linear-gradient(135deg, #1e8a5a, #176b45);
+      box-shadow: 0 6px 20px rgba(23, 107, 69, 0.4); transform: translateY(-1px);
     }
     .service-card {
       padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border); background: white;
@@ -60,7 +60,7 @@
       </div>
       <div class="page-body">
         <div class="section-card" style="margin-bottom:24px;overflow:hidden;">
-          <div style="background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%);height:100px;position:relative;"></div>
+          <div style="background:linear-gradient(135deg,#176b45 0%,#0f5c3a 100%);height:100px;position:relative;"></div>
           <div style="padding:0 28px 24px; position:relative; z-index:2;">
             <div style="display:flex;align-items:flex-end;gap:20px;margin-top:-44px;margin-bottom:16px;flex-wrap:wrap;">
               <div style="flex-shrink:0;text-align:center;">
@@ -74,7 +74,7 @@
                 <h4 style="font-family:'Lora',serif;font-weight:700;color:var(--damayan-dark);margin:0;font-size:1.15rem;"><?= ($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '') ?: 'Damayan Staff' ?></h4>
                 <p style="color:var(--text-muted);font-size:0.83rem;margin:0 0-10px;"><?= $dbUser['email'] ?? 'damayan@iscag.org' ?></p>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-                  <span class="info-badge" style="background:rgba(220, 38, 38, 0.1);color:var(--damayan-accent);">Damayan Department</span>
+                  <span class="info-badge" style="background:rgba(23, 107, 69, 0.1);color:var(--damayan-accent);">Damayan Department</span>
                   <span class="info-badge" style="background:rgba(46,125,85,0.1);color:var(--success);">Active</span>
                 </div>
               </div>

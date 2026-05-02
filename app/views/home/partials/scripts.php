@@ -7,7 +7,7 @@
       if (imgSrc) previewImg.src = imgSrc;
       if (imgLabel) labelSpan.textContent = imgLabel;
     } else {
-      previewImg.src = "<?= asset('assets/hero-mosque.png') ?>";
+      previewImg.src = "<?= asset('assets/logo.jpg') ?>";
       labelSpan.textContent = "ISCAG Departments";
     }
   }

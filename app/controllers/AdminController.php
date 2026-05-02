@@ -239,6 +239,27 @@ class AdminController extends Controller
         $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_notification', ['dbUser' => $dbUser]);
     }
 
+    public function dawahNotifications(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        // Determine department type based on role
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        $viewPath = ($dawah_type === 'female') 
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/notifications'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/notifications';
+
+        $this->view($viewPath, [
+            'active_page' => 'notifications',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser
+        ]);
+    }
+
     public function apartmentSoa(): void
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
@@ -1081,7 +1102,14 @@ class AdminController extends Controller
         
         $counselingModel = new CounselingRequest();
         $rawRequests = $counselingModel->getByGender('male');
-        $analytics = $counselingModel->getAnalytics('male');
+        $counselingAnalytics = $counselingModel->getAnalytics('male');
+
+        require_once BASE_PATH . '/app/models/MarriageRequest.php';
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        $marriageModel = new MarriageRequest();
+        $eduModel = new IslamicEducation();
+        $marriageAll = $marriageModel->getAll();
+        $eduAnalytics = $eduModel->getAnalytics('male');
 
         // Transform raw DB rows into the shape the dashboard JS expects
         $requests = array_map(function($r) {
@@ -1101,6 +1129,17 @@ class AdminController extends Controller
                 'status_class'  => $s['class'],
             ];
         }, $rawRequests);
+
+        $analytics = [
+            'counseling_total' => $counselingAnalytics['total'] ?? 0,
+            'counseling_pending' => $counselingAnalytics['pending'] ?? 0,
+            'counseling_approved' => $counselingAnalytics['approved'] ?? 0,
+            'marriage_total' => count($marriageAll),
+            'student_count' => $eduAnalytics['total'] ?? 0,
+            'student_active' => $eduAnalytics['active'] ?? 0,
+            'student_completed' => $eduAnalytics['completed'] ?? 0,
+            'pending' => ($counselingAnalytics['pending'] ?? 0) + ($eduAnalytics['pending'] ?? 0),
+        ];
 
         $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/dawah_male_dashboard', [
             'active_page' => 'dashboard',
@@ -1125,33 +1164,30 @@ class AdminController extends Controller
         }
         
         $eduModel = new IslamicEducation();
-        $rawRequests = $eduModel->getAllByGender('female');
-        $analytics = $eduModel->getAnalytics('female');
+        $rawStudents = $eduModel->getAllByGender('female');
+        $eduAnalytics = $eduModel->getAnalytics('female');
 
-        // Transform raw DB rows into the shape the dashboard JS expects
-        $requests = array_map(function($r) {
-            $statusMap = [
-                'pending'   => ['label' => 'Pending',   'class' => 'pending'],
-                'active'    => ['label' => 'Active',    'class' => 'warning'],
-                'completed' => ['label' => 'Completed', 'class' => 'success'],
-                'dropped'   => ['label' => 'Dropped',   'class' => 'danger'],
-            ];
-            $s = $statusMap[$r['status']] ?? ['label' => ucfirst($r['status']), 'class' => 'pending'];
-            return [
-                'id'            => $r['id'],
-                'name'          => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')),
-                'type'          => 'education',
-                'service_label' => $r['program_name'] ?? 'Islamic Studies',
-                'date'          => date('M d, Y', strtotime($r['created_at'])),
-                'status'        => $s['label'],
-                'status_class'  => $s['class'],
-            ];
-        }, $rawRequests);
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $counselingModel = new CounselingRequest();
+        $counselingAnalytics = $counselingModel->getAnalytics('female');
+        $counselingRequests = $counselingModel->getByGender('female');
+
+        $students = $rawStudents;
+
+        $analytics = [
+            'total_students' => $eduAnalytics['total'] ?? 0,
+            'active_students' => $eduAnalytics['active'] ?? 0,
+            'completed' => $eduAnalytics['completed'] ?? 0,
+            'pending' => ($eduAnalytics['pending'] ?? 0) + ($counselingAnalytics['pending'] ?? 0),
+            'counseling_total' => $counselingAnalytics['total'] ?? 0,
+            'counseling_approved' => $counselingAnalytics['approved'] ?? 0,
+        ];
 
         $this->view('admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/dawah_female_dashboard', [
             'active_page' => 'dashboard',
             'dbUser' => $dbUser,
-            'requests' => $requests,
+            'students' => $students,
+            'counseling' => $counselingRequests,
             'analytics' => $analytics
         ]);
     }
@@ -1255,6 +1291,7 @@ class AdminController extends Controller
             return [
                 'type' => 'Counseling',
                 'name' => $r['first_name'] . ' ' . $r['last_name'],
+                'age'  => $r['age'] ?? null,
                 'date' => $r['preferred_date'],
                 'time' => $r['preferred_time'],
                 'desc' => 'Religious Guidance — ' . ($r['reason'] ?? 'General'),
@@ -1268,6 +1305,7 @@ class AdminController extends Controller
             return [
                 'type' => 'Marriage Ceremony',
                 'name' => $r['groom_name'] . ' & ' . $r['bride_name'],
+                'age'  => $r['age'] ?? null,
                 'date' => $r['marriage_date'],
                 'time' => $r['marriage_time'],
                 'desc' => 'Venue: ' . $r['marriage_venue'],
@@ -1275,8 +1313,23 @@ class AdminController extends Controller
             ];
         }, $marriageRaw);
 
-        // 3. Consolidate & Sort by Date/Time
-        $schedules = array_merge($counselingScheds, $marriageScheds);
+        // 3. Fetch Manual Assignments (Classes/Seminars)
+        require_once BASE_PATH . '/app/models/DawahSchedule.php';
+        $manualModel = new DawahSchedule();
+        $manualRaw = $manualModel->getByDepartment($dawah_type);
+        $manualScheds = array_map(function($r) {
+            return [
+                'type' => $r['event_type'],
+                'name' => $r['title'],
+                'date' => $r['event_date'],
+                'time' => $r['event_time'],
+                'desc' => $r['description'],
+                'status' => 'approved' // Manual assignments are pre-approved
+            ];
+        }, $manualRaw);
+
+        // 4. Consolidate & Sort by Date/Time
+        $schedules = array_merge($counselingScheds, $marriageScheds, $manualScheds);
         usort($schedules, function($a, $b) {
             $dateA = strtotime($a['date'] . ' ' . $a['time']);
             $dateB = strtotime($b['date'] . ' ' . $b['time']);
@@ -1300,26 +1353,89 @@ class AdminController extends Controller
         ]);
     }
 
+    public function dawahMaleProfile(): void {
+        Auth::protectRole(['Admin', 'Staff_Male']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/profile', [
+            'active_page' => 'profile',
+            'dbUser' => $dbUser
+        ]);
+    }
+
+    public function dawahFemaleProfile(): void {
+        Auth::protectRole(['Admin', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/profile', [
+            'active_page' => 'profile',
+            'dbUser' => $dbUser
+        ]);
+    }
+
+    public function assignDawahSchedule(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $input = json_decode(file_get_contents('php://input'), true);
+                
+                $role = $_SESSION['role'] ?? '';
+                $dept = ($role === 'Staff_Female') ? 'female' : 'male';
+                
+                $data = [
+                    'title' => $input['title'] ?? '',
+                    'description' => $input['description'] ?? '',
+                    'event_date' => $input['date'] ?? '',
+                    'event_time' => $input['time'] ?? '',
+                    'event_type' => $input['type'] ?? 'Class',
+                    'department' => $dept
+                ];
+
+                require_once BASE_PATH . '/app/models/DawahSchedule.php';
+                $model = new DawahSchedule();
+                
+                $success = $model->create($data);
+                echo json_encode(['success' => $success]);
+            } catch (Exception $e) {
+                error_log("Assign Schedule Error: " . $e->getMessage());
+                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            }
+            exit;
+        }
+    }
+
     public function toggleDawahAvailability(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
-            $date = $input['date'] ?? '';
-            $status = $input['status'] ?? ''; // 'block' or 'unblock'
-            $reason = $input['reason'] ?? 'Administrator Blockout';
-            
-            $role = $_SESSION['role'] ?? '';
-            $dept = ($role === 'Staff_Female') ? 'female' : 'male';
+            try {
+                $input = json_decode(file_get_contents('php://input'), true);
+                $date = $input['date'] ?? '';
+                $status = $input['status'] ?? '';
+                $reason = $input['reason'] ?? 'Administrator Blockout';
+                
+                $role = $_SESSION['role'] ?? '';
+                $dept = ($role === 'Staff_Female') ? 'female' : 'male';
 
-            require_once BASE_PATH . '/app/models/DawahAvailability.php';
-            $model = new DawahAvailability();
-            
-            $success = ($status === 'block') 
-                ? $model->blockDate($date, $dept, $reason)
-                : $model->unblockDate($date, $dept);
+                require_once BASE_PATH . '/app/models/DawahAvailability.php';
+                $model = new DawahAvailability();
+                
+                $success = ($status === 'block') 
+                    ? $model->blockDate($date, $dept, $reason)
+                    : $model->unblockDate($date, $dept);
 
-            header('Content-Type: application/json');
-            echo json_encode(['success' => $success]);
+                echo json_encode(['success' => $success]);
+            } catch (Exception $e) {
+                error_log("Toggle Availability Error: " . $e->getMessage());
+                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            }
             exit;
         }
     }
@@ -1370,6 +1486,8 @@ class AdminController extends Controller
         
         $counselingModel = new CounselingRequest();
         $eduModel = new IslamicEducation();
+        require_once BASE_PATH . '/app/models/MarriageRequest.php';
+        $marriageModel = new MarriageRequest();
 
         // 1. Counseling Stats
         $counselingAnalytics = $counselingModel->getAnalytics($dawah_type);
@@ -1378,8 +1496,8 @@ class AdminController extends Controller
         // 2. Education Stats
         $educationAnalytics = $eduModel->getAnalytics($dawah_type);
         
-        // 3. Marriage Stats (Placeholder)
-        $marriageStats = ['total' => 0, 'pending' => 0, 'approved' => 0];
+        // 3. Marriage Stats
+        $marriageStats = $marriageModel->getAnalytics();
 
         $viewPath = ($dawah_type === 'female') 
             ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/analytics'
@@ -1399,28 +1517,46 @@ class AdminController extends Controller
     public function damayanAdminDashboard(): void {
         Auth::protectRole(['Admin', 'Staff_Damayan']);
         require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
         
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
         
+        $burialModel = new BurialRequest();
+        $burialAnalytics = $burialModel->getAnalytics();
+        $allBurials = $burialModel->getAll();
+
         // Sync session with live DB data
         if ($dbUser) {
             $_SESSION['name'] = trim($dbUser['first_name'] . ' ' . $dbUser['last_name']);
             $_SESSION['email'] = $dbUser['email'];
         }
 
-        // Analytics placeholder — will come from BurialRequest model when implemented
         $analytics = [
-            'burial' => 0,
-            'charity' => 0,
-            'completed' => 0,
-            'pending' => 0
+            'burial' => $burialAnalytics['total'],
+            'charity' => 0, // Charity module still placeholder
+            'completed' => $burialAnalytics['completed'],
+            'pending' => $burialAnalytics['pending']
         ];
+
+        // Format burial records for the dashboard table
+        $records = [];
+        foreach(array_slice($allBurials, 0, 10) as $b) {
+            $records[] = [
+                'id' => $b['ref_id'],
+                'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
+                'type' => 'burial',
+                'service_label' => 'Burial Service',
+                'date' => date('Y-m-d', strtotime($b['submitted_at'])),
+                'status' => ucfirst($b['status']),
+                'status_class' => $this->getBurialStatusClass($b['status'])
+            ];
+        }
 
         $this->view('admin/Staff_Admin/Admin-Damayan_Department/damayan_dashboard', [
             'active_page' => 'dashboard',
             'dbUser' => $dbUser,
-            'records' => [],
+            'records' => $records,
             'analytics' => $analytics
         ]);
     }
@@ -1428,6 +1564,186 @@ class AdminController extends Controller
     public function damayanRecords(): void {
         Auth::protectRole(['Admin', 'Staff_Damayan']);
         $this->view('admin/mis_admin/damayan_records', ['active_page' => 'damayan_records']);
+    }
+
+    public function damayanProfile(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/profile', [
+            'active_page' => 'profile',
+            'dbUser' => $dbUser
+        ]);
+    }
+
+    public function damayanBurial(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $burialModel = new BurialRequest();
+        $rawBurials = $burialModel->getAll();
+
+        $records = [];
+        foreach($rawBurials as $b) {
+            $records[] = [
+                'id' => $b['ref_id'],
+                'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
+                'deceased' => $b['deceased_name'] ?? 'N/A',
+                'date' => date('Y-m-d', strtotime($b['submitted_at'])),
+                'status' => ucfirst($b['status']),
+                'status_class' => $this->getBurialStatusClass($b['status'])
+            ];
+        }
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/burial', [
+            'active_page' => 'burial',
+            'dbUser' => $dbUser,
+            'records' => $records
+        ]);
+    }
+
+    public function damayanBurialRequests(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $burialModel = new BurialRequest();
+        $rawBurials = $burialModel->getAll();
+
+        $records = [];
+        foreach($rawBurials as $b) {
+            $records[] = [
+                'id' => $b['ref_id'],
+                'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
+                'deceased' => $b['deceased_name'] ?? 'N/A',
+                'date' => date('Y-m-d', strtotime($b['submitted_at'])),
+                'status' => ucfirst($b['status']),
+                'status_class' => $this->getBurialStatusClass($b['status'])
+            ];
+        }
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/burial_requests', [
+            'active_page' => 'burial_requests',
+            'dbUser' => $dbUser,
+            'records' => $records
+        ]);
+    }
+
+    private function getBurialStatusClass(string $status): string {
+        $status = strtolower($status);
+        if ($status === 'pending') return 'badge-pending';
+        if ($status === 'arrived') return 'badge-info';
+        if ($status === 'completed') return 'badge-active';
+        return 'badge-approved'; // For 'Approved' or 'Verified'
+    }
+
+    public function damayanCharity(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CharityDonation.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $donationModel = new CharityDonation();
+        $stats = $donationModel->getStats();
+        $recentRequests = $donationModel->getRecentRequests();
+        
+        // Fetch all donations to pass to the view for modal rendering
+        // In a real app, you might fetch these via AJAX when the card is clicked, 
+        // but for now we'll pass them all if the dataset is small.
+        $allDonations = [];
+        $programs = [1, 2, 3]; // Our known program IDs
+        foreach($programs as $pid) {
+            $allDonations[$pid] = $donationModel->getByProgram($pid);
+        }
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/charity', [
+            'active_page' => 'charity',
+            'dbUser' => $dbUser,
+            'stats' => $stats,
+            'requests' => $recentRequests,
+            'donations' => $allDonations
+        ]);
+    }
+
+    public function damayanNotifications(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/notifications', [
+            'active_page' => 'notifications',
+            'dbUser' => $dbUser
+        ]);
+    }
+
+    public function updateBurialStatus(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $input['id'] ?? null;
+            $status = $input['status'] ?? null;
+            
+            require_once BASE_PATH . '/app/models/BurialRequest.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            
+            $model = new BurialRequest();
+            $notifModel = new Notification();
+            
+            $burial = $model->findByRefId($id);
+            $success = $model->updateStatus($id, $status);
+
+            if ($success && $burial && isset($burial['tenant_id'])) {
+                $title = "Burial Service Update";
+                $msg = "";
+                
+                if ($status === 'arrived') {
+                    $msg = "Peace be upon you. We would like to inform you that the deceased (" . ($burial['deceased_name'] ?? 'your loved one') . ") has been respectfully received at the Damayan facility. We are now proceeding with the necessary burial preparations.";
+                } else {
+                    $msg = "Your burial service request (#{$id}) for " . ($burial['deceased_name'] ?? 'your loved one') . " has been " . strtoupper($status) . ".";
+                }
+                
+                $notifModel->create((int)$burial['tenant_id'], $title, $msg, 'burial');
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $success]);
+            exit;
+        }
+    }
+
+    public function damayanAnalytics(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        require_once BASE_PATH . '/app/models/CharityDonation.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        $burialModel = new BurialRequest();
+        $charityModel = new CharityDonation();
+        
+        $burialStats = $burialModel->getAnalytics();
+        $charityStats = $charityModel->getAnalytics();
+        $allBurials = $burialModel->getAll();
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/analytics', [
+            'active_page' => 'analytics',
+            'dbUser' => $dbUser,
+            'burial' => $burialStats,
+            'charity' => $charityStats,
+            'requests' => $allBurials
+        ]);
     }
 
     public function renewalRecords(): void {
@@ -2022,27 +2338,37 @@ class AdminController extends Controller
         header('Location: ' . url($redirect));
     }
 
-    public function delete_user(): void {
-        Auth::protectRole(['Admin']);
-        header('Content-Type: application/json');
-
-        $input = json_decode(file_get_contents('php://input'), true);
-        $id = $input['id'] ?? null;
-
-        if (!$id) {
-            echo json_encode(['success' => false, 'message' => 'Missing User ID']);
-            return;
-        }
-
+    public function damayanFinance(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
         require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CharityFinance.php';
+
         $userModel = new User();
-        $ok = $userModel->deleteAccount((int)$id);
+        $dbUser = $userModel->findById($_SESSION['user_id']);
 
-        if ($ok) {
-            $this->logAudit('USER_MGMT', 'DELETE_ACCOUNT', "Permanently deleted account ID: $id");
+        $financeModel = new CharityFinance();
+        $summary = $financeModel->getSummary();
+        $liquidations = $financeModel->getAllLiquidations();
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/finance', [
+            'active_page' => 'finance',
+            'dbUser' => $dbUser,
+            'summary' => $summary,
+            'liquidations' => $liquidations
+        ]);
+    }
+
+    public function submitLiquidation(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            require_once BASE_PATH . '/app/models/CharityFinance.php';
+            $model = new CharityFinance();
+            $success = $model->createLiquidation($input);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $success]);
+            exit;
         }
-
-        echo json_encode(['success' => $ok, 'message' => $ok ? 'Account deleted' : 'Failed to delete account']);
     }
 }
 

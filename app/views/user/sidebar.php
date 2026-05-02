@@ -110,11 +110,37 @@ $active_page = $active_page ?? 'dashboard';
                 </a>
                 <?php endif; ?>
                 <?php if ($sex !== 'male'): ?>
-                <a href="<?= url('/user/services/counseling/female') ?>" class="<?= $active_page === 'female_education' ? 'active-submenu' : '' ?>">
+                <a href="<?= url('/user/services/counseling/female') ?>" class="<?= $active_page === 'counseling_female' ? 'active-submenu' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                    Counseling Service
+                </a>
+                
+                <?php 
+                $isEnrolled = !empty($_SESSION['female_education_enrolled']);
+                $isFemale = (strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female');
+                ?>
+                
+                <?php if ($isFemale): ?>
+                <a href="<?= url('/user/services/education/female/school') ?>" class="<?= $active_page === 'female_school' ? 'active-submenu' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+                    School Schedule
+                </a>
+                
+                <?php if (!$isEnrolled): ?>
+                <a href="<?= url('/user/services/education/female') ?>" class="<?= $active_page === 'female_education' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
-                    Female Education Section
+                    Registration Form
+                </a>
+                <?php else: ?>
+                <a href="<?= url('/user/services/education/female/subjects') ?>" class="<?= $active_page === 'female_subjects' ? 'active-submenu' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+                    My Learning
                 </a>
                 <?php endif; ?>
+                <?php endif; ?>
+                <?php endif; ?>
+
+                <?php if ($sex !== 'female'): ?>
                 <a href="<?= url('/user/services/marriage-form') ?>" class="<?= $active_page === 'marriage_form' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                     Marriage Services
@@ -123,6 +149,7 @@ $active_page = $active_page ?? 'dashboard';
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
                     Islamic Studies
                 </a>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -274,7 +301,7 @@ $active_page = $active_page ?? 'dashboard';
             const stored = JSON.parse(localStorage.getItem('mis_user') || '{}');
             const isComplete = stored.profileComplete || false;
             const isTenant = stored.role === 'Tenant';
-            const wraps = ['damayan-wrap', 'dawah-wrap', 'apartment-wrap'];
+            const wraps = ['apartment-wrap'];
             
             wraps.forEach(id => {
                 const wrap = document.getElementById(id);

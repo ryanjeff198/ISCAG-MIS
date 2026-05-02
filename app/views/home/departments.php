@@ -82,6 +82,7 @@
       overflow: hidden;
       border: 1px solid var(--border);
       display: flex;
+      height: 420px;
       margin-bottom: 40px;
       transition: all 0.4s ease;
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
@@ -153,7 +154,7 @@
     .dept-main-card.reverse { flex-direction: row-reverse; }
 
     @media (max-width: 991px) {
-      .dept-main-card { flex-direction: column !important; }
+      .dept-main-card { flex-direction: column !important; height: auto; }
       .dept-img, .dept-body { width: 100%; }
       .dept-body { padding: 40px; }
       .dept-img { min-height: 250px; }
@@ -198,19 +199,7 @@
 
     <a href="<?= url('/dawah') ?>" class="dept-main-card reverse reveal">
       <div class="dept-img">
-        <div id="deptDawahCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="4000">
-          <div class="carousel-inner" style="height: 100%;">
-            <div class="carousel-item active" style="height: 100%;">
-              <img src="<?= asset('assets/dawahFeatureImage4.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Dawah 4">
-            </div>
-            <div class="carousel-item" style="height: 100%;">
-              <img src="<?= asset('assets/dawahFeatureImage3.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Dawah 3">
-            </div>
-            <div class="carousel-item" style="height: 100%;">
-              <img src="<?= asset('assets/dawahFeatureImage2.jpg') ?>" class="d-block w-100 h-100" style="object-fit: cover;" alt="Dawah 2">
-            </div>
-          </div>
-        </div>
+        <img src="<?= asset('assets/dawahHeroBG.jpg') ?>" alt="Dawah">
       </div>
       <div class="dept-body">
         <span class="dept-tag">Guidance & Call</span>
@@ -226,7 +215,7 @@
     <!-- Damayan -->
     <a href="<?= url('/damayan') ?>" class="dept-main-card reveal">
       <div class="dept-img">
-        <img src="<?= asset('assets/about-center.png') ?>" alt="Damayan">
+        <img src="<?= asset('assets/damayanHero3.png') ?>" alt="Damayan">
       </div>
       <div class="dept-body">
         <span class="dept-tag">Social Welfare</span>

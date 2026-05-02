@@ -1,3 +1,7 @@
+<?php
+require_once BASE_PATH . '/app/helpers/Auth.php';
+Auth::protectRole(['Admin', 'Staff_Male']);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,16 +11,25 @@
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
-    :root {
-        --male-accent: #14532d;
-        --male-dark: #064e3b;
-        --male-light: #f0fdf4;
-    }
-    .top-bar-title { color: var(--male-dark); }
-    .breadcrumb-bar .current { color: var(--male-accent); }
-    .btn-action { color: var(--male-accent); }
-    .btn-action-pill:hover { filter: brightness(0.95); transform: translateY(-1px); }
-    .btn-action-pill:active { transform: translateY(0); }
+    .badge-status { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    
+    /* Category Dropdown */
+    .filter-row { display: flex; gap: 16px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+    .category-select-wrapper { display: flex; align-items: center; gap: 10px; background: white; padding: 8px 16px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .category-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+    .category-dropdown { border: none; font-size: 0.9rem; font-weight: 700; color: var(--primary); cursor: pointer; background: transparent; padding-right: 20px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right center; background-size: 14px; }
+    .category-dropdown:focus { outline: none; }
+    
+    /* Insights */
+    .admin-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .insight-card { background: white; padding: 16px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.3s; display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden; cursor: pointer; }
+    .insight-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); border-color: var(--accent); }
+    .insight-card::after { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--border); }
+    .insight-card.all::after { background: var(--accent); }
+    .insight-card.active-tab::after { background: var(--primary); }
+    
+    .insight-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .insight-value { font-size: 1.5rem; font-weight: 800; color: var(--text-main); line-height: 1; }
   </style>
 </head>
 <body>
@@ -26,66 +39,55 @@
       $dawah_type = 'male';
       include BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Dawah_Department/sidebar.php'; 
     ?>
+    
     <div class="main-content">
       <div class="top-bar">
-        <div style="display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; background: var(--male-light); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--male-accent);">
-            <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:currentColor;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-          </div>
-          <div>
-            <div class="top-bar-title">Male Counseling & Guidance</div>
-            <div class="top-bar-subtitle">Manage religious counseling sessions and guidance requests</div>
-          </div>
+        <div class="top-bar-left">
+            <div class="top-bar-title">Counseling Management</div>
+            <div class="top-bar-subtitle">Male Da'wah Department — Guidance and Consultation Services</div>
+        </div>
+        <div class="top-bar-actions">
+          <span id="admin-name" style="font-weight:700;color:var(--text-main);font-size:0.9rem;"></span>
         </div>
       </div>
+
       <div class="page-body">
         <div class="breadcrumb-bar">
-          <a href="<?= url('/admin/dawah/male') ?>">Dashboard</a>
-          <span class="separator">/</span>
-          <span class="current">Counseling Records</span>
+          <a href="<?= url('/admin/dawah/male') ?>">Da'wah Department</a>
+          <span class="sep">›</span>
+          <span class="current">Counseling Requests</span>
         </div>
 
-        <!-- ANALYTICS CARDS -->
-        <div class="admin-insights" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px;">
-          <div class="insight-card">
-            <div class="insight-label" style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Requests</div>
-            <div class="insight-value" style="font-size: 1.8rem; font-weight: 800; color: var(--male-dark);"><?= count($records) ?></div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label" style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pending</div>
-            <div class="insight-value" style="font-size: 1.8rem; font-weight: 800; color: #f59e0b;"><?= count(array_filter($records, fn($r) => $r['status'] === 'pending')) ?></div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label" style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Approved</div>
-            <div class="insight-value" style="font-size: 1.8rem; font-weight: 800; color: #10b981;"><?= count(array_filter($records, fn($r) => $r['status'] === 'approved')) ?></div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label" style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Disapproved</div>
-            <div class="insight-value" style="font-size: 1.8rem; font-weight: 800; color: #ef4444;"><?= count(array_filter($records, fn($r) => $r['status'] === 'rejected')) ?></div>
+        <!-- Dynamic Insights Summary -->
+        <div class="admin-insights" id="insights-container">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- Category & Filters Row -->
+        <div class="filter-row">
+          <div class="category-select-wrapper">
+            <span class="category-label">Category:</span>
+            <select class="category-dropdown" id="category-dropdown" onchange="switchCategory(this.value)">
+              <!-- Rendered by JS -->
+            </select>
           </div>
         </div>
 
-        <!-- TAB NAVIGATION -->
-        <style>
-          .tab-nav { display: flex; gap: 12px; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
-          .tab-btn { padding: 12px 24px; font-size: 0.9rem; font-weight: 700; color: var(--text-muted); background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.25s ease; }
-          .tab-btn.active { color: var(--male-accent) !important; border-bottom-color: var(--male-accent) !important; }
-          .insight-card { background: white; padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        </style>
-        
-        <div class="tab-nav">
-          <button class="tab-btn active" onclick="filterByStatus('all')">All Requests</button>
-          <button class="tab-btn" onclick="filterByStatus('pending')">Pending</button>
-          <button class="tab-btn" onclick="filterByStatus('approved')">Approved</button>
-          <button class="tab-btn" onclick="filterByStatus('rejected')">Disapproved</button>
-        </div>
-
+        <!-- Table Section -->
         <div class="section-card">
-          <div class="section-card-header">
-            <h6 style="color: var(--male-dark); margin: 0;">
-              <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--male-accent);margin-right:8px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-              Counseling Request List (Male)
+          <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <h6 id="current-category-title">
+              <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--accent);margin-right:8px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              Brothers' Counseling Records
             </h6>
+            <div style="display:flex; gap:10px;">
+              <select id="status-filter" class="form-control" style="font-size:0.8rem; padding:4px 12px; border-radius:8px; width:auto; appearance:auto;" onchange="renderActiveCategory()">
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
           </div>
           <div class="section-card-body" style="padding:0;">
             <div class="table-wrapper">
@@ -94,8 +96,8 @@
                   <tr>
                     <th>Ref #</th>
                     <th>Applicant</th>
-                    <th>Reason / Topic</th>
-                    <th>Submitted Date</th>
+                    <th style="min-width: 180px;">Specific Concern</th>
+                    <th>Date Filed</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
@@ -110,41 +112,98 @@
       </div>
     </div>
   </div>
+
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     syncSessionUser('<?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>', '<?= $dbUser['email'] ?? '' ?>', '<?= $_SESSION['role'] ?? '' ?>');
     standardizePage('staff');
 
     const records = <?= json_encode($records ?? []) ?>;
-    
-    function renderTable(filter = 'all') {
+    let activeCategory = 'All Records';
+
+    const categories = [
+      "All Records",
+      "Family / Marital Issues",
+      "Personal / Spiritual Struggles",
+      "Parenting & Family Guidance",
+      "Youth & Academic Concerns",
+      "Financial Difficulties",
+      "Grief and Loss",
+      "Anger Management",
+      "Revert / New Muslim Support",
+      "Other"
+    ];
+
+    function renderTabs() {
+      const dropdown = document.getElementById('category-dropdown');
+      dropdown.innerHTML = categories.map(cat => `
+        <option value="${cat}" ${activeCategory === cat ? 'selected' : ''}>${cat}</option>
+      `).join('');
+    }
+
+    function renderInsights() {
+      const container = document.getElementById('insights-container');
+      const total = records.length;
+      const pending = records.filter(r => r.status === 'pending').length;
+
+      container.innerHTML = `
+        <div class="insight-card all" onclick="switchCategory('All Records')">
+          <div class="insight-label">Total Requests</div>
+          <div class="insight-value">${total}</div>
+        </div>
+        <div class="insight-card pending" style="--border:var(--warning);" onclick="renderActiveCategory()">
+          <div class="insight-label">Awaiting Review</div>
+          <div class="insight-value" style="color:var(--warning);">${pending}</div>
+        </div>
+        <div class="insight-card active-tab" onclick="switchCategory('${activeCategory}')">
+          <div class="insight-label">${activeCategory === 'All Records' ? 'Most Recent' : activeCategory}</div>
+          <div class="insight-value" style="color:var(--primary);">${activeCategory === 'All Records' ? records.length : records.filter(r => r.reason === activeCategory).length}</div>
+        </div>
+      `;
+    }
+
+    function switchCategory(cat) {
+      activeCategory = cat;
+      renderTabs();
+      renderInsights();
+      document.getElementById('current-category-title').innerHTML = `
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--accent);margin-right:8px;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        ${cat}
+      `;
+      renderActiveCategory();
+    }
+
+    function renderActiveCategory() {
       const tbody = document.getElementById('counseling-tbody');
-      let filtered = records;
-      if(filter !== 'all') filtered = records.filter(r => r.status === filter);
+      const statusFilter = document.getElementById('status-filter').value;
       
-      if(filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No ${filter === 'all' ? '' : filter} counseling records found.</td></tr>`;
+      let filtered = records;
+      if (activeCategory !== 'All Records') filtered = filtered.filter(r => r.reason === activeCategory);
+      if (statusFilter !== 'all') filtered = filtered.filter(r => r.status === statusFilter);
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No records found for "${activeCategory}".</td></tr>`;
         return;
       }
-      
+
       tbody.innerHTML = filtered.map(r => {
-        const sc = (r.status === 'approved') ? 'success' : ((r.status === 'rejected') ? 'danger' : 'pending');
+        const sc = (r.status === 'approved') ? 'badge-approved' : ((r.status === 'rejected') ? 'badge-rejected' : 'badge-pending');
         const displayStatus = r.status === 'rejected' ? 'Disapproved' : r.status.charAt(0).toUpperCase() + r.status.slice(1);
         
         return `
           <tr>
             <td class="td-id">#${r.id}</td>
             <td style="font-weight:600;">${r.first_name} ${r.last_name}</td>
-            <td>${r.reason || 'General Consultation'}</td>
+            <td><span style="font-weight:700; color:var(--primary);">${r.reason}</span></td>
             <td>${new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</td>
             <td><span class="badge-status ${sc}">${displayStatus}</span></td>
             <td>
-              <div style="display: flex; gap: 8px;">
-                <button class="btn-action-pill approve" onclick="handleAction(${r.id}, 'approve')" style="color: #10b981; font-weight:700; background:rgba(16,185,129,0.1); padding:6px 14px; border-radius:8px; border:none; cursor:pointer; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
-                  <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Approve
+              <div class="actions-cell">
+                <button class="btn-action btn-approve" onclick="handleAction(${r.id}, 'approve')">
+                  <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Approve
                 </button>
-                <button class="btn-action-pill resched" onclick="handleAction(${r.id}, 'resched')" style="color: #f59e0b; font-weight:700; background:rgba(245,158,11,0.1); padding:6px 14px; border-radius:8px; border:none; cursor:pointer; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
-                  <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg> Resched
+                <button class="btn-action btn-edit" style="color:var(--warning); border-color:var(--warning);" onclick="handleAction(${r.id}, 'resched')">
+                  <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg> Resched
                 </button>
               </div>
             </td>
@@ -153,41 +212,40 @@
       }).join('');
     }
 
-    function filterByStatus(status) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
-      renderTable(status);
-    }
-
     async function handleAction(id, action) {
       if(action === 'resched') {
-        alert('Reschedule modal will be implemented in the next phase.');
+        showAlert('Service Update', 'The Reschedule module is currently undergoing system synchronization. Please check back shortly.', 'info');
         return;
       }
-
-      if(!confirm(`Are you sure you want to ${action} this request?`)) return;
-
-      try {
-        const endpoint = action === 'approve' ? '/admin/dawah/counseling/approve' : '/admin/dawah/counseling/reject';
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
-        });
-        const result = await response.json();
-        if(result.success) {
-          location.reload();
-        } else {
-          alert('Action failed. Please try again.');
+      
+      const title = action === 'approve' ? 'Approve Request' : 'Reject Request';
+      const message = `Are you sure you want to ${action} this counseling request? This action will update the applicant's status immediately.`;
+      
+      showConfirm(title, message, async () => {
+        try {
+          const endpoint = action === 'approve' ? '/admin/dawah/counseling/approve' : '/admin/dawah/counseling/reject';
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          const result = await response.json();
+          if(result.success) {
+            showAlert('Action Successful', `The request has been ${action}d successfully.`, 'success');
+            setTimeout(() => location.reload(), 1500);
+          } else {
+            showAlert('Action Failed', 'The system could not process this request. Please verify your connection.', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          showAlert('System Error', 'A critical error occurred during the update process.', 'error');
         }
-      } catch (err) {
-        console.error(err);
-        alert('An error occurred.');
-      }
+      }, action === 'approve' ? 'success' : 'danger');
     }
 
-    // Initial render
-    renderTable();
+    renderTabs();
+    renderInsights();
+    renderActiveCategory();
   </script>
 </body>
 </html>
