@@ -294,7 +294,7 @@
       
       const attachment = document.getElementById('d-attachment-area');
       if (r.attachment) {
-        document.getElementById('d-attachment').src = '<?= url("/") ?>' + r.attachment;
+        document.getElementById('d-attachment').src = '<?= asset('') ?>' + r.attachment;
         attachment.style.display = 'block';
       } else {
         attachment.style.display = 'none';

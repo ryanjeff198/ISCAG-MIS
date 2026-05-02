@@ -115,6 +115,10 @@ class ApartmentController extends Controller {
         $relPath = "uploads/tenants/" . $fileName;
         $fullPath = BASE_PATH . "/public/" . $relPath;
 
+        if (!is_dir(dirname($fullPath))) {
+            mkdir(dirname($fullPath), 0777, true);
+        }
+
         if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
             echo json_encode(['success' => false, 'message' => 'Failed to save file to disk']);
             return;
@@ -1050,6 +1054,11 @@ class ApartmentController extends Controller {
                 $userId,
                 '/admin/mis_admin/maintenance'
             );
+
+            // Notify Tenant
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $notif = new Notification();
+            $notif->create($userId, 'Maintenance Request Received', "Your request for $category maintenance has been received and is waiting for review.", 'info');
 
             echo json_encode(['success' => true]);
         } else {

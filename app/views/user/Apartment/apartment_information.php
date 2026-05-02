@@ -19,6 +19,7 @@ if ($userId) {
 // Ensure variables from controller are handled
 $familyCount = $familyCount ?? 0;
 $hasParking = $hasParking ?? false;
+$uploadedDocs = $uploadedDocs ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -299,6 +300,83 @@ $hasParking = $hasParking ?? false;
         .form-label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
         .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 0.9rem; }
         .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1); }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1); }
+
+        /* ── Documents Section ── */
+        .doc-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .doc-preview-item {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .doc-preview-item:hover {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .doc-preview-icon {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .doc-preview-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* ── Image Preview ── */
+        .image-preview-container {
+            margin-top: 10px;
+            display: none;
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid var(--border);
+        }
+        .image-preview-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .remove-preview {
+            position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.5); color: white;
+            border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px;
+        }
+
+        /* ── Success Modal ── */
+        .success-modal {
+            max-width: 400px !important;
+            text-align: center;
+        }
+        .success-icon-bounce {
+            width: 80px;
+            height: 80px;
+            background: #ecfdf5;
+            color: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes bounceIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 
@@ -379,7 +457,7 @@ $hasParking = $hasParking ?? false;
                 </div>
                 <button onclick="closeMaintenanceModal()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted);">&times;</button>
             </div>
-            <form id="maintenanceForm" onsubmit="submitMaintenance(event)">
+            <form id="maintenanceForm" onsubmit="handleInitialSubmit(event)">
                 <div style="padding: 24px;">
                     <div class="form-group">
                         <label class="form-label">Type of Issue</label>
@@ -399,7 +477,11 @@ $hasParking = $hasParking ?? false;
                     </div>
                     <div class="form-group">
                         <label class="form-label">Attachment (Optional)</label>
-                        <input type="file" name="attachment" class="form-control" accept="image/*">
+                        <input type="file" name="attachment" id="maintenance_file" class="form-control" accept="image/*" onchange="previewMaintenanceImage(this)">
+                        <div class="image-preview-container" id="maintenance_preview_container">
+                            <img id="maintenance_preview_img" src="" alt="Preview">
+                            <button type="button" class="remove-preview" onclick="clearMaintenanceImage()">&times;</button>
+                        </div>
                     </div>
                 </div>
                 <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:#f9fafb;">
@@ -407,6 +489,22 @@ $hasParking = $hasParking ?? false;
                     <button type="submit" class="btn-action primary" id="maintenanceSubmitBtn">Submit Request</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: SUCCESS CONFIRMATION ═══ -->
+    <div class="apt-modal-overlay" id="successModal">
+        <div class="apt-modal success-modal">
+            <div style="padding: 40px 24px;">
+                <div class="success-icon-bounce">
+                    <svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                </div>
+                <h3 style="font-family:'Lora',serif; color:var(--primary-dark); margin-bottom:10px;">Request Submitted!</h3>
+                <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.5;">Your maintenance request has been recorded. You will be notified once a staff member reviews it.</p>
+                <div style="margin-top:24px;">
+                    <button onclick="closeSuccessModal()" class="btn-action primary">Got it, thanks!</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -424,14 +522,15 @@ $hasParking = $hasParking ?? false;
                 const aptApp = <?= json_encode($application ?? null) ?>;
                 const familyCount = <?= json_encode($familyCount ?? 0) ?>;
                 const hasParking = <?= json_encode($hasParking ?? false) ?>;
+                const uploadedDocs = <?= json_encode($uploadedDocs ?? []) ?>;
                 
                 // Determine logic for "Automatic Queue"
                 if (aptApp && (aptApp.status.toLowerCase() === 'assigned' || aptApp.status.toLowerCase() === 'verified' || aptApp.status.toLowerCase() === 'occupied')) {
                     const type = apartmentTypes.find(t => t.type_key === aptApp.roomtype) || apartmentTypes[0];
-                    assignedApt = { ...type, ...aptApp, displayStatus: 'Your Unit', familyCount, hasParking };
+                    assignedApt = { ...type, ...aptApp, displayStatus: 'Your Unit', familyCount, hasParking, uploadedDocs };
                 } else if (aptApp && aptApp.status.toLowerCase() === 'queued') {
                     const type = apartmentTypes.find(t => t.type_key === aptApp.roomtype) || apartmentTypes[0];
-                    assignedApt = { ...type, ...aptApp, displayStatus: `Waitlisted (Pos #${aptApp.queue_position})`, familyCount, hasParking };
+                    assignedApt = { ...type, ...aptApp, displayStatus: `Waitlisted (Pos #${aptApp.queue_position})`, familyCount, hasParking, uploadedDocs };
                 }
 
                 renderDashboard(aptApp);
@@ -457,7 +556,9 @@ $hasParking = $hasParking ?? false;
                     <div class="status-hero-top">
                         <div class="status-hero-header">
                             <div class="status-hero-header-left">
-                                <div class="status-hero-avatar"><svg viewBox="0 0 24 24" style="width:28px;fill:white;"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z"/></svg></div>
+                                <div class="status-hero-avatar">
+                                    <svg viewBox="0 0 24 24" style="width:28px;fill:white;"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z"/></svg>
+                                </div>
                                 <div><h2 class="status-hero-name">${assignedApt.label || assignedApt.name}</h2><p class="status-hero-subtitle">Assigned Unit: ${assignedApt.room_number || 'ISCAG Compound'}</p></div>
                             </div>
                             <div class="status-badge approved"><span class="status-badge-dot"></span>Active Unit</div>
@@ -539,10 +640,37 @@ $hasParking = $hasParking ?? false;
             document.getElementById('maintenanceModal').classList.remove('active');
             document.body.style.overflow = 'auto';
             document.getElementById('maintenanceForm').reset();
+            clearMaintenanceImage();
+        }
+
+        function previewMaintenanceImage(input) {
+            const container = document.getElementById('maintenance_preview_container');
+            const img = document.getElementById('maintenance_preview_img');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    container.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearMaintenanceImage() {
+            document.getElementById('maintenance_file').value = '';
+            document.getElementById('maintenance_preview_container').style.display = 'none';
+            document.getElementById('maintenance_preview_img').src = '';
+        }
+
+        function handleInitialSubmit(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to submit this maintenance request?')) {
+                submitMaintenance(e);
+            }
         }
 
         async function submitMaintenance(e) {
-            e.preventDefault();
             const btn = document.getElementById('maintenanceSubmitBtn');
             const form = document.getElementById('maintenanceForm');
             const formData = new FormData(form);
@@ -557,8 +685,8 @@ $hasParking = $hasParking ?? false;
                 }).then(r => r.json());
 
                 if (res.success) {
-                    alert('Maintenance request submitted successfully!');
                     closeMaintenanceModal();
+                    openSuccessModal();
                 } else {
                     alert(res.message || 'Failed to submit request');
                 }
@@ -569,6 +697,16 @@ $hasParking = $hasParking ?? false;
                 btn.disabled = false;
                 btn.textContent = 'Submit Request';
             }
+        }
+
+        function openSuccessModal() {
+            document.getElementById('successModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
         }
 
         init();
