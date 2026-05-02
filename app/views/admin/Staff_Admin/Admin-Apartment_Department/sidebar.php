@@ -1,3 +1,11 @@
+<?php
+$rawName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? ''));
+if (empty($rawName)) {
+    $rawName = $_SESSION['name'] ?? 'Apartment Staff';
+}
+$name_parts = explode(' ', $rawName);
+$sidebar_initials = strtoupper(substr($name_parts[0], 0, 1) . (count($name_parts) > 1 ? substr(end($name_parts), 0, 1) : ''));
+?>
 <aside class="sidebar" id="sidebar">
   <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
     <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" /></svg>
@@ -10,10 +18,10 @@
   </div>
   <div class="sidebar-user">
     <div class="user-avatar" id="nav-avatar" style="background:var(--accent);">
-      <?= strtoupper(substr($dbUser['first_name'] ?? 'A', 0, 1) . substr($dbUser['last_name'] ?? 'S', 0, 1)) ?>
+      <?= htmlspecialchars($sidebar_initials) ?>
     </div>
     <div class="user-info">
-      <strong id="nav-name"><?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: 'Apartment Staff' ?></strong>
+      <strong id="nav-name"><?= htmlspecialchars($rawName) ?></strong>
       <span>Apartment Manager</span>
     </div>
   </div>
