@@ -791,18 +791,41 @@ class ApartmentController extends Controller {
         $db = getDbConnection();
 
         require_once BASE_PATH . '/app/models/Lease.php';
+        require_once BASE_PATH . '/app/models/Payment.php';
         $leaseModel = new Lease();
+        $paymentModel = new Payment();
         $lease = $leaseModel->getLeaseByTenantId($userId);
 
         if (!$lease) {
             $this->view('user/Apartment/tenant_soa', [
                 'lease' => null, 
                 'transactions' => [],
+                'balanceForwarded' => 0,
                 'filterMonth' => 'all',
-                'availableMonths' => []
+                'availableMonths' => [],
+                'occupants' => 1
             ]);
             return;
         }
+
+        // --- FETCH DATA FOR SIMULATION ---
+        $payments = $paymentModel->getPaymentsByLease($lease['lease_id']);
+
+        // Occupants (Tenant + Family)
+        $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM tenant_family_members WHERE tenant_id = ?");
+        $stmt->execute([$userId]);
+        $resCount = $stmt->fetch(PDO::FETCH_ASSOC);
+        $occupants = (int)($resCount['cnt'] ?? 0) + 1;
+
+        // Parking
+        $stmt = $db->prepare("SELECT parking_id, vehiclename, plateno, datestarted, date FROM tenant_parking WHERE tenant_id = ? AND status = 'Approved'");
+        $stmt->execute([$userId]);
+        $parkingApps = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Manual Billing
+        $stmt = $db->prepare("SELECT * FROM billing WHERE tenant_id = ? ORDER BY due_date ASC");
+        $stmt->execute([$userId]);
+        $billingRecords = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         // 1. Categorize Advances & Consumable Payments
         $advanceQueues = [];
@@ -811,6 +834,8 @@ class ApartmentController extends Controller {
         foreach ($payments as $p) {
             if ($p['payment_status'] === 'Paid') {
                 $lowType = strtolower($p['payment_type']);
+                // Normalize: bare 'advance' is really 'rent-advance'
+                if ($lowType === 'advance') $lowType = 'rent-advance';
                 if (strpos($lowType, 'advance') !== false || $lowType === 'deposit') {
                     if (!isset($advanceQueues[$lowType])) $advanceQueues[$lowType] = [];
                     $advanceQueues[$lowType][] = $p;
@@ -881,22 +906,22 @@ class ApartmentController extends Controller {
                     'charge' => $rentAmt, 'payment' => 0, 'ref' => 'LSE-R' . $lease['lease_id'] . '-' . $currentDate->format('my')
                 ];
                 $applyAdvance('rent-advance', "Rent for $monthName", $rentAmt);
-
-                // Water
-                $waterAmt = (float)($occupants * 100);
-                $transactions[] = [
-                    'date' => $simDate, 'type' => 'Water', 'description' => "Water Consumption ($occupants occupants) — $monthName",
-                    'charge' => $waterAmt, 'payment' => 0, 'ref' => 'LSE-W' . $lease['lease_id'] . '-' . $currentDate->format('my')
-                ];
-                $applyAdvance('water-advance', "Water for $monthName", $waterAmt);
-
-                // Contribution
-                $transactions[] = [
-                    'date' => $simDate, 'type' => 'Contribution', 'description' => "Monthly Contribution (Security & Garbage) — $monthName",
-                    'charge' => 150.00, 'payment' => 0, 'ref' => 'LSE-C' . $lease['lease_id'] . '-' . $currentDate->format('my')
-                ];
-                $applyAdvance('contribution-advance', "Contribution for $monthName", 150.00);
             }
+
+            // Water (All months including Month 0)
+            $waterAmt = (float)($occupants * 100);
+            $transactions[] = [
+                'date' => $simDate, 'type' => 'Water', 'description' => "Water Consumption ($occupants occupants) — $monthName",
+                'charge' => $waterAmt, 'payment' => 0, 'ref' => 'LSE-W' . $lease['lease_id'] . '-' . $currentDate->format('my')
+            ];
+            $applyAdvance('water-advance', "Water for $monthName", $waterAmt);
+
+            // Contribution (All months including Month 0)
+            $transactions[] = [
+                'date' => $simDate, 'type' => 'Contribution', 'description' => "Monthly Contribution (Security & Garbage) — $monthName",
+                'charge' => 150.00, 'payment' => 0, 'ref' => 'LSE-C' . $lease['lease_id'] . '-' . $currentDate->format('my')
+            ];
+            $applyAdvance('contribution-advance', "Contribution for $monthName", 150.00);
 
             // Parking
             foreach ($parkingApps as $pa) {
@@ -953,20 +978,30 @@ class ApartmentController extends Controller {
             }
         }
 
-        // Sort and Filter
+        // Sort transactions chronologically
         usort($transactions, function($a, $b) {
             return strtotime($a['date']) <=> strtotime($b['date']);
         });
 
-        $filterMonth = $_GET['month'] ?? 'all';
-        $balanceForwarded = 0;
-        $filteredTransactions = [];
+        // 1. Gather all available months first
         $availableMonths = [];
-
         foreach ($transactions as $t) {
             $tMonth = substr($t['date'], 0, 7);
             if (!in_array($tMonth, $availableMonths)) $availableMonths[] = $tMonth;
+        }
+        sort($availableMonths);
 
+        // 2. Determine selected filter month (default to first month instead of 'all')
+        $firstMonth = !empty($availableMonths) ? $availableMonths[0] : 'all';
+        $filterMonth = $_GET['month'] ?? $firstMonth;
+
+        // 3. Apply the filter and calculate balance forwarded
+        $balanceForwarded = 0;
+        $filteredTransactions = [];
+        
+        foreach ($transactions as $t) {
+            $tMonth = substr($t['date'], 0, 7);
+            
             if ($filterMonth !== 'all') {
                 if ($tMonth < $filterMonth) {
                     $balanceForwarded += ($t['charge'] - $t['payment']);
@@ -977,7 +1012,6 @@ class ApartmentController extends Controller {
                 $filteredTransactions[] = $t;
             }
         }
-        rsort($availableMonths);
 
         $this->view('user/Apartment/tenant_soa', [
             'lease' => $lease,

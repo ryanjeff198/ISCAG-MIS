@@ -826,6 +826,8 @@ class AdminController extends Controller
             if ($p['payment_status'] === 'Paid') {
                 $tid = $p['tenant_id'];
                 $lowType = strtolower($p['payment_type']);
+                // Normalize: bare 'advance' is really 'rent-advance'
+                if ($lowType === 'advance') $lowType = 'rent-advance';
                 if (strpos($lowType, 'advance') !== false || $lowType === 'deposit') {
                     if (!isset($advanceQueues[$tid])) $advanceQueues[$tid] = [];
                     if (!isset($advanceQueues[$tid][$lowType])) $advanceQueues[$tid][$lowType] = [];
@@ -907,25 +909,25 @@ class AdminController extends Controller
                         'charge'     => $rentAmt, 'payment' => 0, 'status' => 'Unpaid'
                     ];
                     $applyAdvance('rent-advance', "Rent for $monthName", $rentAmt);
-
-                    // 3. Water Bill
-                    $occupants = ($memberMap[$tid] ?? 0) + 1;
-                    $waterAmt = (float)($occupants * 100);
-                    $transactions[] = [
-                        'tenant_id' => $tid, 'date' => $simDate, 'type' => 'Water',
-                        'description' => "Water ($occupants occupants) — $monthName", 'ref' => 'LSE-W' . $l['lease_id'] . '-' . $currentDate->format('my'),
-                        'charge' => $waterAmt, 'payment' => 0, 'status' => 'Unpaid'
-                    ];
-                    $applyAdvance('water-advance', "Water for $monthName", $waterAmt);
-
-                    // 4. Contribution
-                    $transactions[] = [
-                        'tenant_id' => $tid, 'date' => $simDate, 'type' => 'Contribution',
-                        'description' => "Security & Garbage — $monthName", 'ref' => 'LSE-C' . $l['lease_id'] . '-' . $currentDate->format('my'),
-                        'charge' => 150.00, 'payment' => 0, 'status' => 'Unpaid'
-                    ];
-                    $applyAdvance('contribution-advance', "Contribution for $monthName", 150.00);
                 }
+
+                // 3. Water Bill (All months including Month 0)
+                $occupants = ($memberMap[$tid] ?? 0) + 1;
+                $waterAmt = (float)($occupants * 100);
+                $transactions[] = [
+                    'tenant_id' => $tid, 'date' => $simDate, 'type' => 'Water',
+                    'description' => "Water ($occupants occupants) — $monthName", 'ref' => 'LSE-W' . $l['lease_id'] . '-' . $currentDate->format('my'),
+                    'charge' => $waterAmt, 'payment' => 0, 'status' => 'Unpaid'
+                ];
+                $applyAdvance('water-advance', "Water for $monthName", $waterAmt);
+
+                // 4. Contribution (All months including Month 0)
+                $transactions[] = [
+                    'tenant_id' => $tid, 'date' => $simDate, 'type' => 'Contribution',
+                    'description' => "Security & Garbage — $monthName", 'ref' => 'LSE-C' . $l['lease_id'] . '-' . $currentDate->format('my'),
+                    'charge' => 150.00, 'payment' => 0, 'status' => 'Unpaid'
+                ];
+                $applyAdvance('contribution-advance', "Contribution for $monthName", 150.00);
 
                 // 5. Parking (Monthly if approved)
                 foreach ($parkingApps as $pa) {

@@ -230,4 +230,54 @@ class User
             return false;
         }
     }
+    
+    /**
+     * Delete an account and ALL related data (CLEANUP).
+     */
+    public function deleteAccount(int $userId): bool
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Delete associated data first to satisfy constraints if any (Manual Cascade)
+            
+            // Profiles
+            $this->db->prepare("DELETE FROM tenant_user_profiles WHERE tenant_id = ?")->execute([$userId]);
+            
+            // Apartment Applications and their sub-data
+            $this->db->prepare("DELETE FROM apartmentsapp WHERE tenant_id = ?")->execute([$userId]);
+            
+            // Leases
+            $this->db->prepare("DELETE FROM leases WHERE tenant_id = ?")->execute([$userId]);
+            
+            // Payments
+            $this->db->prepare("DELETE FROM payments WHERE tenant_id = ?")->execute([$userId]);
+            
+            // Billing
+            $this->db->prepare("DELETE FROM billing WHERE tenant_id = ?")->execute([$userId]);
+            
+            // Parking
+            $this->db->prepare("DELETE FROM tenant_parking WHERE tenant_id = ?")->execute([$userId]);
+            
+            // Additional Info & Images
+            // Fetch images to delete from disk if applicable later? 
+            // For now just DB delete.
+            $this->db->prepare("DELETE FROM tenant_addinfo_images WHERE addinfo_id IN (SELECT tenant_info FROM tenant_addinfo WHERE tenant_id = ?)")->execute([$userId]);
+            $this->db->prepare("DELETE FROM tenant_addinfo WHERE tenant_id = ?")->execute([$userId]);
+            
+            // Family
+            $this->db->prepare("DELETE FROM tenant_family_members WHERE tenant_id = ?")->execute([$userId]);
+
+            // 2. Finally delete the core account
+            $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE tenant_id = ?");
+            $res = $stmt->execute([$userId]);
+
+            $this->db->commit();
+            return $res;
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            error_log("Delete Account Error: " . $e->getMessage());
+            return false;
+        }
+    }
 }
