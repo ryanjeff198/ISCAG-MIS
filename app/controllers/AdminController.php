@@ -2019,5 +2019,28 @@ class AdminController extends Controller
         $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/maintenance' : '/admin/mis_admin/maintenance';
         header('Location: ' . url($redirect));
     }
+
+    public function delete_user(): void {
+        Auth::protectRole(['Admin']);
+        header('Content-Type: application/json');
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $id = $input['id'] ?? null;
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Missing User ID']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $ok = $userModel->deleteAccount((int)$id);
+
+        if ($ok) {
+            $this->logAudit('USER_MGMT', 'DELETE_ACCOUNT', "Permanently deleted account ID: $id");
+        }
+
+        echo json_encode(['success' => $ok, 'message' => $ok ? 'Account deleted' : 'Failed to delete account']);
+    }
 }
 

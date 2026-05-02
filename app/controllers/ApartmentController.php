@@ -791,18 +791,41 @@ class ApartmentController extends Controller {
         $db = getDbConnection();
 
         require_once BASE_PATH . '/app/models/Lease.php';
+        require_once BASE_PATH . '/app/models/Payment.php';
         $leaseModel = new Lease();
+        $paymentModel = new Payment();
         $lease = $leaseModel->getLeaseByTenantId($userId);
 
         if (!$lease) {
             $this->view('user/Apartment/tenant_soa', [
                 'lease' => null, 
                 'transactions' => [],
+                'balanceForwarded' => 0,
                 'filterMonth' => 'all',
-                'availableMonths' => []
+                'availableMonths' => [],
+                'occupants' => 1
             ]);
             return;
         }
+
+        // --- FETCH DATA FOR SIMULATION ---
+        $payments = $paymentModel->getPaymentsByLease($lease['lease_id']);
+
+        // Occupants (Tenant + Family)
+        $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM tenant_family_members WHERE tenant_id = ?");
+        $stmt->execute([$userId]);
+        $resCount = $stmt->fetch(PDO::FETCH_ASSOC);
+        $occupants = (int)($resCount['cnt'] ?? 0) + 1;
+
+        // Parking
+        $stmt = $db->prepare("SELECT parking_id, vehiclename, plateno, datestarted, date FROM tenant_parking WHERE tenant_id = ? AND status = 'Approved'");
+        $stmt->execute([$userId]);
+        $parkingApps = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Manual Billing
+        $stmt = $db->prepare("SELECT * FROM billing WHERE tenant_id = ? ORDER BY due_date ASC");
+        $stmt->execute([$userId]);
+        $billingRecords = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         // 1. Categorize Advances & Consumable Payments
         $advanceQueues = [];
