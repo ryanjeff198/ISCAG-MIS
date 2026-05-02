@@ -445,7 +445,6 @@
           
           <div class="soa-container">
             <!-- Stamp -->
-            <div id="soa-stamp" class="soa-stamp">UNPAID</div>
             
             <div class="soa-header">
               <div class="soa-brand">
@@ -793,9 +792,6 @@
         document.getElementById('soa-total-payments').textContent = '₱' + totalPayments.toLocaleString(undefined, {minimumFractionDigits: 2});
         document.getElementById('soa-net-standing').textContent = '₱' + netStanding.toLocaleString(undefined, {minimumFractionDigits: 2});
         
-        const stamp = document.getElementById('soa-stamp');
-        stamp.textContent = netStanding <= 0 ? 'FULLY SETTLED' : 'UNPAID';
-        stamp.className = 'soa-stamp ' + (netStanding <= 0 ? 'paid' : 'unpaid');
     }
 
     calculateData();

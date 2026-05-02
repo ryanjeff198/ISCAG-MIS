@@ -56,29 +56,6 @@
     .btn-topbar.primary { background: var(--primary); color: white; display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; }
     .btn-topbar.primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
-    .soa-stamp {
-      position: absolute;
-      top: 30%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(-15deg);
-      font-size: 5rem;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      pointer-events: none;
-      z-index: 10;
-      border: 8px solid;
-      padding: 10px 40px;
-      border-radius: 20px;
-    }
-    .soa-stamp.paid {
-      color: rgba(22, 163, 74, 0.12); /* Green */
-      border-color: rgba(22, 163, 74, 0.12);
-    }
-    .soa-stamp.unpaid {
-      color: rgba(220, 38, 38, 0.08); /* Red */
-      border-color: rgba(220, 38, 38, 0.08);
-    }
 
     @media print {
       body * { visibility: hidden; }
@@ -148,7 +125,7 @@
         </div>
 
         <!-- Statement Document (The Exact Admin View) -->
-        <div class="soa-container" style="position: relative;">
+        <div class="soa-container">
           <div class="soa-header">
             <div class="soa-brand">
               <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo">
@@ -292,9 +269,6 @@
             <p>This is a system-generated document and acts as an official statement of account.</p>
           </div>
 
-          <?php if (isset($runningBalance) && $runningBalance <= 0 && !empty($transactions)): ?>
-            <div class="soa-stamp paid">FULLY SETTLED</div>
-          <?php endif; ?>
         </div>
         <?php endif; ?>
       </div>
