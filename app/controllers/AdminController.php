@@ -1202,6 +1202,7 @@ class AdminController extends Controller
             return [
                 'type' => 'Counseling',
                 'name' => $r['first_name'] . ' ' . $r['last_name'],
+                'age'  => $r['age'] ?? null,
                 'date' => $r['preferred_date'],
                 'time' => $r['preferred_time'],
                 'desc' => 'Religious Guidance — ' . ($r['reason'] ?? 'General'),
@@ -1215,6 +1216,7 @@ class AdminController extends Controller
             return [
                 'type' => 'Marriage Ceremony',
                 'name' => $r['groom_name'] . ' & ' . $r['bride_name'],
+                'age'  => $r['age'] ?? null,
                 'date' => $r['marriage_date'],
                 'time' => $r['marriage_time'],
                 'desc' => 'Venue: ' . $r['marriage_venue'],
@@ -1222,8 +1224,23 @@ class AdminController extends Controller
             ];
         }, $marriageRaw);
 
-        // 3. Consolidate & Sort by Date/Time
-        $schedules = array_merge($counselingScheds, $marriageScheds);
+        // 3. Fetch Manual Assignments (Classes/Seminars)
+        require_once BASE_PATH . '/app/models/DawahSchedule.php';
+        $manualModel = new DawahSchedule();
+        $manualRaw = $manualModel->getByDepartment($dawah_type);
+        $manualScheds = array_map(function($r) {
+            return [
+                'type' => $r['event_type'],
+                'name' => $r['title'],
+                'date' => $r['event_date'],
+                'time' => $r['event_time'],
+                'desc' => $r['description'],
+                'status' => 'approved' // Manual assignments are pre-approved
+            ];
+        }, $manualRaw);
+
+        // 4. Consolidate & Sort by Date/Time
+        $schedules = array_merge($counselingScheds, $marriageScheds, $manualScheds);
         usort($schedules, function($a, $b) {
             $dateA = strtotime($a['date'] . ' ' . $a['time']);
             $dateB = strtotime($b['date'] . ' ' . $b['time']);
@@ -1247,26 +1264,89 @@ class AdminController extends Controller
         ]);
     }
 
+    public function dawahMaleProfile(): void {
+        Auth::protectRole(['Admin', 'Staff_Male']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/profile', [
+            'active_page' => 'profile',
+            'dbUser' => $dbUser
+        ]);
+    }
+
+    public function dawahFemaleProfile(): void {
+        Auth::protectRole(['Admin', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/profile', [
+            'active_page' => 'profile',
+            'dbUser' => $dbUser
+        ]);
+    }
+
+    public function assignDawahSchedule(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $input = json_decode(file_get_contents('php://input'), true);
+                
+                $role = $_SESSION['role'] ?? '';
+                $dept = ($role === 'Staff_Female') ? 'female' : 'male';
+                
+                $data = [
+                    'title' => $input['title'] ?? '',
+                    'description' => $input['description'] ?? '',
+                    'event_date' => $input['date'] ?? '',
+                    'event_time' => $input['time'] ?? '',
+                    'event_type' => $input['type'] ?? 'Class',
+                    'department' => $dept
+                ];
+
+                require_once BASE_PATH . '/app/models/DawahSchedule.php';
+                $model = new DawahSchedule();
+                
+                $success = $model->create($data);
+                echo json_encode(['success' => $success]);
+            } catch (Exception $e) {
+                error_log("Assign Schedule Error: " . $e->getMessage());
+                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            }
+            exit;
+        }
+    }
+
     public function toggleDawahAvailability(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
-            $date = $input['date'] ?? '';
-            $status = $input['status'] ?? ''; // 'block' or 'unblock'
-            $reason = $input['reason'] ?? 'Administrator Blockout';
-            
-            $role = $_SESSION['role'] ?? '';
-            $dept = ($role === 'Staff_Female') ? 'female' : 'male';
+            try {
+                $input = json_decode(file_get_contents('php://input'), true);
+                $date = $input['date'] ?? '';
+                $status = $input['status'] ?? '';
+                $reason = $input['reason'] ?? 'Administrator Blockout';
+                
+                $role = $_SESSION['role'] ?? '';
+                $dept = ($role === 'Staff_Female') ? 'female' : 'male';
 
-            require_once BASE_PATH . '/app/models/DawahAvailability.php';
-            $model = new DawahAvailability();
-            
-            $success = ($status === 'block') 
-                ? $model->blockDate($date, $dept, $reason)
-                : $model->unblockDate($date, $dept);
+                require_once BASE_PATH . '/app/models/DawahAvailability.php';
+                $model = new DawahAvailability();
+                
+                $success = ($status === 'block') 
+                    ? $model->blockDate($date, $dept, $reason)
+                    : $model->unblockDate($date, $dept);
 
-            header('Content-Type: application/json');
-            echo json_encode(['success' => $success]);
+                echo json_encode(['success' => $success]);
+            } catch (Exception $e) {
+                error_log("Toggle Availability Error: " . $e->getMessage());
+                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            }
             exit;
         }
     }
@@ -1317,6 +1397,8 @@ class AdminController extends Controller
         
         $counselingModel = new CounselingRequest();
         $eduModel = new IslamicEducation();
+        require_once BASE_PATH . '/app/models/MarriageRequest.php';
+        $marriageModel = new MarriageRequest();
 
         // 1. Counseling Stats
         $counselingAnalytics = $counselingModel->getAnalytics($dawah_type);
@@ -1325,8 +1407,8 @@ class AdminController extends Controller
         // 2. Education Stats
         $educationAnalytics = $eduModel->getAnalytics($dawah_type);
         
-        // 3. Marriage Stats (Placeholder)
-        $marriageStats = ['total' => 0, 'pending' => 0, 'approved' => 0];
+        // 3. Marriage Stats
+        $marriageStats = $marriageModel->getAnalytics();
 
         $viewPath = ($dawah_type === 'female') 
             ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/analytics'

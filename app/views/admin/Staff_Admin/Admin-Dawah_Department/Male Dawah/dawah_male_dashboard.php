@@ -7,31 +7,8 @@
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
-    .admin-insights {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 24px;
-    }
-    .insight-card {
-      background: white;
-      padding: 24px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      cursor: pointer;
-    }
-    .insight-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); border-color: #14532d; }
-    .insight-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    .insight-value { font-size: 1.8rem; font-weight: 800; color: #14532d; line-height: 1; }
-    
-    .tab-nav { display: flex; gap: 12px; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
-    .tab-btn { padding: 12px 24px; font-size: 0.9rem; font-weight: 700; color: var(--text-muted); background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.25s ease; }
-    .tab-btn.active { color: #14532d !important; border-bottom-color: #14532d !important; }
+    .insight-card:hover { border-color: var(--accent); }
+    .tab-btn.active { color: var(--primary) !important; border-bottom-color: var(--primary) !important; }
   </style>
 </head>
 <body>
@@ -43,14 +20,13 @@
     ?>
     <div class="main-content">
       <div class="top-bar">
-        <div style="display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; background: #f0fdf4; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #14532d;">
-            <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-          </div>
-          <div>
-            <div class="top-bar-title">Welcome, <?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: 'Male Da\'wah Manager' ?></div>
-            <div class="top-bar-subtitle">Managing religious services and educational programs</div>
-          </div>
+        <div class="top-bar-left">
+          <div class="top-bar-title">Welcome, <?= htmlspecialchars(explode(' ',trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')))[0]) ?: 'Da\'wah Manager' ?></div>
+          <div class="top-bar-subtitle">Male Da'wah Department — Managing religious services and educational programs</div>
+        </div>
+        <div class="top-bar-actions">
+           <span id="admin-name" style="font-weight:700;color:var(--text-main);font-size:0.9rem;"></span>
+           <button class="btn-topbar" onclick="location.href='<?= url('/admin/dawah/male/analytics') ?>'">📊 Dept Analytics</button>
         </div>
       </div>
       <div class="page-body">
@@ -59,21 +35,21 @@
         </div>
 
         <div class="admin-insights">
-          <div class="insight-card" onclick="window.location.href='<?= url('/admin/dawah/counseling') ?>'">
-            <div class="insight-label">Male Counseling</div>
-            <div class="insight-value" id="stat-counseling">0</div>
+          <div class="insight-card" onclick="window.location.href='<?= url('/admin/dawah/male/counseling') ?>'">
+            <div class="insight-label">Counseling Requests</div>
+            <div class="insight-value" style="color:var(--primary);" id="stat-counseling">0</div>
           </div>
-          <div class="insight-card" onclick="window.location.href='<?= url('/admin/dawah/marriage') ?>'">
-            <div class="insight-label">Marriage Files</div>
-            <div class="insight-value" id="stat-marriage">0</div>
+          <div class="insight-card" onclick="window.location.href='<?= url('/admin/dawah/male/marriage') ?>'">
+            <div class="insight-label">Marriage Applications</div>
+            <div class="insight-value" style="color:var(--accent);" id="stat-marriage">0</div>
           </div>
-          <div class="insight-card" onclick="window.location.href='<?= url('/admin/dawah/education') ?>'">
-            <div class="insight-label">Shahada Records</div>
-            <div class="insight-value" id="stat-conversion">0</div>
+          <div class="insight-card" onclick="window.location.href='<?= url('/admin/dawah/male/education') ?>'">
+            <div class="insight-label">Student Records</div>
+            <div class="insight-value" style="color:var(--info);" id="stat-conversion">0</div>
           </div>
           <div class="insight-card">
-            <div class="insight-label">Action Required</div>
-            <div class="insight-value warning" id="stat-pending">0</div>
+            <div class="insight-label">Pending Review</div>
+            <div class="insight-value" style="color:var(--danger);" id="stat-pending">0</div>
           </div>
         </div>
 
@@ -86,7 +62,10 @@
 
         <div class="section-card">
           <div class="section-card-header">
-            <h6>Service Request Overview (Male)</h6>
+            <h6>
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:var(--accent);margin-right:8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+              Service Request Overview (Male)
+            </h6>
           </div>
           <div class="section-card-body" style="padding:0;">
             <div class="table-wrapper">
@@ -102,7 +81,7 @@
                   </tr>
                 </thead>
                 <tbody id="request-tbody">
-                  <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No records found.</td></tr>
+                  <!-- Rendered by JS -->
                 </tbody>
               </table>
             </div>
@@ -115,30 +94,39 @@
   <script>
     syncSessionUser('<?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>', '<?= $dbUser['email'] ?? '' ?>', '<?= $_SESSION['role'] ?? '' ?>');
     standardizePage('staff');
+    
     const requests = <?= json_encode($requests ?? []) ?>;
     
     function renderTable(filter = 'all') {
       const tbody = document.getElementById('request-tbody');
       let filtered = requests;
-      if(filter !== 'all') filtered = requests.filter(r => r.type === filter);
+      if(filter !== 'all') filtered = filtered.filter(r => r.type === filter);
       
       if(filtered.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No records found for this category.</td></tr>';
         return;
       }
       
-      tbody.innerHTML = filtered.map(r => `
-        <tr>
-          <td class="td-id">#${r.id}</td>
-          <td style="font-weight:600;">${r.name}</td>
-          <td>${r.service_label}</td>
-          <td>${r.date}</td>
-          <td><span class="badge-status ${r.status_class}">${r.status}</span></td>
-          <td>
-            <button class="btn-action" style="color:#14532d;">Process Request</button>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = filtered.map(r => {
+          const sc = r.status.toLowerCase().includes('pend') ? 'badge-pending' : (r.status.toLowerCase().includes('approv') ? 'badge-approved' : 'badge-rejected');
+          return `
+            <tr>
+              <td class="td-id">#${r.id}</td>
+              <td style="font-weight:600;">${r.name}</td>
+              <td>${r.service_label}</td>
+              <td>${r.date}</td>
+              <td><span class="badge-status ${sc}">${r.status}</span></td>
+              <td>
+                <div class="actions-cell">
+                    <button class="btn-action btn-view" onclick="alert('Processing request...')">
+                        <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        View Details
+                    </button>
+                </div>
+              </td>
+            </tr>
+          `;
+      }).join('');
     }
     
     function switchTab(type) {
@@ -148,9 +136,10 @@
     }
     
     const analytics = <?= json_encode($analytics ?? ['total' => 0, 'pending' => 0, 'approved' => 0]) ?>;
-    document.getElementById('stat-counseling').textContent = analytics.total || 0;
+    document.getElementById('stat-counseling').textContent = analytics.counseling_total || 0;
+    document.getElementById('stat-marriage').textContent = analytics.marriage_total || 0;
     document.getElementById('stat-pending').textContent = analytics.pending || 0;
-    document.getElementById('stat-approved').textContent = analytics.approved || 0;
+    document.getElementById('stat-conversion').textContent = analytics.student_count || 0;
     
     renderTable();
   </script>

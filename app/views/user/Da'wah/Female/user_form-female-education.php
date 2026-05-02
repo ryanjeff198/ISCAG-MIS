@@ -208,7 +208,21 @@ $dbUser = array_merge($dbUser, $extraInfo);
                             <option value="Guardian">Guardian</option>
                             <option value="Relative">Relative</option>
                             <option value="Friend">Friend</option>
-
+                        </select>
+                    </div>
+                  </div>
+                  <div class="sub-head">Academic Program</div>
+                  <div class="grid-sys">
+                    <div class="field-box" style="grid-column: span 12;">
+                        <span class="field-tag">Program of Interest *</span>
+                        <select name="program_name" class="field-line" required>
+                            <option value="" disabled selected>Choose a Program</option>
+                            <option value="Beginners Qur'an (B4)">Beginners Qur'an (B4)</option>
+                            <option value="Intermediate Islamic Studies">Intermediate Islamic Studies</option>
+                            <option value="Tajweed Mastery">Tajweed Mastery</option>
+                            <option value="Tahfidhul Qur'an">Tahfidhul Qur'an</option>
+                            <option value="Arabic Language">Arabic Language</option>
+                            <option value="Other Programs">Other Programs</option>
                         </select>
                     </div>
                   </div>

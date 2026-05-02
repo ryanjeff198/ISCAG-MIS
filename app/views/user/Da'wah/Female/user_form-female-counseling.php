@@ -205,9 +205,12 @@ foreach ($history as $req) {
                         <option value="">— Select primary concern —</option>
                         <option>Family / Marital Issues</option>
                         <option>Personal / Spiritual Struggles</option>
-                        <option>Youth / Parenting Concerns</option>
+                        <option>Parenting & Family Guidance</option>
+                        <option>Youth & Academic Concerns</option>
                         <option>Financial Difficulties</option>
                         <option>Grief and Loss</option>
+                        <option>Anger Management</option>
+                        <option>Revert / New Muslim Support</option>
                         <option>Other</option>
                     </select>
                 </div>
