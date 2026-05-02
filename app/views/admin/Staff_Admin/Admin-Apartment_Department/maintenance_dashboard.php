@@ -1,4 +1,9 @@
-<?php $active_page = 'maintenance'; ?>
+<?php 
+  $active_page = 'maintenance'; 
+  $pending = array_filter($requests, fn($r) => $r['status'] === 'Pending');
+  $active  = array_filter($requests, fn($r) => $r['status'] === 'In Progress');
+  $history = array_filter($requests, fn($r) => in_array($r['status'], ['Completed', 'Rejected']));
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,11 +53,43 @@
       </div>
 
       <div class="page-body">
-        <div class="section-card">
+        <!-- Admin Insights Ribbon -->
+        <div class="admin-insights">
+          <div class="insight-card pending">
+            <div class="insight-label">Pending Review</div>
+            <div class="insight-value warning"><?= count($pending) ?></div>
+            <div class="insight-icon-bg"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div>
+          </div>
+          <div class="insight-card total">
+            <div class="insight-label">Active Repairs</div>
+            <div class="insight-value info"><?= count($active) ?></div>
+            <div class="insight-icon-bg"><svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.5 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg></div>
+          </div>
+          <div class="insight-card verified">
+            <div class="insight-label">Resolved (Total)</div>
+            <div class="insight-value success"><?= count(array_filter($history, fn($r) => $r['status'] === 'Completed')) ?></div>
+            <div class="insight-icon-bg"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+          </div>
+        </div>
+
+        <div class="tab-nav">
+          <button class="tab-btn active" onclick="switchTab('pending', this)">
+            Pending <span class="tab-count pending"><?= count($pending) ?></span>
+          </button>
+          <button class="tab-btn" onclick="switchTab('active', this)">
+            In Progress <span class="tab-count approved"><?= count($active) ?></span>
+          </button>
+          <button class="tab-btn" onclick="switchTab('history', this)">
+            History <span class="tab-count rejected"><?= count($history) ?></span>
+          </button>
+        </div>
+
+        <!-- PENDING TABLE -->
+        <div class="section-card tab-panel" id="tab-pending">
           <div class="section-card-header">
             <h6>
-              <svg viewBox="0 0 24 24" style="width:18px;fill:var(--primary);"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.5 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
-              Active Requests
+              <svg viewBox="0 0 24 24" style="width:18px;fill:var(--primary);"><path d="m12 2c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10zm1 15h-2v-6h2v6zm0-8h-2v-2h2v2z"/></svg>
+              Pending Approval
             </h6>
           </div>
           <div class="section-card-body" style="padding:0;">
@@ -69,39 +106,128 @@
                 </tr>
               </thead>
               <tbody>
-                <?php if (empty($requests)): ?>
-                  <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No maintenance requests found.</td></tr>
+                <?php if (empty($pending)): ?>
+                  <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No pending requests.</td></tr>
                 <?php else: ?>
-                  <?php foreach ($requests as $r): ?>
+                  <?php foreach ($pending as $r): ?>
                     <tr>
                       <td class="td-id"><?= $r['id'] ?></td>
                       <td style="font-weight:600;"><?= htmlspecialchars($r['first_name'] . ' ' . $r['last_name']) ?></td>
                       <td><span style="font-weight:700; color:var(--primary);"><?= $r['category'] ?></span></td>
                       <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($r['description']) ?></td>
                       <td><?= date('M d, Y', strtotime($r['created_at'])) ?></td>
-                      <td>
-                        <?php 
-                          $statusClass = 'badge-pending';
-                          if($r['status'] === 'In Progress') $statusClass = 'badge-approved';
-                          if($r['status'] === 'Completed') $statusClass = 'badge-approved';
-                          if($r['status'] === 'Rejected') $statusClass = 'badge-rejected';
-                        ?>
-                        <span class="badge-status <?= $statusClass ?>"><?= $r['status'] ?></span>
-                      </td>
+                      <td><span class="badge-status badge-pending"><?= $r['status'] ?></span></td>
                       <td>
                         <div class="actions-cell">
                           <button class="btn-circle eye" onclick="viewMaintenance(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
                             <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                           </button>
-                          <?php if ($r['status'] === 'Pending'): ?>
-                            <button class="btn-circle check" onclick="approveMaintenance(<?= $r['id'] ?>)" title="Approve">
-                              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                            </button>
-                            <button class="btn-circle reject" onclick="rejectMaintenance(<?= $r['id'] ?>)" title="Reject">
-                              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                            </button>
-                          <?php endif; ?>
+                          <button class="btn-circle check" onclick="approveMaintenance(<?= $r['id'] ?>)" title="Approve">
+                            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                          </button>
+                          <button class="btn-circle reject" onclick="rejectMaintenance(<?= $r['id'] ?>)" title="Reject">
+                            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                          </button>
                         </div>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ACTIVE TABLE -->
+        <div class="section-card tab-panel" id="tab-active" style="display:none;">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24" style="width:18px;fill:var(--success);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              In Progress Requests
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <table class="mis-table">
+              <thead>
+                <tr>
+                  <th>Ref #</th>
+                  <th>Tenant Name</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Managed At</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($active)): ?>
+                  <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No active repairs.</td></tr>
+                <?php else: ?>
+                  <?php foreach ($active as $r): ?>
+                    <tr>
+                      <td class="td-id"><?= $r['id'] ?></td>
+                      <td style="font-weight:600;"><?= htmlspecialchars($r['first_name'] . ' ' . $r['last_name']) ?></td>
+                      <td><span style="font-weight:700; color:var(--primary);"><?= $r['category'] ?></span></td>
+                      <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($r['description']) ?></td>
+                      <td><?= date('M d, Y', strtotime($r['updated_at'] ?? $r['created_at'])) ?></td>
+                      <td><span class="badge-status badge-approved"><?= $r['status'] ?></span></td>
+                      <td>
+                        <div class="actions-cell">
+                          <button class="btn-circle eye" onclick="viewMaintenance(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
+                            <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                          </button>
+                          <button class="btn-circle check" onclick="resolveMaintenance(<?= $r['id'] ?>)" title="Mark as Resolved">
+                            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- HISTORY TABLE -->
+        <div class="section-card tab-panel" id="tab-history" style="display:none;">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24" style="width:18px;fill:var(--text-muted);"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+              Resolved / Canceled
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <table class="mis-table">
+              <thead>
+                <tr>
+                  <th>Ref #</th>
+                  <th>Tenant Name</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($history)): ?>
+                  <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No history items found.</td></tr>
+                <?php else: ?>
+                  <?php foreach ($history as $r): ?>
+                    <tr>
+                      <td class="td-id"><?= $r['id'] ?></td>
+                      <td style="font-weight:600;"><?= htmlspecialchars($r['first_name'] . ' ' . $r['last_name']) ?></td>
+                      <td><?= $r['category'] ?></td>
+                      <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($r['description']) ?></td>
+                      <td>
+                        <span class="badge-status <?= $r['status'] === 'Completed' ? 'badge-approved' : 'badge-rejected' ?>">
+                          <?= $r['status'] ?>
+                        </span>
+                      </td>
+                      <td>
+                        <button class="btn-circle eye" onclick="viewMaintenance(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
+                          <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        </button>
                       </td>
                     </tr>
                   <?php endforeach; ?>
@@ -152,6 +278,14 @@
   <script>
     standardizePage('staff');
 
+    function switchTab(tabName, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const target = document.getElementById('tab-' + tabName);
+      if (target) target.style.display = 'block';
+      if (btn) btn.classList.add('active');
+    }
+
     function viewMaintenance(r) {
       document.getElementById('d-tenant').textContent = `${r.first_name} ${r.last_name} (${r.email})`;
       document.getElementById('d-category').textContent = r.category;
@@ -175,6 +309,11 @@
             <button class="btn-topbar primary" onclick="approveMaintenance(${r.id})">Approve & Start</button>
           </div>
         `;
+      } else if (r.status === 'In Progress') {
+        footer.innerHTML = `
+          <button class="btn-topbar" onclick="closeModal('maintenance-modal')">Close</button>
+          <button class="btn-topbar primary" style="margin-left:auto;" onclick="resolveMaintenance(${r.id})">Mark as Resolved / Done</button>
+        `;
       } else {
         footer.innerHTML = `<button class="btn-topbar" onclick="closeModal('maintenance-modal')">Close</button>`;
       }
@@ -185,6 +324,12 @@
     function approveMaintenance(id) {
       if (confirm('Approve this maintenance request and set to "In Progress"?')) {
         window.location.href = '<?= url("/admin/apartment/maintenance/approve") ?>?id=' + id;
+      }
+    }
+
+    function resolveMaintenance(id) {
+      if (confirm('Mark this maintenance request as Completed?')) {
+        window.location.href = '<?= url("/admin/apartment/maintenance/resolve") ?>?id=' + id;
       }
     }
 

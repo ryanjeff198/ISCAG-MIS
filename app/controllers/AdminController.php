@@ -1968,5 +1968,24 @@ class AdminController extends Controller
         $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/maintenance' : '/admin/mis_admin/maintenance';
         header('Location: ' . url($redirect));
     }
+
+    public function resolveMaintenance() {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            require_once BASE_PATH . '/app/models/Maintenance.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $model = new Maintenance();
+            $notif = new Notification();
+            
+            $req = $model->getById($id);
+            if ($model->updateStatus($id, 'Completed', 'Your maintenance request has been resolved/completed.')) {
+                $notif->create($req['tenant_id'], 'Maintenance Resolved', 'Your maintenance request for ' . $req['category'] . ' has been marked as Completed.', 'success');
+                $this->logAudit('MAINTENANCE', 'RESOLVE_MAINTENANCE', "Resolved maintenance ID: $id");
+            }
+        }
+        $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/maintenance' : '/admin/mis_admin/maintenance';
+        header('Location: ' . url($redirect));
+    }
 }
 
