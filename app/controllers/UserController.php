@@ -302,14 +302,69 @@ class UserController extends Controller
     {
         Auth::protectRole(['Guest', 'Tenant']);
         require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/DawahAvailability.php';
+
         $model = new CounselingRequest();
+        $availModel = new DawahAvailability();
+
         $history = $model->getByUser($_SESSION['user_id']);
         $analytics = $model->getAnalytics('female');
+        $blockedDates = $availModel->getBlockedDates('female');
 
         $this->view('user/Da\'wah/Female/user_form-female-counseling', [
             'history' => $history,
+            'analytics' => $analytics,
+            'blockedDates' => $blockedDates
+        ]);
+    }
+
+    public function femaleEducation(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        
+        // Application status is now handled within the view via $hasPending/$hasApproved
+        // No redirect needed to allow viewing status on this page.
+
+        $history = [];
+        $analytics = ['total' => 0, 'pending' => 0, 'approved' => 0];
+
+        $this->view('user/Da\'wah/Female/user_form-female-education', [
+            'dbUser' => $dbUser,
+            'history' => $history,
             'analytics' => $analytics
         ]);
+    }
+
+    public function femaleSchool(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']) ?: [];
+        $extraInfo = $userModel->getAdditionalInfo($_SESSION['user_id']) ?: [];
+        $dbUser = array_merge($dbUser, $extraInfo);
+        $this->view('user/Da\'wah/Female/user_female-school', ['dbUser' => $dbUser, 'active_page' => 'female_school']);
+    }
+
+    public function femaleSubjects(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        // Check if enrolled - security gate
+        if (empty($_SESSION['female_education_enrolled'])) {
+            $this->redirect('/user/services/education/female');
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']) ?: [];
+        $extraInfo = $userModel->getAdditionalInfo($_SESSION['user_id']) ?: [];
+        $dbUser = array_merge($dbUser, $extraInfo);
+        
+        $this->view('user/Da\'wah/Female/user_female-subjects', ['dbUser' => $dbUser, 'active_page' => 'female_subjects']);
     }
 
     public function counselingResources(): void

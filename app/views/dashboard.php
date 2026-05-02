@@ -1103,7 +1103,11 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       const isTenant = user.role === 'Tenant';
       card.addEventListener('click', (e) => {
         e.preventDefault();
-        if (!isComplete && !isTenant) {
+        
+        // Skip profile completion check for Da'wah and Damayan
+        const skipAccessCheck = (svc.id === 'dawah' || svc.id === 'damayan');
+        
+        if (!isComplete && !isTenant && !skipAccessCheck) {
           showAccessModal({
             percentage,
             missingFields,
@@ -1190,7 +1194,8 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                 <p style="font-size:0.95rem;color:var(--text-muted);">Please select the service you wish to access</p>
               </div>
 
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:32px;">
+              <div style="display:grid;grid-template-columns:<?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)' ?>;gap:20px;margin-bottom:32px;">
+                <?php if (strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') !== 'female'): ?>
                 <!-- Marriage -->
                 <div class="dawah-opt-card" id="opt-marriage" style="
                   border:2px solid #f0f2f1;border-radius:20px;padding:24px 20px;text-align:center;
@@ -1202,6 +1207,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                   <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Marriage</h6>
                   <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Nikah services and pre-marital consultation</p>
                 </div>
+                <?php endif; ?>
 
                 <!-- Counseling / Education -->
                 <div class="dawah-opt-card" id="opt-counseling" style="
@@ -1209,20 +1215,26 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                   cursor:pointer;transition:all 0.3s ease;background:rgba(23,107,69,0.02);
                 ">
                   <div style="width:64px;height:64px;border-radius:18px;background:var(--primary-light);color:white;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 20px rgba(23,107,69,0.2);">
-                    <?php if (strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female'): ?>
-                        <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
-                    <?php else: ?>
-                        <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-                    <?php endif; ?>
+                    <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
                   </div>
-                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">
-                    <?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female' ? 'Female Education' : 'Counseling & Guidance' ?>
-                  </h6>
-                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">
-                    <?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female' ? 'Enrollment and Islamic classes for sisters' : 'Personal, family, or spiritual guidance sessions' ?>
-                  </p>
+                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Counseling</h6>
+                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Personal, family, or spiritual guidance sessions</p>
                 </div>
 
+                <!-- Islamic Education -->
+                <div class="dawah-opt-card" id="opt-education" style="
+                  border:2px solid #f0f2f1;border-radius:20px;padding:24px 20px;text-align:center;
+                  cursor:pointer;transition:all 0.3s ease;
+                  <?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female' ? '' : 'display:none;' ?>
+                ">
+                  <div style="width:64px;height:64px;border-radius:18px;background:var(--primary-female-light);color:var(--primary-female-dark);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 20px rgba(212, 175, 55, 0.15);">
+                    <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+                  </div>
+                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Islamic Education</h6>
+                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Enrollment and Islamic classes for sisters</p>
+                </div>
+
+                <?php if (strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') !== 'female'): ?>
                 <!-- Islamic Studies -->
                 <div class="dawah-opt-card" id="opt-studies" style="
                   border:2px solid #f0f2f1;border-radius:20px;padding:24px 20px;text-align:center;
@@ -1234,6 +1246,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                   <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Islamic Studies</h6>
                   <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Quran, Hadith, and Fiqh educational programs</p>
                 </div>
+                <?php endif; ?>
               </div>
 
               <div style="text-align:center;">
@@ -1275,16 +1288,25 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         modal.onclick = (e) => { if (e.target === modal) closeModal(); };
 
         document.getElementById('opt-counseling').onclick = () => {
-          window.location.href = dawahHref;
+          window.location.href = '<?= url('/user/services/counseling/') ?>' + '<?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female' ? 'female' : 'male' ?>';
         };
 
+        const optEdu = document.getElementById('opt-education');
+        if (optEdu) {
+          optEdu.onclick = () => {
+            window.location.href = '<?= url('/user/services/education/female') ?>';
+          };
+        }
+
+        <?php if (strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') !== 'female'): ?>
         document.getElementById('opt-marriage').onclick = () => {
           window.location.href = '<?= url('/user/services/marriage-form') ?>';
         };
-
+        
         document.getElementById('opt-studies').onclick = () => {
           window.location.href = '<?= url('/user/services/conversion-form') ?>';
         };
+        <?php endif; ?>
       }
 
       function showDamayanSelectionModal() {
