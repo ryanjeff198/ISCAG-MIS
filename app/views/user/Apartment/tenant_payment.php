@@ -208,23 +208,43 @@
                                     $unpaidIds = [];
                                     $unpaidItems = [];
                                     foreach ($payments as $pay): 
-                                        if (!in_array($pay['payment_type'], ['Deposit', 'Advance'])) continue;
+                                        if (!in_array($pay['payment_type'], ['Deposit', 'Advance', 'Water-Advance', 'Contribution-Advance', 'Parking-Advance'])) continue;
                                         $isPaid = $pay['payment_status'] === 'Paid';
                                         $isFailed = $pay['payment_status'] === 'Failed';
                                         
                                         if (!$isPaid) {
                                             $unpaidIds[] = $pay['payment_id'];
+                                            
+                                            $dispName = $pay['payment_type'];
+                                            if ($dispName === 'Deposit') $dispName = 'Security Deposit';
+                                            if ($dispName === 'Advance') $dispName = 'Advance Rent';
+                                            
                                             $unpaidItems[] = [
-                                                'name' => $pay['payment_type'] === 'Deposit' ? 'Security Deposit' : 'Advance Rent',
+                                                'name' => $dispName,
                                                 'amount' => $pay['amount']
                                             ];
                                         }
                                     ?>
                                     <tr>
                                         <td>
-                                            <div class="breakdown-item-name"><?= $pay['payment_type'] === 'Deposit' ? 'Security Deposit' : 'Advance Rent' ?></div>
+                                            <div class="breakdown-item-name">
+                                                <?php
+                                                    if ($pay['payment_type'] === 'Deposit') echo 'Security Deposit';
+                                                    elseif ($pay['payment_type'] === 'Advance') echo 'Advance Rent';
+                                                    elseif ($pay['payment_type'] === 'Water-Advance') echo 'Water Bill';
+                                                    elseif ($pay['payment_type'] === 'Contribution-Advance') echo 'Contribution';
+                                                    elseif ($pay['payment_type'] === 'Parking-Advance') echo 'Parking Fee';
+                                                    else echo htmlspecialchars($pay['payment_type']);
+                                                ?>
+                                            </div>
                                             <div class="breakdown-item-desc">
-                                                <?php if($pay['payment_type'] === 'Deposit') echo "Refundable at end of lease"; else echo "Equivalent to 1 month rent"; ?>
+                                                <?php 
+                                                    if($pay['payment_type'] === 'Deposit') echo "Refundable at end of lease"; 
+                                                    elseif($pay['payment_type'] === 'Advance') echo "Equivalent to 1 month rent"; 
+                                                    elseif($pay['payment_type'] === 'Water-Advance') echo "1st Month Water Consumption"; 
+                                                    elseif($pay['payment_type'] === 'Contribution-Advance') echo "1st Month Security & Garbage"; 
+                                                    elseif($pay['payment_type'] === 'Parking-Advance') echo "1st Month Parking"; 
+                                                ?>
                                                 <?php if($isPaid && $pay['reference_number']) echo "<br/><span style='color:#166534;font-size:0.72rem;font-weight:600;'>Ref: {$pay['reference_number']}</span>"; ?>
                                             </div>
                                         </td>

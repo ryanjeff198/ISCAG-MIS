@@ -54,7 +54,29 @@ class Payment
             'amount'       => $advanceAmount
         ]);
 
-        return $ok1 && $ok2;
+        // Calculate Water Amount based on occupants
+        $stmtOcc = $this->db->prepare("SELECT COUNT(*) FROM tenant_family_members WHERE tenant_id = :tid");
+        $stmtOcc->execute(['tid' => $tenantId]);
+        $occupants = (int)$stmtOcc->fetchColumn() + 1; // +1 for the tenant
+        $waterAmount = $occupants * 100.00;
+
+        // Generate Water-Advance
+        $ok3 = $stmtInsert->execute([
+            'lease_id'     => $leaseId,
+            'tenant_id'    => $tenantId,
+            'payment_type' => 'Water-Advance',
+            'amount'       => $waterAmount
+        ]);
+
+        // Generate Contribution-Advance
+        $ok4 = $stmtInsert->execute([
+            'lease_id'     => $leaseId,
+            'tenant_id'    => $tenantId,
+            'payment_type' => 'Contribution-Advance',
+            'amount'       => 150.00
+        ]);
+
+        return $ok1 && $ok2 && $ok3 && $ok4;
     }
 
     /**
