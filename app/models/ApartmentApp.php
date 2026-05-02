@@ -59,6 +59,35 @@ class ApartmentApp {
                 }
                 $lastId = $existing['tenant_info'];
             }
+
+            // ── Sync family members to relational table ──
+            if (isset($data['family_data'])) {
+                $familyJson = $data['family_data'];
+                $members = is_string($familyJson) ? json_decode($familyJson, true) : $familyJson;
+                
+                if (is_array($members)) {
+                    // Clear existing members for this tenant
+                    $delStmt = $this->db->prepare("DELETE FROM tenant_family_members WHERE tenant_id = ?");
+                    $delStmt->execute([$userId]);
+                    
+                    // Insert fresh members
+                    $insStmt = $this->db->prepare(
+                        "INSERT INTO tenant_family_members (tenant_id, name, relation, age, religion) VALUES (?, ?, ?, ?, ?)"
+                    );
+                    foreach ($members as $m) {
+                        $name = trim($m['name'] ?? '');
+                        if ($name === '') continue; // Skip empty rows
+                        $insStmt->execute([
+                            $userId,
+                            $name,
+                            $m['relation'] ?? '',
+                            !empty($m['age']) ? (int)$m['age'] : null,
+                            $m['religion'] ?? 'Islam'
+                        ]);
+                    }
+                }
+            }
+
             $this->db->commit();
             return $lastId;
         } catch (PDOException $e) {
