@@ -302,6 +302,8 @@
       display: flex;
       flex-direction: column;
       width: 100%;
+      text-decoration: none;
+      color: inherit;
     }
     .dept-card:hover {
       transform: translateY(-15px) rotate(1deg);
@@ -457,7 +459,7 @@
   <div class="container">
     <span class="hero-label reveal">The ISCAG Legacy</span>
     <h1 class="hero-title reveal">History & Organization</h1>
-    <p class="hero-subtitle reveal">Discover our heritage and the dedicated leadership steering our mission forward.</p>
+    <p class="hero-subtitle reveal">Discover our heritage and the core departments steering our mission forward.</p>
   </div>
 </header>
 
@@ -538,87 +540,10 @@
 <!-- BOARD SECTION -->
 <section class="org-section fade-in delay-300">
   <div class="container">
-    <h2 class="section-title reveal">Organizational Leadership</h2>
-    
-    <!-- Administration -->
-    <h3 class="dept-sub-title reveal">Administration</h3>
-    <div class="board-grid">
-      <div class="member-card reveal">
-        <div class="member-avatar">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <h3 class="member-name">(No Name)</h3>
-        <p class="member-role">President & CEO</p>
-      </div>
-      <div class="member-card reveal delay-1">
-        <div class="member-avatar">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <h3 class="member-name">(No Name)</h3>
-        <p class="member-role">Executive Director</p>
-      </div>
-    </div>
 
-    <!-- Da'wah Department -->
-    <h3 class="dept-sub-title reveal">Da'wah Department</h3>
-    
-    <h4 class="section-divider reveal">Male Section</h4>
-    <div class="board-grid">
-      <div class="member-card reveal">
-        <div class="member-avatar">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <h3 class="member-name">(No Name)</h3>
-        <p class="member-role">Head of Male Dawah</p>
-      </div>
-    </div>
-
-    <h4 class="section-divider reveal">Female Section</h4>
-    <div class="board-grid" style="margin-bottom: 40px;">
-      <div class="member-card reveal">
-        <div class="member-avatar">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <h3 class="member-name">(No Name)</h3>
-        <p class="member-role">Head of Female Dawah</p>
-      </div>
-    </div>
-
-    <!-- Operations & Services -->
-    <h3 class="dept-sub-title reveal">Operations & Services</h3>
-    <div class="board-grid">
-      <div class="member-card reveal">
-        <div class="member-avatar">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <h3 class="member-name">(No Name)</h3>
-        <p class="member-role">Apartment Manager</p>
-      </div>
-            <div class="member-card reveal">
-        <div class="member-avatar">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <h3 class="member-name">(No Name)</h3>
-        <p class="member-role">Operation Manager</p>
-      </div>
-    </div>
-
-    <!-- Damayan Department -->
-    <h3 class="dept-sub-title reveal">Damayan Department</h3>
-    <div class="board-grid">
-      <div class="member-card reveal">
-        <div class="member-avatar">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <h3 class="member-name">(No Name)</h3>
-        <p class="member-role">Head of Damayan</p>
-      </div>
-    </div>
-
-    <!-- Core Departments Overview -->
-    <h2 class="section-title reveal" style="margin-top: 80px;">Functional Departments</h2>
+    <h2 class="section-title reveal">Functional Departments</h2>
     <div class="dept-grid">
-      <div class="dept-card reveal">
+      <a href="<?= url('/dawah') ?>" class="dept-card reveal">
         <div class="dept-icon">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         </div>
@@ -626,8 +551,8 @@
           <h3>Da'wah Department</h3>
           <p>Overseeing Islamic propagation, counseling, and guidance for new Muslims.</p>
         </div>
-      </div>
-      <div class="dept-card reveal delay-1">
+      </a>
+      <a href="<?= url('/apartment') ?>" class="dept-card reveal delay-1">
         <div class="dept-icon">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </div>
@@ -635,8 +560,8 @@
           <h3>Apartment Management</h3>
           <p>Supervising residential facilities and housing services.</p>
         </div>
-      </div>
-      <div class="dept-card reveal delay-2">
+      </a>
+      <a href="<?= url('/damayan') ?>" class="dept-card reveal delay-2">
         <div class="dept-icon">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
         </div>
@@ -644,7 +569,7 @@
           <h3>Damayan Services</h3>
           <p>Coordinating social welfare, bereavement support, and burial services.</p>
         </div>
-      </div>
+      </a>
     </div>
   </div>
 </section>

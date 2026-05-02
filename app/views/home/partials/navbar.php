@@ -63,7 +63,7 @@
             <!-- IMAGE PANEL -->
             <div class="dept-image-panel">
               <img
-                src="<?= asset('assets/hero-mosque.png') ?>"
+                src="<?= asset('assets/logo.jpg') ?>"
                 alt="Department Preview"
                 id="deptPreviewImg"
               />
@@ -87,7 +87,7 @@
               </a>
 
               <a href="<?= url('/damayan') ?>" class="dept-item"
-                 onmouseenter="swapLayout(true, '<?= asset('assets/about-center.png') ?>', 'Damayan Support')">
+                 onmouseenter="swapLayout(true, '<?= asset('assets/damayanHero3.png') ?>', 'Damayan Support')">
                 <span class="dept-item-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="item-svg"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
                 </span>
@@ -98,7 +98,7 @@
               </a>
 
                <a href="<?= url('/dawah') ?>" class="dept-item"
-                  onmouseenter="swapLayout(true, '<?= asset("assets/da'wah logo.jpg") ?>', 'Dawah Programs')">
+                  onmouseenter="swapLayout(true, '<?= asset('assets/dawahFeatureImage3.jpg') ?>', 'Dawah Programs')">
                 <span class="dept-item-icon">
                   <img src="<?= asset("assets/da'wah logo.jpg") ?>" alt="Dawah Logo" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">
                 </span>
