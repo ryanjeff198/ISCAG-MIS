@@ -21,6 +21,15 @@
     }
     
     /* Exact style clone from Admin SOA */
+    :root {
+      --primary: #176b45;
+      --primary-dark: #0e452c;
+      --danger: #d93025;
+      --success: #2f8a60;
+      --text-main: #202124;
+      --text-muted: #5f6368;
+      --border: #dadce0;
+    }
     .soa-container { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 40px; max-width: 900px; margin: 20px auto; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); }
     .soa-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--primary-dark); padding-bottom: 20px; margin-bottom: 30px; }
     .soa-brand { display: flex; align-items: center; gap: 15px; }

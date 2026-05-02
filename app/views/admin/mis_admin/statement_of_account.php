@@ -16,7 +16,7 @@
       --primary-light: #e8f5ed;
       --secondary: #f4b400;
       --danger: #d93025;
-      --success: #188038;
+      --success: #2f8a60;
       --text-main: #202124;
       --text-muted: #5f6368;
       --border: #dadce0;

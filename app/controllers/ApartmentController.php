@@ -834,6 +834,8 @@ class ApartmentController extends Controller {
         foreach ($payments as $p) {
             if ($p['payment_status'] === 'Paid') {
                 $lowType = strtolower($p['payment_type']);
+                // Normalize: bare 'advance' is really 'rent-advance'
+                if ($lowType === 'advance') $lowType = 'rent-advance';
                 if (strpos($lowType, 'advance') !== false || $lowType === 'deposit') {
                     if (!isset($advanceQueues[$lowType])) $advanceQueues[$lowType] = [];
                     $advanceQueues[$lowType][] = $p;
@@ -904,22 +906,22 @@ class ApartmentController extends Controller {
                     'charge' => $rentAmt, 'payment' => 0, 'ref' => 'LSE-R' . $lease['lease_id'] . '-' . $currentDate->format('my')
                 ];
                 $applyAdvance('rent-advance', "Rent for $monthName", $rentAmt);
-
-                // Water
-                $waterAmt = (float)($occupants * 100);
-                $transactions[] = [
-                    'date' => $simDate, 'type' => 'Water', 'description' => "Water Consumption ($occupants occupants) — $monthName",
-                    'charge' => $waterAmt, 'payment' => 0, 'ref' => 'LSE-W' . $lease['lease_id'] . '-' . $currentDate->format('my')
-                ];
-                $applyAdvance('water-advance', "Water for $monthName", $waterAmt);
-
-                // Contribution
-                $transactions[] = [
-                    'date' => $simDate, 'type' => 'Contribution', 'description' => "Monthly Contribution (Security & Garbage) — $monthName",
-                    'charge' => 150.00, 'payment' => 0, 'ref' => 'LSE-C' . $lease['lease_id'] . '-' . $currentDate->format('my')
-                ];
-                $applyAdvance('contribution-advance', "Contribution for $monthName", 150.00);
             }
+
+            // Water (All months including Month 0)
+            $waterAmt = (float)($occupants * 100);
+            $transactions[] = [
+                'date' => $simDate, 'type' => 'Water', 'description' => "Water Consumption ($occupants occupants) — $monthName",
+                'charge' => $waterAmt, 'payment' => 0, 'ref' => 'LSE-W' . $lease['lease_id'] . '-' . $currentDate->format('my')
+            ];
+            $applyAdvance('water-advance', "Water for $monthName", $waterAmt);
+
+            // Contribution (All months including Month 0)
+            $transactions[] = [
+                'date' => $simDate, 'type' => 'Contribution', 'description' => "Monthly Contribution (Security & Garbage) — $monthName",
+                'charge' => 150.00, 'payment' => 0, 'ref' => 'LSE-C' . $lease['lease_id'] . '-' . $currentDate->format('my')
+            ];
+            $applyAdvance('contribution-advance', "Contribution for $monthName", 150.00);
 
             // Parking
             foreach ($parkingApps as $pa) {
