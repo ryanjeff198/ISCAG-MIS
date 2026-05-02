@@ -990,4 +990,63 @@ class ApartmentController extends Controller {
             'occupants' => $occupants
         ]);
     }
+
+    public function submitMaintenance() {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+        $userId = $_SESSION['user_id'];
+        
+        $category = $_POST['category'] ?? '';
+        $description = $_POST['description'] ?? '';
+        $attachment = null;
+
+        if (empty($category) || empty($description)) {
+            echo json_encode(['success' => false, 'message' => 'Category and description are required']);
+            return;
+        }
+
+        if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['attachment'];
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $fileName = "maintenance_{$userId}_" . time() . "_" . uniqid() . "." . $ext;
+            $relPath = "uploads/maintenance/" . $fileName;
+            $fullPath = BASE_PATH . "/public/" . $relPath;
+
+            if (!is_dir(dirname($fullPath))) {
+                mkdir(dirname($fullPath), 0777, true);
+            }
+
+            if (move_uploaded_file($file['tmp_name'], $fullPath)) {
+                $attachment = $relPath;
+            }
+        }
+
+        require_once BASE_PATH . '/app/models/Maintenance.php';
+        $model = new Maintenance();
+        
+        $data = [
+            'category' => $category,
+            'description' => $description,
+            'attachment' => $attachment
+        ];
+
+        if ($model->create($userId, $data)) {
+            // Notify Admin
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $adminNotif = new AdminNotification();
+            $tenantName = $_SESSION['name'] ?? 'A tenant';
+            $adminNotif->create(
+                'Maintenance Request',
+                "$tenantName submitted a $category maintenance request.",
+                'request',
+                $tenantName,
+                $userId,
+                '/admin/mis_admin/maintenance'
+            );
+
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to submit request']);
+        }
+    }
 }

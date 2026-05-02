@@ -62,6 +62,16 @@ class AdminController extends Controller
         // ── Gender Distribution ──
         $genderData = $db->query("SELECT COALESCE(sex,'Unknown') as gender, COUNT(*) as count FROM tenant_addinfo GROUP BY sex")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+        // ── Maintenance Data ──
+        $pendingMaintenance = (int) $db->query("SELECT COUNT(*) FROM tenant_maintenance WHERE status = 'Pending'")->fetchColumn();
+        $recentMaintenance = $db->query("
+            SELECT m.*, u.first_name, u.last_name 
+            FROM tenant_maintenance m
+            JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+            ORDER BY m.created_at DESC 
+            LIMIT 5
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
         // ── Recent Activity ──
         $stmtLogs = $db->query("
             SELECT * FROM admin_notifications 
@@ -82,6 +92,8 @@ class AdminController extends Controller
             'pendingBilling' => $pendingBilling,
             'overdueBilling' => $overdueBilling,
             'paidThisMonth' => $paidThisMonth,
+            'pendingMaintenance' => $pendingMaintenance,
+            'recentMaintenance' => $recentMaintenance,
             'billingStats' => [
                 ['status' => 'Paid', 'count' => $paidThisMonth, 'total' => $totalRevenue],
                 ['status' => 'Pending', 'count' => $pendingBilling, 'total' => 0],
@@ -1895,6 +1907,61 @@ class AdminController extends Controller
             // Silently fail to not block main operation
             error_log("Audit Log Failure: " . $e->getMessage());
         }
+    }
+
+    public function maintenanceRequests() {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        require_once BASE_PATH . '/app/models/Maintenance.php';
+        $model = new Maintenance();
+        $requests = $model->getAll();
+        
+        $view = 'admin/mis_admin/maintenance_requests';
+        if ($_SESSION['role'] === 'Staff_Tenant') {
+            $view = 'admin/Staff_Admin/Admin-Apartment_Department/maintenance_dashboard';
+        }
+        
+        $this->view($view, [
+            'active_page' => 'maintenance',
+            'requests' => $requests
+        ]);
+    }
+
+    public function approveMaintenance() {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        if ($id) {
+            require_once BASE_PATH . '/app/models/Maintenance.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $model = new Maintenance();
+            $notif = new Notification();
+            
+            $req = $model->getById($id);
+            if ($model->updateStatus($id, 'In Progress', 'Your maintenance request has been seen and is now in progress.')) {
+                $notif->create($req['tenant_id'], 'Maintenance Update', 'Your maintenance request for ' . $req['category'] . ' is now In Progress.', 'approval');
+                $this->logAudit('APARTMENT', 'APPROVE_MAINTENANCE', "Approved maintenance ID: $id");
+            }
+        }
+        $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/maintenance' : '/admin/mis_admin/maintenance';
+        header('Location: ' . url($redirect));
+    }
+    public function rejectMaintenance() {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $id = $_GET['id'] ?? null;
+        $reason = $_POST['reason'] ?? 'Not approved at this time.';
+        if ($id) {
+            require_once BASE_PATH . '/app/models/Maintenance.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $model = new Maintenance();
+            $notif = new Notification();
+            
+            $req = $model->getById($id);
+            if ($model->updateStatus($id, 'Rejected', 'Your maintenance request was rejected. Reason: ' . $reason)) {
+                $notif->create($req['tenant_id'], 'Maintenance Update', 'Your maintenance request for ' . $req['category'] . ' was rejected.', 'danger');
+                $this->logAudit('APARTMENT', 'REJECT_MAINTENANCE', "Rejected maintenance ID: $id. Reason: $reason");
+            }
+        }
+        $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/maintenance' : '/admin/mis_admin/maintenance';
+        header('Location: ' . url($redirect));
     }
 }
 

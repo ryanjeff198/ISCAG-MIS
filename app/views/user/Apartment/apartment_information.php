@@ -284,6 +284,21 @@ $hasParking = $hasParking ?? false;
         .empty-state-hero h3 { font-family: 'Lora', serif; color: var(--primary-dark); margin: 0 0 8px; }
         .empty-state-hero p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
         .empty-state-body { padding: 24px; text-align: center; border-top: 1px solid var(--border); }
+        .btn-action.secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .btn-action.secondary:hover { background: #e2e8f0; }
+
+        /* Maintenance Specific */
+        .maintenance-modal {
+            max-width: 500px !important;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+        .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 0.9rem; }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1); }
     </style>
 </head>
 
@@ -355,6 +370,46 @@ $hasParking = $hasParking ?? false;
         </div>
     </div>
 
+    <!-- ═══ MODAL: MAINTENANCE REQUEST ═══ -->
+    <div class="apt-modal-overlay" id="maintenanceModal">
+        <div class="apt-modal maintenance-modal">
+            <div class="apt-modal-header">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <h3 style="margin:0; font-family:'Lora',serif; color:var(--primary-dark); font-weight:800;">Request Maintenance</h3>
+                </div>
+                <button onclick="closeMaintenanceModal()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted);">&times;</button>
+            </div>
+            <form id="maintenanceForm" onsubmit="submitMaintenance(event)">
+                <div style="padding: 24px;">
+                    <div class="form-group">
+                        <label class="form-label">Type of Issue</label>
+                        <select name="category" class="form-control" required>
+                            <option value="">Select a category</option>
+                            <option value="Plumbing">Plumbing</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Structural">Structural</option>
+                            <option value="Appliance">Appliance</option>
+                            <option value="Pest Control">Pest Control</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description / Reason</label>
+                        <textarea name="description" class="form-control" rows="4" placeholder="Describe the issue clearly..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Attachment (Optional)</label>
+                        <input type="file" name="attachment" class="form-control" accept="image/*">
+                    </div>
+                </div>
+                <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:#f9fafb;">
+                    <button type="button" onclick="closeMaintenanceModal()" class="btn-action secondary">Cancel</button>
+                    <button type="submit" class="btn-action primary" id="maintenanceSubmitBtn">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const root = document.getElementById('tenant-info-root');
         let assignedApt = null;
@@ -422,7 +477,13 @@ $hasParking = $hasParking ?? false;
 
                 <div class="action-bar">
                     <div class="action-bar-text"><h4>View Full Unit Specifications</h4><p>Check room inclusions, house rules, and detailed lease terms.</p></div>
-                    <div class="action-bar-btns"><button class="btn-action primary" onclick="openAptDetails()">View Unit Modal</button></div>
+                    <div class="action-bar-btns" style="display:flex; gap:12px;">
+                        <button class="btn-action secondary" onclick="openMaintenanceModal()">
+                            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.5 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
+                            Maintenance
+                        </button>
+                        <button class="btn-action primary" onclick="openAptDetails()">View Unit Modal</button>
+                    </div>
                 </div>
             `;
         }
@@ -467,6 +528,47 @@ $hasParking = $hasParking ?? false;
         function closeAptModal() {
             document.getElementById('aptDetailModal').classList.remove('active');
             document.body.style.overflow = 'auto';
+        }
+
+        function openMaintenanceModal() {
+            document.getElementById('maintenanceModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMaintenanceModal() {
+            document.getElementById('maintenanceModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('maintenanceForm').reset();
+        }
+
+        async function submitMaintenance(e) {
+            e.preventDefault();
+            const btn = document.getElementById('maintenanceSubmitBtn');
+            const form = document.getElementById('maintenanceForm');
+            const formData = new FormData(form);
+
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            try {
+                const res = await fetch('<?= url("/user/apartment/maintenance/submit") ?>', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => r.json());
+
+                if (res.success) {
+                    alert('Maintenance request submitted successfully!');
+                    closeMaintenanceModal();
+                } else {
+                    alert(res.message || 'Failed to submit request');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit Request';
+            }
         }
 
         init();
