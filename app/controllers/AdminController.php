@@ -797,107 +797,159 @@ class AdminController extends Controller
         // ── Build unified transactions array ──
         $transactions = [];
         $now = new DateTime();
+        // --- CATEGORIZE ADVANCES & CONSUMABLE PAYMENTS ---
+        $advanceQueues = []; // [tenant_id][type] => [ payment1, payment2, ... ]
+        $consumedPaymentIds = [];
 
-        // Calculate advance payments per tenant to extend simulation horizon
-        $advancePaymentMap = [];
         foreach ($payments as $p) {
-            $tid = $p['tenant_id'];
-            if (!isset($advancePaymentMap[$tid])) $advancePaymentMap[$tid] = 0;
-            if ($p['payment_status'] === 'Paid' && strtolower($p['payment_type']) === 'rent-advance') {
-                $advancePaymentMap[$tid]++;
+            if ($p['payment_status'] === 'Paid') {
+                $tid = $p['tenant_id'];
+                $lowType = strtolower($p['payment_type']);
+                if (strpos($lowType, 'advance') !== false || $lowType === 'deposit') {
+                    if (!isset($advanceQueues[$tid])) $advanceQueues[$tid] = [];
+                    if (!isset($advanceQueues[$tid][$lowType])) $advanceQueues[$tid][$lowType] = [];
+                    $advanceQueues[$tid][$lowType][] = $p;
+                }
             }
         }
 
-        // A) Recurring Charges: Monthly Rent & Water
+        // A) Simulated Timeline: Monthly Rent, Water, Contribution, Parking
         foreach ($leases as $l) {
             $tid = $l['tenant_id'];
             $leaseStart = new DateTime($l['start_date']);
             $currentDate = clone $leaseStart;
             
+            // Simulation logic
             $myNow = clone $now;
-            $advCount = $advancePaymentMap[$tid] ?? 0;
-            if ($advCount > 0) {
-                $myNow->modify("+$advCount month");
-            }
+            $totalAdvances = 0;
+            if (isset($advanceQueues[$tid]['rent-advance'])) $totalAdvances = count($advanceQueues[$tid]['rent-advance']);
+            if ($totalAdvances > 0) $myNow->modify("+$totalAdvances month");
             
-            // Limit to today or lease end
             $leaseEnd = $l['end_date'] ? new DateTime($l['end_date']) : null;
             $limitDate = ($leaseEnd && $leaseEnd < $myNow) ? $leaseEnd : $myNow;
 
             $monthCount = 0;
             while ($currentDate <= $limitDate) {
                 $monthName = $currentDate->format('F Y');
-                
-                // 1. Monthly Rent Usage Charge
-                // SKIP generating this for the VERY FIRST MONTH (Month 0) 
-                // because it is already handled by the 'Advance Rent' in section B.
-                if ($monthCount > 0) {
-                    $transactions[] = [
-                        'tenant_id'  => $l['tenant_id'],
-                        'date'       => $currentDate->format('Y-m-d'),
-                        'type'       => 'Monthly Rent',
-                        'description'=> "Monthly Rent Usage — $monthName",
-                        'ref'        => 'LSE-R' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
-                        'charge'     => (float)$l['monthly_rent'],
-                        'payment'    => 0,
-                        'status'     => 'Unpaid'
-                    ];
+                $simDate = $currentDate->format('Y-m-d');
+
+                // Helper to apply advance if available
+                $applyAdvance = function($type, $desc, $amt) use (&$advanceQueues, $tid, &$transactions, $simDate, &$consumedPaymentIds) {
+                    if (!empty($advanceQueues[$tid][$type])) {
+                        $p = array_shift($advanceQueues[$tid][$type]);
+                        $consumedPaymentIds[] = $p['payment_id'];
+                        // Generate Charge record for the advance element (if it's a deposit)
+                        // Actually, Advance Rent charges already exist below. 
+                        // We just generate the PAYMENT side here matching the cycle.
+                        $transactions[] = [
+                            'tenant_id'  => $tid,
+                            'date'       => $simDate,
+                            'type'       => ucfirst(str_replace('-',' ',$type)) . ' (Advance)',
+                            'description'=> "Payment Applied from Advance — $desc",
+                            'ref'        => 'ADV-' . str_pad($p['payment_id'], 4, '0', STR_PAD_LEFT),
+                            'charge'     => 0,
+                            'payment'    => (float)$amt,
+                            'status'     => 'Paid'
+                        ];
+                        return true;
+                    }
+                    return false;
+                };
+
+                // 1. Initial Deposit/Advance (Month 0 only)
+                if ($monthCount === 0) {
+                   if ($l['deposit_amount'] > 0) {
+                       $transactions[] = [
+                           'tenant_id' => $tid, 'date' => $simDate, 'type' => 'Deposit',
+                           'description' => 'Security Deposit', 'ref' => 'LSE-DEP-'.$l['lease_id'],
+                           'charge' => (float)$l['deposit_amount'], 'payment' => 0, 'status' => 'Pending'
+                       ];
+                       $applyAdvance('deposit', 'Security Deposit', (float)$l['deposit_amount']);
+                   }
+                   if ($l['advance_amount'] > 0) {
+                       $transactions[] = [
+                           'tenant_id' => $tid, 'date' => $simDate, 'type' => 'Advance Rent',
+                           'description' => 'Advance Rent (Month 1)', 'ref' => 'LSE-ADV-'.$l['lease_id'],
+                           'charge' => (float)$l['advance_amount'], 'payment' => 0, 'status' => 'Pending'
+                       ];
+                       // Consume the very first advance-rent for month 1 charge (even though it's month 0 entry)
+                       $applyAdvance('rent-advance', "Rent for $monthName", (float)$l['advance_amount']);
+                   }
                 }
 
-                // 2. Water Bill Charge (Monthly)
-                // Also SKIP for the very first month, as utilities are billed after usage.
+                // 2. Regular Monthly Rent (Month 1+)
                 if ($monthCount > 0) {
-                    $occupancyCount = ($memberMap[$l['tenant_id']] ?? 0) + 1;
+                    $rentAmt = (float)$l['monthly_rent'];
                     $transactions[] = [
-                        'tenant_id'  => $l['tenant_id'],
-                        'date'       => $currentDate->format('Y-m-d'),
-                        'type'       => 'Water',
-                        'description'=> "Water Consumption ($occupancyCount occupants) — $monthName",
-                        'ref'        => 'LSE-W' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
-                        'charge'     => (float)($occupancyCount * 100),
-                        'payment'    => 0,
-                        'status'     => 'Unpaid'
+                        'tenant_id'  => $tid, 'date' => $simDate, 'type' => 'Monthly Rent',
+                        'description'=> "Monthly Rent — $monthName", 'ref' => 'LSE-R' . $l['lease_id'] . '-' . $currentDate->format('my'),
+                        'charge'     => $rentAmt, 'payment' => 0, 'status' => 'Unpaid'
                     ];
+                    $applyAdvance('rent-advance', "Rent for $monthName", $rentAmt);
 
-                    // 3. Contribution Fee (Monthly)
+                    // 3. Water Bill
+                    $occupants = ($memberMap[$tid] ?? 0) + 1;
+                    $waterAmt = (float)($occupants * 100);
                     $transactions[] = [
-                        'tenant_id'  => $l['tenant_id'],
-                        'date'       => $currentDate->format('Y-m-d'),
-                        'type'       => 'Contribution',
-                        'description'=> "Monthly Contribution (Security/Garbage) — $monthName",
-                        'ref'        => 'LSE-C' . str_pad($l['lease_id'], 3, '0', STR_PAD_LEFT) . '-' . $currentDate->format('my'),
-                        'charge'     => 150.00,
-                        'payment'    => 0,
-                        'status'     => 'Unpaid'
+                        'tenant_id' => $tid, 'date' => $simDate, 'type' => 'Water',
+                        'description' => "Water ($occupants occupants) — $monthName", 'ref' => 'LSE-W' . $l['lease_id'] . '-' . $currentDate->format('my'),
+                        'charge' => $waterAmt, 'payment' => 0, 'status' => 'Unpaid'
                     ];
+                    $applyAdvance('water-advance', "Water for $monthName", $waterAmt);
+
+                    // 4. Contribution
+                    $transactions[] = [
+                        'tenant_id' => $tid, 'date' => $simDate, 'type' => 'Contribution',
+                        'description' => "Security & Garbage — $monthName", 'ref' => 'LSE-C' . $l['lease_id'] . '-' . $currentDate->format('my'),
+                        'charge' => 150.00, 'payment' => 0, 'status' => 'Unpaid'
+                    ];
+                    $applyAdvance('contribution-advance', "Contribution for $monthName", 150.00);
+                }
+
+                // 5. Parking (Monthly if approved)
+                foreach ($parkingApps as $pa) {
+                    if ($pa['tenant_id'] == $tid) {
+                        $parkStartStr = $pa['datestarted'] ?: $pa['date'];
+                        if ($simDate >= date('Y-m-d', strtotime($parkStartStr))) {
+                            $transactions[] = [
+                                'tenant_id' => $tid, 'date' => $simDate, 'type' => 'Parking Fee',
+                                'description' => 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle'),
+                                'ref' => 'PKG-' . $pa['parking_id'] . '-' . $currentDate->format('my'),
+                                'charge' => 1000.00, 'payment' => 0, 'status' => 'Unpaid'
+                            ];
+                            $applyAdvance('parking-advance', "Parking for $monthName", 1000.00);
+                        }
+                    }
                 }
 
                 $currentDate->modify('+1 month');
                 $monthCount++;
-                // Stop if we overshot the month by days
                 if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
             }
         }
 
-        // B) Initial Payments (Deposit & Advance)
+        // B) Non-Consumed Payments (Direct payments made after move-in)
         foreach ($payments as $p) {
+            if (in_array($p['payment_id'], $consumedPaymentIds)) continue;
+
             $isPaid = $p['payment_status'] === 'Paid';
-            // Charge entry
+            $chargeDate = date('Y-m-d', strtotime($p['created_at']));
+            $payDate = $p['payment_date'] ? date('Y-m-d', strtotime($p['payment_date'])) : $chargeDate;
+
             $transactions[] = [
                 'tenant_id'  => $p['tenant_id'],
-                'date'       => date('Y-m-d', strtotime($p['created_at'])),
+                'date'       => $chargeDate,
                 'type'       => $p['payment_type'],
-                'description'=> $p['payment_type'] === 'Deposit' ? 'Security Deposit (Initial)' : 'Advance Rent (Month 1)',
+                'description'=> $p['payment_type'],
                 'ref'        => 'PMT-' . str_pad($p['payment_id'], 4, '0', STR_PAD_LEFT),
                 'charge'     => (float)$p['amount'],
                 'payment'    => 0,
                 'status'     => $p['payment_status']
             ];
-            // Payment entry if paid
             if ($isPaid) {
                 $transactions[] = [
                     'tenant_id'  => $p['tenant_id'],
-                    'date'       => $p['payment_date'] ? date('Y-m-d', strtotime($p['payment_date'])) : date('Y-m-d', strtotime($p['created_at'])),
+                    'date'       => $payDate,
                     'type'       => $p['payment_type'] . ' (Payment)',
                     'description'=> 'Payment Received — ' . $p['payment_type'],
                     'ref'        => $p['reference_number'] ?: 'PAY-' . str_pad($p['payment_id'], 4, '0', STR_PAD_LEFT),
@@ -908,21 +960,7 @@ class AdminController extends Controller
             }
         }
 
-        // C) Parking Fee — Fixed ₱1,000 per approved parking
-        foreach ($parkingApps as $pa) {
-            $transactions[] = [
-                'tenant_id'  => $pa['tenant_id'],
-                'date'       => $pa['datestarted'] ?: $pa['date'],
-                'type'       => 'Parking Fee',
-                'description'=> 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle') . ' (' . ($pa['plateno'] ?: 'N/A') . ')',
-                'ref'        => 'PKG-' . str_pad($pa['parking_id'], 4, '0', STR_PAD_LEFT),
-                'charge'     => 1000.00,
-                'payment'    => 0,
-                'status'     => 'Approved'
-            ];
-        }
-
-        // D) Existing billing records (manual invoices)
+        // D) Existing billing records (Manual Invoices)
         foreach ($billingRecords as $b) {
             $transactions[] = [
                 'tenant_id'  => $b['tenant_id'],
@@ -948,17 +986,9 @@ class AdminController extends Controller
             }
         }
 
-        // Global Sort by Date
+        // Global Sort
         usort($transactions, function($a, $b) {
             return strtotime($a['date']) <=> strtotime($b['date']);
-        });
-
-        // F) Contribution — placeholder (empty for now)
-        // No charges generated
-
-        // Sort by date
-        usort($transactions, function($a, $b) {
-            return strtotime($a['date']) - strtotime($b['date']);
         });
 
         $this->view('admin/mis_admin/statement_of_account', [
@@ -968,6 +998,8 @@ class AdminController extends Controller
             'memberMap'    => $memberMap
         ]);
     }
+
+
 
     public function reports(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);

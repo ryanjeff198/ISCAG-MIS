@@ -181,26 +181,43 @@
 
           <!-- Exact Breakdown Cards -->
           <div class="breakdown-grid">
+            <?php if ($metrics['Rent'] > 0): ?>
             <div class="breakdown-card">
               <div class="bk-label">Monthly Rent</div>
               <div class="bk-value">₱<?= number_format($metrics['Rent'], 2) ?></div>
+              <div class="bk-sub"><?= htmlspecialchars($lease['roomtype'] ?? 'Unit Fee') ?></div>
             </div>
+            <?php endif; ?>
+
+            <?php if ($metrics['Deposit'] > 0): ?>
             <div class="breakdown-card">
               <div class="bk-label">Security Deposit</div>
               <div class="bk-value">₱<?= number_format($metrics['Deposit'], 2) ?></div>
             </div>
+            <?php endif; ?>
+
+            <?php if ($metrics['Parking'] > 0): ?>
             <div class="breakdown-card">
               <div class="bk-label">Parking Fee</div>
               <div class="bk-value">₱<?= number_format($metrics['Parking'], 2) ?></div>
             </div>
+            <?php endif; ?>
+
+            <?php if ($metrics['Water'] > 0): ?>
             <div class="breakdown-card">
               <div class="bk-label">Water Bill</div>
               <div class="bk-value">₱<?= number_format($metrics['Water'], 2) ?></div>
+              <div class="bk-sub"><?= $occupants ?> person(s)</div>
             </div>
+            <?php endif; ?>
+
+            <?php if ($metrics['Contribution'] > 0): ?>
             <div class="breakdown-card">
-              <div class="bk-label">Contribution</div>
+              <div class="bk-label">Monthly Contribution</div>
               <div class="bk-value">₱<?= number_format($metrics['Contribution'], 2) ?></div>
+              <div class="bk-sub">Security & Garbage</div>
             </div>
+            <?php endif; ?>
           </div>
 
           <table class="soa-table">
