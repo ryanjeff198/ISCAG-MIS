@@ -2,6 +2,7 @@
 
 require_once BASE_PATH . '/app/controllers/Controller.php';
 require_once BASE_PATH . '/app/helpers/Auth.php';
+require_once BASE_PATH . '/app/helpers/AuditLogger.php';
 
 class AdminController extends Controller
 {
@@ -388,7 +389,8 @@ class AdminController extends Controller
             );
             $this->logAudit('APARTMENT', 'APPROVE_APP', "Approved application ID: $id for Tenant ID: $tenantId");
         }
-        header('Location: ' . url('/admin/apartment/confirmation'));
+        $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/confirmation' : '/admin/mis_admin/apartment_confirmation';
+        header('Location: ' . url($redirect));
     }
 
     public function staffRejectApartmentApp(): void {
@@ -412,7 +414,8 @@ class AdminController extends Controller
             );
             $this->logAudit('APARTMENT', 'REJECT_APP', "Rejected application ID: $id. Reason: $reason");
         }
-        header('Location: ' . url('/admin/apartment/confirmation'));
+        $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/confirmation' : '/admin/mis_admin/apartment_confirmation';
+        header('Location: ' . url($redirect));
     }
 
     public function apartmentRecords(): void {
@@ -449,9 +452,10 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
             $model->updateParkingStatus($id, 'Approved');
-            $this->logAudit('PARKING', 'APPROVE_PARKING', "Approved parking for Tenant ID: $tid");
+            $this->logAudit('PARKING', 'APPROVE_PARKING', "Approved parking ID: $id");
         }
-        header('Location: ' . url('/admin/mis_admin/parking_approval'));
+        $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/parking' : '/admin/mis_admin/parking_approval';
+        header('Location: ' . url($redirect));
     }
 
     public function rejectParking(): void {
@@ -464,7 +468,8 @@ class AdminController extends Controller
             $model->updateParkingStatus($id, 'Rejected', $reason);
             $this->logAudit('PARKING', 'REJECT_PARKING', "Rejected parking ID: $id. Reason: $reason");
         }
-        header('Location: ' . url('/admin/mis_admin/parking_approval'));
+        $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/parking' : '/admin/mis_admin/parking_approval';
+        header('Location: ' . url($redirect));
     }
 
     // ── Staff Parking Approval ──
@@ -486,6 +491,7 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
             $model->updateParkingStatus($id, 'Approved');
+            $this->logAudit('PARKING', 'APPROVE_PARKING', "Staff approved parking ID: $id");
         }
         header('Location: ' . url('/admin/apartment/parking'));
     }
@@ -498,6 +504,7 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/ApartmentApp.php';
             $model = new ApartmentApp();
             $model->updateParkingStatus($id, 'Rejected', $reason);
+            $this->logAudit('PARKING', 'REJECT_PARKING', "Staff rejected parking ID: $id. Reason: $reason");
         }
         header('Location: ' . url('/admin/apartment/parking'));
     }
@@ -1551,7 +1558,16 @@ class AdminController extends Controller
     public function auditLogs(): void {
         Auth::protectRole(['Admin']);
         $db = getDbConnection();
-        $logs = $db->query("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 1000")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // Join with tenant_accounts to get the current role, fallback to stored role for system/deleted users
+        $query = "
+            SELECT al.*, 
+                   COALESCE(ta.role, al.admin_role, 'System') as display_role
+            FROM audit_logs al
+            LEFT JOIN tenant_accounts ta ON al.admin_id = ta.tenant_id
+            ORDER BY al.timestamp DESC 
+            LIMIT 1000
+        ";
+        $logs = $db->query($query)->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $this->view('admin/mis_admin/audit_logs', [
             'active_page' => 'audit_logs',
             'logs' => $logs
@@ -1711,7 +1727,8 @@ class AdminController extends Controller
                 $this->logAudit('RENEWAL', 'APPROVE_RENEWAL', "Approved renewal ID: $id for Tenant ID: $tenantId");
             }
         }
-        header('Location: ' . url('/admin/apartment/renewals'));
+        $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/renewals' : '/admin/mis_admin/renewal_records';
+        header('Location: ' . url($redirect));
     }
 
     public function rejectRenewal() {
@@ -1738,7 +1755,8 @@ class AdminController extends Controller
                 $this->logAudit('RENEWAL', 'REJECT_RENEWAL', "Rejected renewal ID: $id for Tenant ID: $tenantId");
             }
         }
-        header('Location: ' . url('/admin/apartment/renewals'));
+        $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/renewals' : '/admin/mis_admin/renewal_records';
+        header('Location: ' . url($redirect));
     }
     /**
      * Private helper to run the financial simulation engine and return aggregated metrics
@@ -1890,23 +1908,10 @@ class AdminController extends Controller
     }
 
     /**
-     * Private helper to log administrative actions for audit
+     * Helper to log administrative actions for audit
      */
     private function logAudit(string $module, string $action, string $details): void {
-        try {
-            $db = getDbConnection();
-            $stmt = $db->prepare("INSERT INTO audit_logs (admin_id, admin_name, module, action, details) VALUES (:aid, :aname, :mod, :act, :det)");
-            $stmt->execute([
-                'aid'   => $_SESSION['user_id'] ?? 0,
-                'aname' => $_SESSION['name'] ?? ($_SESSION['role'] ?? 'System'),
-                'mod'   => $module,
-                'act'   => $action,
-                'det'   => $details
-            ]);
-        } catch (\Exception $e) {
-            // Silently fail to not block main operation
-            error_log("Audit Log Failure: " . $e->getMessage());
-        }
+        AuditLogger::log($module, $action, $details);
     }
 
     public function maintenanceRequests() {
@@ -1938,7 +1943,7 @@ class AdminController extends Controller
             $req = $model->getById($id);
             if ($model->updateStatus($id, 'In Progress', 'Your maintenance request has been seen and is now in progress.')) {
                 $notif->create($req['tenant_id'], 'Maintenance Update', 'Your maintenance request for ' . $req['category'] . ' is now In Progress.', 'approval');
-                $this->logAudit('APARTMENT', 'APPROVE_MAINTENANCE', "Approved maintenance ID: $id");
+                $this->logAudit('MAINTENANCE', 'APPROVE_MAINTENANCE', "Approved maintenance ID: $id");
             }
         }
         $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/maintenance' : '/admin/mis_admin/maintenance';
@@ -1957,7 +1962,7 @@ class AdminController extends Controller
             $req = $model->getById($id);
             if ($model->updateStatus($id, 'Rejected', 'Your maintenance request was rejected. Reason: ' . $reason)) {
                 $notif->create($req['tenant_id'], 'Maintenance Update', 'Your maintenance request for ' . $req['category'] . ' was rejected.', 'danger');
-                $this->logAudit('APARTMENT', 'REJECT_MAINTENANCE', "Rejected maintenance ID: $id. Reason: $reason");
+                $this->logAudit('MAINTENANCE', 'REJECT_MAINTENANCE', "Rejected maintenance ID: $id. Reason: $reason");
             }
         }
         $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/maintenance' : '/admin/mis_admin/maintenance';

@@ -87,11 +87,14 @@ if (!function_exists('url')) {
                         placeholder="Search by user, action, or module..." onkeyup="renderLogs()" style="flex:2;" />
                     <select id="filter-module" class="filter-input" onchange="renderLogs()">
                         <option value="">All Modules</option>
-                        <option value="USER">User Management</option>
-                        <option value="BILLING">Billing</option>
-                        <option value="DAMAYAN">Damayan</option>
-                        <option value="DA'WAH">Da'wah</option>
-                        <option value="APARTMENT">Apartment</option>
+                        <!-- Populated dynamically -->
+                    </select>
+                    <select id="filter-role" class="filter-input" onchange="renderLogs()">
+                        <option value="">All Roles</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Tenant">Tenant</option>
+                        <option value="Guest">Guest</option>
+                        <option value="Apartment Staff">Apartment Staff</option>
                     </select>
                     <input type="date" id="filter-date" class="filter-input" onchange="renderLogs()" />
                 </div>
@@ -104,6 +107,7 @@ if (!function_exists('url')) {
                                     <tr>
                                         <th>Timestamp</th>
                                         <th>User ID</th>
+                                        <th>Role</th>
                                         <th>Module</th>
                                         <th>Action</th>
                                         <th>Details / Notes</th>
@@ -140,15 +144,45 @@ if (!function_exists('url')) {
         // Map database fields to the UI expectation
         allLogs = allLogs.map(l => ({
             admin_id: l.admin_name + ' (' + l.admin_id + ')',
-            module: l.module,
+            role: l.display_role || 'Admin',
+            module: getModuleLabel(l.module),
+            raw_module: l.module,
             action: l.action,
             timestamp: l.timestamp,
             details: l.details
         }));
 
+        populateModuleDropdown();
+
         function formatTime(isoStr) {
             const d = new Date(isoStr);
             return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function getModuleLabel(mod) {
+            const map = {
+                'AUTH': 'Security/Auth',
+                'APARTMENT': 'Apartment MGMT',
+                'BILLING': 'Billing/Finance',
+                'USER': 'User Accounts',
+                'MAINTENANCE': 'Maintenance',
+                'PARKING': 'Parking',
+                'RENEWAL': 'Lease Renewals'
+            };
+            return map[mod.toUpperCase()] || mod;
+        }
+
+        function populateModuleDropdown() {
+            const select = document.getElementById('filter-module');
+            const modules = [...new Set(allLogs.map(l => l.raw_module))].sort();
+            
+            modules.forEach(m => {
+                if (!m) return;
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = getModuleLabel(m);
+                select.appendChild(opt);
+            });
         }
 
         function getActionTag(action) {
@@ -167,11 +201,24 @@ if (!function_exists('url')) {
 
             const search = document.getElementById('search-input').value.toLowerCase();
             const module = document.getElementById('filter-module').value;
+            const role = document.getElementById('filter-role').value;
             const date = document.getElementById('filter-date').value;
 
             let filtered = allLogs.filter(log => {
                 if (search && !(log.admin_id.toLowerCase().includes(search) || log.action.toLowerCase().includes(search) || (log.details && log.details.toLowerCase().includes(search)))) return false;
-                if (module && log.module !== module) return false;
+                if (module && log.raw_module !== module) return false;
+                
+                // Scalable Role Filter: 
+                // Group anything that is not Admin, Tenant, or Guest into "Apartment Staff"
+                if (role) {
+                    const isCoreRole = ['Admin', 'Tenant', 'Guest'].includes(log.role);
+                    if (role === 'Apartment Staff') {
+                        if (isCoreRole) return false;
+                    } else if (log.role !== role) {
+                        return false;
+                    }
+                }
+
                 if (date && !log.timestamp.startsWith(date)) return false;
                 return true;
             });
@@ -189,6 +236,7 @@ if (!function_exists('url')) {
                     tr.innerHTML = `
             <td style="white-space:nowrap;color:var(--text-muted);font-size:0.85rem;">${formatTime(log.timestamp)}</td>
             <td style="font-weight:600;">${log.admin_id}</td>
+            <td><span class="card-badge" style="background:#f8fafc; border:1px solid #e2e8f0; color:#64748b; font-size:11px;">${log.role}</span></td>
             <td><strong>${log.module}</strong></td>
             <td>${getActionTag(log.action)}</td>
             <td><div class="log-details">${log.details || '--'}</div></td>
@@ -199,9 +247,9 @@ if (!function_exists('url')) {
         }
 
         function downloadCSV() {
-            let csvContent = "data:text/csv;charset=utf-8,Timestamp,User ID,Module,Action,Details\n";
+            let csvContent = "data:text/csv;charset=utf-8,Timestamp,User ID,Role,Module,Action,Details\n";
             allLogs.forEach(function (rowArray) {
-                let row = [rowArray.timestamp, `"${rowArray.admin_id}"`, rowArray.module, rowArray.action, `"${rowArray.details || ''}"`];
+                let row = [rowArray.timestamp, `"${rowArray.admin_id}"`, rowArray.role, rowArray.module, rowArray.action, `"${rowArray.details || ''}"`];
                 csvContent += row.join(",") + "\n";
             });
             var encodedUri = encodeURI(csvContent);

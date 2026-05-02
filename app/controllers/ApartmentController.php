@@ -2,6 +2,7 @@
 require_once BASE_PATH . '/app/controllers/Controller.php';
 require_once BASE_PATH . '/app/models/ApartmentApp.php';
 require_once BASE_PATH . '/app/helpers/Auth.php';
+require_once BASE_PATH . '/app/helpers/AuditLogger.php';
 require_once BASE_PATH . '/config/database.php';
 
 class ApartmentController extends Controller {
@@ -250,6 +251,8 @@ class ApartmentController extends Controller {
         }
 
         if ($allSuccess) {
+            $vc = count($body['vehicles']);
+            AuditLogger::log('PARKING', 'SUBMIT_PARKING', "Submitted parking application for $vc vehicle(s)");
             require_once BASE_PATH . '/app/models/AdminNotification.php';
             $adminNotif = new AdminNotification();
             $tenantName = $_SESSION['name'] ?? 'A tenant';
@@ -289,6 +292,7 @@ class ApartmentController extends Controller {
         $ok = $model->updateStatusByTenant($userId, 'Pending');
         
         if ($ok) {
+            AuditLogger::log('APARTMENT', 'SUBMIT_APP', "Finalized and submitted apartment application");
             require_once BASE_PATH . '/app/models/AdminNotification.php';
             $adminNotif = new AdminNotification();
             $tenantName = $_SESSION['name'] ?? 'A user';
@@ -682,6 +686,7 @@ class ApartmentController extends Controller {
         }
 
         if ($allOk) {
+            AuditLogger::log('BILLING', 'SUBMIT_PAYMENT', "Submitted payment for " . count($paymentIds) . " item(s). Ref: $refNo");
             require_once BASE_PATH . '/app/models/Notification.php';
             $notifModel = new Notification();
             
@@ -745,6 +750,7 @@ class ApartmentController extends Controller {
         $ok = $renewalModel->requestRenewal((int) $leaseId, $userId, $term);
 
         if ($ok) {
+            AuditLogger::log('RENEWAL', 'SUBMIT_RENEWAL', "Requested lease renewal for $term months (Lease ID: $leaseId)");
             // Notify admin about the renewal request
             require_once BASE_PATH . '/app/models/AdminNotification.php';
             $adminNotif = new AdminNotification();
@@ -1031,6 +1037,7 @@ class ApartmentController extends Controller {
         ];
 
         if ($model->create($userId, $data)) {
+            AuditLogger::log('MAINTENANCE', 'SUBMIT_MAINTENANCE', "Submitted $category maintenance request");
             // Notify Admin
             require_once BASE_PATH . '/app/models/AdminNotification.php';
             $adminNotif = new AdminNotification();
