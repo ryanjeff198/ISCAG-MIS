@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 01, 2026 at 05:05 AM
+-- Generation Time: May 01, 2026 at 06:12 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,6 +20,24 @@ SET time_zone = "+00:00";
 --
 -- Database: `iscag`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `admin_notifications`
+--
+
+CREATE TABLE `admin_notifications` (
+  `id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `message` text NOT NULL,
+  `type` varchar(50) DEFAULT 'system',
+  `actor_name` varchar(255) DEFAULT 'System',
+  `actor_id` int(11) DEFAULT NULL,
+  `source_url` varchar(500) DEFAULT NULL,
+  `is_read` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -60,20 +78,6 @@ INSERT INTO `apartmentsapp` (`application_id`, `tenant_id`, `roomtype`, `lease_t
 -- --------------------------------------------------------
 
 --
--- Table structure for table `apartments_info`
---
-
-CREATE TABLE `apartments_info` (
-  `apartment_id` int(11) NOT NULL,
-  `application_id` int(11) NOT NULL,
-  `roomnumber` varchar(50) DEFAULT NULL,
-  `description` text DEFAULT NULL,
-  `status` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `apartment_types`
 --
 
@@ -92,20 +96,28 @@ CREATE TABLE `apartment_types` (
   `is_active` tinyint(1) DEFAULT 1,
   `sort_order` int(11) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `inclusions` text DEFAULT NULL,
+  `rules` text DEFAULT NULL,
+  `security_deposit` varchar(100) DEFAULT '1 Month',
+  `advance_rent` varchar(100) DEFAULT '1 Month',
+  `other_fees` varchar(255) DEFAULT NULL,
+  `min_lease` varchar(100) DEFAULT '3 Months',
+  `notice_period` varchar(100) DEFAULT '25th day',
+  `queue_label` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `apartment_types`
 --
 
-INSERT INTO `apartment_types` (`type_id`, `type_key`, `label`, `price`, `capacity`, `description`, `floor_area`, `bedrooms`, `bathroom`, `kitchen`, `parking`, `is_active`, `sort_order`, `created_at`, `updated_at`) VALUES
-(1, 'studio', 'Studio ', 4680.00, '1-2 pax', 'A compact and efficient studio-type living space ideal for individuals or couples seeking privacy and convenience. It features an open-plan layout that combines the sleeping, living, and dining areas into one well-designed space, along with a separate bathroom and a functional kitchenette. Perfect for short or long stays requiring simplicity, comfort, and practical living.', '', '1 (separate)', '1 ', 'Kitchenette', 'Shared lot', 1, 1, '2026-04-21 17:53:51', '2026-04-27 16:01:37'),
-(2, '1br', 'One-Bedroom ', 6240.00, '2-3 pax', 'A comfortable one-bedroom apartment ideal for small families, couples, or Muslim guests who prefer a separate sleeping area and a private, respectful living space. It features a distinct living room, a private bedroom, a full bathroom, and a dining-kitchen area with ample counter space, suitable for short or long stays with comfort and privacy.', '', '1 (separate)', '1 (with shower)', 'Full kitchen', 'Shared lot', 1, 2, '2026-04-21 17:53:51', '2026-04-27 16:01:19'),
-(3, '2br', 'Two-Bedroom ', 7000.00, '3-5 persons', 'A spacious two-bedroom apartment designed for small to growing families, couples, or Muslim guests seeking comfort and privacy. It includes a same size bedroom, a full living and dining area, a complete kitchen, and a bathroom. Ideal for families or guests looking for a peaceful and well-organized living space within the community housing complex.', '', '2 (separate)', '1 (with shower)', 'Full kitchen', 'Dedicated slot', 1, 3, '2026-04-21 17:53:51', '2026-04-27 16:01:47'),
-(4, '1tr', 'Transient', 2500.00, '10 pax', 'A transient accommodation designed for short-term stays, typically accommodating 8–10 guests. It may consist of multiple bedrooms or shared sleeping areas, along with common facilities such as a living space, kitchen, and bathroom depending on the setup.\n\n1 month deposit', '', 'shared bedspace', '1 shared', NULL, NULL, 1, 0, '2026-04-21 18:54:28', '2026-04-28 14:09:50'),
-(5, '1gr', 'Guest Room', 5000.00, '3-5 pax', 'A guest room accommodation designed for visiting guests, families, or travelers seeking a comfortable short-term stay. It is similar in layout to a two-bedroom unit, typically featuring a master bedroom, a second bedroom, a shared living area, a kitchen, and a bathroom. It is commonly used for Islamic visitors and families, providing a clean, private, and respectful space suitable for short stays.', '', '2 (separate)', '1', NULL, NULL, 1, 0, '2026-04-22 03:44:49', '2026-04-23 13:12:51'),
-(6, '1bc', 'Bachelor', 2500.00, '1-2 pax', 'A compact bachelor-type unit designed for single occupants or couples seeking a simple and efficient living space. It features an open-plan layout that combines sleeping, living, and dining areas in one space, with a separate bathroom and a small kitchenette. Ideal for individuals who prefer a minimal, practical, and low-maintenance home for short or long stays.', '', '1', '1', NULL, NULL, 1, 0, '2026-04-23 12:56:11', '2026-04-23 13:16:26');
+INSERT INTO `apartment_types` (`type_id`, `type_key`, `label`, `price`, `capacity`, `description`, `floor_area`, `bedrooms`, `bathroom`, `kitchen`, `parking`, `is_active`, `sort_order`, `created_at`, `updated_at`, `inclusions`, `rules`, `security_deposit`, `advance_rent`, `other_fees`, `min_lease`, `notice_period`, `queue_label`) VALUES
+(1, 'studio', 'Studio ', 4680.00, '1-2 pax', 'A compact and efficient studio-type living space ideal for individuals or couples seeking privacy and convenience. It features an open-plan layout that combines the sleeping, living, and dining areas into one well-designed space, along with a separate bathroom and a functional kitchenette. Perfect for short or long stays requiring simplicity, comfort, and practical living.', '', '1 (separate)', '1 ', 'Kitchenette', 'Shared lot', 1, 1, '2026-04-21 17:53:51', '2026-04-27 16:01:37', NULL, NULL, '1 Month', '1 Month', NULL, '3 Months', '25th day', NULL),
+(2, '1br', 'One-Bedroom ', 6240.00, '2-3 pax', 'A comfortable one-bedroom apartment ideal for small families, couples, or Muslim guests who prefer a separate sleeping area and a private, respectful living space. It features a distinct living room, a private bedroom, a full bathroom, and a dining-kitchen area with ample counter space, suitable for short or long stays with comfort and privacy.', '', '1 (separate)', '1 (with shower)', 'Full kitchen', 'Shared lot', 1, 2, '2026-04-21 17:53:51', '2026-04-27 16:01:19', NULL, NULL, '1 Month', '1 Month', NULL, '3 Months', '25th day', NULL),
+(3, '2br', 'Two-Bedroom ', 7000.00, '3-5 persons', 'A spacious two-bedroom apartment designed for small to growing families, couples, or Muslim guests seeking comfort and privacy. It includes a same size bedroom, a full living and dining area, a complete kitchen, and a bathroom. Ideal for families or guests looking for a peaceful and well-organized living space within the community housing complex.', '', '2 (separate)', '1 (with shower)', 'Full kitchen', 'Dedicated slot', 1, 3, '2026-04-21 17:53:51', '2026-04-27 16:01:47', NULL, NULL, '1 Month', '1 Month', NULL, '3 Months', '25th day', NULL),
+(4, '1tr', 'Transient', 2500.00, '10 pax', 'A transient accommodation designed for short-term stays, typically accommodating 8–10 guests. It may consist of multiple bedrooms or shared sleeping areas, along with common facilities such as a living space, kitchen, and bathroom depending on the setup.\n\n1 month deposit', '', 'shared bedspace', '1 shared', NULL, NULL, 1, 0, '2026-04-21 18:54:28', '2026-04-28 14:09:50', NULL, NULL, '1 Month', '1 Month', NULL, '3 Months', '25th day', NULL),
+(5, '1gr', 'Guest Room', 5000.00, '3-5 pax', 'A guest room accommodation designed for visiting guests, families, or travelers seeking a comfortable short-term stay. It is similar in layout to a two-bedroom unit, typically featuring a master bedroom, a second bedroom, a shared living area, a kitchen, and a bathroom. It is commonly used for Islamic visitors and families, providing a clean, private, and respectful space suitable for short stays.', '', '2 (separate)', '1', NULL, NULL, 1, 0, '2026-04-22 03:44:49', '2026-04-23 13:12:51', NULL, NULL, '1 Month', '1 Month', NULL, '3 Months', '25th day', NULL),
+(6, '1bc', 'Bachelor', 2500.00, '1-2 pax', 'A compact bachelor-type unit designed for single occupants or couples seeking a simple and efficient living space. It features an open-plan layout that combines sleeping, living, and dining areas in one space, with a separate bathroom and a small kitchenette. Ideal for individuals who prefer a minimal, practical, and low-maintenance home for short or long stays.', '', '1', '1', NULL, NULL, 1, 0, '2026-04-23 12:56:11', '2026-04-23 13:16:26', NULL, NULL, '1 Month', '1 Month', NULL, '3 Months', '25th day', NULL);
 
 -- --------------------------------------------------------
 
@@ -322,14 +334,27 @@ DELIMITER ;
 --
 
 CREATE TABLE `audit_logs` (
-  `log_id` int(11) NOT NULL,
-  `tenant_id` int(11) NOT NULL,
-  `action` varchar(100) NOT NULL,
-  `module` varchar(100) NOT NULL,
-  `description` text DEFAULT NULL,
-  `ip_address` varchar(50) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `audit_id` int(11) NOT NULL,
+  `admin_id` int(11) DEFAULT NULL,
+  `admin_name` varchar(255) DEFAULT NULL,
+  `module` varchar(50) DEFAULT NULL,
+  `action` varchar(50) DEFAULT NULL,
+  `details` text DEFAULT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `audit_logs`
+--
+
+INSERT INTO `audit_logs` (`audit_id`, `admin_id`, `admin_name`, `module`, `action`, `details`, `timestamp`) VALUES
+(1, 59, 'Norman Ungasin', 'GOVERNANCE', 'TOGGLE_USER', 'Deactivated user account ID: 31', '2026-05-01 10:39:57'),
+(2, 59, 'Norman Ungasin', 'GOVERNANCE', 'TOGGLE_USER', 'Activated user account ID: 31', '2026-05-01 10:40:07'),
+(3, 59, 'Norman Ungasin', 'GOVERNANCE', 'TOGGLE_USER', 'Deactivated user account ID: 31', '2026-05-01 10:42:50'),
+(4, 59, 'Norman Ungasin', 'GOVERNANCE', 'TOGGLE_USER', 'Activated user account ID: 31', '2026-05-01 10:42:56'),
+(5, 59, 'Norman Ungasin', 'GOVERNANCE', 'TOGGLE_USER', 'Deactivated user account ID: 31', '2026-05-01 10:45:13'),
+(6, 59, 'Norman Ungasin', 'GOVERNANCE', 'TOGGLE_USER', 'Activated user account ID: 31', '2026-05-01 10:45:16'),
+(7, 59, 'Norman Ungasin', 'BROADCAST', 'SEND_NOTIFICATION', 'Sent \'Maintenance\' to 1 users (APARTMENT)', '2026-05-01 15:16:53');
 
 -- --------------------------------------------------------
 
@@ -357,6 +382,29 @@ INSERT INTO `billing` (`billing_id`, `tenant_id`, `amount`, `status`, `due_date`
 (4, 1, 3500.00, 'Pending', '2026-05-01', '2026-04-27 19:25:20'),
 (5, 2, 4000.00, 'Paid', '2026-03-01', '2026-04-27 19:25:20'),
 (6, 3, 6000.00, 'Paid', '2026-02-01', '2026-04-27 19:25:20');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `broadcasts`
+--
+
+CREATE TABLE `broadcasts` (
+  `broadcast_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `message` text NOT NULL,
+  `target_group` varchar(50) NOT NULL,
+  `sender_id` int(11) NOT NULL,
+  `type` varchar(50) DEFAULT 'system',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `broadcasts`
+--
+
+INSERT INTO `broadcasts` (`broadcast_id`, `title`, `message`, `target_group`, `sender_id`, `type`, `created_at`) VALUES
+(1, 'Maintenance', 'Hello', 'APARTMENT', 59, 'system', '2026-05-01 15:16:53');
 
 -- --------------------------------------------------------
 
@@ -948,22 +996,13 @@ INSERT INTO `notifications` (`notification_id`, `tenant_id`, `title`, `message`,
 (19, 47, 'Room Assigned!', 'Congratulations! You have been assigned to Room B2-13 in Building 2. Your account has been upgraded to Tenant.', 'approval', 0, '2026-04-27 11:17:29'),
 (20, 47, 'Room Assigned!', 'Congratulations! You have been assigned to Room B2-14 in Building 2. Your account has been upgraded to Tenant.', 'approval', 0, '2026-04-27 12:04:46'),
 (21, 47, 'Room Assigned!', 'Congratulations! You have been assigned to Room B3-01 in Building 3. Your account has been upgraded to Tenant.', 'approval', 0, '2026-04-27 12:20:20'),
-(32, 60, 'Application Approved!', 'Congratulations! Your apartment application has been approved. Please review and accept your Lease Contract to proceed to Initial Payments. A room will be assigned once payments are settled.', 'approval', 0, '2026-04-30 23:32:57'),
-(33, 60, 'Room Assigned!', 'Your payment is confirmed and your lease is now Active! You have been assigned to Room B3-30 in Building 3. Welcome to your new home!', 'payment', 0, '2026-04-30 23:36:30');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `payment`
---
-
-CREATE TABLE `payment` (
-  `payment_id` int(11) NOT NULL,
-  `tenant_id` int(11) NOT NULL,
-  `status` varchar(50) DEFAULT NULL,
-  `date` date DEFAULT NULL,
-  `assistedby` varchar(100) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+(32, 60, 'Application Approved!', 'Congratulations! Your apartment application has been approved. Please review and accept your Lease Contract to proceed to Initial Payments. A room will be assigned once payments are settled.', 'approval', 1, '2026-04-30 23:32:57'),
+(33, 60, 'Room Assigned!', 'Your payment is confirmed and your lease is now Active! You have been assigned to Room B3-30 in Building 3. Welcome to your new home!', 'payment', 1, '2026-04-30 23:36:30'),
+(34, 60, 'Payment Received', 'Your payment for Rent Advance has been recorded (Ref: PAY-ADV-605984). Thank you for settling your dues!', 'payment', 1, '2026-05-01 13:22:34'),
+(35, 60, 'Payment Received', 'Your payment for Water 2026 07 has been recorded (Ref: PAY-BLK-6093076). Thank you for settling your dues!', 'payment', 1, '2026-05-01 13:23:40'),
+(36, 60, 'Payment Received', 'Your payment for Contribution 2026 06, Contribution 2026 07 has been recorded (Ref: PAY-BLK-3922295). Thank you for settling your dues!', 'payment', 1, '2026-05-01 14:08:29'),
+(37, 60, 'Upcoming Payment Reminder - May 2026', 'Heads up! Your monthly bill for May 2026 is due on the 5th. Please settle your Rent, Water, and Contributions to avoid any late flags.', 'payment', 1, '2026-05-01 14:53:19'),
+(38, 60, 'Maintenance', 'Hello', 'system', 1, '2026-05-01 15:16:53');
 
 -- --------------------------------------------------------
 
@@ -992,7 +1031,12 @@ INSERT INTO `payments` (`payment_id`, `lease_id`, `tenant_id`, `payment_type`, `
 (7, 6, 60, 'Deposit', 1000.00, 'Paid', '2026-05-01 07:36:27', 'PAY-3092918', '2026-04-30 23:36:09', '2026-04-30 23:36:27'),
 (8, 6, 60, 'Advance', 2500.00, 'Paid', '2026-05-01 07:36:30', 'PAY-7803835', '2026-04-30 23:36:09', '2026-04-30 23:36:30'),
 (20, 6, 60, 'Rent-2026-06', 2500.00, 'Paid', '2026-05-01 09:12:05', 'PAY-7413520', '2026-05-01 01:12:05', '2026-05-01 01:12:05'),
-(21, 6, 60, 'Water-2026-06', 100.00, 'Paid', '2026-05-01 09:12:08', 'PAY-5116146', '2026-05-01 01:12:08', '2026-05-01 01:12:08');
+(21, 6, 60, 'Water-2026-06', 100.00, 'Paid', '2026-05-01 09:12:08', 'PAY-5116146', '2026-05-01 01:12:08', '2026-05-01 01:12:08'),
+(22, 6, 60, 'Rent-advance', 2500.00, 'Paid', '2026-05-01 20:58:20', 'PAY-ADV-7684737', '2026-05-01 12:58:20', '2026-05-01 12:58:20'),
+(23, 6, 60, 'Rent-advance', 2500.00, 'Paid', '2026-05-01 21:22:34', 'PAY-ADV-605984', '2026-05-01 13:22:34', '2026-05-01 13:22:34'),
+(24, 6, 60, 'Water-2026-07', 100.00, 'Paid', '2026-05-01 21:23:40', 'PAY-BLK-6093076', '2026-05-01 13:23:40', '2026-05-01 13:23:40'),
+(25, 6, 60, 'Contribution-2026-06', 150.00, 'Paid', '2026-05-01 22:08:29', 'PAY-BLK-3922295', '2026-05-01 14:08:29', '2026-05-01 14:08:29'),
+(26, 6, 60, 'Contribution-2026-07', 150.00, 'Paid', '2026-05-01 22:08:29', 'PAY-BLK-3922295', '2026-05-01 14:08:29', '2026-05-01 14:08:29');
 
 -- --------------------------------------------------------
 
@@ -1008,50 +1052,6 @@ CREATE TABLE `postmortem_certificate` (
   `address` text DEFAULT NULL,
   `signature` varchar(255) DEFAULT NULL,
   `date_signed` date DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `proofpayment`
---
-
-CREATE TABLE `proofpayment` (
-  `proof_id` int(11) NOT NULL,
-  `payment_id` int(11) NOT NULL,
-  `receipt` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `reports`
---
-
-CREATE TABLE `reports` (
-  `report_id` int(11) NOT NULL,
-  `tenant_id` int(11) NOT NULL,
-  `report_name` varchar(150) NOT NULL,
-  `report_type` varchar(100) NOT NULL,
-  `module` varchar(100) NOT NULL,
-  `date_generated` timestamp NOT NULL DEFAULT current_timestamp(),
-  `generated_by` varchar(150) DEFAULT NULL,
-  `file_path` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `statementofacc`
---
-
-CREATE TABLE `statementofacc` (
-  `bill_id` int(11) NOT NULL,
-  `tenant_id` int(11) NOT NULL,
-  `room` decimal(10,2) DEFAULT NULL,
-  `waterbill` decimal(10,2) DEFAULT NULL,
-  `parking` decimal(10,2) DEFAULT NULL,
-  `contribution` decimal(10,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -1257,18 +1257,17 @@ INSERT INTO `tenant_user_profiles` (`id`, `tenant_id`, `muslim_name`, `birthdate
 --
 
 --
+-- Indexes for table `admin_notifications`
+--
+ALTER TABLE `admin_notifications`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `apartmentsapp`
 --
 ALTER TABLE `apartmentsapp`
   ADD PRIMARY KEY (`application_id`),
   ADD KEY `fk_apartmentsapp_tenant` (`tenant_id`);
-
---
--- Indexes for table `apartments_info`
---
-ALTER TABLE `apartments_info`
-  ADD PRIMARY KEY (`apartment_id`),
-  ADD KEY `fk_apartments_info_app` (`application_id`);
 
 --
 -- Indexes for table `apartment_types`
@@ -1295,14 +1294,19 @@ ALTER TABLE `apartment_units`
 -- Indexes for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  ADD PRIMARY KEY (`log_id`),
-  ADD KEY `fk_audit_logs_tenant` (`tenant_id`);
+  ADD PRIMARY KEY (`audit_id`);
 
 --
 -- Indexes for table `billing`
 --
 ALTER TABLE `billing`
   ADD PRIMARY KEY (`billing_id`);
+
+--
+-- Indexes for table `broadcasts`
+--
+ALTER TABLE `broadcasts`
+  ADD PRIMARY KEY (`broadcast_id`);
 
 --
 -- Indexes for table `certificate_issuance`
@@ -1540,13 +1544,6 @@ ALTER TABLE `notifications`
   ADD KEY `fk_notifications_tenant` (`tenant_id`);
 
 --
--- Indexes for table `payment`
---
-ALTER TABLE `payment`
-  ADD PRIMARY KEY (`payment_id`),
-  ADD KEY `fk_payment_tenant` (`tenant_id`);
-
---
 -- Indexes for table `payments`
 --
 ALTER TABLE `payments`
@@ -1561,27 +1558,6 @@ ALTER TABLE `payments`
 ALTER TABLE `postmortem_certificate`
   ADD PRIMARY KEY (`postmortem_id`),
   ADD UNIQUE KEY `deceased_id` (`deceased_id`);
-
---
--- Indexes for table `proofpayment`
---
-ALTER TABLE `proofpayment`
-  ADD PRIMARY KEY (`proof_id`),
-  ADD UNIQUE KEY `payment_id` (`payment_id`);
-
---
--- Indexes for table `reports`
---
-ALTER TABLE `reports`
-  ADD PRIMARY KEY (`report_id`),
-  ADD KEY `fk_reports_tenant` (`tenant_id`);
-
---
--- Indexes for table `statementofacc`
---
-ALTER TABLE `statementofacc`
-  ADD PRIMARY KEY (`bill_id`),
-  ADD KEY `fk_statementofacc_tenant` (`tenant_id`);
 
 --
 -- Indexes for table `tenant_accounts`
@@ -1635,16 +1611,16 @@ ALTER TABLE `tenant_user_profiles`
 --
 
 --
+-- AUTO_INCREMENT for table `admin_notifications`
+--
+ALTER TABLE `admin_notifications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `apartmentsapp`
 --
 ALTER TABLE `apartmentsapp`
   MODIFY `application_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
-
---
--- AUTO_INCREMENT for table `apartments_info`
---
-ALTER TABLE `apartments_info`
-  MODIFY `apartment_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `apartment_types`
@@ -1668,13 +1644,19 @@ ALTER TABLE `apartment_units`
 -- AUTO_INCREMENT for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `audit_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `billing`
 --
 ALTER TABLE `billing`
   MODIFY `billing_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `broadcasts`
+--
+ALTER TABLE `broadcasts`
+  MODIFY `broadcast_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `certificate_issuance`
@@ -1872,43 +1854,19 @@ ALTER TABLE `marriage_witness`
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
-
---
--- AUTO_INCREMENT for table `payment`
---
-ALTER TABLE `payment`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `postmortem_certificate`
 --
 ALTER TABLE `postmortem_certificate`
   MODIFY `postmortem_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `proofpayment`
---
-ALTER TABLE `proofpayment`
-  MODIFY `proof_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `reports`
---
-ALTER TABLE `reports`
-  MODIFY `report_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `statementofacc`
---
-ALTER TABLE `statementofacc`
-  MODIFY `bill_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tenant_accounts`
@@ -1964,12 +1922,6 @@ ALTER TABLE `apartmentsapp`
   ADD CONSTRAINT `fk_app_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `apartments_info`
---
-ALTER TABLE `apartments_info`
-  ADD CONSTRAINT `fk_apartments_info_app` FOREIGN KEY (`application_id`) REFERENCES `apartmentsapp` (`application_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
 -- Constraints for table `apartment_type_images`
 --
 ALTER TABLE `apartment_type_images`
@@ -1981,12 +1933,6 @@ ALTER TABLE `apartment_type_images`
 ALTER TABLE `apartment_units`
   ADD CONSTRAINT `fk_unit_application` FOREIGN KEY (`application_id`) REFERENCES `apartmentsapp` (`application_id`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_unit_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `audit_logs`
---
-ALTER TABLE `audit_logs`
-  ADD CONSTRAINT `fk_audit_logs_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `certificate_issuance`
@@ -2189,12 +2135,6 @@ ALTER TABLE `notifications`
   ADD CONSTRAINT `fk_notifications_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `payment`
---
-ALTER TABLE `payment`
-  ADD CONSTRAINT `fk_payment_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
 -- Constraints for table `payments`
 --
 ALTER TABLE `payments`
@@ -2206,24 +2146,6 @@ ALTER TABLE `payments`
 --
 ALTER TABLE `postmortem_certificate`
   ADD CONSTRAINT `fk_postmortem_deceased` FOREIGN KEY (`deceased_id`) REFERENCES `death_records` (`deceased_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `proofpayment`
---
-ALTER TABLE `proofpayment`
-  ADD CONSTRAINT `fk_proofpayment_payment` FOREIGN KEY (`payment_id`) REFERENCES `payment` (`payment_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `reports`
---
-ALTER TABLE `reports`
-  ADD CONSTRAINT `fk_reports_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `statementofacc`
---
-ALTER TABLE `statementofacc`
-  ADD CONSTRAINT `fk_statementofacc_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `tenant_addfam`

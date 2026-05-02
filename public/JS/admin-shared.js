@@ -286,6 +286,117 @@ function showToast(msg, bg) {
   }, 3000);
 }
 
+/**
+ * showAlert() — Replaces standard browser alerts with a styled modal
+ */
+function showAlert(title, message, type = 'info') {
+  const existing = document.getElementById('system-alert-modal');
+  if (existing) existing.remove();
+
+  const colors = {
+    success: { bg: '#ecfdf5', text: '#065f46', icon: '#10b981', border: '#10b981' },
+    error: { bg: '#fef2f2', text: '#991b1b', icon: '#ef4444', border: '#ef4444' },
+    warning: { bg: '#fffbeb', text: '#92400e', icon: '#f59e0b', border: '#f59e0b' },
+    info: { bg: '#eff6ff', text: '#1e40af', icon: '#3b82f6', border: '#3b82f6' }
+  };
+  const theme = colors[type] || colors.info;
+
+  const icons = {
+    success: '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>',
+    error: '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>',
+    warning: '<svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>',
+    info: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>'
+  };
+
+  const modalHtml = `
+    <div id="system-alert-modal" style="position:fixed; inset:0; background:rgba(15,30,22,0.5); backdrop-filter:blur(4px); z-index:100000; display:flex; align-items:center; justify-content:center; padding:20px; animation:modalFadeIn 0.3s ease;">
+      <div style="background:white; border-radius:20px; width:100%; max-width:420px; box-shadow:0 30px 60px rgba(0,0,0,0.2); overflow:hidden; animation:modalSlideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div style="height:6px; background:${theme.border};"></div>
+        <div style="padding:32px 28px; text-align:center;">
+          <div style="width:64px; height:64px; background:${theme.bg}; color:${theme.icon}; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; box-shadow:0 8px 16px rgba(0,0,0,0.05);">
+            <div style="width:32px; height:32px; fill:currentColor;">${icons[type] || icons.info}</div>
+          </div>
+          <h4 style="font-family:'Lora',serif; font-size:1.3rem; font-weight:800; color:#1a1a1a; margin:0 0 12px; letter-spacing:-0.01em;">${title}</h4>
+          <p style="font-size:0.95rem; line-height:1.6; color:#555; margin:0;">${message}</p>
+        </div>
+        <div style="padding:0 28px 28px; display:flex; justify-content:center;">
+          <button id="alert-close-btn" style="width:100%; padding:14px; background:#1a1a1a; color:white; border:none; border-radius:12px; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s; box-shadow:0 10px 20px rgba(0,0,0,0.1);">Dismiss</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const modal = document.getElementById('system-alert-modal');
+  const closeBtn = document.getElementById('alert-close-btn');
+
+  const closeAlert = () => {
+    modal.style.opacity = '0';
+    modal.querySelector('div').style.transform = 'translateY(20px)';
+    setTimeout(() => modal.remove(), 300);
+  };
+
+  closeBtn.onclick = closeAlert;
+  modal.onclick = (e) => { if (e.target === modal) closeAlert(); };
+}
+
+/**
+ * showConfirm() — Styled replacement for browser confirm()
+ */
+function showConfirm(title, message, onConfirm, type = 'warning') {
+  const existing = document.getElementById('system-confirm-modal');
+  if (existing) existing.remove();
+
+  const colors = {
+    warning: { bg: '#fffbeb', text: '#92400e', icon: '#f59e0b', border: '#f59e0b', btn: '#1a1a1a' },
+    danger: { bg: '#fef2f2', text: '#991b1b', icon: '#ef4444', border: '#ef4444', btn: '#8b2e2e' },
+    success: { bg: '#ecfdf5', text: '#065f46', icon: '#10b981', border: '#10b981', btn: '#176b45' }
+  };
+  const theme = colors[type] || colors.warning;
+
+  const icons = {
+    warning: '<svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>',
+    danger: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>',
+    success: '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+  };
+
+  const modalHtml = `
+    <div id="system-confirm-modal" style="position:fixed; inset:0; background:rgba(15,30,22,0.5); backdrop-filter:blur(4px); z-index:100000; display:flex; align-items:center; justify-content:center; padding:20px; animation:modalFadeIn 0.3s ease;">
+      <div style="background:white; border-radius:20px; width:100%; max-width:420px; box-shadow:0 30px 60px rgba(0,0,0,0.2); overflow:hidden; animation:modalSlideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div style="height:6px; background:${theme.border};"></div>
+        <div style="padding:32px 28px; text-align:center;">
+          <div style="width:64px; height:64px; background:${theme.bg}; color:${theme.icon}; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; box-shadow:0 8px 16px rgba(0,0,0,0.05);">
+            <div style="width:32px; height:32px; fill:currentColor;">${icons[type] || icons.warning}</div>
+          </div>
+          <h4 style="font-family:'Lora',serif; font-size:1.3rem; font-weight:800; color:#1a1a1a; margin:0 0 12px; letter-spacing:-0.01em;">${title}</h4>
+          <p style="font-size:0.95rem; line-height:1.6; color:#555; margin:0;">${message}</p>
+        </div>
+        <div style="padding:0 28px 28px; display:flex; gap:12px;">
+          <button id="confirm-cancel-btn" style="flex:1; padding:14px; background:#f8fafc; color:#64748b; border:1px solid #e2e8f0; border-radius:12px; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s;">Cancel</button>
+          <button id="confirm-yes-btn" style="flex:1; padding:14px; background:${theme.btn}; color:white; border:none; border-radius:12px; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s; box-shadow:0 10px 20px rgba(0,0,0,0.1);">Confirm</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const modal = document.getElementById('system-confirm-modal');
+  const cancelBtn = document.getElementById('confirm-cancel-btn');
+  const yesBtn = document.getElementById('confirm-yes-btn');
+
+  const closeConfirm = () => {
+    modal.style.opacity = '0';
+    modal.querySelector('div').style.transform = 'translateY(20px)';
+    setTimeout(() => modal.remove(), 300);
+  };
+
+  cancelBtn.onclick = closeConfirm;
+  yesBtn.onclick = () => { closeConfirm(); if (typeof onConfirm === 'function') onConfirm(); };
+  modal.onclick = (e) => { if (e.target === modal) closeConfirm(); };
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   const d = new Date(dateStr);

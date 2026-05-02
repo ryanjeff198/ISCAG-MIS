@@ -42,7 +42,7 @@
       content: "";
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: url('<?= asset('assets/about-center.png') ?>') center/cover no-repeat;
+      background: url('<?= asset('assets/damayanHero.png') ?>') center/cover no-repeat;
       opacity: 0.15;
       z-index: 0;
     }
@@ -391,7 +391,7 @@
     
     <div class="feature-row reveal">
       <div class="feature-img">
-        <img src="<?= asset('assets/about-center.png') ?>" alt="Social Support">
+        <img src="<?= asset('assets/damayanHero3.png') ?>" alt="Social Support">
       </div>
       <div class="feature-body">
         <span class="section-tag">Compassion in Action</span>

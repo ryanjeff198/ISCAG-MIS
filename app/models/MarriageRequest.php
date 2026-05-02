@@ -45,9 +45,11 @@ class MarriageRequest
     public function getAll(): array
     {
         $stmt = $this->db->prepare("
-            SELECT r.*, t.first_name, t.last_name, t.email
+            SELECT r.*, t.first_name, t.last_name, t.email,
+                   TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) as age
             FROM {$this->table} r
             JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
+            LEFT JOIN tenant_user_profiles p ON t.tenant_id = p.tenant_id
             ORDER BY r.marriage_date ASC, r.marriage_time ASC
         ");
         $stmt->execute();

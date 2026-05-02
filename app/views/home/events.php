@@ -266,7 +266,7 @@
       <div class="col-lg-4">
         <div class="event-card">
           <div class="event-img">
-            <img src="<?= asset('assets/events_hero.png') ?>" alt="Islamic Seminar">
+            <img src="<?= asset('assets/dawahFeatureImage.jpg') ?>" alt="Islamic Seminar">
             <div class="event-date-badge">
               <span class="date-day">15</span>
               <span class="date-month">May</span>
@@ -298,7 +298,7 @@
       <div class="col-lg-4">
         <div class="event-card">
           <div class="event-img">
-            <img src="<?= asset('assets/hero-mosque.png') ?>" alt="Youth Program">
+            <img src="<?= asset('assets/ISCAG2.png') ?>" alt="Youth Program">
             <div class="event-date-badge">
               <span class="date-day">22</span>
               <span class="date-month">May</span>
@@ -330,7 +330,7 @@
       <div class="col-lg-4">
         <div class="event-card">
           <div class="event-img">
-            <img src="<?= asset('assets/about-center.png') ?>" alt="Community Dinner">
+            <img src="<?= asset('assets/damayanHero2.png') ?>" alt="Community Dinner">
             <div class="event-date-badge">
               <span class="date-day">05</span>
               <span class="date-month">Jun</span>
