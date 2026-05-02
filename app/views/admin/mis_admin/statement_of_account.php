@@ -23,6 +23,12 @@
       --bg-gray: #f8f9fa;
     }
 
+    /* Fix sidebar avatar color - page's --primary-light is too light */
+    .sidebar .user-avatar {
+      background: #2f8a60 !important;
+      color: white !important;
+    }
+
     .controls-panel {
       background: white;
       padding: 24px;
@@ -94,7 +100,7 @@
     .tenant-info-cell { display: flex; align-items: center; gap: 12px; }
     .tenant-avatar {
       width: 36px; height: 36px; border-radius: 50%;
-      background: var(--primary-light); color: var(--primary-dark);
+      background: #2f8a60; color: white;
       display: flex; align-items: center; justify-content: center;
       font-weight: 700; font-size: 0.8rem;
     }
@@ -382,20 +388,27 @@
         </div>
         
         <div class="controls-panel">
-          <div class="form-group" style="flex: 1;">
-            <label>Master List Filters</label>
+          <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start;" id="filter-buttons-group">
+            
             <div style="display: flex; gap: 12px; align-items: center; height: 42px;">
               <button class="btn-topbar" id="btn-show-all" onclick="setMasterFilter('all')" style="border-radius: 8px; border-color: var(--border); height: 42px;">All Tenants</button>
               <button class="btn-topbar" id="btn-show-unpaid" onclick="setMasterFilter('unpaid')" style="border-radius: 8px; border-color: var(--border); height: 42px;">Show Only Unpaid</button>
               <button class="btn-topbar" id="btn-show-paid" onclick="setMasterFilter('paid')" style="border-radius: 8px; border-color: var(--border); height: 42px;">Show Only Paid</button>
             </div>
           </div>
-          <div class="form-group" style="flex: 1; min-width: 300px;" id="search-slot">
-            <div class="table-search-container">
+          <div style="flex: none; width: 300px; margin-left: auto; display: flex; flex-direction: column; gap: 8px;" id="search-slot">
+            <!-- Search bar (visible in list view) -->
+            <div class="table-search-container" id="search-container">
               <div class="table-search-wrapper">
                 <input type="text" id="tenant-search" class="table-search-input" placeholder="Search name or room..." oninput="applyFilters()">
                 <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
               </div>
+            </div>
+            <!-- Month filter (visible in detail view) -->
+            <div id="month-filter-container" style="display: none;">
+              <select id="month-filter" onchange="generateSOA()" style="width:220px; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:0.95rem; height:42px; margin-left:auto;">
+                <option value="all">All Time History</option>
+              </select>
             </div>
           </div>
         </div>
@@ -423,16 +436,11 @@
 
         <!-- DETAIL VIEW (SOA DOCUMENT) -->
         <div id="soa-detail-view">
-          <div class="view-header">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
             <button class="btn-back" onclick="showListView()">
               <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
               &nbsp;Back to Overview
             </button>
-            <div class="form-group" style="margin: 0; min-width: 200px;">
-              <select id="month-filter" onchange="generateSOA()" style="margin:0;">
-                <option value="all">All Time History</option>
-              </select>
-            </div>
           </div>
           
           <div class="soa-container">
@@ -601,6 +609,10 @@
         currentTenantId = tid;
         document.getElementById('soa-list-view').style.display = 'none';
         document.getElementById('soa-detail-view').style.display = 'block';
+        // Swap controls: hide filters & search, show month filter centered
+        document.getElementById('filter-buttons-group').style.display = 'none';
+        document.getElementById('search-container').style.display = 'none';
+        document.getElementById('month-filter-container').style.display = 'block';
         updateMonthsAndSOA();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -608,6 +620,10 @@
     function showListView() {
         document.getElementById('soa-list-view').style.display = 'block';
         document.getElementById('soa-detail-view').style.display = 'none';
+        // Swap controls: show filters & search, hide month filter
+        document.getElementById('filter-buttons-group').style.display = 'flex';
+        document.getElementById('search-container').style.display = 'block';
+        document.getElementById('month-filter-container').style.display = 'none';
         currentTenantId = null;
     }
 
