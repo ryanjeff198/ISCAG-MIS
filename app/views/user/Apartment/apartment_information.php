@@ -525,10 +525,12 @@ $uploadedDocs = $uploadedDocs ?? [];
                 const uploadedDocs = <?= json_encode($uploadedDocs ?? []) ?>;
                 
                 // Determine logic for "Automatic Queue"
-                if (aptApp && (aptApp.status.toLowerCase() === 'assigned' || aptApp.status.toLowerCase() === 'verified' || aptApp.status.toLowerCase() === 'occupied')) {
+                const status = aptApp ? aptApp.status.toLowerCase() : '';
+                
+                if (aptApp && (status === 'assigned' || status === 'verified' || status === 'occupied')) {
                     const type = apartmentTypes.find(t => t.type_key === aptApp.roomtype) || apartmentTypes[0];
                     assignedApt = { ...type, ...aptApp, displayStatus: 'Your Unit', familyCount, hasParking, uploadedDocs };
-                } else if (aptApp && aptApp.status.toLowerCase() === 'queued') {
+                } else if (aptApp && status === 'queued') {
                     const type = apartmentTypes.find(t => t.type_key === aptApp.roomtype) || apartmentTypes[0];
                     assignedApt = { ...type, ...aptApp, displayStatus: `Waitlisted (Pos #${aptApp.queue_position})`, familyCount, hasParking, uploadedDocs };
                 }
@@ -543,8 +545,27 @@ $uploadedDocs = $uploadedDocs ?? [];
         function renderDashboard(aptApp) {
             if (!assignedApt) {
                 if (aptApp) {
-                    const isQueued = aptApp.status === 'Queued';
-                    root.innerHTML = `<div class="empty-state-card"><div class="empty-state-hero" style="background: linear-gradient(135deg, var(--accent), #d4a83a);"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg><h3>${isQueued ? 'Waitlisted' : 'Application in Review'}</h3><p>${isQueued ? `Position #${aptApp.queue_position} on the waitlist.` : 'Under Admin Review.'}</p></div></div>`;
+                    const status = aptApp.status.toLowerCase();
+                    const isQueued = status === 'queued';
+                    const isApproved = status === 'approved';
+                    
+                    let title = isQueued ? 'Waitlisted' : (isApproved ? 'Application Approved!' : 'Application in Review');
+                    let sub = isQueued ? `Position #${aptApp.queue_position} on the waitlist.` : (isApproved ? 'Your application is approved. Please proceed to payment and lease signing to get your room key.' : 'Our admin team is currently reviewing your documents.');
+                    let heroColor = isApproved ? 'linear-gradient(135deg, var(--primary), var(--primary-light))' : (isQueued ? 'linear-gradient(135deg, var(--accent), #d4a83a)' : 'linear-gradient(135deg, #94a3b8, #cbd5e1)');
+
+                    root.innerHTML = `
+                        <div class="empty-state-card">
+                            <div class="empty-state-hero" style="background: ${heroColor}; color: white;">
+                                <svg viewBox="0 0 24 24" style="fill: currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                <h3 style="color:white;">${title}</h3>
+                                <p style="color:rgba(255,255,255,0.8);">${sub}</p>
+                            </div>
+                            <div class="empty-state-body">
+                                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:15px;">Status Update: <strong>${aptApp.status}</strong></p>
+                                <a href="<?= url('/user/dashboard') ?>" class="btn-action secondary">Return to Dashboard</a>
+                            </div>
+                        </div>
+                    `;
                 } else {
                     root.innerHTML = `<div class="empty-state-card"><div class="empty-state-hero"><svg viewBox="0 0 24 24"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z"/></svg><h3>No Apartment Assigned</h3><p>Apply for a unit to see details here.</p></div><div class="empty-state-body"><a href="<?= url('/user/apartment/apply') ?>" class="btn-action primary">Apply Now</a></div></div>`;
                 }
