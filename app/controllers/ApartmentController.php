@@ -978,20 +978,30 @@ class ApartmentController extends Controller {
             }
         }
 
-        // Sort and Filter
+        // Sort transactions chronologically
         usort($transactions, function($a, $b) {
             return strtotime($a['date']) <=> strtotime($b['date']);
         });
 
-        $filterMonth = $_GET['month'] ?? 'all';
-        $balanceForwarded = 0;
-        $filteredTransactions = [];
+        // 1. Gather all available months first
         $availableMonths = [];
-
         foreach ($transactions as $t) {
             $tMonth = substr($t['date'], 0, 7);
             if (!in_array($tMonth, $availableMonths)) $availableMonths[] = $tMonth;
+        }
+        sort($availableMonths);
 
+        // 2. Determine selected filter month (default to first month instead of 'all')
+        $firstMonth = !empty($availableMonths) ? $availableMonths[0] : 'all';
+        $filterMonth = $_GET['month'] ?? $firstMonth;
+
+        // 3. Apply the filter and calculate balance forwarded
+        $balanceForwarded = 0;
+        $filteredTransactions = [];
+        
+        foreach ($transactions as $t) {
+            $tMonth = substr($t['date'], 0, 7);
+            
             if ($filterMonth !== 'all') {
                 if ($tMonth < $filterMonth) {
                     $balanceForwarded += ($t['charge'] - $t['payment']);
@@ -1002,7 +1012,6 @@ class ApartmentController extends Controller {
                 $filteredTransactions[] = $t;
             }
         }
-        rsort($availableMonths);
 
         $this->view('user/Apartment/tenant_soa', [
             'lease' => $lease,

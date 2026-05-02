@@ -598,15 +598,20 @@
     function updateMonthsAndSOA() {
         if (!currentTenantId) return;
         const tenantTransactions = transactions.filter(t => t.tenant_id == currentTenantId);
-        const months = [...new Set(tenantTransactions.map(t => t.date.substring(0, 7)))].sort().reverse();
+        const months = [...new Set(tenantTransactions.map(t => t.date.substring(0, 7)))].sort();
         
         const filter = document.getElementById('month-filter');
-        filter.innerHTML = '<option value="all">All Time History</option>';
+        filter.innerHTML = '';
         months.forEach(m => {
             const date = new Date(m + '-01');
             const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
             filter.innerHTML += `<option value="${m}">${label}</option>`;
         });
+        filter.innerHTML += '<option value="all">All Time History</option>';
+        
+        if (months.length > 0) {
+            filter.value = months[0];
+        }
         
         generateSOA();
     }
