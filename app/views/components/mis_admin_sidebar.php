@@ -8,7 +8,7 @@ $initials = strtoupper(substr($admin_name_parts[0], 0, 1) . (count($admin_name_p
 $active_page = $active_page ?? 'admin_dashboard';
 
 // Determine which dropdowns should be open based on the active page
-$is_pending_open = in_array($active_page, ['apartment_confirmation', 'parking_approval']);
+$is_pending_open = in_array($active_page, ['apartment_confirmation', 'parking_approval', 'maintenance']);
 $is_finance_open = in_array($active_page, ['billing', 'soa', 'reports']);
 $is_comm_open = in_array($active_page, ['apartment_records', 'renewal_records', 'dawah_records', 'damayan_records', 'notifications']);
 $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification']);
@@ -57,6 +57,7 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
             <div class="nav-dropdown <?= $is_pending_open ? 'open' : '' ?>" id="pending-menu">
                 <a href="<?= url('/admin/mis_admin/apartment_confirmation') ?>" class="<?= $active_page === 'apartment_confirmation' ? 'active-submenu' : '' ?>">App. Confirmation</a>
                 <a href="<?= url('/admin/mis_admin/parking_approval') ?>" class="<?= $active_page === 'parking_approval' ? 'active-submenu' : '' ?>">Parking Alloc.</a>
+                <a href="<?= url('/admin/mis_admin/maintenance') ?>" class="<?= $active_page === 'maintenance' ? 'active-submenu' : '' ?>">Maintenance</a>
             </div>
         </div>
 

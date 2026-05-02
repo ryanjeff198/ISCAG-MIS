@@ -19,6 +19,7 @@ if ($userId) {
 // Ensure variables from controller are handled
 $familyCount = $familyCount ?? 0;
 $hasParking = $hasParking ?? false;
+$uploadedDocs = $uploadedDocs ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -284,6 +285,98 @@ $hasParking = $hasParking ?? false;
         .empty-state-hero h3 { font-family: 'Lora', serif; color: var(--primary-dark); margin: 0 0 8px; }
         .empty-state-hero p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
         .empty-state-body { padding: 24px; text-align: center; border-top: 1px solid var(--border); }
+        .btn-action.secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .btn-action.secondary:hover { background: #e2e8f0; }
+
+        /* Maintenance Specific */
+        .maintenance-modal {
+            max-width: 500px !important;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+        .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 0.9rem; }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1); }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1); }
+
+        /* ── Documents Section ── */
+        .doc-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .doc-preview-item {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .doc-preview-item:hover {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .doc-preview-icon {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .doc-preview-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* ── Image Preview ── */
+        .image-preview-container {
+            margin-top: 10px;
+            display: none;
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid var(--border);
+        }
+        .image-preview-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .remove-preview {
+            position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.5); color: white;
+            border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px;
+        }
+
+        /* ── Success Modal ── */
+        .success-modal {
+            max-width: 400px !important;
+            text-align: center;
+        }
+        .success-icon-bounce {
+            width: 80px;
+            height: 80px;
+            background: #ecfdf5;
+            color: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes bounceIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 
@@ -355,6 +448,66 @@ $hasParking = $hasParking ?? false;
         </div>
     </div>
 
+    <!-- ═══ MODAL: MAINTENANCE REQUEST ═══ -->
+    <div class="apt-modal-overlay" id="maintenanceModal">
+        <div class="apt-modal maintenance-modal">
+            <div class="apt-modal-header">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <h3 style="margin:0; font-family:'Lora',serif; color:var(--primary-dark); font-weight:800;">Request Maintenance</h3>
+                </div>
+                <button onclick="closeMaintenanceModal()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted);">&times;</button>
+            </div>
+            <form id="maintenanceForm" onsubmit="handleInitialSubmit(event)">
+                <div style="padding: 24px;">
+                    <div class="form-group">
+                        <label class="form-label">Type of Issue</label>
+                        <select name="category" class="form-control" required>
+                            <option value="">Select a category</option>
+                            <option value="Plumbing">Plumbing</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Structural">Structural</option>
+                            <option value="Appliance">Appliance</option>
+                            <option value="Pest Control">Pest Control</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description / Reason</label>
+                        <textarea name="description" class="form-control" rows="4" placeholder="Describe the issue clearly..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Attachment (Optional)</label>
+                        <input type="file" name="attachment" id="maintenance_file" class="form-control" accept="image/*" onchange="previewMaintenanceImage(this)">
+                        <div class="image-preview-container" id="maintenance_preview_container">
+                            <img id="maintenance_preview_img" src="" alt="Preview">
+                            <button type="button" class="remove-preview" onclick="clearMaintenanceImage()">&times;</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:#f9fafb;">
+                    <button type="button" onclick="closeMaintenanceModal()" class="btn-action secondary">Cancel</button>
+                    <button type="submit" class="btn-action primary" id="maintenanceSubmitBtn">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: SUCCESS CONFIRMATION ═══ -->
+    <div class="apt-modal-overlay" id="successModal">
+        <div class="apt-modal success-modal">
+            <div style="padding: 40px 24px;">
+                <div class="success-icon-bounce">
+                    <svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                </div>
+                <h3 style="font-family:'Lora',serif; color:var(--primary-dark); margin-bottom:10px;">Request Submitted!</h3>
+                <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.5;">Your maintenance request has been recorded. You will be notified once a staff member reviews it.</p>
+                <div style="margin-top:24px;">
+                    <button onclick="closeSuccessModal()" class="btn-action primary">Got it, thanks!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const root = document.getElementById('tenant-info-root');
         let assignedApt = null;
@@ -369,14 +522,17 @@ $hasParking = $hasParking ?? false;
                 const aptApp = <?= json_encode($application ?? null) ?>;
                 const familyCount = <?= json_encode($familyCount ?? 0) ?>;
                 const hasParking = <?= json_encode($hasParking ?? false) ?>;
+                const uploadedDocs = <?= json_encode($uploadedDocs ?? []) ?>;
                 
                 // Determine logic for "Automatic Queue"
-                if (aptApp && (aptApp.status.toLowerCase() === 'assigned' || aptApp.status.toLowerCase() === 'verified' || aptApp.status.toLowerCase() === 'occupied')) {
+                const status = aptApp ? aptApp.status.toLowerCase() : '';
+                
+                if (aptApp && (status === 'assigned' || status === 'verified' || status === 'occupied')) {
                     const type = apartmentTypes.find(t => t.type_key === aptApp.roomtype) || apartmentTypes[0];
-                    assignedApt = { ...type, ...aptApp, displayStatus: 'Your Unit', familyCount, hasParking };
-                } else if (aptApp && aptApp.status.toLowerCase() === 'queued') {
+                    assignedApt = { ...type, ...aptApp, displayStatus: 'Your Unit', familyCount, hasParking, uploadedDocs };
+                } else if (aptApp && status === 'queued') {
                     const type = apartmentTypes.find(t => t.type_key === aptApp.roomtype) || apartmentTypes[0];
-                    assignedApt = { ...type, ...aptApp, displayStatus: `Waitlisted (Pos #${aptApp.queue_position})`, familyCount, hasParking };
+                    assignedApt = { ...type, ...aptApp, displayStatus: `Waitlisted (Pos #${aptApp.queue_position})`, familyCount, hasParking, uploadedDocs };
                 }
 
                 renderDashboard(aptApp);
@@ -389,8 +545,27 @@ $hasParking = $hasParking ?? false;
         function renderDashboard(aptApp) {
             if (!assignedApt) {
                 if (aptApp) {
-                    const isQueued = aptApp.status === 'Queued';
-                    root.innerHTML = `<div class="empty-state-card"><div class="empty-state-hero" style="background: linear-gradient(135deg, var(--accent), #d4a83a);"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg><h3>${isQueued ? 'Waitlisted' : 'Application in Review'}</h3><p>${isQueued ? `Position #${aptApp.queue_position} on the waitlist.` : 'Under Admin Review.'}</p></div></div>`;
+                    const status = aptApp.status.toLowerCase();
+                    const isQueued = status === 'queued';
+                    const isApproved = status === 'approved';
+                    
+                    let title = isQueued ? 'Waitlisted' : (isApproved ? 'Application Approved!' : 'Application in Review');
+                    let sub = isQueued ? `Position #${aptApp.queue_position} on the waitlist.` : (isApproved ? 'Your application is approved. Please proceed to payment and lease signing to get your room key.' : 'Our admin team is currently reviewing your documents.');
+                    let heroColor = isApproved ? 'linear-gradient(135deg, var(--primary), var(--primary-light))' : (isQueued ? 'linear-gradient(135deg, var(--accent), #d4a83a)' : 'linear-gradient(135deg, #94a3b8, #cbd5e1)');
+
+                    root.innerHTML = `
+                        <div class="empty-state-card">
+                            <div class="empty-state-hero" style="background: ${heroColor}; color: white;">
+                                <svg viewBox="0 0 24 24" style="fill: currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                <h3 style="color:white;">${title}</h3>
+                                <p style="color:rgba(255,255,255,0.8);">${sub}</p>
+                            </div>
+                            <div class="empty-state-body">
+                                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:15px;">Status Update: <strong>${aptApp.status}</strong></p>
+                                <a href="<?= url('/user/dashboard') ?>" class="btn-action secondary">Return to Dashboard</a>
+                            </div>
+                        </div>
+                    `;
                 } else {
                     root.innerHTML = `<div class="empty-state-card"><div class="empty-state-hero"><svg viewBox="0 0 24 24"><path d="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z"/></svg><h3>No Apartment Assigned</h3><p>Apply for a unit to see details here.</p></div><div class="empty-state-body"><a href="<?= url('/user/apartment/apply') ?>" class="btn-action primary">Apply Now</a></div></div>`;
                 }
@@ -402,7 +577,9 @@ $hasParking = $hasParking ?? false;
                     <div class="status-hero-top">
                         <div class="status-hero-header">
                             <div class="status-hero-header-left">
-                                <div class="status-hero-avatar"><svg viewBox="0 0 24 24" style="width:28px;fill:white;"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z"/></svg></div>
+                                <div class="status-hero-avatar">
+                                    <svg viewBox="0 0 24 24" style="width:28px;fill:white;"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z"/></svg>
+                                </div>
                                 <div><h2 class="status-hero-name">${assignedApt.label || assignedApt.name}</h2><p class="status-hero-subtitle">Assigned Unit: ${assignedApt.room_number || 'ISCAG Compound'}</p></div>
                             </div>
                             <div class="status-badge approved"><span class="status-badge-dot"></span>Active Unit</div>
@@ -422,7 +599,13 @@ $hasParking = $hasParking ?? false;
 
                 <div class="action-bar">
                     <div class="action-bar-text"><h4>View Full Unit Specifications</h4><p>Check room inclusions, house rules, and detailed lease terms.</p></div>
-                    <div class="action-bar-btns"><button class="btn-action primary" onclick="openAptDetails()">View Unit Modal</button></div>
+                    <div class="action-bar-btns" style="display:flex; gap:12px;">
+                        <button class="btn-action secondary" onclick="openMaintenanceModal()">
+                            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.5 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
+                            Maintenance
+                        </button>
+                        <button class="btn-action primary" onclick="openAptDetails()">View Unit Modal</button>
+                    </div>
                 </div>
             `;
         }
@@ -466,6 +649,84 @@ $hasParking = $hasParking ?? false;
 
         function closeAptModal() {
             document.getElementById('aptDetailModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function openMaintenanceModal() {
+            document.getElementById('maintenanceModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMaintenanceModal() {
+            document.getElementById('maintenanceModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('maintenanceForm').reset();
+            clearMaintenanceImage();
+        }
+
+        function previewMaintenanceImage(input) {
+            const container = document.getElementById('maintenance_preview_container');
+            const img = document.getElementById('maintenance_preview_img');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    container.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearMaintenanceImage() {
+            document.getElementById('maintenance_file').value = '';
+            document.getElementById('maintenance_preview_container').style.display = 'none';
+            document.getElementById('maintenance_preview_img').src = '';
+        }
+
+        function handleInitialSubmit(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to submit this maintenance request?')) {
+                submitMaintenance(e);
+            }
+        }
+
+        async function submitMaintenance(e) {
+            const btn = document.getElementById('maintenanceSubmitBtn');
+            const form = document.getElementById('maintenanceForm');
+            const formData = new FormData(form);
+
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            try {
+                const res = await fetch('<?= url("/user/apartment/maintenance/submit") ?>', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => r.json());
+
+                if (res.success) {
+                    closeMaintenanceModal();
+                    openSuccessModal();
+                } else {
+                    alert(res.message || 'Failed to submit request');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit Request';
+            }
+        }
+
+        function openSuccessModal() {
+            document.getElementById('successModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.remove('active');
             document.body.style.overflow = 'auto';
         }
 

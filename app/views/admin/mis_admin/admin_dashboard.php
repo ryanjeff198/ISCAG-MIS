@@ -127,6 +127,7 @@
                 ['User Account Info',number_format($totalUsers??0),'Active tenant accounts','up','+8.2%','var(--info)','M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z', url('/admin/mis_admin/records'), 'users'],
                 ['Applications',number_format($totalApplications??0),$pendingApprovals.' pending review',($pendingApprovals>2?'down':'up'),($pendingApprovals>0?$pendingApprovals.' pending':'All clear'),'var(--warning)','M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z', url('/admin/mis_admin/apartment_confirmation'), 'apps'],
                 ['Parking Permits',number_format($totalParking??0),'Active allocations','flat','—','var(--primary)','M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z', url('/admin/mis_admin/parking_approval'), 'parking'],
+                ['Maintenance',number_format($pendingMaintenance??0),'Facility repair requests',($pendingMaintenance>0?'down':'up'),($pendingMaintenance>0?$pendingMaintenance.' pending':'All clear'),'var(--accent)','M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.5 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z', url('/admin/mis_admin/maintenance'), 'maint'],
                 ['Unread Alerts',number_format($auditFlags??0),'Requires attention',($auditFlags>5?'down':'flat'),($auditFlags>0?$auditFlags.' unread':'Clear'),'var(--danger)','M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z', url('/admin/mis_admin/notification'), 'unread']
               ];
               foreach($kpis as $k):
@@ -257,6 +258,45 @@
               </div>
               <?php endforeach; ?>
             </div>
+          </div>
+        </div>
+
+        <div class="db-section">
+          <div class="db-section-head">
+             <div><div class="db-section-title">Pending Maintenance Requests</div><div class="db-section-sub">Latest issues reported by tenants</div></div>
+             <a href="<?= url('/admin/mis_admin/maintenance') ?>" style="font-size:.75rem;color:var(--primary);font-weight:600;text-decoration:none">View All Requests →</a>
+          </div>
+          <div class="card" style="padding:0; overflow:hidden;">
+             <table class="mis-table">
+                <thead>
+                   <tr>
+                      <th>Ref #</th>
+                      <th>Tenant</th>
+                      <th>Category</th>
+                      <th>Description</th>
+                      <th>Submitted</th>
+                      <th>Action</th>
+                   </tr>
+                </thead>
+                <tbody>
+                   <?php if(empty($recentMaintenance)): ?>
+                      <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No pending requests.</td></tr>
+                   <?php else: ?>
+                      <?php foreach($recentMaintenance as $rm): ?>
+                      <tr>
+                         <td class="td-id"><?= $rm['id'] ?></td>
+                         <td style="font-weight:600;"><?= htmlspecialchars($rm['first_name'] . ' ' . $rm['last_name']) ?></td>
+                         <td><span style="font-weight:700; color:var(--primary);"><?= $rm['category'] ?></span></td>
+                         <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($rm['description']) ?></td>
+                         <td><?= date('M d, Y', strtotime($rm['created_at'])) ?></td>
+                         <td>
+                            <a href="<?= url('/admin/mis_admin/maintenance') ?>?id=<?= $rm['id'] ?>" class="card-badge" style="text-decoration:none;">Review</a>
+                         </td>
+                      </tr>
+                      <?php endforeach; ?>
+                   <?php endif; ?>
+                </tbody>
+             </table>
           </div>
         </div>
 
