@@ -9,7 +9,84 @@
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <meta name="description" content="Generate and view Statement of Account for tenants" />
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
-  <style>
+  <style>    .controls-panel {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      display: flex;
+      gap: 32px;
+      align-items: flex-start; /* Alignment start to handle labels better */
+      flex-wrap: wrap;
+    }
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      align-items: flex-start !important;
+    }
+    .form-group label {
+      display: block !important;
+      font-size: 0.85rem !important;
+      font-weight: 700 !important;
+      color: var(--primary-dark) !important;
+      margin: 0 !important;
+      text-align: left !important;
+    }
+    .form-group select, .form-group input {
+      width: 100% !important;
+      padding: 10px 14px !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 8px !important;
+      font-size: 0.95rem !important;
+      outline: none !important;
+      height: 42px !important;
+      box-sizing: border-box !important;
+    }
+    
+    /* Search Bar Integration - Force it to behave like a normal flex child */
+    .table-search-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        position: static !important;
+        border: none !important;
+        box-shadow: none !important;
+        display: block !important;
+        float: none !important;
+    }
+    .table-search-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        display: flex !important; /* Switch to flex for centering */
+        align-items: center !important;
+        position: relative !important;
+        height: 42px !important;
+    }
+    .table-search-wrapper svg {
+        position: absolute !important;
+        right: 14px !important; /* Move to right */
+        left: auto !important;
+        z-index: 5 !important;
+        pointer-events: none !important;
+        fill: var(--text-muted) !important;
+        width: 16px !important;
+        height: 16px !important;
+        margin: 0 !important;
+    }
+    .table-search-input {
+        height: 42px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        display: block !important;
+        padding-left: 14px !important; 
+        padding-right: 40px !important; /* Space for icon on right */
+    }
     .soa-container {
       background: white;
       border-radius: 12px;
@@ -17,7 +94,8 @@
       padding: 40px;
       max-width: 900px;
       margin: 20px auto;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      position: relative; /* Fixed: Absolute stamp relative to this container */
     }
     .soa-header {
       display: flex;
@@ -99,7 +177,6 @@
       font-size: 0.9rem;
     }
     .soa-table tr:hover { background: #f8faf9; }
-    .soa-table .row-charge { }
     .soa-table .row-payment { background: rgba(47,138,96,0.03); }
     
     .type-badge {
@@ -175,40 +252,48 @@
       border-color: rgba(22, 163, 74, 0.12);
       display: block;
     }
-
-    .controls-panel {
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      margin-bottom: 24px;
-      display: flex;
-      gap: 20px;
-      align-items: flex-end;
-      flex-wrap: wrap;
-    }
-    .form-group {
-      flex: 1;
-      min-width: 200px;
-    }
-    .form-group label {
+    .soa-stamp.unpaid {
+      color: rgba(220, 38, 38, 0.08); /* Red */
+      border-color: rgba(220, 38, 38, 0.08);
       display: block;
-      margin-bottom: 8px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--primary-dark);
     }
-    .form-group select, .form-group input {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
+
     .form-group select:focus, .form-group input:focus {
       border-color: var(--primary);
+    }
+    
+    /* Interactive Cards */
+    .insight-card.clickable {
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .insight-card.clickable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+    }
+    .insight-card.clickable:active {
+        transform: translateY(0);
+    }
+    .filter-active-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: var(--danger);
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        display: none;
+    }
+    .insight-card.filtering .filter-active-badge {
+        display: block;
+    }
+    .insight-card.filtering {
+        border-color: var(--danger);
+        background: rgba(220, 38, 38, 0.01);
     }
 
     .breakdown-grid {
@@ -299,7 +384,8 @@
             <div class="insight-label">Last Generated</div>
             <div class="insight-value success"><?= date('M d') ?></div>
           </div>
-          <div class="insight-card">
+          <div class="insight-card clickable" id="outstanding-filter-card" onclick="toggleUnpaidFilter()">
+            <div class="filter-active-badge">Filter On</div>
             <?php
               $totalOutstanding = 0;
               foreach($transactions as $t) {
@@ -315,7 +401,7 @@
         <div class="controls-panel">
           <div class="form-group">
             <label>Select Tenant</label>
-            <select id="tenant-select" onchange="generateSOA()">
+            <select id="tenant-select" onchange="updateMonthsAndSOA()">
               <option value="">— Select a Tenant —</option>
               <?php foreach($tenants as $t): ?>
                 <option value="<?= $t['tenant_id'] ?>"><?= htmlspecialchars($t['first_name'] . ' ' . $t['last_name']) ?> (<?= $t['room_number'] ? $t['building'].'-'.$t['room_number'] : 'No Unit' ?>)</option>
@@ -323,15 +409,13 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Date From</label>
-            <input type="date" id="date-from" onchange="generateSOA()" />
+            <label>Filter by Month</label>
+            <select id="month-filter" onchange="generateSOA()">
+              <option value="all">All Time</option>
+            </select>
           </div>
-          <div class="form-group">
-            <label>Date To</label>
-            <input type="date" id="date-to" onchange="generateSOA()" />
-          </div>
-          <div>
-            <button class="btn-action" style="padding:10px 20px; background:var(--primary); color:white; border-radius:8px;" onclick="generateSOA()">Generate</button>
+          <div class="form-group" style="flex: 1.5; min-width: 250px;" id="search-slot">
+            <!-- Search bar will be moved here -->
           </div>
         </div>
 
@@ -403,7 +487,8 @@
             </div>
           </div>
           
-          <div id="admin-soa-stamp" class="soa-stamp paid" style="display:none;">FULLY SETTLED</div>
+          <div id="admin-soa-stamp-paid" class="soa-stamp paid" style="display:none;">FULLY SETTLED</div>
+          <div id="admin-soa-stamp-unpaid" class="soa-stamp unpaid" style="display:none;">UNPAID</div>
 
           <div style="margin-top: 50px; text-align: center; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 20px;">
             <p>If you have any questions regarding this statement, please contact the Apartment Admin.</p>
@@ -428,9 +513,83 @@
   <script>
     standardizePage('admin');
 
+    function setupMovableSearch() {
+        const searchTarget = document.getElementById('search-slot');
+        const container = document.querySelector('.table-search-container');
+        if (!container || !searchTarget) return;
+
+        const label = document.createElement('label');
+        label.textContent = 'Search Record';
+        searchTarget.innerHTML = '';
+        searchTarget.appendChild(label);
+        searchTarget.appendChild(container);
+        
+        container.style.cssText = 'width:100%; padding:0; margin-top:4px;';
+        const input = container.querySelector('input');
+        if (input) {
+            input.id = 'tenant-search';
+            input.placeholder = 'Search name, unit, or records...';
+            input.addEventListener('input', applyFilters);
+        }
+        if (window._searchObserver) window._searchObserver.disconnect();
+    }
+
+    setupMovableSearch();
+    window._searchObserver = new MutationObserver(() => setupMovableSearch());
+    window._searchObserver.observe(document.body, { childList: true, subtree: true });
+
     const transactions = <?= json_encode($transactions) ?>;
     const tenants = <?= json_encode($tenants) ?>;
     const memberMap = <?= json_encode($memberMap ?? []) ?>;
+
+    // Pre-calculate balances for each tenant
+    const tenantBalances = {};
+    transactions.forEach(t => {
+        if (!tenantBalances[t.tenant_id]) tenantBalances[t.tenant_id] = 0;
+        tenantBalances[t.tenant_id] += (t.charge - t.payment);
+    });
+
+    let isFilteringUnpaid = false;
+
+    function toggleUnpaidFilter() {
+        const card = document.getElementById('outstanding-filter-card');
+        isFilteringUnpaid = !isFilteringUnpaid;
+        
+        if (isFilteringUnpaid) card.classList.add('filtering');
+        else card.classList.remove('filtering');
+        
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const select = document.getElementById('tenant-select');
+        const searchInput = document.getElementById('tenant-search') || document.querySelector('.table-search-input');
+        if (!searchInput || !select) return;
+        
+        const query = searchInput.value.toLowerCase();
+        const options = select.options;
+        
+        for (let i = 1; i < options.length; i++) {
+            const opt = options[i];
+            const tid = opt.value;
+            const originalName = opt.getAttribute('data-original-name') || opt.textContent.split(' [')[0];
+            if (!opt.getAttribute('data-original-name')) opt.setAttribute('data-original-name', originalName);
+            
+            const text = originalName.toLowerCase();
+            const bal = tenantBalances[tid] || 0;
+            
+            let visible = true;
+            if (query && !text.includes(query)) visible = false;
+            if (isFilteringUnpaid && bal <= 0) visible = false;
+            
+            if (visible) {
+                opt.style.display = 'block';
+                opt.textContent = originalName + (isFilteringUnpaid ? ` [₱${bal.toLocaleString()}]` : '');
+            } else {
+                opt.style.display = 'none';
+            }
+        }
+    }
 
     function getTypeBadge(type) {
       const t = (type || '').toLowerCase();
@@ -445,10 +604,35 @@
       return '<span class="type-badge">' + type + '</span>';
     }
 
+    function updateMonthsAndSOA() {
+      const tenantId = document.getElementById('tenant-select').value;
+      const monthSelect = document.getElementById('month-filter');
+      
+      // Clear months except "All Time"
+      monthSelect.innerHTML = '<option value="all">All Time</option>';
+      
+      if (tenantId) {
+        const tenantTransactions = transactions.filter(t => t.tenant_id == tenantId);
+        const uniqueMonths = [...new Set(tenantTransactions.map(t => {
+            const d = new Date(t.date);
+            return d.getFullYear() + '-' + (d.getMonth() + 1).toString().padStart(2, '0');
+        }))].sort().reverse();
+
+        uniqueMonths.forEach(m => {
+            const [y, mm] = m.split('-');
+            const label = new Date(y, parseInt(mm)-1).toLocaleDateString('en-US', {month: 'long', year: 'numeric'});
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = label;
+            monthSelect.appendChild(opt);
+        });
+      }
+      generateSOA();
+    }
+
     function generateSOA() {
       const tenantId = document.getElementById('tenant-select').value;
-      const dateFrom = document.getElementById('date-from').value;
-      const dateTo = document.getElementById('date-to').value;
+      const selectedMonth = document.getElementById('month-filter').value; // YYYY-MM or 'all'
 
       if (!tenantId) {
         document.getElementById('soa-document').style.display = 'none';
@@ -476,50 +660,46 @@
       const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       document.getElementById('soa-date-generated').textContent = today;
       
-      renderSOA(tenantId, dateFrom, dateTo, info, totalOccupants);
+      renderSOA(tenantId, selectedMonth, info, totalOccupants);
     }
 
-    // ══ AUTO-SELECT FROM URL ══
-    window.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const tid = urlParams.get('tenant_id');
-      const shouldPrint = urlParams.get('print');
-
-      if (tid) {
-        const select = document.getElementById('tenant-select');
-        select.value = tid;
-        generateSOA();
-
-        if (shouldPrint === '1') {
-            setTimeout(() => window.print(), 800); // Small delay to let cards render
-        }
-      }
-    });
-
-    function renderSOA(tenantId, dateFrom, dateTo, info, totalOccupants) {
+    function renderSOA(tenantId, selectedMonth, info, totalOccupants) {
       let periodText = 'All Time';
-      if(dateFrom && dateTo) periodText = `${dateFrom} to ${dateTo}`;
-      else if(dateFrom) periodText = `From ${dateFrom}`;
-      else if(dateTo) periodText = `Up to ${dateTo}`;
+      if(selectedMonth !== 'all') {
+         const [y, m] = selectedMonth.split('-');
+         periodText = new Date(y, parseInt(m)-1).toLocaleDateString('en-US', {month: 'long', year: 'numeric'});
+      }
       document.getElementById('soa-period').textContent = periodText;
 
-      // Filter transactions for this tenant
-      let filtered = transactions.filter(t => t.tenant_id == tenantId);
-      if(dateFrom) filtered = filtered.filter(t => new Date(t.date) >= new Date(dateFrom));
-      if(dateTo) filtered = filtered.filter(t => new Date(t.date) <= new Date(dateTo));
+      const tenantTransactions = transactions.filter(t => t.tenant_id == tenantId).sort((a,b) => new Date(a.date) - new Date(b.date));
+      
+      let balanceForwarded = 0;
+      let filtered = [];
 
-      filtered.sort((a,b) => new Date(a.date) - new Date(b.date));
+      if (selectedMonth === 'all') {
+        filtered = tenantTransactions;
+      } else {
+        const [sy, sm] = selectedMonth.split('-');
+        const monthStart = new Date(sy, parseInt(sm)-1, 1);
+        const monthEnd = new Date(sy, parseInt(sm), 0);
+
+        tenantTransactions.forEach(t => {
+            const tDate = new Date(t.date);
+            if (tDate < monthStart) {
+                balanceForwarded += (t.charge - t.payment);
+            } else if (tDate >= monthStart && tDate <= monthEnd) {
+                filtered.push(t);
+            }
+        });
+      }
 
       // Calculate category breakdowns
-      let rentTotal = 0, depositTotal = 0, advanceTotal = 0, parkingTotal = 0, waterTotal = 0, contributionTotal = 0, paymentsTotal = 0;
+      let rentTotal = 0, initialTotal = 0, parkingTotal = 0, waterTotal = 0, contributionTotal = 0;
       filtered.forEach(t => {
         const type = (t.type || '').toLowerCase();
-        if (t.payment > 0) {
-          paymentsTotal += t.payment;
-        } else {
-          if (type.includes('rent') || type.includes('invoice')) rentTotal += t.charge;
-          else if (type.includes('deposit')) depositTotal += t.charge;
-          else if (type.includes('advance')) advanceTotal += t.charge;
+        if (t.payment === 0) {
+          if (type.includes('rent')) rentTotal += t.charge;
+          else if (type.includes('deposit') || type.includes('advance')) initialTotal += t.charge;
           else if (type.includes('parking')) parkingTotal += t.charge;
           else if (type.includes('water')) waterTotal += t.charge;
           else if (type.includes('contribution')) contributionTotal += t.charge;
@@ -535,24 +715,24 @@
           <div class="bk-sub">${info.roomtype || 'Apartment'}</div>
         </div>
         <div class="breakdown-card">
-          <div class="bk-label">Security Deposit</div>
-          <div class="bk-value">₱${depositTotal.toLocaleString(undefined, {minimumFractionDigits:2})}</div>
-          <div class="bk-sub">Fixed ₱1,000</div>
+          <div class="bk-label">Initial Payments</div>
+          <div class="bk-value">₱${initialTotal.toLocaleString(undefined, {minimumFractionDigits:2})}</div>
+          <div class="bk-sub">Deposit & Advance</div>
         </div>
         <div class="breakdown-card">
           <div class="bk-label">Parking Fee</div>
           <div class="bk-value">₱${parkingTotal.toLocaleString(undefined, {minimumFractionDigits:2})}</div>
-          <div class="bk-sub">${parkingTotal > 0 ? 'Fixed ₱1,000' : 'Not Applied'}</div>
+          <div class="bk-sub">${parkingTotal > 0 ? 'Fixed Charge' : 'None'}</div>
         </div>
         <div class="breakdown-card">
           <div class="bk-label">Water Bill</div>
           <div class="bk-value">₱${waterTotal.toLocaleString(undefined, {minimumFractionDigits:2})}</div>
-          <div class="bk-sub">${totalOccupants} × ₱100/person</div>
+          <div class="bk-sub">${totalOccupants} pax × ₱100</div>
         </div>
         <div class="breakdown-card">
           <div class="bk-label">Contribution</div>
-          <div class="bk-value">₱0.00</div>
-          <div class="bk-sub">No charges</div>
+          <div class="bk-value">₱${contributionTotal.toLocaleString(undefined, {minimumFractionDigits:2})}</div>
+          <div class="bk-sub">Security/Garbage</div>
         </div>
       `;
 
@@ -560,11 +740,21 @@
       const tbody = document.getElementById('soa-tbody');
       tbody.innerHTML = '';
 
-      let runningBalance = 0;
+      let runningBalance = balanceForwarded;
       let totalCharges = 0;
       let totalPayments = 0;
 
-      if (filtered.length === 0) {
+      // Balance Forwarded Row
+      if (selectedMonth !== 'all' && balanceForwarded !== 0) {
+          const bfRow = document.createElement('tr');
+          bfRow.innerHTML = `
+            <td colspan="6"><strong>Balance Forwarded from Previous Months (${balanceForwarded < 0 ? 'Overpayment Credit' : 'Unpaid Balance'})</strong></td>
+            <td style="text-align:right; font-weight:700; color:${balanceForwarded > 0 ? 'var(--danger)' : 'var(--success)'}">${balanceForwarded < 0 ? '-' : ''}₱${Math.abs(balanceForwarded).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+          `;
+          tbody.appendChild(bfRow);
+      }
+
+      if (filtered.length === 0 && balanceForwarded === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No transactions found for the selected period.</td></tr>`;
       } else {
         let lastCategory = '';
@@ -605,16 +795,45 @@
       outstandingEl.textContent = '₱' + runningBalance.toLocaleString(undefined, {minimumFractionDigits:2});
       outstandingEl.style.color = runningBalance > 0 ? 'var(--danger)' : 'var(--success)';
 
+      // Update the top Insight Ribbon for this specific tenant
+      const ribbonNet = document.querySelector('.insight-card:nth-child(4) .insight-value');
+      if (ribbonNet) {
+        ribbonNet.textContent = '₱' + Math.abs(runningBalance).toLocaleString(undefined, {minimumFractionDigits:2});
+        ribbonNet.className = 'insight-value ' + (runningBalance > 0 ? 'danger' : 'success');
+      }
+
       // Stamp logic
-      const stampEl = document.getElementById('admin-soa-stamp');
-      if (stampEl) {
-        if (runningBalance <= 0 && filtered.length > 0) {
-          stampEl.style.display = 'block';
-        } else {
-          stampEl.style.display = 'none';
-        }
+      const stampPaid = document.getElementById('admin-soa-stamp-paid');
+      const stampUnpaid = document.getElementById('admin-soa-stamp-unpaid');
+      
+      if (runningBalance <= 0 && (filtered.length > 0 || balanceForwarded < 0)) {
+          stampPaid.style.display = 'block';
+          stampUnpaid.style.display = 'none';
+      } else if (runningBalance > 0) {
+          stampPaid.style.display = 'none';
+          stampUnpaid.style.display = 'block';
+      } else {
+          stampPaid.style.display = 'none';
+          stampUnpaid.style.display = 'none';
       }
     }
+
+    // ══ AUTO-SELECT FROM URL ══
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tid = urlParams.get('tenant_id');
+      const shouldPrint = urlParams.get('print');
+
+      if (tid) {
+        const select = document.getElementById('tenant-select');
+        select.value = tid;
+        updateMonthsAndSOA();
+
+        if (shouldPrint === '1') {
+            setTimeout(() => window.print(), 800); 
+        }
+      }
+    });
 
     function getCategoryGroup(type) {
       const t = (type || '').toLowerCase();
