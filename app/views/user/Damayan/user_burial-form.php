@@ -1262,16 +1262,45 @@ Auth::protect();
         }
     });
 
-    document.getElementById('btn-submit').addEventListener('click', function() {
+    document.getElementById('btn-submit').addEventListener('click', async function() {
         this.disabled = true;
+        const originalHTML = this.innerHTML;
         this.innerHTML = '<svg class="animate-spin" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:white;stroke-width:2;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"></path></svg> Submitting...';
         
-        setTimeout(() => {
-            const toast = document.getElementById('toast');
-            toast.textContent = 'Burial service request submitted successfully!';
-            toast.style.display = 'block';
-            setTimeout(() => window.location.href = '<?= url("/user/services/burial-dashboard") ?>', 2000);
-        }, 1500);
+        // Gather data from steps
+        const formData = {
+            firstName: document.querySelector('input[placeholder="First Name"]').value,
+            lastName: document.querySelector('input[placeholder="Last Name"]').value,
+            dob: document.querySelector('input[type="date"]').value,
+            dod: document.querySelectorAll('input[type="date"]')[1].value,
+            pod: document.querySelector('input[placeholder="Complete address of death occurrence"]').value,
+            residence: document.querySelector('input[placeholder="Complete home address"]').value,
+            religion: document.querySelector('select[value="Islam"]')?.value || 'Islam',
+            relationship: document.querySelector('input[placeholder="Relationship"]').value || 'Relative'
+        };
+
+        try {
+            const res = await fetch('<?= url("/user/services/burial/submit") ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                const toast = document.getElementById('toast');
+                toast.textContent = 'Burial service request submitted successfully! Ref: ' + data.ref_id;
+                toast.style.display = 'block';
+                setTimeout(() => window.location.href = '<?= url("/user/services/burial-dashboard") ?>', 2000);
+            } else {
+                throw new Error('Failed to save');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Failed to submit request. Please try again.');
+            this.disabled = false;
+            this.innerHTML = originalHTML;
+        }
     });
 
     // Set real-time date in top bar

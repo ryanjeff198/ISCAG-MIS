@@ -11,20 +11,25 @@ $d = array_merge($d, $e);
 $name = htmlspecialchars(($d['first_name']??'').' '.($d['last_name']??''));
 $init = strtoupper(substr($d['first_name']??'S',0,1));
 
-// Mock Active Burial Request — will be replaced with DB data
-$activeBurial = [
-    'ref_id' => 'BR-' . str_pad($_SESSION['user_id'] ?? 1, 5, '0', STR_PAD_LEFT),
-    'status' => 'pending',
-    'submitted_at' => date('Y-m-d H:i:s'),
-    'deceased_name' => 'Juan Dela Cruz',
-    'date_of_death' => date('Y-m-d', strtotime('-2 days')),
-    'place_of_death' => 'Manila Medical Center',
-    'religion' => 'Islam',
-    'relationship' => 'Son'
+// Fetch Actual Burial Requests from DB
+require_once BASE_PATH . '/app/models/BurialRequest.php';
+$burialModel = new BurialRequest();
+$allRequests = $burialModel->getByTenantId($_SESSION['user_id']);
+
+// Use the most recent request as the "active" one for the dashboard summary
+$activeBurial = !empty($allRequests) ? $allRequests[0] : [
+    'ref_id' => 'NONE',
+    'status' => 'No active request',
+    'submitted_at' => null,
+    'deceased_name' => 'N/A',
+    'date_of_death' => null,
+    'place_of_death' => 'N/A',
+    'religion' => 'N/A',
+    'relationship' => 'N/A'
 ];
 
-$hasPending = $activeBurial['status'] === 'pending';
-$hasApproved = $activeBurial['status'] === 'approved';
+$hasPending = strtolower($activeBurial['status']) === 'pending';
+$hasApproved = strtolower($activeBurial['status']) === 'approved' || strtolower($activeBurial['status']) === 'verified' || strtolower($activeBurial['status']) === 'arrived';
 $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery Coordination"];
 ?>
 <!DOCTYPE html>
@@ -231,22 +236,52 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
     </div>
   </div>
 
-  <!-- Included Services -->
-  <div class="card services-card">
-    <h3>Included Services</h3>
-    <div class="services-grid">
-      <?php foreach($services as $svc): ?>
-      <div class="service-item">
-        <div class="service-check <?= $hasApproved ? 'included' : 'pending' ?>">
-          <?php if($hasApproved): ?>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+  <!-- Request History Table -->
+  <div class="card services-card" style="margin-top: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 style="margin: 0;">My Burial Requests</h3>
+      <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); background: var(--bg); padding: 4px 12px; border-radius: 100px;">Total: <?= count($allRequests) ?></span>
+    </div>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border); text-align: left;">
+            <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Ref ID</th>
+            <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Deceased Name</th>
+            <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Relationship</th>
+            <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Date Submitted</th>
+            <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Status</th>
+            <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php if(empty($allRequests)): ?>
+            <tr><td colspan="6" style="padding: 30px; text-align: center; color: var(--text-muted);">No requests found.</td></tr>
           <?php else: ?>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <?php foreach($allRequests as $r): ?>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 16px 12px; font-weight: 700; color: var(--primary);">#<?= $r['ref_id'] ?></td>
+              <td style="padding: 16px 12px; font-weight: 600;"><?= htmlspecialchars($r['deceased_name']) ?></td>
+              <td style="padding: 16px 12px;"><?= htmlspecialchars($r['relationship']) ?></td>
+              <td style="padding: 16px 12px; color: var(--text-muted);"><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
+              <td style="padding: 16px 12px;">
+                <?php 
+                  $st = strtolower($r['status']);
+                  $sc = $st === 'pending' ? '#fffbeb' : ($st === 'completed' ? 'var(--success-light)' : '#e0f2fe');
+                  $tc = $st === 'pending' ? 'var(--gold)' : ($st === 'completed' ? 'var(--success)' : '#0369a1');
+                ?>
+                <span style="padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; background: <?= $sc ?>; color: <?= $tc ?>;">
+                  <?= ucfirst($r['status']) ?>
+                </span>
+              </td>
+              <td style="padding: 16px 12px;">
+                <a href="<?= url('/user/services/burial-details?id=' . $r['ref_id']) ?>" style="color: var(--primary); font-weight: 700; text-decoration: none; font-size: 0.85rem;">View Details</a>
+              </td>
+            </tr>
+            <?php endforeach; ?>
           <?php endif; ?>
-        </div>
-        <span class="service-name"><?= $svc ?></span>
-      </div>
-      <?php endforeach; ?>
+        </tbody>
+      </table>
     </div>
   </div>
   

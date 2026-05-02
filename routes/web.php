@@ -79,6 +79,8 @@ $routes = [
     '/user/services/counseling/resources' => ['UserController', 'counselingResources'],
     '/user/services/counseling/submit' => ['UserController', 'submitCounseling'],
     '/user/services/charity' => ['UserController', 'charity'],
+    '/user/services/burial/submit' => ['UserController', 'submitBurial'],
+    '/user/services/charity/submit' => ['UserController', 'submitDonation'],
     '/user/apartment/apply' => ['UserController', 'apartmentApply'],
 
     // Admin Modules (New)
@@ -106,6 +108,7 @@ $routes = [
     '/admin/dawah/marriage'          => ['AdminController', 'dawahMarriage'],
     '/admin/dawah/schedule'          => ['AdminController', 'dawahSchedule'],
     '/admin/dawah/analytics'         => ['AdminController', 'dawahAnalytics'],
+    '/admin/dawah/notifications'     => ['AdminController', 'dawahNotifications'],
     '/admin/dawah/toggle-availability'=> ['AdminController', 'toggleDawahAvailability'],
     '/admin/dawah/availability/toggle'=> ['AdminController', 'toggleDawahAvailability'],
     '/admin/dawah/schedule/assign'    => ['AdminController', 'assignDawahSchedule'],
@@ -113,6 +116,14 @@ $routes = [
     '/admin/dawah/counseling/reject'  => ['AdminController', 'rejectCounseling'],
     '/admin/damayan'                 => ['AdminController', 'damayanAdminDashboard'],
     '/admin/damayan/profile'         => ['AdminController', 'damayanProfile'],
+    '/admin/damayan/burial'          => ['AdminController', 'damayanBurial'],
+    '/admin/damayan/charity'         => ['AdminController', 'damayanCharity'],
+    '/admin/damayan/notifications'   => ['AdminController', 'damayanNotifications'],
+    '/admin/damayan/burial/update'   => ['AdminController', 'updateBurialStatus'],
+    '/admin/damayan/analytics'       => ['AdminController', 'damayanAnalytics'],
+    '/admin/damayan/burial-requests' => ['AdminController', 'damayanBurialRequests'],
+    '/admin/damayan/finance'         => ['AdminController', 'damayanFinance'],
+    '/admin/damayan/liquidation/submit' => ['AdminController', 'submitLiquidation'],
     '/admin/dawah/male/profile'      => ['AdminController', 'dawahMaleProfile'],
     '/admin/payment'                 => ['AdminController', 'payment'],
 

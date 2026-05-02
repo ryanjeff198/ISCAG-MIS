@@ -521,4 +521,58 @@ class UserController extends Controller
             'message' => $success ? 'Request submitted successfully.' : 'Failed to save request.'
         ]);
     }
+    public function submitBurial(): void {
+        Auth::protect();
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false]); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        
+        $refId = 'BR-' . date('Ymd') . '-' . substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 4);
+        
+        $data = [
+            'ref_id' => $refId,
+            'tenant_id' => $_SESSION['user_id'],
+            'deceased_name' => ($input['firstName'] ?? '') . ' ' . ($input['lastName'] ?? ''),
+            'date_of_birth' => $input['dob'] ?? null,
+            'date_of_death' => $input['dod'] ?? date('Y-m-d'),
+            'place_of_death' => $input['pod'] ?? 'N/A',
+            'residence' => $input['residence'] ?? 'N/A',
+            'religion' => $input['religion'] ?? 'Islam',
+            'relationship' => $input['relationship'] ?? 'Relative'
+        ];
+
+        $success = $model->create($data);
+        echo json_encode(['success' => $success, 'ref_id' => $refId]);
+        exit;
+    }
+
+    public function submitDonation(): void {
+        Auth::protect();
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false]); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        require_once BASE_PATH . '/app/models/CharityDonation.php';
+        $model = new CharityDonation();
+        
+        $data = [
+            'tenant_id' => $_SESSION['user_id'],
+            'donor_name' => $_SESSION['name'] ?? 'Self',
+            'amount' => $input['amount'] ?? 0,
+            'program_id' => $input['program_id'] ?? 1
+        ];
+
+        $success = $model->create($data);
+        echo json_encode(['success' => $success]);
+        exit;
+    }
 }

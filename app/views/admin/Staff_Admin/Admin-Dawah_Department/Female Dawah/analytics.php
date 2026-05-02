@@ -186,58 +186,6 @@ Auth::protectRole(['Admin', 'Staff_Female']);
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:24px;">
-          <div class="section-card">
-            <div class="section-card-header">
-              <h6>
-                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:var(--accent);margin-right:8px;"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
-                Active Enrollment by Age
-              </h6>
-            </div>
-            <div class="section-card-body" style="max-height: 300px; overflow-y: auto;">
-              <?php if (!empty($education['active_ages'])): ?>
-                <table style="width:100%; font-size:0.85rem; border-collapse:collapse;">
-                  <thead>
-                    <tr style="text-align:left; border-bottom:1px solid var(--border);">
-                      <th style="padding:10px 0;">Student Age</th>
-                      <th style="padding:10px 0; text-align:right;">Active Students</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php foreach ($education['active_ages'] as $age => $count): ?>
-                      <tr style="border-bottom:1px solid var(--border-light);">
-                        <td style="padding:10px 0; font-weight:600;"><?= $age ?> years old</td>
-                        <td style="padding:10px 0; text-align:right; font-weight:800; color:var(--primary);"><?= $count ?> students</td>
-                      </tr>
-                    <?php endforeach; ?>
-                  </tbody>
-                </table>
-              <?php else: ?>
-                <div style="text-align:center; color:var(--text-muted); padding:40px;">No active students with recorded age.</div>
-              <?php endif; ?>
-            </div>
-          </div>
-
-          <div class="section-card">
-            <div class="section-card-header">
-              <h6>
-                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:var(--accent);margin-right:8px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-                Student Demographics Summary
-              </h6>
-            </div>
-            <div class="section-card-body">
-              <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.6; margin:0;">
-                The majority of active students are in the 
-                <strong><?php 
-                  $groups = $education['age_groups'] ?? [];
-                  arsort($groups);
-                  echo ucfirst(str_replace('_', ' ', array_key_first($groups)));
-                ?></strong> category. 
-                This data helps the Female Da'wah department allocate resources and tailor curricula to the specific needs of different age groups.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>

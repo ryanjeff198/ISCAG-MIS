@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
     :root {
-      --damayan-accent: #dc2626;
-      --damayan-dark: #991b1b;
-      --damayan-light: #fef2f2;
+      --damayan-accent: #176b45;
+      --damayan-dark: #0f5c3a;
+      --damayan-light: #e8f5ed;
     }
     .admin-insights {
       display: grid;
@@ -123,6 +123,7 @@
     syncSessionUser('<?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>', '<?= $dbUser['email'] ?? '' ?>', '<?= $_SESSION['role'] ?? '' ?>');
     standardizePage('staff');
     const records = <?= json_encode($records ?? []) ?>;
+    const analytics = <?= json_encode($analytics ?? []) ?>;
     
     function renderTable(filter = 'all') {
       const tbody = document.getElementById('request-tbody');
@@ -142,7 +143,7 @@
           <td>${r.date}</td>
           <td><span class="badge-status ${r.status_class}">${r.status}</span></td>
           <td>
-            <button class="btn-action" style="color:#dc2626;">Manage</button>
+            <button class="btn-action" style="color:var(--damayan-accent);" onclick="${r.type === 'burial' ? `manageBurial('${r.id}')` : `location.href='<?= url('/admin/damayan/charity') ?>'`}">Notify</button>
           </td>
         </tr>
       `).join('');
@@ -154,8 +155,47 @@
       renderTable(type);
     }
     
+    // Manage Burial Logic
+    let activeBurialId = null;
+    function manageBurial(id) {
+      activeBurialId = id;
+      showConfirm(
+        'Manage Burial Request', 
+        `Update the status for request #${id}? This will automatically notify the family.`,
+        'Notify Arrival',
+        () => updateStatus('arrived'),
+        'Notify & Complete',
+        () => updateStatus('completed')
+      );
+    }
+
+    async function updateStatus(newStatus) {
+      try {
+        const res = await fetch('<?= url('/admin/damayan/burial/update') ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: activeBurialId, status: newStatus })
+        });
+        const data = await res.json();
+        if(data.success) {
+          showAlert('Success', 'Status updated and family notified.', 'success');
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          showAlert('Error', 'Failed to update status.', 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        showAlert('Error', 'An unexpected error occurred.', 'error');
+      }
+    }
+
+    // Interactive Insights
+    document.querySelectorAll('.insight-card')[0].onclick = () => location.href = "<?= url('/admin/damayan/burial') ?>";
+    document.querySelectorAll('.insight-card')[1].onclick = () => location.href = "<?= url('/admin/damayan/charity') ?>";
+    document.querySelectorAll('.insight-card')[2].style.cursor = 'default';
+    document.querySelectorAll('.insight-card')[3].onclick = () => location.href = "<?= url('/admin/damayan/notifications') ?>";
+
     // Stats
-    const analytics = <?= json_encode($analytics ?? ['burial' => 0, 'charity' => 0, 'completed' => 0, 'pending' => 0]) ?>;
     document.getElementById('stat-burial').textContent = analytics.burial || 0;
     document.getElementById('stat-charity').textContent = analytics.charity || 0;
     document.getElementById('stat-completed').textContent = analytics.completed || 0;

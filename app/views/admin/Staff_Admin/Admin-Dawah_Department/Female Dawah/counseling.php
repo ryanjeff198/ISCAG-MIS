@@ -217,25 +217,30 @@ Auth::protectRole(['Admin', 'Staff_Female']);
         showAlert('Service Update', 'The Reschedule module is currently undergoing system synchronization. Please check back shortly.', 'info');
         return;
       }
-      if(!confirm(`Are you sure you want to ${action} this request?`)) return;
-      try {
-        const endpoint = action === 'approve' ? '/admin/dawah/counseling/approve' : '/admin/dawah/counseling/reject';
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
-        });
-        const result = await response.json();
-        if(result.success) {
-          showAlert('Action Successful', `The request has been ${action}d successfully.`, 'success');
-          setTimeout(() => location.reload(), 1500);
-        } else {
-          showAlert('Action Failed', 'The system could not process this request. Please verify your connection.', 'error');
+      
+      const title = action === 'approve' ? 'Approve Request' : 'Reject Request';
+      const message = `Are you sure you want to ${action} this counseling request? This action will update the applicant's status immediately.`;
+      
+      showConfirm(title, message, async () => {
+        try {
+          const endpoint = action === 'approve' ? '/admin/dawah/counseling/approve' : '/admin/dawah/counseling/reject';
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          const result = await response.json();
+          if(result.success) {
+            showAlert('Action Successful', `The request has been ${action}d successfully.`, 'success');
+            setTimeout(() => location.reload(), 1500);
+          } else {
+            showAlert('Action Failed', 'The system could not process this request. Please verify your connection.', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          showAlert('System Error', 'A critical error occurred during the update process.', 'error');
         }
-      } catch (err) {
-        console.error(err);
-        showAlert('System Error', 'A critical error occurred during the update process.', 'error');
-      }
+      }, action === 'approve' ? 'success' : 'danger');
     }
 
     renderTabs();

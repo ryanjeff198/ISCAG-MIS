@@ -720,7 +720,7 @@ body {
   font-weight: 600;
 }
 
-.nav-item.active svg { opacity: 1; fill: var(--active-accent, var(--accent-light)); }
+.nav-item.active svg { opacity: 1; fill: var(--accent-light); }
 
 /* ── Notification Red Dot Badge ── */
 .notif-dot {

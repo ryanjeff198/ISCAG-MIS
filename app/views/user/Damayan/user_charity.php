@@ -1,3 +1,15 @@
+<?php
+if (!defined('BASE_PATH')) define('BASE_PATH', dirname(__DIR__, 4));
+require_once BASE_PATH . '/app/helpers/Auth.php';
+Auth::protect();
+require_once BASE_PATH . '/app/models/CharityDonation.php';
+
+$donationModel = new CharityDonation();
+$myDonations = $donationModel->getByTenantId($_SESSION['user_id']);
+$totalDonated = array_reduce($myDonations, function($acc, $curr) {
+    return $acc + (strtolower($curr['status']) === 'verified' ? $curr['amount'] : 0);
+}, 0);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -488,95 +500,57 @@
         </div>
       </section>
 
-      <!-- ═══ Schedule & Announcements Section ═══ -->
-      <section class="schedule-section">
-        <div class="section-header">
-          <h2>Upcoming Events & Schedule</h2>
-          <p>Stay updated with our community programs, charity drives, and spiritual gatherings.</p>
+      <!-- ═══ Contribution History ═══ -->
+      <section class="transparency-section" style="text-align: left; padding: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+          <div>
+            <h2 style="font-size: 1.8rem; margin-bottom: 8px;">Contribution History</h2>
+            <p style="font-size: 0.95rem; color: var(--text-muted);">Thank you for your generous support of the ISCAG programs.</p>
+          </div>
+          <div style="background: var(--primary-green); color: white; padding: 12px 24px; border-radius: 12px; font-weight: 800;">
+            Total Donated: ₱<?= number_format($totalDonated, 2) ?>
+          </div>
         </div>
 
-        <div class="schedule-grid">
-          <!-- Left: Detailed Schedule -->
-          <div class="schedule-list">
-            <h4 style="margin-bottom:24px; color:var(--primary-green); display:flex; align-items:center; gap:10px;">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-              Weekly Activity Schedule
-            </h4>
-            
-            <article class="schedule-item">
-              <div class="schedule-date">
-                <span class="day">15</span>
-                <span class="month">May</span>
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:0.75rem; font-weight:800; color:var(--accent-gold); text-transform:uppercase; margin-bottom:4px;">Charity Drive</div>
-                <h5 style="font-size:1.1rem; color:var(--primary-green); margin-bottom:8px;">Community Food Distribution</h5>
-                <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Monthly distribution of essential food packs to registered indigent families.</p>
-                <div style="display:flex; gap:16px; font-size:0.75rem; color:var(--text-muted); font-weight:600;">
-                  <span>📍 ISCAG Main Gate</span>
-                  <span>⏰ 09:00 AM - 12:00 PM</span>
-                </div>
-              </div>
-            </article>
-
-            <article class="schedule-item">
-              <div class="schedule-date">
-                <span class="day">22</span>
-                <span class="month">May</span>
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:0.75rem; font-weight:800; color:var(--primary-green); text-transform:uppercase; margin-bottom:4px;">Medical Mission</div>
-                <h5 style="font-size:1.1rem; color:var(--primary-green); margin-bottom:8px;">General Health Check-up for Reverts</h5>
-                <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Free medical consultations and basic medicine distribution for the revert community.</p>
-                <div style="display:flex; gap:16px; font-size:0.75rem; color:var(--text-muted); font-weight:600;">
-                  <span>📍 ISCAG Clinic</span>
-                  <span>⏰ 08:30 AM - 04:00 PM</span>
-                </div>
-              </div>
-            </article>
-
-            <article class="schedule-item">
-              <div class="schedule-date">
-                <span class="day">28</span>
-                <span class="month">May</span>
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:0.75rem; font-weight:800; color:#4a90e2; text-transform:uppercase; margin-bottom:4px;">Education</div>
-                <h5 style="font-size:1.1rem; color:var(--primary-green); margin-bottom:8px;">School Supplies Handover Ceremony</h5>
-                <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Awarding ceremony for the Educational Support Fund beneficiaries.</p>
-                <div style="display:flex; gap:16px; font-size:0.75rem; color:var(--text-muted); font-weight:600;">
-                  <span>📍 ISCAG Multi-purpose Hall</span>
-                  <span>⏰ 02:00 PM - 05:00 PM</span>
-                </div>
-              </div>
-            </article>
-          </div>
-
-          <!-- Right: Announcements -->
-          <div>
-            <h4 style="margin-bottom:24px; color:var(--primary-green); display:flex; align-items:center; gap:10px;">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-              Important Announcements
-            </h4>
-            
-            <div class="announcement-card">
-              <span class="announcement-tag">Critical Update</span>
-              <h5 style="font-size:1.4rem; color:var(--primary-green); margin-bottom:16px;">New Burial Assistance Hotline</h5>
-              <p style="font-size:1rem; line-height:1.7; color:var(--text-muted); margin-bottom:24px;">
-                The Damayan department has officially launched a 24/7 dedicated hotline for emergency burial coordination. 
-                This service ensures immediate assistance for families during their most difficult times.
-              </p>
-              <div style="background:var(--bg-soft); padding:20px; border-radius:16px; border:1px solid var(--border-light); text-align:center;">
-                <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Emergency Number</div>
-                <div style="font-size:1.8rem; font-weight:900; color:var(--primary-green); letter-spacing:1px;">0956 029 4935</div>
-              </div>
-            </div>
-
-            <div style="margin-top:24px; padding:24px; background:rgba(23, 107, 69, 0.04); border-radius:20px; border:1px dashed var(--primary-light);">
-              <h6 style="color:var(--primary-green); margin-bottom:8px; font-weight:800;">Volunteer with Damayan</h6>
-              <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5;">Our programs rely on the strength of our volunteers. Join us in making a difference. Send a message to get involved.</p>
-            </div>
-          </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border-light); text-align: left;">
+                <th style="padding: 16px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Date</th>
+                <th style="padding: 16px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Target Program</th>
+                <th style="padding: 16px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Amount</th>
+                <th style="padding: 16px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Status</th>
+                <th style="padding: 16px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Ref No.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if(empty($myDonations)): ?>
+                <tr><td colspan="5" style="padding: 30px; text-align: center; color: var(--text-muted);">No contributions recorded yet.</td></tr>
+              <?php else: ?>
+                <?php foreach($myDonations as $don): ?>
+                <tr style="border-bottom: 1px solid var(--border-light);">
+                  <td style="padding: 20px 12px; font-weight: 600;"><?= date('M d, Y', strtotime($don['submitted_at'])) ?></td>
+                  <td style="padding: 20px 12px;">
+                    <?php 
+                      $pNames = [1 => 'Medical Assistance', 2 => 'Food Security', 3 => 'Educational Aid'];
+                      echo $pNames[$don['program_id']] ?? 'General Welfare';
+                    ?>
+                  </td>
+                  <td style="padding: 20px 12px; font-weight: 800; color: var(--primary-green);">₱<?= number_format($don['amount'], 2) ?></td>
+                  <td style="padding: 20px 12px;">
+                    <?php 
+                      $st = strtolower($don['status']);
+                      $bg = $st === 'verified' ? '#e8f5e9' : ($st === 'rejected' ? '#fee2e2' : '#fffbeb');
+                      $fg = $st === 'verified' ? '#2e7d32' : ($st === 'rejected' ? '#dc2626' : '#d97706');
+                    ?>
+                    <span style="background: <?= $bg ?>; color: <?= $fg ?>; padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;"><?= $don['status'] ?></span>
+                  </td>
+                  <td style="padding: 20px 12px; font-family: monospace; color: var(--text-muted);">#<?= substr(md5($don['id']), 0, 8) ?></td>
+                </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
         </div>
       </section>
 
