@@ -666,26 +666,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         </div>
 
         <?php if (($account['role'] ?? '') === 'Tenant'): ?>
-        <!-- TENANT DASHBOARD (TENANT ONLY) -->
-        <div class="section-card" style="margin-bottom: 24px;">
-            <div class="section-card-header" style="background: linear-gradient(135deg, #0f5c3a, #176b45); color: white;">
-                <h6 style="color: white; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;">
-                        <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm5 15h-2v-6H9v6H7v-7.81l5-4.5 5 4.5V18z"/>
-                    </svg>
-                    My Apartment Details
-                </h6>
-            </div>
-            <div class="section-card-body">
-                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">You are now an official tenant. Your account has full access to the MIS Tenant features. You can view your current unit assignment and lease details below.</p>
-                <div style="margin-top: 16px;">
-                    <a href="<?= url('/user/apartment/info') ?>" class="btn-topbar primary" style="text-decoration: none; display: inline-block;">
-                        <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; margin-right: 6px;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                        View Apartment Details
-                    </a>
-                </div>
-            </div>
-        </div>
+        <!-- TENANT ONBOARDING (TENANT ONLY) -->
 
         <!-- Tenant Onboarding Guide Modal -->
         <div id="tenant-onboarding-modal" style="
