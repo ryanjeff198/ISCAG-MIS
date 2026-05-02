@@ -330,6 +330,11 @@
               <button class="btn-topbar" id="btn-show-paid" onclick="setMasterFilter('paid')" style="border-radius: 8px; border-color: var(--border); height: 42px;">Show Only Paid</button>
             </div>
           </div>
+          <div id="month-filter-container" style="flex: 1; display: flex; justify-content: center; padding-top: 1px;">
+            <select id="month-filter" onchange="onMonthFilterChange()" style="width:220px; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:0.95rem; height:42px;">
+            </select>
+          </div>
+
           <div style="flex: none; width: 300px; margin-left: auto; display: flex; flex-direction: column; gap: 8px;" id="search-slot">
             <!-- Search bar (visible in list view) -->
             <div class="table-search-container" id="search-container">
@@ -337,12 +342,6 @@
                 <input type="text" id="tenant-search" class="table-search-input" placeholder="Search name or room..." oninput="applyFilters()">
                 <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
               </div>
-            </div>
-            <!-- Month filter (visible in detail view) -->
-            <div id="month-filter-container" style="display: none;">
-              <select id="month-filter" onchange="generateSOA()" style="width:220px; padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:0.95rem; height:42px; margin-left:auto;">
-                <option value="all">All Time History</option>
-              </select>
             </div>
           </div>
         </div>
@@ -471,8 +470,24 @@
     const tenantBalances = {};
     const tenantTotals = {}; 
 
+    // === GLOBAL FILTER INITIALIZATION ===
+    const allMonths = [...new Set(transactions.map(t => t.date.substring(0, 7)))].sort();
+    const globalFilter = document.getElementById('month-filter');
+    globalFilter.innerHTML = '';
+    allMonths.forEach(m => {
+        const date = new Date(m + '-01');
+        const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        globalFilter.innerHTML += `<option value="${m}">${label}</option>`;
+    });
+    globalFilter.innerHTML += '<option value="all">All Time History</option>';
+    if (allMonths.length > 0) {
+        globalFilter.value = allMonths[0]; // default to first month
+    }
+
     // === INITIALIZATION ===
     function calculateData() {
+        const selectedMonth = globalFilter.value;
+
         tenants.forEach(t => {
             const tid = t.tenant_id || t.id;
             tenantBalances[tid] = 0;
@@ -482,11 +497,41 @@
         transactions.forEach(t => {
             const tid = t.tenant_id;
             if (tenantBalances[tid] === undefined) return;
+            
+            if (selectedMonth !== 'all' && !t.date.startsWith(selectedMonth)) return;
+
             tenantBalances[tid] += (parseFloat(t.charge) - parseFloat(t.payment));
             tenantTotals[tid].charges += parseFloat(t.charge);
             tenantTotals[tid].payments += parseFloat(t.payment);
         });
     }
+
+    function onMonthFilterChange() {
+        calculateData();
+        initMasterTable();
+        
+        let newNet = 0;
+        transactions.forEach(t => {
+            // IGNORE ghost admin leases: only calculate for visible tenants in the array
+            if (tenantBalances[t.tenant_id] === undefined) return;
+            
+            if (globalFilter.value !== 'all' && !t.date.startsWith(globalFilter.value)) return;
+            newNet += (parseFloat(t.charge || 0) - parseFloat(t.payment || 0));
+        });
+        
+        const ribbon = document.getElementById('ribbon-net-standing');
+        if (ribbon) {
+            ribbon.className = 'insight-value ' + (newNet > 0 ? 'danger' : 'success');
+            ribbon.textContent = '₱' + Math.abs(newNet).toLocaleString(undefined, {minimumFractionDigits:2});
+        }
+
+        if (currentTenantId) {
+            generateSOA();
+        }
+    }
+    
+    // Kickstart the filter to build the initial ribbon properly
+    onMonthFilterChange();
 
     function initMasterTable() {
         const body = document.getElementById('master-tenant-body');
@@ -542,21 +587,19 @@
         currentTenantId = tid;
         document.getElementById('soa-list-view').style.display = 'none';
         document.getElementById('soa-detail-view').style.display = 'block';
-        // Swap controls: hide filters & search, show month filter centered
+        // Hide master filtering buttons, keep month filter
         document.getElementById('filter-buttons-group').style.display = 'none';
         document.getElementById('search-container').style.display = 'none';
-        document.getElementById('month-filter-container').style.display = 'block';
-        updateMonthsAndSOA();
+        generateSOA();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function showListView() {
         document.getElementById('soa-list-view').style.display = 'block';
         document.getElementById('soa-detail-view').style.display = 'none';
-        // Swap controls: show filters & search, hide month filter
+        // Show master filtering buttons
         document.getElementById('filter-buttons-group').style.display = 'flex';
         document.getElementById('search-container').style.display = 'block';
-        document.getElementById('month-filter-container').style.display = 'none';
         currentTenantId = null;
     }
 
@@ -595,26 +638,6 @@
     }
 
     // === SOA DOCUMENT LOGIC ===
-    function updateMonthsAndSOA() {
-        if (!currentTenantId) return;
-        const tenantTransactions = transactions.filter(t => t.tenant_id == currentTenantId);
-        const months = [...new Set(tenantTransactions.map(t => t.date.substring(0, 7)))].sort();
-        
-        const filter = document.getElementById('month-filter');
-        filter.innerHTML = '';
-        months.forEach(m => {
-            const date = new Date(m + '-01');
-            const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            filter.innerHTML += `<option value="${m}">${label}</option>`;
-        });
-        filter.innerHTML += '<option value="all">All Time History</option>';
-        
-        if (months.length > 0) {
-            filter.value = months[0];
-        }
-        
-        generateSOA();
-    }
 
     // === HELPER FUNCTIONS (Matching tenant_soa.php exactly) ===
     function getCategoryLabel(type) {
