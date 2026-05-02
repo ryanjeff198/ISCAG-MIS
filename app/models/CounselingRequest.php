@@ -74,4 +74,10 @@ class CounselingRequest
         $stmt->execute(['id' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function updateStatus(int $id, string $status): bool
+    {
+        $stmt = $this->db->prepare("UPDATE {$this->table} SET status = :status WHERE id = :id");
+        return $stmt->execute(['status' => strtolower($status), 'id' => $id]);
+    }
 }

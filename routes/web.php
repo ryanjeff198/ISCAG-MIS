@@ -64,6 +64,7 @@ $routes = [
     '/user/apartment/payment'        => ['ApartmentController', 'payment'],
     '/user/apartment/payment/submit' => ['ApartmentController', 'submitPayment'],
     '/user/apartment/soa'            => ['ApartmentController', 'soa'],
+    '/user/apartment/maintenance/submit' => ['ApartmentController', 'submitMaintenance'],
 
     // Service Modules
     '/user/services/burial-form'      => ['UserController', 'burialForm'],
@@ -74,7 +75,7 @@ $routes = [
     '/user/services/counseling/resources' => ['UserController', 'counselingResources'],
     '/user/services/counseling/submit' => ['UserController', 'submitCounseling'],
     '/user/services/charity' => ['UserController', 'charity'],
-    '/user/apartment/apply' => ['UserController', 'apartmentApply'],
+    // '/user/apartment/apply' => ['UserController', 'apartmentApply'],
 
     // Admin Modules (New)
     '/admin/apartment'               => ['AdminController', 'apartment'],
@@ -128,6 +129,14 @@ $routes = [
     '/admin/mis_admin/notification/read'   => ['AdminController', 'markAdminNotifRead'],
     '/admin/mis_admin/notification/read_all' => ['AdminController', 'markAllAdminNotifsRead'],
     '/admin/mis_admin/renewal_records'     => ['AdminController', 'renewalRecords'],
+    '/admin/mis_admin/maintenance'         => ['AdminController', 'maintenanceRequests'],
+    '/admin/mis_admin/maintenance/approve' => ['AdminController', 'approveMaintenance'],
+    '/admin/mis_admin/maintenance/reject'  => ['AdminController', 'rejectMaintenance'],
+    '/admin/mis_admin/maintenance/resolve' => ['AdminController', 'resolveMaintenance'],
+    '/admin/apartment/maintenance'         => ['AdminController', 'maintenanceRequests'],
+    '/admin/apartment/maintenance/approve' => ['AdminController', 'approveMaintenance'],
+    '/admin/apartment/maintenance/reject'  => ['AdminController', 'rejectMaintenance'],
+    '/admin/apartment/maintenance/resolve' => ['AdminController', 'resolveMaintenance'],
     '/admin/mis_admin/tenant_image'        => ['AdminController', 'serveTenantImage'],
     '/admin/mis_admin/broadcast/users'     => ['AdminController', 'getBroadcastUsers'],
     '/admin/mis_admin/broadcast/send'      => ['AdminController', 'processBroadcast'],

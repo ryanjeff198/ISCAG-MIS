@@ -3,6 +3,8 @@
 require_once BASE_PATH . '/app/controllers/Controller.php';
 require_once BASE_PATH . '/app/models/User.php';
 require_once BASE_PATH . '/app/helpers/Mailer.php';
+require_once BASE_PATH . '/app/helpers/AuditLogger.php';
+require_once BASE_PATH . '/app/helpers/Security.php';
 
 class AuthController extends Controller
 {
@@ -36,6 +38,8 @@ class AuthController extends Controller
                 $_SESSION['name'] = $user['first_name'] . ' ' . $user['last_name'];
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['sex'] = $user['sex'] ?? $user['gender'] ?? 'Male';
+                
+                AuditLogger::log('AUTH', 'LOGIN', "User logged into the system");
 
                 // Redirect based on role
                 if ($user['role'] === 'Admin') {
@@ -412,11 +416,11 @@ class AuthController extends Controller
 
     public function logout(): void
     {
+        AuditLogger::log('AUTH', 'LOGOUT', "User logged out of the system");
+
         // Unset all session variables
         $_SESSION = [];
-
-        // If it's desired to kill the session, also delete the session cookie.
-        // Note: This will destroy the session, and not just the session data!
+        
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
             setcookie(session_name(), '', time() - 42000,
