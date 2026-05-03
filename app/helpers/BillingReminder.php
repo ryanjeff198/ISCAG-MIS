@@ -11,7 +11,7 @@ class BillingReminder {
      */
     public static function checkAndNotify(int $tenantId): void {
         $db = getDbConnection();
-        $now = new \DateTime();
+        $now = TimeSim::now('now', $tenantId);
         
         // 1. Get Lease Info
         $leaseModel = new Lease();

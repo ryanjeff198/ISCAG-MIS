@@ -44,6 +44,7 @@ session_start();
 // Require Core Files
 require_once BASE_PATH . '/app/helpers/Security.php';
 require_once BASE_PATH . '/app/helpers/Auth.php';
+require_once BASE_PATH . '/app/helpers/TimeSim.php';
 
 // Load route definitions
 require_once BASE_PATH . '/routes/web.php';

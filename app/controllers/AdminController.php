@@ -454,7 +454,7 @@ class AdminController extends Controller
                 $transactions = [];
                 $totalAdvances = isset($advanceQueues['rent-advance']) ? count($advanceQueues['rent-advance']) : 0;
 
-                $now = clone (new \DateTime());
+                $now = TimeSim::now('now', $selectedTenantId);
                 if ($totalAdvances > 0) $now->modify("+$totalAdvances month"); 
                 
                 $leaseStart = new \DateTime($lease['start_date']);
@@ -528,7 +528,7 @@ class AdminController extends Controller
 
                     foreach ($parkingApps as $pa) {
                         $parkStartStr = $pa['datestarted'] ?: $pa['date'];
-                        if ($simDate >= date('Y-m-d', strtotime($parkStartStr))) {
+                        if ($simDate >= TimeSim::date('Y-m-d', strtotime($parkStartStr))) {
                             $transactions[] = [
                                 'date' => $simDate, 'type' => 'Parking Fee', 'description' => 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle'),
                                 'charge' => 1000.00, 'payment' => 0, 'ref' => 'PKG-' . $pa['parking_id'] . '-' . $currentDate->format('my')
@@ -562,7 +562,7 @@ class AdminController extends Controller
                     ];
                     if ($b['status'] === 'Paid') {
                         $transactions[] = [
-                            'date' => $b['due_date'], 'type' => 'Payment', 'description' => 'Payment Received — Rent',
+                            'date' => TimeSim::date('M d, Y'), 'type' => 'Payment', 'description' => 'Payment Received — Rent',
                             'charge' => 0, 'payment' => (float)$b['amount'], 'ref' => 'PAY-INV-' . $b['billing_id']
                         ];
                     }
@@ -1100,7 +1100,7 @@ class AdminController extends Controller
 
         // ── Build unified transactions array ──
         $transactions = [];
-        $now = new DateTime('now');
+        $nowGlobal = TimeSim::now(); // Admin's current perspective (Real Time)
         // --- CATEGORIZE ADVANCES & CONSUMABLE PAYMENTS ---
         $advanceQueues = []; // [tenant_id][type] => [ payment1, payment2, ... ]
         $consumedPaymentIds = [];
@@ -1125,8 +1125,8 @@ class AdminController extends Controller
             $leaseStart = new DateTime($l['start_date']);
             $currentDate = clone $leaseStart;
             
-            // Simulation logic
-            $myNow = clone $now;
+            $tenantNow = TimeSim::now('now', $tid); 
+            $myNow = clone $tenantNow;
             $totalAdvances = 0;
             if (isset($advanceQueues[$tid]['rent-advance'])) $totalAdvances = count($advanceQueues[$tid]['rent-advance']);
             if ($totalAdvances > 0) $myNow->modify("+$totalAdvances month");
@@ -2415,7 +2415,7 @@ class AdminController extends Controller
      */
     private function getBillingAggregateMetrics(): array {
         $db = getDbConnection();
-        $now = new \DateTime('now');
+        $now = TimeSim::now('now', $tid ?? null);
         $thisMonthKey = $now->format('Y-m');
         $lastMonthKey = (clone $now)->modify('-1 month')->format('Y-m');
 
@@ -2782,7 +2782,7 @@ class AdminController extends Controller
 
         try {
             $db = getDbConnection();
-            $now = new \DateTime('now');
+            $now = TimeSim::now('now', $tid);
             error_log("getTenantBalance: Calculating for TID $tid as of " . $now->format('Y-m-d'));
 
         // Fetch Lease
