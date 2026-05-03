@@ -308,7 +308,42 @@
                       $appStatus = $app ? strtolower($app['status'] ?? '') : 'no-app';
                       $appStatusLabel = $app ? ($app['status'] ?? '—') : 'No Application';
                       $roomtype = $app['roomtype'] ?? '—';
-                      $roomNumber = $app['room_number'] ?? '—';
+                      $roomNumber = '—';
+                      if ($app && !empty($app['room_number'])) {
+                          // Sequential rule: 5 rooms per floor
+                          $roomStr = (string)$app['room_number'];
+                          $isOld = (str_contains($roomStr, 'B') || str_contains($roomStr, '-'));
+                          $numericPart = preg_replace('/\D/', '', $roomStr);
+                          
+                          $appBuilding = $app['building'] ?? 'Building 1';
+                          preg_match('/\d+/', $appBuilding, $bm);
+                          $bDigit = isset($bm[0]) ? substr($bm[0], 0, 1) : '1';
+                          
+                          if ($isOld) {
+                              $seqNum = (int)$numericPart % 100;
+                              $f = floor(($seqNum - 1) / 5) + 1;
+                              $r = (($seqNum - 1) % 5) + 1;
+                              $floorDigit = (string)$f;
+                              $roomPart = str_pad((string)$r, 2, '0', STR_PAD_LEFT);
+                          } else {
+                              if (strlen($numericPart) >= 4) {
+                                  $bDigit = substr($numericPart, 0, 1);
+                                  $floorDigit = substr($numericPart, 1, 1);
+                                  $roomPart = str_pad(substr($numericPart, 2), 2, '0', STR_PAD_LEFT);
+                              } else if (strlen($numericPart) === 3) {
+                                  $floorDigit = substr($numericPart, 0, 1);
+                                  $roomPart = str_pad(substr($numericPart, 1), 2, '0', STR_PAD_LEFT);
+                              } else {
+                                  $floorDigit = '1';
+                                  $roomPart = str_pad($numericPart, 2, '0', STR_PAD_LEFT);
+                              }
+                          }
+                          
+                          $roomPart = substr($roomPart, -2);
+                          if ((int)$roomPart < 1) $roomPart = '01';
+                          
+                          $roomNumber = $bDigit . $floorDigit . $roomPart;
+                      }
                       
                       $dateApplied = $app ? date('M d, Y', strtotime($app['submitted_at'])) : '—';
                       $role = $t['role'] ?? 'Guest';

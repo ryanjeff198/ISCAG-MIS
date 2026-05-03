@@ -205,6 +205,81 @@ class AdminController extends Controller
         ]);
     }
 
+    public function apartmentAnalytics(): void
+    {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $db = getDbConnection();
+        
+        // 1. Basic User Info
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        // 2. Application Status Distribution (Real-time)
+        $appStatsQuery = $db->query("SELECT status, COUNT(*) as count FROM apartmentsapp GROUP BY status")->fetchAll(PDO::FETCH_ASSOC);
+        $appStats = ['Applied'=>0, 'Accepted'=>0, 'Rejected'=>0, 'Pending'=>0, 'Verified'=>0, 'Assigned'=>0];
+        foreach ($appStatsQuery as $row) {
+            $st = ucfirst($row['status']);
+            if (isset($appStats[$st])) $appStats[$st] = (int)$row['count'];
+        }
+
+        // 3. Unit Occupancy (Real-time)
+        $occStatsQuery = $db->query("SELECT status, COUNT(*) as count FROM apartment_units GROUP BY status")->fetchAll(PDO::FETCH_ASSOC);
+        $occStats = ['Available'=>0, 'Occupied'=>0, 'Reserved'=>0];
+        foreach ($occStatsQuery as $row) {
+            $st = ucfirst(strtolower($row['status']));
+            if (isset($occStats[$st])) $occStats[$st] = (int)$row['count'];
+        }
+
+        // 4. Monthly Application Trends
+        $appTrend = $db->query("
+            SELECT DATE_FORMAT(date, '%b %Y') as month, COUNT(*) as count 
+            FROM apartmentsapp 
+            WHERE date IS NOT NULL 
+            GROUP BY month 
+            ORDER BY MIN(date) ASC 
+            LIMIT 12
+        ")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+
+        // 5. Billing & Revenue (Real-time from billing table)
+        $revenueTrend = $db->query("
+            SELECT DATE_FORMAT(created_at, '%b %Y') as month, SUM(amount) as total 
+            FROM billing 
+            WHERE status = 'Paid' 
+            GROUP BY month 
+            ORDER BY MIN(created_at) ASC 
+            LIMIT 12
+        ")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+
+        // 6. Billing Status Summary
+        $billingSummary = $db->query("SELECT status, SUM(amount) as total FROM billing GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+
+        // 7. Unit Type Preferences (From applications)
+        $typePrefs = $db->query("SELECT roomtype, COUNT(*) as count FROM apartmentsapp GROUP BY roomtype")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+
+        // 8. Building-wise Occupancy
+        $buildingStats = $db->query("
+            SELECT building, 
+                   SUM(CASE WHEN status = 'Occupied' THEN 1 ELSE 0 END) as occupied,
+                   SUM(CASE WHEN status = 'Available' THEN 1 ELSE 0 END) as available
+            FROM apartment_units 
+            WHERE building IS NOT NULL
+            GROUP BY building
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_analytics', [
+            'active_page' => 'apartment_analytics',
+            'dbUser' => $dbUser,
+            'appStats' => $appStats,
+            'occStats' => $occStats,
+            'appTrend' => $appTrend,
+            'revenueTrend' => $revenueTrend,
+            'billingSummary' => $billingSummary,
+            'typePrefs' => $typePrefs,
+            'buildingStats' => $buildingStats
+        ]);
+    }
+
 
 
 

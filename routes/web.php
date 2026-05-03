@@ -100,6 +100,7 @@ $routes = [
     '/admin/apartment/renewals'      => ['AdminController', 'renewals'],
     '/admin/apartment/renewals/approve' => ['AdminController', 'approveRenewal'],
     '/admin/apartment/renewals/reject'  => ['AdminController', 'rejectRenewal'],
+    '/admin/apartment/analytics'     => ['AdminController', 'apartmentAnalytics'],
     '/admin/dawah'                   => ['AdminController', 'dawahAdminDashboard'],
     '/admin/dawah/male'              => ['AdminController', 'dawahMaleDashboard'],
     '/admin/dawah/female'            => ['AdminController', 'dawahFemaleDashboard'],
@@ -179,4 +180,5 @@ $routes = [
     '/api/apartment-units/create'          => ['ApartmentTypeController', 'createUnit'],
     '/api/apartment-units/update'          => ['ApartmentTypeController', 'updateUnit'],
     '/api/apartment-units/delete'          => ['ApartmentTypeController', 'deleteUnit'],
+    '/api/apartment-units/check'           => ['ApartmentTypeController', 'checkUnit'],
 ];
