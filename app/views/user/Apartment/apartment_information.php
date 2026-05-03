@@ -499,11 +499,50 @@ $uploadedDocs = $uploadedDocs ?? [];
                 <div class="success-icon-bounce">
                     <svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 </div>
-                <h3 style="font-family:'Lora',serif; color:var(--primary-dark); margin-bottom:10px;">Request Submitted!</h3>
-                <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.5;">Your maintenance request has been recorded. You will be notified once a staff member reviews it.</p>
+                <h3 style="font-family:'Lora',serif; color:var(--primary-dark); margin-bottom:10px;" id="successModalTitle">Request Submitted!</h3>
+                <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.5;" id="successModalMsg">Your maintenance request has been recorded. You will be notified once a staff member reviews it.</p>
                 <div style="margin-top:24px;">
                     <button onclick="closeSuccessModal()" class="btn-action primary">Got it, thanks!</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: MOVE-OUT REQUEST ═══ -->
+    <div class="apt-modal-overlay" id="moveOutModal">
+        <div class="apt-modal" style="max-width: 650px;">
+            <div class="apt-modal-header">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <h3 style="margin:0; font-family:'Lora',serif; color:var(--primary-dark); font-weight:800;">Notice to Vacate</h3>
+                </div>
+                <button onclick="closeMoveOutModal()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted);">&times;</button>
+            </div>
+            <div class="apt-modal-body" style="grid-template-columns: 1fr; display: block;">
+                <div class="apt-card" style="border-left: 4px solid var(--danger); background: #fffafb;">
+                    <h4 class="apt-card-title" style="color: #8b2e2e;"><svg viewBox="0 0 24 24" style="fill: #8b2e2e;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg> Important: Move-Out Policy Review</h4>
+                    <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0;">Please review the following contract terms regarding your move-out process. By proceeding, you acknowledge your intent to vacate the premises.</p>
+                </div>
+
+                <div style="max-height: 350px; overflow-y: auto; padding-right: 10px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 8px; padding: 15px; background: white;">
+                    <p style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.05em;">Lease Agreement Snippet (Notice & Deposit)</p>
+                    <ol style="padding-left: 20px; font-size: 0.85rem; color: #334155; line-height: 1.6;">
+                        <li style="margin-bottom: 15px;"><strong>Security Deposit:</strong> ₱1,000 — refundable at the end of the lease, less any unpaid dues, utilities, lost items, or damages to the unit caused by negligence.</li>
+                        <li style="margin-bottom: 15px;"><strong>Notice Period:</strong> Either party may terminate this lease with a <strong>thirty (30) day written notice</strong>.</li>
+                        <li style="margin-bottom: 15px;"><strong>Early Termination:</strong> Early termination by the Lessee prior to the expiration of the agreed term shall result in <strong>forfeiture of the Security Deposit</strong>.</li>
+                        <li style="margin-bottom: 15px;"><strong>Room Condition:</strong> The unit must be returned in the same good and habitable condition as received. Damages beyond normal wear and tear will be deducted from the deposit.</li>
+                    </ol>
+                </div>
+
+                <div class="form-group" style="display: flex; gap: 10px; align-items: flex-start; background: #f8fafc; padding: 15px; border-radius: 10px;">
+                    <input type="checkbox" id="ackTerms" style="width: 18px; height: 18px; margin-top: 2px;">
+                    <label for="ackTerms" style="font-size: 0.82rem; color: var(--text-main); line-height: 1.4; font-weight: 600; cursor: pointer;">
+                        I have read and understood the move-out policy and the 30-day notice requirement. I wish to proceed with my request to vacate.
+                    </label>
+                </div>
+            </div>
+            <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:#f9fafb;">
+                <button onclick="closeMoveOutModal()" class="btn-action secondary">Cancel</button>
+                <button id="btnProceedMoveOut" onclick="submitMoveOutRequest()" class="btn-action danger" disabled>Proceed to Request</button>
             </div>
         </div>
     </div>
@@ -622,6 +661,7 @@ $uploadedDocs = $uploadedDocs ?? [];
                             Maintenance
                         </button>
                         <button class="btn-action primary" onclick="openAptDetails()">View Unit Modal</button>
+                        <button class="btn-action danger" onclick="openMoveOutModal()">Request Move-Out</button>
                     </div>
                 </div>
             `;
@@ -760,6 +800,59 @@ $uploadedDocs = $uploadedDocs ?? [];
         function closeSuccessModal() {
             document.getElementById('successModal').classList.remove('active');
             document.body.style.overflow = 'auto';
+        }
+
+        function openMoveOutModal() {
+            document.getElementById('moveOutModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Handle agreement check
+            const check = document.getElementById('ackTerms');
+            const btn = document.getElementById('btnProceedMoveOut');
+            check.checked = false;
+            btn.disabled = true;
+            
+            check.onchange = () => {
+                btn.disabled = !check.checked;
+            };
+        }
+
+        function closeMoveOutModal() {
+            document.getElementById('moveOutModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        async function submitMoveOutRequest() {
+            const btn = document.getElementById('btnProceedMoveOut');
+            btn.disabled = true;
+            btn.textContent = 'Submitting Request...';
+
+            try {
+                const res = await fetch('<?= url("/user/apartment/moveout/submit") ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ unit_id: assignedApt.unit_id })
+                }).then(r => r.json());
+
+                if (res.success) {
+                    closeMoveOutModal();
+                    
+                    // Customize success modal
+                    document.getElementById('successModalTitle').textContent = 'Move-Out Request Sent!';
+                    document.getElementById('successModalMsg').textContent = 'Your request to vacate has been sent to the ISCAG administration. They will review your account and contact you for the final inspection and settlement.';
+                    
+                    openSuccessModal();
+                } else {
+                    alert(res.message || 'Failed to submit request');
+                    btn.disabled = false;
+                    btn.textContent = 'Proceed to Request';
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Proceed to Request';
+            }
         }
 
         init();

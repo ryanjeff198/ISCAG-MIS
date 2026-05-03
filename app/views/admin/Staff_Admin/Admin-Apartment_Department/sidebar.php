@@ -55,6 +55,10 @@ $sidebar_initials = strtoupper(substr($name_parts[0], 0, 1) . (count($name_parts
           <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px; height:14px; flex-shrink:0; opacity:0.7;"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.5 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
           Maintenance
         </a>
+        <a href="<?= url('/admin/apartment/moveout_requests') ?>" class="<?= ($active_page ?? '') === 'moveout_requests' ? 'active-submenu' : '' ?>">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px; height:14px; flex-shrink:0; opacity:0.7;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          Move-Out Requests
+        </a>
       </div>
     </div>
 

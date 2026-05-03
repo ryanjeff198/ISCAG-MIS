@@ -182,6 +182,7 @@ $active_page = $active_page ?? 'dashboard';
                     Application Status
                 </a>
                 <?php endif; ?>
+                <?php if (($_SESSION['role'] ?? '') === 'Tenant'): ?>
                 <a href="<?= url('/user/apartment/lease') ?>" class="<?= $active_page === 'apartment_lease' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
@@ -206,7 +207,6 @@ $active_page = $active_page ?? 'dashboard';
                     </svg>
                     Apartment Information
                 </a>
-                <?php if (($_SESSION['role'] ?? '') === 'Tenant'): ?>
                 <a href="<?= url('/user/apartment/parking') ?>" class="<?= $active_page === 'apartment_parking' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />

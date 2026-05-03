@@ -65,6 +65,7 @@ $routes = [
     '/user/apartment/payment/submit' => ['ApartmentController', 'submitPayment'],
     '/user/apartment/soa'            => ['ApartmentController', 'soa'],
     '/user/apartment/maintenance/submit' => ['ApartmentController', 'submitMaintenance'],
+    '/user/apartment/moveout/submit' => ['ApartmentController', 'submitMoveout'],
 
     // Service Modules
     '/user/services/burial-form'      => ['UserController', 'burialForm'],
@@ -157,6 +158,11 @@ $routes = [
     '/admin/mis_admin/broadcast/users'     => ['AdminController', 'getBroadcastUsers'],
     '/admin/mis_admin/broadcast/send'      => ['AdminController', 'processBroadcast'],
     '/admin/mis_admin/broadcast/history'   => ['AdminController', 'getBroadcastHistory'],
+    '/admin/mis_admin/moveout_requests'    => ['AdminController', 'moveoutRequests'],
+    '/admin/apartment/moveout_requests'    => ['AdminController', 'moveoutRequests'],
+    '/admin/apartment/moveout/action'      => ['AdminController', 'processMoveOutAction'],
+    '/admin/apartment/tenant/balance'     => ['AdminController', 'getTenantBalance'],
+
 
     // Apartment Type Management API
     '/api/apartment-types'                 => ['ApartmentTypeController', 'listTypes'],

@@ -438,11 +438,21 @@ class ApartmentController extends Controller {
 
         require_once BASE_PATH . '/app/models/Lease.php';
         require_once BASE_PATH . '/app/models/Payment.php';
+        require_once BASE_PATH . '/app/models/MoveOut.php';
 
         $leaseModel = new Lease();
         $paymentModel = new Payment();
+        $moveOutModel = new MoveOut();
 
         $lease = $leaseModel->getLeaseByTenantId($userId);
+        
+        // Fetch Move-Out Request to check for settlement
+        // (Assuming we might need a method to get specific request for a tenant)
+        // Let's find any processing move-out request for this tenant
+        $db = getDbConnection();
+        $stmt = $db->prepare("SELECT * FROM move_out_requests WHERE tenant_id = ? AND status IN ('Processing', 'Completed') ORDER BY created_at DESC LIMIT 1");
+        $stmt->execute([$userId]);
+        $moveout = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
         
         // A) Initial Payments (Deposit & Advance)
         $payments = [];
@@ -464,7 +474,7 @@ class ApartmentController extends Controller {
         $recurringCharges = [];
         if ($lease && $lease['lease_status'] === 'Active') {
             $db = getDbConnection();
-            $now = clone (new \DateTime());
+            $now = clone (new \DateTime('+1 month'));
             // Family members for water bill
             $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM tenant_family_members WHERE tenant_id = ?");
             $stmt->execute([$userId]);
@@ -608,7 +618,8 @@ class ApartmentController extends Controller {
             'payments'         => $payments,
             'recurringCharges' => $recurringCharges,
             'occupants'        => $occupants ?? 1,
-            'parkingApps'      => $parkingApps ?? []
+            'parkingApps'      => $parkingApps ?? [],
+            'moveout'          => $moveout
         ]);
     }
 
@@ -648,14 +659,26 @@ class ApartmentController extends Controller {
         $allOk = true;
 
         foreach ($paymentIds as $pid) {
-            // CASE 1: Recurring Charge (String ID like 'rent-2026-05')
+            // CASE 1: Recurring or Settlement Charge (String ID like 'rent-2026-05' or 'settlement-damage')
             if (is_string($pid) && strpos($pid, '-') !== false) {
                 $parts = explode('-', $pid);
-                $type = ucfirst($parts[0]); // Rent, Water, Parking
+                $type = ucfirst($parts[0]); 
                 $amount = 0;
-                
-                // Determine amount based on type
-                if ($type === 'Rent') {
+                $exactType = ucfirst(strtolower($pid));
+
+                // Move-Out Settlement handling
+                if (strtolower($type) === 'settlement') {
+                    $stmt = $db->prepare("SELECT * FROM move_out_requests WHERE tenant_id = ? AND status = 'Processing' LIMIT 1");
+                    $stmt->execute([$userId]);
+                    $mo = $stmt->fetch(\PDO::FETCH_ASSOC);
+                    if ($mo) {
+                        $field = ($parts[1] === 'damage') ? 'damage_costs' : 'utility_deductions';
+                        $amount = (float)$mo[$field];
+                        $exactType = 'Move-Out ' . ucfirst($parts[1]);
+                    }
+                }
+                // Regular Recurring charges
+                elseif ($type === 'Rent') {
                     $amount = (float)$lease['monthly_rent'];
                 } elseif ($type === 'Water') {
                     $stmt = $db->prepare("SELECT COUNT(*) FROM tenant_family_members WHERE tenant_id = ?");
@@ -668,8 +691,6 @@ class ApartmentController extends Controller {
                     $amount = 150.00;
                 }
                 
-                $exactType = ucfirst(strtolower($pid)); 
-
                 // Create record
                 $stmt = $db->prepare("INSERT INTO payments (lease_id, tenant_id, amount, payment_type, reference_number, payment_status, payment_date) VALUES (?, ?, ?, ?, ?, 'Paid', NOW())");
                 $ok = $stmt->execute([$lease['lease_id'], $userId, $amount, $exactType, $refNo]);
@@ -776,6 +797,61 @@ class ApartmentController extends Controller {
     }
 
     /**
+     * Submit Move-Out Request (Tenant Action)
+     */
+    public function submitMoveout() {
+        Auth::protectRole(['Tenant']);
+        header('Content-Type: application/json');
+        
+        $userId = $_SESSION['user_id'];
+        $body = json_decode(file_get_contents('php://input'), true);
+        $unitId = $body['unit_id'] ?? 0;
+
+        if (!$unitId) {
+            echo json_encode(['success' => false, 'message' => 'Unit context missing']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/MoveOut.php';
+        $model = new MoveOut();
+
+        // Calculate target move-out date (30 days notice)
+        $moveOutDate = date('Y-m-d', strtotime('+30 days'));
+
+        if ($model->createRequest($userId, (int)$unitId, $moveOutDate)) {
+            // Log it
+            AuditLogger::log('APARTMENT', 'REQUEST_MOVEOUT', "Tenant requested to vacate unit ID: $unitId");
+
+            // Notify Admin
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $adminNotif = new AdminNotification();
+            $tenantName = $_SESSION['name'] ?? 'A tenant';
+            $adminNotif->create(
+                'Move-Out Request Received',
+                $tenantName . ' has submitted a formal notice to vacate their unit.',
+                'request',
+                $tenantName,
+                $userId,
+                '/admin/mis_admin/moveout_requests'
+            );
+
+            // Notify Tenant
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $tenantNotif = new Notification();
+            $tenantNotif->create(
+                $userId,
+                'Move-Out Request Sent',
+                'Your notice to vacate has been received. Our team will contact you for inspection and final payment clearance.',
+                'system'
+            );
+
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'A move-out request is already pending for your account.']);
+        }
+    }
+
+    /**
      * Official Statement of Account (Tenant View)
      */
     public function soa() {
@@ -839,7 +915,7 @@ class ApartmentController extends Controller {
         $transactions = [];
         $totalAdvances = isset($advanceQueues['rent-advance']) ? count($advanceQueues['rent-advance']) : 0;
 
-        $now = clone (new \DateTime());
+        $now = clone (new \DateTime('+1 month'));
         
         $leaseStart = new \DateTime($lease['start_date']);
         $leaseEnd = $lease['end_date'] ? (new \DateTime($lease['end_date'])) : null;
