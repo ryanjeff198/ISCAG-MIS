@@ -241,6 +241,10 @@ class User
 
             // 1. Delete associated data first to satisfy constraints if any (Manual Cascade)
             
+            // Explicitly vacate any unit occupied by this tenant to fire the MySQL trigger
+            // Foreign Key cascades (ON DELETE SET NULL) skip triggers in MySQL!
+            $this->db->prepare("UPDATE apartment_units SET tenant_id = NULL, status = 'Available', application_id = NULL WHERE tenant_id = ?")->execute([$userId]);
+            
             // Profiles
             $this->db->prepare("DELETE FROM tenant_user_profiles WHERE tenant_id = ?")->execute([$userId]);
             
@@ -260,8 +264,6 @@ class User
             $this->db->prepare("DELETE FROM tenant_parking WHERE tenant_id = ?")->execute([$userId]);
             
             // Additional Info & Images
-            // Fetch images to delete from disk if applicable later? 
-            // For now just DB delete.
             $this->db->prepare("DELETE FROM tenant_addinfo_images WHERE addinfo_id IN (SELECT tenant_info FROM tenant_addinfo WHERE tenant_id = ?)")->execute([$userId]);
             $this->db->prepare("DELETE FROM tenant_addinfo WHERE tenant_id = ?")->execute([$userId]);
             

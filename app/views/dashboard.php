@@ -666,8 +666,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         </div>
 
         <?php if (($account['role'] ?? '') === 'Tenant'): ?>
-        <!-- TENANT DASHBOARD (TENANT ONLY) -->
-
+        <!-- TENANT ONBOARDING (TENANT ONLY) -->
 
         <!-- Tenant Onboarding Guide Modal -->
         <div id="tenant-onboarding-modal" style="

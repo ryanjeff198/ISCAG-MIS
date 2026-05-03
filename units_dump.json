@@ -1,0 +1,93 @@
+[
+    {
+        "unit_id": 13,
+        "room_number": "B1-02",
+        "building": "Building 1",
+        "status": "Occupied",
+        "tenant_id": 32
+    },
+    {
+        "unit_id": 16,
+        "room_number": "B1-05",
+        "building": "Building 1",
+        "status": "Occupied",
+        "tenant_id": 32
+    },
+    {
+        "unit_id": 17,
+        "room_number": "00",
+        "building": "Building 1",
+        "status": "Available",
+        "tenant_id": 0
+    },
+    {
+        "unit_id": 23,
+        "room_number": "B1-12",
+        "building": "Building 1",
+        "status": "Occupied",
+        "tenant_id": null
+    },
+    {
+        "unit_id": 24,
+        "room_number": "B2-01",
+        "building": "Building 2",
+        "status": "Occupied",
+        "tenant_id": null
+    },
+    {
+        "unit_id": 26,
+        "room_number": "B2-03",
+        "building": "Building 2",
+        "status": "Occupied",
+        "tenant_id": null
+    },
+    {
+        "unit_id": 27,
+        "room_number": "B2-04",
+        "building": "Building 2",
+        "status": "Occupied",
+        "tenant_id": 61
+    },
+    {
+        "unit_id": 30,
+        "room_number": "B2-07",
+        "building": "Building 2",
+        "status": "Occupied",
+        "tenant_id": 27
+    },
+    {
+        "unit_id": 34,
+        "room_number": "B2-11",
+        "building": "Building 2",
+        "status": "Occupied",
+        "tenant_id": 63
+    },
+    {
+        "unit_id": 36,
+        "room_number": "B2-13",
+        "building": "Building 2",
+        "status": "Occupied",
+        "tenant_id": 47
+    },
+    {
+        "unit_id": 37,
+        "room_number": "B2-14",
+        "building": "Building 2",
+        "status": "Occupied",
+        "tenant_id": 47
+    },
+    {
+        "unit_id": 42,
+        "room_number": "B3-01",
+        "building": "Building 3",
+        "status": "Occupied",
+        "tenant_id": 62
+    },
+    {
+        "unit_id": 71,
+        "room_number": "B3-30",
+        "building": "Building 3",
+        "status": "Occupied",
+        "tenant_id": 60
+    }
+]
