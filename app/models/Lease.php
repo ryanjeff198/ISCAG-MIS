@@ -66,7 +66,7 @@ class Lease
             JOIN apartmentsapp a ON l.application_id = a.application_id
             JOIN tenant_accounts u ON l.tenant_id = u.tenant_id
             LEFT JOIN apartment_units au ON l.tenant_id = au.tenant_id
-            WHERE l.tenant_id = :tid
+            WHERE l.tenant_id = :tid AND l.lease_status NOT IN ('Archived', '')
             ORDER BY l.lease_id DESC
             LIMIT 1
         ");
@@ -127,7 +127,7 @@ class Lease
      */
     public function updateLeaseStatus(int $leaseId, string $status): bool
     {
-        $valid = ['Pending', 'Accepted', 'Rejected', 'Active', 'Expired'];
+        $valid = ['Pending', 'Accepted', 'Rejected', 'Active', 'Expired', 'Archived'];
         if (!in_array($status, $valid)) {
             return false;
         }

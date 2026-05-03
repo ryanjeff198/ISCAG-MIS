@@ -1004,25 +1004,44 @@ class AdminController extends Controller
                 ];
                 $applyAdvance('contribution-advance', "Contribution for $monthName", 150.00);
 
-                // 5. Parking (Monthly if approved)
-                foreach ($parkingApps as $pa) {
-                    if ($pa['tenant_id'] == $tid) {
-                        $parkStartStr = $pa['datestarted'] ?: $pa['date'];
-                        if ($simDate >= date('Y-m-d', strtotime($parkStartStr))) {
-                            $transactions[] = [
-                                'tenant_id' => $tid, 'date' => $simDate, 'type' => 'Parking Fee',
-                                'description' => 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle'),
-                                'ref' => 'PKG-' . $pa['parking_id'] . '-' . $currentDate->format('my'),
-                                'charge' => 1000.00, 'payment' => 0, 'status' => 'Unpaid'
-                            ];
-                            $applyAdvance('parking-advance', "Parking for $monthName", 1000.00);
-                        }
-                    }
-                }
-
                 $currentDate->modify('+1 month');
                 $monthCount++;
                 if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
+            }
+            
+            // 5. Independent loop for Parking Fees (Computing precise dates per tenant)
+            foreach ($parkingApps as $pa) {
+                if ($pa['tenant_id'] == $tid) {
+                    $parkStart = new \DateTime($pa['datestarted'] ?: $pa['date']);
+                    $parkStart->modify('+1 month'); // Align to 1 month after application
+                    
+                    $pDate = clone $parkStart;
+                    while ($pDate <= $limitDate) {
+                        $pSimDate = $pDate->format('Y-m-d');
+                        $pMonthName = $pDate->format('F Y');
+                        
+                        $transactions[] = [
+                            'tenant_id' => $tid, 'date' => $pSimDate, 'type' => 'Parking Fee',
+                            'description' => 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle') . ' — ' . $pMonthName,
+                            'ref' => 'PKG-' . $pa['parking_id'] . '-' . $pDate->format('my'),
+                            'charge' => 1000.00, 'payment' => 0, 'status' => 'Unpaid'
+                        ];
+                        
+                        if (!empty($advanceQueues['parking-advance'])) {
+                            $pArr = array_shift($advanceQueues['parking-advance']);
+                            $consumedPaymentIds[] = $pArr['payment_id'];
+                            $transactions[] = [
+                                'tenant_id' => $tid, 'date' => $pSimDate, 'type' => 'Payment',
+                                'description' => 'Payment Applied from Advance — Parking for ' . $pMonthName,
+                                'ref' => $pArr['reference_number'] ?: 'ADV-' . str_pad($pArr['payment_id'], 4, '0', STR_PAD_LEFT),
+                                'charge' => 0, 'payment' => 1000.00, 'status' => 'Paid'
+                            ];
+                        }
+                        
+                        $pDate->modify('+1 month');
+                        if ($pDate > $limitDate && $pDate->format('mY') === $limitDate->format('mY')) break;
+                    }
+                }
             }
         }
 
@@ -2519,6 +2538,10 @@ class AdminController extends Controller
                     // Logical Archiving: End the Active Lease
                     $stmtLease = $db->prepare("UPDATE leases SET lease_status = 'Archived' WHERE tenant_id = ? AND lease_status IN ('Active', 'Wait_Advance')");
                     $stmtLease->execute([$req['tenant_id']]);
+
+                    // Archive the old Application so it won't block future applications
+                    $stmtApp = $db->prepare("UPDATE apartmentsapp SET status = 'Archived' WHERE tenant_id = ? AND status IN ('Assigned', 'Occupied', 'VERIFIED')");
+                    $stmtApp->execute([$req['tenant_id']]);
 
                     // Role Downgrade: Turn Tenant back into Guest
                     $stmtRole = $db->prepare("UPDATE tenant_accounts SET role = 'Guest' WHERE tenant_id = ?");

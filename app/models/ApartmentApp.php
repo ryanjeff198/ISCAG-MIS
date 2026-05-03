@@ -186,7 +186,7 @@ class ApartmentApp {
         $this->db->beginTransaction();
         try {
             $existing = $this->getApplication($userId);
-            if (!$existing) {
+            if (!$existing || in_array($existing['status'] ?? '', ['Archived', 'Moved-Out', 'Rejected'])) {
                 // Initial status is 'Draft' until documents are submitted
                 $sql = "INSERT INTO apartmentsapp (tenant_id, roomtype, date, status) VALUES (:uid, :rt, CURDATE(), 'Draft')";
                 $stmt = $this->db->prepare($sql);

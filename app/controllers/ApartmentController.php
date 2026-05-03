@@ -579,7 +579,7 @@ class ApartmentController extends Controller {
             // Recurring Parking Fees
             foreach ($parkingApps as $pa) {
                 $parkStart = new \DateTime($pa['datestarted'] ?: $pa['date']);
-                $parkStart->modify('first day of this month'); // Align to month start 
+                $parkStart->modify('+1 month'); // Start recurring billing 1 month after application
                 
                 $pDate = clone $parkStart;
                 while ($pDate <= $limitDate) {
@@ -991,23 +991,43 @@ class ApartmentController extends Controller {
             ];
             $applyAdvance('contribution-advance', "Contribution for $monthName", 150.00);
 
-            // Parking
-            foreach ($parkingApps as $pa) {
-                $parkStartStr = $pa['datestarted'] ?: $pa['date'];
-                if ($simDate >= date('Y-m-d', strtotime($parkStartStr))) {
-                    $transactions[] = [
-                        'date' => $simDate, 'type' => 'Parking Fee', 'description' => 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle'),
-                        'charge' => 1000.00, 'payment' => 0, 'ref' => 'PKG-' . $pa['parking_id'] . '-' . $currentDate->format('my')
-                    ];
-                    $applyAdvance('parking-advance', "Parking for $monthName", 1000.00);
-                }
-            }
+
 
             $currentDate->modify('+1 month');
             $monthCount++;
             if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
         }
-
+        // Independent loop for Parking Fees to compute precise dates
+        foreach ($parkingApps as $pa) {
+            $parkStart = new \DateTime($pa['datestarted'] ?: $pa['date']);
+            $parkStart->modify('+1 month'); // Align to 1 month after application
+            
+            $pDate = clone $parkStart;
+            while ($pDate <= $limitDate) {
+                $pSimDate = $pDate->format('Y-m-d');
+                $pMonthName = $pDate->format('F Y');
+                
+                $transactions[] = [
+                    'date' => $pSimDate, 'type' => 'Parking Fee', 'description' => 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle') . ' — ' . $pMonthName,
+                    'charge' => 1000.00, 'payment' => 0, 'ref' => 'PKG-' . $pa['parking_id'] . '-' . $pDate->format('my')
+                ];
+                
+                // We use a custom apply for advance just for this item if needed
+                if (!empty($advanceQueues['parking-advance'])) {
+                    $pArr = array_shift($advanceQueues['parking-advance']);
+                    $consumedPaymentIds[] = $pArr['payment_id'];
+                    $transactions[] = [
+                        'date' => $pSimDate, 'type' => 'Payment', 'description' => 'Payment Applied from Advance — Parking for ' . $pMonthName,
+                        'ref' => $pArr['reference_number'] ?: 'ADV-' . str_pad($pArr['payment_id'], 4, '0', STR_PAD_LEFT),
+                        'charge' => 0, 'payment' => 1000.00
+                    ];
+                }
+                
+                $pDate->modify('+1 month');
+                if ($pDate > $limitDate && $pDate->format('mY') === $limitDate->format('mY')) break;
+            }
+        }
+        
         // 3. Process Non-Consumed Payments (Direct payments made after move-in)
         foreach ($payments as $p) {
             if (in_array($p['payment_id'], $consumedPaymentIds)) continue;

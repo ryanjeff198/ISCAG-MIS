@@ -182,7 +182,7 @@ $active_page = $active_page ?? 'dashboard';
                     Application Status
                 </a>
                 <?php endif; ?>
-                <?php if (($_SESSION['role'] ?? '') === 'Tenant'): ?>
+                <?php if (in_array($_SESSION['role'] ?? '', ['Guest', 'Tenant'])): ?>
                 <a href="<?= url('/user/apartment/lease') ?>" class="<?= $active_page === 'apartment_lease' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
@@ -195,6 +195,9 @@ $active_page = $active_page ?? 'dashboard';
                     </svg>
                     Bills & Payments
                 </a>
+                <?php endif; ?>
+                
+                <?php if (($_SESSION['role'] ?? '') === 'Tenant'): ?>
                 <a href="<?= url('/user/apartment/soa') ?>" class="<?= $active_page === 'apartment_soa' ? 'active-submenu' : '' ?>">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v2H7zm0 4h2v2H7zm4-4h6v2h-6zm0 4h6v2h-6z" />

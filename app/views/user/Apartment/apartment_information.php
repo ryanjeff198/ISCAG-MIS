@@ -292,6 +292,19 @@ $uploadedDocs = $uploadedDocs ?? [];
         }
         .btn-action.secondary:hover { background: #e2e8f0; }
 
+        .btn-action.warning {
+            background: linear-gradient(135deg, #d97706, #fbbf24);
+            color: white;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
+            border: none;
+        }
+        .btn-action.danger {
+            background: linear-gradient(135deg, #dc2626, #f87171);
+            color: white;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+            border: none;
+        }
+
         /* Maintenance Specific */
         .maintenance-modal {
             max-width: 500px !important;
@@ -656,9 +669,9 @@ $uploadedDocs = $uploadedDocs ?? [];
                 <div class="action-bar">
                     <div class="action-bar-text"><h4>View Full Unit Specifications</h4><p>Check room inclusions, house rules, and detailed lease terms.</p></div>
                     <div class="action-bar-btns" style="display:flex; gap:12px;">
-                        <button class="btn-action secondary" onclick="openMaintenanceModal()">
+                        <button class="btn-action warning" onclick="openMaintenanceModal()">
                             <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.5 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
-                            Maintenance
+                            Repair
                         </button>
                         <button class="btn-action primary" onclick="openAptDetails()">View Unit Modal</button>
                         <button class="btn-action danger" onclick="openMoveOutModal()">Request Move-Out</button>

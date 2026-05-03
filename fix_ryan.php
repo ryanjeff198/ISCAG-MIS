@@ -1,6 +1,8 @@
 <?php
 require 'config/database.php';
 $db = getDbConnection();
-$db->prepare("UPDATE tenant_accounts SET role = 'Guest' WHERE tenant_id = 63")->execute();
-$db->prepare("UPDATE leases SET lease_status = 'Archived' WHERE tenant_id = 63")->execute();
-echo "Ryan downgraded!";
+$db->exec("ALTER TABLE leases MODIFY COLUMN lease_status ENUM('Pending','Accepted','Rejected','Active','Expired','Archived') DEFAULT 'Pending'");
+echo "Column altered.\n";
+// Now fix Ryan
+$db->exec("UPDATE leases SET lease_status = 'Archived' WHERE lease_id = 9");
+echo "Ryan fixed: " . $db->query("SELECT lease_status FROM leases WHERE lease_id = 9")->fetchColumn() . "\n";
