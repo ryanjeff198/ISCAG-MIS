@@ -150,6 +150,31 @@
     }
     $grandTotal = $initialDue + $recurringTotal;
 
+    // Move-Out Settlement simulation
+    $moveoutTotal = 0;
+    if ($moveout && $moveout['status'] === 'Processing') {
+        $moDamagePaid = false;
+        $moUtilityPaid = false;
+        foreach ($payments as $p) {
+            if ($p['payment_status'] === 'Paid') {
+                if ($p['payment_type'] === 'Move-Out Damage') $moDamagePaid = true;
+                if ($p['payment_type'] === 'Move-Out Utility') $moUtilityPaid = true;
+            }
+        }
+        
+        // Damage is ONLY added to the grand total if it EXCEEDS the ₱1,000 security deposit
+        if (!$moDamagePaid) {
+            $excessDamage = max(0, (float)($moveout['damage_costs'] ?? 0) - 1000);
+            $moveoutTotal += $excessDamage;
+        }
+        
+        // Utilities are always considered separate charges to be paid
+        if (!$moUtilityPaid) {
+            $moveoutTotal += (float)($moveout['utility_deductions'] ?? 0);
+        }
+    }
+    $grandTotal += $moveoutTotal;
+
     // Calculate dynamic 1-Month Advance Package
     $advPayload = ['Rent-Advance'];
     $advCost = (float)($lease['monthly_rent'] ?? 0);
@@ -292,6 +317,108 @@
                         </div>
                     </div>
 <?php endif; ?>
+                    
+                    <!-- ═══════════ SECTION MOVE-OUT: SETTLEMENT ═══════════ -->
+<?php if ($moveout && in_array($moveout['status'], ['Processing', 'Completed'])): ?>
+                    <div class="section-divider">
+                        <span class="divider-line"></span>
+                        <span class="divider-label">Move-Out Clearance & Settlement</span>
+                        <span class="divider-line"></span>
+                    </div>
+
+                    <div class="payment-card" style="border: 1px solid #fecaca; background: #fffcfc;">
+                        <div class="payment-header" style="background: linear-gradient(to right, #fff5f5, #ffffff);">
+                            <div class="payment-header-left">
+                                <div class="payment-icon" style="background: rgba(220, 38, 38, 0.1); color: #dc2626;"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div>
+                                <h3 class="payment-title">Final Clearance Items</h3>
+                            </div>
+                            <span class="badge-status <?= $moveout['status'] === 'Processing' ? 'badge-info' : 'badge-approved' ?>" style="font-size:0.7rem;"><?= $moveout['status'] ?></span>
+                        </div>
+
+                        <div class="payment-body">
+                            <table class="breakdown-table">
+                                <thead>
+                                    <tr>
+                                        <th>Settlement Item</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="breakdown-item-name">Damage / Repair Costs</div>
+                                            <div class="breakdown-item-desc"><?= htmlspecialchars($moveout['inspection_notes'] ?: 'Final inspection findings') ?></div>
+                                            <div style="font-size:0.7rem; color:var(--text-muted); margin-top:4px;">
+                                                Status: <?= $moveout['damage_costs'] <= 1000 ? 'Covered by Security Deposit' : 'Excess to be paid' ?>
+                                            </div>
+                                        </td>
+                                        <td class="text-right">
+                                            <div class="breakdown-item-price" style="color:#dc2626;">+₱<?= number_format($moveout['damage_costs'], 2) ?></div>
+                                        </td>
+                                    </tr>
+                                    <tr style="background: <?= ($recurringTotal <= 0) ? 'rgba(34, 197, 94, 0.05)' : 'rgba(23, 107, 69, 0.02)' ?>;">
+                                        <td>
+                                            <div class="breakdown-item-name">Unpaid Utility / Bills</div>
+                                            <div class="breakdown-item-desc">Final meter reading and outstanding bills</div>
+                                            <div style="font-size:0.7rem; color:<?= ($recurringTotal <= 0) ? 'var(--success)' : 'var(--primary)' ?>; font-weight:600; margin-top:4px;">
+                                                <?= ($recurringTotal <= 0) ? 'Status: Fully Paid' : 'Must be settled via checkout' ?>
+                                            </div>
+                                        </td>
+                                        <td class="text-right">
+                                            <div class="breakdown-item-price" style="color:<?= ($recurringTotal <= 0) ? 'var(--success)' : '#dc2626' ?>;">
+                                                <?= ($recurringTotal <= 0) ? '₱0.00' : '+₱' . number_format($moveout['utility_deductions'], 2) ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr style="background: #f8fafc; border-top: 2px solid #e2e8f0;">
+                                        <td>
+                                            <div class="breakdown-item-name" style="color:var(--success);">Security Deposit Account</div>
+                                            <div class="breakdown-item-desc">Your original refundable deposit</div>
+                                        </td>
+                                        <td class="text-right">
+                                            <div class="breakdown-item-price" style="color:var(--success);">-₱1,000.00</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div style="margin-top:20px; padding:20px; background:white; border: 2px dashed #e2e8f0; border-radius:12px; text-align:center;">
+                                <label class="stat-label" style="font-size:0.75rem; color:#64748b;">NET REFUNDABLE TO YOU</label>
+                                <div style="font-size:2rem; font-weight:900; color:var(--primary);">₱<?= number_format($moveout['final_refund'], 2) ?></div>
+                                <?php if($moveout['status'] === 'Processing'): ?>
+                                    <p style="font-size:0.8rem; color:#64748b; margin-top:8px;">Please settle the final charges above to complete your clearance.</p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <?php 
+                        // Logic to check if settlement items are already paid
+                        $damagePaid = false;
+                        $utilityPaid = false;
+                        foreach ($payments as $p) {
+                            if ($p['payment_status'] === 'Paid') {
+                                if ($p['payment_type'] === 'Move-Out Damage') $damagePaid = true;
+                                if ($p['payment_type'] === 'Move-Out Utility') $utilityPaid = true;
+                            }
+                        }
+
+                        // Add move-out items to JS tracking if processing and NOT yet paid
+                        if($moveout['status'] === 'Processing') {
+                               // Damage only adds to payment IDs if it EXCEEDS ₱1,000
+                               if($moveout['damage_costs'] > 1000 && !$damagePaid) {
+                                   $unpaidIds[] = 'settlement-damage';
+                                   $unpaidItems[] = ['name' => 'Move-Out: Excess Damage Costs', 'amount' => (float)($moveout['damage_costs'] - 1000)];
+                               }
+                               // Utilities always add to payment IDs if there is a balance
+                               if($moveout['utility_deductions'] > 0 && !$utilityPaid) {
+                                   $unpaidIds[] = 'settlement-utility';
+                                   $unpaidItems[] = ['name' => 'Move-Out: Unpaid Utilities', 'amount' => (float)$moveout['utility_deductions']];
+                               }
+                        }
+                    ?>
+<?php endif; ?>
+
                     <!-- ═══════════ SECTION B: RECURRING MONTHLY CHARGES ═══════════ -->
 <?php if ($allInitialPaid): ?>
                     <div class="section-divider">
@@ -307,9 +434,11 @@
                             <h4>You're All Caught Up!</h4>
                             <p>No outstanding monthly charges yet. Your next billing cycle will appear here automatically.</p>
                             <div style="margin-top:24px; display:flex; justify-content:center; gap:12px;">
+                                <?php if (!$moveout || ($moveout['status'] !== 'Processing' && $moveout['status'] !== 'Completed')): ?>
                                 <button class="btn-pay" style="padding: 10px 20px; font-size:0.9rem; background:white; color:var(--primary); border:2px solid var(--border); box-shadow:none;" onclick='openAdvancePaymentModal(<?= json_encode($advPayload) ?>, <?= json_encode($advItems) ?>, <?= $advCost ?>)'>
                                     Pay 1 Month Advance Package
                                 </button>
+                                <?php endif; ?>
                                 <a href="<?= url('/user/apartment/soa') ?>" class="btn-submit" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding: 10px 20px; margin:0; width:auto; border-radius:8px; font-size:0.9rem;">
                                     <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
                                     Download Receipt
@@ -410,10 +539,12 @@
                             <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
                             Download Official Receipt (SOA)
                         </a>
+                        <?php if (!$moveout || ($moveout['status'] !== 'Processing' && $moveout['status'] !== 'Completed')): ?>
                         <button class="btn-pay" style="padding: 12px 24px; font-size:0.95rem; display:inline-flex; align-items:center; gap:8px;" onclick='openAdvancePaymentModal(<?= json_encode($advPayload) ?>, <?= json_encode($advItems) ?>, <?= $advCost ?>)'>
                             <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
                             Pay 1 Month Advance Package
                         </button>
+                        <?php endif; ?>
                     </div>
     <?php endif; ?>
 <?php endif; ?>
