@@ -98,6 +98,7 @@ $routes = [
     '/admin/apartment/renewals'      => ['AdminController', 'renewals'],
     '/admin/apartment/renewals/approve' => ['AdminController', 'approveRenewal'],
     '/admin/apartment/renewals/reject'  => ['AdminController', 'rejectRenewal'],
+    '/admin/apartment/analytics'     => ['AdminController', 'apartmentAnalytics'],
     '/admin/dawah'                   => ['AdminController', 'dawahAdminDashboard'],
     '/admin/dawah/male'              => ['AdminController', 'dawahMaleDashboard'],
     '/admin/dawah/female'            => ['AdminController', 'dawahFemaleDashboard'],

@@ -9,49 +9,6 @@
   <meta name="description" content="Management dashboard for the Apartment department" />
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
-    .btn-action.btn-assign:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .verified-glow {
-      border-left: 4px solid var(--success);
-    }
-
-    .verified-glow .section-card-header h6 {
-      color: var(--primary-dark);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 30px 20px;
-      color: var(--text-muted);
-    }
-
-    .empty-state svg {
-      width: 40px;
-      height: 40px;
-      fill: var(--border);
-      margin-bottom: 8px;
-    }
-
-    .empty-state h4 {
-      font-family: 'Lora', serif;
-      font-size: 0.92rem;
-      font-weight: 700;
-      margin: 0 0 4px;
-    }
-
-    .empty-state p {
-      font-size: 0.8rem;
-      margin: 0;
-    }
-
-    /* ── Hover Overrides for Apartment Staff ── */
-    .btn-view { border-color: var(--accent) !important; color: var(--accent) !important; }
-    .btn-view:hover { background: var(--accent) !important; color: white !important; }
-    .btn-view:hover svg { fill: white !important; }
-
     .btn-manage { border-color: var(--accent) !important; color: var(--accent) !important; }
     .btn-manage:hover { background: var(--accent) !important; color: white !important; }
     .btn-manage:hover svg { fill: white !important; }
@@ -578,6 +535,21 @@
     </div>
   </div>
 
+        <div class="section-card tab-panel" id="billing-section" style="margin-bottom:24px; display:none;">
+          <div class="section-card-header">
+            <h6>Monthly Billing Overview</h6>
+          </div>
+          <div class="section-card-body" style="padding:40px; text-align:center;">
+             <p style="color:var(--text-muted);">Billing management is currently handled by MIS Main Admin.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART JS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
@@ -586,14 +558,7 @@
       $availableSlots = 0;
       $fullyOccupied = 0;
       $reserved = 0;
-      $availableSlots = 0;
-      $fullyOccupied = 0;
-      $reserved = 0;
-      foreach ($units as &$u) {
-          if (strtolower($u['status']) === 'available') $availableSlots++;
-          if (strtolower($u['status']) === 'occupied') $fullyOccupied++;
-          if (strtolower($u['status']) === 'reserved') $reserved++;
-
+         foreach ($units as &$u) {
           // Sequential rule: 5 rooms per floor
           $roomStr = (string)$u['room_number'];
           $isOld = (str_contains($roomStr, 'B') || str_contains($roomStr, '-'));
@@ -628,6 +593,32 @@
           $u['display_id'] = $bDigit . $floorDigit . $roomPart;
       }
       unset($u);
+
+      // Sort by display_id numerically
+      usort($units, function($a, $b) {
+          return (int)$a['display_id'] <=> (int)$b['display_id'];
+      });
+
+      // Deduplicate by display_id
+      $uniqueUnits = [];
+      $seenIds = [];
+      foreach ($units as $u) {
+          if (!isset($seenIds[$u['display_id']])) {
+              $seenIds[$u['display_id']] = true;
+              $uniqueUnits[] = $u;
+          }
+      }
+      $units = $uniqueUnits;
+
+      // Re-calculate stats based on deduplicated units
+      $availableSlots = 0; $fullyOccupied = 0; $reserved = 0;
+      foreach ($units as $u) {
+          $st = strtolower($u['status']);
+          if ($st === 'available') $availableSlots++;
+          elseif ($st === 'occupied') $fullyOccupied++;
+          elseif ($st === 'reserved') $reserved++;
+      }
+      $totalUnits = count($units);
     ?>
 
     standardizePage('staff');
@@ -656,18 +647,13 @@
     }
 
     // ── Floor formatting ──
-    function formatFloor(roomNum) {
-      if (!roomNum) return '—';
-      let rNumOnly = roomNum.toString().replace(/\D/g, '');
-      let floorDigit = '1';
-      if (rNumOnly.length >= 3) {
-        floorDigit = rNumOnly.charAt(0);
-      }
+    function formatFloor(displayId) {
+      if (!displayId || displayId.toString().length < 4) return '—';
+      let floorDigit = displayId.toString().charAt(1); 
       const n = parseInt(floorDigit);
       const s = ["th", "st", "nd", "rd"],
             v = n % 100;
-      const suffix = (s[(v - 20) % 10] || s[v] || s[0]);
-      return n + suffix + " Floor";
+      return n + (s[(v - 20) % 10] || s[v] || s[0]) + " Floor";
     }
 
     // ── Pagination State ──
@@ -764,7 +750,7 @@
           return `<tr>
             <td class="td-id">#${displayId}</td>
             <td style="font-weight:600;">${formattedName}</td>
-            <td>${formatFloor(u.room_number)}</td>
+            <td>${formatFloor(u.display_id)}</td>
             <td>${u.type_label}</td>
             <td>₱${Number(u.price).toLocaleString()}</td>
             <td><span class="badge-status ${statusClass}">${u.status}</span></td>
@@ -934,9 +920,11 @@
         }).join('');
       }
     }
-    renderRecentApps();
-
-    // ── Billing (read-only) ──
+    // Auto-select first tab
+    window.onload = function() {
+      const firstTab = document.querySelector('.tab-btn');
+      if (firstTab) firstTab.click();
+    };  // ── Billing (read-only) ──
     function renderBilling() {
       const bill = getBilling().filter(b => b.type.toLowerCase().includes('apartment'));
       const bTbody = document.getElementById('billing-tbody');
@@ -1045,15 +1033,6 @@
 
     // Initialize notification badge
     initNotifBadge('staff');
-
-    // ── Tab Switching Logic ──
-    window.switchTab = function(tabName, btn) {
-      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      const panel = document.getElementById(tabName + '-section');
-      if (panel) panel.style.display = 'block';
-      if (btn) btn.classList.add('active');
-    };
   </script>
 </body>
 
