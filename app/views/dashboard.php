@@ -1136,6 +1136,107 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       }).join('');
     }
 
+      // ── Status Announcement Function ──
+      function showStatusAnnouncement(appData, dismissKey) {
+          const status = (appData.status || '').toLowerCase();
+
+          const configs = {
+              assigned: {
+                  theme: 'theme-success',
+                  icon: '<path d="M10 15.17l-3.59-3.58L5 13l5 5L20 8l-1.41-1.42z"/>',
+                  title: 'Room Assigned!',
+                  desc: 'Congratulations! You have been officially assigned to your apartment unit. Your journey as a tenant begins now.',
+                  detail: appData.unit_code ? ('Unit: <strong>' + appData.unit_code + '</strong>') : 'Your unit details are available in your Apartment Information page.',
+                  primaryBtn: 'View My Apartment',
+                  primaryHref: '<?= url("/user/apartment/info") ?>',
+              },
+              approved: {
+                  theme: 'theme-success',
+                  icon: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>',
+                  title: 'Application Approved!',
+                  desc: 'Your apartment application has been approved. Please proceed to accept your lease and submit the initial payment.',
+                  detail: 'Next step: Go to <strong>Lease Contract</strong> to review and accept your terms.',
+                  primaryBtn: 'View Lease Contract',
+                  primaryHref: '<?= url("/user/apartment/lease") ?>',
+              },
+              queued: {
+                  theme: 'theme-warning',
+                  icon: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>',
+                  title: 'You\'re On the Waitlist',
+                  desc: 'All units of your selected type are currently occupied. You\'ve been placed in a priority queue and will be notified when a unit becomes available.',
+                  detail: 'Queue Position: <strong>#' + (appData.queue_position || '—') + '</strong>',
+                  primaryBtn: 'Check Status',
+                  primaryHref: '<?= url("/user/apartment/status") ?>',
+              },
+              rejected: {
+                  theme: 'theme-danger',
+                  icon: '<path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>',
+                  title: 'Application Not Approved',
+                  desc: 'Unfortunately, your apartment application was not approved at this time. You may re-apply or contact the administration office for more details.',
+                  detail: appData.reject_reason ? ('Reason: <em>' + appData.reject_reason + '</em>') : 'Please visit the office for further clarification.',
+                  primaryBtn: 'Re-apply',
+                  primaryHref: '<?= url("/user/apartment/apply") ?>',
+              }
+          };
+
+          const cfg = configs[status];
+          if (!cfg) return;
+
+          const modalHtml = `
+              <div id="status-announcement-modal" class="${cfg.theme}" style="
+                  position:fixed;inset:0;z-index:99999;
+                  display:flex;align-items:center;justify-content:center;
+                  background:rgba(15,30,22,0.65);backdrop-filter:blur(8px);
+                  opacity:0;transition:opacity 0.3s ease;
+              ">
+                  <div id="announcement-content" style="
+                      background:white;border-radius:20px;width:100%;max-width:440px;
+                      box-shadow:0 25px 70px rgba(0,0,0,0.3);overflow:hidden;
+                      transform:translateY(20px) scale(0.95);transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                  ">
+                      <div style="height:4px;background:linear-gradient(90deg,#0f5c3a,#c79a2b);"></div>
+                      <div class="ann-header">
+                          <div class="ann-icon">
+                              <svg viewBox="0 0 24 24">${cfg.icon}</svg>
+                          </div>
+                          <div class="ann-title">${cfg.title}</div>
+                          <p class="ann-desc">${cfg.desc}</p>
+                      </div>
+                      <div class="ann-details">${cfg.detail}</div>
+                      <div class="ann-footer">
+                          <button class="ann-btn primary" onclick="window.location.href='${cfg.primaryHref}'">${cfg.primaryBtn}</button>
+                          <button class="ann-btn secondary" id="ann-dismiss-btn">Dismiss</button>
+                      </div>
+                  </div>
+              </div>
+          `;
+
+          document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+          const modal = document.getElementById('status-announcement-modal');
+          const content = document.getElementById('announcement-content');
+
+          setTimeout(() => {
+              modal.style.opacity = '1';
+              content.style.transform = 'translateY(0) scale(1)';
+          }, 50);
+
+          document.getElementById('ann-dismiss-btn').addEventListener('click', () => {
+              modal.style.opacity = '0';
+              content.style.transform = 'translateY(20px) scale(0.95)';
+              setTimeout(() => modal.remove(), 300);
+
+              // Mark as seen server-side
+              fetch('<?= url("/user/status/mark-seen") ?>', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' }
+              }).catch(() => {});
+
+              // Client-side dismiss guard
+              localStorage.setItem(dismissKey, '1');
+          });
+      }
+
       // ── Status Announcement Logic ──
       const appData = <?= json_encode($application ?? null) ?>;
       
@@ -1153,6 +1254,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
               showStatusAnnouncement(appData, dismissKey);
           }
       }
+
 
       function showDawahSelectionModal() {
         const existing = document.getElementById('dawah-selection-modal');

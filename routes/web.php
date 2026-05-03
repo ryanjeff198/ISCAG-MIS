@@ -44,6 +44,7 @@ $routes = [
     '/user/notifications' => ['UserController', 'notifications'],
     '/user/status/check'  => ['UserController', 'checkStatus'],
     '/user/notifications/mark-all-read' => ['UserController', 'markAllRead'],
+    '/user/status/mark-seen' => ['UserController', 'markStatusSeen'],
     '/logout'           => ['AuthController', 'logout'],
 
     // User Apartment Module
