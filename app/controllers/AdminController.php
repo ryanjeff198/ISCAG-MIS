@@ -817,7 +817,7 @@ class AdminController extends Controller
 
         // ── Build unified transactions array ──
         $transactions = [];
-        $now = new DateTime('+1 month');
+        $now = new DateTime('now');
         // --- CATEGORIZE ADVANCES & CONSUMABLE PAYMENTS ---
         $advanceQueues = []; // [tenant_id][type] => [ payment1, payment2, ... ]
         $consumedPaymentIds = [];
@@ -2113,7 +2113,7 @@ class AdminController extends Controller
      */
     private function getBillingAggregateMetrics(): array {
         $db = getDbConnection();
-        $now = new \DateTime('+1 month');
+        $now = new \DateTime('now');
         $thisMonthKey = $now->format('Y-m');
         $lastMonthKey = (clone $now)->modify('-1 month')->format('Y-m');
 
@@ -2476,7 +2476,7 @@ class AdminController extends Controller
 
         try {
             $db = getDbConnection();
-            $now = new \DateTime('+1 month');
+            $now = new \DateTime('now');
             error_log("getTenantBalance: Calculating for TID $tid as of " . $now->format('Y-m-d'));
 
         // Fetch Lease

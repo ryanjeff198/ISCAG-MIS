@@ -474,7 +474,7 @@ class ApartmentController extends Controller {
         $recurringCharges = [];
         if ($lease && $lease['lease_status'] === 'Active') {
             $db = getDbConnection();
-            $now = clone (new \DateTime('+1 month'));
+            $now = clone (new \DateTime('now'));
             // Family members for water bill
             $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM tenant_family_members WHERE tenant_id = ?");
             $stmt->execute([$userId]);
@@ -915,7 +915,7 @@ class ApartmentController extends Controller {
         $transactions = [];
         $totalAdvances = isset($advanceQueues['rent-advance']) ? count($advanceQueues['rent-advance']) : 0;
 
-        $now = clone (new \DateTime('+1 month'));
+        $now = clone (new \DateTime('now'));
         
         $leaseStart = new \DateTime($lease['start_date']);
         $leaseEnd = $lease['end_date'] ? (new \DateTime($lease['end_date'])) : null;
