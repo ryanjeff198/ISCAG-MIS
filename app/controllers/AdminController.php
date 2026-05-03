@@ -2292,6 +2292,10 @@ class AdminController extends Controller
             
             $req = $model->getById($id);
             if ($model->updateStatus($id, 'In Progress', 'Your maintenance request has been seen and is now in progress.')) {
+                // Sync: Set the tenant's room unit to "Maintenance" status
+                $model->setUnitStatus((int)$req['tenant_id'], 'Maintenance');
+                $this->logAudit('APARTMENT', 'UNIT_MAINTENANCE', "Room for Tenant ID {$req['tenant_id']} set to MAINTENANCE status due to maintenance request ID: $id");
+                
                 $notif->create($req['tenant_id'], 'Maintenance Update', 'Your maintenance request for ' . $req['category'] . ' is now In Progress.', 'approval');
                 $this->logAudit('MAINTENANCE', 'APPROVE_MAINTENANCE', "Approved maintenance ID: $id");
             }
@@ -2330,6 +2334,10 @@ class AdminController extends Controller
             
             $req = $model->getById($id);
             if ($model->updateStatus($id, 'Completed', 'Your maintenance request has been resolved/completed.')) {
+                // Sync: Restore the tenant's room unit back to "Occupied"
+                $model->setUnitStatus((int)$req['tenant_id'], 'Occupied');
+                $this->logAudit('APARTMENT', 'UNIT_RESTORED', "Room for Tenant ID {$req['tenant_id']} restored to OCCUPIED status after maintenance ID: $id resolved");
+                
                 $notif->create($req['tenant_id'], 'Maintenance Resolved', 'Your maintenance request for ' . $req['category'] . ' has been marked as Completed.', 'success');
                 $this->logAudit('MAINTENANCE', 'RESOLVE_MAINTENANCE', "Resolved maintenance ID: $id");
             }

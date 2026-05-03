@@ -508,6 +508,22 @@ $uploadedDocs = $uploadedDocs ?? [];
         </div>
     </div>
 
+    <!-- ═══ MODAL: MAINTENANCE AWARENESS ═══ -->
+    <div class="apt-modal-overlay" id="maintenanceAwarenessModal">
+        <div class="apt-modal success-modal" style="border: 3px solid var(--accent);">
+            <div style="padding: 40px 24px;">
+                <div class="success-icon-bounce" style="background: #fffbeb; color: #d97706; animation: none;">
+                    <svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:currentColor;"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.5 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
+                </div>
+                <h3 style="font-family:'Lora',serif; color:var(--primary-dark); margin-bottom:10px;">Unit Under Maintenance</h3>
+                <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.5;">Your unit is currently marked as <strong>Under Maintenance</strong>. ISCAG staff or contractors may be on-site performing repairs. Thank you for your patience.</p>
+                <div style="margin-top:24px;">
+                    <button onclick="closeMaintenanceAwarenessModal()" class="btn-action primary" style="background: var(--accent);">Acknowledge</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const root = document.getElementById('tenant-info-root');
         let assignedApt = null;
@@ -583,6 +599,7 @@ $uploadedDocs = $uploadedDocs ?? [];
                                 <div><h2 class="status-hero-name">${assignedApt.label || assignedApt.name}</h2><p class="status-hero-subtitle">Assigned Unit: ${assignedApt.room_number || 'ISCAG Compound'}</p></div>
                             </div>
                             <div class="status-badge approved"><span class="status-badge-dot"></span>Active Unit</div>
+                            ${assignedApt.unit_status === 'Maintenance' ? `<div class="status-badge" style="background:#fffbeb; color:#d97706; border:1px solid #fde68a;">⚠️ Under Maintenance</div>` : ''}
                         </div>
                     </div>
                     <div class="status-summary">
@@ -608,6 +625,21 @@ $uploadedDocs = $uploadedDocs ?? [];
                     </div>
                 </div>
             `;
+
+            // Check for maintenance awareness
+            if (assignedApt.unit_status === 'Maintenance') {
+                setTimeout(openMaintenanceAwarenessModal, 800);
+            }
+        }
+
+        function openMaintenanceAwarenessModal() {
+            document.getElementById('maintenanceAwarenessModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMaintenanceAwarenessModal() {
+            document.getElementById('maintenanceAwarenessModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
         }
 
         function openAptDetails() {

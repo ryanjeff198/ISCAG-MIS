@@ -64,4 +64,20 @@ class Maintenance {
         $stmt->execute(['id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Update the apartment unit status for a tenant.
+     * Used to sync maintenance approval/resolution with room status.
+     *
+     * @param int    $tenantId  The tenant whose unit to update
+     * @param string $status    The new unit status (e.g. 'Maintenance', 'Occupied')
+     * @return bool
+     */
+    public function setUnitStatus(int $tenantId, string $status): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE apartment_units SET status = :status WHERE tenant_id = :tid"
+        );
+        return $stmt->execute(['status' => $status, 'tid' => $tenantId]);
+    }
 }

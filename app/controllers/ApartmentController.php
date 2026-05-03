@@ -464,9 +464,7 @@ class ApartmentController extends Controller {
         $recurringCharges = [];
         if ($lease && $lease['lease_status'] === 'Active') {
             $db = getDbConnection();
-            $simulationMonths = 0; // REAL TIME
             $now = clone (new \DateTime());
-            
             // Family members for water bill
             $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM tenant_family_members WHERE tenant_id = ?");
             $stmt->execute([$userId]);
@@ -485,20 +483,16 @@ class ApartmentController extends Controller {
             $advanceParkingCount = 0;
             $advanceContributionCount = 0;
             foreach ($payments as $p) {
-                if ($p['payment_status'] === 'Paid' && strpos($p['payment_type'], '-') !== false) {
-                    $paidRecurringKeys[] = strtolower($p['payment_type']);
-                    if (strtolower($p['payment_type']) === 'rent-advance') {
-                        $advancePaymentCount++;
-                        $simulationMonths++;
+                if ($p['payment_status'] === 'Paid') {
+                    $typeLower = strtolower($p['payment_type']);
+                    if (strpos($typeLower, '-') !== false) {
+                        $paidRecurringKeys[] = $typeLower;
                     }
-                    if (strtolower($p['payment_type']) === 'water-advance') $advanceWaterCount++;
-                    if (strtolower($p['payment_type']) === 'parking-advance') $advanceParkingCount++;
-                    if (strtolower($p['payment_type']) === 'contribution-advance') $advanceContributionCount++;
+                    if ($typeLower === 'rent-advance' || $typeLower === 'advance') $advancePaymentCount++;
+                    if ($typeLower === 'water-advance') $advanceWaterCount++;
+                    if ($typeLower === 'parking-advance') $advanceParkingCount++;
+                    if ($typeLower === 'contribution-advance') $advanceContributionCount++;
                 }
-            }
-
-            if ($simulationMonths > 0) {
-                $now->modify("+$simulationMonths month");
             }
 
             // Generate monthly charges from lease start
@@ -513,18 +507,32 @@ class ApartmentController extends Controller {
                 $monthName = $currentDate->format('F Y');
                 $monthKey = $currentDate->format('Y-m');
 
-                // Skip Month 0 (covered by Advance Rent)
-                if ($monthCount > 0) {
-                    // Monthly Rent
-                    $rentId = 'rent-' . $monthKey;
-                    $isPaid = in_array(strtolower($rentId), $paidRecurringKeys);
-                    
-                    // Consume floating advance payments to mark future unpaid rents as paid
-                    if (!$isPaid && $advancePaymentCount > 0) {
-                        $isPaid = true;
-                        $advancePaymentCount--;
-                    }
+                // 1. Rent Logic
+                $rentId = 'rent-' . $monthKey;
+                $isPaid = in_array(strtolower($rentId), $paidRecurringKeys);
+                if (!$isPaid && $advancePaymentCount > 0) {
+                    $isPaid = true;
+                    $advancePaymentCount--;
+                }
 
+                // 2. Water Logic
+                $waterId = 'water-' . $monthKey;
+                $isWaterPaid = in_array(strtolower($waterId), $paidRecurringKeys);
+                if (!$isWaterPaid && $advanceWaterCount > 0) {
+                    $isWaterPaid = true;
+                    $advanceWaterCount--;
+                }
+
+                // 3. Contribution Logic
+                $contribId = 'contribution-' . $monthKey;
+                $isContribPaid = in_array(strtolower($contribId), $paidRecurringKeys);
+                if (!$isContribPaid && $advanceContributionCount > 0) {
+                    $isContribPaid = true;
+                    $advanceContributionCount--;
+                }
+
+                // UI Display: Only show in recurring charges list if it's Month 1+
+                if ($monthCount > 0) {
                     $recurringCharges[] = [
                         'id'          => $rentId,
                         'date'        => $currentDate->format('Y-m-d'),
@@ -534,14 +542,6 @@ class ApartmentController extends Controller {
                         'status'      => $isPaid ? 'Paid' : 'Unpaid'
                     ];
 
-                    // Water Bill
-                    $waterId = 'water-' . $monthKey;
-                    $isWaterPaid = in_array(strtolower($waterId), $paidRecurringKeys);
-                    if (!$isWaterPaid && $advanceWaterCount > 0) {
-                        $isWaterPaid = true;
-                        $advanceWaterCount--;
-                    }
-                    
                     $recurringCharges[] = [
                         'id'          => $waterId,
                         'date'        => $currentDate->format('Y-m-d'),
@@ -550,14 +550,7 @@ class ApartmentController extends Controller {
                         'amount'      => (float)($occupants * 100),
                         'status'      => $isWaterPaid ? 'Paid' : 'Unpaid'
                     ];
-                    // Contribution
-                    $contribId = 'contribution-' . $monthKey;
-                    $isContribPaid = in_array(strtolower($contribId), $paidRecurringKeys);
-                    if (!$isContribPaid && $advanceContributionCount > 0) {
-                        $isContribPaid = true;
-                        $advanceContributionCount--;
-                    }
-                    
+
                     $recurringCharges[] = [
                         'id'          => $contribId,
                         'date'        => $currentDate->format('Y-m-d'),
@@ -847,7 +840,6 @@ class ApartmentController extends Controller {
         $totalAdvances = isset($advanceQueues['rent-advance']) ? count($advanceQueues['rent-advance']) : 0;
 
         $now = clone (new \DateTime());
-        if ($totalAdvances > 0) $now->modify("+$totalAdvances month"); 
         
         $leaseStart = new \DateTime($lease['start_date']);
         $leaseEnd = $lease['end_date'] ? (new \DateTime($lease['end_date'])) : null;
