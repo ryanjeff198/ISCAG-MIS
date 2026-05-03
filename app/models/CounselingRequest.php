@@ -37,12 +37,6 @@ class CounselingRequest
         return $stmt->execute($data);
     }
 
-    public function updateStatus(int $id, string $status): bool
-    {
-        $stmt = $this->db->prepare("UPDATE {$this->table} SET status = :status WHERE id = :id");
-        return $stmt->execute(['status' => $status, 'id' => $id]);
-    }
-
     public function getAnalytics(string $gender): array
     {
         $stmt = $this->db->prepare("
