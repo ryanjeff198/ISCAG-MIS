@@ -205,6 +205,14 @@
                                 </thead>
                                 <tbody>
                                     <?php 
+                                    // Custom sort order for Initial Payments
+                                    $sortOrder = ['Advance' => 1, 'Deposit' => 2, 'Water-Advance' => 3, 'Contribution-Advance' => 4, 'Parking-Advance' => 5];
+                                    usort($payments, function($a, $b) use ($sortOrder) {
+                                        $orderA = $sortOrder[$a['payment_type']] ?? 99;
+                                        $orderB = $sortOrder[$b['payment_type']] ?? 99;
+                                        return $orderA <=> $orderB;
+                                    });
+
                                     $unpaidIds = [];
                                     $unpaidItems = [];
                                     foreach ($payments as $pay): 
