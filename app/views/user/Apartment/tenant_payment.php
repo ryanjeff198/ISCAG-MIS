@@ -42,6 +42,8 @@
         .type-badge.rent { background: rgba(23,107,69,0.1); color: #176b45; }
         .type-badge.water { background: rgba(6,182,212,0.1); color: #0891b2; }
         .type-badge.parking { background: rgba(245,158,11,0.1); color: #b45309; }
+        .type-badge.deposit { background: rgba(59,130,246,0.1); color: #2563eb; }
+        .type-badge.contribution { background: rgba(139,92,246,0.1); color: #7c3aed; }
         
         .payment-status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
         .payment-status-badge.pending { background: #fffbeb; color: #ca8a04; border: 1px solid #fef08a; }
@@ -237,13 +239,16 @@
                                         <td>
                                             <div class="breakdown-item-name">
                                                 <?php
-                                                    if ($pay['payment_type'] === 'Deposit') echo 'Security Deposit';
-                                                    elseif ($pay['payment_type'] === 'Advance') echo 'Advance Rent';
-                                                    elseif ($pay['payment_type'] === 'Water-Advance') echo 'Water Bill';
-                                                    elseif ($pay['payment_type'] === 'Contribution-Advance') echo 'Contribution';
-                                                    elseif ($pay['payment_type'] === 'Parking-Advance') echo 'Parking Fee';
-                                                    else echo htmlspecialchars($pay['payment_type']);
+                                                    $bClass = 'rent';
+                                                    $disp = 'Charge';
+                                                    if ($pay['payment_type'] === 'Deposit') { $bClass = 'deposit'; $disp = 'Security Deposit'; }
+                                                    elseif ($pay['payment_type'] === 'Advance') { $bClass = 'rent'; $disp = 'Advance Rent'; }
+                                                    elseif ($pay['payment_type'] === 'Water-Advance') { $bClass = 'water'; $disp = 'Water Bill'; }
+                                                    elseif ($pay['payment_type'] === 'Contribution-Advance') { $bClass = 'contribution'; $disp = 'Contribution'; }
+                                                    elseif ($pay['payment_type'] === 'Parking-Advance') { $bClass = 'parking'; $disp = 'Parking Fee'; }
+                                                    else { $disp = htmlspecialchars($pay['payment_type']); }
                                                 ?>
+                                                <span class="type-badge <?= $bClass ?>"><?= $disp ?></span>
                                             </div>
                                             <div class="breakdown-item-desc">
                                                 <?php 
@@ -253,7 +258,7 @@
                                                     elseif($pay['payment_type'] === 'Contribution-Advance') echo "1st Month Security & Garbage"; 
                                                     elseif($pay['payment_type'] === 'Parking-Advance') echo "1st Month Parking"; 
                                                 ?>
-                                                <?php if($isPaid && $pay['reference_number']) echo "<br/><span style='color:#166534;font-size:0.72rem;font-weight:600;'>Ref: {$pay['reference_number']}</span>"; ?>
+                                                <?php if($isPaid && $pay['reference_number']) echo "<br/><span style='color:var(--text-muted);font-size:0.72rem;font-weight:600;'>Receipt: {$pay['reference_number']}</span>"; ?>
                                             </div>
                                         </td>
                                         <td>
