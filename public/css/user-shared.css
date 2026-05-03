@@ -87,7 +87,12 @@ body {
   position: relative;
   flex-shrink: 0;
   z-index: 200;
-  transition: min-width 0.3s ease, width 0.3s ease;
+  will-change: width, min-width;
+  transition: min-width 0.5s cubic-bezier(0.22, 1, 0.36, 1), 
+              width 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+              background 0.3s ease,
+              box-shadow 0.4s ease;
+  box-shadow: 4px 0 15px rgba(0,0,0,0.05);
 }
 
 .sidebar::after {

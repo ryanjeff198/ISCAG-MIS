@@ -618,7 +618,8 @@
           elseif ($st === 'occupied') $fullyOccupied++;
           elseif ($st === 'reserved') $reserved++;
       }
-      $totalUnits = count($units);
+      $totalUnits = 125;
+      $availableSlots += ($totalUnits - count($units));
     ?>
 
     standardizePage('staff');
@@ -636,6 +637,29 @@
     }
     // ── Stats ──
     refreshStats();
+
+    // ── Tabs Logic ──
+    window.switchTab = function(key, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      else {
+        // If triggered from insight card, find the matching tab button
+        const mapping = {
+          'total': 0, 'available': 1, 'occupied': 2, 'reserved': 3
+        };
+        if(mapping[key] !== undefined) {
+          const btns = document.querySelectorAll('.tab-btn');
+          if(btns[mapping[key]]) btns[mapping[key]].classList.add('active');
+        }
+      }
+
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      const panel = document.getElementById(key + '-section');
+      if (panel) {
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
 
     // ── Unit type detection ──
     function getUnitType(name) {

@@ -118,43 +118,30 @@
     .soa-details strong {
       color: var(--primary-dark);
     }
-    .soa-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 30px;
-    }
-    .soa-table th {
-      background: var(--primary-dark);
-      color: white;
-      padding: 12px;
-      text-align: left;
-      font-size: 0.9rem;
-    }
-    .soa-table td {
-      padding: 12px;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.95rem;
-    }
-    .soa-summary {
-      width: 100%;
-      max-width: 350px;
-      margin-left: auto;
-    }
-    .soa-summary-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .soa-summary-row.total {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--primary-dark);
-      border-bottom: none;
-      border-top: 2px solid var(--primary-dark);
-      margin-top: 10px;
-      padding-top: 15px;
-    }
+    .soa-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 1px solid var(--border); }
+    .soa-table th { background: var(--primary-dark); color: white; padding: 12px; text-align: left; font-size: 0.85rem; border: 1px solid var(--border); }
+    .soa-table td { padding: 10px 12px; border: 1px solid var(--border); font-size: 0.9rem; }
+    .soa-table tr:hover { background: #f8faf9; }
+    .type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+    .type-badge.rent { background: rgba(23,107,69,0.1); color: #176b45; }
+    .type-badge.deposit { background: rgba(59,130,246,0.1); color: #2563eb; }
+    .type-badge.advance { background: rgba(139,92,246,0.1); color: #7c3aed; }
+    .type-badge.parking { background: rgba(245,158,11,0.1); color: #b45309; }
+    .type-badge.water { background: rgba(6,182,212,0.1); color: #0891b2; }
+    .type-badge.payment { background: rgba(34,197,94,0.1); color: #16a34a; }
+    .type-badge.contribution { background: rgba(156,163,175,0.15); color: #4b5563; }
+    .soa-summary { width: 100%; max-width: 400px; margin-left: auto; }
+    .soa-summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+    .soa-summary-row.total { font-size: 1.2rem; font-weight: 700; color: var(--primary-dark); border-bottom: none; border-top: 2px solid var(--primary-dark); margin-top: 10px; padding-top: 15px; }
+    .soa-section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary); padding: 12px; background: rgba(23,107,69,0.04); border-left: 3px solid var(--primary); }
+    .breakdown-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; padding: 0 12px; }
+    .breakdown-card { background: #f8faf9; border-radius: 10px; padding: 14px 16px; border: 1px solid var(--border); }
+    .breakdown-card .bk-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 6px; }
+    .breakdown-card .bk-value { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+    
+    .label-muted { color: var(--text-muted); }
+    .row-payment td { background: rgba(34,197,94,0.02); }
+    .row-charge td { background: white; }
 
     /* Controls Panel */
     .controls-panel {
@@ -222,115 +209,7 @@
       transform: translateY(-1px);
     }
 
-    /* Layout for Form + History */
-    .billing-middle-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.5fr;
-      gap: 24px;
-      align-items: start;
-    }
-
-    @media (max-width: 1000px) {
-      .billing-middle-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .form-card {
-      background: white;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-      padding: 24px;
-    }
-
-    .card-title {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--primary-dark);
-      border-bottom: 2px solid var(--border);
-      padding-bottom: 12px;
-      margin-bottom: 20px;
-    }
-
-    .form-row {
-      margin-bottom: 16px;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: var(--text-main);
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-family: inherit;
-    }
-
-    .form-control:focus {
-      border-color: var(--primary);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1);
-    }
-
-    .file-dropzone {
-      border: 2px dashed var(--border);
-      border-radius: 8px;
-      padding: 24px;
-      text-align: center;
-      background: #fafafa;
-      position: relative;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .file-dropzone:hover {
-      border-color: var(--primary);
-      background: rgba(23, 107, 69, 0.03);
-    }
-
-    .file-dropzone input {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-    }
-
-    .file-name {
-      margin-top: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--primary-dark);
-    }
-
-    .btn-submit {
-      width: 100%;
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(23, 107, 69, 0.2);
-      transition: all 0.2s;
-    }
-
-    .btn-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(23, 107, 69, 0.3);
-    }
+    /* Grid layouts removed for full size */
 
     /* History Table */
     .history-card {
@@ -496,35 +375,66 @@
         <!-- Admin Tenant Selector -->
         <!-- Controls Panel -->
         <div class="controls-panel no-print">
-          <div class="form-group-control flex-2">
-            <label>Select Tenant</label>
-            <select id="tenant-dropdown" onchange="loadTenantData()">
-              <option value="">— Select a Tenant to Manage —</option>
-              <?php foreach ($allUsers ?? [] as $u): ?>
-                <?php $uName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')); ?>
-                <option value="<?= $u['tenant_id'] ?>"><?= htmlspecialchars($uName ?: 'User '.$u['tenant_id']) ?> (ID: <?= $u['tenant_id'] ?>)</option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="form-group-control">
-            <label>Date From</label>
-            <input type="date" id="date-from" onchange="loadTenantData()" />
-          </div>
-          <div class="form-group-control">
-            <label>Date To</label>
-            <input type="date" id="date-to" onchange="loadTenantData()" />
-          </div>
-          <div class="form-group-control" style="flex: 0 0 auto;">
-            <label>&nbsp;</label>
-            <button class="btn-filter-soa" onclick="loadTenantData()">
-              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
-              Filter
-            </button>
-          </div>
+          <form method="GET" action="" style="display:flex; width:100%; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+            <div class="form-group-control flex-2">
+              <label>Select Tenant</label>
+              <select name="tenant_id" id="tenant-dropdown" onchange="this.form.submit()">
+                <option value="">— Select a Tenant to Manage —</option>
+                <?php foreach ($allUsers ?? [] as $u): ?>
+                  <?php $uName = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')); ?>
+                  <option value="<?= $u['tenant_id'] ?>" <?= ($selectedTenantId == $u['tenant_id']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($uName ?: 'User '.$u['tenant_id']) ?> (ID: <?= $u['tenant_id'] ?>)
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <?php if ($selectedTenantId && !empty($availableMonths)): ?>
+            <div class="form-group-control">
+              <label>Filter by Month</label>
+              <select name="month" id="monthFilter" onchange="this.form.submit()">
+                <option value="all" <?= ($filterMonth === 'all') ? 'selected' : '' ?>>All Time</option>
+                <?php foreach ($availableMonths as $am): 
+                  $amLabel = date('F Y', strtotime($am . '-01'));
+                ?>
+                  <option value="<?= $am ?>" <?= ($filterMonth === $am) ? 'selected' : '' ?>><?= $amLabel ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <?php endif; ?>
+            <div class="form-group-control" style="flex: 0 0 auto;">
+              <label>&nbsp;</label>
+              <button type="submit" class="btn-filter-soa">
+                <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+                Load
+              </button>
+            </div>
+          </form>
         </div>
 
-        <div class="billing-wrapper" id="billing-wrapper" style="display:none;">
-
+        <?php if ($selectedTenantId): ?>
+        <div class="billing-wrapper" id="billing-wrapper">
+          
+          <?php if (!$lease): ?>
+            <div style="text-align:center; padding:60px 20px; background:white; border-radius:12px; border:1px solid var(--border);">
+              <p>No active lease found for this tenant.</p>
+            </div>
+          <?php else: 
+            $metrics = ['Rent' => 0, 'Deposit' => 0, 'Parking' => 0, 'Water' => 0, 'Contribution' => 0, 'Payments' => 0];
+            foreach($transactions as $t) {
+              if($t['payment'] > 0) $metrics['Payments'] += $t['payment'];
+              else {
+                $type = strtolower($t['type']);
+                if(strpos($type, 'rent') !== false) $metrics['Rent'] += $t['charge'];
+                elseif(strpos($type, 'deposit') !== false) $metrics['Deposit'] += $t['charge'];
+                elseif(strpos($type, 'parking') !== false) $metrics['Parking'] += $t['charge'];
+                elseif(strpos($type, 'water') !== false) $metrics['Water'] += $t['charge'];
+                elseif(strpos($type, 'contribution') !== false) $metrics['Contribution'] += $t['charge'];
+              }
+            }
+            $tName = trim(($selectedTenantInfo['first_name'] ?? '') . ' ' . ($selectedTenantInfo['last_name'] ?? ''));
+            if (!$tName) $tName = 'Tenant';
+          ?>
+          
           <!-- SOA SECTION (Official Layout) -->
           <div class="soa-container" id="printable-soa">
             <div class="soa-header">
@@ -538,69 +448,128 @@
               </div>
               <div class="soa-title">
                 <h1>Statement of Account</h1>
-                <p>Generated on: <span id="soa-date-generated">--</span></p>
+                <p>Generated on: <?= date('F d, Y') ?></p>
               </div>
             </div>
 
             <div class="soa-details">
               <div class="soa-details-left">
                 <p>Bill To:</p>
-                <p><strong id="soa-t-name" style="font-size:1.2rem;">--</strong></p>
-                <p>Unit: <strong id="soa-t-room">--</strong></p>
-                <p>App ID: <span id="soa-t-app">--</span></p>
+                <p><strong style="font-size:1.2rem;"><?= htmlspecialchars($tName) ?></strong></p>
+                <p>Unit: <strong><?= (!empty($lease['building']) && !empty($lease['room_number'])) ? htmlspecialchars($lease['building'] . '-' . $lease['room_number']) : 'Unassigned' ?></strong></p>
+                <p>Email: <?= htmlspecialchars($lease['email'] ?? '') ?></p>
               </div>
               <div class="soa-details-right" style="text-align: right;">
                 <p>Statement Period:</p>
-                <p><strong id="soa-month">April 2026</strong></p>
+                <p><strong><?= $filterMonth === 'all' ? 'All Time' : date('F Y', strtotime($filterMonth . '-01')) ?></strong></p>
+                <p style="margin-top:8px;">Occupants: <strong><?= $occupants ?> person(s)</strong></p>
+                <p>Room Type: <strong><?= htmlspecialchars($lease['roomtype'] ?? 'Apartment') ?></strong></p>
               </div>
+            </div>
+
+            <!-- Exact Breakdown Cards -->
+            <div class="breakdown-grid">
+              <?php if ($metrics['Rent'] > 0): ?>
+              <div class="breakdown-card">
+                <div class="bk-label">Monthly Rent</div>
+                <div class="bk-value">₱<?= number_format($metrics['Rent'], 2) ?></div>
+                <div class="bk-sub"><?= htmlspecialchars($lease['roomtype'] ?? 'Unit Fee') ?></div>
+              </div>
+              <?php endif; ?>
+
+              <?php if ($metrics['Deposit'] > 0): ?>
+              <div class="breakdown-card">
+                <div class="bk-label">Security Deposit</div>
+                <div class="bk-value">₱<?= number_format($metrics['Deposit'], 2) ?></div>
+              </div>
+              <?php endif; ?>
+
+              <?php if ($metrics['Parking'] > 0): ?>
+              <div class="breakdown-card">
+                <div class="bk-label">Parking Fee</div>
+                <div class="bk-value">₱<?= number_format($metrics['Parking'], 2) ?></div>
+              </div>
+              <?php endif; ?>
+
+              <?php if ($metrics['Water'] > 0): ?>
+              <div class="breakdown-card">
+                <div class="bk-label">Water Bill</div>
+                <div class="bk-value">₱<?= number_format($metrics['Water'], 2) ?></div>
+                <div class="bk-sub"><?= $occupants ?> person(s)</div>
+              </div>
+              <?php endif; ?>
+
+              <?php if ($metrics['Contribution'] > 0): ?>
+              <div class="breakdown-card">
+                <div class="bk-label">Monthly Contribution</div>
+                <div class="bk-value">₱<?= number_format($metrics['Contribution'], 2) ?></div>
+                <div class="bk-sub">Security & Garbage</div>
+              </div>
+              <?php endif; ?>
             </div>
 
             <table class="soa-table">
               <thead>
                 <tr>
-                  <th>Particulars</th>
-                  <th style="text-align:right;">Previous Balance</th>
-                  <th style="text-align:right;">Current Charges</th>
-                  <th style="text-align:right;">Payments</th>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>Reference</th>
+                  <th style="text-align:right;">Charge</th>
+                  <th style="text-align:right;">Payment</th>
                   <th style="text-align:right;">Balance</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Water Consumption</td>
-                  <td id="b-w-prev" style="text-align:right;">₱0.00</td>
-                  <td id="b-w-curr" style="text-align:right;">₱0.00</td>
-                  <td id="b-w-pay" style="text-align:right; color:var(--success);">₱0.00</td>
-                  <td id="b-w-bal" style="text-align:right; font-weight:600;">₱0.00</td>
+                <?php 
+                $runningBalance = $balanceForwarded ?? 0; 
+                $totalCharges = 0; 
+                $totalPayments = 0;
+                $lastCat = '';
+
+                if (($filterMonth ?? 'all') !== 'all' && $runningBalance != 0): ?>
+                  <tr>
+                    <td colspan="6"><strong>Balance Forwarded from Previous Months (<?= $runningBalance < 0 ? 'Overpayment Credit' : 'Unpaid Balance' ?>)</strong></td>
+                    <td style="text-align:right; font-weight:700; color:<?= $runningBalance > 0 ? 'var(--danger)' : 'var(--success)' ?>"><?= $runningBalance < 0 ? '-' : '' ?>₱<?= number_format(abs($runningBalance), 2) ?></td>
+                  </tr>
+                <?php endif;
+
+                foreach ($transactions as $t): 
+                  $cat = getCategoryLabel($t['type']);
+                  if ($cat !== $lastCat): ?>
+                    <tr><td colspan="7" class="soa-section-title"><?= $cat ?></td></tr>
+                    <?php $lastCat = $cat; 
+                  endif;
+
+                  $runningBalance += ($t['charge'] - $t['payment']);
+                  $totalCharges += $t['charge'];
+                  $totalPayments += $t['payment'];
+                ?>
+                <tr class="<?= $t['payment'] > 0 ? 'row-payment' : 'row-charge' ?>">
+                  <td><?= date('Y-m-d', strtotime($t['date'])) ?></td>
+                  <td><span class="type-badge <?= getBadgeClass($t['type']) ?>"><?= $t['type'] ?></span></td>
+                  <td><?= htmlspecialchars($t['description']) ?></td>
+                  <td style="font-family:monospace; font-size:0.8rem;"><?= htmlspecialchars($t['ref']) ?></td>
+                  <td style="text-align:right;"><?= $t['charge'] > 0 ? '₱'.number_format($t['charge'], 2) : '-' ?></td>
+                  <td style="text-align:right; color:var(--success);"><?= $t['payment'] > 0 ? '₱'.number_format($t['payment'], 2) : '-' ?></td>
+                  <td style="text-align:right; font-weight:700; color:<?= $runningBalance > 0 ? 'var(--danger)' : 'var(--success)' ?>">₱<?= number_format($runningBalance, 2) ?></td>
                 </tr>
-                <tr>
-                  <td>Monthly Rent</td>
-                  <td id="b-r-prev" style="text-align:right;">₱0.00</td>
-                  <td id="b-r-curr" style="text-align:right;">₱0.00</td>
-                  <td id="b-r-pay" style="text-align:right; color:var(--success);">₱0.00</td>
-                  <td id="b-r-bal" style="text-align:right; font-weight:600;">₱0.00</td>
-                </tr>
-                <tr>
-                  <td>Parking Fee</td>
-                  <td id="b-p-prev" style="text-align:right;">₱0.00</td>
-                  <td id="b-p-curr" style="text-align:right;">₱0.00</td>
-                  <td id="b-p-pay" style="text-align:right; color:var(--success);">₱0.00</td>
-                  <td id="b-p-bal" style="text-align:right; font-weight:600;">₱0.00</td>
-                </tr>
-                <tr>
-                  <td>Contribution</td>
-                  <td id="b-c-prev" style="text-align:right;">₱0.00</td>
-                  <td id="b-c-curr" style="text-align:right;">₱0.00</td>
-                  <td id="b-c-pay" style="text-align:right; color:var(--success);">₱0.00</td>
-                  <td id="b-c-bal" style="text-align:right; font-weight:600;">₱0.00</td>
-                </tr>
+                <?php endforeach; ?>
               </tbody>
             </table>
 
             <div class="soa-summary">
+              <div class="soa-summary-row">
+                <span class="label-muted">Total Charges:</span>
+                <span>₱<?= number_format($totalCharges ?? 0, 2) ?></span>
+              </div>
+              <div class="soa-summary-row">
+                <span class="label-muted">Total Payments:</span>
+                <span style="color:var(--success);">₱<?= number_format($totalPayments ?? 0, 2) ?></span>
+              </div>
               <div class="soa-summary-row total">
                 <span>Outstanding Balance:</span>
-                <span id="soa-total-due">₱0.00</span>
+                <span style="color:<?= ($runningBalance ?? 0) > 0 ? 'var(--danger)' : 'var(--success)' ?>">₱<?= number_format($runningBalance ?? 0, 2) ?></span>
               </div>
             </div>
 
@@ -608,54 +577,12 @@
               <p>This is a system-generated document. For inquiries, please contact the ISCAG Apartment Department.</p>
             </div>
           </div>
+          <?php endif; ?>
 
-          <!-- FORM & HISTORY GRID -->
-          <div class="billing-middle-grid">
-
-            <!-- PAYMENT SUBMISSION FORM -->
-            <div class="form-card">
-              <div class="card-title" id="form-title">Submit Proof of Payment</div>
-              <form id="payForm" onsubmit="event.preventDefault(); handlePaymentSubmit();">
-                <div class="form-row">
-                  <label class="form-label">Amount Paid (₱)</label>
-                  <input type="number" step="0.01" class="form-control" id="form-amount" required>
-                </div>
-                <div class="form-row" style="display:flex;gap:12px;">
-                  <div style="flex:1;">
-                    <label class="form-label">Payment Method</label>
-                    <select class="form-control" id="form-method" required>
-                      <option value="">Select...</option>
-                      <option value="GCash">GCash</option>
-                      <option value="Maya">Maya</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                      <option value="Cash OTC">Cash OTC (Admin Only)</option>
-                    </select>
-                  </div>
-                  <div style="flex:1;">
-                    <label class="form-label">Date Paid</label>
-                    <input type="date" class="form-control" id="form-date" required>
-                  </div>
-                </div>
-                <div class="form-row">
-                  <label class="form-label">Reference Number</label>
-                  <input type="text" class="form-control" id="form-ref" placeholder="Trace ID / Receipt No" required>
-                </div>
-                <div class="form-row">
-                  <label class="form-label">Attach Proof (Image/PDF)</label>
-                  <div class="file-dropzone">
-                    <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:var(--text-muted);">
-                      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                    </svg>
-                    <div class="file-name" id="file-label">Click to upload file...</div>
-                    <input type="file" id="form-file" accept="image/*,.pdf" onchange="updateFileLabel(this)" required>
-                  </div>
-                </div>
-                <button type="submit" class="btn-submit">Submit Payment Record</button>
-              </form>
-            </div>
-
+          <!-- FULL SIZE TRACKER GRID -->
+          <div style="margin-top: 24px;">
             <!-- PAYMENT STATUS HISTORY -->
-            <div class="history-card">
+            <div class="history-card" style="width:100%;">
               <div class="history-card-header">
                 <h3>Payment Tracking & Verification</h3>
               </div>
@@ -673,16 +600,17 @@
                     </tr>
                   </thead>
                   <tbody id="history-tbody">
-                    <!-- JS Injected -->
+                    <!-- JS Injected based on selected tenant -->
                   </tbody>
                 </table>
               </div>
               <div id="no-history-msg" style="padding:40px; text-align:center; color:var(--text-muted); display:none;">
                 No payments submitted for this billing cycle yet.</div>
             </div>
-
           </div>
+
         </div>
+        <?php endif; ?>
       </div>
     </div>
   </div>
@@ -714,79 +642,34 @@
     localStorage.setItem('mis_current_role', activeRole);
     setCurrentRole(activeRole); 
 
-    let APPROVED_TENANTS = [];
     let CURRENT_TARGET = null;
     let currentProofIdAction = null;
 
-    const APPROVED_FROM_DB = <?= json_encode($approvedTenants ?? []) ?>;
-    const ALL_USERS_DB = <?= json_encode($allUsers ?? []) ?>;
-    const APT_TYPES_DB = <?= json_encode($apartmentTypes ?? []) ?>;
+    const selectedTenantId = <?= json_encode($selectedTenantId) ?>;
+    const currentLease = <?= json_encode($lease) ?>;
+    const selectedTenantInfo = <?= json_encode($selectedTenantInfo) ?>;
+
+    if (selectedTenantId) {
+      CURRENT_TARGET = {
+        id: selectedTenantId,
+        app_id: currentLease ? currentLease.application_id : null,
+        name: selectedTenantInfo ? `${selectedTenantInfo.first_name} ${selectedTenantInfo.last_name}`.trim() : 'Tenant',
+        room: currentLease ? currentLease.roomtype : 'Unassigned'
+      };
+    }
 
     function initPage() {
-      // 1. Start with tenants who have active/approved applications
-      APPROVED_TENANTS = APPROVED_FROM_DB.map(r => {
-        const apt = APT_TYPES_DB.find(a => a.type_key === r.roomtype || a.label === r.roomtype);
-        const rentAmount = apt ? parseFloat(apt.price) : 5000;
-        
-        return {
-          id: r.tenant_id,
-          app_id: r.id,
-          name: `${r.first_name} ${r.last_name}`.trim(),
-          room: r.roomtype || 'Unassigned',
-          current: { water: 350, rent: rentAmount, parking: 0, contribution: 100 },
-          prev: { water: 0, rent: 0, parking: 0, contribution: 0 },
-          payments: { water: 0, rent: 0, parking: 0, contribution: 0 }
-        };
-      });
-
-      // 2. Merge all other real users from the database who don't have applications yet
-      ALL_USERS_DB.forEach(u => {
-        const exists = APPROVED_TENANTS.some(t => t.id === u.tenant_id);
-        if (!exists) {
-          APPROVED_TENANTS.push({
-            id: u.tenant_id,
-            app_id: 'N/A',
-            name: `${u.first_name} ${u.last_name}`.trim(),
-            room: 'General Account',
-            current: { water: 0, rent: 0, parking: 0, contribution: 100 },
-            prev: { water: 0, rent: 0, parking: 0, contribution: 0 },
-            payments: { water: 0, rent: 0, parking: 0, contribution: 0 }
-          });
-        }
-      });
-
-      // 3. (Fallback removed per request - showing only real users)
-      if (APPROVED_TENANTS.length === 0) {
-        console.warn("No real users found in database for billing dropdown.");
-      }
-
       // UI Adaptation based on roles
       const isAdmin = (activeRole === ROLES.MIS_ADMIN || activeRole === ROLES.STAFF_ADMIN);
 
-      document.getElementById('form-date').valueAsDate = new Date();
-      document.getElementById('soa-month').textContent = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
       if (isAdmin) {
-        // Setup Admin View
         setupAdminSidebar();
-        const selectorUi = document.getElementById('admin-selector-ui');
-        if (selectorUi) selectorUi.style.display = 'flex';
-
-        const sel = document.getElementById('tenant-dropdown');
-        if (sel) {
-          // Dropdown is already populated by PHP for reliability.
-          // We just need to make sure the internal APPROVED_TENANTS list is ready for SOA logic.
-        }
-
       } else {
-        // Setup User View Constraints
         setupUserSidebar();
-        document.getElementById('admin-selector-ui').style.display = 'none';
+      }
 
-        // Simulate User session targeting
-        CURRENT_TARGET = APPROVED_TENANTS[0];
-        document.getElementById('billing-wrapper').style.display = 'block';
-        renderUnifiedModule();
+      if (CURRENT_TARGET) {
+        renderHistoryTable();
       }
     }
 
@@ -833,95 +716,6 @@
     `;
     }
 
-    // ── CORE LOGIC ──
-    function loadTenantData() {
-      const val = document.getElementById('tenant-dropdown').value;
-      const wrapper = document.getElementById('billing-wrapper');
-      if (!val) {
-        wrapper.style.display = 'none';
-        CURRENT_TARGET = null;
-      } else {
-        wrapper.style.display = 'block';
-        CURRENT_TARGET = APPROVED_TENANTS.find(x => x.id === val);
-        renderUnifiedModule();
-      }
-    }
-
-    function fmtMon(num) { return '₱' + parseFloat(num).toLocaleString('en-PH', { minimumFractionDigits: 2 }); }
-
-    function renderUnifiedModule() {
-      if (!CURRENT_TARGET) return;
-
-      // 1. RENDER SOA Calculations (Balance = Prev + Curr - Payments)
-      document.getElementById('soa-t-name').textContent = CURRENT_TARGET.name;
-      document.getElementById('soa-t-room').textContent = CURRENT_TARGET.room;
-      document.getElementById('soa-t-app').textContent = CURRENT_TARGET.app_id;
-      document.getElementById('soa-date-generated').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-      const dateFrom = document.getElementById('date-from').value;
-      const dateTo = document.getElementById('date-to').value;
-      let periodText = 'Current Billing Cycle';
-      if(dateFrom && dateTo) periodText = `${dateFrom} to ${dateTo}`;
-      else if(dateFrom) periodText = `From ${dateFrom}`;
-      else if(dateTo) periodText = `Up to ${dateTo}`;
-      
-      document.getElementById('soa-month').textContent = periodText;
-
-      let subTotal = 0;
-      const cat = ['water', 'rent', 'parking', 'contribution'];
-      cat.forEach(item => {
-        let run = CURRENT_TARGET.prev[item] + CURRENT_TARGET.current[item] - CURRENT_TARGET.payments[item];
-        subTotal += run;
-
-        document.getElementById(`b-${item.charAt(0)}-prev`).textContent = fmtMon(CURRENT_TARGET.prev[item]);
-        document.getElementById(`b-${item.charAt(0)}-curr`).textContent = fmtMon(CURRENT_TARGET.current[item]);
-        document.getElementById(`b-${item.charAt(0)}-pay`).textContent = fmtMon(CURRENT_TARGET.payments[item]);
-        document.getElementById(`b-${item.charAt(0)}-bal`).textContent = fmtMon(run);
-      });
-
-      document.getElementById('soa-total-due').textContent = fmtMon(subTotal);
-      document.getElementById('form-amount').value = subTotal; // Auto-suggest total amount
-
-      // 2. RENDER HISTORY
-      renderHistoryTable();
-    }
-
-    function updateFileLabel(inp) {
-      if (inp.files.length > 0) document.getElementById('file-label').textContent = inp.files[0].name;
-      else document.getElementById('file-label').textContent = "Click to upload file...";
-    }
-
-    // Payment Subroutines Unified
-    function handlePaymentSubmit() {
-      if (!CURRENT_TARGET) return;
-
-      const allProofs = JSON.parse(localStorage.getItem('mis_proof_of_payments') || '[]');
-      const newProof = {
-        proof_id: "PR-2026-" + String(allProofs.length + 1).padStart(3, '0'),
-        app_id: CURRENT_TARGET.app_id,
-        tenant_name: CURRENT_TARGET.name,
-        amount: document.getElementById('form-amount').value,
-        method: document.getElementById('form-method').value,
-        reference_no: document.getElementById('form-ref').value,
-        upload_date: new Date().toISOString(),
-        status: "Pending"
-      };
-
-      allProofs.push(newProof);
-      localStorage.setItem('mis_proof_of_payments', JSON.stringify(allProofs));
-
-      // Audit System Interop
-      let audits = JSON.parse(localStorage.getItem('mis_audit_logs') || '[]');
-      audits.push({ admin_id: "SYSTEM", module: "BILLING", action: "SUBMIT_PAYMENT", timestamp: new Date().toISOString() });
-      localStorage.setItem('mis_audit_logs', JSON.stringify(audits));
-
-      showToast('✅ Payment Document Submitted Successfully!', 'var(--success)');
-      document.getElementById('payForm').reset();
-      document.getElementById('file-label').textContent = "Click to upload file...";
-
-      renderHistoryTable();
-    }
-
     function renderHistoryTable() {
       if (!CURRENT_TARGET) return;
       const isAdmin = (activeRole === ROLES.MIS_ADMIN || activeRole === ROLES.STAFF_ADMIN);
@@ -958,7 +752,7 @@
         <tr>
           <td>${new Date(h.upload_date).toLocaleDateString()}</td>
           <td style="font-weight:600; color:var(--primary-dark);">${CURRENT_TARGET.room}</td>
-          <td style="font-size:0.8rem;">${h.app_id || CURRENT_TARGET.app_id}</td>
+          <td style="font-size:0.8rem;">${h.app_id || CURRENT_TARGET.app_id || 'N/A'}</td>
           <td style="font-weight:700;">₱${parseFloat(h.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
           <td>
             <div style="font-weight:600;">${h.method}</div>
@@ -1006,3 +800,27 @@
 </body>
 
 </html>
+
+<?php
+function getCategoryLabel($type) {
+  $t = strtolower($type);
+  if (strpos($t, 'rent') !== false && strpos($t, 'payment') === false) return 'Apartment Rent';
+  if (strpos($t, 'deposit') !== false || strpos($t, 'advance') !== false) return 'Initial Payments';
+  if (strpos($t, 'parking') !== false) return 'Parking';
+  if (strpos($t, 'water') !== false) return 'Water Consumption';
+  if (strpos($t, 'contribution') !== false) return 'Contribution';
+  if (strpos($t, 'payment') !== false) return 'Payment Records';
+  return 'Other';
+}
+function getBadgeClass($type) {
+  $t = strtolower($type);
+  if (strpos($t, 'rent') !== false) return 'rent';
+  if (strpos($t, 'deposit') !== false) return 'deposit';
+  if (strpos($t, 'advance') !== false) return 'advance';
+  if (strpos($t, 'parking') !== false) return 'parking';
+  if (strpos($t, 'water') !== false) return 'water';
+  if (strpos($t, 'contribution') !== false) return 'contribution';
+  if (strpos($t, 'payment') !== false) return 'payment';
+  return '';
+}
+?>
