@@ -837,6 +837,7 @@
             tbody.innerHTML = pageData.map(u => {
                 const statusClass = u.status.toLowerCase() === 'available' ? 'badge-available' 
                     : u.status.toLowerCase() === 'occupied' ? 'badge-occupied'
+                    : u.status.toLowerCase() === 'maintenance' ? 'badge-pending'
                     : 'badge-reserved';
 
                 const formattedName = u.display_id || u.room_number;
