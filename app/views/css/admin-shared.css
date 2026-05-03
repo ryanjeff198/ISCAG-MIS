@@ -179,12 +179,12 @@ body {
 
 .sidebar-user .user-info strong {
   display: block;
-  font-size: 0.82rem; color: white; font-weight: 600;
+  font-size: 0.85rem; color: white; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .sidebar-user .user-info span {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -216,7 +216,7 @@ body {
   display: flex; align-items: center; gap: 11px;
   padding: 10px 20px;
   color: var(--sidebar-text); text-decoration: none;
-  font-size: 0.87rem; font-weight: 500;
+  font-size: 0.85rem; font-weight: 500;
   border-left: 3px solid transparent;
   transition: all 0.18s; cursor: pointer; position: relative;
 }

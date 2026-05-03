@@ -30,8 +30,8 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
             <?= htmlspecialchars($initials) ?>
         </div>
         <div class="user-info">
-            <strong style="font-size:0.85rem;"><?= htmlspecialchars($_SESSION['name'] ?? 'Admin') ?></strong>
-            <span data-preserve-role="true" style="color:var(--accent); font-size: 0.68rem; font-weight: 700; text-transform: uppercase;"><?= htmlspecialchars($_SESSION['role'] ?? 'Administrator') ?></span>
+            <strong><?= htmlspecialchars($_SESSION['name'] ?? 'Admin') ?></strong>
+            <span data-preserve-role="true" style="color:var(--accent); font-weight: 700; text-transform: uppercase;"><?= htmlspecialchars($_SESSION['role'] ?? 'Administrator') ?></span>
         </div>
     </div>
 

@@ -559,35 +559,37 @@
       $fullyOccupied = 0;
       $reserved = 0;
          foreach ($units as &$u) {
-          // Sequential rule: 5 rooms per floor
           $roomStr = (string)$u['room_number'];
-          $isOld = (str_contains($roomStr, 'B') || str_contains($roomStr, '-'));
-          $numericPart = preg_replace('/\D/', '', $roomStr);
           
+          // Extract building digit from building name
           preg_match('/\d+/', $u['building'], $bm);
           $bDigit = isset($bm[0]) ? substr($bm[0], 0, 1) : '1';
           
-          if ($isOld) {
-              $seqNum = (int)$numericPart % 100;
-              $f = floor(($seqNum - 1) / 5) + 1;
-              $r = (($seqNum - 1) % 5) + 1;
-              $floorDigit = (string)$f;
-              $roomPart = str_pad((string)$r, 2, '0', STR_PAD_LEFT);
+          // Check if old format: "B#-##" (e.g. B1-02, B2-11)
+          if (preg_match('/^B(\d+)-(\d+)$/i', $roomStr, $oldMatch)) {
+              // Old format B#-## : extract room number directly
+              $roomSeq = (int)$oldMatch[2];
+              // 5 rooms per floor: room 01-05 = floor 1, 06-10 = floor 2, etc.
+              $floorDigit = (string)(floor(($roomSeq - 1) / 5) + 1);
+              $roomInFloor = (($roomSeq - 1) % 5) + 1;
+              $roomPart = str_pad((string)$roomInFloor, 2, '0', STR_PAD_LEFT);
           } else {
-              if (strlen($numericPart) >= 4) {
-                  $bDigit = substr($numericPart, 0, 1);
-                  $floorDigit = substr($numericPart, 1, 1);
-                  $roomPart = str_pad(substr($numericPart, 2), 2, '0', STR_PAD_LEFT);
-              } else if (strlen($numericPart) === 3) {
-                  $floorDigit = substr($numericPart, 0, 1);
-                  $roomPart = str_pad(substr($numericPart, 1), 2, '0', STR_PAD_LEFT);
+              // New format: FRR (e.g. 101 = floor 1, room 01)
+              $numericPart = preg_replace('/\D/', '', $roomStr);
+              
+              if (strlen($numericPart) >= 3) {
+                  $floorDigit = substr($numericPart, -3, 1);
+                  $roomPart = str_pad(substr($numericPart, -2), 2, '0', STR_PAD_LEFT);
+              } else if (strlen($numericPart) === 2) {
+                  $floorDigit = '1';
+                  $roomPart = str_pad($numericPart, 2, '0', STR_PAD_LEFT);
               } else {
                   $floorDigit = '1';
                   $roomPart = str_pad($numericPart, 2, '0', STR_PAD_LEFT);
               }
           }
           
-          $roomPart = substr($roomPart, -2);
+          // Ensure room part is at least 01 (never 00)
           if ((int)$roomPart < 1) $roomPart = '01';
           
           $u['display_id'] = $bDigit . $floorDigit . $roomPart;

@@ -215,7 +215,7 @@ body {
 
 .sidebar-user .user-info strong {
   display: block;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   color: white;
   font-weight: 600;
   white-space: nowrap;
@@ -224,7 +224,7 @@ body {
 }
 
 .sidebar-user .user-info span {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -264,7 +264,7 @@ body {
   padding: 10px 20px;
   color: var(--sidebar-text);
   text-decoration: none;
-  font-size: 0.87rem;
+  font-size: 0.85rem;
   font-weight: 500;
   border-left: 3px solid transparent;
   cursor: pointer;

@@ -735,37 +735,38 @@
                         let bDigit, floorDigit, roomPart;
                         
                         const roomStr = u.room_number.toString();
-                        const isOld = roomStr.includes('B') || roomStr.includes('-');
-                        const numericPart = roomStr.replace(/\D/g, '');
                         
+                        // Extract building digit from building name (e.g., "Building 1" -> "1")
                         const bMatch = u.building ? u.building.match(/\d+/) : null;
                         bDigit = bMatch ? bMatch[0].charAt(0) : '1';
                         
-                        if (isOld) {
-                            // Sequential rule: 5 rooms per floor
-                            // Extract the unit number (e.g. B1-06 -> 06 -> 6)
-                            const seqNum = parseInt(numericPart) % 100; 
-                            
-                            const f = Math.floor((seqNum - 1) / 5) + 1;
-                            const r = (seqNum - 1) % 5 + 1;
-                            
-                            floorDigit = f.toString();
-                            roomPart = r.toString().padStart(2, '0');
+                        // Check if old format: "B#-##" (e.g. B1-02, B2-11)
+                        const oldMatch = roomStr.match(/^B(\d+)-(\d+)$/i);
+                        
+                        if (oldMatch) {
+                            // Old format B#-## : extract room number directly
+                            const roomSeq = parseInt(oldMatch[2]);
+                            // 5 rooms per floor: room 01-05 = floor 1, 06-10 = floor 2, etc.
+                            floorDigit = (Math.floor((roomSeq - 1) / 5) + 1).toString();
+                            const roomInFloor = ((roomSeq - 1) % 5) + 1;
+                            roomPart = roomInFloor.toString().padStart(2, '0');
                         } else {
-                            // New format: [B]FRR or FRR
-                            if (numericPart.length >= 4) {
-                                bDigit = numericPart.charAt(0);
-                                floorDigit = numericPart.charAt(1);
-                                roomPart = numericPart.substring(2).padStart(2, '0').slice(-2);
-                            } else if (numericPart.length === 3) {
-                                floorDigit = numericPart.charAt(0);
-                                roomPart = numericPart.substring(1).padStart(2, '0').slice(-2);
+                            // New format: FRR (e.g. 101 = floor 1, room 01)
+                            const numericPart = roomStr.replace(/\D/g, '');
+                            
+                            if (numericPart.length >= 3) {
+                                floorDigit = numericPart.charAt(numericPart.length - 3);
+                                roomPart = numericPart.substring(numericPart.length - 2).padStart(2, '0');
+                            } else if (numericPart.length === 2) {
+                                floorDigit = '1';
+                                roomPart = numericPart.padStart(2, '0');
                             } else {
                                 floorDigit = '1';
-                                roomPart = numericPart.padStart(2, '0').slice(-2);
+                                roomPart = numericPart.padStart(2, '0');
                             }
                         }
                         
+                        // Ensure room part is at least 01 (never 00)
                         if (parseInt(roomPart) < 1) roomPart = '01';
                         
                         const display_id = bDigit + floorDigit + roomPart;
@@ -1187,9 +1188,9 @@
             let rVal = roomInput ? parseInt(roomInput) : null;
             
             if (rVal !== null) {
-                if (rVal > 5) {
-                    rVal = 5;
-                    document.getElementById('u-room-only').value = 5;
+                if (rVal > 12) {
+                    rVal = 12;
+                    document.getElementById('u-room-only').value = 12;
                 } else if (rVal < 1) {
                     rVal = 1;
                     document.getElementById('u-room-only').value = 1;
