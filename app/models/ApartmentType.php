@@ -301,6 +301,53 @@ class ApartmentType
     }
 
     /**
+     * Check if a unit exists (by building and room_number).
+     */
+    public function checkUnitExists(string $building, string $roomNumber, ?int $excludeId = null): bool
+    {
+        $sql = "SELECT COUNT(*) FROM apartment_units WHERE building = :building AND room_number = :room_number";
+        $params = ['building' => $building, 'room_number' => $roomNumber];
+        
+        if ($excludeId) {
+            $sql .= " AND unit_id != :exclude_id";
+            $params['exclude_id'] = $excludeId;
+        }
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Get next available room number for a given building and floor.
+     */
+    public function getNextAvailableRoom(string $building, string $floor): string
+    {
+        $stmt = $this->db->prepare("
+            SELECT room_number FROM apartment_units 
+            WHERE building = :building AND room_number LIKE :floor_pattern
+            ORDER BY room_number ASC
+        ");
+        $stmt->execute(['building' => $building, 'floor_pattern' => $floor . '%']);
+        $existing = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $takenRooms = array_map(function($r) {
+            return (int) substr($r, 1);
+        }, $existing);
+
+        // Find the first gap between 1 and 12
+        for ($i = 1; $i <= 12; $i++) {
+            if (!in_array($i, $takenRooms)) {
+                return $floor . str_pad($i, 2, '0', STR_PAD_LEFT);
+            }
+        }
+
+        // If 1-12 are full, return max + 1
+        $max = !empty($takenRooms) ? max($takenRooms) : 12;
+        return $floor . str_pad($max + 1, 2, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Count available units for a given type.
      */
     public function getAvailableCountByType(int $typeId): int

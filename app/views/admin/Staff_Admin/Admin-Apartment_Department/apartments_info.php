@@ -641,8 +641,8 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Room Number (01-05)</label>
-                            <input type="number" class="form-control" id="u-room-only" placeholder="01" min="1" max="5" oninput="updateGeneratedCode()" required>
+                            <label class="form-label">Room Number (01-12)</label>
+                            <input type="number" class="form-control" id="u-room-only" placeholder="Auto-generate next" min="1" max="12" oninput="updateGeneratedCode()">
                         </div>
                     </div>
 
@@ -651,6 +651,7 @@
                             <label class="form-label">Generated Unit Code</label>
                             <input type="text" class="form-control" id="u-preview" readonly style="background:#f1f5f9; font-weight:800; color:var(--primary); letter-spacing:1px; text-align:center; font-size:1.1rem;">
                             <input type="hidden" name="room_number" id="u-number">
+                            <div id="u-status-msg" style="margin-top:6px; font-size:0.8rem; font-weight:700; height:18px;"></div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Status</label>
@@ -671,7 +672,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-topbar" onclick="closeModal('unit-modal')">Cancel</button>
-                <button class="btn-topbar primary" onclick="saveUnit()">Save Unit</button>
+                <button class="btn-topbar primary" id="btn-save-unit" onclick="saveUnit()">Save Unit</button>
             </div>
         </div>
     </div>
@@ -705,14 +706,8 @@
         const savedTab = localStorage.getItem('active_apartment_tab') || 'types';
         if (savedTab !== 'types') switchTab(savedTab);
 
-        function formatFloor(roomNum) {
-            if (!roomNum) return '—';
-            let rNumOnly = roomNum.toString().replace(/\D/g, '');
-            let floorDigit = '1';
-            if (rNumOnly.length >= 3) {
-                floorDigit = rNumOnly.charAt(0);
-            }
-            const n = parseInt(floorDigit);
+        function formatFloor(floorNum) {
+            const n = parseInt(floorNum) || 1;
             const s = ["th", "st", "nd", "rd"],
                   v = n % 100;
             const suffix = (s[(v - 20) % 10] || s[v] || s[0]);
@@ -736,20 +731,62 @@
                     populateTypeDropdowns();
                 }
                 if (unitsRes.success) {
-                    roomUnits = unitsRes.data.units.map(u => {
-                        // Calculate strict 4-digit Display ID: [BuildingDigit][FloorDigit][RoomDigits]
-                        const bMatch = u.building ? u.building.match(/\d+/) : null;
-                        const bDigit = (bMatch ? bMatch[0] : '1').charAt(0);
-                        let rDigits = u.room_number.toString().replace(/\D/g, '');
+                    const processedUnits = unitsRes.data.units.map(u => {
+                        let bDigit, floorDigit, roomPart;
                         
-                        let display_id = "";
-                        if (rDigits.length >= 3) {
-                            display_id = bDigit + rDigits.slice(-3);
+                        const roomStr = u.room_number.toString();
+                        const isOld = roomStr.includes('B') || roomStr.includes('-');
+                        const numericPart = roomStr.replace(/\D/g, '');
+                        
+                        const bMatch = u.building ? u.building.match(/\d+/) : null;
+                        bDigit = bMatch ? bMatch[0].charAt(0) : '1';
+                        
+                        if (isOld) {
+                            // Sequential rule: 5 rooms per floor
+                            // Extract the unit number (e.g. B1-06 -> 06 -> 6)
+                            const seqNum = parseInt(numericPart) % 100; 
+                            
+                            const f = Math.floor((seqNum - 1) / 5) + 1;
+                            const r = (seqNum - 1) % 5 + 1;
+                            
+                            floorDigit = f.toString();
+                            roomPart = r.toString().padStart(2, '0');
                         } else {
-                            display_id = bDigit + "1" + (rDigits || "0").padStart(2, '0').slice(-2);
+                            // New format: [B]FRR or FRR
+                            if (numericPart.length >= 4) {
+                                bDigit = numericPart.charAt(0);
+                                floorDigit = numericPart.charAt(1);
+                                roomPart = numericPart.substring(2).padStart(2, '0').slice(-2);
+                            } else if (numericPart.length === 3) {
+                                floorDigit = numericPart.charAt(0);
+                                roomPart = numericPart.substring(1).padStart(2, '0').slice(-2);
+                            } else {
+                                floorDigit = '1';
+                                roomPart = numericPart.padStart(2, '0').slice(-2);
+                            }
                         }
+                        
+                        if (parseInt(roomPart) < 1) roomPart = '01';
+                        
+                        const display_id = bDigit + floorDigit + roomPart;
                         return { ...u, display_id };
                     });
+                    
+                    // Sort numerically by display_id
+                    processedUnits.sort((a, b) => parseInt(a.display_id) - parseInt(b.display_id));
+                    
+                    // DEDUPLICATE by display_id to prevent showing the same physical room twice 
+                    const uniqueUnits = [];
+                    const seenIds = new Set();
+                    for (const u of processedUnits) {
+                        if (!seenIds.has(u.display_id)) {
+                            seenIds.add(u.display_id);
+                            uniqueUnits.push(u);
+                        }
+                    }
+                    
+                    roomUnits = uniqueUnits;
+                    
                     allBuildings = unitsRes.data.buildings || [];
                     populateBuildingFilter();
                     renderUnits();
@@ -839,11 +876,13 @@
                     : u.status.toLowerCase() === 'occupied' ? 'badge-occupied'
                     : 'badge-reserved';
 
-                const formattedName = u.display_id || u.room_number;
+                const formattedName = u.display_id;
+                // Floor digit is the 2nd character of display_id (BFRR format)
+                const floorNum = parseInt(u.display_id.charAt(1)) || 1;
 
                 return `<tr>
                     <td style="font-weight:600;">${formattedName}</td>
-                    <td>${formatFloor(u.room_number)}</td>
+                    <td>${formatFloor(floorNum)}</td>
                     <td>${u.type_label}</td>
                     <td>₱${Number(u.price).toLocaleString()}</td>
                     <td>${u.tenant_id ? 'Assigned' : '—'}</td>
@@ -1140,26 +1179,67 @@
             }
         }
 
-        function updateGeneratedCode() {
+        async function updateGeneratedCode() {
             const bVal = document.getElementById('u-building').value;
             const fVal = document.getElementById('u-floor').value;
-            let rVal = parseInt(document.getElementById('u-room-only').value || 0);
+            const roomInput = document.getElementById('u-room-only').value;
             
-            // Limit to 5 rooms per floor
-            if (rVal > 5) {
-                rVal = 5;
-                document.getElementById('u-room-only').value = 5;
+            let rVal = roomInput ? parseInt(roomInput) : null;
+            
+            if (rVal !== null) {
+                if (rVal > 5) {
+                    rVal = 5;
+                    document.getElementById('u-room-only').value = 5;
+                } else if (rVal < 1) {
+                    rVal = 1;
+                    document.getElementById('u-room-only').value = 1;
+                }
             }
             
             const bDigit = bVal.replace(/\D/g, '') || '1';
-            const roomPadded = rVal.toString().padStart(2, '0');
+            let roomPadded = rVal !== null ? rVal.toString().padStart(2, '0') : '';
             
-            const generated = bDigit + fVal + roomPadded;
-            document.getElementById('u-preview').value = generated;
-            // The actual room_number sent to DB is [Floor][Room] because the table logic adds Building
-            // Wait, the user said "Building 1 + Floor 2 + Room 01 = 1201"
-            // So the database room_number should store "201" and the UI logic adds the Building digit.
-            document.getElementById('u-number').value = fVal + roomPadded;
+            const unitId = document.getElementById('u-id').value;
+            
+            try {
+                const res = await fetch('<?= url("/api/apartment-units/check") ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        building: bVal,
+                        floor: fVal,
+                        room_number: roomPadded ? fVal + roomPadded : '',
+                        unit_id: unitId
+                    })
+                }).then(r => r.json());
+                
+                const statusMsg = document.getElementById('u-status-msg');
+                const btnSave = document.getElementById('btn-save-unit');
+                
+                if (res.success) {
+                    if (res.exists) {
+                        statusMsg.innerHTML = '❌ Unit already occupied <br><span style="color:#64748b; font-weight:500;">Suggested available: ' + res.suggested + '</span>';
+                        statusMsg.style.color = 'var(--danger)';
+                        btnSave.disabled = true;
+                        document.getElementById('u-preview').value = bDigit + fVal + roomPadded;
+                        document.getElementById('u-number').value = fVal + roomPadded;
+                    } else if (roomPadded === '') {
+                        statusMsg.innerHTML = '✅ Available <br><span style="color:#64748b; font-weight:500;">Suggested next: ' + res.suggested + '</span>';
+                        statusMsg.style.color = 'var(--success)';
+                        btnSave.disabled = false;
+                        document.getElementById('u-preview').value = res.suggested;
+                        document.getElementById('u-number').value = fVal + res.suggested_room;
+                    } else {
+                        statusMsg.innerHTML = '✅ Unit available';
+                        statusMsg.style.color = 'var(--success)';
+                        btnSave.disabled = false;
+                        document.getElementById('u-preview').value = bDigit + fVal + roomPadded;
+                        document.getElementById('u-number').value = fVal + roomPadded;
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to check unit availability", err);
+            }
         }
 
         // ══ MODALS: UNIT ══
@@ -1197,7 +1277,9 @@
         }
 
         async function saveUnit() {
-            updateGeneratedCode(); // Final sync
+            await updateGeneratedCode(); // Final sync
+            if (document.getElementById('btn-save-unit').disabled) return;
+            
             const formData = new FormData(document.getElementById('unit-form'));
             const data = Object.fromEntries(formData.entries());
             const id = data.unit_id;

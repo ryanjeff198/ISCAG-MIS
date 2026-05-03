@@ -224,7 +224,8 @@ class ApartmentApp {
                 a.accepted_at,
                 t.*,
                 au.room_number,
-                au.building
+                au.building,
+                au.description
             FROM apartmentsapp a
             JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
             LEFT JOIN tenant_addinfo t ON a.tenant_id = t.tenant_id

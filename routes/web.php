@@ -172,4 +172,5 @@ $routes = [
     '/api/apartment-units/create'          => ['ApartmentTypeController', 'createUnit'],
     '/api/apartment-units/update'          => ['ApartmentTypeController', 'updateUnit'],
     '/api/apartment-units/delete'          => ['ApartmentTypeController', 'deleteUnit'],
+    '/api/apartment-units/check'           => ['ApartmentTypeController', 'checkUnit'],
 ];

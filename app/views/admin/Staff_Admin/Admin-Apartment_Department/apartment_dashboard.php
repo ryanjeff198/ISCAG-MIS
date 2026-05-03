@@ -594,15 +594,38 @@
           if (strtolower($u['status']) === 'occupied') $fullyOccupied++;
           if (strtolower($u['status']) === 'reserved') $reserved++;
 
-          // Calculate strict 4-digit Display ID: [BuildingDigit][FloorDigit][RoomDigits]
+          // Sequential rule: 5 rooms per floor
+          $roomStr = (string)$u['room_number'];
+          $isOld = (str_contains($roomStr, 'B') || str_contains($roomStr, '-'));
+          $numericPart = preg_replace('/\D/', '', $roomStr);
+          
           preg_match('/\d+/', $u['building'], $bm);
           $bDigit = isset($bm[0]) ? substr($bm[0], 0, 1) : '1';
-          $rDigits = preg_replace('/\D/', '', $u['room_number']);
-          if (strlen($rDigits) >= 3) {
-              $u['display_id'] = $bDigit . substr($rDigits, -3);
+          
+          if ($isOld) {
+              $seqNum = (int)$numericPart % 100;
+              $f = floor(($seqNum - 1) / 5) + 1;
+              $r = (($seqNum - 1) % 5) + 1;
+              $floorDigit = (string)$f;
+              $roomPart = str_pad((string)$r, 2, '0', STR_PAD_LEFT);
           } else {
-              $u['display_id'] = $bDigit . '1' . str_pad($rDigits, 2, '0', STR_PAD_LEFT);
+              if (strlen($numericPart) >= 4) {
+                  $bDigit = substr($numericPart, 0, 1);
+                  $floorDigit = substr($numericPart, 1, 1);
+                  $roomPart = str_pad(substr($numericPart, 2), 2, '0', STR_PAD_LEFT);
+              } else if (strlen($numericPart) === 3) {
+                  $floorDigit = substr($numericPart, 0, 1);
+                  $roomPart = str_pad(substr($numericPart, 1), 2, '0', STR_PAD_LEFT);
+              } else {
+                  $floorDigit = '1';
+                  $roomPart = str_pad($numericPart, 2, '0', STR_PAD_LEFT);
+              }
           }
+          
+          $roomPart = substr($roomPart, -2);
+          if ((int)$roomPart < 1) $roomPart = '01';
+          
+          $u['display_id'] = $bDigit . $floorDigit . $roomPart;
       }
       unset($u);
     ?>

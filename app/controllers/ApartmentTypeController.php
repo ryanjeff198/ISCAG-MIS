@@ -226,6 +226,11 @@ class ApartmentTypeController
         if (empty($input['type_id']) || empty($input['room_number'])) {
             $this->json(['success' => false, 'error' => 'type_id and room_number are required'], 400);
         }
+
+        if ($this->model->checkUnitExists($input['building'] ?? '', $input['room_number'])) {
+            $this->json(['success' => false, 'error' => 'Unit ID already exists. Please choose a different room.'], 400);
+        }
+
         $id = $this->model->createUnit($input);
         $this->json(['success' => true, 'data' => ['unit_id' => $id]]);
     }
@@ -240,6 +245,11 @@ class ApartmentTypeController
         if (!$id) {
             $this->json(['success' => false, 'error' => 'Missing unit_id'], 400);
         }
+
+        if (!empty($input['room_number']) && $this->model->checkUnitExists($input['building'] ?? '', $input['room_number'], $id)) {
+            $this->json(['success' => false, 'error' => 'Unit ID already exists. Please choose a different room.'], 400);
+        }
+
         unset($input['unit_id']);
         $ok = $this->model->updateUnit($id, $input);
         $this->json(['success' => $ok]);
@@ -257,6 +267,42 @@ class ApartmentTypeController
         }
         $ok = $this->model->deleteUnit($id);
         $this->json(['success' => $ok]);
+    }
+
+    /**
+     * POST /api/apartment-units/check
+     */
+    public function checkUnit(): void
+    {
+        $input = $this->getInput();
+        if (empty($input['building'])) {
+            $this->json(['success' => false, 'error' => 'building required'], 400);
+        }
+
+        $floor = $input['floor'] ?? '1';
+        $roomNumber = $input['room_number'] ?? '';
+        
+        if (empty($roomNumber)) {
+            // Auto-generate next available room
+            $suggested = $this->model->getNextAvailableRoom($input['building'], $floor);
+            
+            // Format to display ID for the frontend suggestion
+            $bDigit = preg_replace('/\D/', '', $input['building']) ?: '1';
+            $displayId = $bDigit . $suggested;
+            
+            $this->json(['success' => true, 'exists' => false, 'suggested' => $displayId, 'suggested_room' => substr($suggested, 1)]);
+        }
+
+        $exists = $this->model->checkUnitExists($input['building'], $roomNumber, $input['unit_id'] ?? null);
+        
+        if ($exists) {
+            $suggested = $this->model->getNextAvailableRoom($input['building'], $floor);
+            $bDigit = preg_replace('/\D/', '', $input['building']) ?: '1';
+            $displayId = $bDigit . $suggested;
+            $this->json(['success' => true, 'exists' => true, 'suggested' => $displayId, 'suggested_room' => substr($suggested, 1)]);
+        } else {
+            $this->json(['success' => true, 'exists' => false]);
+        }
     }
 
     // ═══════════════════════════════════════════
