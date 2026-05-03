@@ -237,23 +237,6 @@ foreach ($notifs as $n) {
             margin-bottom: 24px;
             white-space: pre-wrap; /* Preserve line breaks */
         }
-
-        /* SESSION DEBUG BOX - Keep hidden unless needed */
-        #debug-probe {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: #000;
-            color: #0f0;
-            padding: 10px;
-            border: 2px solid #0f0;
-            z-index: 99999;
-            font-family: monospace;
-            font-size: 11px;
-            opacity: 0.1;
-            transition: opacity 0.3s;
-        }
-        #debug-probe:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -277,9 +260,6 @@ foreach ($notifs as $n) {
                 </div>
             </div>
 
-            <div id="debug-probe">
-                ID: <?= $_SESSION['user_id'] ?? 'NONE' ?> | NAME: <?= $_SESSION['name'] ?? 'NONE' ?>
-            </div>
 
             <!-- PAGE BODY -->
             <div class="page-body">
