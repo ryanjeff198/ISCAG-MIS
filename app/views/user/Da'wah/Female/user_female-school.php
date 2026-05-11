@@ -55,33 +55,23 @@ $today = date('l');
     }
     .stat{
         background:#fff;
-        border-radius:24px;
-        padding:30px 20px;
-        border:1px solid var(--b);
-        box-shadow:0 15px 35px rgba(0,0,0,.05);
-        transition:all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border-radius:16px;
+        padding:24px;
+        border: 1px solid var(--border);
         display: flex;
         flex-direction: column;
         align-items: center;
         text-align: center;
-        position: relative;
-        overflow: hidden;
-    }
-    .stat::before {
-        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-        background: var(--g); opacity: 0; transition: 0.3s;
-    }
-    .stat:hover{transform:translateY(-10px);box-shadow:0 25px 50px rgba(0,0,0,.1);border-color:var(--gl);}
-    .stat:hover::before { opacity: 1; }
-    
-    .stat-icon{
-        width:54px;height:54px;border-radius:16px;
-        display:flex;align-items:center;justify-content:center;
-        margin-bottom:18px;
         transition: 0.3s;
     }
-    .stat:hover .stat-icon { transform: scale(1.1) rotate(5deg); }
-    .stat-icon svg{width:26px;height:26px;fill:#fff;}
+    .stat:hover{ transform: translateY(-4px); border-color: var(--g); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+    
+    .stat-icon{
+        width:48px; height:48px; border-radius:12px;
+        display:flex; align-items:center; justify-content:center;
+        margin-bottom:16px;
+    }
+    .stat-icon svg{ width:24px; height:24px; fill:#fff; }
     .stat-val{font-size:2.2rem;font-weight:900;color:var(--t);line-height:1;font-family:'Lora', serif;}
     .stat-lbl{font-size:.7rem;font-weight:800;color:var(--m);text-transform:uppercase;margin-top:10px;letter-spacing:1.5px;}
 
@@ -122,32 +112,46 @@ $today = date('l');
     .sec-head::after{content:'';position:absolute;bottom:0;left:0;width:50px;height:4px;background:var(--gold);border-radius:10px;}
     .sec-head svg{width:28px;height:28px;fill:var(--g);}
 
-    /* Clickable Schedule Cards */
-    .sched-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:15px;}
-    .sd{
-        background:#fff;
-        border-radius:20px;
-        border:1px solid var(--b);
-        overflow:hidden;
-        transition:all .4s ease;
-        min-height:200px;
-        cursor:pointer;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    /* ── Tabbed Schedule Styles ── */
+    .schedule-tabs {
+        display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 10px;
+        scrollbar-width: none; -ms-overflow-style: none;
     }
-    .sd:hover{transform:translateY(-5px);box-shadow:0 20px 40px rgba(0,0,0,.1);z-index:5;border-color:var(--gl);}
-    .sd.today{border-color:var(--gold);background:var(--gx);box-shadow:0 0 0 5px rgba(212,175,55,.1);}
-    .sd.closed .sd-h{background:#ef4444;}
-    .sd.friday .sd-h{background:linear-gradient(135deg,var(--gd),var(--gold));}
-    .sd-h{background:var(--g);color:#fff;padding:15px;font-weight:900;font-size:.8rem;text-transform:uppercase;letter-spacing:1.5px;text-align:center;}
-    .sd-b{padding:18px; flex-grow:1;}
-    .sd-item{padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.75rem;}
-    .sd-item:last-child{border:none;}
-    .sd-cls{font-weight:800;color:var(--t);margin-bottom:3px;}
-    .sd-time{color:var(--m);font-weight:700;font-size:0.68rem; display: flex; align-items:center; gap:5px;}
-    .sd-time::before { content: '•'; color: var(--gold); font-size: 1.2rem; }
-    .sd-closed-txt{text-align:center;padding:50px 10px;color:#ef4444;font-weight:900;font-size:1rem;letter-spacing:2px;text-transform:uppercase;opacity:0.8;}
+    .schedule-tabs::-webkit-scrollbar { display: none; }
+    
+    .day-tab {
+        padding: 12px 24px; background: #fff; border: 1.5px solid var(--b); border-radius: 12px;
+        font-size: 0.85rem; font-weight: 700; color: var(--m); cursor: pointer; transition: 0.2s;
+        white-space: nowrap; display: flex; flex-direction: column; align-items: center; min-width: 100px;
+    }
+    .day-tab span:last-child { font-size: 0.65rem; font-weight: 500; opacity: 0.7; margin-top: 2px; }
+    .day-tab:hover { border-color: var(--gl); color: var(--g); background: var(--gx); }
+    .day-tab.active { background: var(--g); border-color: var(--g); color: #fff; box-shadow: 0 8px 16px rgba(27, 94, 32, 0.2); }
+    .day-tab.active span:last-child { opacity: 0.9; }
+    
+    .schedule-content { min-height: 250px; position: relative; }
+    .day-pane { display: none; animation: fadeIn 0.3s ease; }
+    .day-pane.active { display: block; }
+    
+    .timeline-item {
+        display: flex; gap: 20px; padding: 20px; background: #fff; border: 1px solid var(--b);
+        border-radius: 16px; margin-bottom: 15px; align-items: center; justify-content: space-between; transition: 0.3s;
+    }
+    .timeline-item:hover { transform: translateY(-4px); border-color: var(--gl); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .timeline-time {
+        min-width: 130px; font-weight: 900; font-size: 0.75rem; color: var(--g);
+        background: var(--gx); padding: 8px 16px; border-radius: 30px; text-align: center;
+        white-space: nowrap;
+    }
+    .timeline-info h4 { font-weight: 800; font-size: 1.05rem; color: var(--t); margin-bottom: 4px; }
+    .timeline-info p { font-size: 0.8rem; color: var(--m); font-weight: 600; margin: 0; }
+    
+    .closed-state {
+        text-align: center; padding: 60px 20px; background: #fff; border: 1.5px dashed var(--b);
+        border-radius: 20px; color: var(--m);
+    }
+    .closed-state div:first-child { font-size: 3rem; margin-bottom: 15px; }
+    .closed-state h3 { font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
 
     /* Progress & Subjects */
     .prog-grid, .subj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
@@ -293,7 +297,13 @@ $today = date('l');
                 <div class="hero-sub">ISCAG Da'wah Female School — <?= !empty($_SESSION['female_education_enrolled']) ? 'Enrolled Student' : 'General Schedule' ?></div>
             </div>
         </div>
-        <div class="hero-badge"><?= !empty($_SESSION['female_education_enrolled']) ? 'Verified • Active' : 'Public Access' ?> • <?= date('F Y') ?></div>
+        <div class="hero-badge">
+            <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor; margin-right:4px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <?= !empty($_SESSION['female_education_enrolled']) ? 'Verified • Active' : 'Public Access' ?> 
+            <span style="margin: 0 8px; opacity:0.5;">|</span>
+            <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor; margin-right:4px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            <?= date('F Y') ?>
+        </div>
     </div>
 </div>
 
@@ -346,7 +356,8 @@ $today = date('l');
     <!-- SCHEDULE -->
     <div class="sec">
         <div class="sec-head"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>School Weekly Schedule</div>
-        <div class="sched-grid">
+        
+        <div class="schedule-tabs" id="dayTabs">
             <?php
             $days = [
                 'Monday' => [],
@@ -357,25 +368,42 @@ $today = date('l');
                 'Saturday' => [['Beginners B4','8:00 AM–4:30 PM'],['Kids 7-9','9:00–11:00 AM']],
                 'Sunday' => [['Intermediate','8:00–11:30 AM'],['Tahfidhul Qur\'an','1:00–4:30 PM']]
             ];
-            foreach($days as $day => $classes):
-                $isToday = ($day === $today);
-                $cls = $isToday ? 'sd today' : 'sd';
-                if($day==='Monday') $cls .= ' closed';
-                if($day==='Friday') $cls .= ' friday';
-                $jsonClasses = htmlspecialchars(json_encode(['day' => $day, 'classes' => $classes]));
+            foreach(array_keys($days) as $dayName):
+                $isToday = ($dayName === $today);
             ?>
-            <div class="<?= $cls ?>" onclick='openScheduleModal(<?= $jsonClasses ?>)'>
-                <div class="sd-h"><?= substr($day,0,3) ?><?= $isToday?' ★':'' ?></div>
-                <?php if(empty($classes)): ?><div class="sd-closed-txt">CLOSED</div>
+            <div class="day-tab <?= $isToday ? 'active' : '' ?>" onclick="switchDay('<?= $dayName ?>')">
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span><?= $dayName ?></span>
+                    <?php if($isToday): ?>
+                        <svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:currentColor;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    <?php endif; ?>
+                </div>
+                <span><?= $isToday ? 'TODAY' : 'View Schedule' ?></span>
+            </div>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="schedule-content" id="schedulePanes">
+            <?php foreach($days as $day => $classes): ?>
+            <div class="day-pane <?= $day === $today ? 'active' : '' ?>" id="pane-<?= $day ?>">
+                <?php if(empty($classes)): ?>
+                <div class="closed-state">
+                    <div style="color: var(--m); margin-bottom: 15px;">
+                        <svg viewBox="0 0 24 24" style="width:48px; height:48px; fill:currentColor;"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+                    </div>
+                    <h3>Center Closed</h3>
+                    <p>There are no scheduled activities for <?= $day ?>.</p>
+                </div>
                 <?php else: ?>
-                <div class="sd-b">
                     <?php foreach($classes as $c): ?>
-                    <div class="sd-item">
-                        <div class="sd-cls"><?= $c[0] ?></div>
-                        <div class="sd-time"><?= $c[1] ?></div>
+                    <div class="timeline-item">
+                        <div class="timeline-info">
+                            <h4><?= $c[0] ?></h4>
+                            <p>Female Education Program • IDFS Center</p>
+                        </div>
+                        <div class="timeline-time"><?= $c[1] ?></div>
                     </div>
                     <?php endforeach; ?>
-                </div>
                 <?php endif; ?>
             </div>
             <?php endforeach; ?>
@@ -412,51 +440,15 @@ $today = date('l');
 </div>
 
 <script>
-    function openScheduleModal(data) {
-        const modal = document.getElementById('scheduleModal');
-        const modalDay = document.getElementById('modalDay');
-        const modalBody = document.getElementById('modalBody');
+    function switchDay(day) {
+        // Update Tabs
+        document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+        const activeTab = Array.from(document.querySelectorAll('.day-tab')).find(t => t.innerText.includes(day));
+        if (activeTab) activeTab.classList.add('active');
         
-        modalDay.innerText = data.day + ' Classes';
-        modalBody.innerHTML = '';
-        
-        if (data.classes.length === 0) {
-            modalBody.innerHTML = `
-                <div style="text-align:center; padding: 40px 20px;">
-                    <div style="font-size: 3rem; margin-bottom: 15px;">🌙</div>
-                    <div style="color:#ef4444; font-weight:900; font-size: 1.2rem; letter-spacing: 1px;">CENTER CLOSED</div>
-                    <p style="color:#6b7280; font-size: 0.9rem; margin-top: 10px;">There are no scheduled activities for this day.</p>
-                </div>
-            `;
-        } else {
-            data.classes.forEach(cls => {
-                modalBody.innerHTML += `
-                    <div class="modal-class-item">
-                        <div class="modal-time-box">${cls[1]}</div>
-                        <div class="modal-class-info">
-                            <h4>${cls[0]}</h4>
-                            <p>Female Education Program</p>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        
-        modal.style.display = 'flex';
-        setTimeout(() => {
-            modal.querySelector('.modal-content').style.transform = 'translateY(0)';
-        }, 10);
-    }
-
-    function closeModal() {
-        document.getElementById('scheduleModal').style.display = 'none';
-    }
-
-    window.onclick = function(event) {
-        const modal = document.getElementById('scheduleModal');
-        if (event.target == modal) {
-            closeModal();
-        }
+        // Update Panes
+        document.querySelectorAll('.day-pane').forEach(p => p.classList.remove('active'));
+        document.getElementById('pane-' + day).classList.add('active');
     }
 </script>
 </div></div></div>

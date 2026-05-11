@@ -337,11 +337,16 @@ class UserController extends Controller
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
         
-        // Application status is now handled within the view via $hasPending/$hasApproved
-        // No redirect needed to allow viewing status on this page.
-
-        $history = [];
-        $analytics = ['total' => 0, 'pending' => 0, 'approved' => 0];
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        $eduModel = new IslamicEducation();
+        
+        $history = $eduModel->getByRegistrant($_SESSION['user_id']);
+        
+        $analytics = ['total' => count($history), 'pending' => 0, 'approved' => 0];
+        foreach ($history as $req) {
+            if ($req['status'] === 'pending') $analytics['pending']++;
+            if ($req['status'] === 'active') $analytics['approved']++;
+        }
 
         $this->view('user/Da\'wah/Female/user_form-female-education', [
             'dbUser' => $dbUser,
@@ -573,6 +578,72 @@ class UserController extends Controller
 
         $success = $model->create($data);
         echo json_encode(['success' => $success]);
+        exit;
+    }
+
+    public function submitFemaleEducation(): void {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid method']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input || empty($input['applicants'])) {
+            echo json_encode(['success' => false, 'message' => 'No applicant data found.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        $model = new IslamicEducation();
+        $registrantId = $_SESSION['user_id'];
+        $relationship = $input['relationship'] ?? 'self';
+        $programName = $input['level'] ?? 'Beginner';
+        $paymentMethod = $input['payment'] ?? 'Cash';
+
+        $successCount = 0;
+        foreach ($input['applicants'] as $app) {
+            $data = [
+                'registered_by' => $registrantId,
+                'relationship' => $relationship,
+                'first_name' => $app['first_name'] ?? '',
+                'last_name' => $app['last_name'] ?? '',
+                'middle_initial' => $app['mi'] ?? null,
+                'muslim_name' => $app['muslim_name'] ?? null,
+                'birthdate' => $app['dob'] ?? null,
+                'islamic_status' => $app['status'] ?? null,
+                'shahadah_date' => $app['shahadah_date'] ?? null,
+                'previous_education' => $app['prev_edu'] ?? null,
+                'home_address' => $input['address'] ?? null,
+                'facebook_account' => $input['facebook'] ?? null,
+                'contact_number' => $input['contact'] ?? null,
+                'emergency_contact_name' => $input['emergency_name'] ?? null,
+                'emergency_contact_relationship' => $input['emergency_rel'] ?? null,
+                'emergency_contact_no' => $input['emergency_no'] ?? null,
+                'guardian_name' => $input['guardian_name'] ?? null,
+                'guardian_mobile' => $input['guardian_mobile'] ?? null,
+                'program_name' => $programName,
+                'payment_method' => $paymentMethod,
+                'gender' => 'female',
+                'status' => 'pending'
+            ];
+
+            // If registering self, link tenant_id
+            if ($relationship === 'self') {
+                $data['tenant_id'] = $registrantId;
+            }
+
+            if ($model->enroll($data)) {
+                $successCount++;
+            }
+        }
+
+        echo json_encode([
+            'success' => $successCount > 0,
+            'message' => $successCount . ' student(s) enrolled successfully.'
+        ]);
         exit;
     }
 }

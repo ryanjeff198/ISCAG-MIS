@@ -12,23 +12,61 @@ class IslamicEducation {
         $sql = "CREATE TABLE IF NOT EXISTS islamic_education_enrollments (
             id INT AUTO_INCREMENT PRIMARY KEY,
             tenant_id INT NULL,
+            registered_by INT NULL,
+            relationship VARCHAR(50) DEFAULT 'self',
             first_name VARCHAR(100) NOT NULL,
             last_name VARCHAR(100) NOT NULL,
+            middle_initial VARCHAR(10) NULL,
+            muslim_name VARCHAR(100) NULL,
             birthdate DATE NULL,
+            islamic_status ENUM('revert', 'born') NULL,
+            shahadah_date DATE NULL,
+            previous_education TEXT NULL,
+            home_address TEXT NULL,
+            facebook_account VARCHAR(255) NULL,
+            contact_number VARCHAR(20) NULL,
+            emergency_contact_name VARCHAR(100) NULL,
+            emergency_contact_relationship VARCHAR(50) NULL,
+            emergency_contact_no VARCHAR(20) NULL,
+            guardian_name VARCHAR(100) NULL,
+            guardian_mobile VARCHAR(20) NULL,
             program_name VARCHAR(255) NOT NULL,
+            payment_method VARCHAR(50) NULL,
             status ENUM('pending', 'active', 'completed', 'dropped') DEFAULT 'pending',
             gender ENUM('male', 'female') NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (tenant_id) REFERENCES tenant_accounts(tenant_id) ON DELETE SET NULL
+            FOREIGN KEY (tenant_id) REFERENCES tenant_accounts(tenant_id) ON DELETE SET NULL,
+            FOREIGN KEY (registered_by) REFERENCES tenant_accounts(tenant_id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
         
         $this->db->exec($sql);
 
-        // Migration: Add birthdate column if it doesn't exist
-        try {
-            $this->db->exec("ALTER TABLE islamic_education_enrollments ADD COLUMN birthdate DATE NULL AFTER last_name");
-        } catch (Exception $e) { /* ignore if column exists */ }
+        // Migration logic for existing tables
+        $columnsToAdd = [
+            'registered_by' => "INT NULL AFTER tenant_id",
+            'relationship' => "VARCHAR(50) DEFAULT 'self' AFTER registered_by",
+            'middle_initial' => "VARCHAR(10) NULL AFTER last_name",
+            'muslim_name' => "VARCHAR(100) NULL AFTER middle_initial",
+            'islamic_status' => "ENUM('revert', 'born') NULL AFTER birthdate",
+            'shahadah_date' => "DATE NULL AFTER islamic_status",
+            'previous_education' => "TEXT NULL AFTER shahadah_date",
+            'home_address' => "TEXT NULL AFTER previous_education",
+            'facebook_account' => "VARCHAR(255) NULL AFTER home_address",
+            'contact_number' => "VARCHAR(20) NULL AFTER facebook_account",
+            'emergency_contact_name' => "VARCHAR(100) NULL AFTER contact_number",
+            'emergency_contact_relationship' => "VARCHAR(50) NULL AFTER emergency_contact_name",
+            'emergency_contact_no' => "VARCHAR(20) NULL AFTER emergency_contact_relationship",
+            'guardian_name' => "VARCHAR(100) NULL AFTER emergency_contact_no",
+            'guardian_mobile' => "VARCHAR(20) NULL AFTER guardian_name",
+            'payment_method' => "VARCHAR(50) NULL AFTER program_name"
+        ];
+
+        foreach ($columnsToAdd as $col => $definition) {
+            try {
+                $this->db->exec("ALTER TABLE islamic_education_enrollments ADD COLUMN $col $definition");
+            } catch (Exception $e) { /* column likely exists */ }
+        }
     }
 
     public function getAllByGender($gender) {
@@ -41,6 +79,16 @@ class IslamicEducation {
             ORDER BY e.created_at DESC
         ");
         $stmt->execute(['gender' => $gender]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getByRegistrant($userId) {
+        $stmt = $this->db->prepare("
+            SELECT * FROM islamic_education_enrollments 
+            WHERE registered_by = :uid1 OR tenant_id = :uid2
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute(['uid1' => $userId, 'uid2' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -127,14 +175,44 @@ class IslamicEducation {
     }
 
     public function enroll($data) {
-        $sql = "INSERT INTO islamic_education_enrollments (tenant_id, first_name, last_name, program_name, gender, status) 
-                VALUES (:tenant_id, :first_name, :last_name, :program_name, :gender, :status)";
+        $sql = "INSERT INTO islamic_education_enrollments (
+                    tenant_id, registered_by, relationship, first_name, last_name, 
+                    middle_initial, muslim_name, birthdate, islamic_status, 
+                    shahadah_date, previous_education, home_address, facebook_account, 
+                    contact_number, emergency_contact_name, emergency_contact_relationship, 
+                    emergency_contact_no, guardian_name, guardian_mobile, 
+                    program_name, payment_method, gender, status
+                ) VALUES (
+                    :tenant_id, :registered_by, :relationship, :first_name, :last_name, 
+                    :middle_initial, :muslim_name, :birthdate, :islamic_status, 
+                    :shahadah_date, :previous_education, :home_address, :facebook_account, 
+                    :contact_number, :emergency_contact_name, :emergency_contact_relationship, 
+                    :emergency_contact_no, :guardian_name, :guardian_mobile, 
+                    :program_name, :payment_method, :gender, :status
+                )";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             'tenant_id' => $data['tenant_id'] ?? null,
+            'registered_by' => $data['registered_by'] ?? null,
+            'relationship' => $data['relationship'] ?? 'self',
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
+            'middle_initial' => $data['middle_initial'] ?? null,
+            'muslim_name' => $data['muslim_name'] ?? null,
+            'birthdate' => $data['birthdate'] ?? null,
+            'islamic_status' => $data['islamic_status'] ?? null,
+            'shahadah_date' => $data['shahadah_date'] ?? null,
+            'previous_education' => $data['previous_education'] ?? null,
+            'home_address' => $data['home_address'] ?? null,
+            'facebook_account' => $data['facebook_account'] ?? null,
+            'contact_number' => $data['contact_number'] ?? null,
+            'emergency_contact_name' => $data['emergency_contact_name'] ?? null,
+            'emergency_contact_relationship' => $data['emergency_contact_relationship'] ?? null,
+            'emergency_contact_no' => $data['emergency_contact_no'] ?? null,
+            'guardian_name' => $data['guardian_name'] ?? null,
+            'guardian_mobile' => $data['guardian_mobile'] ?? null,
             'program_name' => $data['program_name'],
+            'payment_method' => $data['payment_method'] ?? null,
             'gender' => $data['gender'],
             'status' => $data['status'] ?? 'pending'
         ]);

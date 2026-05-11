@@ -88,17 +88,14 @@ foreach ($history as $req) {
         <div class="top-bar-subtitle">Education Enrollment & History</div>
       </div>
       <div class="top-bar-actions">
-        <a href="<?= url('/user/dashboard') ?>" class="btn-topbar">
-          <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor; margin-right:4px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-          Dashboard
-        </a>
+        <a href="<?= url('/user/dashboard') ?>" class="btn-topbar">← Dashboard</a>
       </div>
     </div>
 
     <div class="page-body">
       <div class="breadcrumb-bar">
         <a href="<?= url('/user/dashboard') ?>">Dashboard</a>
-        <span class="sep"><svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:currentColor;"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></span>
+        <span class="sep">›</span>
         <span class="current">Female Education</span>
       </div>
 
