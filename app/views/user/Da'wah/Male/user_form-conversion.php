@@ -146,7 +146,23 @@
                 </div>
                 <div>
                   <label class="form-label">Occupation <span class="required">*</span></label>
-                  <input type="text" name="occupation" class="form-control" required />
+                  <select name="occupation" id="occupation" class="form-select" required>
+                    <option value="">— Select Occupation Type —</option>
+                    <option>Student</option>
+                    <option>Private Employee</option>
+                    <option>Government Employee</option>
+                    <option>Self-employed / Business Owner</option>
+                    <option>Professional</option>
+                    <option>Skilled / Technical Worker</option>
+                    <option>Service / Sales Worker</option>
+                    <option>Laborer / Agricultural Worker</option>
+                    <option>Retired</option>
+                    <option>Unemployed / Homemaker</option>
+                    <option value="Others">Others</option>
+                  </select>
+                  <div id="occupation_other_wrap" class="other-field-wrap">
+                    <input type="text" name="occupation_other" id="occupation_other" class="form-control" placeholder="Please specify..." />
+                  </div>
                 </div>
               </div>
 
@@ -340,6 +356,22 @@
       relWrap.classList.remove('show');
       relInput.required = false;
       setTimeout(() => { if(!relWrap.classList.contains('show')) relInput.value = ''; }, 400);
+    }
+  };
+
+  // ── Toggle Other Occupation ──
+  const occSelect = document.getElementById('occupation');
+  const occWrap = document.getElementById('occupation_other_wrap');
+  const occInput = document.getElementById('occupation_other');
+  occSelect.onchange = () => {
+    if (occSelect.value === 'Others') {
+      occWrap.classList.add('show');
+      occInput.required = true;
+      setTimeout(() => occInput.focus(), 300);
+    } else {
+      occWrap.classList.remove('show');
+      occInput.required = false;
+      setTimeout(() => { if(!occWrap.classList.contains('show')) occInput.value = ''; }, 400);
     }
   };
 

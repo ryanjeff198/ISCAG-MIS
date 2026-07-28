@@ -42,6 +42,26 @@ class MarriageRequest
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'pending' => 0, 'approved' => 0];
     }
 
+    public function getByUser(int $userId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT * FROM {$this->table}
+            WHERE tenant_id = :id
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute(['id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function create(array $data): bool
+    {
+        $fields = array_keys($data);
+        $placeholders = array_map(fn($f) => ":$f", $fields);
+        $sql = "INSERT INTO {$this->table} (" . implode(',', $fields) . ") VALUES (" . implode(',', $placeholders) . ")";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($data);
+    }
+
     public function getAll(): array
     {
         $stmt = $this->db->prepare("
@@ -54,5 +74,10 @@ class MarriageRequest
         ");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public function updateStatus(int $id, string $status): bool
+    {
+        $stmt = $this->db->prepare("UPDATE {$this->table} SET status = :status WHERE id = :id");
+        return $stmt->execute(['status' => strtolower($status), 'id' => $id]);
     }
 }

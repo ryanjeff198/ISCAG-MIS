@@ -389,7 +389,63 @@ class UserController extends Controller
     public function marriageForm(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
-        $this->view('user/Da\'wah/Male/user_form-marriage');
+        require_once BASE_PATH . '/app/models/MarriageRequest.php';
+        require_once BASE_PATH . '/app/models/DawahAvailability.php';
+
+        $model = new MarriageRequest();
+        $availModel = new DawahAvailability();
+
+        $history = $model->getByUser($_SESSION['user_id']);
+        $analytics = $model->getAnalytics();
+        $blockedDates = $availModel->getBlockedDates('male');
+
+        $this->view('user/Da\'wah/Male/user_form-marriage', [
+            'history' => $history,
+            'analytics' => $analytics,
+            'blockedDates' => $blockedDates
+        ]);
+    }
+
+    public function submitMarriage(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+
+        require_once BASE_PATH . '/app/models/MarriageRequest.php';
+        $model = new MarriageRequest();
+
+        $groom = trim($input['groom_name'] ?? '');
+        $bride = trim($input['bride_name'] ?? '');
+        $date  = $input['marriage_date'] ?? null;
+        $time  = $input['marriage_time'] ?? null;
+        $venue = trim($input['marriage_venue'] ?? 'ISCAG Mosque');
+
+        if (empty($groom) || empty($bride) || empty($date) || empty($time)) {
+            echo json_encode(['success' => false, 'message' => 'Please complete all required booking fields.']);
+            return;
+        }
+
+        $success = $model->create([
+            'tenant_id' => $_SESSION['user_id'],
+            'groom_name' => $groom,
+            'bride_name' => $bride,
+            'marriage_date' => $date,
+            'marriage_time' => $time,
+            'marriage_venue' => $venue,
+            'status' => 'pending'
+        ]);
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? 'Marriage reservation request submitted successfully.' : 'Failed to submit reservation.'
+        ]);
     }
 
     public function conversionForm(): void

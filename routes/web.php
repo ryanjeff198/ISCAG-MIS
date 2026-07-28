@@ -78,6 +78,7 @@ $routes = [
     '/user/services/education/female/subjects' => ['UserController', 'femaleSubjects'],
     '/user/services/education/female/counseling' => ['UserController', 'femaleCounselingDashboard'],
     '/user/services/marriage-form' => ['UserController', 'marriageForm'],
+    '/user/services/marriage/submit' => ['UserController', 'submitMarriage'],
     '/user/services/conversion-form' => ['UserController', 'conversionForm'],
     '/user/services/counseling/resources' => ['UserController', 'counselingResources'],
     '/user/services/counseling/submit' => ['UserController', 'submitCounseling'],
