@@ -7,18 +7,17 @@ Auth::protectRole(['Admin', 'Staff_Male']);
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ISCAG MIS — Male Marriage Management</title>
+  <title>ISCAG MIS — Conversion & Shahadah Management</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
     .badge-status { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-    .filter-row { display: flex; gap: 16px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
     
     .admin-insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .insight-card { background: white; padding: 16px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.3s; display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden; cursor: pointer; }
     .insight-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); border-color: var(--accent); }
     .insight-card::after { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--border); }
-    .insight-card.all::after { background: var(--accent); }
+    .insight-card.all::after { background: #1E90FF; }
     .insight-card.pending::after { background: var(--warning); }
     .insight-card.approved::after { background: var(--success); }
     
@@ -26,52 +25,53 @@ Auth::protectRole(['Admin', 'Staff_Male']);
     .insight-value { font-size: 1.5rem; font-weight: 800; color: var(--text-main); line-height: 1; }
 
     /* Modal Styles */
-    .marriage-modal-backdrop {
+    .conversion-modal-backdrop {
       position: fixed; inset: 0; z-index: 99999;
       background: rgba(15, 30, 22, 0.7); backdrop-filter: blur(8px);
       display: none; align-items: center; justify-content: center; padding: 20px;
       animation: fadeIn 0.3s ease;
     }
-    .marriage-modal-card {
-      background: #fff; border-radius: 20px; width: 100%; max-width: 580px;
+    .conversion-modal-card {
+      background: #fff; border-radius: 20px; width: 100%; max-width: 650px;
       box-shadow: 0 30px 70px rgba(0,0,0,0.3); overflow: hidden;
       border: 1px solid rgba(0,0,0,0.08); animation: slideUp 0.35s ease;
     }
-    .marriage-modal-header {
+    .conversion-modal-header {
       padding: 20px 24px; border-bottom: 1px solid var(--border);
       display: flex; justify-content: space-between; align-items: center;
       background: #fdfdfd;
     }
-    .marriage-modal-close {
+    .conversion-modal-close {
       background: none; border: none; font-size: 1.8rem; cursor: pointer; color: #6b7280;
       padding: 0; line-height: 1; transition: color 0.2s;
     }
-    .marriage-modal-close:hover { color: var(--primary); }
-    .marriage-modal-body { padding: 24px; max-height: 75vh; overflow-y: auto; }
-    .marriage-modal-footer {
+    .conversion-modal-close:hover { color: var(--primary); }
+    .conversion-modal-body { padding: 24px; max-height: 75vh; overflow-y: auto; }
+    .conversion-modal-footer {
       padding: 16px 24px; background: #f9fafb; border-top: 1px solid var(--border);
       display: flex; justify-content: flex-end; gap: 10px;
     }
     .info-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .info-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
     .info-box { background: #f9fafb; padding: 14px; border-radius: 12px; border: 1px solid var(--border); }
-    .info-box.highlight { background: #f0fdf4; border-color: #dcfce7; }
+    .info-box.highlight { background: #eff6ff; border-color: #dbeafe; }
     .info-box-lbl { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
     .info-box-val { font-size: 0.95rem; font-weight: 700; color: #1f2937; }
-    .info-box-val.gold { color: #b8860b; font-family: 'Lora', serif; }
+    .info-box-val.gold { color: #1E90FF; font-family: 'Lora', serif; }
   </style>
 </head>
 <body>
   <div class="app-wrapper">
     <?php 
-      $active_page = 'marriage';
+      $active_page = 'conversion';
       $dawah_type = 'male';
       include BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Dawah_Department/sidebar.php'; 
     ?>
     <div class="main-content">
       <div class="top-bar">
         <div class="top-bar-left">
-          <div class="top-bar-title">Marriage Records & Solemnization</div>
-          <div class="top-bar-subtitle">Male Da'wah Department — Marriage applications, scheduling, and solemnization tracking</div>
+          <div class="top-bar-title">Conversion &amp; Shahadah Records</div>
+          <div class="top-bar-subtitle">Male Da'wah Department — Conversion to Islam applications and certificate issuance</div>
         </div>
         <div class="top-bar-actions">
            <span id="admin-name" style="font-weight:700;color:var(--text-main);font-size:0.9rem;"></span>
@@ -82,7 +82,7 @@ Auth::protectRole(['Admin', 'Staff_Male']);
         <div class="breadcrumb-bar">
           <a href="<?= url('/admin/dawah/male') ?>">Da'wah Department</a>
           <span class="sep">›</span>
-          <span class="current">Marriage Applications</span>
+          <span class="current">Conversion Records</span>
         </div>
 
         <!-- Dynamic Insights Summary -->
@@ -93,8 +93,8 @@ Auth::protectRole(['Admin', 'Staff_Male']);
         <div class="section-card">
           <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center;">
             <h6>
-              <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--accent);margin-right:8px;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-              Brothers' Marriage Reservations
+              <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#1E90FF;margin-right:8px;"><path d="M12 2L1 21h22L12 2zm0 3.8L19.5 19H4.5L12 5.8zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+              Brothers' Conversion to Islam Applications
             </h6>
             <div style="display:flex; gap:10px;">
               <select id="status-filter" class="form-control" style="font-size:0.8rem; padding:4px 12px; border-radius:8px; width:auto; appearance:auto;" onchange="renderTable()">
@@ -111,15 +111,15 @@ Auth::protectRole(['Admin', 'Staff_Male']);
                 <thead>
                   <tr>
                     <th>Ref #</th>
-                    <th>Groom</th>
-                    <th>Bride</th>
-                    <th>Ceremony Date & Time</th>
-                    <th>Venue</th>
+                    <th>Legal Name</th>
+                    <th>Adopted Islamic Name</th>
+                    <th>Former Religion</th>
+                    <th>Conversion Date</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody id="marriage-tbody">
+                <tbody id="conversion-tbody">
                   <!-- Rendered by JS -->
                 </tbody>
               </table>
@@ -130,64 +130,91 @@ Auth::protectRole(['Admin', 'Staff_Male']);
     </div>
   </div>
 
-  <!-- 💍 Marriage Details Modal -->
-  <div id="marriage-modal" class="marriage-modal-backdrop" onclick="if(event.target===this) closeMarriageModal()">
-    <div class="marriage-modal-card">
-      <div class="marriage-modal-header">
+  <!-- 📜 Conversion Details Modal -->
+  <div id="conversion-modal" class="conversion-modal-backdrop" onclick="if(event.target===this) closeConversionModal()">
+    <div class="conversion-modal-card">
+      <div class="conversion-modal-header">
         <h5 style="margin:0; font-family:'Lora',serif; color:var(--primary-dark); font-weight:800; display:flex; align-items:center; gap:8px;">
-          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--accent);"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-          Marriage Reservation Details
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#1E90FF;"><path d="M12 2L1 21h22L12 2zm0 3.8L19.5 19H4.5L12 5.8zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+          Conversion Application Details
         </h5>
-        <button type="button" onclick="closeMarriageModal()" class="marriage-modal-close">&times;</button>
+        <button type="button" onclick="closeConversionModal()" class="conversion-modal-close">&times;</button>
       </div>
-      <div class="marriage-modal-body">
+      <div class="conversion-modal-body">
         <div class="info-grid-2">
           <div class="info-box highlight">
-            <div class="info-box-lbl">Groom Name</div>
-            <div id="modal-groom" class="info-box-val">—</div>
+            <div class="info-box-lbl">Legal Name</div>
+            <div id="modal-legal-name" class="info-box-val">—</div>
           </div>
           <div class="info-box highlight">
-            <div class="info-box-lbl">Bride Name</div>
-            <div id="modal-bride" class="info-box-val">—</div>
+            <div class="info-box-lbl">Adopted Islamic Name</div>
+            <div id="modal-adopted-name" class="info-box-val gold">—</div>
+          </div>
+        </div>
+
+        <div class="info-grid-3">
+          <div class="info-box">
+            <div class="info-box-lbl">Sex / Age</div>
+            <div id="modal-sex-age" class="info-box-val">—</div>
+          </div>
+          <div class="info-box">
+            <div class="info-box-lbl">Civil Status</div>
+            <div id="modal-civil" class="info-box-val">—</div>
+          </div>
+          <div class="info-box">
+            <div class="info-box-lbl">Former Religion</div>
+            <div id="modal-former-rel" class="info-box-val">—</div>
           </div>
         </div>
 
         <div class="info-grid-2">
           <div class="info-box">
-            <div class="info-box-lbl">Ceremony Date</div>
-            <div id="modal-date" class="info-box-val gold">—</div>
+            <div class="info-box-lbl">Place of Birth</div>
+            <div id="modal-pob" class="info-box-val">—</div>
           </div>
           <div class="info-box">
-            <div class="info-box-lbl">Ceremony Time</div>
-            <div id="modal-time" class="info-box-val">—</div>
+            <div class="info-box-lbl">Present Residence</div>
+            <div id="modal-residence" class="info-box-val">—</div>
           </div>
-        </div>
-
-        <div class="info-box" style="margin-bottom:16px;">
-          <div class="info-box-lbl">Venue</div>
-          <div id="modal-venue" class="info-box-val">—</div>
         </div>
 
         <div class="info-grid-2">
           <div class="info-box">
-            <div class="info-box-lbl">Application Ref #</div>
-            <div id="modal-ref" class="info-box-val">—</div>
+            <div class="info-box-lbl">Father's Name &amp; Religion</div>
+            <div id="modal-father" class="info-box-val">—</div>
           </div>
           <div class="info-box">
-            <div class="info-box-lbl">Current Status</div>
+            <div class="info-box-lbl">Mother's Name &amp; Religion</div>
+            <div id="modal-mother" class="info-box-val">—</div>
+          </div>
+        </div>
+
+        <div class="info-grid-2">
+          <div class="info-box">
+            <div class="info-box-lbl">First Witness</div>
+            <div id="modal-w1" class="info-box-val">—</div>
+          </div>
+          <div class="info-box">
+            <div class="info-box-lbl">Second Witness</div>
+            <div id="modal-w2" class="info-box-val">—</div>
+          </div>
+        </div>
+
+        <div class="info-grid-2">
+          <div class="info-box">
+            <div class="info-box-lbl">Conversion Date</div>
+            <div id="modal-conv-date" class="info-box-val gold">—</div>
+          </div>
+          <div class="info-box">
+            <div class="info-box-lbl">Status</div>
             <div id="modal-status" class="info-box-val">—</div>
           </div>
         </div>
-
-        <div class="info-box">
-          <div class="info-box-lbl">Applicant Contact Info</div>
-          <div id="modal-contact" class="info-box-val" style="font-size:0.85rem; color:#4b5563;">—</div>
-        </div>
       </div>
-      <div class="marriage-modal-footer">
-        <button type="button" onclick="closeMarriageModal()" class="btn-cancel">Close</button>
+      <div class="conversion-modal-footer">
+        <button type="button" onclick="closeConversionModal()" class="btn-cancel">Close</button>
         <button type="button" id="modal-btn-reject" class="btn-action btn-edit" style="color:var(--danger); border-color:var(--danger); display:none;">Reject</button>
-        <button type="button" id="modal-btn-approve" class="btn-action btn-approve" style="display:none;">Approve Reservation</button>
+        <button type="button" id="modal-btn-approve" class="btn-action btn-approve" style="display:none;">Approve &amp; Issue Certificate</button>
       </div>
     </div>
   </div>
@@ -207,15 +234,15 @@ Auth::protectRole(['Admin', 'Staff_Male']);
 
       container.innerHTML = `
         <div class="insight-card all" onclick="setFilter('all')">
-          <div class="insight-label">Total Reservations</div>
-          <div class="insight-value">${total}</div>
+          <div class="insight-label">Total Applications</div>
+          <div class="insight-value" style="color:#1E90FF;">${total}</div>
         </div>
         <div class="insight-card pending" onclick="setFilter('pending')">
           <div class="insight-label">Pending Verification</div>
           <div class="insight-value" style="color:var(--warning);">${pending}</div>
         </div>
         <div class="insight-card approved" onclick="setFilter('approved')">
-          <div class="insight-label">Approved &amp; Scheduled</div>
+          <div class="insight-label">Certificates Issued</div>
           <div class="insight-value" style="color:var(--success);">${approved}</div>
         </div>
       `;
@@ -227,7 +254,7 @@ Auth::protectRole(['Admin', 'Staff_Male']);
     }
 
     function renderTable() {
-      const tbody = document.getElementById('marriage-tbody');
+      const tbody = document.getElementById('conversion-tbody');
       const filter = document.getElementById('status-filter').value;
       
       let filtered = applications;
@@ -236,7 +263,7 @@ Auth::protectRole(['Admin', 'Staff_Male']);
       }
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No marriage records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No conversion records found.</td></tr>`;
         return;
       }
 
@@ -244,29 +271,28 @@ Auth::protectRole(['Admin', 'Staff_Male']);
         const st = (app.status || 'pending').toLowerCase();
         const sc = st === 'approved' ? 'badge-approved' : (st === 'rejected' ? 'badge-rejected' : 'badge-pending');
         const displayStatus = st === 'rejected' ? 'Disapproved' : st.charAt(0).toUpperCase() + st.slice(1);
-        const schedDate = app.marriage_date ? new Date(app.marriage_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-        const schedTime = app.marriage_time || '';
-        const venue = app.marriage_venue || 'ISCAG Mosque';
+        const convDate = app.conversion_date ? new Date(app.conversion_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+        const legalName = `${app.fname || ''} ${app.mname ? app.mname + ' ' : ''}${app.lname || ''}`.trim() || '—';
 
         return `
           <tr>
-            <td class="td-id">#MR-${String(app.id).padStart(4, '0')}</td>
-            <td style="font-weight:700; color:var(--primary);">${app.groom_name || '—'}</td>
-            <td style="font-weight:700; color:var(--primary);">${app.bride_name || '—'}</td>
-            <td>${schedDate} ${schedTime ? 'at ' + schedTime : ''}</td>
-            <td>${venue}</td>
+            <td class="td-id">#CR-${String(app.id).padStart(4, '0')}</td>
+            <td style="font-weight:700; color:var(--primary);">${legalName}</td>
+            <td style="font-weight:700; color:#1E90FF;">${app.adopted_name || '—'}</td>
+            <td>${app.former_religion || '—'}</td>
+            <td>${convDate}</td>
             <td><span class="badge-status ${sc}">${displayStatus}</span></td>
             <td>
               <div class="actions-cell">
-                <button class="btn-action btn-view" onclick='viewMarriageDetails(${JSON.stringify(app)})'>
+                <button class="btn-action btn-view" onclick='viewConversionDetails(${JSON.stringify(app)})'>
                   <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                   Details
                 </button>
                 ${st === 'pending' ? `
-                  <button class="btn-action btn-approve" onclick="handleMarriageAction(${app.id}, 'approve')">
+                  <button class="btn-action btn-approve" onclick="handleConversionAction(${app.id}, 'approve')">
                     <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Approve
                   </button>
-                  <button class="btn-action btn-edit" style="color:var(--danger); border-color:var(--danger);" onclick="handleMarriageAction(${app.id}, 'reject')">
+                  <button class="btn-action btn-edit" style="color:var(--danger); border-color:var(--danger);" onclick="handleConversionAction(${app.id}, 'reject')">
                     Reject
                   </button>
                 ` : ''}
@@ -277,15 +303,21 @@ Auth::protectRole(['Admin', 'Staff_Male']);
       }).join('');
     }
 
-    function viewMarriageDetails(app) {
-      document.getElementById('modal-groom').innerText = app.groom_name || '—';
-      document.getElementById('modal-bride').innerText = app.bride_name || '—';
-      document.getElementById('modal-date').innerText = app.marriage_date ? new Date(app.marriage_date).toLocaleDateString('en-US', { weekday:'long', month: 'long', day: 'numeric', year: 'numeric' }) : '—';
-      document.getElementById('modal-time').innerText = app.marriage_time || '—';
-      document.getElementById('modal-venue').innerText = app.marriage_venue || 'ISCAG Mosque';
-      document.getElementById('modal-ref').innerText = `#MR-${String(app.id).padStart(4, '0')}`;
+    function viewConversionDetails(app) {
+      const legalName = `${app.fname || ''} ${app.mname ? app.mname + ' ' : ''}${app.lname || ''}`.trim() || '—';
+      document.getElementById('modal-legal-name').innerText = legalName;
+      document.getElementById('modal-adopted-name').innerText = app.adopted_name || '—';
+      document.getElementById('modal-sex-age').innerText = `${app.sex || 'Male'}, ${app.age || '—'} yrs old`;
+      document.getElementById('modal-civil').innerText = app.civil_status || '—';
+      document.getElementById('modal-former-rel').innerText = app.former_religion || '—';
+      document.getElementById('modal-pob').innerText = app.pob || '—';
+      document.getElementById('modal-residence').innerText = app.residence || '—';
+      document.getElementById('modal-father').innerText = `${app.father_name || '—'} (${app.father_religion || '—'})`;
+      document.getElementById('modal-mother').innerText = `${app.mother_name || '—'} (${app.mother_religion || '—'})`;
+      document.getElementById('modal-w1').innerText = `${app.witness1_name || '—'} ${app.witness1_address ? '— ' + app.witness1_address : ''}`;
+      document.getElementById('modal-w2').innerText = `${app.witness2_name || '—'} ${app.witness2_address ? '— ' + app.witness2_address : ''}`;
+      document.getElementById('modal-conv-date').innerText = app.conversion_date ? new Date(app.conversion_date).toLocaleDateString('en-US', { weekday:'long', month: 'long', day: 'numeric', year: 'numeric' }) : '—';
       document.getElementById('modal-status').innerText = (app.status || 'Pending').toUpperCase();
-      document.getElementById('modal-contact').innerText = `${app.first_name || ''} ${app.last_name || ''} (${app.email || 'No email registered'})`;
 
       const btnApprove = document.getElementById('modal-btn-approve');
       const btnReject = document.getElementById('modal-btn-reject');
@@ -293,28 +325,28 @@ Auth::protectRole(['Admin', 'Staff_Male']);
 
       if (st === 'pending') {
         btnApprove.style.display = 'inline-flex';
-        btnApprove.onclick = () => { closeMarriageModal(); handleMarriageAction(app.id, 'approve'); };
+        btnApprove.onclick = () => { closeConversionModal(); handleConversionAction(app.id, 'approve'); };
         btnReject.style.display = 'inline-flex';
-        btnReject.onclick = () => { closeMarriageModal(); handleMarriageAction(app.id, 'reject'); };
+        btnReject.onclick = () => { closeConversionModal(); handleConversionAction(app.id, 'reject'); };
       } else {
         btnApprove.style.display = 'none';
         btnReject.style.display = 'none';
       }
 
-      document.getElementById('marriage-modal').style.display = 'flex';
+      document.getElementById('conversion-modal').style.display = 'flex';
     }
 
-    function closeMarriageModal() {
-      document.getElementById('marriage-modal').style.display = 'none';
+    function closeConversionModal() {
+      document.getElementById('conversion-modal').style.display = 'none';
     }
 
-    async function handleMarriageAction(id, action) {
-      const title = action === 'approve' ? 'Approve Marriage Reservation' : 'Reject Marriage Reservation';
-      const message = `Are you sure you want to ${action} this marriage ceremony reservation? The applicant will be notified immediately.`;
+    async function handleConversionAction(id, action) {
+      const title = action === 'approve' ? 'Approve Conversion & Issue Certificate' : 'Reject Conversion Application';
+      const message = `Are you sure you want to ${action} this conversion application? The applicant will be notified immediately.`;
 
       showConfirm(title, message, async () => {
         try {
-          const endpoint = action === 'approve' ? '/admin/dawah/marriage/approve' : '/admin/dawah/marriage/reject';
+          const endpoint = action === 'approve' ? '/admin/dawah/conversion/approve' : '/admin/dawah/conversion/reject';
           const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -322,7 +354,7 @@ Auth::protectRole(['Admin', 'Staff_Male']);
           });
           const result = await response.json();
           if (result.success) {
-            showAlert('Action Successful', `The reservation has been ${action}d successfully.`, 'success');
+            showAlert('Action Successful', `The application has been ${action}d successfully.`, 'success');
             setTimeout(() => location.reload(), 1200);
           } else {
             showAlert('Action Failed', 'Could not process request. Please try again.', 'error');

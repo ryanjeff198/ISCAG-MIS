@@ -642,6 +642,68 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
 
       <div class="page-body">
 
+        <?php
+          $dbRecentRequests = [];
+          $pendingCounseling = null;
+          $approvedCounseling = null;
+          $pendingConversion = null;
+          $approvedConversion = null;
+
+          foreach ($counselingRequests ?? [] as $cr) {
+              if (($cr['status'] ?? '') === 'approved' && !$approvedCounseling) $approvedCounseling = $cr;
+              if (($cr['status'] ?? '') === 'pending' && !$pendingCounseling) $pendingCounseling = $cr;
+
+              $isFemale = ($cr['gender'] ?? '') === 'female';
+              $cUrl = $isFemale ? url('/user/services/counseling/female') : url('/user/services/counseling/male');
+              $cLabel = $isFemale ? "Da'wah Female Counseling" : "Male Counseling & Guidance";
+
+              $dbRecentRequests[] = [
+                  'id' => 'MC-' . str_pad($cr['id'], 4, '0', STR_PAD_LEFT),
+                  'type' => $cLabel . ' (' . htmlspecialchars(ucfirst($cr['reason'] ?? 'General')) . ')',
+                  'date' => !empty($cr['created_at']) ? date('M d, Y', strtotime($cr['created_at'])) : date('M d, Y'),
+                  'status' => $cr['status'],
+                  'updatedAt' => !empty($cr['preferred_date']) ? 'Slot: ' . date('M d, Y', strtotime($cr['preferred_date'])) : (!empty($cr['created_at']) ? date('M d, Y', strtotime($cr['created_at'])) : date('M d, Y')),
+                  'link' => $cUrl
+              ];
+          }
+
+          foreach ($conversionRequests ?? [] as $cv) {
+              if (($cv['status'] ?? '') === 'approved' && !$approvedConversion) $approvedConversion = $cv;
+              if (($cv['status'] ?? '') === 'pending' && !$pendingConversion) $pendingConversion = $cv;
+
+              $dbRecentRequests[] = [
+                  'id' => 'CV-' . str_pad($cv['id'], 4, '0', STR_PAD_LEFT),
+                  'type' => 'Conversion to Islam (Shahadah: ' . htmlspecialchars($cv['adopted_name']) . ')',
+                  'date' => !empty($cv['created_at']) ? date('M d, Y', strtotime($cv['created_at'])) : date('M d, Y'),
+                  'status' => $cv['status'],
+                  'updatedAt' => !empty($cv['conversion_date']) ? 'Conversion: ' . date('M d, Y', strtotime($cv['conversion_date'])) : date('M d, Y'),
+                  'link' => url('/user/services/conversion-form')
+              ];
+          }
+
+          foreach ($marriageRequests ?? [] as $mr) {
+              $dbRecentRequests[] = [
+                  'id' => 'MR-' . str_pad($mr['id'], 4, '0', STR_PAD_LEFT),
+                  'type' => 'Marriage Ceremony Reservation (' . htmlspecialchars($mr['groom_name'] . ' & ' . $mr['bride_name']) . ')',
+                  'date' => !empty($mr['created_at']) ? date('M d, Y', strtotime($mr['created_at'])) : date('M d, Y'),
+                  'status' => $mr['status'],
+                  'updatedAt' => !empty($mr['marriage_date']) ? 'Ceremony: ' . date('M d, Y', strtotime($mr['marriage_date'])) : date('M d, Y'),
+                  'link' => url('/user/services/marriage-form')
+              ];
+          }
+
+          if (!empty($application)) {
+              $dbRecentRequests[] = [
+                  'id' => 'APT-' . str_pad($application['application_id'] ?? '1', 4, '0', STR_PAD_LEFT),
+                  'type' => 'Apartment Housing Application',
+                  'date' => !empty($application['created_at']) ? date('M d, Y', strtotime($application['created_at'])) : date('M d, Y'),
+                  'status' => strtolower($application['status'] ?? 'pending'),
+                  'updatedAt' => !empty($application['updated_at']) ? date('M d, Y', strtotime($application['updated_at'])) : date('M d, Y'),
+                  'link' => url('/user/apartment/status')
+              ];
+          }
+        ?>
+
         <!-- WELCOME BANNER -->
         <div class="welcome-banner">
           <h3 id="welcome-heading">Assalamu Alaikum, <?= htmlspecialchars(explode(' ', $_SESSION['name'] ?? 'User')[0]) ?>!</h3>
@@ -664,6 +726,76 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
             <a href="<?= url('/user/profile') ?>" class="btn-complete-profile" id="btn-complete-profile">Complete Profile</a>
           </div>
         </div>
+
+        <!-- ACTIVE COUNSELING / APPOINTMENT ALERT BANNER -->
+        <?php if ($approvedCounseling): ?>
+        <div style="background:linear-gradient(135deg, #14532D, #166534); border-radius:16px; padding:20px 24px; color:white; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 8px 24px rgba(20,83,45,0.2); flex-wrap:wrap; gap:16px;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:48px; height:48px; border-radius:14px; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid rgba(255,255,255,0.3);">
+              <svg viewBox="0 0 24 24" style="width:26px; height:26px; fill:#fde047;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:#fde047; margin-bottom:2px;">Confirmed Appointment</div>
+              <div style="font-family:'Lora',serif; font-size:1.15rem; font-weight:700;">Counseling Session Scheduled: <?= date('l, M d, Y', strtotime($approvedCounseling['preferred_date'])) ?> at <?= htmlspecialchars($approvedCounseling['preferred_time']) ?></div>
+              <div style="font-size:0.83rem; color:rgba(255,255,255,0.85); margin-top:2px;">Ref: #MC-<?= str_pad($approvedCounseling['id'], 4, '0', STR_PAD_LEFT) ?> • Topic: <?= htmlspecialchars($approvedCounseling['reason']) ?> • Venue: Room 204</div>
+            </div>
+          </div>
+          <a href="<?= url('/user/services/counseling/' . (($approvedCounseling['gender'] ?? '') === 'female' ? 'female' : 'male')) ?>" style="padding:12px 24px; background:linear-gradient(135deg, #D4AF37, #B8860B); color:#1a1a1a; font-weight:800; border-radius:10px; text-decoration:none; font-size:0.88rem; white-space:nowrap; box-shadow:0 4px 14px rgba(212,175,55,0.35);">
+            View Appointment Pass →
+          </a>
+        </div>
+        <?php elseif ($pendingCounseling): ?>
+        <div style="background:#fffbeb; border:1.5px solid #fde68a; border-radius:16px; padding:18px 24px; color:#92400e; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 16px rgba(245,158,11,0.08); flex-wrap:wrap; gap:16px;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:46px; height:46px; border-radius:12px; background:#fef3c7; border:1px solid #fde68a; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#b45309;">
+              <svg viewBox="0 0 24 24" style="width:24px; height:24px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:#b45309; margin-bottom:2px;">Active Pending Request</div>
+              <div style="font-family:'Lora',serif; font-size:1.1rem; font-weight:700; color:#78350f;">Counseling Request Under Review (#MC-<?= str_pad($pendingCounseling['id'], 4, '0', STR_PAD_LEFT) ?>)</div>
+              <div style="font-size:0.83rem; color:#92400e; margin-top:2px;">Topic: <?= htmlspecialchars($pendingCounseling['reason']) ?> • Preferred Slot: <?= !empty($pendingCounseling['preferred_date']) ? date('M d, Y', strtotime($pendingCounseling['preferred_date'])) : 'Pending' ?> at <?= htmlspecialchars($pendingCounseling['preferred_time'] ?? '10:00 AM') ?></div>
+            </div>
+          </div>
+          <a href="<?= url('/user/services/counseling/' . (($pendingCounseling['gender'] ?? '') === 'female' ? 'female' : 'male')) ?>" style="padding:10px 22px; background:#f59e0b; color:white; font-weight:700; border-radius:10px; text-decoration:none; font-size:0.86rem; white-space:nowrap; box-shadow:0 3px 10px rgba(245,158,11,0.25);">
+            Track Schedule →
+          </a>
+        </div>
+        <?php endif; ?>
+
+        <!-- ACTIVE CONVERSION / CERTIFICATE ALERT BANNER -->
+        <?php if ($approvedConversion): ?>
+        <div style="background:linear-gradient(135deg, #14532D, #166534); border-radius:16px; padding:20px 24px; color:white; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 8px 24px rgba(20,83,45,0.2); flex-wrap:wrap; gap:16px;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:48px; height:48px; border-radius:14px; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid rgba(255,255,255,0.3);">
+              <svg viewBox="0 0 24 24" style="width:26px; height:26px; fill:#fde047;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:#fde047; margin-bottom:2px;">Official Certificate of Conversion Issued</div>
+              <div style="font-family:'Lora',serif; font-size:1.15rem; font-weight:700;">Certificate of Conversion to Islam (Adopted: <?= htmlspecialchars($approvedConversion['adopted_name']) ?>)</div>
+              <div style="font-size:0.83rem; color:rgba(255,255,255,0.85); margin-top:2px;">Ref: #CV-<?= str_pad($approvedConversion['id'], 4, '0', STR_PAD_LEFT) ?> • Conversion Date: <?= date('M d, Y', strtotime($approvedConversion['conversion_date'])) ?></div>
+            </div>
+          </div>
+          <a href="<?= url('/user/services/conversion-form') ?>" style="padding:12px 24px; background:linear-gradient(135deg, #D4AF37, #B8860B); color:#1a1a1a; font-weight:800; border-radius:10px; text-decoration:none; font-size:0.88rem; white-space:nowrap; box-shadow:0 4px 14px rgba(212,175,55,0.35);">
+            View Official Certificate →
+          </a>
+        </div>
+        <?php elseif ($pendingConversion): ?>
+        <div style="background:#fffbeb; border:1.5px solid #fde68a; border-radius:16px; padding:18px 24px; color:#92400e; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 16px rgba(245,158,11,0.08); flex-wrap:wrap; gap:16px;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:46px; height:46px; border-radius:12px; background:#fef3c7; border:1px solid #fde68a; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#b45309;">
+              <svg viewBox="0 0 24 24" style="width:24px; height:24px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:#b45309; margin-bottom:2px;">Active Pending Request</div>
+              <div style="font-family:'Lora',serif; font-size:1.1rem; font-weight:700; color:#78350f;">Conversion Registration Under Review (#CV-<?= str_pad($pendingConversion['id'], 4, '0', STR_PAD_LEFT) ?>)</div>
+              <div style="font-size:0.83rem; color:#92400e; margin-top:2px;">Adopted Muslim Name: <strong><?= htmlspecialchars($pendingConversion['adopted_name']) ?></strong> • Conversion Date: <?= date('M d, Y', strtotime($pendingConversion['conversion_date'])) ?></div>
+            </div>
+          </div>
+          <a href="<?= url('/user/services/conversion-form') ?>" style="padding:10px 22px; background:#f59e0b; color:white; font-weight:700; border-radius:10px; text-decoration:none; font-size:0.86rem; white-space:nowrap; box-shadow:0 3px 10px rgba(245,158,11,0.25);">
+            View Registration →
+          </a>
+        </div>
+        <?php endif; ?>
 
         <?php if (($account['role'] ?? '') === 'Tenant'): ?>
         <!-- TENANT ONBOARDING (TENANT ONLY) -->
@@ -753,7 +885,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
               </svg>
               My Recent Requests
             </h6>
-            <span style="font-size:0.75rem;color:var(--text-muted);" id="req-count">Your submission history</span>
+            <span style="font-size:0.75rem;color:var(--text-muted);" id="req-count"><?= count($dbRecentRequests) ?> <?= count($dbRecentRequests) === 1 ? 'record' : 'records' ?></span>
           </div>
           <div class="section-card-body" style="padding:0;">
             <div class="table-wrapper">
@@ -764,10 +896,37 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                     <th>Service Type</th>
                     <th>Date Submitted</th>
                     <th>Status</th>
-                    <th>Last Updated</th>
+                    <th>Details / Action</th>
                   </tr>
                 </thead>
-                <tbody id="req-tbody"></tbody>
+                <tbody id="req-tbody">
+                  <?php if (empty($dbRecentRequests)): ?>
+                    <tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted);">No service requests yet. Submit your first request above.</td></tr>
+                  <?php else: ?>
+                    <?php foreach ($dbRecentRequests as $r): ?>
+                      <tr>
+                        <td class="td-id">#<?= htmlspecialchars($r['id']) ?></td>
+                        <td style="font-weight:600;"><?= htmlspecialchars($r['type']) ?></td>
+                        <td><?= htmlspecialchars($r['date']) ?></td>
+                        <td>
+                          <?php if (in_array(strtolower($r['status']), ['approved', 'assigned'])): ?>
+                            <span class="badge-status badge-approved" style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;font-weight:700;">Confirmed</span>
+                          <?php elseif (in_array(strtolower($r['status']), ['pending', 'under review', 'queued'])): ?>
+                            <span class="badge-status badge-pending" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-weight:700;">Under Review</span>
+                          <?php else: ?>
+                            <span class="badge-status badge-rejected" style="font-weight:700;"><?= htmlspecialchars(ucfirst($r['status'])) ?></span>
+                          <?php endif; ?>
+                        </td>
+                        <td>
+                          <a href="<?= $r['link'] ?>" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:8px; background:<?= in_array(strtolower($r['status']), ['approved', 'assigned']) ? '#166534' : '#f8faf9' ?>; color:<?= in_array(strtolower($r['status']), ['approved', 'assigned']) ? 'white' : 'var(--primary-dark)' ?>; border:1px solid <?= in_array(strtolower($r['status']), ['approved', 'assigned']) ? '#166534' : '#e2e8f0' ?>; font-size:0.8rem; font-weight:700; text-decoration:none; transition:all 0.2s;">
+                            <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                            <?= in_array(strtolower($r['status']), ['approved', 'assigned']) ? 'View Pass / Schedule' : 'Track Status' ?>
+                          </a>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
               </table>
             </div>
           </div>
@@ -1108,31 +1267,31 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
       serviceGrid.appendChild(card);
     });
 
-    // ── Requests table ──
-    const reqs = getRequests().filter(r => r.user === user.id);
+    // ── Requests table logic ──
+    const SERVER_REQS = <?= json_encode($dbRecentRequests ?? []) ?>;
     const reqTbody = document.getElementById('req-tbody');
     const reqCount = document.getElementById('req-count');
 
-    reqCount.textContent = reqs.length + ' record' + (reqs.length !== 1 ? 's' : '');
-
-    if (reqs.length === 0) {
-      reqTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted);">No service requests yet. Submit your first request above.</td></tr>';
-    } else {
-      reqTbody.innerHTML = reqs.map(r => {
-        let type = r.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        if (r.type === 'male_counseling' || r.type === 'counseling_male') {
-          type = 'Counseling & Guidance';
-        } else if (r.type === 'female_counseling' || r.type === 'counseling_female' || r.type === 'female_education') {
-          type = 'Female Education';
-        }
-        return '<tr>' +
-          '<td class="td-id">#' + r.id + '</td>' +
-          '<td>' + type + '</td>' +
-          '<td>' + r.date + '</td>' +
-          '<td><span class="badge-status badge-' + r.status + '">' + r.status + '</span></td>' +
-          '<td style="color:var(--text-muted);">' + (r.updatedAt || r.date) + '</td>' +
-          '</tr>';
-      }).join('');
+    if (!SERVER_REQS || SERVER_REQS.length === 0) {
+      const localReqs = getRequests().filter(r => r.user === user.id);
+      if (localReqs.length > 0) {
+        reqCount.textContent = localReqs.length + ' record' + (localReqs.length !== 1 ? 's' : '');
+        reqTbody.innerHTML = localReqs.map(r => {
+          let type = r.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          if (r.type === 'male_counseling' || r.type === 'counseling_male') {
+            type = 'Counseling & Guidance';
+          } else if (r.type === 'female_counseling' || r.type === 'counseling_female' || r.type === 'female_education') {
+            type = 'Female Education';
+          }
+          return '<tr>' +
+            '<td class="td-id">#' + r.id + '</td>' +
+            '<td style="font-weight:600;">' + type + '</td>' +
+            '<td>' + r.date + '</td>' +
+            '<td><span class="badge-status badge-' + r.status + '">' + r.status + '</span></td>' +
+            '<td><a href="<?= url('/user/services/counseling/male') ?>" style="padding:6px 12px; border-radius:6px; background:#f8faf9; color:var(--primary-dark); font-size:0.8rem; font-weight:700; text-decoration:none;">View Details</a></td>' +
+            '</tr>';
+        }).join('');
+      }
     }
 
       // ── Status Announcement Function ──

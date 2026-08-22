@@ -25,6 +25,19 @@ class UserController extends Controller
         $appModel = new ApartmentApp();
         $application = $appModel->getApplication($userId);
 
+        // Fetch active service requests from Database
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $counselingModel = new CounselingRequest();
+        $counselingRequests = $userId ? $counselingModel->getByUser((int)$userId) : [];
+
+        require_once BASE_PATH . '/app/models/MarriageRequest.php';
+        $marriageModel = new MarriageRequest();
+        $marriageRequests = $userId ? $marriageModel->getByUser((int)$userId) : [];
+
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
+        $conversionModel = new ConversionRequest();
+        $conversionRequests = $userId ? $conversionModel->getByUser((int)$userId) : [];
+
         // Run automated billing reminder check
         try {
             require_once BASE_PATH . '/app/helpers/BillingReminder.php';
@@ -34,7 +47,10 @@ class UserController extends Controller
         $this->view('dashboard', [
             'account' => $account,
             'info' => $info,
-            'application' => $application
+            'application' => $application,
+            'counselingRequests' => $counselingRequests,
+            'marriageRequests' => $marriageRequests,
+            'conversionRequests' => $conversionRequests
         ]);
     }
     public function profile(): void
@@ -382,8 +398,15 @@ class UserController extends Controller
     public function counselingResources(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
-        // Only allow if user has an approved request (optional check, but good for security)
-        $this->view('user/Da\'wah/Male/counseling_resources');
+        $userId = $_SESSION['user_id'] ?? null;
+        
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $counselingModel = new CounselingRequest();
+        $history = $userId ? $counselingModel->getByUser((int)$userId) : [];
+
+        $this->view('user/Da\'wah/Male/counseling_resources', [
+            'history' => $history
+        ]);
     }
 
     public function marriageForm(): void
@@ -451,9 +474,89 @@ class UserController extends Controller
     public function conversionForm(): void
     {
         Auth::protect();
+        $userId = $_SESSION['user_id'] ?? null;
         $userModel = new User();
-        $dbUser = $userModel->findById($_SESSION['user_id']);
-        $this->view('user/Da\'wah/Male/user_form-conversion', ['dbUser' => $dbUser]);
+        $dbUser = $userId ? $userModel->findById($userId) : [];
+        
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
+        $conversionModel = new ConversionRequest();
+        $history = $userId ? $conversionModel->getByUser((int)$userId) : [];
+
+        $this->view('user/Da\'wah/Male/user_form-conversion', [
+            'dbUser' => $dbUser,
+            'history' => $history
+        ]);
+    }
+
+    public function submitConversion(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $userId = $_SESSION['user_id'] ?? null;
+
+        if (!$userId) {
+            echo json_encode(['success' => false, 'message' => 'Authentication required.']);
+            return;
+        }
+
+        $fname = trim($input['fname'] ?? '');
+        $lname = trim($input['lname'] ?? '');
+        $adoptedName = trim($input['adopted_name'] ?? '');
+        $convDate = $input['conversion_date'] ?? date('Y-m-d');
+
+        if (empty($fname) || empty($lname) || empty($adoptedName)) {
+            echo json_encode(['success' => false, 'message' => 'First name, last name, and adopted Muslim name are required.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
+        $model = new ConversionRequest();
+
+        $data = [
+            'tenant_id' => $userId,
+            'fname' => $fname,
+            'mname' => trim($input['mname'] ?? ''),
+            'lname' => $lname,
+            'adopted_name' => $adoptedName,
+            'sex' => $input['sex'] ?? 'Male',
+            'civil_status' => $input['civil_status'] ?? '',
+            'citizenship' => $input['citizenship'] ?? 'Filipino',
+            'dob' => !empty($input['dob']) ? $input['dob'] : null,
+            'age' => !empty($input['age']) ? (int)$input['age'] : null,
+            'occupation' => trim(($input['occupation'] ?? '') === 'Others' ? ($input['occupation_other'] ?? 'Others') : ($input['occupation'] ?? '')),
+            'former_religion' => trim(($input['former_religion'] ?? '') === 'Others' ? ($input['former_religion_other'] ?? 'Others') : ($input['former_religion'] ?? '')),
+            'pob' => trim($input['pob'] ?? ''),
+            'residence' => trim($input['residence'] ?? ''),
+            'father_name' => trim($input['father_name'] ?? ''),
+            'father_religion' => trim($input['father_religion'] ?? ''),
+            'mother_name' => trim($input['mother_name'] ?? ''),
+            'mother_religion' => trim($input['mother_religion'] ?? ''),
+            'conversion_date' => $convDate,
+            'witness1_name' => trim($input['witness1_name'] ?? ''),
+            'witness1_address' => trim($input['witness1_address'] ?? ''),
+            'witness2_name' => trim($input['witness2_name'] ?? ''),
+            'witness2_address' => trim($input['witness2_address'] ?? ''),
+            'status' => 'pending'
+        ];
+
+        $success = $model->create($data);
+
+        if ($success) {
+            AuditLogger::log('DAWAH', 'CONVERSION_SUBMIT', "User submitted conversion registration for adopted name: {$adoptedName}");
+        }
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? 'Conversion registration submitted successfully.' : 'Failed to submit registration.'
+        ]);
+        exit;
     }
 
     public function charity(): void
@@ -549,14 +652,16 @@ class UserController extends Controller
             return;
         }
 
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+
         $userId = $_SESSION['user_id'];
-        $gender = strtolower($_POST['gender'] ?? '');
-        $reason = $_POST['reason'] ?? '';
-        $date = $_POST['preferred_date'] ?? null;
-        $time = $_POST['preferred_time'] ?? null;
+        $gender = strtolower($input['gender'] ?? 'male');
+        $reason = trim($input['reason'] ?? '');
+        $date = $input['preferred_date'] ?? null;
+        $time = $input['preferred_time'] ?? null;
 
         if (empty($reason)) {
-            echo json_encode(['success' => false, 'message' => 'Reason is required.']);
+            echo json_encode(['success' => false, 'message' => 'Reason for counseling is required.']);
             return;
         }
 
@@ -565,7 +670,7 @@ class UserController extends Controller
         
         $success = $model->create([
             'tenant_id' => $userId,
-            'gender' => $gender,
+            'gender' => $gender ?: 'male',
             'reason' => $reason,
             'preferred_date' => $date,
             'preferred_time' => $time,
@@ -574,7 +679,7 @@ class UserController extends Controller
 
         echo json_encode([
             'success' => $success,
-            'message' => $success ? 'Request submitted successfully.' : 'Failed to save request.'
+            'message' => $success ? 'Counseling request submitted successfully.' : 'Failed to save request.'
         ]);
     }
     public function submitBurial(): void {
