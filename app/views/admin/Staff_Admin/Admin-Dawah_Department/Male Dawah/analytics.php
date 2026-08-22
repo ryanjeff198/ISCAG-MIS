@@ -57,6 +57,9 @@ Auth::protectRole(['Admin', 'Staff_Male']);
           
           $mTotal = ($marriage['total'] ?? 0) ?: 1;
           $mAppRate = round((($marriage['approved'] ?? 0) / $mTotal) * 100);
+
+          $convTotal = ($conversion['total'] ?? 0) ?: 1;
+          $convCertRate = round((($conversion['approved'] ?? 0) / $convTotal) * 100);
         ?>
         
         <div class="admin-insights">
@@ -78,8 +81,11 @@ Auth::protectRole(['Admin', 'Staff_Male']);
           </div>
           <div class="insight-card">
             <div class="insight-label">New Muslims</div>
-            <div class="insight-value" style="color:var(--info);">0</div>
-            <div class="kpi-trend" style="color:var(--text-muted);">0% Growth</div>
+            <div class="insight-value" style="color:var(--info);"><?= $conversion['total'] ?? 0 ?></div>
+            <div class="kpi-trend up">
+               <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+               <?= $convCertRate ?>% Certified
+            </div>
           </div>
           <div class="insight-card">
             <div class="insight-label">Active Students</div>
@@ -264,10 +270,10 @@ Auth::protectRole(['Admin', 'Staff_Male']);
       new Chart(document.getElementById('distributionChart'), {
         type: 'doughnut',
         data: {
-          labels: ['Counseling', 'Marriage', 'Education', 'Outreach'],
+          labels: ['Counseling', 'Marriage', 'Conversion', 'Education'],
           datasets: [{
-            data: [<?= $counseling['total'] ?? 0 ?>, <?= $marriage['total'] ?? 0 ?>, <?= $education['total'] ?? 0 ?>, 0],
-            backgroundColor: [colors.primary, colors.accent, colors.info, '#94a3b8'],
+            data: [<?= $counseling['total'] ?? 0 ?>, <?= $marriage['total'] ?? 0 ?>, <?= $conversion['total'] ?? 0 ?>, <?= $education['total'] ?? 0 ?>],
+            backgroundColor: [colors.primary, colors.accent, '#1E90FF', colors.info],
             borderWidth: 2,
             borderColor: '#ffffff'
           }]

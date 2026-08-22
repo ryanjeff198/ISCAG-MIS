@@ -88,7 +88,7 @@
         </div>
 
         <!-- KPI Cards -->
-        <div class="dash-kpi-grid">
+        <div class="dash-kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
           <div class="dash-kpi" onclick="window.location.href='<?= url('/admin/dawah/counseling') ?>'">
             <div class="kpi-header">
               <span class="kpi-label">Counseling</span>
@@ -111,7 +111,18 @@
               </div>
             </div>
             <div class="kpi-value" style="color:var(--accent);"><?= $analytics['marriage_total'] ?? 0 ?></div>
-            <div class="kpi-sub">Applications filed</div>
+            <div class="kpi-sub"><?= $analytics['marriage_approved'] ?? 0 ?> approved</div>
+          </div>
+
+          <div class="dash-kpi" onclick="window.location.href='<?= url('/admin/dawah/conversion') ?>'">
+            <div class="kpi-header">
+              <span class="kpi-label">Converts</span>
+              <div class="kpi-icon" style="background:rgba(30,144,255,0.1);">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#1E90FF;"><path d="M12 2L1 21h22L12 2zm0 3.8L19.5 19H4.5L12 5.8zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" style="color:#1E90FF;"><?= $analytics['conversion_total'] ?? 0 ?></div>
+            <div class="kpi-sub"><?= $analytics['conversion_approved'] ?? 0 ?> certified</div>
           </div>
 
           <div class="dash-kpi" onclick="window.location.href='<?= url('/admin/dawah/education') ?>'">
@@ -123,7 +134,7 @@
             </div>
             <div class="kpi-value" style="color:var(--success);"><?= $analytics['student_count'] ?? 0 ?></div>
             <div class="kpi-sub">
-              <?= $analytics['student_active'] ?? 0 ?> active · <?= $analytics['student_completed'] ?? 0 ?> graduated
+              <?= $analytics['student_active'] ?? 0 ?> active
             </div>
           </div>
 
@@ -140,7 +151,7 @@
         </div>
 
         <!-- Quick Access Links -->
-        <div class="quick-links">
+        <div class="quick-links" style="grid-template-columns: repeat(5, 1fr);">
           <a href="<?= url('/admin/dawah/counseling') ?>" class="quick-link">
             <div class="ql-icon" style="background:rgba(23,107,69,0.08);">
               <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:var(--primary);"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
@@ -150,13 +161,31 @@
               <div class="ql-desc">Manage sessions</div>
             </div>
           </a>
+          <a href="<?= url('/admin/dawah/marriage') ?>" class="quick-link">
+            <div class="ql-icon" style="background:rgba(139,46,46,0.08);">
+              <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:var(--danger);"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <div>
+              <div class="ql-title">Marriage</div>
+              <div class="ql-desc">Applications</div>
+            </div>
+          </a>
+          <a href="<?= url('/admin/dawah/conversion') ?>" class="quick-link">
+            <div class="ql-icon" style="background:rgba(30,144,255,0.08);">
+              <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:#1E90FF;"><path d="M12 2L1 21h22L12 2zm0 3.8L19.5 19H4.5L12 5.8zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+            </div>
+            <div>
+              <div class="ql-title">Conversion</div>
+              <div class="ql-desc">Certificates</div>
+            </div>
+          </a>
           <a href="<?= url('/admin/dawah/schedule') ?>" class="quick-link">
             <div class="ql-icon" style="background:rgba(199,154,43,0.08);">
               <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:var(--accent);"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
             </div>
             <div>
               <div class="ql-title">Schedule</div>
-              <div class="ql-desc">Calendar & events</div>
+              <div class="ql-desc">Calendar</div>
             </div>
           </a>
           <a href="<?= url('/admin/dawah/education') ?>" class="quick-link">
@@ -165,16 +194,7 @@
             </div>
             <div>
               <div class="ql-title">Education</div>
-              <div class="ql-desc">Student records</div>
-            </div>
-          </a>
-          <a href="<?= url('/admin/dawah/marriage') ?>" class="quick-link">
-            <div class="ql-icon" style="background:rgba(139,46,46,0.08);">
-              <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:var(--danger);"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            </div>
-            <div>
-              <div class="ql-title">Marriage</div>
-              <div class="ql-desc">Applications & records</div>
+              <div class="ql-desc">Students</div>
             </div>
           </a>
         </div>
@@ -185,6 +205,7 @@
             <button class="tab-pill active" onclick="switchTab('all', this)">All Requests</button>
             <button class="tab-pill" onclick="switchTab('counseling', this)">Counseling</button>
             <button class="tab-pill" onclick="switchTab('marriage', this)">Marriage</button>
+            <button class="tab-pill" onclick="switchTab('conversion', this)">Conversion</button>
           </div>
           <div class="section-card-header" style="border-top:none; padding-top:8px;">
             <h6>
@@ -239,6 +260,10 @@
       
       tbody.innerHTML = filtered.map(r => {
           const sc = r.status.toLowerCase().includes('pend') ? 'badge-pending' : (r.status.toLowerCase().includes('approv') ? 'badge-approved' : 'badge-rejected');
+          let viewUrl = '<?= url('/admin/dawah/counseling') ?>';
+          if(r.type === 'marriage') viewUrl = '<?= url('/admin/dawah/marriage') ?>';
+          if(r.type === 'conversion') viewUrl = '<?= url('/admin/dawah/conversion') ?>';
+
           return `
             <tr>
               <td class="td-id">#${r.id}</td>
@@ -248,10 +273,10 @@
               <td><span class="badge-status ${sc}">${r.status}</span></td>
               <td>
                 <div class="actions-cell">
-                    <button class="btn-action btn-view" onclick="alert('Processing request...')">
+                    <a href="${viewUrl}" class="btn-action btn-view" style="text-decoration:none;">
                         <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                        View
-                    </button>
+                        Manage
+                    </a>
                 </div>
               </td>
             </tr>

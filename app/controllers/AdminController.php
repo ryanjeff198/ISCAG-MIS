@@ -1408,12 +1408,15 @@ class AdminController extends Controller
 
         require_once BASE_PATH . '/app/models/MarriageRequest.php';
         require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
         $marriageModel = new MarriageRequest();
         $eduModel = new IslamicEducation();
+        $conversionModel = new ConversionRequest();
         $marriageAll = $marriageModel->getAll();
+        $conversionAll = $conversionModel->getAll();
         $eduAnalytics = $eduModel->getAnalytics('male');
 
-        // Transform raw DB rows into the shape the dashboard JS expects
+        // 1. Transform raw Counseling rows
         $requests = array_map(function($r) {
             $statusMap = [
                 'pending'  => ['label' => 'Pending',  'class' => 'pending'],
@@ -1423,24 +1426,83 @@ class AdminController extends Controller
             $s = $statusMap[$r['status']] ?? ['label' => ucfirst($r['status']), 'class' => 'pending'];
             return [
                 'id'            => $r['id'],
-                'name'          => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')),
+                'name'          => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?: 'Applicant',
                 'type'          => 'counseling',
                 'service_label' => 'Counseling — ' . ($r['reason'] ?? 'General'),
                 'date'          => date('M d, Y', strtotime($r['created_at'])),
                 'status'        => $s['label'],
                 'status_class'  => $s['class'],
+                'raw'           => $r
             ];
         }, $rawRequests);
 
+        // 2. Transform Marriage rows
+        foreach ($marriageAll as $m) {
+            $statusMap = [
+                'pending'  => ['label' => 'Pending',  'class' => 'pending'],
+                'approved' => ['label' => 'Approved', 'class' => 'success'],
+                'rejected' => ['label' => 'Rejected', 'class' => 'danger'],
+            ];
+            $s = $statusMap[$m['status']] ?? ['label' => ucfirst($m['status']), 'class' => 'pending'];
+            $requests[] = [
+                'id'            => $m['id'],
+                'name'          => ($m['groom_name'] ?? 'Groom') . ' & ' . ($m['bride_name'] ?? 'Bride'),
+                'type'          => 'marriage',
+                'service_label' => 'Marriage Ceremony',
+                'date'          => date('M d, Y', strtotime($m['created_at'] ?? $m['marriage_date'])),
+                'status'        => $s['label'],
+                'status_class'  => $s['class'],
+                'raw'           => $m
+            ];
+        }
+
+        // 3. Transform Conversion rows
+        $convPending = 0;
+        $convApproved = 0;
+        foreach ($conversionAll as $c) {
+            if (($c['status'] ?? '') === 'pending') $convPending++;
+            if (($c['status'] ?? '') === 'approved') $convApproved++;
+            $statusMap = [
+                'pending'  => ['label' => 'Pending',  'class' => 'pending'],
+                'approved' => ['label' => 'Approved', 'class' => 'success'],
+                'rejected' => ['label' => 'Rejected', 'class' => 'danger'],
+            ];
+            $s = $statusMap[$c['status']] ?? ['label' => ucfirst($c['status']), 'class' => 'pending'];
+            $adopted = !empty($c['adopted_name']) ? " ({$c['adopted_name']})" : '';
+            $requests[] = [
+                'id'            => $c['id'],
+                'name'          => trim(($c['fname'] ?? '') . ' ' . ($c['lname'] ?? '')) . $adopted,
+                'type'          => 'conversion',
+                'service_label' => 'Conversion / Shahadah',
+                'date'          => date('M d, Y', strtotime($c['created_at'] ?? $c['conversion_date'])),
+                'status'        => $s['label'],
+                'status_class'  => $s['class'],
+                'raw'           => $c
+            ];
+        }
+
+        // Sort unified requests by date descending
+        usort($requests, function($a, $b) {
+            return strtotime($b['date']) <=> strtotime($a['date']);
+        });
+
+        $marriagePending = count(array_filter($marriageAll, fn($m) => ($m['status'] ?? '') === 'pending'));
+        $marriageApproved = count(array_filter($marriageAll, fn($m) => ($m['status'] ?? '') === 'approved'));
+
         $analytics = [
-            'counseling_total' => $counselingAnalytics['total'] ?? 0,
-            'counseling_pending' => $counselingAnalytics['pending'] ?? 0,
+            'counseling_total'    => $counselingAnalytics['total'] ?? 0,
+            'counseling_pending'  => $counselingAnalytics['pending'] ?? 0,
             'counseling_approved' => $counselingAnalytics['approved'] ?? 0,
-            'marriage_total' => count($marriageAll),
-            'student_count' => $eduAnalytics['total'] ?? 0,
-            'student_active' => $eduAnalytics['active'] ?? 0,
-            'student_completed' => $eduAnalytics['completed'] ?? 0,
-            'pending' => ($counselingAnalytics['pending'] ?? 0) + ($eduAnalytics['pending'] ?? 0),
+            'marriage_total'      => count($marriageAll),
+            'marriage_pending'    => $marriagePending,
+            'marriage_approved'   => $marriageApproved,
+            'conversion_total'    => count($conversionAll),
+            'conversion_pending'  => $convPending,
+            'conversion_approved' => $convApproved,
+            'student_count'       => $eduAnalytics['total'] ?? 0,
+            'student_active'      => $eduAnalytics['active'] ?? 0,
+            'student_completed'   => $eduAnalytics['completed'] ?? 0,
+            'pending'             => ($counselingAnalytics['pending'] ?? 0) + ($eduAnalytics['pending'] ?? 0) + $marriagePending + $convPending,
         ];
 
         $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/dawah_male_dashboard', [
@@ -1550,6 +1612,7 @@ class AdminController extends Controller
     public function dawahMarriage(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
         require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/MarriageRequest.php';
         
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
@@ -1557,8 +1620,8 @@ class AdminController extends Controller
         $role = $_SESSION['role'] ?? '';
         $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
         
-        // Marriage records placeholder — in production would use a MarriageModel
-        $records = []; 
+        $marriageModel = new MarriageRequest();
+        $records = $marriageModel->getAll(); 
 
         $viewPath = ($dawah_type === 'female') 
             ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/marriage'
@@ -1568,8 +1631,167 @@ class AdminController extends Controller
             'active_page' => 'marriage',
             'dawah_type' => $dawah_type,
             'dbUser' => $dbUser,
+            'applications' => $records,
             'records' => $records
         ]);
+    }
+
+    public function approveMarriage(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = (int)($input['id'] ?? 0);
+            
+            require_once BASE_PATH . '/app/models/MarriageRequest.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $model = new MarriageRequest();
+            $success = $model->updateStatus($id, 'approved');
+
+            if ($success && $id) {
+                $db = getDbConnection();
+                $stmt = $db->prepare("SELECT tenant_id, groom_name, bride_name, marriage_date, marriage_time, marriage_venue FROM marriage_requests WHERE id = ?");
+                $stmt->execute([$id]);
+                $req = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($req && !empty($req['tenant_id'])) {
+                    $notif = new Notification();
+                    $dateStr = !empty($req['marriage_date']) ? date('M d, Y', strtotime($req['marriage_date'])) : 'Confirmed Date';
+                    $timeStr = !empty($req['marriage_time']) ? ' at ' . $req['marriage_time'] : '';
+                    $notif->create(
+                        (int)$req['tenant_id'],
+                        'Marriage Solemnization Approved',
+                        "As-salamu alaykum. Your marriage ceremony reservation for {$req['groom_name']} & {$req['bride_name']} has been approved for {$dateStr}{$timeStr} at {$req['marriage_venue']}. Please access your Ceremony Pass in your dashboard.",
+                        'success'
+                    );
+                    $this->logAudit('DAWAH', 'APPROVE_MARRIAGE', "Approved marriage reservation ID: $id for Tenant ID: {$req['tenant_id']}");
+                }
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $success]);
+            exit;
+        }
+    }
+
+    public function rejectMarriage(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = (int)($input['id'] ?? 0);
+            
+            require_once BASE_PATH . '/app/models/MarriageRequest.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $model = new MarriageRequest();
+            $success = $model->updateStatus($id, 'rejected');
+
+            if ($success && $id) {
+                $db = getDbConnection();
+                $stmt = $db->prepare("SELECT tenant_id, groom_name, bride_name FROM marriage_requests WHERE id = ?");
+                $stmt->execute([$id]);
+                $req = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($req && !empty($req['tenant_id'])) {
+                    $notif = new Notification();
+                    $notif->create(
+                        (int)$req['tenant_id'],
+                        'Marriage Reservation Update',
+                        "Your marriage solemnization reservation for {$req['groom_name']} & {$req['bride_name']} could not be accommodated at the requested time. Please contact the Da'wah office.",
+                        'warning'
+                    );
+                    $this->logAudit('DAWAH', 'REJECT_MARRIAGE', "Rejected marriage request ID: $id for Tenant ID: {$req['tenant_id']}");
+                }
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $success]);
+            exit;
+        }
+    }
+
+    public function dawahConversion(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        
+        $conversionModel = new ConversionRequest();
+        $records = $conversionModel->getAll();
+
+        $viewPath = 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/conversion';
+
+        $this->view($viewPath, [
+            'active_page' => 'conversion',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'applications' => $records,
+            'records' => $records
+        ]);
+    }
+
+    public function approveConversion(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = (int)($input['id'] ?? 0);
+            
+            require_once BASE_PATH . '/app/models/ConversionRequest.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $model = new ConversionRequest();
+            $success = $model->updateStatus($id, 'approved');
+
+            if ($success && $id) {
+                $req = $model->getById($id);
+                if ($req && !empty($req['tenant_id'])) {
+                    $notif = new Notification();
+                    $adopted = $req['adopted_name'] ?: ($req['fname'] . ' ' . $req['lname']);
+                    $notif->create(
+                        (int)$req['tenant_id'],
+                        'Conversion Certificate Approved',
+                        "Alhamdulillah! Your Conversion to Islam (Shahadah) Certificate for {$adopted} has been officially approved. You can now view and print your Certificate from your account.",
+                        'success'
+                    );
+                    $this->logAudit('DAWAH', 'APPROVE_CONVERSION', "Approved conversion certificate ID: $id for Tenant ID: {$req['tenant_id']}");
+                }
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $success]);
+            exit;
+        }
+    }
+
+    public function rejectConversion(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = (int)($input['id'] ?? 0);
+            
+            require_once BASE_PATH . '/app/models/ConversionRequest.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $model = new ConversionRequest();
+            $success = $model->updateStatus($id, 'rejected');
+
+            if ($success && $id) {
+                $req = $model->getById($id);
+                if ($req && !empty($req['tenant_id'])) {
+                    $notif = new Notification();
+                    $notif->create(
+                        (int)$req['tenant_id'],
+                        'Conversion Certificate Status Update',
+                        "Your Conversion certificate application requires additional verification. Please visit the ISCAG Da'wah Department office with your supporting documents.",
+                        'warning'
+                    );
+                    $this->logAudit('DAWAH', 'REJECT_CONVERSION', "Rejected conversion certificate ID: $id for Tenant ID: {$req['tenant_id']}");
+                }
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => $success]);
+            exit;
+        }
     }
 
     public function dawahSchedule(): void {
@@ -1746,11 +1968,31 @@ class AdminController extends Controller
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $input = json_decode(file_get_contents('php://input'), true);
-            $id = $input['id'] ?? null;
+            $id = (int)($input['id'] ?? 0);
             
             require_once BASE_PATH . '/app/models/CounselingRequest.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
             $model = new CounselingRequest();
             $success = $model->updateStatus($id, 'approved');
+
+            if ($success && $id) {
+                $db = getDbConnection();
+                $stmt = $db->prepare("SELECT tenant_id, preferred_date, preferred_time, reason FROM counseling_requests WHERE id = ?");
+                $stmt->execute([$id]);
+                $req = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($req && !empty($req['tenant_id'])) {
+                    $notif = new Notification();
+                    $dateStr = !empty($req['preferred_date']) ? date('M d, Y', strtotime($req['preferred_date'])) : 'Confirmed Date';
+                    $timeStr = !empty($req['preferred_time']) ? ' at ' . $req['preferred_time'] : '';
+                    $notif->create(
+                        (int)$req['tenant_id'],
+                        'Counseling Schedule Confirmed',
+                        "As-salamu alaykum. Your counseling appointment for {$req['reason']} has been approved for {$dateStr}{$timeStr}. Please check your schedule dashboard for details.",
+                        'success'
+                    );
+                    $this->logAudit('DAWAH', 'APPROVE_COUNSELING', "Approved counseling request ID: $id for Tenant ID: {$req['tenant_id']}");
+                }
+            }
 
             header('Content-Type: application/json');
             echo json_encode(['success' => $success]);
@@ -1762,11 +2004,29 @@ class AdminController extends Controller
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $input = json_decode(file_get_contents('php://input'), true);
-            $id = $input['id'] ?? null;
+            $id = (int)($input['id'] ?? 0);
             
             require_once BASE_PATH . '/app/models/CounselingRequest.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
             $model = new CounselingRequest();
             $success = $model->updateStatus($id, 'rejected');
+
+            if ($success && $id) {
+                $db = getDbConnection();
+                $stmt = $db->prepare("SELECT tenant_id, reason FROM counseling_requests WHERE id = ?");
+                $stmt->execute([$id]);
+                $req = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($req && !empty($req['tenant_id'])) {
+                    $notif = new Notification();
+                    $notif->create(
+                        (int)$req['tenant_id'],
+                        'Counseling Request Update',
+                        "Your counseling appointment request for {$req['reason']} could not be scheduled at this time. Please contact the Da'wah office or submit an alternate date.",
+                        'warning'
+                    );
+                    $this->logAudit('DAWAH', 'REJECT_COUNSELING', "Rejected counseling request ID: $id for Tenant ID: {$req['tenant_id']}");
+                }
+            }
 
             header('Content-Type: application/json');
             echo json_encode(['success' => $success]);
@@ -1779,6 +2039,8 @@ class AdminController extends Controller
         require_once BASE_PATH . '/app/models/User.php';
         require_once BASE_PATH . '/app/models/CounselingRequest.php';
         require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        require_once BASE_PATH . '/app/models/MarriageRequest.php';
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
         
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
@@ -1788,8 +2050,8 @@ class AdminController extends Controller
         
         $counselingModel = new CounselingRequest();
         $eduModel = new IslamicEducation();
-        require_once BASE_PATH . '/app/models/MarriageRequest.php';
         $marriageModel = new MarriageRequest();
+        $conversionModel = new ConversionRequest();
 
         // 1. Counseling Stats
         $counselingAnalytics = $counselingModel->getAnalytics($dawah_type);
@@ -1800,6 +2062,12 @@ class AdminController extends Controller
         
         // 3. Marriage Stats
         $marriageStats = $marriageModel->getAnalytics();
+
+        // 4. Conversion Stats
+        $conversionAll = $conversionModel->getAll();
+        $convTotal = count($conversionAll);
+        $convApproved = count(array_filter($conversionAll, fn($c) => ($c['status'] ?? '') === 'approved'));
+        $convPending = count(array_filter($conversionAll, fn($c) => ($c['status'] ?? '') === 'pending'));
 
         $viewPath = ($dawah_type === 'female') 
             ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/analytics'
@@ -1812,6 +2080,11 @@ class AdminController extends Controller
             'counseling' => $counselingAnalytics,
             'education' => $educationAnalytics,
             'marriage' => $marriageStats,
+            'conversion' => [
+                'total' => $convTotal,
+                'approved' => $convApproved,
+                'pending' => $convPending
+            ],
             'requests' => $counselingRequests
         ]);
     }

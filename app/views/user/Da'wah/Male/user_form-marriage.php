@@ -186,6 +186,160 @@
         color: var(--primary-dark);
     }
 
+    /* ══════════════════════════════════════════════════════════ */
+    /* 💍 APPROVED MARRIAGE APPOINTMENT HUB STYLES               */
+    /* ══════════════════════════════════════════════════════════ */
+    .marriage-hub-card {
+      background: #fff; border-radius: 20px; border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(20, 83, 45, 0.07); overflow: hidden; margin-bottom: 28px;
+    }
+    .marriage-hero-banner {
+      background: linear-gradient(135deg, #0f3d24 0%, #166534 50%, #14532D 100%);
+      padding: 32px 36px; position: relative; overflow: hidden; color: #fff;
+    }
+    .marriage-hero-banner::after {
+      content: ''; position: absolute; right: -40px; bottom: -40px; width: 220px; height: 220px;
+      border-radius: 50%; background: rgba(212, 175, 55, 0.12); pointer-events: none;
+    }
+    .marriage-hero-banner::before {
+      content: ''; position: absolute; right: 120px; top: -30px; width: 140px; height: 140px;
+      border-radius: 50%; background: rgba(255, 255, 255, 0.05); pointer-events: none;
+    }
+    .mhero-top-row {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;
+      position: relative; z-index: 1; flex-wrap: wrap; margin-bottom: 24px;
+    }
+    .mhero-title-area { display: flex; align-items: center; gap: 18px; }
+    .mhero-avatar-icon {
+      width: 64px; height: 64px; border-radius: 18px; background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;
+      border: 2px solid rgba(212, 175, 55, 0.4); flex-shrink: 0; box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    .mhero-avatar-icon svg { width: 32px; height: 32px; fill: #fff; }
+    .mhero-headings h3 {
+      font-family: 'Lora', serif; font-size: 1.45rem; font-weight: 700; margin: 0 0 4px;
+      letter-spacing: -0.01em; color: #fff;
+    }
+    .mhero-headings p { font-size: 0.85rem; color: rgba(255, 255, 255, 0.82); margin: 0; }
+    .badge-live-pulse {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px;
+      border-radius: 30px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.06em; background: rgba(255, 255, 255, 0.2); border: 1.5px solid rgba(212, 175, 55, 0.6);
+      backdrop-filter: blur(10px); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #4ade80;
+      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); animation: livePulse 1.8s infinite;
+    }
+    @keyframes livePulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(74, 222, 128, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+    }
+    .mhero-schedule-strip {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+      position: relative; z-index: 1;
+    }
+    .msched-metric-box {
+      background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 14px 16px;
+      transition: all 0.2s;
+    }
+    .msched-metric-box:hover { background: rgba(255, 255, 255, 0.18); transform: translateY(-2px); }
+    .msched-metric-lbl {
+      font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+      color: rgba(255, 255, 255, 0.75); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+    }
+    .msched-metric-val { font-size: 1rem; font-weight: 700; color: #fff; line-height: 1.3; }
+    .msched-metric-val.gold { color: #fde047; }
+
+    .marriage-toolbar {
+      padding: 16px 36px; background: #fafafa; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .toolbar-left-msg {
+      display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; color: #374151;
+    }
+    .toolbar-left-msg svg { width: 18px; height: 18px; fill: #14532D; flex-shrink: 0; }
+    .toolbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .btn-action-tool {
+      display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+      border-radius: 10px; font-size: 0.84rem; font-weight: 700; cursor: pointer;
+      text-decoration: none; transition: all 0.2s; border: none;
+    }
+    .btn-action-tool svg { width: 16px; height: 16px; fill: currentColor; }
+    .btn-tool-print {
+      background: linear-gradient(135deg, #14532D, #0f3e21); color: #fff;
+      box-shadow: 0 4px 12px rgba(20, 83, 45, 0.25);
+    }
+    .btn-tool-print:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(20, 83, 45, 0.35); }
+    .btn-tool-gold {
+      background: linear-gradient(135deg, #D4AF37, #B8860B); color: #1a1a1a;
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3); font-weight: 800;
+    }
+    .btn-tool-gold:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4); }
+
+    .schedule-hub-grid {
+      display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px; padding: 32px 36px;
+    }
+    .hub-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); transition: all 0.2s;
+    }
+    .hub-card:hover { border-color: rgba(20, 83, 45, 0.2); }
+    .hub-card-title {
+      font-family: 'Lora', serif; font-size: 1.05rem; font-weight: 700; color: #111827;
+      margin: 0 0 18px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .hub-card-title span { display: flex; align-items: center; gap: 8px; }
+    .hub-card-title svg { width: 18px; height: 18px; fill: #14532D; }
+    .detail-table { display: flex; flex-direction: column; gap: 14px; }
+    .detail-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 12px; border-bottom: 1px solid #f3f4f6;
+    }
+    .detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .detail-key { font-size: 0.8rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em; }
+    .detail-val-text { font-size: 0.92rem; font-weight: 700; color: #1f2937; text-align: right; }
+    .detail-val-text.highlight { color: #14532D; font-family: 'Lora', serif; font-size: 1rem; }
+    .detail-badge-pill {
+      display: inline-block; padding: 4px 12px; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 800; background: #f0fdf4; color: #14532D;
+      border: 1px solid #dcfce7;
+    }
+
+    .checklist-list { display: flex; flex-direction: column; gap: 12px; }
+    .check-item {
+      display: flex; align-items: flex-start; gap: 14px; padding: 12px 14px;
+      border-radius: 12px; background: #f9fafb; border: 1px solid #f3f4f6; transition: all 0.2s;
+    }
+    .check-item:hover { background: #f0fdf4; border-color: #dcfce7; }
+    .check-num {
+      width: 24px; height: 24px; border-radius: 50%; background: #14532D;
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 800; flex-shrink: 0; margin-top: 1px;
+    }
+    .check-content strong { display: block; font-size: 0.85rem; color: #1f2937; margin-bottom: 2px; }
+    .check-content p { font-size: 0.78rem; color: #6b7280; margin: 0; line-height: 1.4; }
+
+    /* Printable Marriage Pass Modal */
+    .pass-modal-backdrop {
+      position: fixed; inset: 0; z-index: 99999;
+      background: rgba(15, 30, 22, 0.7); backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .pass-modal-card {
+      background: #fff; border-radius: 20px; width: 100%; max-width: 600px;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.3); overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08); max-height: 90vh; overflow-y: auto;
+    }
+    @media print {
+      body * { visibility: hidden; }
+      #printable-pass-area, #printable-pass-area * { visibility: visible; }
+      #printable-pass-area { position: absolute; left: 0; top: 0; width: 100%; }
+      .no-print { display: none !important; }
+    }
+
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
@@ -392,130 +546,214 @@
           </form>
         </div>
       </div>
-      <?php else: ?>
+      <?php elseif ($hasPending && $activeRequest): ?>
 
-      <!-- 📢 PREMIUM STATUS HERO (Exact Sync with Counseling) -->
-      <div class="status-hero" style="background: white; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06); overflow: hidden; margin-bottom: 24px;">
-        <div class="status-hero-top" style="background: linear-gradient(135deg, #14532D, #166534); padding: 28px 32px 24px; position: relative; overflow: hidden;">
-            <div style="position: absolute; right: -20px; bottom: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 255, 255, 0.1);"></div>
-            <div style="position: absolute; right: 100px; bottom: -30px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 255, 255, 0.05);"></div>
-            
-            <div class="status-hero-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; position: relative; z-index: 1;">
-                <div class="status-hero-header-left" style="display: flex; align-items: center; gap: 16px;">
-                    <div class="status-hero-avatar" style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.25); flex-shrink: 0;">
-                        <svg viewBox="0 0 24 24" style="width: 28px; height: 28px; fill: white;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                    </div>
-                    <div>
-                        <h5 class="status-hero-name" style="font-family: 'Lora', serif; font-size: 1.2rem; font-weight: 700; color: white; margin: 0 0 2px;">Marriage Reservation Status</h5>
-                        <p class="status-hero-subtitle" style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.7); margin: 0;">Ref No: <strong>#<?= $activeRequest['id'] ?? 'MR-AUTO' ?></strong> • Submitted on <?= isset($activeRequest['created_at']) ? date('M d, Y', strtotime($activeRequest['created_at'])) : 'Recently' ?></p>
-                    </div>
-                </div>
-                <div class="status-badge <?= $hasPending ? 'pending' : 'approved' ?>" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 22px; border-radius: 24px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; backdrop-filter: blur(8px); background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
-                    <div class="status-badge-dot" style="width: 7px; height: 7px; border-radius: 50%; background: currentColor;"></div>
-                    <?= $hasPending ? 'Under Review' : 'Scheduled' ?>
-                </div>
+      <!-- ⏳ PENDING: UNDER REVIEW STATUS -->
+      <div style="background: white; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06); overflow: hidden; margin-bottom: 24px;">
+        <div style="background: linear-gradient(135deg, #14532D, #166534); padding: 28px 32px 24px; color: white; position: relative; overflow: hidden;">
+          <div style="position: absolute; right: -20px; bottom: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 255, 255, 0.1);"></div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; position: relative; z-index: 1;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.25); flex-shrink: 0;">
+                <svg viewBox="0 0 24 24" style="width: 28px; height: 28px; fill: white;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </div>
+              <div>
+                <h5 style="font-family: 'Lora', serif; font-size: 1.2rem; font-weight: 700; color: white; margin: 0 0 2px;">Marriage Reservation Under Review</h5>
+                <p style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.7); margin: 0;">Ref No: <strong>#MR-<?= str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT) ?></strong> • Submitted on <?= date('M d, Y', strtotime($activeRequest['created_at'])) ?></p>
+              </div>
             </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 22px; border-radius: 24px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; background: rgba(245, 158, 11, 0.25); color: #fef08a; border: 1px solid rgba(253, 224, 71, 0.4);">
+              Awaiting Verification
+            </div>
+          </div>
         </div>
-        <!-- Status Summary Bar -->
-        <div class="status-summary" style="padding: 18px 32px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; background: #f9fafb; border-top: 1px solid var(--border);">
-            <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Request ID</div>
-                <div class="summary-stat-value" style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D;">#<?= $activeRequest['id'] ?? 'MR-AUTO' ?></div>
+
+        <div style="padding: 18px 32px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; background: #f9fafb; border-top: 1px solid var(--border);">
+          <div style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
+            <div style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Groom</div>
+            <div style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D;"><?= htmlspecialchars($activeRequest['groom_name'] ?? '—') ?></div>
+          </div>
+          <div style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
+            <div style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Bride</div>
+            <div style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D;"><?= htmlspecialchars($activeRequest['bride_name'] ?? '—') ?></div>
+          </div>
+          <div style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
+            <div style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Preferred Date</div>
+            <div style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #f59e0b;"><?= isset($activeRequest['marriage_date']) ? date('M d, Y', strtotime($activeRequest['marriage_date'])) : '—' ?></div>
+          </div>
+        </div>
+
+        <div style="padding: 24px 32px; text-align: center; background: #fff;">
+          <p style="font-size: 0.92rem; color: #4b5563; line-height: 1.6; max-width: 600px; margin: 0 auto 16px;">
+            Your marriage solemnization request has been received. The Da'wah Department is currently reviewing your reservation. You will be notified once your ceremony is officially approved and scheduled.
+          </p>
+          <a href="<?= url('/user/dashboard') ?>" class="btn-submit" style="display:inline-block; padding:10px 24px; text-decoration:none;">Return to Dashboard</a>
+        </div>
+      </div>
+
+      <?php elseif ($hasApproved && $activeRequest): ?>
+
+      <!-- 💍 APPROVED: MARRIAGE CEREMONY APPOINTMENT HUB -->
+      <div class="marriage-hub-card">
+        <!-- Hero Banner -->
+        <div class="marriage-hero-banner">
+          <div class="mhero-top-row">
+            <div class="mhero-title-area">
+              <div class="mhero-avatar-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </div>
+              <div class="mhero-headings">
+                <h3>Marriage Ceremony Confirmed</h3>
+                <p>Ref No: <strong>#MR-<?= str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT) ?></strong> • Filed on <?= date('M d, Y', strtotime($activeRequest['created_at'])) ?></p>
+              </div>
             </div>
-            <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Department</div>
-                <div class="summary-stat-value" style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D;">Da'wah (Marriage)</div>
+            <div class="badge-live-pulse">
+              <div class="pulse-dot"></div>
+              Approved &amp; Scheduled
             </div>
-            <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Current Stage</div>
-                <div class="summary-stat-value" style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D;"><?= $hasPending ? 'Review' : 'Approved' ?></div>
+          </div>
+
+          <div class="mhero-schedule-strip">
+            <div class="msched-metric-box">
+              <div class="msched-metric-lbl">
+                <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+                Ceremony Date
+              </div>
+              <div class="msched-metric-val gold"><?= date('F d, Y', strtotime($activeRequest['marriage_date'])) ?></div>
             </div>
+            <div class="msched-metric-box">
+              <div class="msched-metric-lbl">
+                <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                Time Slot
+              </div>
+              <div class="msched-metric-val"><?= htmlspecialchars($activeRequest['marriage_time']) ?></div>
+            </div>
+            <div class="msched-metric-box">
+              <div class="msched-metric-lbl">
+                <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                Venue
+              </div>
+              <div class="msched-metric-val"><?= htmlspecialchars($activeRequest['marriage_venue'] ?? 'ISCAG Main Mosque') ?></div>
+            </div>
+            <div class="msched-metric-box">
+              <div class="msched-metric-lbl">
+                <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Status
+              </div>
+              <div class="msched-metric-val gold">Approved</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Toolbar -->
+        <div class="marriage-toolbar">
+          <div class="toolbar-left-msg">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            Your solemnization ceremony is confirmed. Please review the details and bring your ceremony pass on the appointed date.
+          </div>
+          <div class="toolbar-actions">
+            <button type="button" class="btn-action-tool btn-tool-print" onclick="openPassModal()">
+              <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+              Print Ceremony Pass
+            </button>
+            <a href="<?= url('/user/dashboard') ?>" class="btn-action-tool btn-tool-gold">
+              ← Return to Dashboard
+            </a>
+          </div>
+        </div>
+
+        <!-- Two-Column Schedule Hub -->
+        <div class="schedule-hub-grid">
+          <!-- LEFT: Ceremony Details -->
+          <div class="hub-card">
+            <div class="hub-card-title">
+              <span>
+                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                Ceremony Details
+              </span>
+              <span class="detail-badge-pill">Confirmed</span>
+            </div>
+            <div class="detail-table">
+              <div class="detail-row">
+                <span class="detail-key">Groom</span>
+                <span class="detail-val-text highlight"><?= htmlspecialchars($activeRequest['groom_name']) ?></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Bride</span>
+                <span class="detail-val-text highlight"><?= htmlspecialchars($activeRequest['bride_name']) ?></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Date</span>
+                <span class="detail-val-text"><?= date('l, F d, Y', strtotime($activeRequest['marriage_date'])) ?></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Time</span>
+                <span class="detail-val-text"><?= htmlspecialchars($activeRequest['marriage_time']) ?></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Venue</span>
+                <span class="detail-val-text"><?= htmlspecialchars($activeRequest['marriage_venue'] ?? 'ISCAG Main Mosque Hall') ?></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Ref No.</span>
+                <span class="detail-val-text">#MR-<?= str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT) ?></span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Officiant</span>
+                <span class="detail-val-text">ISCAG Da'wah Ustaz</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Pre-Ceremony Checklist -->
+          <div class="hub-card">
+            <div class="hub-card-title">
+              <span>
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                Pre-Ceremony Checklist
+              </span>
+            </div>
+            <div class="checklist-list">
+              <div class="check-item">
+                <div class="check-num">1</div>
+                <div class="check-content">
+                  <strong>Valid IDs &amp; Documents</strong>
+                  <p>Bring valid government-issued IDs for both groom and bride. Prepare birth certificates and Certificate of No Marriage (CENOMAR).</p>
+                </div>
+              </div>
+              <div class="check-item">
+                <div class="check-num">2</div>
+                <div class="check-content">
+                  <strong>Two Witnesses Required</strong>
+                  <p>Both witnesses must be present during the solemnization ceremony and bring their own valid IDs.</p>
+                </div>
+              </div>
+              <div class="check-item">
+                <div class="check-num">3</div>
+                <div class="check-content">
+                  <strong>Marriage License</strong>
+                  <p>Ensure your marriage license from the Local Civil Registrar is valid and active on the ceremony date.</p>
+                </div>
+              </div>
+              <div class="check-item">
+                <div class="check-num">4</div>
+                <div class="check-content">
+                  <strong>Arrive 30 Minutes Early</strong>
+                  <p>Please arrive at the venue at least 30 minutes before the scheduled time for preparation and final documentation.</p>
+                </div>
+              </div>
+              <div class="check-item">
+                <div class="check-num">5</div>
+                <div class="check-content">
+                  <strong>Ceremony Fee / Mahr</strong>
+                  <p>Prepare any applicable ceremony fee and the agreed-upon Mahr (bridal gift). Coordinate with the Da'wah office for details.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 🗓️ TIMELINE CARD -->
-      <div class="timeline-card" style="background: white; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06); overflow: hidden; margin-bottom: 24px;">
-        <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid var(--border); background: linear-gradient(to right, rgba(20, 83, 45, 0.05), transparent);">
-            <div class="card-header-left" style="display: flex; align-items: center; gap: 10px;">
-                <div class="card-header-icon" style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #14532D, #166534); display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" style="width: 17px; height: 17px; fill: white;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-                </div>
-                <h6 class="card-header-title" style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #1a1a1a; margin: 0;">Reservation Lifecycle</h6>
-            </div>
-        </div>
-        <div class="card-body" style="padding: 32px 24px;">
-            <div class="timeline" style="display: flex; align-items: flex-start; gap: 0; position: relative;">
-                <div style="position: absolute; top: 18px; left: 0; right: 0; height: 3px; background: #e5e7eb; z-index: 1;"></div>
-                <div style="position: absolute; top: 18px; left: 0; width: <?= $hasApproved ? '100%' : '50%' ?>; height: 3px; background: #14532D; z-index: 2; transition: width 1s ease;"></div>
-                
-                <div class="timeline-step completed" style="flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2;">
-                    <div class="timeline-dot" style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid #14532D; background: linear-gradient(135deg, #14532D, #166534); color: white; position: relative; z-index: 3;">
-                        <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                    </div>
-                    <span class="timeline-label" style="margin-top: 10px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #14532D;">Requested</span>
-                </div>
-                
-                <div class="timeline-step <?= $hasPending ? 'active' : 'completed' ?>" style="flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2;">
-                    <div class="timeline-dot" style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid <?= $hasPending ? '#f59e0b' : '#14532D' ?>; background: <?= $hasPending ? '#fff' : 'linear-gradient(135deg, #14532D, #166534)' ?>; color: <?= $hasPending ? '#f59e0b' : 'white' ?>; position: relative; z-index: 3;">
-                        <?php if ($hasPending): ?>
-                            <span style="font-size: 1rem; font-weight: 800;">2</span>
-                        <?php else: ?>
-                            <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <?php endif; ?>
-                    </div>
-                    <span class="timeline-label" style="margin-top: 10px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: <?= $hasPending ? '#f59e0b' : '#14532D' ?>;">Review</span>
-                </div>
-
-                <div class="timeline-step <?= $hasApproved ? 'completed' : '' ?>" style="flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2;">
-                    <div class="timeline-dot" style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid <?= $hasApproved ? '#14532D' : '#e5e7eb' ?>; background: <?= $hasApproved ? 'linear-gradient(135deg, #14532D, #166534)' : '#fff' ?>; color: <?= $hasApproved ? 'white' : '#9ca3af' ?>; position: relative; z-index: 3;">
-                        <?php if ($hasApproved): ?>
-                            <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <?php else: ?>
-                            <span style="font-size: 0.9rem; font-weight: 700;">3</span>
-                        <?php endif; ?>
-                    </div>
-                    <span class="timeline-label" style="margin-top: 10px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: <?= $hasApproved ? '#14532D' : '#9ca3af' ?>;">Scheduled</span>
-                </div>
-            </div>
-
-            <div style="text-align: center; max-width: 580px; margin: 40px auto 0;">
-                <?php if ($hasPending): ?>
-                    <p style="font-size: 0.95rem; color: #4b5563; line-height: 1.7; margin: 0;">Our Da'wah department officers are currently reviewing your marriage reservation request. Please keep your contact lines open for verification and administrative confirmation.</p>
-                <?php else: ?>
-                    <p style="font-size: 0.95rem; color: #4b5563; line-height: 1.7; margin-bottom: 16px;">As-salamu alaykum. Your marriage ceremony has been approved and officially scheduled by the Da'wah Department!</p>
-                    
-                    <!-- Approved Marriage Details Card -->
-                    <div class="approved-details-card">
-                      <div style="font-size:0.85rem;font-weight:800;color:var(--primary-dark);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #d1fae5;padding-bottom:8px;margin-bottom:12px;">
-                        Confirmed Ceremony Schedule & Venue
-                      </div>
-                      <div class="approved-details-grid">
-                        <div class="detail-item">
-                          <div class="detail-label">Groom Name</div>
-                          <div class="detail-val"><?= htmlspecialchars($activeRequest['groom_name'] ?? '—') ?></div>
-                        </div>
-                        <div class="detail-item">
-                          <div class="detail-label">Bride Name</div>
-                          <div class="detail-val"><?= htmlspecialchars($activeRequest['bride_name'] ?? '—') ?></div>
-                        </div>
-                        <div class="detail-item">
-                          <div class="detail-label">Date of Marriage</div>
-                          <div class="detail-val"><?= isset($activeRequest['marriage_date']) ? date('F d, Y', strtotime($activeRequest['marriage_date'])) : '—' ?></div>
-                        </div>
-                        <div class="detail-item">
-                          <div class="detail-label">Time & Slot</div>
-                          <div class="detail-val"><?= htmlspecialchars($activeRequest['marriage_time'] ?? '—') ?></div>
-                        </div>
-                        <div class="detail-item" style="grid-column: span 2;">
-                          <div class="detail-label">Assigned Venue</div>
-                          <div class="detail-val"><?= htmlspecialchars($activeRequest['marriage_venue'] ?? 'ISCAG Main Mosque Hall') ?></div>
-                        </div>
-                      </div>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-      </div>
       <?php endif; ?>
 
       <!-- RECENT APPLICATIONS TABLE -->
@@ -534,7 +772,7 @@
                   <th>Ref #</th>
                   <th>Groom</th>
                   <th>Bride</th>
-                  <th>Scheduled Date & Time</th>
+                  <th>Scheduled Date &amp; Time</th>
                   <th>Venue</th>
                   <th>Status</th>
                 </tr>
@@ -551,6 +789,81 @@
   </div>
 </div>
 
+<!-- 🎟️ PRINTABLE CEREMONY PASS MODAL -->
+<?php if ($hasApproved && $activeRequest): ?>
+<div class="pass-modal-backdrop" id="pass-modal" onclick="if(event.target===this) closePassModal()">
+  <div class="pass-modal-card">
+    <div style="padding:20px 24px; background:#f8faf9; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;" class="no-print">
+      <h5 style="margin:0; font-family:'Lora',serif; color:var(--primary-dark);">Marriage Ceremony Pass</h5>
+      <button type="button" onclick="closePassModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#6b7280;">&times;</button>
+    </div>
+
+    <div id="printable-pass-area" style="padding:40px; background:#fff; text-align:center; position:relative; border:8px double #166534; margin:16px;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:8px;">
+        <img src="<?= asset('assets/logo.jpg') ?>" style="width:50px; height:50px; border-radius:8px;" alt="ISCAG" />
+        <div style="text-align:left;">
+          <div style="font-family:'Lora',serif; font-size:1.15rem; font-weight:800; color:#14532D;">ISLAMIC STUDIES, CALL AND GUIDANCE</div>
+          <div style="font-size:0.75rem; color:#4b5563; font-weight:600;">Da'wah Department — Marriage Solemnization</div>
+        </div>
+      </div>
+
+      <div style="margin:24px 0 16px;">
+        <h2 style="font-family:'Lora',serif; font-size:1.5rem; font-weight:700; color:#14532D; text-transform:uppercase; letter-spacing:0.06em; margin:0 0 6px;">Ceremony Appointment Pass</h2>
+        <div style="font-size:0.8rem; font-weight:700; color:#B8860B; text-transform:uppercase; letter-spacing:0.12em;">Ref: #MR-<?= str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT) ?></div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; text-align:left; margin:20px 0;">
+        <div style="background:#f0fdf4; border:1px solid #dcfce7; border-radius:10px; padding:12px;">
+          <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#6b7280;">Groom</div>
+          <div style="font-size:1rem; font-weight:700; color:#14532D;"><?= htmlspecialchars($activeRequest['groom_name']) ?></div>
+        </div>
+        <div style="background:#f0fdf4; border:1px solid #dcfce7; border-radius:10px; padding:12px;">
+          <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#6b7280;">Bride</div>
+          <div style="font-size:1rem; font-weight:700; color:#14532D;"><?= htmlspecialchars($activeRequest['bride_name']) ?></div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:left; margin:16px 0 24px;">
+        <div style="background:#fefce8; border:1px solid #fde68a; border-radius:10px; padding:12px;">
+          <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#6b7280;">Date</div>
+          <div style="font-size:0.9rem; font-weight:700; color:#1a1a1a;"><?= date('F d, Y', strtotime($activeRequest['marriage_date'])) ?></div>
+        </div>
+        <div style="background:#fefce8; border:1px solid #fde68a; border-radius:10px; padding:12px;">
+          <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#6b7280;">Time</div>
+          <div style="font-size:0.9rem; font-weight:700; color:#1a1a1a;"><?= htmlspecialchars($activeRequest['marriage_time']) ?></div>
+        </div>
+        <div style="background:#fefce8; border:1px solid #fde68a; border-radius:10px; padding:12px;">
+          <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#6b7280;">Venue</div>
+          <div style="font-size:0.9rem; font-weight:700; color:#1a1a1a;"><?= htmlspecialchars($activeRequest['marriage_venue'] ?? 'ISCAG Mosque') ?></div>
+        </div>
+      </div>
+
+      <p style="font-size:0.82rem; color:#6b7280; line-height:1.5; margin-bottom:24px;">
+        Please present this pass at the venue on the date of the ceremony. Both parties and two witnesses must be present with valid identification.
+      </p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:32px; margin-top:32px; text-align:center;">
+        <div>
+          <div style="border-bottom:1px solid #000; height:32px; margin-bottom:6px;"></div>
+          <div style="font-size:0.8rem; font-weight:700; color:#111;">Da'wah Director / Ustaz</div>
+          <div style="font-size:0.72rem; color:#6b7280;">ISCAG Da'wah Department</div>
+        </div>
+        <div>
+          <div style="border-bottom:1px solid #000; height:32px; margin-bottom:6px;"></div>
+          <div style="font-size:0.8rem; font-weight:700; color:#111;">Authorized Official</div>
+          <div style="font-size:0.72rem; color:#6b7280;">ISCAG Philippines</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:16px 24px; background:#f8faf9; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px;" class="no-print">
+      <button type="button" onclick="closePassModal()" class="btn-cancel">Close</button>
+      <button type="button" onclick="window.print()" class="btn-submit" style="background:#166534;">Print Document</button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <script>
   // ── Render History ──
   const historyTbody = document.getElementById('history-tbody');
@@ -559,7 +872,7 @@
   if (historyData.length > 0) {
     historyTbody.innerHTML = historyData.map(h => `
       <tr>
-        <td class="td-id">#${h.id}</td>
+        <td class="td-id">#MR-${String(h.id).padStart(4, '0')}</td>
         <td>${h.groom_name || '—'}</td>
         <td>${h.bride_name || '—'}</td>
         <td>${h.marriage_date ? new Date(h.marriage_date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : ''} at ${h.marriage_time || ''}</td>
@@ -591,8 +904,8 @@
   function closeModal() {
     if(modal) {
       modal.classList.remove('active');
-      calStep.classList.add('active');
-      timeStep.classList.remove('active');
+      if(calStep) calStep.classList.add('active');
+      if(timeStep) timeStep.classList.remove('active');
     }
   }
 
@@ -634,27 +947,31 @@
 
   window.selectDate = (date) => {
     selectedDate = date;
-    calStep.classList.remove('active');
-    timeStep.classList.add('active');
-    document.getElementById('display-selected-date').innerText = new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    if(calStep) calStep.classList.remove('active');
+    if(timeStep) timeStep.classList.add('active');
+    const el = document.getElementById('display-selected-date');
+    if(el) el.innerText = new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
   window.selectTime = (time) => {
     selectedTime = time;
     document.querySelectorAll('.slot-pill').forEach(p => p.classList.remove('selected'));
     event.currentTarget.classList.add('selected');
-    confirmBtn.disabled = false;
+    if(confirmBtn) confirmBtn.disabled = false;
   };
 
   window.backToCal = () => {
-    timeStep.classList.remove('active');
-    calStep.classList.add('active');
+    if(timeStep) timeStep.classList.remove('active');
+    if(calStep) calStep.classList.add('active');
   };
 
   if(confirmBtn) confirmBtn.onclick = () => {
-    document.getElementById('selected-schedule-text').innerText = `${new Date(selectedDate).toLocaleDateString()} at ${selectedTime}`;
-    document.getElementById('input-date').value = selectedDate;
-    document.getElementById('input-time').value = selectedTime;
+    const schedText = document.getElementById('selected-schedule-text');
+    const inputDate = document.getElementById('input-date');
+    const inputTime = document.getElementById('input-time');
+    if(schedText) schedText.innerText = `${new Date(selectedDate).toLocaleDateString()} at ${selectedTime}`;
+    if(inputDate) inputDate.value = selectedDate;
+    if(inputTime) inputTime.value = selectedTime;
     closeModal();
   };
 
@@ -701,6 +1018,16 @@
         showToast('An error occurred. Please try again.', '#e74c3c');
       }
     };
+  }
+
+  // ── Pass Modal ──
+  function openPassModal() {
+    const m = document.getElementById('pass-modal');
+    if(m) m.style.display = 'flex';
+  }
+  function closePassModal() {
+    const m = document.getElementById('pass-modal');
+    if(m) m.style.display = 'none';
   }
 
   function showToast(msg, bg) {
