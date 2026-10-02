@@ -8,7 +8,7 @@
       <div class="brand-text"><strong>ISCAG MIS</strong><span>Damayan Department</span></div>
     </div>
   </div>
-  <div class="sidebar-user">
+  <div class="sidebar-user" onclick="window.location.href='<?= url('/admin/damayan/profile') ?>'" style="cursor:pointer; transition: background 0.2s;" title="View Profile">
     <div class="user-avatar" id="nav-avatar" data-preserve-avatar style="background:#176b45;">
       <?= strtoupper(substr($dbUser['first_name'] ?? 'D', 0, 1) . substr($dbUser['last_name'] ?? 'M', 0, 1)) ?>
     </div>

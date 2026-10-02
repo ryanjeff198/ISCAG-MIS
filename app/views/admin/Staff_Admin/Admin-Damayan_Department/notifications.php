@@ -44,7 +44,7 @@
       include BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Damayan_Department/sidebar.php'; 
     ?>
     <div class="main-content">
-      <div class="top-bar">
+      <div class="top-bar" style="display:flex; align-items:center; justify-content:space-between;">
         <div style="display: flex; align-items: center; gap: 16px;">
           <div style="width: 48px; height: 48px; background: var(--damayan-light); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--damayan-accent);">
             <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:currentColor;"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" /></svg>
@@ -53,6 +53,11 @@
             <div class="top-bar-title">Department Notifications</div>
             <div class="top-bar-subtitle">System alerts, service requests, and administrative updates</div>
           </div>
+        </div>
+        <div class="top-bar-actions">
+          <a href="<?= url('/admin/damayan/profile') ?>" class="btn-topbar" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:700;color:var(--damayan-accent);">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg> Profile
+          </a>
         </div>
       </div>
       <div class="page-body">
