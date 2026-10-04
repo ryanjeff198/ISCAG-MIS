@@ -35,7 +35,8 @@ class User
      */
     public function findByEmail(string $email)
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE email = :email LIMIT 1");
+        $email = trim($email);
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE LOWER(email) = LOWER(:email) ORDER BY is_verified DESC, tenant_id DESC LIMIT 1");
         $stmt->execute(['email' => $email]);
         return $stmt->fetch();
     }
@@ -61,8 +62,12 @@ class User
             throw new Exception("Invalid field name for existence check.");
         }
 
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->table} WHERE {$field} = :value");
-        $stmt->execute(['value' => $value]);
+        if ($field === 'email') {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->table} WHERE LOWER(email) = LOWER(:value)");
+        } else {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->table} WHERE {$field} = :value");
+        }
+        $stmt->execute(['value' => trim($value)]);
         return $stmt->fetchColumn() > 0;
     }
 
@@ -71,7 +76,9 @@ class User
      */
     public function updateOTP(string $email, string $otp, string $expiry): bool
     {
-        $stmt = $this->db->prepare("UPDATE {$this->table} SET otp_code = :otp, otp_expiry = :expiry WHERE email = :email");
+        $email = trim($email);
+        $otp = trim($otp);
+        $stmt = $this->db->prepare("UPDATE {$this->table} SET otp_code = :otp, otp_expiry = :expiry WHERE LOWER(email) = LOWER(:email)");
         return $stmt->execute([
             'otp' => $otp,
             'expiry' => $expiry,
@@ -84,22 +91,50 @@ class User
      */
     public function verifyAccount(string $email, string $otp): bool
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE email = :email AND otp_code = :otp LIMIT 1");
-        $stmt->execute(['email' => $email, 'otp' => $otp]);
-        $user = $stmt->fetch();
+        $email = trim($email);
+        $otp = preg_replace('/\D/', '', trim($otp));
 
-        if ($user) {
-            // Check expiry in PHP
-            $expiry = strtotime($user['otp_expiry']);
-            if ($expiry < time()) {
-                return false; // Expired
-            }
-
-            $update = $this->db->prepare("UPDATE {$this->table} SET is_verified = 1, otp_code = NULL, otp_expiry = NULL WHERE email = :email");
-            return $update->execute(['email' => $email]);
+        if (empty($email) || empty($otp) || strlen($otp) !== 6) {
+            error_log("[OTP_DEBUG] Verify failed: empty email or invalid OTP length for email '{$email}'");
+            return false;
         }
 
-        return false;
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE LOWER(email) = LOWER(:email) ORDER BY is_verified ASC, tenant_id DESC LIMIT 1");
+        $stmt->execute(['email' => $email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            error_log("[OTP_DEBUG] Verify failed: No user found for email '{$email}'");
+            return false;
+        }
+
+        if (empty($user['otp_code'])) {
+            error_log("[OTP_DEBUG] Verify failed: User '{$email}' has no active OTP code");
+            return false;
+        }
+
+        // Compare OTP code
+        if (trim($user['otp_code']) !== $otp) {
+            error_log("[OTP_DEBUG] Verify failed: Code mismatch for '{$email}'. Expected '{$user['otp_code']}', received '{$otp}'");
+            return false;
+        }
+
+        // Check expiration
+        if (!empty($user['otp_expiry'])) {
+            $expiry = strtotime($user['otp_expiry']);
+            $now = time();
+            // Allow a 2-minute (120s) grace period for server clock drift or network lag
+            if ($expiry && ($expiry + 120) < $now) {
+                error_log("[OTP_DEBUG] Verify failed: Code expired for '{$email}'. Expiry: {$user['otp_expiry']} (" . ($expiry) . "), Current: {$now}");
+                return false;
+            }
+        }
+
+        // Mark verified and clear OTP
+        $update = $this->db->prepare("UPDATE {$this->table} SET is_verified = 1, otp_code = NULL, otp_expiry = NULL WHERE tenant_id = :id");
+        $res = $update->execute(['id' => $user['tenant_id']]);
+        error_log("[OTP_DEBUG] Verify SUCCESS: Account '{$email}' (ID: {$user['tenant_id']}) verified successfully");
+        return $res;
     }
 
     /**

@@ -70,6 +70,7 @@ $routes = [
 
     // Service Modules
     '/user/services/burial-form'      => ['UserController', 'burialForm'],
+    '/user/services/burial/submit'    => ['UserController', 'submitBurial'],
     '/user/services/burial-dashboard' => ['UserController', 'burialDashboard'],
     '/user/services/counseling/male'   => ['UserController', 'maleCounseling'],
     '/user/services/counseling/female' => ['UserController', 'femaleCounseling'],
@@ -133,6 +134,29 @@ $routes = [
     '/admin/damayan/burial-requests' => ['AdminController', 'damayanBurialRequests'],
     '/admin/damayan/finance'         => ['AdminController', 'damayanFinance'],
     '/admin/damayan/liquidation/submit' => ['AdminController', 'submitLiquidation'],
+    // Funeral Case Management (Admin)
+    '/admin/damayan/funeral-cases'          => ['AdminController', 'damayanFuneralCases'],
+    '/admin/damayan/funeral-cases/detail'   => ['AdminController', 'damayanFuneralCaseDetail'],
+    '/admin/damayan/funeral-cases/review'   => ['AdminController', 'reviewFuneralCase'],
+    '/admin/damayan/funeral-cases/update'   => ['AdminController', 'updateFuneralCase'],
+    '/admin/damayan/funeral-cases/psa-update' => ['AdminController', 'updateFuneralPsa'],
+    '/admin/damayan/funeral-cases/doc-review'  => ['AdminController', 'reviewFuneralDoc'],
+    '/admin/damayan/funeral-cases/serve-doc'   => ['AdminController', 'serveFuneralDoc'],
+    // Certificate Tracking & Release Scheduling (Admin)
+    '/admin/damayan/certificate-tracking'            => ['AdminController', 'damayanCertificateTracking'],
+    '/admin/damayan/certificate-tracking/detail'     => ['AdminController', 'damayanCertificateDetail'],
+    '/admin/damayan/certificate-tracking/status'     => ['AdminController', 'updateCertificateStatus'],
+    '/admin/damayan/certificate-tracking/schedule'   => ['AdminController', 'scheduleCertificateRelease'],
+    '/admin/damayan/certificate-tracking/reschedule' => ['AdminController', 'rescheduleCertificateRelease'],
+    '/admin/damayan/certificate-tracking/release'    => ['AdminController', 'markCertificateReleased'],
+    // Funeral Case Management (User)
+    '/user/services/funeral/report'       => ['UserController', 'funeralReport'],
+    '/user/services/funeral/submit'       => ['UserController', 'submitFuneralReport'],
+    '/user/services/funeral/case'         => ['UserController', 'funeralCase'],
+    '/user/services/funeral/tracking'     => ['UserController', 'funeralCase'],
+    '/user/services/funeral/upload'       => ['UserController', 'uploadFuneralDoc'],
+    '/user/services/funeral/psa-request'  => ['UserController', 'submitPsaRequest'],
+    '/user/services/funeral/serve-doc'    => ['UserController', 'serveFuneralDoc'],
     '/admin/dawah/male/profile'      => ['AdminController', 'dawahMaleProfile'],
     '/admin/payment'                 => ['AdminController', 'payment'],
 

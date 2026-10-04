@@ -89,7 +89,7 @@ class AuthController extends Controller
                 return;
             }
 
-            $email = $_POST['email'] ?? '';
+            $email = trim($_POST['email'] ?? '');
             
             // Check if email already exists
             $existingUser = $this->userModel->findByEmail($email);
@@ -99,31 +99,32 @@ class AuthController extends Controller
                     $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
                     return;
                 }
-                // If not verified, we can continue and it will update the existing record (if create/exists logic allows)
-                // Actually, our create() uses INSERT. I should add an "upsert" or "delete then insert" logic.
-                // Let's go with "Update existing unverified user".
             }
 
-            if ($this->userModel->exists('contactnum', $_POST['contactnum'] ?? '')) {
+            $contactnum = trim($_POST['contactnum'] ?? '');
+            if (!empty($contactnum) && $this->userModel->exists('contactnum', $contactnum)) {
                 // If we are updating an existing unverified user, we should allow it if the phone matches the same user
-                if (!$existingUser || $existingUser['contactnum'] !== $_POST['contactnum']) {
+                if (!$existingUser || $existingUser['contactnum'] !== $contactnum) {
                     $error = "Phone number already used.";
                     $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
                     return;
                 }
             }
 
+            $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $otpExpiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+
             $data = [
-                'first_name' => $_POST['first_name'] ?? '',
-                'last_name' => $_POST['last_name'] ?? '',
+                'first_name' => trim($_POST['first_name'] ?? ''),
+                'last_name' => trim($_POST['last_name'] ?? ''),
                 'sex' => $_POST['sex'] ?? 'Male',
                 'email' => $email,
-                'contactnum' => $_POST['contactnum'] ?? '',
+                'contactnum' => $contactnum,
                 'password' => password_hash($password, PASSWORD_DEFAULT),
                 'confirmpass' => password_hash($confirmpass, PASSWORD_DEFAULT),
                 'role' => 'Guest',
-                'otp_code' => str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT),
-                'otp_expiry' => date('Y-m-d H:i:s', strtotime('+10 minutes')),
+                'otp_code' => $otpCode,
+                'otp_expiry' => $otpExpiry,
                 'is_verified' => 0
             ];
 
@@ -144,7 +145,7 @@ class AuthController extends Controller
                     header('Location: ' . url('/verify-otp'));
                     exit;
                 } else {
-                    $error = "Account created but failed to send verification email.";
+                    $error = "Account created but failed to send verification email. Please check your email or try again.";
                     $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
                     return;
                 }
@@ -163,8 +164,6 @@ class AuthController extends Controller
      */
     private function updateUnverifiedUser(string $email, array $data): bool
     {
-        // Simple implementation: delete and re-insert, or update specific fields.
-        // Update is cleaner.
         $sql = "UPDATE tenant_accounts SET 
                 first_name = :first_name, 
                 last_name = :last_name, 
@@ -172,6 +171,7 @@ class AuthController extends Controller
                 contactnum = :contactnum, 
                 password = :password, 
                 confirmpass = :confirmpass, 
+                role = :role,
                 otp_code = :otp_code, 
                 otp_expiry = :otp_expiry 
                 WHERE email = :email AND is_verified = 0";
@@ -185,6 +185,7 @@ class AuthController extends Controller
             'contactnum' => $data['contactnum'],
             'password' => $data['password'],
             'confirmpass' => $data['confirmpass'],
+            'role' => $data['role'] ?? 'Guest',
             'otp_code' => $data['otp_code'],
             'otp_expiry' => $data['otp_expiry'],
             'email' => $email
@@ -197,8 +198,17 @@ class AuthController extends Controller
             if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
                 die("CSRF token validation failed.");
             }
-            $email = $_SESSION['temp_email'] ?? '';
-            $otp = implode('', $_POST['otp'] ?? []);
+            $email = trim($_SESSION['temp_email'] ?? '');
+            
+            $otp = '';
+            if (!empty($_POST['otp_full'])) {
+                $otp = trim($_POST['otp_full']);
+            } elseif (isset($_POST['otp']) && is_array($_POST['otp'])) {
+                $otp = implode('', array_map('trim', $_POST['otp']));
+            } elseif (isset($_POST['otp'])) {
+                $otp = trim($_POST['otp']);
+            }
+            $otp = preg_replace('/\D/', '', $otp);
 
             if (!$email) {
                 $isReset = isset($_SESSION['reset_mode']) && $_SESSION['reset_mode'];
@@ -219,7 +229,7 @@ class AuthController extends Controller
                 // Fetch user to auto-login (Standard Registration Flow)
                 $user = $this->userModel->findByEmail($email);
                 
-                unset($_SESSION['temp_email']);
+                unset($_SESSION['temp_email'], $_SESSION['otp_expiry'], $_SESSION['temp_reg_data']);
                 
                 $_SESSION['user_id'] = $user['tenant_id'];
                 $_SESSION['email'] = $user['email'];
@@ -260,7 +270,13 @@ class AuthController extends Controller
                 return;
             }
         }
-        $this->view('auth/verify-otp');
+        $data = [];
+        if (isset($_GET['resend']) && $_GET['resend'] === 'success') {
+            $data['success'] = "A new verification code has been sent to your email.";
+        } elseif (isset($_GET['resend']) && $_GET['resend'] === 'failed') {
+            $data['error'] = "Failed to resend verification code to your email. Please try again.";
+        }
+        $this->view('auth/verify-otp', $data);
     }
 
     public function forgotPassword(): void
@@ -395,17 +411,23 @@ class AuthController extends Controller
 
     public function resendOtp(): void
     {
-        $email = $_SESSION['temp_email'] ?? '';
+        $email = trim($_SESSION['temp_email'] ?? '');
         if ($email) {
-            $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $expiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
             
-            // Generate and store OTP (using model helper)
-            $this->userModel->updateOTP($email, $otp, $expiry);
-            
+            error_log("[OTP_DEBUG] Resend OTP requested for '{$email}'. Generated new OTP: {$otp}");
+
+            // Send email FIRST to ensure delivery before updating DB
             if (Mailer::sendOTP($email, $otp)) {
+                $this->userModel->updateOTP($email, $otp, $expiry);
                 $_SESSION['otp_expiry'] = strtotime($expiry) * 1000;
+                error_log("[OTP_DEBUG] Resend OTP email delivered successfully for '{$email}'. DB updated with new OTP.");
                 header('Location: ' . url('/verify-otp') . '?resend=success');
+                exit;
+            } else {
+                error_log("[OTP_DEBUG] Resend OTP email delivery FAILED for '{$email}'. Database OTP was NOT overwritten.");
+                header('Location: ' . url('/verify-otp') . '?resend=failed');
                 exit;
             }
         }

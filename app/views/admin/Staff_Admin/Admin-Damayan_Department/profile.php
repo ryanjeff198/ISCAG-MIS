@@ -108,7 +108,7 @@
                 </h4>
                 <p style="color:var(--text-muted);font-size:0.83rem;margin:0 0 10px;" id="p-email"><?= $dbUser['email'] ?? 'damayan@iscag.org' ?></p>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-                  <span class="info-badge" style="background:rgba(23, 107, 69, 0.1);color:var(--damayan-accent);">Damayan Department</span>
+
                   <span class="info-badge" style="background:rgba(46,125,85,0.1);color:var(--success);">Active</span>
                   <span class="info-badge" style="background:rgba(23,107,69,0.1);color:var(--damayan-dark);" id="p-occupation">Damayan Manager</span>
                 </div>
@@ -157,6 +157,10 @@
               <div><label class="form-label">Role</label><p style="font-weight:600;" id="s-role">Damayan Manager</p></div>
               <div><label class="form-label">Department</label><p style="font-weight:600;" id="s-dept">Damayan Social Welfare</p></div>
               <div><label class="form-label">Contact Number</label><p style="font-weight:600;" id="s-phone"><?= $dbUser['phone_number'] ?? $dbUser['contactnum'] ?? '+63 917 000 0000' ?></p></div>
+              <div><label class="form-label">Gender</label><p style="font-weight:600;" id="s-gender"><?php
+                $genderVal = $dbUser['sex'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '';
+                echo $genderVal ? ucfirst(strtolower($genderVal)) : '—';
+              ?></p></div>
               <div><label class="form-label">Muslim Name</label><p style="font-weight:600;" id="s-arabic"><?= $dbUser['arabic_name'] ?? $dbUser['muslimname'] ?? '—' ?></p></div>
               <div><label class="form-label">Status</label><p><span class="badge-status badge-approved">Active</span></p></div>
             </div>
@@ -186,11 +190,8 @@
           <div><label class="form-label">Phone</label><input type="tel" class="form-control" id="f-phone" /></div>
           <div>
             <label class="form-label">Gender</label>
-            <select class="form-control" id="f-gender" style="appearance:auto;">
-              <option value="">—</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-            </select>
+            <input type="text" class="form-control" id="f-gender" readonly style="background:var(--bg-light,#f5f5f5);cursor:not-allowed;opacity:0.8;" />
+            <small style="color:var(--text-muted);font-size:0.7rem;">Set during registration</small>
           </div>
         </div>
         <div class="form-section-title">Staff Details</div>
@@ -225,7 +226,7 @@
         name: "<?= addslashes($fullName) ?>",
         email: "<?= addslashes($email) ?>",
         phone: "<?= addslashes($dbUser['phone_number'] ?? $dbUser['contactnum'] ?? '+63 917 000 0000') ?>",
-        gender: "<?= addslashes($dbUser['sex'] ?? 'male') ?>",
+        gender: "<?= addslashes($dbUser['sex'] ?? $_SESSION['sex'] ?? $_SESSION['gender'] ?? '') ?>",
         arabic: "<?= addslashes($dbUser['arabic_name'] ?? $dbUser['muslimname'] ?? '') ?>",
         occupation: "Damayan Manager",
         id: "<?= addslashes($dbUser['tenant_id'] ?? 'DMY-001') ?>"
@@ -261,6 +262,7 @@
       document.getElementById('s-id').textContent = p.id;
       document.getElementById('s-role').textContent = p.occupation || 'Damayan Manager';
       document.getElementById('s-phone').textContent = p.phone || '—';
+      document.getElementById('s-gender').textContent = p.gender ? p.gender.charAt(0).toUpperCase() + p.gender.slice(1).toLowerCase() : '—';
       document.getElementById('s-arabic').textContent = p.arabic || '—';
 
       const navA = document.getElementById('nav-avatar');
@@ -286,7 +288,7 @@
       document.getElementById('f-name').value = p.name || '';
       document.getElementById('f-email').value = p.email || '';
       document.getElementById('f-phone').value = p.phone || '';
-      document.getElementById('f-gender').value = p.gender || '';
+      document.getElementById('f-gender').value = p.gender ? p.gender.charAt(0).toUpperCase() + p.gender.slice(1).toLowerCase() : '—';
       document.getElementById('f-arabic').value = p.arabic || '';
       document.getElementById('f-occupation').value = p.occupation || '';
       document.getElementById('profile-modal').style.display = 'flex';
@@ -305,7 +307,7 @@
       p.name = document.getElementById('f-name').value.trim() || p.name;
       p.email = document.getElementById('f-email').value.trim() || p.email;
       p.phone = document.getElementById('f-phone').value.trim();
-      p.gender = document.getElementById('f-gender').value;
+      // gender is read-only — always kept from registration
       p.arabic = document.getElementById('f-arabic').value.trim();
       p.occupation = document.getElementById('f-occupation').value.trim();
 

@@ -291,7 +291,8 @@ class UserController extends Controller
     public function burialForm(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
-        $this->view('user/Damayan/user_burial-form');
+        $_GET['tab'] = $_GET['tab'] ?? 'request';
+        $this->funeralCase();
     }
 
     public function burialDashboard(): void
@@ -709,7 +710,42 @@ class UserController extends Controller
         ];
 
         $success = $model->create($data);
-        echo json_encode(['success' => $success, 'ref_id' => $refId]);
+        $caseNumber = null;
+
+        // Also create death certificate tracking record so it connects to the Certificate Tracking System
+        if ($success) {
+            try {
+                require_once BASE_PATH . '/app/models/FuneralCase.php';
+                $fcModel = new FuneralCase();
+                $caseId = $fcModel->create([
+                    'tenant_id' => $_SESSION['user_id'],
+                    'deceased_first_name' => $input['firstName'] ?? '',
+                    'deceased_middle_name' => $input['middleName'] ?? '',
+                    'deceased_last_name' => $input['lastName'] ?? '',
+                    'deceased_sex' => $input['sex'] ?? null,
+                    'deceased_dob' => !empty($input['dob']) ? $input['dob'] : null,
+                    'deceased_dod' => !empty($input['dod']) ? $input['dod'] : date('Y-m-d'),
+                    'deceased_place_of_death' => $input['pod'] ?? 'N/A',
+                    'deceased_address' => $input['residence'] ?? 'N/A',
+                    'deceased_civil_status' => $input['civilStatus'] ?? '',
+                    'deceased_nationality' => $input['citizenship'] ?? 'Filipino',
+                    'deceased_religion' => $input['religion'] ?? 'Islam',
+                    'deceased_occupation' => $input['occupation'] ?? '',
+                    'informant_name' => !empty($input['informantName']) ? $input['informantName'] : ($_SESSION['name'] ?? 'Requester'),
+                    'informant_relationship' => $input['relationship'] ?? 'Relative',
+                    'informant_contact' => $input['informantContact'] ?? '',
+                    'informant_address' => $input['informantAddress'] ?? ($input['residence'] ?? '')
+                ]);
+                if ($caseId) {
+                    $createdCase = $fcModel->find($caseId);
+                    $caseNumber = $createdCase['case_number'] ?? null;
+                }
+            } catch (\Throwable $te) {
+                error_log("submitBurial auto-case error: " . $te->getMessage());
+            }
+        }
+
+        echo json_encode(['success' => $success, 'ref_id' => $refId, 'case_number' => $caseNumber]);
         exit;
     }
 
@@ -734,6 +770,200 @@ class UserController extends Controller
 
         $success = $model->create($data);
         echo json_encode(['success' => $success]);
+        exit;
+    }
+
+    /* ======================================================================
+     *  FUNERAL CASE MANAGEMENT
+     * ==================================================================== */
+
+    /** Show the death report form */
+    public function funeralReport(): void
+    {
+        Auth::protect();
+        require_once BASE_PATH . '/app/models/User.php';
+        $u = new User();
+        $dbUser = $u->findById($_SESSION['user_id']) ?: [];
+        $extra  = $u->getAdditionalInfo($_SESSION['user_id']) ?: [];
+        $dbUser = array_merge($dbUser, $extra);
+        $this->view('user/Damayan/user_funeral-report', ['dbUser' => $dbUser]);
+    }
+
+    /** Submit the death report (POST, JSON) */
+    public function submitFuneralReport(): void
+    {
+        Auth::protect();
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $model = new FuneralCase();
+
+        $input['tenant_id'] = $_SESSION['user_id'];
+        $caseId = $model->create($input);
+
+        if ($caseId) {
+            $case = $model->findById($caseId);
+            AuditLogger::log('FUNERAL', 'SUBMIT_DEATH_REPORT',
+                "Death report submitted — Case #{$case['case_number']} for {$input['deceased_first_name']} {$input['deceased_last_name']}");
+            echo json_encode(['success' => true, 'case_id' => $caseId, 'case_number' => $case['case_number']]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to create funeral case']);
+        }
+        exit;
+    }
+
+    /** Show user's funeral case dashboard */
+    public function funeralCase(): void
+    {
+        Auth::protect();
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        require_once BASE_PATH . '/app/models/User.php';
+
+        $model = new FuneralCase();
+        $cases = $model->getByTenantId($_SESSION['user_id']);
+
+        // Get case details if ?case= is provided
+        $caseDetail = null;
+        $documents  = [];
+        $psaRequest = null;
+        $logs       = [];
+        $caseNum    = $_GET['case'] ?? '';
+
+        if ($caseNum) {
+            $caseDetail = $model->findByCaseNumber($caseNum);
+            if ($caseDetail && $caseDetail['tenant_id'] == $_SESSION['user_id']) {
+                $documents  = $model->getDocuments($caseDetail['id']);
+                $psaRequest = $model->getPsaRequest($caseDetail['id']);
+                $logs       = $model->getLogs($caseDetail['id']);
+            } else {
+                $caseDetail = null;
+            }
+        } elseif (!empty($cases)) {
+            $caseDetail = $cases[0];
+            $documents  = $model->getDocuments($caseDetail['id']);
+            $psaRequest = $model->getPsaRequest($caseDetail['id']);
+            $logs       = $model->getLogs($caseDetail['id']);
+        }
+
+        $u = new User();
+        $dbUser = $u->findById($_SESSION['user_id']) ?: [];
+
+        $this->view('user/Damayan/user_funeral-case', [
+            'cases'      => $cases,
+            'caseDetail' => $caseDetail,
+            'documents'  => $documents,
+            'psaRequest' => $psaRequest,
+            'logs'       => $logs,
+            'dbUser'     => $dbUser
+        ]);
+    }
+
+    /** Upload a document for a funeral case (POST, multipart) */
+    public function uploadFuneralDoc(): void
+    {
+        Auth::protect();
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $docId  = $_POST['doc_id'] ?? 0;
+        $caseId = $_POST['case_id'] ?? 0;
+
+        if (!$docId || !$caseId || empty($_FILES['document'])) {
+            echo json_encode(['success' => false, 'error' => 'Missing required fields']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $model = new FuneralCase();
+        $case  = $model->findById((int) $caseId);
+
+        if (!$case || $case['tenant_id'] != $_SESSION['user_id']) {
+            echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+            exit;
+        }
+
+        $file = $_FILES['document'];
+        $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed = ['pdf','jpg','jpeg','png','gif','doc','docx'];
+        if (!in_array($ext, $allowed)) {
+            echo json_encode(['success' => false, 'error' => 'Invalid file type']);
+            exit;
+        }
+
+        $uploadDir = BASE_PATH . '/public/uploads/funeral/' . $case['case_number'];
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+        $safeName = 'doc_' . $docId . '_' . time() . '.' . $ext;
+        $destPath = $uploadDir . '/' . $safeName;
+
+        if (move_uploaded_file($file['tmp_name'], $destPath)) {
+            $relPath = 'uploads/funeral/' . $case['case_number'] . '/' . $safeName;
+            $model->updateDocument((int) $docId, [
+                'file_path' => $relPath,
+                'file_name' => $file['name']
+            ]);
+            $model->addLog((int) $caseId, $_SESSION['user_id'], null, 'DOC_UPLOADED', 'DOCUMENTS',
+                "Document uploaded: {$file['name']}", 'Uploaded');
+
+            echo json_encode(['success' => true, 'file_name' => $file['name']]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Upload failed']);
+        }
+        exit;
+    }
+
+    /** Submit PSA certificate request (POST, JSON) */
+    public function submitPsaRequest(): void
+    {
+        Auth::protect();
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false]);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $model = new FuneralCase();
+
+        $case = $model->findById((int)($input['case_id'] ?? 0));
+        if (!$case || $case['tenant_id'] != $_SESSION['user_id']) {
+            echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+            exit;
+        }
+
+        if ($case['status'] !== 'Registered' && $case['status'] !== 'Completed') {
+            echo json_encode(['success' => false, 'error' => 'Death must be registered before requesting PSA certificate']);
+            exit;
+        }
+
+        $psaId = $model->createPsaRequest($case['id'], $input);
+        echo json_encode(['success' => (bool)$psaId, 'psa_id' => $psaId]);
+        exit;
+    }
+
+    /** Serve a funeral document file */
+    public function serveFuneralDoc(): void
+    {
+        Auth::protect();
+        $path = $_GET['path'] ?? '';
+        if (!$path) { http_response_code(404); exit; }
+
+        $fullPath = BASE_PATH . '/public/' . $path;
+        if (!file_exists($fullPath)) { http_response_code(404); exit; }
+
+        $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: inline; filename="' . basename($fullPath) . '"');
+        readfile($fullPath);
         exit;
     }
 }
