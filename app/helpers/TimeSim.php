@@ -22,13 +22,21 @@ class TimeSim {
         $uid = $userId ?? ($_SESSION['user_id'] ?? null);
         
         if ($uid) {
-            $db = getDbConnection();
-            $stmt = $db->prepare("SELECT time_offset FROM tenant_accounts WHERE tenant_id = ?");
-            $stmt->execute([$uid]);
-            $offset = $stmt->fetchColumn();
-            
-            if ($offset) {
-                @$now->modify($offset);
+            try {
+                $db = getDbConnection();
+                $stmt = $db->prepare("SELECT time_offset FROM tenant_accounts WHERE tenant_id = ?");
+                $stmt->execute([$uid]);
+                $offset = $stmt->fetchColumn();
+                
+                if ($offset) {
+                    @$now->modify($offset);
+                }
+            } catch (\Throwable $e) {
+                // If column doesn't exist or DB fails, attempt auto-migration and fallback gracefully
+                try {
+                    $db = getDbConnection();
+                    $db->exec("ALTER TABLE tenant_accounts ADD COLUMN time_offset VARCHAR(50) DEFAULT NULL");
+                } catch (\Throwable $ignored) {}
             }
         }
         

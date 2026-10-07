@@ -641,11 +641,8 @@ class AdminController extends Controller
             $notifModel = new Notification();
             $leaseModel = new Lease();
             
-            // 1. Remove Room Assignment from Approval Step
-            // $result = $appModel->assignOrQueue((int) $id);
-            // Instead, just update application status to 'Approved'
-            $appModel->updateApplicationStatus((int) $id, 'Approved');
-            
+            // Run the Room Assignment & Waitlist Engine
+            $result = $appModel->assignOrQueue((int) $id);
             $tenantId = $appModel->getTenantIdByApplicationId($id);
 
             // ── Auto-Generate Lease Contract ──
@@ -670,6 +667,7 @@ class AdminController extends Controller
 
             $startDate = date('Y-m-d');
             $endDate = date('Y-m-d', strtotime('+12 months'));
+            $isAssigned = (isset($result['result']) && $result['result'] === 'assigned');
 
             $leaseModel->createLease([
                 'tenant_id'      => $tenantId,
@@ -680,17 +678,35 @@ class AdminController extends Controller
                 'advance_amount' => $monthlyRent, // 1 month advance
                 'start_date'     => $startDate,
                 'end_date'       => $endDate,
+                'lease_status'   => $isAssigned ? 'Active' : 'Pending',
             ]);
             
-            // Notify tenant that application is approved and lease is ready
-            $notifModel->create(
-                $tenantId,
-                'Application Approved!',
-                'Congratulations! Your apartment application has been approved. '
-                . 'Please review and accept your Lease Contract to proceed to Initial Payments. '
-                . 'A room will be assigned once payments are settled.',
-                'approval'
-            );
+            // Notify tenant
+            if ($isAssigned) {
+                $notifModel->create(
+                    $tenantId,
+                    'Room Assigned!',
+                    'Congratulations! You have been assigned to Room ' . ($result['room_number'] ?? '') 
+                    . ' in ' . ($result['building'] ?? '') . '. Your account has been upgraded to Tenant.',
+                    'approval'
+                );
+            } elseif (isset($result['result']) && $result['result'] === 'queued') {
+                $notifModel->create(
+                    $tenantId,
+                    'Application Accepted — Waitlisted',
+                    'Your application has been verified and accepted, but all rooms of your requested type are currently full. '
+                    . 'You are #' . ($result['queue_position'] ?? '1') . ' in the waiting list. '
+                    . 'You will be notified when a room becomes available.',
+                    'info'
+                );
+            } else {
+                $notifModel->create(
+                    $tenantId,
+                    'Application Approved!',
+                    'Congratulations! Your apartment application has been approved. Welcome to ISCAG Apartments!',
+                    'approval'
+                );
+            }
             $this->logAudit('APARTMENT', 'APPROVE_APP', "Approved application ID: $id for Tenant ID: $tenantId");
         }
         $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/confirmation' : '/admin/mis_admin/apartment_confirmation';

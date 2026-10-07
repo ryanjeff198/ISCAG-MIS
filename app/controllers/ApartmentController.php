@@ -447,12 +447,7 @@ class ApartmentController extends Controller {
         $lease = $leaseModel->getLeaseByTenantId($userId);
         
         // Fetch Move-Out Request to check for settlement
-        // (Assuming we might need a method to get specific request for a tenant)
-        // Let's find any processing move-out request for this tenant
-        $db = getDbConnection();
-        $stmt = $db->prepare("SELECT * FROM move_out_requests WHERE tenant_id = ? AND status IN ('Processing', 'Completed') ORDER BY created_at DESC LIMIT 1");
-        $stmt->execute([$userId]);
-        $moveout = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+        $moveout = $moveOutModel->getSettlementForTenant($userId, ['Processing', 'Completed']);
         
         // A) Initial Payments (Deposit & Advance)
         $payments = [];
@@ -668,9 +663,9 @@ class ApartmentController extends Controller {
 
                 // Move-Out Settlement handling
                 if (strtolower($type) === 'settlement') {
-                    $stmt = $db->prepare("SELECT * FROM move_out_requests WHERE tenant_id = ? AND status = 'Processing' LIMIT 1");
-                    $stmt->execute([$userId]);
-                    $mo = $stmt->fetch(\PDO::FETCH_ASSOC);
+                    require_once BASE_PATH . '/app/models/MoveOut.php';
+                    $moveOutModel = new MoveOut();
+                    $mo = $moveOutModel->getSettlementForTenant($userId, ['Processing']);
                     if ($mo) {
                         $field = ($parts[1] === 'damage') ? 'damage_costs' : 'utility_deductions';
                         $amount = (float)$mo[$field];

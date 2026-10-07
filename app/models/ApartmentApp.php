@@ -343,24 +343,18 @@ class ApartmentApp {
     // ═══════════════════════════════════════════════════
 
     /**
-     * Core logic: Assign a room ONLY if lease is ACTIVE.
+     * Core logic: Assign a room OR add to waitlist.
      * 
-     * Flow:
-     *   1. Validate lease_status == "Active"
-     *   2. Try to match preferred room type
-     *   3. Otherwise assign first available room globally
+     * Flow: 
+     *   1. Look up the application's requested room type
+     *   2. Find an available room of that type (or transient room with < 10 occupants)
+     *   3a. If found → Assign room, mark unit Occupied, update application to Assigned, change role to Tenant
+     *   3b. If none  → Calculate queue position, set status to Queued
+     *
+     * @return array ['result' => 'assigned'|'queued'|'error', 'unit_id' => int|null, 'queue_position' => int|null, 'room_number' => string|null, 'building' => string|null]
      */
-    public function assignRoom(int $applicationId): array
+    public function assignOrQueue(int $applicationId): array
     {
-        // 1. Validation Rule: DO NOT assign room if lease_status != "ACTIVE"
-        $leaseStmt = $this->db->prepare("SELECT lease_status FROM leases WHERE application_id = :id");
-        $leaseStmt->execute(['id' => $applicationId]);
-        $leaseStatus = $leaseStmt->fetchColumn();
-
-        if ($leaseStatus !== 'Active') {
-            return ['result' => 'error', 'message' => 'Payment not completed or lease not active.'];
-        }
-
         // Get the application
         $stmt = $this->db->prepare("SELECT * FROM apartmentsapp WHERE application_id = :id");
         $stmt->execute(['id' => $applicationId]);
@@ -429,7 +423,7 @@ class ApartmentApp {
             ")->execute(['uid' => $room['unit_id'], 'aid' => $applicationId]);
 
             // Change role: Guest → Tenant
-            $this->changeRoleToTenant($app['tenant_id']);
+            $this->changeRoleToTenant((int) $app['tenant_id']);
 
             return [
                 'result' => 'assigned',
@@ -439,23 +433,33 @@ class ApartmentApp {
             ];
         } else {
             // ── QUEUE: No rooms available ──
-            // Get current max queue position FOR THIS ROOM TYPE (label or key)
             $qStmt = $this->db->prepare("SELECT COALESCE(MAX(queue_position), 0) + 1 FROM apartmentsapp WHERE status = 'Queued'");
             $qStmt->execute();
-            $nextPos = $qStmt->fetchColumn();
+            $nextPos = (int) $qStmt->fetchColumn();
 
             $this->db->prepare("
                 UPDATE apartmentsapp 
-                SET status = 'Queued', queue_position = :pos 
+                SET status = 'Queued', queue_position = :pos, accepted_at = NOW()
                 WHERE application_id = :aid
             ")->execute(['pos' => $nextPos, 'aid' => $applicationId]);
 
             return [
                 'result' => 'queued',
+                'unit_id' => null,
+                'room_number' => null,
+                'building' => null,
                 'queue_position' => $nextPos,
                 'message' => 'No rooms available. You have been placed in the queue.'
             ];
         }
+    }
+
+    /**
+     * Assign room alias for backward compatibility.
+     */
+    public function assignRoom(int $applicationId): array
+    {
+        return $this->assignOrQueue($applicationId);
     }
 
     /**
@@ -486,16 +490,16 @@ class ApartmentApp {
         $stmt = $this->db->prepare("
             SELECT application_id, tenant_id 
             FROM apartmentsapp 
-            WHERE roomtype = :rt AND status = 'Queued' 
+            WHERE (TRIM(roomtype) = TRIM(:rt) OR roomtype LIKE :rt_like) AND status = 'Queued' 
             ORDER BY queue_position ASC 
             LIMIT 1
         ");
-        $stmt->execute(['rt' => $unit['type_label']]);
+        $stmt->execute(['rt' => $unit['type_label'], 'rt_like' => '%' . trim($unit['type_label']) . '%']);
         $next = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($next) {
             // Auto-assign to next in queue
-            return $this->assignRoom($next['application_id']);
+            return $this->assignOrQueue((int)$next['application_id']);
         }
 
         return ['result' => 'released', 'message' => 'Room released. No one in queue.'];
@@ -552,25 +556,28 @@ class ApartmentApp {
     }
 
     // ── Helper: Map room type label to type_id ──
-    private function getTypeIdByLabel(string $label): ?int
+    public function getTypeIdByLabel(string $label): ?int
     {
-        // Match labels like "One-Bedroom" → apartment_types.label
+        $trimmed = trim($label);
         $stmt = $this->db->prepare("
             SELECT type_id FROM apartment_types 
-            WHERE label LIKE :lbl OR type_key = :key
+            WHERE label LIKE :lbl OR type_key = :key OR TRIM(label) = :trimmed
             LIMIT 1
         ");
-        // Handle partial matches: "One-Bedroom" should match "One-Bedroom Unit"
-        $stmt->execute(['lbl' => '%' . $label . '%', 'key' => $label]);
+        $stmt->execute(['lbl' => '%' . $trimmed . '%', 'key' => $trimmed, 'trimmed' => $trimmed]);
         $id = $stmt->fetchColumn();
         return $id ? (int) $id : null;
     }
 
     // ── Helper: Change role from Guest to Tenant ──
-    private function changeRoleToTenant(int $tenantId): bool
+    public function changeRoleToTenant(int $tenantId): bool
     {
-        $stmt = $this->db->prepare("UPDATE tenant_accounts SET role = 'Tenant' WHERE tenant_id = :tid AND role = 'Guest'");
-        return $stmt->execute(['tid' => $tenantId]);
+        $stmt = $this->db->prepare("UPDATE tenant_accounts SET role = 'Tenant' WHERE tenant_id = :tid AND (role = 'Guest' OR role = 'Applicant')");
+        $ok = $stmt->execute(['tid' => $tenantId]);
+        if (isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] === $tenantId) {
+            $_SESSION['role'] = 'Tenant';
+        }
+        return $ok;
     }
 
 }

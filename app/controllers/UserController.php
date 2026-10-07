@@ -600,25 +600,32 @@ class UserController extends Controller
 
     public function markNotificationRead(): void
     {
-        Auth::protectRole(['Applicant', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant', 'Applicant']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $input = json_decode(file_get_contents('php://input'), true);
             $notifId = $input['id'] ?? 0;
+            $type = $input['type'] ?? null;
             $userId = $_SESSION['user_id'] ?? 0;
             
-            if ($notifId && $userId) {
+            if ($userId) {
                 require_once BASE_PATH . '/app/models/Notification.php';
                 $notifModel = new Notification();
-                $notifModel->markAsRead($notifId, $userId);
+                if ($notifId) {
+                    $notifModel->markAsRead((int)$notifId, (int)$userId);
+                }
+                if ($type === 'approval') {
+                    $notifModel->markTypeAsRead('approval', (int)$userId);
+                }
                 
                 // If the session role is Guest but DB says Tenant, update session now
                 require_once BASE_PATH . '/app/models/User.php';
                 $userModel = new User();
                 $user = $userModel->findById($userId);
-                if ($user && $user['role'] === 'Tenant') {
+                if ($user && isset($user['role']) && $user['role'] === 'Tenant') {
                     $_SESSION['role'] = 'Tenant';
                 }
                 
+                header('Content-Type: application/json');
                 echo json_encode(['success' => true]);
                 exit;
             }

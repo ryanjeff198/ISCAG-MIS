@@ -236,6 +236,64 @@ $active_page = $active_page ?? 'dashboard';
         </a>
     </div>
 
+    <!-- ═══ APPROVAL MODAL ═══ -->
+    <style>
+        #approval-modal {
+            position: fixed; inset: 0; z-index: 99999;
+            display: none; align-items: center; justify-content: center;
+            background: rgba(15,30,22,0.6); backdrop-filter: blur(6px);
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        #approval-modal.show {
+            display: flex; opacity: 1;
+        }
+        .approval-modal-content {
+            background: white; border-radius: 16px; width: 100%; max-width: 440px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25); overflow: hidden;
+            position: relative;
+            transform: translateY(30px); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #approval-modal.show .approval-modal-content {
+            transform: translateY(0);
+        }
+        .approval-modal-close {
+            position: absolute; top: 12px; right: 14px;
+            background: none; border: none; font-size: 24px; line-height: 1;
+            color: #6f7f78; cursor: pointer; padding: 4px 8px; border-radius: 6px;
+            transition: all 0.15s; z-index: 2;
+        }
+        .approval-modal-close:hover { color: #1f2e2a; background: rgba(0,0,0,0.05); }
+        .approval-modal-header { height: 4px; background: linear-gradient(90deg,#0f5c3a,#c79a2b); }
+        .approval-modal-body { padding: 32px 28px 24px; text-align: center; }
+        .approval-modal-icon { width: 64px; height: 64px; fill: #2f8a60; margin: 0 auto 16px; }
+        .approval-modal-title { font-family: 'Lora', serif; font-size: 1.4rem; font-weight: 700; color: #0f5c3a; margin: 0 0 10px; }
+        .approval-modal-text { font-size: 0.9rem; color: #6f7f78; line-height: 1.6; margin: 0; }
+        .approval-modal-footer { display: flex; gap: 10px; padding: 0 28px 24px; justify-content: center; }
+        .approval-btn {
+            padding: 10px 24px; border-radius: 8px; border: none;
+            background: linear-gradient(135deg,#0f5c3a,#2f8a60);
+            color: white; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(15,92,58,0.3); transition: all 0.2s;
+        }
+        .approval-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15,92,58,0.4); }
+    </style>
+    <div id="approval-modal">
+        <div class="approval-modal-content">
+            <button type="button" class="approval-modal-close" id="approval-close-btn" title="Close modal">&times;</button>
+            <div class="approval-modal-header"></div>
+            <div class="approval-modal-body">
+                <svg class="approval-modal-icon" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <h4 class="approval-modal-title">Congratulations!</h4>
+                <p class="approval-modal-text" id="approval-modal-desc">You are now officially a tenant. Your application has been approved, your room has been assigned, and all tenant features are now unlocked.</p>
+            </div>
+            <div class="approval-modal-footer">
+                <button class="approval-btn" id="approval-continue-btn">Continue to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══ LOGOUT CONFIRMATION MODAL ═══ -->
     <div id="logout-confirm-modal" style="position:fixed;inset:0;background:rgba(15,30,22,0.6);backdrop-filter:blur(6px);z-index:99999;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;">
         <div style="background:white;border-radius:16px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;transform:translateY(20px);transition:transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
@@ -354,10 +412,20 @@ $active_page = $active_page ?? 'dashboard';
                     }
 
                     // Check for Approval
+                    const seenKey = 'mis_approval_seen_' + (sessionUser.id || 'default');
+                    const isAlreadySeen = (localStorage.getItem(seenKey) === 'true' || sessionStorage.getItem(seenKey) === 'true');
                     const approvalNotif = notifs.find(n => n.type === 'approval' && n.is_read == 0);
-                    if (approvalNotif) {
-                        approvalNotifId = approvalNotif.id || approvalNotif.notification_id;
-                        document.getElementById('approval-modal')?.classList.add('show');
+
+                    if (approvalNotif && !isAlreadySeen) {
+                        approvalNotifId = approvalNotif.notification_id || approvalNotif.id;
+                        const desc = document.getElementById('approval-modal-desc');
+                        if (desc && approvalNotif.message) {
+                            desc.textContent = approvalNotif.message;
+                        }
+                        const modal = document.getElementById('approval-modal');
+                        if (modal) {
+                            modal.classList.add('show');
+                        }
                     } else if (data.role === 'Tenant' && sessionUser.role === 'Guest') {
                         window.location.reload();
                     }
@@ -365,19 +433,44 @@ $active_page = $active_page ?? 'dashboard';
                 .catch(err => console.warn('Status check failed:', err));
         }
 
-        const continueBtn = document.getElementById('approval-continue-btn');
-        if (continueBtn) {
-            continueBtn.addEventListener('click', () => {
-                document.getElementById('approval-modal')?.classList.remove('show');
-                if (approvalNotifId) {
-                    fetch('<?= url("/user/notifications/mark-read") ?>', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: approvalNotifId })
-                    }).finally(() => window.location.href = '<?= url("/user/dashboard") ?>');
-                } else {
+        function dismissApprovalModal() {
+            const modal = document.getElementById('approval-modal');
+            if (modal) modal.classList.remove('show');
+
+            const seenKey = 'mis_approval_seen_' + (sessionUser.id || 'default');
+            localStorage.setItem(seenKey, 'true');
+            sessionStorage.setItem(seenKey, 'true');
+
+            const stored = JSON.parse(localStorage.getItem('mis_user') || '{}');
+            stored.role = 'Tenant';
+            localStorage.setItem('mis_user', JSON.stringify(stored));
+
+            const notifIdToSend = approvalNotifId;
+            fetch('<?= url("/user/notifications/mark-read") ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: notifIdToSend, type: 'approval' })
+            }).finally(() => {
+                if (!window.location.pathname.includes('/user/dashboard')) {
                     window.location.href = '<?= url("/user/dashboard") ?>';
                 }
+            });
+        }
+
+        const continueBtn = document.getElementById('approval-continue-btn');
+        if (continueBtn) {
+            continueBtn.addEventListener('click', dismissApprovalModal);
+        }
+
+        const closeBtn = document.getElementById('approval-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', dismissApprovalModal);
+        }
+
+        const approvalModalOverlay = document.getElementById('approval-modal');
+        if (approvalModalOverlay) {
+            approvalModalOverlay.addEventListener('click', (e) => {
+                if (e.target === approvalModalOverlay) dismissApprovalModal();
             });
         }
 

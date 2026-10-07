@@ -25,16 +25,22 @@ class Lease
      */
     public function createLease(array $data)
     {
+        $status = $data['lease_status'] ?? 'Active';
+
         // Prevent duplicates for the same application
         $existing = $this->getLeaseByApplicationId($data['application_id']);
         if ($existing) {
+            if (isset($data['lease_status'])) {
+                $upd = $this->db->prepare("UPDATE leases SET lease_status = :status WHERE lease_id = :id");
+                $upd->execute(['status' => $data['lease_status'], 'id' => $existing['lease_id']]);
+            }
             return $existing['lease_id'];
         }
 
         $sql = "INSERT INTO leases 
                 (tenant_id, application_id, unit_type, monthly_rent, deposit_amount, advance_amount, start_date, end_date, lease_status)
                 VALUES 
-                (:tenant_id, :application_id, :unit_type, :monthly_rent, :deposit_amount, :advance_amount, :start_date, :end_date, 'Pending')";
+                (:tenant_id, :application_id, :unit_type, :monthly_rent, :deposit_amount, :advance_amount, :start_date, :end_date, :lease_status)";
 
         $stmt = $this->db->prepare($sql);
         $ok = $stmt->execute([
@@ -46,6 +52,7 @@ class Lease
             'advance_amount'  => $data['advance_amount']  ?? 0,
             'start_date'      => $data['start_date']      ?? null,
             'end_date'        => $data['end_date']        ?? null,
+            'lease_status'    => $status,
         ]);
 
         return $ok ? (int) $this->db->lastInsertId() : false;
