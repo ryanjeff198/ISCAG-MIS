@@ -210,7 +210,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       <div class="summary-info">
         <h4>Deceased</h4>
         <div class="val"><?= htmlspecialchars($activeBurial['deceased_name']) ?></div>
-        <p>Death: <?= date('M d, Y', strtotime($activeBurial['date_of_death'])) ?></p>
+        <p>Death: <?= !empty($activeBurial['date_of_death']) ? date('M d, Y', strtotime($activeBurial['date_of_death'])) : 'N/A' ?></p>
       </div>
     </div>
     <div class="summary-card">
@@ -239,7 +239,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       <div class="step completed">
         <div class="step-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
         <div class="step-label">Submitted</div>
-        <div class="step-date"><?= date('M d', strtotime($activeBurial['submitted_at'])) ?></div>
+        <div class="step-date"><?= !empty($activeBurial['submitted_at']) ? date('M d', strtotime($activeBurial['submitted_at'])) : '—' ?></div>
       </div>
       <div class="step <?= $hasPending ? 'active' : 'completed' ?>">
         <div class="step-icon">
@@ -329,7 +329,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       </div>
       <div class="info-group">
         <span class="info-label">Date of Death</span>
-        <span class="info-value"><?= date('F d, Y', strtotime($activeBurial['date_of_death'])) ?></span>
+        <span class="info-value"><?= !empty($activeBurial['date_of_death']) ? date('F d, Y', strtotime($activeBurial['date_of_death'])) : 'N/A' ?></span>
       </div>
       <div class="info-group">
         <span class="info-label">Place of Death</span>
@@ -345,7 +345,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       </div>
       <div class="info-group">
         <span class="info-label">Date Submitted</span>
-        <span class="info-value"><?= date('F d, Y \a\t h:i A', strtotime($activeBurial['submitted_at'])) ?></span>
+        <span class="info-value"><?= !empty($activeBurial['submitted_at']) ? date('F d, Y \a\t h:i A', strtotime($activeBurial['submitted_at'])) : 'N/A' ?></span>
       </div>
     </div>
   </div>

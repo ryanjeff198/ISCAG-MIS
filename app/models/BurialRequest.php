@@ -39,6 +39,24 @@ class BurialRequest
 
     public function __construct() {
         $this->db = getDbConnection();
+        try {
+            $this->db->exec("CREATE TABLE IF NOT EXISTS burial_requests (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                ref_id VARCHAR(50) NOT NULL UNIQUE,
+                tenant_id INT NOT NULL,
+                deceased_name VARCHAR(255) NOT NULL,
+                date_of_birth DATE NULL,
+                date_of_death DATE NOT NULL,
+                place_of_death VARCHAR(255) NULL,
+                residence VARCHAR(255) NULL,
+                religion VARCHAR(100) DEFAULT 'Islam',
+                relationship VARCHAR(100) NULL,
+                status VARCHAR(50) DEFAULT 'Pending',
+                submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+        } catch (\PDOException $e) {
+            // ignore
+        }
     }
 
     /**

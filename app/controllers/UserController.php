@@ -291,8 +291,13 @@ class UserController extends Controller
     public function burialForm(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
-        $_GET['tab'] = $_GET['tab'] ?? 'request';
-        $this->funeralCase();
+        $this->view('user/Damayan/user_burial-form');
+    }
+
+    public function burialDetails(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $this->view('user/Damayan/user_burial-details');
     }
 
     public function burialDashboard(): void

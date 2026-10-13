@@ -70,6 +70,7 @@ $routes = [
 
     // Service Modules
     '/user/services/burial-form'      => ['UserController', 'burialForm'],
+    '/user/services/burial-details'   => ['UserController', 'burialDetails'],
     '/user/services/burial/submit'    => ['UserController', 'submitBurial'],
     '/user/services/burial-dashboard' => ['UserController', 'burialDashboard'],
     '/user/services/counseling/male'   => ['UserController', 'maleCounseling'],

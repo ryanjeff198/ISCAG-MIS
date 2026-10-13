@@ -275,6 +275,11 @@ class FuneralCase
         }
     }
 
+    public function find(int $id): ?array
+    {
+        return $this->findById($id);
+    }
+
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare("SELECT * FROM funeral_cases WHERE id = :id");
