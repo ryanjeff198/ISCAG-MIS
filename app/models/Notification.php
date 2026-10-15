@@ -73,6 +73,16 @@ class Notification
         return $stmt->execute(['tenant_id' => $tenantId]);
     }
 
+    public function markTypeAsRead(string $type, int $tenantId): bool
+    {
+        $sql = "UPDATE {$this->table} SET is_read = 1 WHERE type = :type AND tenant_id = :tenant_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'type' => $type,
+            'tenant_id' => $tenantId
+        ]);
+    }
+
     /**
      * Check if a specific notification title already exists for a tenant to avoid duplicates.
      */

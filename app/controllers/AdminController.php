@@ -641,11 +641,8 @@ class AdminController extends Controller
             $notifModel = new Notification();
             $leaseModel = new Lease();
             
-            // 1. Remove Room Assignment from Approval Step
-            // $result = $appModel->assignOrQueue((int) $id);
-            // Instead, just update application status to 'Approved'
-            $appModel->updateApplicationStatus((int) $id, 'Approved');
-            
+            // Run the Room Assignment & Waitlist Engine
+            $result = $appModel->assignOrQueue((int) $id);
             $tenantId = $appModel->getTenantIdByApplicationId($id);
 
             // ── Auto-Generate Lease Contract ──
@@ -670,6 +667,7 @@ class AdminController extends Controller
 
             $startDate = date('Y-m-d');
             $endDate = date('Y-m-d', strtotime('+12 months'));
+            $isAssigned = (isset($result['result']) && $result['result'] === 'assigned');
 
             $leaseModel->createLease([
                 'tenant_id'      => $tenantId,
@@ -680,17 +678,35 @@ class AdminController extends Controller
                 'advance_amount' => $monthlyRent, // 1 month advance
                 'start_date'     => $startDate,
                 'end_date'       => $endDate,
+                'lease_status'   => $isAssigned ? 'Active' : 'Pending',
             ]);
             
-            // Notify tenant that application is approved and lease is ready
-            $notifModel->create(
-                $tenantId,
-                'Application Approved!',
-                'Congratulations! Your apartment application has been approved. '
-                . 'Please review and accept your Lease Contract to proceed to Initial Payments. '
-                . 'A room will be assigned once payments are settled.',
-                'approval'
-            );
+            // Notify tenant
+            if ($isAssigned) {
+                $notifModel->create(
+                    $tenantId,
+                    'Room Assigned!',
+                    'Congratulations! You have been assigned to Room ' . ($result['room_number'] ?? '') 
+                    . ' in ' . ($result['building'] ?? '') . '. Your account has been upgraded to Tenant.',
+                    'approval'
+                );
+            } elseif (isset($result['result']) && $result['result'] === 'queued') {
+                $notifModel->create(
+                    $tenantId,
+                    'Application Accepted — Waitlisted',
+                    'Your application has been verified and accepted, but all rooms of your requested type are currently full. '
+                    . 'You are #' . ($result['queue_position'] ?? '1') . ' in the waiting list. '
+                    . 'You will be notified when a room becomes available.',
+                    'info'
+                );
+            } else {
+                $notifModel->create(
+                    $tenantId,
+                    'Application Approved!',
+                    'Congratulations! Your apartment application has been approved. Welcome to ISCAG Apartments!',
+                    'approval'
+                );
+            }
             $this->logAudit('APARTMENT', 'APPROVE_APP', "Approved application ID: $id for Tenant ID: $tenantId");
         }
         $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/confirmation' : '/admin/mis_admin/apartment_confirmation';
@@ -2319,6 +2335,407 @@ class AdminController extends Controller
             'charity' => $charityStats,
             'requests' => $allBurials
         ]);
+    }
+
+    /* ======================================================================
+     *  FUNERAL CASE MANAGEMENT (ADMIN)
+     * ==================================================================== */
+
+    /** Admin funeral cases list */
+    public function damayanFuneralCases(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $fcModel = new FuneralCase();
+        $statusFilter = $_GET['status'] ?? '';
+        $allCases = $fcModel->getAll($statusFilter);
+        $analytics = $fcModel->getAnalytics();
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/funeral_cases', [
+            'active_page' => 'funeral_cases',
+            'dbUser' => $dbUser,
+            'cases' => $allCases,
+            'analytics' => $analytics,
+            'currentFilter' => $statusFilter
+        ]);
+    }
+
+    /** Admin funeral case detail */
+    public function damayanFuneralCaseDetail(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $fcModel = new FuneralCase();
+        $caseId = (int)($_GET['id'] ?? 0);
+        $caseDetail = $fcModel->findById($caseId);
+
+        if (!$caseDetail) {
+            header('Location: ' . url('/admin/damayan/funeral-cases'));
+            exit;
+        }
+
+        $documents  = $fcModel->getDocuments($caseId);
+        $psaRequest = $fcModel->getPsaRequest($caseId);
+        $logs       = $fcModel->getLogs($caseId);
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/funeral_case_detail', [
+            'active_page' => 'funeral_cases',
+            'dbUser' => $dbUser,
+            'caseDetail' => $caseDetail,
+            'documents' => $documents,
+            'psaRequest' => $psaRequest,
+            'logs' => $logs
+        ]);
+    }
+
+    /** Review / verify a funeral case (POST, JSON) */
+    public function reviewFuneralCase(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false]); exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $fcModel = new FuneralCase();
+
+        $caseId = (int)($input['case_id'] ?? 0);
+        $action = $input['action'] ?? '';
+        $reason = $input['reason'] ?? '';
+
+        $case = $fcModel->findById($caseId);
+        if (!$case) {
+            echo json_encode(['success' => false, 'error' => 'Case not found']); exit;
+        }
+
+        $statusMap = [
+            'verify'    => 'Information Verified',
+            'review'    => 'Under Review',
+            'incomplete'=> 'Requirements Incomplete',
+            'ready'     => 'Ready for Registration',
+            'submit_lcro' => 'Submitted to LCRO',
+            'registered'=> 'Registered',
+            'correction'=> 'Returned for Correction',
+            'reject'    => 'Rejected',
+            'complete'  => 'Completed'
+        ];
+
+        if (!isset($statusMap[$action])) {
+            echo json_encode(['success' => false, 'error' => 'Invalid action']); exit;
+        }
+
+        $newStatus = $statusMap[$action];
+        $ok = $fcModel->updateStatus($caseId, $newStatus, $reason ?: null);
+
+        if ($ok) {
+            // Update registration info if provided
+            if (!empty($input['registration_reference']) || !empty($input['registration_place'])) {
+                $fcModel->updateRegistration($caseId, [
+                    'registration_reference' => $input['registration_reference'] ?? '',
+                    'registration_place' => $input['registration_place'] ?? '',
+                    'assigned_admin_id' => $_SESSION['user_id'] ?? '',
+                    'assigned_admin_name' => $_SESSION['name'] ?? ''
+                ]);
+            }
+            AuditLogger::log('FUNERAL', 'CASE_' . strtoupper($action),
+                "Case #{$case['case_number']} — Status changed to: {$newStatus}" . ($reason ? " — {$reason}" : ''));
+        }
+
+        echo json_encode(['success' => $ok, 'new_status' => $newStatus]);
+        exit;
+    }
+
+    /** Update funeral case general fields (POST, JSON) */
+    public function updateFuneralCase(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false]); exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $fcModel = new FuneralCase();
+
+        $caseId = (int)($input['case_id'] ?? 0);
+        $ok = $fcModel->updateRegistration($caseId, $input);
+
+        echo json_encode(['success' => $ok]);
+        exit;
+    }
+
+    /** Update PSA request status (POST, JSON) */
+    public function updateFuneralPsa(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false]); exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $fcModel = new FuneralCase();
+
+        $psaId = (int)($input['psa_id'] ?? 0);
+        if (!$psaId) {
+            echo json_encode(['success' => false, 'error' => 'Missing PSA ID']); exit;
+        }
+
+        $ok = $fcModel->updatePsaRequest($psaId, $input);
+
+        if ($ok && isset($input['case_id'])) {
+            $fcModel->addLog((int)$input['case_id'], null, $_SESSION['user_id'] ?? '',
+                'PSA_STATUS_UPDATE', 'PSA',
+                "PSA request updated — Status: " . ($input['request_status'] ?? 'N/A'),
+                $input['request_status'] ?? '');
+
+            // If PSA is received, mark case as completed
+            if (($input['request_status'] ?? '') === 'Received by Requester') {
+                $fcModel->updateStatus((int)$input['case_id'], 'Completed');
+            }
+
+            AuditLogger::log('FUNERAL', 'PSA_UPDATE',
+                "PSA request updated for case — Status: " . ($input['request_status'] ?? 'N/A'));
+        }
+
+        echo json_encode(['success' => $ok]);
+        exit;
+    }
+
+    /** Review a document (approve/reject) (POST, JSON) */
+    public function reviewFuneralDoc(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false]); exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $fcModel = new FuneralCase();
+
+        $docId  = (int)($input['doc_id'] ?? 0);
+        $status = $input['status'] ?? '';
+        $reason = $input['reason'] ?? '';
+
+        $updateData = ['upload_status' => $status];
+        if ($status === 'Verified') {
+            $updateData['verified_by'] = $_SESSION['name'] ?? 'Admin';
+        }
+        if ($status === 'Rejected' || $status === 'Resubmission Required') {
+            $updateData['rejection_reason'] = $reason;
+        }
+        if (isset($input['remarks'])) {
+            $updateData['remarks'] = $input['remarks'];
+        }
+
+        $ok = $fcModel->updateDocument($docId, $updateData);
+
+        if ($ok && isset($input['case_id'])) {
+            $fcModel->addLog((int)$input['case_id'], null, $_SESSION['user_id'] ?? '',
+                'DOC_REVIEW', 'DOCUMENTS',
+                "Document #{$docId} marked as {$status}" . ($reason ? " — {$reason}" : ''),
+                $status);
+        }
+
+        echo json_encode(['success' => $ok]);
+        exit;
+    }
+
+    /** Serve a funeral document file (admin) */
+    public function serveFuneralDoc(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        $path = $_GET['path'] ?? '';
+        if (!$path) { http_response_code(404); exit; }
+
+        $fullPath = BASE_PATH . '/public/' . $path;
+        if (!file_exists($fullPath)) { http_response_code(404); exit; }
+
+        $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: inline; filename="' . basename($fullPath) . '"');
+        readfile($fullPath);
+        exit;
+    }
+
+    /* ====================================================================
+     *  CERTIFICATE TRACKING & RELEASE SCHEDULING (DAMAYAN ADMIN)
+     * ==================================================================== */
+
+    /** Certificate Tracking List View */
+    public function damayanCertificateTracking(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $fcModel = new FuneralCase();
+        $statusFilter = $_GET['status'] ?? '';
+        $search = $_GET['search'] ?? '';
+
+        $certificates = $fcModel->getAllCertificates($statusFilter, $search);
+        $analytics = $fcModel->getCertificateAnalytics();
+        $staffList = $fcModel->getStaffList();
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/certificate_tracking', [
+            'active_page'   => 'certificate_tracking',
+            'dbUser'        => $dbUser,
+            'certificates'  => $certificates,
+            'analytics'     => $analytics,
+            'staffList'     => $staffList,
+            'currentFilter' => $statusFilter,
+            'search'        => $search
+        ]);
+    }
+
+    /** Certificate Details (JSON for tracking panel) */
+    public function damayanCertificateDetail(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $fcModel = new FuneralCase();
+
+        $id = (int)($_GET['id'] ?? 0);
+        $case = $fcModel->findById($id);
+
+        if (!$case) {
+            echo json_encode(['success' => false, 'error' => 'Certificate request not found']);
+            exit;
+        }
+
+        $logs = $fcModel->getLogs($id);
+        $documents = $fcModel->getDocuments($id);
+        $staffList = $fcModel->getStaffList();
+
+        // Also fetch requester user info if tenant_id exists
+        $requester = null;
+        if (!empty($case['tenant_id'])) {
+            require_once BASE_PATH . '/app/models/User.php';
+            $userModel = new User();
+            $requester = $userModel->findById((int)$case['tenant_id']);
+        }
+
+        echo json_encode([
+            'success'   => true,
+            'case'      => $case,
+            'logs'      => $logs,
+            'documents' => $documents,
+            'staffList' => $staffList,
+            'requester' => $requester
+        ]);
+        exit;
+    }
+
+    /** Update certificate stage: Under Review, Processing, Ready for Release, Cancelled */
+    public function updateCertificateStatus(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $caseId = (int)($input['case_id'] ?? 0);
+        $status = trim($input['status'] ?? '');
+        $reason = trim($input['reason'] ?? '');
+
+        if (!$caseId || !$status) {
+            echo json_encode(['success' => false, 'error' => 'Missing required fields']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $fcModel = new FuneralCase();
+
+        $adminId = $_SESSION['user_id'] ?? null;
+        $adminName = $_SESSION['name'] ?? 'Admin Staff';
+
+        $ok = $fcModel->updateCertificateStatus($caseId, $status, $reason ?: null, $adminId, $adminName);
+
+        echo json_encode(['success' => $ok]);
+        exit;
+    }
+
+    /** Schedule Certificate Release */
+    public function scheduleCertificateRelease(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $caseId = (int)($input['case_id'] ?? 0);
+
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $fcModel = new FuneralCase();
+
+        $adminId = $_SESSION['user_id'] ?? null;
+        $adminName = $_SESSION['name'] ?? 'Admin Staff';
+
+        $result = $fcModel->scheduleRelease($caseId, $input, $adminId, $adminName);
+        echo json_encode($result);
+        exit;
+    }
+
+    /** Reschedule Certificate Release */
+    public function rescheduleCertificateRelease(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $caseId = (int)($input['case_id'] ?? 0);
+
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $fcModel = new FuneralCase();
+
+        $adminId = $_SESSION['user_id'] ?? null;
+        $adminName = $_SESSION['name'] ?? 'Admin Staff';
+
+        $result = $fcModel->rescheduleRelease($caseId, $input, $adminId, $adminName);
+        echo json_encode($result);
+        exit;
+    }
+
+    /** Mark Certificate as Released */
+    public function markCertificateReleased(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $caseId = (int)($input['case_id'] ?? 0);
+
+        require_once BASE_PATH . '/app/models/FuneralCase.php';
+        $fcModel = new FuneralCase();
+
+        $adminId = $_SESSION['user_id'] ?? null;
+        $adminName = $_SESSION['name'] ?? 'Admin Staff';
+
+        $result = $fcModel->markAsReleased($caseId, $input, $adminId, $adminName);
+        echo json_encode($result);
+        exit;
     }
 
     public function renewalRecords(): void {

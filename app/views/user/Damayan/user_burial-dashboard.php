@@ -16,6 +16,11 @@ require_once BASE_PATH . '/app/models/BurialRequest.php';
 $burialModel = new BurialRequest();
 $allRequests = $burialModel->getByTenantId($_SESSION['user_id']);
 
+require_once BASE_PATH . '/app/models/FuneralCase.php';
+$fcModel = new FuneralCase();
+$userCases = $fcModel->getByTenantId($_SESSION['user_id'] ?? '');
+$activeCase = !empty($userCases) ? $userCases[0] : null;
+
 // Use the most recent request as the "active" one for the dashboard summary
 $activeBurial = !empty($allRequests) ? $allRequests[0] : [
     'ref_id' => 'NONE',
@@ -155,6 +160,35 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
   <p>May Allah grant you strength. Here is the status of your burial service request.</p>
 </div>
 
+<?php if ($activeCase): ?>
+<div style="background: white; border: 1.5px solid var(--border); border-left: 5px solid var(--primary); border-radius: 16px; padding: 20px 24px; margin-bottom: 28px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+  <div style="display: flex; align-items: center; gap: 16px;">
+    <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" style="width:26px; height:26px; fill:currentColor;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    </div>
+    <div>
+      <div style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Death Certificate Tracking System</div>
+      <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-top: 2px;">
+        Request ID: <strong style="font-family:monospace;"><?= htmlspecialchars($activeCase['case_number']) ?></strong> — <span style="color:var(--primary); font-weight:800;"><?= htmlspecialchars($activeCase['certificate_status'] ?? 'Requested') ?></span>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
+        <?php if (!empty($activeCase['scheduled_release_date'])): ?>
+          Scheduled for release on <strong><?= date('F j, Y', strtotime($activeCase['scheduled_release_date'])) ?></strong> at <?= date('g:i A', strtotime($activeCase['scheduled_release_time'])) ?> at <?= htmlspecialchars($activeCase['release_location'] ?: 'Masjid Office') ?>
+        <?php else: ?>
+          Deceased: <?= htmlspecialchars(trim(($activeCase['deceased_first_name'] ?? '') . ' ' . ($activeCase['deceased_last_name'] ?? ''))) ?> (Submitted on <?= !empty($activeCase['submitted_at']) ? date('M d, Y', strtotime($activeCase['submitted_at'])) : '—' ?>)
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+  <div>
+    <a href="<?= url('/user/services/funeral/tracking?case=' . urlencode($activeCase['case_number']) . '&tab=tracking') ?>" class="btn-action btn-primary-act" style="text-decoration:none; padding:10px 22px; font-size:0.85rem;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+      Track Certificate &amp; Timeline →
+    </a>
+  </div>
+</div>
+<?php endif; ?>
+
 <div class="grid-container">
 
   <!-- Summary Cards -->
@@ -176,7 +210,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       <div class="summary-info">
         <h4>Deceased</h4>
         <div class="val"><?= htmlspecialchars($activeBurial['deceased_name']) ?></div>
-        <p>Death: <?= date('M d, Y', strtotime($activeBurial['date_of_death'])) ?></p>
+        <p>Death: <?= !empty($activeBurial['date_of_death']) ? date('M d, Y', strtotime($activeBurial['date_of_death'])) : 'N/A' ?></p>
       </div>
     </div>
     <div class="summary-card">
@@ -205,7 +239,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       <div class="step completed">
         <div class="step-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
         <div class="step-label">Submitted</div>
-        <div class="step-date"><?= date('M d', strtotime($activeBurial['submitted_at'])) ?></div>
+        <div class="step-date"><?= !empty($activeBurial['submitted_at']) ? date('M d', strtotime($activeBurial['submitted_at'])) : '—' ?></div>
       </div>
       <div class="step <?= $hasPending ? 'active' : 'completed' ?>">
         <div class="step-icon">
@@ -295,7 +329,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       </div>
       <div class="info-group">
         <span class="info-label">Date of Death</span>
-        <span class="info-value"><?= date('F d, Y', strtotime($activeBurial['date_of_death'])) ?></span>
+        <span class="info-value"><?= !empty($activeBurial['date_of_death']) ? date('F d, Y', strtotime($activeBurial['date_of_death'])) : 'N/A' ?></span>
       </div>
       <div class="info-group">
         <span class="info-label">Place of Death</span>
@@ -311,7 +345,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       </div>
       <div class="info-group">
         <span class="info-label">Date Submitted</span>
-        <span class="info-value"><?= date('F d, Y \a\t h:i A', strtotime($activeBurial['submitted_at'])) ?></span>
+        <span class="info-value"><?= !empty($activeBurial['submitted_at']) ? date('F d, Y \a\t h:i A', strtotime($activeBurial['submitted_at'])) : 'N/A' ?></span>
       </div>
     </div>
   </div>

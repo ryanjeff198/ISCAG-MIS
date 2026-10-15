@@ -62,7 +62,7 @@
       include BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Damayan_Department/sidebar.php'; 
     ?>
     <div class="main-content">
-      <div class="top-bar">
+      <div class="top-bar" style="display:flex; align-items:center; justify-content:space-between;">
         <div style="display: flex; align-items: center; gap: 16px;">
           <div style="width: 48px; height: 48px; background: var(--damayan-light); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--damayan-accent);">
             <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:currentColor;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
@@ -71,6 +71,11 @@
             <div class="top-bar-title">Charity & Donation Management</div>
             <div class="top-bar-subtitle">Managing social welfare programs, community donations, and aid distribution</div>
           </div>
+        </div>
+        <div class="top-bar-actions">
+          <a href="<?= url('/admin/damayan') ?>" class="btn-topbar" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:700;color:var(--damayan-accent);">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Dashboard
+          </a>
         </div>
       </div>
       <div class="page-body">

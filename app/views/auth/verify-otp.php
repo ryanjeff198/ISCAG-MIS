@@ -266,22 +266,26 @@ body {
 
       <form id="otpForm" action="<?= url('/verify-otp') ?>" method="POST">
         <input type="hidden" name="csrf_token" value="<?= Security::csrfToken() ?>">
+        <input type="hidden" name="otp_full" id="otpFull" value="">
+        <?php if (isset($success)): ?>
+          <div class="alert alert-success" style="font-size: 13px; margin-bottom: 15px; color: #155724; background-color: #d4edda; border-color: #c3e6cb; padding: 10px; border-radius: 6px; text-align: center;"><?= $success ?></div>
+        <?php endif; ?>
         <?php if (isset($error)): ?>
-          <div class="alert alert-danger" style="font-size: 13px; margin-bottom: 15px;"><?= $error ?></div>
+          <div class="alert alert-danger" style="font-size: 13px; margin-bottom: 15px; color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; padding: 10px; border-radius: 6px; text-align: center;"><?= $error ?></div>
         <?php endif; ?>
         <div class="otp-inputs">
-          <input type="text" name="otp[]" class="otp-box" maxlength="1" data-index="0" required autofocus>
-          <input type="text" name="otp[]" class="otp-box" maxlength="1" data-index="1" required>
-          <input type="text" name="otp[]" class="otp-box" maxlength="1" data-index="2" required>
-          <input type="text" name="otp[]" class="otp-box" maxlength="1" data-index="3" required>
-          <input type="text" name="otp[]" class="otp-box" maxlength="1" data-index="4" required>
-          <input type="text" name="otp[]" class="otp-box" maxlength="1" data-index="5" required>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" name="otp[]" class="otp-box" maxlength="1" data-index="0" required autofocus>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" name="otp[]" class="otp-box" maxlength="1" data-index="1" required>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" name="otp[]" class="otp-box" maxlength="1" data-index="2" required>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" name="otp[]" class="otp-box" maxlength="1" data-index="3" required>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" name="otp[]" class="otp-box" maxlength="1" data-index="4" required>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" name="otp[]" class="otp-box" maxlength="1" data-index="5" required>
         </div>
 
         <div class="otp-error" id="otpError"></div>
 
         <div class="otp-timer-row">
-          <span class="otp-timer" id="timer">Time remaining: <strong id="timeLeft">05:00</strong></span>
+          <span class="otp-timer" id="timer">Time remaining: <strong id="timeLeft">10:00</strong></span>
           <button type="button" class="otp-resend" id="resendBtn" disabled>Resend OTP</button>
         </div>
 
@@ -335,42 +339,126 @@ body {
     const otpError   = document.getElementById('otpError');
     const timeLeftEl = document.getElementById('timeLeft');
     const timerEl    = document.getElementById('timer');
+    const otpFullInput = document.getElementById('otpFull');
     let timerInterval;
 
     startTimer();
 
+    // Auto-focus first input
+    if (otpBoxes.length > 0) {
+      otpBoxes[0].focus();
+    }
+
+    function syncFullOtp() {
+      let full = '';
+      otpBoxes.forEach(b => full += (b.value || '').trim());
+      if (otpFullInput) otpFullInput.value = full;
+      return full;
+    }
+
     otpBoxes.forEach((box, i) => {
+      // Handle typing and mobile autofill
       box.addEventListener('input', function (e) {
-        if (!/^\d$/.test(e.target.value) && e.target.value !== '') {
-          e.target.value = '';
-          return;
-        }
-        if (e.target.value && i < otpBoxes.length - 1) {
-          otpBoxes[i + 1].focus();
-        }
         clearErrors();
+        const val = this.value;
+        const cleanDigits = val.replace(/\D/g, '');
+
+        if (cleanDigits.length > 1) {
+          // Multi-digit (e.g. mobile autofill or fast typing)
+          cleanDigits.split('').slice(0, 6).forEach((d, idx) => {
+            if (otpBoxes[idx]) otpBoxes[idx].value = d;
+          });
+          const targetIndex = Math.min(cleanDigits.length, 5);
+          otpBoxes[targetIndex].focus();
+          const fullCode = syncFullOtp();
+          if (fullCode.length === 6) {
+            setTimeout(() => {
+              if (form.requestSubmit) form.requestSubmit();
+              else form.submit();
+            }, 200);
+          }
+        } else if (cleanDigits.length === 1) {
+          this.value = cleanDigits;
+          if (i < otpBoxes.length - 1) {
+            otpBoxes[i + 1].focus();
+          } else if (i === otpBoxes.length - 1) {
+            const fullCode = syncFullOtp();
+            if (fullCode.length === 6) {
+              setTimeout(() => {
+                if (form.requestSubmit) form.requestSubmit();
+                else form.submit();
+              }, 200);
+            }
+          }
+        } else {
+          this.value = '';
+        }
+        syncFullOtp();
       });
 
+      // Handle Backspace and arrow navigation
       box.addEventListener('keydown', function (e) {
-        if (e.key === 'Backspace' && !e.target.value && i > 0) {
+        if (e.key === 'Backspace') {
+          if (!this.value && i > 0) {
+            e.preventDefault();
+            otpBoxes[i - 1].value = '';
+            otpBoxes[i - 1].focus();
+          } else {
+            this.value = '';
+          }
+          syncFullOtp();
+        } else if (e.key === 'ArrowLeft' && i > 0) {
+          e.preventDefault();
           otpBoxes[i - 1].focus();
+        } else if (e.key === 'ArrowRight' && i < otpBoxes.length - 1) {
+          e.preventDefault();
+          otpBoxes[i + 1].focus();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (form.requestSubmit) form.requestSubmit();
+          else form.submit();
         }
       });
 
+      // Handle Paste
       box.addEventListener('paste', function (e) {
         e.preventDefault();
-        const data = e.clipboardData.getData('text').replace(/\D/g, '');
-        if (data.length === 6) {
-          otpBoxes.forEach((b, j) => b.value = data[j] || '');
-          otpBoxes[5].focus();
+        const pastedData = (e.clipboardData || window.clipboardData).getData('text');
+        const digits = pastedData.replace(/\D/g, '').slice(0, 6);
+        if (digits.length > 0) {
+          digits.split('').forEach((d, idx) => {
+            if (otpBoxes[idx]) otpBoxes[idx].value = d;
+          });
+          const targetIdx = Math.min(digits.length, 5);
+          otpBoxes[targetIdx].focus();
           clearErrors();
+          syncFullOtp();
+          if (digits.length === 6) {
+            setTimeout(() => {
+              if (form.requestSubmit) form.requestSubmit();
+              else form.submit();
+            }, 200);
+          }
         }
+      });
+
+      // Select text on focus for easy overwriting
+      box.addEventListener('focus', function () {
+        this.select();
       });
     });
 
     form.addEventListener('submit', function (e) {
-      // Show loading state and let PHP handle verification
-      verifyBtn.disabled = true;
+      const code = syncFullOtp();
+      if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+        e.preventDefault();
+        showError('Please enter all 6 digits of the verification code.');
+        otpBoxes.forEach(b => {
+          if (!b.value.trim()) b.classList.add('error');
+        });
+        return false;
+      }
+      verifyBtn.style.pointerEvents = 'none';
       btnText.textContent = 'Verifying...';
       btnSpinner.style.display = 'inline-block';
     });
@@ -379,21 +467,29 @@ body {
       const expiry = parseInt(expiryTime);
       if (isNaN(expiry) || expiry === 0) return;
 
-      timerInterval = setInterval(() => {
+      // Allow resend button after 30 seconds cooldown
+      setTimeout(() => {
+        if (resendBtn) {
+          resendBtn.disabled = false;
+        }
+      }, 30000);
+
+      function update() {
         const left = expiry - Date.now();
         if (left <= 0) {
-          clearInterval(timerInterval);
+          if (timerInterval) clearInterval(timerInterval);
           timerEl.classList.add('expired');
-          timeLeftEl.textContent = 'Expired';
-          resendBtn.disabled = false;
-          verifyBtn.disabled = true;
-          showError('OTP has expired. Please request a new one.');
+          timeLeftEl.textContent = '00:00';
+          if (resendBtn) resendBtn.disabled = false;
           return;
         }
         const m = Math.floor(left / 60000);
         const s = Math.floor((left % 60000) / 1000);
         timeLeftEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-      }, 1000);
+      }
+
+      update(); // Update immediately on page load
+      timerInterval = setInterval(update, 1000);
     }
 
     function showError(msg) {
@@ -407,7 +503,6 @@ body {
     }
 
     resendBtn.addEventListener('click', function() {
-      // Redirect to resend route
       window.location.href = '<?= url('/resend-otp') ?>';
     });
   });

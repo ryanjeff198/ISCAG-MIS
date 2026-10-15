@@ -1007,6 +1007,26 @@ INSERT INTO `notifications` (`notification_id`, `tenant_id`, `title`, `message`,
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `move_out_requests`
+--
+
+CREATE TABLE `move_out_requests` (
+  `request_id` int(11) NOT NULL,
+  `tenant_id` int(11) NOT NULL,
+  `unit_id` int(11) NOT NULL,
+  `move_out_date` date DEFAULT NULL,
+  `inspection_notes` text DEFAULT NULL,
+  `damage_costs` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `utility_deductions` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `final_refund` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `payments`
 --
 
@@ -1075,7 +1095,8 @@ CREATE TABLE `tenant_accounts` (
   `is_verified` tinyint(1) DEFAULT 0,
   `profile_picture` longblob DEFAULT NULL,
   `profile_picture_mime` varchar(50) DEFAULT NULL,
-  `profile_picture_path` varchar(255) DEFAULT NULL
+  `profile_picture_path` varchar(255) DEFAULT NULL,
+  `time_offset` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -1544,6 +1565,15 @@ ALTER TABLE `notifications`
   ADD KEY `fk_notifications_tenant` (`tenant_id`);
 
 --
+-- Indexes for table `move_out_requests`
+--
+ALTER TABLE `move_out_requests`
+  ADD PRIMARY KEY (`request_id`),
+  ADD KEY `idx_moveout_tenant` (`tenant_id`),
+  ADD KEY `idx_moveout_unit` (`unit_id`),
+  ADD KEY `idx_moveout_status` (`status`);
+
+--
 -- Indexes for table `payments`
 --
 ALTER TABLE `payments`
@@ -1855,6 +1885,12 @@ ALTER TABLE `marriage_witness`
 --
 ALTER TABLE `notifications`
   MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+
+--
+-- AUTO_INCREMENT for table `move_out_requests`
+--
+ALTER TABLE `move_out_requests`
+  MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `payments`
