@@ -1,6 +1,6 @@
 <!-- ══════════════════════════════════════════════════════════════════
-     DAMAYAN BURIAL CASE MANAGEMENT MODAL
-     Complete Islamic Funeral Coordination & Case Lifecycle Management
+     DAMAYAN CASE MANAGEMENT MODAL
+     Death Certificate Processing & Cemetery Plot Management
 ══════════════════════════════════════════════════════════════════ -->
 <div id="damayanCaseModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.55); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:20px;">
   <div class="mis-modal-content" style="background:#fff; border-radius:18px; width:100%; max-width:880px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.25); overflow:hidden; animation:modalSlideUp 0.3s ease;">
@@ -15,7 +15,9 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <h5 id="modal-ref-id" style="margin:0; font-size:1.15rem; font-weight:800; color:var(--damayan-dark);">Case #BR-0000</h5>
             <span id="modal-status-badge" class="badge-status badge-pending">New Request</span>
-            <span id="modal-sex-badge" class="badge-status badge-info" style="font-size:0.7rem;">Male</span>
+            <span id="modal-reqtype-badge" class="badge-status badge-info" style="font-size:0.7rem;">Both Services</span>
+            <span id="modal-actiontype-badge" class="badge-status" style="font-size:0.7rem; background:#dbeafe; color:#1e40af;">New Registration</span>
+            <span id="modal-sex-badge" class="badge-status" style="font-size:0.7rem; background:#e0e7ff; color:#3730a3;">Male</span>
           </div>
           <div id="modal-deceased-title" style="font-size:0.85rem; color:var(--text-muted); margin-top:2px; font-weight:600;">
             Deceased: <span id="modal-deceased-name" style="color:var(--text-main); font-weight:700;">Loading...</span>
@@ -27,15 +29,11 @@
 
     <!-- Modal Sub-Navigation Tabs -->
     <div style="display:flex; gap:4px; padding:8px 20px 0; background:#f4f7f5; border-bottom:1px solid var(--border); overflow-x:auto;" id="modalTabsBar">
-      <button type="button" class="case-tab-btn active" onclick="switchCaseTab('overview')">1. Overview</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('deceased')">2. Deceased</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('ghusl')">3. Ghusl</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('kafan')">4. Kafan</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('janazah')">5. Janazah</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('transport')">6. Transport</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('cemetery')">7. Cemetery</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('complete')">8. Finalize</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('logs')">9. Activity Logs</button>
+      <button type="button" class="case-tab-btn active" onclick="switchCaseTab('overview')">1. Overview & Verification</button>
+      <button type="button" class="case-tab-btn" onclick="switchCaseTab('deceased')">2. Deceased Record</button>
+      <button type="button" class="case-tab-btn" onclick="switchCaseTab('death_cert')">3. Death Certificate Processing</button>
+      <button type="button" class="case-tab-btn" onclick="switchCaseTab('cemetery_plot')">4. Cemetery Plot Management</button>
+      <button type="button" class="case-tab-btn" onclick="switchCaseTab('logs')">5. Activity Logs</button>
     </div>
 
     <!-- Modal Body (Scrollable) -->
@@ -50,7 +48,7 @@
       <div id="modal-content-container" style="display:none;">
 
         <!-- ─────────────────────────────────────────────────────────────
-             TAB 1: OVERVIEW & REVIEW ACTIONS
+             TAB 1: OVERVIEW & VERIFICATION
         ───────────────────────────────────────────────────────────── -->
         <div id="tab-overview" class="case-tab-pane">
           
@@ -59,10 +57,10 @@
             <div style="display:flex; align-items:flex-start; gap:10px;">
               <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:#d97706; flex-shrink:0; margin-top:2px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
               <div>
-                <strong style="color:#92400e; font-size:0.85rem;">Additional Information Status:</strong>
+                <strong style="color:#92400e; font-size:0.85rem;">Additional Information Required:</strong>
                 <div id="info-request-notes-text" style="font-size:0.82rem; color:#78350f; margin-top:3px;"></div>
                 <div id="info-response-container" style="margin-top:6px; padding-top:6px; border-top:1px dashed #fcd34d; font-size:0.82rem;">
-                  <span style="font-weight:700; color:#047857;">User Response:</span>
+                  <span style="font-weight:700; color:#047857;">User Submitted Response:</span>
                   <span id="info-submitted-text" style="color:#065f46;"></span>
                   <div id="info-submitted-doc" style="margin-top:4px;"></div>
                 </div>
@@ -73,6 +71,48 @@
           <!-- Rejection Banner if Rejected -->
           <div id="rejection-alert" style="display:none; padding:12px 16px; border-radius:10px; margin-bottom:18px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; font-size:0.85rem;">
             <strong>Rejection Reason:</strong> <span id="rejection-reason-text"></span>
+          </div>
+
+          <!-- Copy Request Verification & Record Link Panel -->
+          <div id="copy-request-panel" style="display:none; background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:18px; margin-bottom:20px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="background:#2563eb; color:#fff; font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:6px; text-transform:uppercase;">Copy Request</span>
+                <strong style="color:#1e40af; font-size:0.95rem;">Request for Another Death Certificate Copy</strong>
+              </div>
+              <span id="v-copy-verified-badge" class="badge-status badge-info" style="font-size:0.75rem;">Awaiting Record Verification</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; font-size:0.84rem; background:#fff; padding:14px; border-radius:10px; border:1px solid #dbeafe; margin-bottom:14px;">
+              <div>
+                <span style="color:var(--text-muted); font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Existing Cert / Reg #</span>
+                <strong id="v-copy-existing-cert" style="color:var(--damayan-dark);">—</strong>
+              </div>
+              <div>
+                <span style="color:var(--text-muted); font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Copies Requested</span>
+                <strong id="v-copy-num-copies">1 copy</strong>
+              </div>
+              <div>
+                <span style="color:var(--text-muted); font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Reason for Request</span>
+                <span id="v-copy-reason" style="color:#1f2937; font-weight:600;">—</span>
+              </div>
+            </div>
+
+            <!-- Verification Status & Actions -->
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; background:#f8fafc; padding:12px 14px; border-radius:8px; border:1px solid #e2e8f0;">
+              <div>
+                <span style="font-size:0.75rem; font-weight:700; color:#475569; text-transform:uppercase; display:block;">Registered Deceased Record Link</span>
+                <div id="v-copy-record-link-desc" style="font-size:0.86rem; font-weight:700; color:#0f172a; margin-top:2px;">Checking database linkage...</div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button type="button" id="btn-search-link-record" class="btn-topbar primary" style="padding:6px 14px; font-size:0.8rem; background:#2563eb; border-color:#2563eb;" onclick="showSearchDeceasedModal()">
+                  Search &amp; Link Existing Record
+                </button>
+                <button type="button" class="btn-topbar" style="padding:6px 14px; font-size:0.8rem; color:#b45309; border-color:#fde68a; background:#fffbeb;" onclick="showRequestInfoModal()">
+                  Request More Info
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Section: Applicant & Deceased Information Summary -->
@@ -95,20 +135,26 @@
             <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px;">
               <div class="panel-section-title" style="font-size:0.75rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
                 <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--damayan-accent);"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-                Deceased Details & Timing
+                Deceased Summary & Services
               </div>
               <div style="display:flex; flex-direction:column; gap:8px; font-size:0.84rem;">
                 <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Deceased Full Name</span><strong id="v-deceased-fullname">—</strong></div>
                 <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Gender & Nationality</span><span id="v-deceased-gender">—</span> · <span id="v-nationality">Filipino</span></div>
                 <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Date & Place of Death</span><span id="v-death-date">—</span> · <span id="v-death-place">—</span></div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Services Requested</span><span id="v-requested-services" style="font-weight:600; color:var(--damayan-accent);">Complete Islamic Funeral Rites</span></div>
+                <div>
+                  <span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Requested Services</span>
+                  <div style="margin-top:4px; display:flex; gap:6px; flex-wrap:wrap;">
+                    <span id="v-dc-badge" class="badge-status badge-pending" style="font-size:0.75rem;">Death Certificate</span>
+                    <span id="v-plot-badge" class="badge-status badge-pending" style="font-size:0.75rem;">Cemetery Plot</span>
+                  </div>
+                </div>
                 <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Cemetery Preference</span><span id="v-cemetery-pref">—</span></div>
               </div>
             </div>
 
           </div>
 
-          <!-- Section: Supporting Document & Additional Notes -->
+          <!-- Section: Supporting Document & Notes -->
           <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:20px;">
             <div class="panel-section-title" style="font-size:0.75rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
               Verification & Supporting Documents
@@ -131,13 +177,12 @@
           <div class="panel-section" style="background:var(--damayan-light); border:1px solid #c7e6d4; border-radius:12px; padding:16px; margin-bottom:20px;">
             <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
               <div>
-                <div style="font-size:0.75rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; letter-spacing:0.04em;">Assigned Staff Coordinator</div>
+                <div style="font-size:0.75rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; letter-spacing:0.04em;">Assigned Damayan Staff Coordinator</div>
                 <div id="v-coordinator-name" style="font-size:0.95rem; font-weight:700; color:var(--damayan-accent); margin-top:2px;">Not Assigned</div>
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <select id="assign-staff-select" style="padding:7px 12px; font-size:0.82rem; border-radius:8px; border:1px solid var(--border); outline:none; background:#fff;">
                   <option value="">-- Select Staff --</option>
-                  <!-- Populated dynamically -->
                 </select>
                 <button type="button" class="btn-topbar primary" style="padding:7px 14px; font-size:0.82rem;" onclick="submitAssignStaff()">Reassign</button>
               </div>
@@ -146,77 +191,37 @@
 
           <!-- Section: Staff Review Actions -->
           <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:10px;">
-            <div style="font-size:0.85rem; font-weight:800; color:var(--damayan-dark); margin-bottom:12px;">Review Actions & Status Control</div>
+            <div style="font-size:0.85rem; font-weight:800; color:var(--damayan-dark); margin-bottom:12px;">Case Review Actions & Workflow Control</div>
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-              <button type="button" class="btn-topbar primary" style="padding:8px 16px; font-size:0.82rem; background:var(--damayan-accent); color:#fff;" onclick="quickAcceptRequest()">
-                Accept for Coordination
+              <button type="button" id="btn-action-accept" class="btn-topbar primary" style="padding:9px 18px; font-size:0.84rem;" onclick="triggerAcceptRequest()">
+                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                Accept Case for Processing
               </button>
-              <button type="button" class="btn-topbar" style="padding:8px 16px; font-size:0.82rem; background:#fffbeb; color:#b45309; border-color:#fde68a;" onclick="toggleReqInfoBox()">
-                Request Additional Info
+              <button type="button" class="btn-topbar" style="padding:9px 18px; font-size:0.84rem; color:#b45309; border-color:#fde68a; background:#fffbeb;" onclick="showRequestInfoModal()">
+                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                Request Additional Information
               </button>
-              <button type="button" class="btn-topbar" style="padding:8px 16px; font-size:0.82rem; background:#fef2f2; color:#b91c1c; border-color:#fecaca;" onclick="toggleRejectBox()">
+              <button type="button" class="btn-topbar" style="padding:9px 18px; font-size:0.84rem; color:#dc2626; border-color:#fecaca; background:#fef2f2;" onclick="showRejectModal()">
+                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                 Reject Request
               </button>
-              
-              <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-                <span style="font-size:0.78rem; font-weight:600; color:var(--text-muted);">Workflow Status:</span>
-                <select id="quick-workflow-status" style="padding:7px 10px; font-size:0.8rem; border-radius:8px; border:1px solid var(--border); background:#fff;">
-                  <option value="New Request">New Request</option>
-                  <option value="Under Review">Under Review</option>
-                  <option value="Additional Information Required">Additional Information Required</option>
-                  <option value="Accepted for Coordination">Accepted for Coordination</option>
-                  <option value="Pending Volunteer Assignment">Pending Volunteer Assignment</option>
-                  <option value="Volunteers Confirmed">Volunteers Confirmed</option>
-                  <option value="Ghusl Scheduled">Ghusl Scheduled</option>
-                  <option value="Ghusl Completed">Ghusl Completed</option>
-                  <option value="Kafan Prepared">Kafan Prepared</option>
-                  <option value="Janazah Scheduled">Janazah Scheduled</option>
-                  <option value="Janazah Completed">Janazah Completed</option>
-                  <option value="Transportation Arranged">Transportation Arranged</option>
-                  <option value="Burial Scheduled">Burial Scheduled</option>
-                  <option value="Burial Completed">Burial Completed</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-                <button type="button" class="btn-topbar" style="padding:7px 12px; font-size:0.8rem;" onclick="submitDirectStatusUpdate()">Set</button>
-              </div>
             </div>
-
-            <!-- Sub-Box: Request Additional Info Form -->
-            <div id="req-info-box" style="display:none; margin-top:16px; padding:16px; background:#fffbeb; border:1px solid #fcd34d; border-radius:10px;">
-              <label style="display:block; font-size:0.82rem; font-weight:700; color:#92400e; margin-bottom:6px;">Specify Required Information / Documents from Applicant:</label>
-              <textarea id="req-info-explanation" rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #fde68a; font-family:inherit; font-size:0.85rem; outline:none;" placeholder="Example: Please provide a clear copy of the Death Certificate or Certificate of Identification from the hospital..."></textarea>
-              <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
-                <button type="button" class="btn-topbar" style="padding:6px 14px; font-size:0.8rem;" onclick="toggleReqInfoBox()">Cancel</button>
-                <button type="button" class="btn-topbar primary" style="padding:6px 16px; font-size:0.8rem; background:#b45309; border-color:#b45309;" onclick="submitRequestInfo()">Send Request to Family</button>
-              </div>
-            </div>
-
-            <!-- Sub-Box: Reject Form -->
-            <div id="reject-box" style="display:none; margin-top:16px; padding:16px; background:#fef2f2; border:1px solid #fecaca; border-radius:10px;">
-              <label style="display:block; font-size:0.82rem; font-weight:700; color:#991b1b; margin-bottom:6px;">Recorded Reason for Rejection (Required):</label>
-              <textarea id="reject-reason" rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid #fecaca; font-family:inherit; font-size:0.85rem; outline:none;" placeholder="State the clear, justified reason for declining this request..."></textarea>
-              <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
-                <button type="button" class="btn-topbar" style="padding:6px 14px; font-size:0.8rem;" onclick="toggleRejectBox()">Cancel</button>
-                <button type="button" class="btn-topbar" style="padding:6px 16px; font-size:0.8rem; background:#dc2626; color:#fff; border-color:#dc2626;" onclick="submitRejectRequest()">Confirm Rejection</button>
-              </div>
-            </div>
-
           </div>
 
         </div>
 
         <!-- ─────────────────────────────────────────────────────────────
-             TAB 2: DECEASED RECORD (Manage & Synchronize)
+             TAB 2: DECEASED RECORD (Linked Deceased Case)
         ───────────────────────────────────────────────────────────── -->
         <div id="tab-deceased" class="case-tab-pane" style="display:none;">
           <div style="margin-bottom:16px;">
-            <h6 style="color:var(--damayan-dark); margin:0 0 4px; font-size:0.95rem;">Official Deceased Person Record</h6>
+            <h6 style="color:var(--damayan-dark); margin:0 0 4px; font-size:0.95rem;">Deceased Person Record</h6>
             <div style="font-size:0.78rem; color:var(--text-muted);">
-              Data is automatically populated from the user's initial application and synchronized across all Islamic funeral service modules.
+              View and verify information about the deceased. Updates here keep both Death Certificate and Cemetery Plot records synchronized.
             </div>
           </div>
 
-          <form id="deceased-form" onsubmit="event.preventDefault(); submitDeceasedForm();">
+          <form id="deceased-record-form" onsubmit="event.preventDefault(); submitDeceasedForm();">
             <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
               <div class="form-group">
                 <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">First Name *</label>
@@ -234,10 +239,10 @@
 
             <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
               <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Gender *</label>
-                <select id="df-sex" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;" onchange="onDeceasedGenderChange(this.value)">
-                  <option value="Male">Male (Brother)</option>
-                  <option value="Female">Female (Sister)</option>
+                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Gender / Sex *</label>
+                <select id="df-sex" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
                 </select>
               </div>
               <div class="form-group">
@@ -245,39 +250,39 @@
                 <input type="date" id="df-dob" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
               </div>
               <div class="form-group">
+                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Date of Death *</label>
+                <input type="date" id="df-dod" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+              <div class="form-group">
+                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Place of Death *</label>
+                <input type="text" id="df-pod" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
+              </div>
+              <div class="form-group">
+                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Last Residence</label>
+                <input type="text" id="df-residence" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:20px;">
+              <div class="form-group">
                 <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Civil Status</label>
-                <select id="df-civil" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;">
+                <select id="df-civil-status" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;">
                   <option value="Single">Single</option>
                   <option value="Married">Married</option>
                   <option value="Widowed">Widowed</option>
                   <option value="Divorced">Divorced</option>
                 </select>
               </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Date of Death *</label>
-                <input type="date" id="df-dod" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Time of Death</label>
-                <input type="time" id="df-tod" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
               <div class="form-group">
                 <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Nationality</label>
-                <input type="text" id="df-nationality" value="Filipino" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Place of Death</label>
-                <input type="text" id="df-pod" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Hospital / City / Residence" />
+                <input type="text" id="df-nationality" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
               </div>
               <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Residential Address</label>
-                <input type="text" id="df-residence" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Complete street address" />
+                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Religion</label>
+                <input type="text" id="df-religion" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
               </div>
             </div>
 
@@ -288,424 +293,258 @@
         </div>
 
         <!-- ─────────────────────────────────────────────────────────────
-             TAB 3: GHUSL COORDINATION (Ritual Washing)
+             TAB 3: DEATH CERTIFICATE PROCESSING
         ───────────────────────────────────────────────────────────── -->
-        <div id="tab-ghusl" class="case-tab-pane" style="display:none;">
-          
-          <!-- Sunnah Gender Compliance Notice -->
-          <div id="ghusl-sunnah-banner" style="padding:12px 16px; border-radius:10px; margin-bottom:18px; background:var(--damayan-light); border:1px solid #c7e6d4; display:flex; align-items:center; gap:10px;">
-            <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:var(--damayan-accent); flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-            <div style="font-size:0.84rem; color:var(--damayan-dark);">
-              <strong>Islamic Sunnah Requirement:</strong> The deceased is <span id="ghusl-gender-label" style="font-weight:700;">Male</span>. Ritual washing must be performed strictly by assigned <strong><span id="ghusl-volunteer-type">Male</span></strong> volunteers.
+        <div id="tab-death_cert" class="case-tab-pane" style="display:none;">
+          <div style="margin-bottom:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <h6 style="color:var(--damayan-dark); margin:0; font-size:0.95rem;">Death Certificate Tracking &amp; Coordination</h6>
+              <span id="dc-current-stage-badge" class="badge-status badge-pending">Request Received</span>
+            </div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">
+              Track the official preparation, hospital coordination, transmittal to Local Civil Registrar (LCRO), and civil registration progress.
             </div>
           </div>
 
-          <form id="ghusl-form" onsubmit="event.preventDefault(); submitGhuslForm();">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div id="dc-not-requested-alert" style="display:none; padding:14px 16px; background:#f3f4f6; border-radius:10px; margin-bottom:18px; color:#4b5563; font-size:0.85rem;">
+            Notice: Death certificate was not initially flagged for this request (Applicant selected Cemetery Plot only). You may still initiate processing if requested by the family below.
+          </div>
+
+          <!-- Specialized Copy Issuance & Tracking Section -->
+          <div id="copy-issuance-section" style="display:none; background:#fafbfc; border:1px solid #93c5fd; border-radius:12px; padding:18px; margin-bottom:18px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+              <h6 style="color:#1e40af; margin:0; font-size:0.95rem; font-weight:800;">Issue Additional Death Certificate Copy</h6>
+              <span id="copy-issuance-status-badge" class="badge-status badge-pending">Pending Issuance</span>
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">
+              Staff must verify the existing registered record before issuing. Official copies are marked received only when confirmed by the requester.
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
               <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Ghusl Status</label>
-                <select id="gf-status" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;">
-                  <option value="Pending">Pending</option>
-                  <option value="Scheduled">Scheduled</option>
-                  <option value="Volunteers Confirmed">Volunteers Confirmed</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
+                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Copy Tracking / Reference Number *</label>
+                <input type="text" id="copy-issue-ref" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. CPY-2026-0084 or PSA-CC-5521" />
+              </div>
+              <div class="form-group">
+                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Staff Issuance Remarks</label>
+                <input type="text" id="copy-issue-remarks" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. 1 official copy prepared for family reference..." />
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px dashed #cbd5e1; flex-wrap:wrap; gap:10px;">
+              <div id="copy-receipt-status-info" style="font-size:0.82rem; color:#475569;">
+                <strong>Receipt Status:</strong> <span id="copy-receipt-status-text">Not issued</span>
+              </div>
+              <button type="button" class="btn-topbar primary" style="background:#2563eb; border-color:#2563eb; padding:8px 18px; font-size:0.84rem;" onclick="submitIssueCopy()">
+                Confirm &amp; Issue Certificate Copy
+              </button>
+            </div>
+          </div>
+
+          <form id="death-cert-form" onsubmit="event.preventDefault(); submitDeathCertForm();">
+            
+            <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+              <div class="form-group" style="margin-bottom:14px;">
+                <label style="font-size:0.82rem; font-weight:800; color:var(--damayan-dark); display:block; margin-bottom:6px;">Current Processing Stage *</label>
+                <select id="dc-status" required style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.88rem; font-weight:600; color:var(--damayan-dark); background:#fff;">
+                  <option value="Request Received">1. Request Received</option>
+                  <option value="Under Review">2. Under Review</option>
+                  <option value="Additional Information Required">3. Additional Information Required</option>
+                  <option value="Awaiting Authorized Certificate Preparation">4. Awaiting Authorized Certificate Preparation</option>
+                  <option value="Certificate Prepared and Certified">5. Certificate Prepared and Certified</option>
+                  <option value="Submitted for Civil Registration">6. Submitted for Civil Registration</option>
+                  <option value="Registered">7. Registered</option>
+                  <option value="Certified Copy Requested or Received">8. Certified Copy Requested or Received</option>
+                  <option value="Rejected">Rejected</option>
                 </select>
               </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Facility / Venue</label>
-                <input type="text" id="gf-venue" value="ISCAG Ghusl Facility" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Scheduled Date</label>
-                <input type="date" id="gf-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Scheduled Time</label>
-                <input type="time" id="gf-time" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <!-- Volunteer Assignment Section -->
-            <div style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <div style="font-size:0.8rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase;">
-                  Assigned Volunteers (<span id="vols-gender-tag">Male</span> Pool)
+              <!-- Stage Dates -->
+              <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-bottom:14px;">
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Preparation Date</label>
+                  <input type="date" id="dc-prep-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
                 </div>
-                <div style="font-size:0.75rem; color:var(--text-muted);">
-                  Select volunteers and record confirmation
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Certified Date</label>
+                  <input type="date" id="dc-certified-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
                 </div>
               </div>
 
-              <!-- Volunteers Checklist (Filtered by Gender) -->
-              <div id="volunteers-checkbox-list" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
-                <!-- Populated via renderVolunteersList() -->
+              <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-bottom:14px;">
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Submitted to LCRO Date</label>
+                  <input type="date" id="dc-submitted-lcro-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
+                </div>
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Official Registered Date</label>
+                  <input type="date" id="dc-registered-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Civil Registry and Document References -->
+            <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+              <div style="font-size:0.75rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px;">
+                Official Document References &amp; Registry Identifiers
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">LCRO Registry Number</label>
+                  <input type="text" id="dc-registry-no" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. 2026-00412" />
+                </div>
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">LCRO Transmittal Ref</label>
+                  <input type="text" id="dc-lcro-ref" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. TR-2026-088" />
+                </div>
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Certified Copy / PSA Ref</label>
+                  <input type="text" id="dc-certified-copy-ref" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. PSA-CC-9912" />
+                </div>
               </div>
 
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:center; margin-top:10px; border-top:1px dashed var(--border); padding-top:10px;">
+              <div class="form-group" style="margin-bottom:14px;">
+                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Responsible Personnel / Hospital / Office Contact</label>
+                <input type="text" id="dc-responsible-personnel" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. Dr. A. Usman (Hospital Lying-in) / Officer B. Ramos (LCRO)" />
+              </div>
+
+              <div class="form-group" style="margin-bottom:10px;">
+                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Staff Remarks &amp; Progress Notes</label>
+                <textarea id="dc-remarks" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Hospital coordination notes, verification updates, transmittal receipt details..."></textarea>
+              </div>
+
+              <div id="dc-rejection-row" class="form-group" style="display:none; margin-top:10px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#dc2626; display:block; margin-bottom:4px;">Death Certificate Rejection Reason *</label>
+                <textarea id="dc-rejection-reason" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid #fca5a5; font-size:0.85rem; background:#fff5f5;" placeholder="Specify why the death certificate request cannot be processed..."></textarea>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end;">
+              <button type="submit" class="btn-topbar primary" style="padding:10px 22px; font-size:0.85rem;">Update Death Certificate Status</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- ─────────────────────────────────────────────────────────────
+             TAB 4: CEMETERY PLOT MANAGEMENT
+        ───────────────────────────────────────────────────────────── -->
+        <div id="tab-cemetery_plot" class="case-tab-pane" style="display:none;">
+          <div style="margin-bottom:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <h6 style="color:var(--damayan-dark); margin:0; font-size:0.95rem;">Cemetery Plot Management &amp; Assignment</h6>
+              <span id="cp-current-status-badge" class="badge-status badge-pending">Pending Review</span>
+            </div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">
+              Manage plot availability, prevent duplicate allocations, and assign burial plots for the deceased.
+            </div>
+          </div>
+
+          <div id="cp-not-requested-alert" style="display:none; padding:14px 16px; background:#f3f4f6; border-radius:10px; margin-bottom:18px; color:#4b5563; font-size:0.85rem;">
+            Notice: Cemetery plot was not initially selected by the family (Applicant requested Death Certificate only). You may allocate a plot if requested below.
+          </div>
+
+          <!-- Currently Assigned Plot Highlight -->
+          <div id="cp-assigned-highlight" style="display:none; padding:14px 18px; border-radius:12px; margin-bottom:16px; background:#ecfdf5; border:1px solid #a7f3d0;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:var(--damayan-accent);"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                 <div>
-                  <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">VOLUNTEER AVAILABILITY CONFIRMATION</label>
-                  <select id="gf-vol-status" style="width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--border); font-size:0.82rem; background:#fff;">
-                    <option value="Pending">Pending Confirmation</option>
-                    <option value="Confirmed">Confirmed by Volunteers</option>
-                    <option value="Unavailable">Unavailable (Reassign Others)</option>
+                  <div style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase;">Currently Assigned Burial Plot</div>
+                  <div id="cp-assigned-display-text" style="font-size:0.92rem; font-weight:700; color:var(--damayan-dark); margin-top:1px;">
+                    ISCAG Cemetery - Section A, Plot #101
+                  </div>
+                </div>
+              </div>
+              <span class="badge-status badge-active" style="font-size:0.75rem;">Assigned</span>
+            </div>
+          </div>
+
+          <form id="cemetery-plot-form" onsubmit="event.preventDefault(); submitCemeteryPlotForm();">
+            
+            <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+                <div class="form-group">
+                  <label style="font-size:0.82rem; font-weight:800; color:var(--damayan-dark); display:block; margin-bottom:6px;">Plot Request Status *</label>
+                  <select id="cp-status" required style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.88rem; font-weight:600; color:var(--damayan-dark); background:#fff;" onchange="handlePlotStatusChange()">
+                    <option value="Pending Review">Pending Review</option>
+                    <option value="Under Review">Under Review</option>
+                    <option value="Available for Assignment">Available for Assignment</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Plot Assigned">Plot Assigned</option>
+                    <option value="Awaiting Plot Availability">Awaiting Plot Availability</option>
+                    <option value="Unavailable">Unavailable</option>
+                    <option value="Rejected">Rejected</option>
                   </select>
                 </div>
-                <div>
-                  <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">CUSTOM / ADDITIONAL VOLUNTEERS (NAMES)</label>
-                  <input type="text" id="gf-custom-vols" placeholder="e.g. Brother Farooq, Brother Rashid" style="width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--border); font-size:0.82rem;" />
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:6px;">Family Cemetery Preference</label>
+                  <input type="text" id="cp-family-pref" readonly style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#f3f4f6; color:#4b5563;" />
                 </div>
               </div>
-            </div>
 
-            <div class="form-group" style="margin-bottom:16px;">
-              <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Ghusl Remarks / Instructions</label>
-              <textarea id="gf-remarks" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Specific instructions, family attendance during preparation, etc."></textarea>
+              <!-- Available Inventory Dropdown Selection -->
+              <div class="form-group" style="margin-bottom:14px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                  <label style="font-size:0.8rem; font-weight:700; color:var(--damayan-dark);">Select from Available Cemetery Inventory (Unique Assignment)</label>
+                  <span style="font-size:0.75rem; color:var(--damayan-accent); font-weight:600;">Prevents Duplicate Plots</span>
+                </div>
+                <select id="cp-inventory-select" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;" onchange="onSelectInventoryPlot(this)">
+                  <option value="">-- Choose an Available Plot from Database --</option>
+                </select>
+              </div>
+
+              <!-- Assignment Fields -->
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Cemetery Name *</label>
+                  <input type="text" id="cp-cemetery-name" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. ISCAG Muslim Cemetery" />
+                </div>
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Section / Block</label>
+                  <input type="text" id="cp-section" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. Section A" />
+                </div>
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Plot / Grave Number *</label>
+                  <input type="text" id="cp-plot-number" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. A-101" />
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Plot Assignment Date</label>
+                  <input type="date" id="cp-assigned-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
+                </div>
+                <div class="form-group">
+                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Cemetery Plot ID (Internal)</label>
+                  <input type="text" id="cp-plot-id" readonly style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#f3f4f6; color:#6b7280;" placeholder="Auto-linked" />
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom:10px;">
+                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Plot Remarks &amp; Caretaker Notes</label>
+                <textarea id="cp-remarks" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Grave preparation, caretaker instructions, orientation (Qiblah)..."></textarea>
+              </div>
+
+              <div id="cp-rejection-row" class="form-group" style="display:none; margin-top:10px;">
+                <label style="font-size:0.8rem; font-weight:700; color:#dc2626; display:block; margin-bottom:4px;">Plot Rejection / Unavailability Reason *</label>
+                <textarea id="cp-rejection-reason" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid #fca5a5; font-size:0.85rem; background:#fff5f5;" placeholder="Specify why the burial plot cannot be allocated or why the request was rejected..."></textarea>
+              </div>
             </div>
 
             <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn-topbar primary" style="padding:10px 22px; font-size:0.85rem;">Save Ghusl Coordination</button>
+              <button type="submit" class="btn-topbar primary" style="padding:10px 22px; font-size:0.85rem;">Save Cemetery Plot Assignment</button>
             </div>
           </form>
         </div>
 
         <!-- ─────────────────────────────────────────────────────────────
-             TAB 4: KAFAN PREPARATION (Burial Shroud)
-        ───────────────────────────────────────────────────────────── -->
-        <div id="tab-kafan" class="case-tab-pane" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <h6 style="color:var(--damayan-dark); margin:0 0 4px; font-size:0.95rem;">Kafan (Burial Shroud) Preparation & Inventory</h6>
-            <div style="font-size:0.78rem; color:var(--text-muted);">
-              Track shroud material preparation in accordance with Sunnah standards (3 pieces for men, 5 pieces for women).
-            </div>
-          </div>
-
-          <form id="kafan-form" onsubmit="event.preventDefault(); submitKafanForm();">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Shroud Specification</label>
-                <select id="kf-type" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;">
-                  <option value="Standard 3-piece shroud (Brother)">Standard 3-piece shroud (Male)</option>
-                  <option value="5-piece shroud (Sister)">5-piece shroud (Female)</option>
-                  <option value="Child / Infant shroud">Child / Infant shroud</option>
-                  <option value="Custom Islamic Shroud">Custom Islamic Shroud</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Kafan Status</label>
-                <select id="kf-status" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;">
-                  <option value="Pending">Pending</option>
-                  <option value="In Preparation">In Preparation</option>
-                  <option value="Ready">Ready / Available</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Prepared By (Staff / Volunteer)</label>
-                <input type="text" id="kf-prep-by" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Staff name or volunteer" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Kafan Remarks / Camphor & Perfumes</label>
-                <input type="text" id="kf-remarks" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Camphor (kafoor), sidr leaves, etc." />
-              </div>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn-topbar primary" style="padding:10px 22px; font-size:0.85rem;">Save Kafan Preparation</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- ─────────────────────────────────────────────────────────────
-             TAB 5: SALAT AL-JANAZAH (Funeral Prayer)
-        ───────────────────────────────────────────────────────────── -->
-        <div id="tab-janazah" class="case-tab-pane" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <h6 style="color:var(--damayan-dark); margin:0 0 4px; font-size:0.95rem;">Salat al-Janazah (Funeral Prayer) Coordination</h6>
-            <div style="font-size:0.78rem; color:var(--text-muted);">
-              Coordinate schedule with the officiating Imam and notify the congregation and bereaved family.
-            </div>
-          </div>
-
-          <form id="janazah-form" onsubmit="event.preventDefault(); submitJanazahForm();">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Janazah Status</label>
-                <select id="jf-status" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;">
-                  <option value="Pending">Pending</option>
-                  <option value="Scheduled">Scheduled</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Masjid / Location</label>
-                <input type="text" id="jf-masjid" value="ISCAG Main Masjid" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Prayer Timing</label>
-                <select id="jf-prayer-time" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;">
-                  <option value="After Dhuhr">After Dhuhr (Sunnah)</option>
-                  <option value="After Asr">After Asr</option>
-                  <option value="After Maghrib">After Maghrib</option>
-                  <option value="After Fajr">After Fajr</option>
-                  <option value="Custom Time">Custom Scheduled Time</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Scheduled Date</label>
-                <input type="date" id="jf-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Scheduled Time</label>
-                <input type="time" id="jf-time" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Officiating Imam Name</label>
-                <input type="text" id="jf-imam-name" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. Imam Omar Farooq" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Imam Contact Number</label>
-                <input type="text" id="jf-imam-contact" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. +63 917 123 4567" />
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:16px;">
-              <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Janazah Remarks</label>
-              <textarea id="jf-remarks" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Arrangements for congregation, announcements, etc."></textarea>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn-topbar primary" style="padding:10px 22px; font-size:0.85rem;">Save Janazah Coordination</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- ─────────────────────────────────────────────────────────────
-             TAB 6: TRANSPORTATION (Ambulance / Hearse)
-        ───────────────────────────────────────────────────────────── -->
-        <div id="tab-transport" class="case-tab-pane" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <h6 style="color:var(--damayan-dark); margin:0 0 4px; font-size:0.95rem;">Deceased Transportation Management</h6>
-            <div style="font-size:0.78rem; color:var(--text-muted);">
-              Coordinate ISCAG ambulance or designated vehicle for pickup, transit to Ghusl facility, Masjid, and Cemetery.
-            </div>
-          </div>
-
-          <form id="transport-form" onsubmit="event.preventDefault(); submitTransportForm();">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Vehicle Type</label>
-                <select id="tf-vehicle" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;">
-                  <option value="ISCAG Ambulance">ISCAG Ambulance</option>
-                  <option value="Islamic Funeral Hearse">Islamic Funeral Hearse</option>
-                  <option value="Arranged Private Vehicle">Arranged Private Vehicle</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Transportation Status</label>
-                <select id="tf-status" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;">
-                  <option value="Pending">Pending</option>
-                  <option value="Scheduled">Scheduled</option>
-                  <option value="En Route">En Route (In Transit)</option>
-                  <option value="Arrived">Arrived at Destination</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Assigned Driver / Personnel</label>
-                <input type="text" id="tf-driver" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. Brother Tariq" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Driver Contact Number</label>
-                <input type="text" id="tf-driver-contact" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. +63 917 555 1234" />
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Pickup Location</label>
-                <input type="text" id="tf-pickup" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Hospital / Residence address" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Destination</label>
-                <input type="text" id="tf-dest" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="ISCAG Facility / Cemetery" />
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Scheduled Departure</label>
-                <input type="datetime-local" id="tf-sched-dt" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Actual Departure</label>
-                <input type="datetime-local" id="tf-actual-dep" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Actual Arrival</label>
-                <input type="datetime-local" id="tf-actual-arr" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:16px;">
-              <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Transportation Remarks</label>
-              <textarea id="tf-remarks" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Vehicle condition, route details, escort notes"></textarea>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn-topbar primary" style="padding:10px 22px; font-size:0.85rem;">Save Transportation Details</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- ─────────────────────────────────────────────────────────────
-             TAB 7: CEMETERY & BURIAL ARRANGEMENTS
-        ───────────────────────────────────────────────────────────── -->
-        <div id="tab-cemetery" class="case-tab-pane" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <h6 style="color:var(--damayan-dark); margin:0 0 4px; font-size:0.95rem;">Cemetery & Grave Coordination</h6>
-            <div style="font-size:0.78rem; color:var(--text-muted);">
-              Coordinate cemetery plot reservation, grave diggers, and burial time in accordance with Islamic Sunnah.
-            </div>
-          </div>
-
-          <form id="cemetery-form" onsubmit="event.preventDefault(); submitCemeteryForm();">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Islamic Cemetery *</label>
-                <input type="text" id="cf-name" value="ISCAG Designated Muslim Cemetery" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Cemetery Status</label>
-                <select id="cf-status" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;">
-                  <option value="Pending">Pending</option>
-                  <option value="Plot Reserved">Plot Reserved</option>
-                  <option value="Scheduled">Scheduled</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Plot / Grave Number</label>
-                <input type="text" id="cf-plot" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. Block 4, Plot 18" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Scheduled Burial Date</label>
-                <input type="date" id="cf-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Scheduled Burial Time</label>
-                <input type="time" id="cf-time" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:16px;">
-              <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Cemetery Arrangements & Notes</label>
-              <textarea id="cf-remarks" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Caretaker contact, grave preparation status, lahd (crevice) preparation..."></textarea>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn-topbar primary" style="padding:10px 22px; font-size:0.85rem;">Save Cemetery Coordination</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- ─────────────────────────────────────────────────────────────
-             TAB 8: COMPLETE BURIAL CASE (Explicit Confirmation)
-        ───────────────────────────────────────────────────────────── -->
-        <div id="tab-complete" class="case-tab-pane" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <h6 style="color:var(--damayan-dark); margin:0 0 4px; font-size:0.95rem;">Official Burial Case Completion</h6>
-            <div style="font-size:0.78rem; color:var(--text-muted);">
-              Per requirement 3.I, complete case recording occurs ONLY after the burial has taken place and all services are verified.
-            </div>
-          </div>
-
-          <form id="complete-case-form" onsubmit="event.preventDefault(); submitCompleteCaseForm();">
-            
-            <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:18px;">
-              <div style="font-size:0.8rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; margin-bottom:10px;">
-                Islamic Funeral Services Delivered Checklist
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.84rem;">
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" id="chk-ghusl" checked style="accent-color:var(--damayan-accent);" />
-                  Ghusl (Ritual Washing according to Sunnah)
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" id="chk-kafan" checked style="accent-color:var(--damayan-accent);" />
-                  Kafan (Burial Shroud Shrouding)
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" id="chk-janazah" checked style="accent-color:var(--damayan-accent);" />
-                  Salat al-Janazah (Funeral Prayer in Congregation)
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" id="chk-transport" checked style="accent-color:var(--damayan-accent);" />
-                  Transportation (Hearse / Ambulance Transit)
-                </label>
-                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" id="chk-burial" checked style="accent-color:var(--damayan-accent);" />
-                  Interment in Designated Muslim Cemetery
-                </label>
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Actual Burial Date & Time *</label>
-                <input type="datetime-local" id="comp-actual-date" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Final Cemetery *</label>
-                <input type="text" id="comp-final-cemetery" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:16px;">
-              <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Final Remarks / Notes</label>
-              <textarea id="comp-final-remarks" rows="3" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Final notes, family acknowledgment, completion documentation..."></textarea>
-            </div>
-
-            <!-- Confirmation Action Requirement 3.I -->
-            <div style="padding:14px 16px; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; margin-bottom:18px;">
-              <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-size:0.84rem; color:#065f46; font-weight:600;">
-                <input type="checkbox" id="comp-confirmation-checkbox" required style="margin-top:2px; accent-color:var(--damayan-accent);" />
-                <span>I confirm that the burial has taken place and all Islamic funeral rites have been completed with dignity and in accordance with Islamic Sunnah.</span>
-              </label>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn-topbar primary" style="padding:12px 26px; font-size:0.9rem; background:#047857;">Confirm &amp; Complete Burial Case</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- ─────────────────────────────────────────────────────────────
-             TAB 9: ACTIVITY LOGS & AUDIT TRAIL
+             TAB 5: ACTIVITY LOGS & AUDIT TRAIL
         ───────────────────────────────────────────────────────────── -->
         <div id="tab-logs" class="case-tab-pane" style="display:none;">
           <div style="margin-bottom:16px;">
             <h6 style="color:var(--damayan-dark); margin:0 0 4px; font-size:0.95rem;">Chronological Case Audit Trail</h6>
             <div style="font-size:0.78rem; color:var(--text-muted);">
-              Every status change, staff action, scheduling update, and user submission is recorded with actor and timestamp.
+              Every status change, staff action, Death Certificate update, and Cemetery Plot assignment is recorded with responsible actor and timestamp.
             </div>
           </div>
 
@@ -721,11 +560,77 @@
     <!-- Modal Footer -->
     <div class="mis-modal-footer" style="padding:14px 24px; border-top:1px solid var(--border); background:#fafbfc; display:flex; align-items:center; justify-content:space-between;">
       <div style="font-size:0.75rem; color:var(--text-muted);">
-        ISCAG Damayan Burial Service Management System
+        ISCAG Damayan Death Certificate &amp; Cemetery Plot Management System
       </div>
       <button type="button" class="btn-topbar" style="padding:6px 18px; font-size:0.82rem;" onclick="closeCaseModal()">Close</button>
     </div>
 
+  </div>
+</div>
+
+<!-- Modal: Request Additional Info Dialog -->
+<div id="damayanReqInfoModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100000; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#fff; border-radius:14px; max-width:500px; width:100%; padding:22px; box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+    <h5 style="margin:0 0 6px; font-size:1.05rem; color:var(--damayan-dark); font-weight:800;">Request Additional Information</h5>
+    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">
+      Notify the family representative of missing documents or clarification needed for this case.
+    </div>
+    <form onsubmit="event.preventDefault(); submitRequestInfo();">
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Requirements / Details Needed *</label>
+        <textarea id="reqinfo-explanation" rows="4" required style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. Please provide a clearer copy of the hospital death summary, medical certificate, or valid ID of the representative..."></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn-topbar" onclick="closeReqInfoModal()">Cancel</button>
+        <button type="submit" class="btn-topbar primary" style="background:#d97706; border-color:#d97706;">Send Requirement Notice</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Reject Case Dialog -->
+<div id="damayanRejectModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100000; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#fff; border-radius:14px; max-width:500px; width:100%; padding:22px; box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+    <h5 style="margin:0 0 6px; font-size:1.05rem; color:#dc2626; font-weight:800;">Reject Burial Request</h5>
+    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">
+      State the clear reason for rejecting this application. The family will be notified.
+    </div>
+    <form onsubmit="event.preventDefault(); submitRejectRequest();">
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Rejection Reason *</label>
+        <textarea id="reject-reason" rows="3" required style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #fca5a5; font-size:0.85rem;" placeholder="e.g. Duplicate submission, invalid deceased credentials, out of service jurisdiction..."></textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn-topbar" onclick="closeRejectModal()">Cancel</button>
+        <button type="submit" class="btn-topbar" style="background:#dc2626; color:#fff; border-color:#dc2626;">Confirm Rejection</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Search & Link Existing Deceased Record -->
+<div id="searchDeceasedModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(3px); z-index:100001; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#fff; border-radius:16px; max-width:640px; width:100%; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 25px 50px rgba(0,0,0,0.25); overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:#fafbfc;">
+      <h5 style="margin:0; font-size:1.05rem; color:var(--damayan-dark); font-weight:800;">Link Existing Registered Deceased Record</h5>
+      <button type="button" onclick="closeSearchDeceasedModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);">&times;</button>
+    </div>
+    <div style="padding:18px 20px; flex:1; overflow-y:auto;">
+      <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:14px;">
+        Important: Do not create duplicate records. Search and select the existing registered deceased person from previous ISCAG records or death registrations.
+      </div>
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <input type="text" id="deceased-search-query" style="flex:1; padding:8px 14px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Search deceased name, date of death, or ref #..." onkeyup="if(event.key==='Enter') executeSearchDeceased()" />
+        <button type="button" class="btn-topbar primary" style="padding:8px 16px; font-size:0.82rem;" onclick="executeSearchDeceased()">Search</button>
+      </div>
+
+      <div id="deceased-search-results" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+        <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.85rem;">Click 'Search' to search existing deceased records.</div>
+      </div>
+    </div>
+    <div style="padding:12px 20px; border-top:1px solid var(--border); background:#fafbfc; display:flex; justify-content:flex-end; gap:8px;">
+      <button type="button" class="btn-topbar" onclick="closeSearchDeceasedModal()">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -760,16 +665,19 @@
 
 <script>
   let activeCase = null;
-  let activeGenderVolunteers = [];
-  let activeAllVolunteers = [];
   let activeStaffList = [];
+  let activeAvailablePlots = [];
+  let activeAllPlots = [];
+  let activeAuditLogs = [];
 
   function switchCaseTab(tabKey) {
     document.querySelectorAll('.case-tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.case-tab-pane').forEach(p => p.style.display = 'none');
     
-    // Activate target
-    event.target.classList.add('active');
+    // Activate clicked button
+    if (window.event && window.event.target) {
+      window.event.target.classList.add('active');
+    }
     const pane = document.getElementById('tab-' + tabKey);
     if(pane) pane.style.display = 'block';
   }
@@ -799,9 +707,10 @@
       }
 
       activeCase = data.burial;
-      activeGenderVolunteers = data.gender_volunteers || [];
-      activeAllVolunteers = data.all_volunteers || [];
       activeStaffList = data.staff_list || [];
+      activeAvailablePlots = data.available_plots || [];
+      activeAllPlots = data.all_plots || [];
+      activeAuditLogs = data.audit_logs || [];
 
       populateCaseModal(data);
       loading.style.display = 'none';
@@ -825,10 +734,39 @@
     document.getElementById('modal-ref-id').textContent = '#' + c.ref_id;
     document.getElementById('modal-deceased-name').textContent = c.deceased_name || (c.first_name + ' ' + c.last_name);
     
-    // Badges
+    // Status Badge
     const statusBadge = document.getElementById('modal-status-badge');
     statusBadge.textContent = c.status;
     statusBadge.className = 'badge-status ' + getBadgeClass(c.status);
+
+    // Request Type Badge
+    const reqTypeBadge = document.getElementById('modal-reqtype-badge');
+    const rType = (c.request_type || 'both').toLowerCase();
+    if (rType === 'death_certificate') {
+      reqTypeBadge.textContent = 'Death Certificate Only';
+      reqTypeBadge.className = 'badge-status badge-info';
+    } else if (rType === 'cemetery_plot') {
+      reqTypeBadge.textContent = 'Cemetery Plot Only';
+      reqTypeBadge.className = 'badge-status badge-info';
+    } else {
+      reqTypeBadge.textContent = 'Both Services';
+      reqTypeBadge.className = 'badge-status badge-active';
+    }
+
+    // Action Type Badge (Register vs Copy)
+    const actionBadge = document.getElementById('modal-actiontype-badge');
+    const isCopy = (c.cert_action_type === 'copy');
+    if (actionBadge) {
+      if (isCopy) {
+        actionBadge.textContent = 'Copy Request';
+        actionBadge.style.background = '#dbeafe';
+        actionBadge.style.color = '#1e40af';
+      } else {
+        actionBadge.textContent = 'New Registration';
+        actionBadge.style.background = '#d1fae5';
+        actionBadge.style.color = '#065f46';
+      }
+    }
 
     const sexBadge = document.getElementById('modal-sex-badge');
     sexBadge.textContent = c.deceased_sex || 'Male';
@@ -836,6 +774,29 @@
     sexBadge.style.color = (c.deceased_sex === 'Female') ? '#9d174d' : '#3730a3';
 
     // ──────────────── TAB 1: OVERVIEW ────────────────
+    const copyPanel = document.getElementById('copy-request-panel');
+    if (copyPanel) {
+      if (isCopy) {
+        copyPanel.style.display = 'block';
+        document.getElementById('v-copy-existing-cert').textContent = c.existing_cert_no || 'Not Provided';
+        document.getElementById('v-copy-num-copies').textContent = (c.num_copies || 1) + (parseInt(c.num_copies) > 1 ? ' copies' : ' copy');
+        document.getElementById('v-copy-reason').textContent = c.copy_reason || 'Personal / Official Use';
+
+        const copyVerifiedBadge = document.getElementById('v-copy-verified-badge');
+        const recordLinkDesc = document.getElementById('v-copy-record-link-desc');
+        if (parseInt(c.existing_record_verified) === 1) {
+          copyVerifiedBadge.textContent = 'Record Verified & Linked';
+          copyVerifiedBadge.className = 'badge-status badge-active';
+          recordLinkDesc.innerHTML = `<span style="color:#059669;">Linked to Registered Deceased Record #${escapeHtml(c.deceased_id || '')}: ${escapeHtml(c.deceased_name || '')} (DOD: ${escapeHtml(c.date_of_death || 'N/A')})</span>`;
+        } else {
+          copyVerifiedBadge.textContent = 'Awaiting Record Search';
+          copyVerifiedBadge.className = 'badge-status badge-warning';
+          recordLinkDesc.innerHTML = `<span style="color:#dc2626;">No existing registered record linked yet. Search and link to an existing record, or request additional information from the applicant.</span>`;
+        }
+      } else {
+        copyPanel.style.display = 'none';
+      }
+    }
     const applicantName = c.informant_name || ((c.user_first_name || '') + ' ' + (c.user_last_name || '')) || 'Applicant';
     document.getElementById('v-applicant-name').textContent = applicantName;
     document.getElementById('v-relationship').textContent = c.relationship || 'Family Member';
@@ -844,13 +805,24 @@
     document.getElementById('v-applicant-address').textContent = c.informant_address || c.residence || 'N/A';
 
     document.getElementById('v-deceased-fullname').textContent = c.deceased_name;
-    document.getElementById('v-deceased-gender').textContent = (c.deceased_sex === 'Female' ? 'Sister (Female)' : 'Brother (Male)');
+    document.getElementById('v-deceased-gender').textContent = (c.deceased_sex === 'Female' ? 'Female' : 'Male');
     document.getElementById('v-nationality').textContent = c.nationality || 'Filipino';
     document.getElementById('v-death-date').textContent = c.date_of_death || 'N/A';
     document.getElementById('v-death-place').textContent = c.place_of_death || 'N/A';
-    document.getElementById('v-requested-services').textContent = c.requested_services || 'Complete Islamic Funeral Rites';
-    document.getElementById('v-cemetery-pref').textContent = c.cemetery_preference || c.cemetery_name || 'ISCAG Muslim Cemetery';
+    document.getElementById('v-cemetery-pref').textContent = c.cemetery_preference || c.assigned_cemetery_name || 'ISCAG Muslim Cemetery';
     document.getElementById('v-family-notes').textContent = c.additional_notes || 'None provided.';
+
+    // Requested Services Badges
+    const dcRequested = (parseInt(c.death_cert_requested) === 1) || (rType === 'both') || (rType === 'death_certificate');
+    const plotRequested = (parseInt(c.cemetery_plot_requested) === 1) || (rType === 'both') || (rType === 'cemetery_plot');
+    
+    const dcBadge = document.getElementById('v-dc-badge');
+    dcBadge.textContent = 'Death Certificate: ' + (c.death_cert_status || (dcRequested ? 'Requested' : 'Not Requested'));
+    dcBadge.className = 'badge-status ' + (dcRequested ? getBadgeClass(c.death_cert_status) : 'badge-disabled');
+
+    const plotBadge = document.getElementById('v-plot-badge');
+    plotBadge.textContent = 'Cemetery Plot: ' + (c.cemetery_plot_status || (plotRequested ? 'Requested' : 'Not Requested'));
+    plotBadge.className = 'badge-status ' + (plotRequested ? getBadgeClass(c.cemetery_plot_status) : 'badge-disabled');
 
     // Supporting document
     const docContainer = document.getElementById('v-doc-container');
@@ -898,167 +870,281 @@
     document.getElementById('v-coordinator-name').textContent = c.assigned_staff_name || 'Unassigned';
     const staffSelect = document.getElementById('assign-staff-select');
     staffSelect.innerHTML = '<option value="">-- Select Staff --</option>' + (data.staff_list || []).map(s => `
-      <option value="${s.id}" data-name="${s.name}" ${s.id == c.assigned_staff_id ? 'selected' : ''}>${s.name} (${s.email})</option>
+      <option value="${s.tenant_id}" ${s.tenant_id == c.assigned_staff_id ? 'selected' : ''}>
+        ${s.first_name} ${s.last_name} (${s.role})
+      </option>
     `).join('');
 
-    // Quick workflow status dropdown
-    document.getElementById('quick-workflow-status').value = c.status;
-
-    // ──────────────── TAB 2: DECEASED FORM ────────────────
-    document.getElementById('df-fname').value = c.dec_fname || c.deceased_first_name || '';
-    document.getElementById('df-mname').value = c.dec_mname || c.deceased_middle_name || '';
-    document.getElementById('df-lname').value = c.dec_lname || c.deceased_last_name || '';
+    // ──────────────── TAB 2: DECEASED RECORD ────────────────
+    const names = (c.deceased_name || '').split(' ');
+    document.getElementById('df-fname').value = c.deceased_first_name || names[0] || '';
+    document.getElementById('df-mname').value = c.deceased_middle_name || (names.length > 2 ? names.slice(1, -1).join(' ') : '');
+    document.getElementById('df-lname').value = c.deceased_last_name || (names.length > 1 ? names[names.length - 1] : '');
     document.getElementById('df-sex').value = c.deceased_sex || 'Male';
-    document.getElementById('df-dob').value = c.date_of_birth || '';
-    document.getElementById('df-dod').value = c.date_of_death || '';
-    document.getElementById('df-tod').value = c.time_of_death || '';
-    document.getElementById('df-civil').value = c.civil_status || 'Married';
-    document.getElementById('df-nationality').value = c.nationality || 'Filipino';
+    document.getElementById('df-dob').value = c.date_of_birth ? c.date_of_birth.substring(0, 10) : '';
+    document.getElementById('df-dod').value = c.date_of_death ? c.date_of_death.substring(0, 10) : '';
     document.getElementById('df-pod').value = c.place_of_death || '';
     document.getElementById('df-residence').value = c.residence || '';
+    document.getElementById('df-civil-status').value = c.civil_status || 'Married';
+    document.getElementById('df-nationality').value = c.nationality || 'Filipino';
+    document.getElementById('df-religion').value = c.religion || 'Islam';
 
-    // ──────────────── TAB 3: GHUSL ────────────────
-    const sex = c.deceased_sex || 'Male';
-    document.getElementById('ghusl-gender-label').textContent = sex;
-    document.getElementById('ghusl-volunteer-type').textContent = sex;
-    document.getElementById('vols-gender-tag').textContent = sex;
-    document.getElementById('gf-status').value = c.ghusl_status || 'Pending';
-    document.getElementById('gf-venue').value = c.ghusl_venue || 'ISCAG Ghusl Facility';
-    document.getElementById('gf-date').value = c.ghusl_date || '';
-    document.getElementById('gf-time').value = c.ghusl_time || '';
-    document.getElementById('gf-vol-status').value = c.ghusl_volunteer_status || 'Pending';
-    document.getElementById('gf-remarks').value = c.ghusl_remarks || '';
-    
-    renderVolunteersList(data.gender_volunteers || [], c.ghusl_assigned_volunteers);
+    // ──────────────── TAB 3: DEATH CERTIFICATE ────────────────
+    const dcStatus = c.death_cert_status || 'Request Received';
+    document.getElementById('dc-status').value = dcStatus;
+    const dcBadgeHeader = document.getElementById('dc-current-stage-badge');
+    dcBadgeHeader.textContent = dcStatus;
+    dcBadgeHeader.className = 'badge-status ' + getBadgeClass(dcStatus);
 
-    // ──────────────── TAB 4: KAFAN ────────────────
-    document.getElementById('kf-status').value = c.kafan_status || 'Pending';
-    document.getElementById('kf-type').value = c.kafan_type || (sex === 'Female' ? '5-piece shroud (Sister)' : 'Standard 3-piece shroud (Brother)');
-    document.getElementById('kf-prep-by').value = c.kafan_prepared_by || c.assigned_staff_name || '';
-    document.getElementById('kf-remarks').value = c.kafan_remarks || '';
+    const copyIssueSec = document.getElementById('copy-issuance-section');
+    if (copyIssueSec) {
+      if (isCopy) {
+        copyIssueSec.style.display = 'block';
+        document.getElementById('copy-issue-ref').value = c.death_cert_certified_copy_ref || '';
+        document.getElementById('copy-issue-remarks').value = c.death_cert_remarks || '';
 
-    // ──────────────── TAB 5: JANAZAH ────────────────
-    document.getElementById('jf-status').value = c.janazah_status || 'Pending';
-    document.getElementById('jf-masjid').value = c.janazah_masjid || 'ISCAG Main Masjid';
-    document.getElementById('jf-prayer-time').value = c.janazah_prayer_time || 'After Dhuhr';
-    document.getElementById('jf-date').value = c.janazah_date || '';
-    document.getElementById('jf-time').value = c.janazah_time || '';
-    document.getElementById('jf-imam-name').value = c.janazah_imam_name || '';
-    document.getElementById('jf-imam-contact').value = c.janazah_imam_contact || '';
-    document.getElementById('jf-remarks').value = c.janazah_remarks || '';
+        const issueBadge = document.getElementById('copy-issuance-status-badge');
+        const receiptText = document.getElementById('copy-receipt-status-text');
+        if (c.copy_issued_at) {
+          issueBadge.textContent = 'Copy Issued';
+          issueBadge.className = 'badge-status badge-active';
+        } else {
+          issueBadge.textContent = 'Pending Issuance';
+          issueBadge.className = 'badge-status badge-pending';
+        }
 
-    // ──────────────── TAB 6: TRANSPORTATION ────────────────
-    document.getElementById('tf-vehicle').value = c.transport_vehicle_type || 'ISCAG Ambulance';
-    document.getElementById('tf-status').value = c.transport_status || 'Pending';
-    document.getElementById('tf-driver').value = c.transport_driver_name || '';
-    document.getElementById('tf-driver-contact').value = c.transport_driver_contact || '';
-    document.getElementById('tf-pickup').value = c.transport_pickup_location || c.place_of_death || '';
-    document.getElementById('tf-dest').value = c.transport_destination || c.cemetery_name || 'ISCAG Cemetery';
-    document.getElementById('tf-sched-dt').value = formatDateTimeInput(c.transport_scheduled_datetime);
-    document.getElementById('tf-actual-dep').value = formatDateTimeInput(c.transport_actual_departure);
-    document.getElementById('tf-actual-arr').value = formatDateTimeInput(c.transport_actual_arrival);
-    document.getElementById('tf-remarks').value = c.transport_remarks || '';
-
-    // ──────────────── TAB 7: CEMETERY ────────────────
-    document.getElementById('cf-name').value = c.cemetery_name || c.cemetery_preference || 'ISCAG Designated Muslim Cemetery';
-    document.getElementById('cf-status').value = c.cemetery_status || 'Pending';
-    document.getElementById('cf-plot').value = c.cemetery_plot_number || '';
-    document.getElementById('cf-date').value = c.cemetery_scheduled_date || '';
-    document.getElementById('cf-time').value = c.cemetery_scheduled_time || '';
-    document.getElementById('cf-remarks').value = c.cemetery_remarks || '';
-
-    // ──────────────── TAB 8: COMPLETE CASE ────────────────
-    document.getElementById('comp-final-cemetery').value = c.final_cemetery || c.cemetery_name || 'ISCAG Designated Muslim Cemetery';
-    document.getElementById('comp-actual-date').value = formatDateTimeInput(c.actual_burial_date) || formatDateTimeInput(new Date().toISOString());
-    document.getElementById('comp-final-remarks').value = c.final_remarks || 'Burial rites completed in accordance with Islamic Sunnah.';
-    document.getElementById('comp-confirmation-checkbox').checked = false;
-
-    // ──────────────── TAB 9: LOGS ────────────────
-    renderActivityLogs(c.activity_logs || []);
-  }
-
-  function renderVolunteersList(vols, assignedStr) {
-    const list = document.getElementById('volunteers-checkbox-list');
-    const assigned = (assignedStr || '').split(',').map(s => s.trim().toLowerCase());
-    
-    if(!vols || vols.length === 0) {
-      list.innerHTML = '<div style="color:var(--text-muted); font-size:0.82rem; grid-column:span 2;">No registered volunteers found for this gender pool.</div>';
-      return;
+        if (parseInt(c.copy_received_confirmed) === 1) {
+          receiptText.innerHTML = `<strong style="color:var(--damayan-accent);">Confirmed Received on ${formatLogTime(c.copy_received_at)}</strong>`;
+        } else if (c.copy_issued_at) {
+          receiptText.innerHTML = `<span style="color:#d97706; font-weight:700;">Issued on ${formatLogTime(c.copy_issued_at)} — Awaiting Physical Receipt Confirmation by Requester</span>`;
+        } else {
+          receiptText.textContent = 'Awaiting Record Verification & Staff Issuance';
+        }
+      } else {
+        copyIssueSec.style.display = 'none';
+      }
     }
 
-    list.innerHTML = vols.map(v => {
-      const isChecked = assigned.includes(v.name.toLowerCase());
-      const availClass = (v.availability_status === 'Available') ? '#ecfdf5;color:#047857' : (v.availability_status === 'Busy' ? '#fffbeb;color:#b45309' : '#fef2f2;color:#b91c1c');
-      return `
-        <label style="display:flex; align-items:center; justify-content:space-between; background:#fff; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.82rem; cursor:pointer;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" class="ghusl-vol-cb" value="${v.name}" ${isChecked ? 'checked' : ''} style="accent-color:var(--damayan-accent);" />
-            <div>
-              <strong>${v.name}</strong>
-              <div style="font-size:0.72rem; color:var(--text-muted);">${v.phone}</div>
-            </div>
-          </div>
-          <span style="font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:10px; background:${availClass};">${v.availability_status}</span>
-        </label>
+    document.getElementById('dc-not-requested-alert').style.display = dcRequested ? 'none' : 'block';
+    document.getElementById('dc-prep-date').value = c.death_cert_prep_date ? c.death_cert_prep_date.substring(0, 10) : '';
+    document.getElementById('dc-certified-date').value = c.death_cert_certified_date ? c.death_cert_certified_date.substring(0, 10) : '';
+    document.getElementById('dc-submitted-lcro-date').value = c.death_cert_submitted_lcro_date ? c.death_cert_submitted_lcro_date.substring(0, 10) : '';
+    document.getElementById('dc-registered-date').value = c.death_cert_registered_date ? c.death_cert_registered_date.substring(0, 10) : '';
+    document.getElementById('dc-registry-no').value = c.death_cert_registry_no || '';
+    document.getElementById('dc-lcro-ref').value = c.death_cert_lcro_ref || '';
+    document.getElementById('dc-certified-copy-ref').value = c.death_cert_certified_copy_ref || '';
+    document.getElementById('dc-responsible-personnel').value = c.death_cert_responsible_personnel || '';
+    document.getElementById('dc-remarks').value = c.death_cert_remarks || '';
+    document.getElementById('dc-rejection-reason').value = c.death_cert_rejection_reason || '';
+    document.getElementById('dc-rejection-row').style.display = (dcStatus === 'Rejected') ? 'block' : 'none';
+
+    document.getElementById('dc-status').onchange = function() {
+      document.getElementById('dc-rejection-row').style.display = (this.value === 'Rejected') ? 'block' : 'none';
+    };
+
+    // ──────────────── TAB 4: CEMETERY PLOT ────────────────
+    const cpStatus = c.cemetery_plot_status || 'Pending Review';
+    document.getElementById('cp-status').value = cpStatus;
+    const cpBadgeHeader = document.getElementById('cp-current-status-badge');
+    cpBadgeHeader.textContent = cpStatus;
+    cpBadgeHeader.className = 'badge-status ' + getBadgeClass(cpStatus);
+
+    document.getElementById('cp-not-requested-alert').style.display = plotRequested ? 'none' : 'block';
+    document.getElementById('cp-family-pref').value = c.cemetery_preference || 'ISCAG Muslim Cemetery';
+
+    // Populate Available Plots Dropdown
+    const invSelect = document.getElementById('cp-inventory-select');
+    invSelect.innerHTML = '<option value="">-- Choose an Available Plot from Database --</option>';
+    (data.available_plots || []).forEach(p => {
+      invSelect.innerHTML += `
+        <option value="${p.id}" data-cemetery="${p.cemetery_name}" data-section="${p.section || ''}" data-plot="${p.plot_number}">
+          ${p.cemetery_name} | Sec ${p.section || 'General'} - Plot #${p.plot_number} (${p.plot_type || 'Standard'})
+        </option>
       `;
-    }).join('');
+    });
+
+    // Populate plot fields
+    document.getElementById('cp-cemetery-name').value = c.assigned_cemetery_name || c.cemetery_name || c.cemetery_preference || 'ISCAG Muslim Cemetery';
+    document.getElementById('cp-section').value = c.assigned_section || c.section || '';
+    document.getElementById('cp-plot-number').value = c.assigned_plot_number || c.plot_number || '';
+    document.getElementById('cp-assigned-date').value = c.plot_assigned_date ? c.plot_assigned_date.substring(0, 10) : '';
+    document.getElementById('cp-plot-id').value = c.cemetery_plot_id || '';
+    document.getElementById('cp-remarks').value = c.cemetery_plot_remarks || '';
+    document.getElementById('cp-rejection-reason').value = c.cemetery_plot_rejection_reason || '';
+    document.getElementById('cp-rejection-row').style.display = (cpStatus === 'Rejected') ? 'block' : 'none';
+
+    // Assigned Highlight
+    const assignHighlight = document.getElementById('cp-assigned-highlight');
+    if (c.assigned_plot_number || cpStatus === 'Plot Assigned') {
+      assignHighlight.style.display = 'block';
+      document.getElementById('cp-assigned-display-text').textContent = 
+        `${c.assigned_cemetery_name || 'ISCAG Cemetery'} - Section ${c.assigned_section || 'A'}, Plot #${c.assigned_plot_number || 'N/A'}`;
+    } else {
+      assignHighlight.style.display = 'none';
+    }
+
+    // ──────────────── TAB 5: ACTIVITY LOGS ────────────────
+    renderActivityLogs(data.audit_logs || []);
+  }
+
+  function handlePlotStatusChange() {
+    const st = document.getElementById('cp-status').value;
+    document.getElementById('cp-rejection-row').style.display = (st === 'Rejected') ? 'block' : 'none';
+    if (st === 'Plot Assigned' && !document.getElementById('cp-assigned-date').value) {
+      document.getElementById('cp-assigned-date').value = new Date().toISOString().substring(0, 10);
+    }
+  }
+
+  function onSelectInventoryPlot(selectElem) {
+    const opt = selectElem.options[selectElem.selectedIndex];
+    if (!opt || !opt.value) return;
+
+    document.getElementById('cp-cemetery-name').value = opt.getAttribute('data-cemetery') || '';
+    document.getElementById('cp-section').value = opt.getAttribute('data-section') || '';
+    document.getElementById('cp-plot-number').value = opt.getAttribute('data-plot') || '';
+    document.getElementById('cp-plot-id').value = opt.value;
+    document.getElementById('cp-status').value = 'Plot Assigned';
+    if (!document.getElementById('cp-assigned-date').value) {
+      document.getElementById('cp-assigned-date').value = new Date().toISOString().substring(0, 10);
+    }
+    handlePlotStatusChange();
   }
 
   function renderActivityLogs(logs) {
     const container = document.getElementById('activity-logs-container');
     if(!logs || logs.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">No activity logs recorded yet.</div>';
+      container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-muted); font-size:0.85rem;">No activity recorded for this case yet.</div>';
       return;
     }
 
     container.innerHTML = logs.map(l => `
-      <div style="display:flex; gap:14px; background:#fafbfc; border:1px solid var(--border); border-radius:10px; padding:12px 16px;">
-        <div style="width:10px; height:10px; border-radius:50%; background:var(--damayan-accent); margin-top:5px; flex-shrink:0;"></div>
+      <div style="display:flex; gap:12px; font-size:0.83rem; padding-bottom:12px; border-bottom:1px solid #f0f0f0;">
+        <div style="width:30px; height:30px; border-radius:50%; background:var(--damayan-light); color:var(--damayan-accent); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        </div>
         <div style="flex:1;">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-            <strong style="font-size:0.85rem; color:var(--damayan-dark);">${l.title}</strong>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+            <strong style="color:var(--damayan-dark);">${escapeHtml(l.title || l.activity_type || l.action || 'Case Activity')}</strong>
             <span style="font-size:0.75rem; color:var(--text-muted);">${formatLogTime(l.created_at)}</span>
           </div>
-          <div style="font-size:0.82rem; color:#4b5563; margin-top:3px;">${l.details || ''}</div>
-          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">
-            Actor: <strong>${l.actor_name || 'Staff'}</strong> (${l.actor_role || 'Staff_Damayan'}) · Type: ${l.activity_type}
-          </div>
+          <div style="color:#4b5563;">${escapeHtml(l.details || '')}</div>
+          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">By: <strong>${escapeHtml(l.actor_name || 'System')}</strong> (${escapeHtml(l.actor_role || 'Staff')})</div>
         </div>
       </div>
     `).join('');
   }
 
-  function onDeceasedGenderChange(newGender) {
-    document.getElementById('modal-sex-badge').textContent = newGender;
-    document.getElementById('modal-sex-badge').style.background = (newGender === 'Female') ? '#fce7f3' : '#e0e7ff';
-    document.getElementById('modal-sex-badge').style.color = (newGender === 'Female') ? '#9d174d' : '#3730a3';
-    
-    // Auto-update Kafan shroud suggestion
-    document.getElementById('kf-type').value = (newGender === 'Female') ? '5-piece shroud (Sister)' : 'Standard 3-piece shroud (Brother)';
-    
-    // Re-fetch gender-specific volunteers
-    fetch('<?= url('/admin/damayan/burial/volunteers') ?>?gender=' + encodeURIComponent(newGender))
-      .then(r => r.json())
-      .then(d => {
-        if(d.success) {
-          activeGenderVolunteers = d.volunteers;
-          document.getElementById('ghusl-gender-label').textContent = newGender;
-          document.getElementById('ghusl-volunteer-type').textContent = newGender;
-          document.getElementById('vols-gender-tag').textContent = newGender;
-          renderVolunteersList(d.volunteers, activeCase ? activeCase.ghusl_assigned_volunteers : '');
-        }
+  // ──────────────── SUBMISSION HANDLERS ────────────────
+
+  async function submitDeathCertForm() {
+    if(!activeCase) return;
+    const payload = {
+      id: activeCase.id,
+      death_cert_status: document.getElementById('dc-status').value,
+      death_cert_prep_date: document.getElementById('dc-prep-date').value,
+      death_cert_certified_date: document.getElementById('dc-certified-date').value,
+      death_cert_submitted_lcro_date: document.getElementById('dc-submitted-lcro-date').value,
+      death_cert_registered_date: document.getElementById('dc-registered-date').value,
+      death_cert_registry_no: document.getElementById('dc-registry-no').value.trim(),
+      death_cert_lcro_ref: document.getElementById('dc-lcro-ref').value.trim(),
+      death_cert_certified_copy_ref: document.getElementById('dc-certified-copy-ref').value.trim(),
+      death_cert_responsible_personnel: document.getElementById('dc-responsible-personnel').value.trim(),
+      death_cert_remarks: document.getElementById('dc-remarks').value.trim(),
+      death_cert_rejection_reason: document.getElementById('dc-rejection-reason').value.trim()
+    };
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/death-cert/update') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
+      const data = await res.json();
+      if(data.success) {
+        showAlert('Death Certificate Updated', 'Death certificate processing stage and details saved.', 'success');
+        openCaseModal(activeCase.id);
+      } else {
+        showAlert('Error', data.error || 'Failed to update death certificate status.', 'error');
+      }
+    } catch(e) {
+      showAlert('Error', 'Network error occurred.', 'error');
+    }
   }
 
-  // ──────────────── SUBMISSION HANDLERS ────────────────
+  async function submitCemeteryPlotForm() {
+    if(!activeCase) return;
+    const payload = {
+      id: activeCase.id,
+      cemetery_plot_status: document.getElementById('cp-status').value,
+      cemetery_plot_id: document.getElementById('cp-plot-id').value,
+      cemetery_name: document.getElementById('cp-cemetery-name').value.trim(),
+      section: document.getElementById('cp-section').value.trim(),
+      plot_number: document.getElementById('cp-plot-number').value.trim(),
+      plot_assigned_date: document.getElementById('cp-assigned-date').value,
+      cemetery_plot_remarks: document.getElementById('cp-remarks').value.trim(),
+      cemetery_plot_rejection_reason: document.getElementById('cp-rejection-reason').value.trim()
+    };
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/cemetery-plot/update') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(data.success) {
+        showAlert('Plot Assigned', 'Cemetery plot assignment and availability records updated.', 'success');
+        openCaseModal(activeCase.id);
+      } else {
+        showAlert('Assignment Error', data.error || 'Failed to assign cemetery plot.', 'error');
+      }
+    } catch(e) {
+      showAlert('Error', 'Network error occurred.', 'error');
+    }
+  }
+
+  async function submitDeceasedForm() {
+    if(!activeCase) return;
+    const payload = {
+      id: activeCase.id,
+      deceased_first_name: document.getElementById('df-fname').value.trim(),
+      deceased_middle_name: document.getElementById('df-mname').value.trim(),
+      deceased_last_name: document.getElementById('df-lname').value.trim(),
+      deceased_sex: document.getElementById('df-sex').value,
+      date_of_birth: document.getElementById('df-dob').value,
+      date_of_death: document.getElementById('df-dod').value,
+      place_of_death: document.getElementById('df-pod').value.trim(),
+      residence: document.getElementById('df-residence').value.trim(),
+      civil_status: document.getElementById('df-civil-status').value,
+      nationality: document.getElementById('df-nationality').value.trim(),
+      religion: document.getElementById('df-religion').value.trim()
+    };
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/update-deceased') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(data.success) {
+        showAlert('Updated', 'Deceased record details successfully updated.', 'success');
+        openCaseModal(activeCase.id);
+      } else {
+        showAlert('Error', data.error || 'Failed to update deceased details.', 'error');
+      }
+    } catch(e) {
+      showAlert('Error', 'Network error.', 'error');
+    }
+  }
+
   async function submitAssignStaff() {
     if(!activeCase) return;
-    const select = document.getElementById('assign-staff-select');
-    const staffId = select.value;
-    const staffName = select.options[select.selectedIndex]?.getAttribute('data-name') || '';
-
+    const staffSelect = document.getElementById('assign-staff-select');
+    const staffId = staffSelect.value;
+    const staffName = staffSelect.options[staffSelect.selectedIndex]?.text.split('(')[0].trim();
     if(!staffId) {
-      showAlert('Selection Required', 'Please select a staff member to assign.', 'warning');
+      showAlert('Notice', 'Please choose a staff coordinator from the list.', 'warning');
       return;
     }
 
@@ -1070,19 +1156,19 @@
       });
       const data = await res.json();
       if(data.success) {
-        showAlert('Assigned', `Case successfully assigned to ${staffName}.`, 'success');
+        showAlert('Staff Assigned', 'Coordinator assigned to case.', 'success');
         openCaseModal(activeCase.id);
       } else {
         showAlert('Error', data.error || 'Failed to assign staff.', 'error');
       }
     } catch(e) {
-      showAlert('Error', 'Network or server error.', 'error');
+      showAlert('Error', 'Network error.', 'error');
     }
   }
 
-  async function quickAcceptRequest() {
+  async function triggerAcceptRequest() {
     if(!activeCase) return;
-    showConfirm('Accept Request', `Accept burial request #${activeCase.ref_id} for Islamic funeral coordination?`, async () => {
+    showConfirm('Accept Request', `Accept burial case #${activeCase.ref_id} for processing? This moves the request into active coordination.`, async () => {
       try {
         const res = await fetch('<?= url('/admin/damayan/burial/accept') ?>', {
           method: 'POST',
@@ -1091,7 +1177,7 @@
         });
         const data = await res.json();
         if(data.success) {
-          showAlert('Accepted', 'Request accepted for coordination. Family has been notified.', 'success');
+          showAlert('Accepted', 'Burial request accepted for processing.', 'success');
           openCaseModal(activeCase.id);
         } else {
           showAlert('Error', data.error || 'Failed to accept request.', 'error');
@@ -1102,20 +1188,17 @@
     });
   }
 
-  function toggleReqInfoBox() {
-    const box = document.getElementById('req-info-box');
-    box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
-    document.getElementById('reject-box').style.display = 'none';
+  function showRequestInfoModal() {
+    document.getElementById('damayanReqInfoModal').style.display = 'flex';
+  }
+  function closeReqInfoModal() {
+    document.getElementById('damayanReqInfoModal').style.display = 'none';
   }
 
   async function submitRequestInfo() {
     if(!activeCase) return;
-    const text = document.getElementById('req-info-explanation').value.trim();
-    if(!text) {
-      showAlert('Required', 'Please explain what additional information or documents are needed.', 'warning');
-      return;
-    }
-
+    const text = document.getElementById('reqinfo-explanation').value.trim();
+    if(!text) return;
     try {
       const res = await fetch('<?= url('/admin/damayan/burial/request-info') ?>', {
         method: 'POST',
@@ -1124,8 +1207,8 @@
       });
       const data = await res.json();
       if(data.success) {
-        showAlert('Request Sent', 'The applicant has been notified of the requested requirements.', 'success');
-        toggleReqInfoBox();
+        closeReqInfoModal();
+        showAlert('Notice Sent', 'The family has been requested to provide additional information.', 'success');
         openCaseModal(activeCase.id);
       } else {
         showAlert('Error', data.error || 'Failed to send request.', 'error');
@@ -1135,20 +1218,17 @@
     }
   }
 
-  function toggleRejectBox() {
-    const box = document.getElementById('reject-box');
-    box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
-    document.getElementById('req-info-box').style.display = 'none';
+  function showRejectModal() {
+    document.getElementById('damayanRejectModal').style.display = 'flex';
+  }
+  function closeRejectModal() {
+    document.getElementById('damayanRejectModal').style.display = 'none';
   }
 
   async function submitRejectRequest() {
     if(!activeCase) return;
     const reason = document.getElementById('reject-reason').value.trim();
-    if(!reason) {
-      showAlert('Reason Required', 'Please provide a clear justification for rejecting the request.', 'warning');
-      return;
-    }
-
+    if(!reason) return;
     try {
       const res = await fetch('<?= url('/admin/damayan/burial/reject') ?>', {
         method: 'POST',
@@ -1157,292 +1237,136 @@
       });
       const data = await res.json();
       if(data.success) {
-        showAlert('Request Declined', 'Request status set to Rejected and recorded in the audit trail.', 'info');
-        toggleRejectBox();
+        closeRejectModal();
+        showAlert('Case Rejected', 'Request rejected and family notified.', 'success');
         openCaseModal(activeCase.id);
       } else {
-        showAlert('Error', data.error || 'Failed to decline request.', 'error');
+        showAlert('Error', data.error || 'Failed to reject request.', 'error');
       }
     } catch(e) {
       showAlert('Error', 'Network error.', 'error');
     }
   }
 
-  async function submitDirectStatusUpdate() {
-    if(!activeCase) return;
-    const st = document.getElementById('quick-workflow-status').value;
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/update') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activeCase.id, status: st })
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Updated', `Workflow status updated to "${st}".`, 'success');
-        openCaseModal(activeCase.id);
-      } else {
-        showAlert('Error', 'Failed to update workflow status.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
-    }
-  }
-
-  async function submitDeceasedForm() {
-    if(!activeCase) return;
-    const payload = {
-      id: activeCase.id,
-      first_name: document.getElementById('df-fname').value.trim(),
-      middle_name: document.getElementById('df-mname').value.trim(),
-      last_name: document.getElementById('df-lname').value.trim(),
-      sex: document.getElementById('df-sex').value,
-      date_of_birth: document.getElementById('df-dob').value,
-      date_of_death: document.getElementById('df-dod').value,
-      time_of_death: document.getElementById('df-tod').value,
-      civil_status: document.getElementById('df-civil').value,
-      nationality: document.getElementById('df-nationality').value,
-      place_of_death: document.getElementById('df-pod').value.trim(),
-      residence_address: document.getElementById('df-residence').value.trim()
-    };
-
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/update-deceased') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Saved', 'Deceased record synchronized across all modules.', 'success');
-        openCaseModal(activeCase.id);
-      } else {
-        showAlert('Error', data.error || 'Failed to update deceased record.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
-    }
-  }
-
-  async function submitGhuslForm() {
-    if(!activeCase) return;
-    
-    // Collect checked volunteers + custom string
-    const checkedVols = Array.from(document.querySelectorAll('.ghusl-vol-cb:checked')).map(cb => cb.value);
-    const customVols = document.getElementById('gf-custom-vols').value.trim();
-    if(customVols) checkedVols.push(customVols);
-
-    const payload = {
-      id: activeCase.id,
-      ghusl_status: document.getElementById('gf-status').value,
-      ghusl_venue: document.getElementById('gf-venue').value.trim(),
-      ghusl_date: document.getElementById('gf-date').value,
-      ghusl_time: document.getElementById('gf-time').value,
-      ghusl_assigned_volunteers: checkedVols.join(', '),
-      ghusl_volunteer_status: document.getElementById('gf-vol-status').value,
-      ghusl_remarks: document.getElementById('gf-remarks').value.trim()
-    };
-
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/update-ghusl') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Ghusl Updated', 'Ghusl ritual coordination saved and status updated.', 'success');
-        openCaseModal(activeCase.id);
-      } else {
-        showAlert('Error', data.error || 'Failed to update Ghusl.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
-    }
-  }
-
-  async function submitKafanForm() {
-    if(!activeCase) return;
-    const payload = {
-      id: activeCase.id,
-      kafan_status: document.getElementById('kf-status').value,
-      kafan_type: document.getElementById('kf-type').value,
-      kafan_prepared_by: document.getElementById('kf-prep-by').value.trim(),
-      kafan_remarks: document.getElementById('kf-remarks').value.trim()
-    };
-
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/update-kafan') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Kafan Updated', 'Kafan shroud preparation recorded.', 'success');
-        openCaseModal(activeCase.id);
-      } else {
-        showAlert('Error', data.error || 'Failed to update Kafan.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
-    }
-  }
-
-  async function submitJanazahForm() {
-    if(!activeCase) return;
-    const payload = {
-      id: activeCase.id,
-      janazah_status: document.getElementById('jf-status').value,
-      janazah_masjid: document.getElementById('jf-masjid').value.trim(),
-      janazah_prayer_time: document.getElementById('jf-prayer-time').value,
-      janazah_date: document.getElementById('jf-date').value,
-      janazah_time: document.getElementById('jf-time').value,
-      janazah_imam_name: document.getElementById('jf-imam-name').value.trim(),
-      janazah_imam_contact: document.getElementById('jf-imam-contact').value.trim(),
-      janazah_remarks: document.getElementById('jf-remarks').value.trim()
-    };
-
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/update-janazah') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Janazah Updated', 'Salat al-Janazah schedule saved and applicant notified.', 'success');
-        openCaseModal(activeCase.id);
-      } else {
-        showAlert('Error', data.error || 'Failed to update Janazah.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
-    }
-  }
-
-  async function submitTransportForm() {
-    if(!activeCase) return;
-    const payload = {
-      id: activeCase.id,
-      transport_vehicle_type: document.getElementById('tf-vehicle').value,
-      transport_status: document.getElementById('tf-status').value,
-      transport_driver_name: document.getElementById('tf-driver').value.trim(),
-      transport_driver_contact: document.getElementById('tf-driver-contact').value.trim(),
-      transport_pickup_location: document.getElementById('tf-pickup').value.trim(),
-      transport_destination: document.getElementById('tf-dest').value.trim(),
-      transport_scheduled_datetime: document.getElementById('tf-sched-dt').value,
-      transport_actual_departure: document.getElementById('tf-actual-dep').value,
-      transport_actual_arrival: document.getElementById('tf-actual-arr').value,
-      transport_remarks: document.getElementById('tf-remarks').value.trim()
-    };
-
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/update-transport') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Transport Updated', 'Transportation arrangements saved and tracking updated.', 'success');
-        openCaseModal(activeCase.id);
-      } else {
-        showAlert('Error', data.error || 'Failed to update transport.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
-    }
-  }
-
-  async function submitCemeteryForm() {
-    if(!activeCase) return;
-    const payload = {
-      id: activeCase.id,
-      cemetery_name: document.getElementById('cf-name').value.trim(),
-      cemetery_status: document.getElementById('cf-status').value,
-      cemetery_plot_number: document.getElementById('cf-plot').value.trim(),
-      cemetery_scheduled_date: document.getElementById('cf-date').value,
-      cemetery_scheduled_time: document.getElementById('cf-time').value,
-      cemetery_remarks: document.getElementById('cf-remarks').value.trim()
-    };
-
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/update-cemetery') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Cemetery Updated', 'Cemetery and burial arrangements saved.', 'success');
-        openCaseModal(activeCase.id);
-      } else {
-        showAlert('Error', data.error || 'Failed to update cemetery.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
-    }
-  }
-
-  async function submitCompleteCaseForm() {
-    if(!activeCase) return;
-    const chk = document.getElementById('comp-confirmation-checkbox');
-    if(!chk.checked) {
-      showAlert('Confirmation Required', 'Please confirm that all Islamic funeral rites and burial have been completed.', 'warning');
-      return;
-    }
-
-    const payload = {
-      id: activeCase.id,
-      actual_burial_date: document.getElementById('comp-actual-date').value,
-      final_cemetery: document.getElementById('comp-final-cemetery').value.trim(),
-      final_remarks: document.getElementById('comp-final-remarks').value.trim()
-    };
-
-    showConfirm('Complete Case', `Are you certain you wish to mark burial case #${activeCase.ref_id} as officially COMPLETED? All services will be recorded as completed and archived.`, async () => {
-      try {
-        const res = await fetch('<?= url('/admin/damayan/burial/complete') ?>', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if(data.success) {
-          showAlert('Case Completed', 'Burial case officially completed. Notification sent to family.', 'success');
-          openCaseModal(activeCase.id);
-          setTimeout(() => location.reload(), 1500);
-        } else {
-          showAlert('Error', data.error || 'Failed to complete burial case.', 'error');
-        }
-      } catch(e) {
-        showAlert('Error', 'Network error.', 'error');
-      }
-    });
-  }
-
-  // Helper formatting functions
+  // Formatting helpers
   function getBadgeClass(status) {
     const s = (status || '').toLowerCase();
-    if(s.includes('new') || s.includes('pending') || s.includes('review')) return 'badge-pending';
+    if(s.includes('new') || s.includes('pending') || s.includes('review') || s.includes('awaiting')) return 'badge-pending';
     if(s.includes('additional') || s.includes('warning') || s.includes('info required')) return 'badge-warning';
-    if(s.includes('accepted') || s.includes('scheduled') || s.includes('arranged') || s.includes('confirmed') || s.includes('prepared')) return 'badge-info';
-    if(s.includes('completed')) return 'badge-active';
-    if(s.includes('rejected')) return 'badge-danger';
+    if(s.includes('accepted') || s.includes('available') || s.includes('certified') || s.includes('submitted') || s.includes('prepared')) return 'badge-info';
+    if(s.includes('completed') || s.includes('assigned') || s.includes('registered') || s.includes('approved')) return 'badge-active';
+    if(s.includes('rejected') || s.includes('unavailable')) return 'badge-danger';
     return 'badge-approved';
-  }
-
-  function formatDateTimeInput(val) {
-    if(!val) return '';
-    const d = new Date(val);
-    if(isNaN(d)) return '';
-    const pad = n => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
   function formatLogTime(val) {
     if(!val) return '';
     const d = new Date(val);
     return isNaN(d) ? val : d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+
+  function escapeHtml(text) {
+    if(!text) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+  }
+
+  function showSearchDeceasedModal() {
+    document.getElementById('searchDeceasedModal').style.display = 'flex';
+    if(activeCase) {
+      document.getElementById('deceased-search-query').value = activeCase.deceased_name || '';
+      executeSearchDeceased();
+    }
+  }
+
+  function closeSearchDeceasedModal() {
+    document.getElementById('searchDeceasedModal').style.display = 'none';
+  }
+
+  async function executeSearchDeceased() {
+    const q = document.getElementById('deceased-search-query').value.trim();
+    const resultsContainer = document.getElementById('deceased-search-results');
+    resultsContainer.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-muted);">Searching records...</div>';
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/deceased-records/search') ?>?q=' + encodeURIComponent(q));
+      const data = await res.json();
+      if(!data.success || !data.records || data.records.length === 0) {
+        resultsContainer.innerHTML = `
+          <div style="padding:20px; text-align:center; color:var(--text-muted); background:#f9fafb; border-radius:10px;">
+            <div>No matching deceased record found.</div>
+            <div style="font-size:0.78rem; margin-top:4px;">Do not create a duplicate. You may use "Request More Info" to request more information from the family.</div>
+          </div>
+        `;
+        return;
+      }
+
+      resultsContainer.innerHTML = data.records.map(r => `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; font-size:0.85rem;">
+          <div>
+            <div style="font-weight:700; color:var(--damayan-dark);">${escapeHtml(r.deceased_name)}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+              DOD: <strong>${escapeHtml(r.date_of_death || 'N/A')}</strong> · POD: ${escapeHtml(r.place_of_death || 'N/A')}
+              ${r.death_cert_registry_no ? ' · <span style="color:#047857; font-weight:700;">Reg #' + escapeHtml(r.death_cert_registry_no) + '</span>' : ''}
+              ${r.ref_id ? ' (Case #' + escapeHtml(r.ref_id) + ')' : ''}
+            </div>
+          </div>
+          <button type="button" class="btn-topbar primary" style="padding:6px 14px; font-size:0.78rem;" onclick="linkDeceasedRecord(${r.id})">
+            Link to Record
+          </button>
+        </div>
+      `).join('');
+    } catch(e) {
+      resultsContainer.innerHTML = '<div style="color:#dc2626; padding:10px; text-align:center;">Error searching records.</div>';
+    }
+  }
+
+  async function linkDeceasedRecord(deceasedId) {
+    if(!activeCase || !deceasedId) return;
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/verify-record') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: activeCase.id, deceased_id: deceasedId })
+      });
+      const data = await res.json();
+      if(data.success) {
+        closeSearchDeceasedModal();
+        showAlert('Record Linked', 'Existing deceased record successfully linked and verified. No duplicate record was created.', 'success');
+        openCaseModal(activeCase.id);
+      } else {
+        showAlert('Error', data.error || 'Failed to link record.', 'error');
+      }
+    } catch(e) {
+      showAlert('Error', 'Network error occurred.', 'error');
+    }
+  }
+
+  async function submitIssueCopy() {
+    if(!activeCase) return;
+    const ref = document.getElementById('copy-issue-ref').value.trim();
+    const remarks = document.getElementById('copy-issue-remarks').value.trim();
+
+    if(!ref) {
+      showAlert('Reference Required', 'Please enter a Certificate Copy Tracking / Reference number.', 'warning');
+      return;
+    }
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/issue-copy') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: activeCase.id, copy_ref: ref, remarks: remarks })
+      });
+      const data = await res.json();
+      if(data.success) {
+        showAlert('Copy Issued', 'Death certificate copy has been officially issued with reference #' + ref + '. The user can now confirm receipt.', 'success');
+        openCaseModal(activeCase.id);
+      } else {
+        showAlert('Error', data.error || 'Failed to issue copy.', 'error');
+      }
+    } catch(e) {
+      showAlert('Error', 'Network error occurred.', 'error');
+    }
   }
 </script>

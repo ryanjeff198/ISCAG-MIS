@@ -969,11 +969,11 @@
       if (st === 'Requested' || st === 'Under Review') {
         primaryBtn = `<button class="btn-topbar primary" onclick="quickStatus(${c.id}, 'Processing')">Start Processing →</button>`;
       } else if (st === 'Processing') {
-        primaryBtn = `<button class="btn-topbar primary" onclick="quickStatus(${c.id}, 'Ready for Release')">Mark as Ready ✓</button>`;
+        primaryBtn = `<button class="btn-topbar primary" onclick="quickStatus(${c.id}, 'Ready for Release')">Mark as Ready</button>`;
       } else if (st === 'Ready for Release') {
-        primaryBtn = `<button class="btn-topbar primary" onclick="openScheduleModal(${c.id}, false)">Schedule Release 📅</button>`;
+        primaryBtn = `<button class="btn-topbar primary" onclick="openScheduleModal(${c.id}, false)">Schedule Release</button>`;
       } else if (st === 'Scheduled for Release') {
-        primaryBtn = `<button class="btn-topbar primary" onclick="openReleaseModal(${c.id}, '${escapeHtml(c.informant_name || 'Requester')}')">Mark as Released 🎁</button>`;
+        primaryBtn = `<button class="btn-topbar primary" onclick="openReleaseModal(${c.id}, '${escapeHtml(c.informant_name || 'Requester')}')">Mark as Released</button>`;
         secondaryBtns = `<button class="btn-topbar" onclick="openScheduleModal(${c.id}, true)">Reschedule</button>`;
       }
 

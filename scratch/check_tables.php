@@ -4,11 +4,9 @@ require_once BASE_PATH . '/config/database.php';
 
 try {
     $db = getDbConnection();
-    $tables = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
-    echo "Tables in database:\n";
-    foreach ($tables as $table) {
-        echo "- $table\n";
-    }
+    $rows = $db->query("SELECT * FROM deceased_records LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+    echo "deceased_records count: " . count($rows) . "\n";
+    print_r($rows);
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
 }

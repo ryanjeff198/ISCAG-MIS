@@ -2124,23 +2124,39 @@ class AdminController extends Controller
         }
 
         $analytics = [
+            'total' => $burialAnalytics['total'],
             'burial' => $burialAnalytics['total'],
-            'charity' => 0, // Charity module still placeholder
-            'completed' => $burialAnalytics['completed'],
+            'charity' => 0,
+            'completed' => $burialAnalytics['death_cert_registered'] + $burialAnalytics['plot_assigned'],
             'pending' => $burialAnalytics['pending'],
-            'coordination' => $burialAnalytics['coordination'] ?? 0
+            'death_cert_pending' => $burialAnalytics['death_cert_pending'],
+            'death_cert_registered' => $burialAnalytics['death_cert_registered'],
+            'plot_pending' => $burialAnalytics['plot_pending'],
+            'plot_assigned' => $burialAnalytics['plot_assigned'],
+            'available_plots' => $burialAnalytics['available_plots'],
+            'occupied_plots' => $burialAnalytics['occupied_plots'],
+            'total_plots' => $burialAnalytics['total_plots']
         ];
 
         // Format burial records for the dashboard table
         $records = [];
-        foreach(array_slice($allBurials, 0, 15) as $b) {
+        foreach(array_slice($allBurials, 0, 20) as $b) {
             $records[] = [
                 'id' => $b['ref_id'],
                 'burial_id' => $b['id'],
                 'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
                 'deceased' => $b['deceased_name'] ?? 'N/A',
+                'deceased_sex' => $b['deceased_sex'] ?? 'Male',
                 'type' => 'burial',
-                'service_label' => 'Burial Service',
+                'request_type' => $b['request_type'] ?? 'both',
+                'death_cert_requested' => (int)($b['death_cert_requested'] ?? 1),
+                'death_cert_status' => $b['death_cert_status'] ?? 'Request Received',
+                'death_cert_registry_no' => $b['death_cert_registry_no'] ?? '',
+                'cemetery_plot_requested' => (int)($b['cemetery_plot_requested'] ?? 1),
+                'cemetery_plot_status' => $b['cemetery_plot_status'] ?? 'Pending Review',
+                'assigned_plot_number' => $b['assigned_plot_number'] ?? '',
+                'assigned_section' => $b['assigned_section'] ?? '',
+                'service_label' => ($b['request_type'] === 'both') ? 'Death Cert & Cemetery Plot' : (($b['request_type'] === 'death_certificate') ? 'Death Certificate' : 'Cemetery Plot'),
                 'date' => date('Y-m-d', strtotime($b['submitted_at'])),
                 'status' => $b['status'],
                 'status_class' => $this->getBurialStatusClass($b['status'])
@@ -2188,6 +2204,9 @@ class AdminController extends Controller
         $volunteers = $burialModel->getVolunteers();
 
         $records = [];
+        $plots = $burialModel->getAllPlots();
+        $availablePlots = $burialModel->getAvailablePlots();
+
         foreach($rawBurials as $b) {
             $records[] = [
                 'id' => $b['ref_id'],
@@ -2198,6 +2217,23 @@ class AdminController extends Controller
                 'date' => date('Y-m-d', strtotime($b['submitted_at'])),
                 'status' => $b['status'],
                 'status_class' => $this->getBurialStatusClass($b['status']),
+                'request_type' => $b['request_type'] ?? 'both',
+                'cert_action_type' => $b['cert_action_type'] ?? 'register',
+                'existing_cert_no' => $b['existing_cert_no'] ?? '',
+                'copy_reason' => $b['copy_reason'] ?? '',
+                'num_copies' => (int)($b['num_copies'] ?? 1),
+                'existing_record_verified' => (int)($b['existing_record_verified'] ?? 0),
+                'copy_issued_at' => $b['copy_issued_at'] ?? null,
+                'copy_received_confirmed' => (int)($b['copy_received_confirmed'] ?? 0),
+                'death_cert_requested' => (int)($b['death_cert_requested'] ?? 1),
+                'death_cert_status' => $b['death_cert_status'] ?? 'Request Received',
+                'death_cert_registry_no' => $b['death_cert_registry_no'] ?? '',
+                'cemetery_plot_requested' => (int)($b['cemetery_plot_requested'] ?? 1),
+                'cemetery_plot_status' => $b['cemetery_plot_status'] ?? 'Pending Review',
+                'assigned_cemetery_name' => $b['assigned_cemetery_name'] ?? '',
+                'assigned_plot_number' => $b['assigned_plot_number'] ?? '',
+                'assigned_section' => $b['assigned_section'] ?? '',
+                'cemetery_preference' => $b['cemetery_preference'] ?? '',
                 'ghusl_status' => $b['ghusl_status'] ?? 'Pending',
                 'janazah_status' => $b['janazah_status'] ?? 'Pending',
                 'transport_status' => $b['transport_status'] ?? 'Pending',
@@ -2212,6 +2248,8 @@ class AdminController extends Controller
             'analytics' => $analytics,
             'staffList' => $staffList,
             'volunteers' => $volunteers,
+            'plots' => $plots,
+            'availablePlots' => $availablePlots,
             'currentFilter' => $filter,
             'searchQuery' => $search
         ]);
@@ -2232,6 +2270,7 @@ class AdminController extends Controller
         $analytics = $burialModel->getAnalytics();
         $staffList = $burialModel->getAllStaff();
         $volunteers = $burialModel->getVolunteers();
+        $plots = $burialModel->getAllPlots();
 
         $records = [];
         foreach($rawBurials as $b) {
@@ -2244,6 +2283,23 @@ class AdminController extends Controller
                 'date' => date('Y-m-d', strtotime($b['submitted_at'])),
                 'status' => $b['status'],
                 'status_class' => $this->getBurialStatusClass($b['status']),
+                'request_type' => $b['request_type'] ?? 'both',
+                'cert_action_type' => $b['cert_action_type'] ?? 'register',
+                'existing_cert_no' => $b['existing_cert_no'] ?? '',
+                'copy_reason' => $b['copy_reason'] ?? '',
+                'num_copies' => (int)($b['num_copies'] ?? 1),
+                'existing_record_verified' => (int)($b['existing_record_verified'] ?? 0),
+                'copy_issued_at' => $b['copy_issued_at'] ?? null,
+                'copy_received_confirmed' => (int)($b['copy_received_confirmed'] ?? 0),
+                'death_cert_requested' => (int)($b['death_cert_requested'] ?? 1),
+                'death_cert_status' => $b['death_cert_status'] ?? 'Request Received',
+                'death_cert_registry_no' => $b['death_cert_registry_no'] ?? '',
+                'cemetery_plot_requested' => (int)($b['cemetery_plot_requested'] ?? 1),
+                'cemetery_plot_status' => $b['cemetery_plot_status'] ?? 'Pending Review',
+                'assigned_cemetery_name' => $b['assigned_cemetery_name'] ?? '',
+                'assigned_plot_number' => $b['assigned_plot_number'] ?? '',
+                'assigned_section' => $b['assigned_section'] ?? '',
+                'cemetery_preference' => $b['cemetery_preference'] ?? '',
                 'ghusl_status' => $b['ghusl_status'] ?? 'Pending',
                 'janazah_status' => $b['janazah_status'] ?? 'Pending',
                 'transport_status' => $b['transport_status'] ?? 'Pending',
@@ -2258,6 +2314,7 @@ class AdminController extends Controller
             'analytics' => $analytics,
             'staffList' => $staffList,
             'volunteers' => $volunteers,
+            'plots' => $plots,
             'currentFilter' => $filter,
             'searchQuery' => $search
         ]);
@@ -2333,13 +2390,21 @@ class AdminController extends Controller
         $volunteers = $model->getVolunteers($gender);
         $allVolunteers = $model->getVolunteers();
         $staffList = $model->getAllStaff();
+        $availablePlots = $model->getAvailablePlots();
+        $allPlots = $model->getAllPlots();
+        $auditLogs = $model->getAuditLogs((int)$burial['id']);
+        $documents = $model->getDocuments((int)$burial['id']);
 
         echo json_encode([
             'success' => true,
             'burial' => $burial,
             'gender_volunteers' => $volunteers,
             'all_volunteers' => $allVolunteers,
-            'staff_list' => $staffList
+            'staff_list' => $staffList,
+            'available_plots' => $availablePlots,
+            'all_plots' => $allPlots,
+            'audit_logs' => $auditLogs,
+            'documents' => $documents
         ]);
         return;
     }
@@ -2443,6 +2508,68 @@ class AdminController extends Controller
         $success = $model->updateDeceasedRecord($id, $input, $staffName);
 
         echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function verifyExistingDeathRecord(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $deceasedId = !empty($input['deceased_id']) ? (int)$input['deceased_id'] : null;
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing case ID']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $result = $model->verifyExistingRecord($id, $deceasedId, $staffName);
+
+        echo json_encode($result);
+        return;
+    }
+
+    public function issueCertificateCopy(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $copyRef = trim($input['copy_ref'] ?? '');
+        $remarks = trim($input['remarks'] ?? '');
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($id) || empty($copyRef)) {
+            echo json_encode(['success' => false, 'error' => 'Case ID and Certificate Copy Reference are required']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $result = $model->issueCertificateCopy($id, $copyRef, $staffName, $remarks);
+
+        echo json_encode($result);
+        return;
+    }
+
+    public function searchDeceasedRecords(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $q = trim($_GET['q'] ?? '');
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $records = $model->searchDeceasedRecords($q);
+
+        echo json_encode(['success' => true, 'records' => $records]);
         return;
     }
 
@@ -2557,6 +2684,110 @@ class AdminController extends Controller
         $model = new BurialRequest();
         $success = $model->updateVolunteerStatus($id, $status);
         echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function updateDeathCertStatus(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $status = trim($input['death_cert_status'] ?? '');
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($id) || empty($status)) {
+            echo json_encode(['success' => false, 'error' => 'Missing ID or status']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $res = $model->updateDeathCertStatus($id, $status, $input, $staffName);
+
+        echo json_encode($res);
+        return;
+    }
+
+    public function updateCemeteryPlot(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $status = trim($input['cemetery_plot_status'] ?? '');
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($id) || empty($status)) {
+            echo json_encode(['success' => false, 'error' => 'Missing ID or status']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $res = $model->updateCemeteryPlot($id, $status, $input, $staffName);
+
+        echo json_encode($res);
+        return;
+    }
+
+    public function getAvailableCemeteryPlots(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $plots = $model->getAvailablePlots();
+        echo json_encode(['success' => true, 'plots' => $plots]);
+        return;
+    }
+
+    public function addCemeteryPlot(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $res = $model->addPlot($input, $staffName);
+
+        echo json_encode($res);
+        return;
+    }
+
+    public function updateCemeteryPlotInventory(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $plotId = (int)($input['plot_id'] ?? 0);
+        $status = trim($input['status'] ?? '');
+        $notes = trim($input['notes'] ?? '');
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($plotId) || empty($status)) {
+            echo json_encode(['success' => false, 'error' => 'Missing plot ID or status']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $res = $model->updatePlotInventory($plotId, $status, $notes, $staffName);
+
+        echo json_encode($res);
         return;
     }
 

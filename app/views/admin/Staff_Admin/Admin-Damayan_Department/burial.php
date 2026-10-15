@@ -142,45 +142,55 @@
           <a href="<?= url('/admin/damayan') ?>">Dashboard</a><span class="sep">›</span><span class="current">Burial Records</span>
         </div>
 
+        <!-- Cemetery Operational Insights Cards -->
+        <?php
+          $totalPlots = count($plots ?? []);
+          $availCount = count(array_filter($plots ?? [], fn($p) => ($p['status'] ?? '') === 'Available'));
+          $occupiedCount = count(array_filter($plots ?? [], fn($p) => ($p['status'] ?? '') === 'Occupied'));
+          $pendingPlots = count(array_filter($records ?? [], fn($r) => in_array(strtolower($r['cemetery_plot_status'] ?? ''), ['pending review', 'under review', 'awaiting plot availability'])));
+        ?>
         <div class="admin-insights">
           <div class="insight-card">
-            <div class="insight-label">Total Registry Records</div>
-            <div class="insight-value"><?= $analytics['total'] ?? 0 ?></div>
-          </div>
-          <div class="insight-card" style="border-left-color:#f59e0b;">
-            <div class="insight-label">Pending Review</div>
-            <div class="insight-value warning"><?= $analytics['pending'] ?? 0 ?></div>
-          </div>
-          <div class="insight-card" style="border-left-color:#3b82f6;">
-            <div class="insight-label">Active In Coordination</div>
-            <div class="insight-value info"><?= $analytics['coordination'] ?? 0 ?></div>
+            <div class="insight-label">Total Cemetery Plots</div>
+            <div class="insight-value"><?= $totalPlots ?></div>
           </div>
           <div class="insight-card" style="border-left-color:#10b981;">
-            <div class="insight-label">Burials Completed</div>
-            <div class="insight-value success"><?= $analytics['completed'] ?? 0 ?></div>
+            <div class="insight-label">Available for Assignment</div>
+            <div class="insight-value success"><?= $availCount ?></div>
+          </div>
+          <div class="insight-card" style="border-left-color:#3b82f6;">
+            <div class="insight-label">Assigned / Occupied</div>
+            <div class="insight-value info"><?= $occupiedCount ?></div>
+          </div>
+          <div class="insight-card" style="border-left-color:#f59e0b;">
+            <div class="insight-label">Awaiting Assignment</div>
+            <div class="insight-value warning"><?= $pendingPlots ?></div>
           </div>
         </div>
 
-        <!-- Filter & Search Bar -->
+        <!-- Section Navigation Pills -->
         <div class="filter-bar">
           <div class="filter-pills">
-            <button type="button" class="filter-pill <?= ($currentFilter ?? 'all') === 'all' ? 'active' : '' ?>" onclick="setFilter('all')">All Records</button>
-            <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'pending' ? 'active' : '' ?>" onclick="setFilter('pending')">Pending</button>
-            <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'coordination' ? 'active' : '' ?>" onclick="setFilter('coordination')">In Coordination</button>
-            <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'completed' ? 'active' : '' ?>" onclick="setFilter('completed')">Completed Archive</button>
-            <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'rejected' ? 'active' : '' ?>" onclick="setFilter('rejected')">Declined</button>
+            <button type="button" class="filter-pill active" id="btn-view-requests" onclick="toggleViewMode('requests')">Plot Requests &amp; Assignments</button>
+            <button type="button" class="filter-pill" id="btn-view-inventory" onclick="toggleViewMode('inventory')">Plot Inventory &amp; Availability</button>
           </div>
-          <div class="search-box">
-            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-            <input type="text" id="table-search-input" placeholder="Search registry by name, deceased, or ref #..." value="<?= htmlspecialchars($searchQuery ?? '') ?>" onkeyup="onSearchInput(event)" />
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <input type="text" id="table-search-input" placeholder="Search plot, deceased, ref #..." value="<?= htmlspecialchars($searchQuery ?? '') ?>" onkeyup="onSearchInput(event)" />
+            </div>
+            <button type="button" class="btn-topbar primary" onclick="showAddPlotModal()" style="padding:7px 14px; font-size:0.82rem; white-space:nowrap;">
+              + Add Plot
+            </button>
           </div>
         </div>
 
-        <div class="section-card">
+        <!-- Container 1: Plot Requests Table -->
+        <div id="container-requests" class="section-card">
           <div class="section-card-header">
             <h6 style="color: var(--damayan-dark);">
               <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--damayan-accent);margin-right:8px;"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
-              Burial Records Archive
+              Cemetery Burial Plot Requests &amp; Case Assignments
             </h6>
           </div>
           <div class="section-card-body" style="padding:0;">
@@ -189,24 +199,24 @@
                 <thead>
                   <tr>
                     <th>Ref #</th>
-                    <th>Applicant</th>
+                    <th>Applicant / Representative</th>
                     <th>Deceased</th>
-                    <th>Date Requested</th>
-                    <th>Services Progress</th>
-                    <th>Status</th>
+                    <th>Preferred Cemetery</th>
+                    <th>Assigned Burial Plot</th>
+                    <th>Plot Status</th>
                     <th style="text-align:center;">Action</th>
                   </tr>
                 </thead>
                 <tbody id="burial-tbody">
                   <?php if(empty($records)): ?>
-                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No burial records found.</td></tr>
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No cemetery plot requests found.</td></tr>
                   <?php else: ?>
                     <?php foreach($records as $r): ?>
                       <tr>
                         <td class="td-id">#<?= htmlspecialchars($r['id']) ?></td>
                         <td>
                           <div style="font-weight:700; color:var(--text-main);"><?= htmlspecialchars($r['name']) ?></div>
-                          <div style="font-size:0.75rem; color:var(--text-muted);">Applicant</div>
+                          <div style="font-size:0.75rem; color:var(--text-muted);">Representative</div>
                         </td>
                         <td>
                           <div style="font-weight:700;"><?= htmlspecialchars($r['deceased']) ?></div>
@@ -214,18 +224,93 @@
                             <?= htmlspecialchars($r['deceased_sex'] ?? 'Male') ?>
                           </span>
                         </td>
-                        <td style="font-size:0.82rem;"><?= htmlspecialchars($r['date']) ?></td>
+                        <td style="font-size:0.82rem; color:var(--text-muted);"><?= htmlspecialchars($r['cemetery_preference'] ?: 'ISCAG Cemetery') ?></td>
                         <td>
-                          <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                            <span class="mini-badge <?= strtolower($r['ghusl_status'] ?? '') === 'completed' ? 'done' : (strtolower($r['ghusl_status'] ?? '') === 'scheduled' ? 'active' : 'pending') ?>" title="Ghusl: <?= htmlspecialchars($r['ghusl_status'] ?? 'Pending') ?>">Ghusl</span>
-                            <span class="mini-badge <?= strtolower($r['janazah_status'] ?? '') === 'completed' ? 'done' : (strtolower($r['janazah_status'] ?? '') === 'scheduled' ? 'active' : 'pending') ?>" title="Janazah: <?= htmlspecialchars($r['janazah_status'] ?? 'Pending') ?>">Janazah</span>
-                            <span class="mini-badge <?= strtolower($r['transport_status'] ?? '') === 'completed' ? 'done' : (strtolower($r['transport_status'] ?? '') === 'scheduled' ? 'active' : 'pending') ?>" title="Transport: <?= htmlspecialchars($r['transport_status'] ?? 'Pending') ?>">Transport</span>
-                            <span class="mini-badge <?= strtolower($r['cemetery_status'] ?? '') === 'completed' ? 'done' : (strtolower($r['cemetery_status'] ?? '') === 'scheduled' ? 'active' : 'pending') ?>" title="Cemetery: <?= htmlspecialchars($r['cemetery_status'] ?? 'Pending') ?>">Cemetery</span>
-                          </div>
+                          <?php if(!empty($r['assigned_plot_number'])): ?>
+                            <div style="font-weight:700; color:var(--damayan-dark);">
+                              <?= htmlspecialchars($r['assigned_cemetery_name'] ?: 'ISCAG Cemetery') ?>
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--damayan-accent); font-weight:600;">
+                              Sec <?= htmlspecialchars($r['assigned_section'] ?: 'General') ?> - Plot #<?= htmlspecialchars($r['assigned_plot_number']) ?>
+                            </div>
+                          <?php else: ?>
+                            <span style="font-size:0.78rem; color:var(--text-muted); font-style:italic;">Not Assigned Yet</span>
+                          <?php endif; ?>
                         </td>
-                        <td><span class="badge-status <?= htmlspecialchars($r['status_class']) ?>"><?= htmlspecialchars($r['status']) ?></span></td>
+                        <td>
+                          <span class="badge-status <?= strtolower($r['cemetery_plot_status'] ?? '') === 'plot assigned' ? 'badge-active' : (in_array(strtolower($r['cemetery_plot_status'] ?? ''), ['approved', 'available for assignment']) ? 'badge-info' : (strtolower($r['cemetery_plot_status'] ?? '') === 'rejected' ? 'badge-danger' : 'badge-pending')) ?>">
+                            <?= htmlspecialchars($r['cemetery_plot_status'] ?? 'Pending Review') ?>
+                          </span>
+                        </td>
                         <td style="text-align:center;">
-                          <button type="button" class="btn-topbar" style="padding:5px 12px; font-size:0.78rem; color:var(--damayan-accent); border-color:var(--damayan-accent);" onclick="openCaseModal('<?= htmlspecialchars($r['id']) ?>')">Manage</button>
+                          <button type="button" class="btn-topbar primary" style="padding:5px 14px; font-size:0.78rem;" onclick="openCaseModal('<?= htmlspecialchars($r['id']) ?>')">Assign / Manage</button>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Container 2: Plot Inventory Table -->
+        <div id="container-inventory" class="section-card" style="display:none;">
+          <div class="section-card-header">
+            <h6 style="color: var(--damayan-dark);">
+              <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--damayan-accent);margin-right:8px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+              Cemetery Plot Physical Inventory &amp; Occupancy
+            </h6>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Plot ID</th>
+                    <th>Cemetery Name</th>
+                    <th>Section</th>
+                    <th>Plot Number</th>
+                    <th>Plot Type</th>
+                    <th>Current Status</th>
+                    <th>Assigned Deceased</th>
+                    <th style="text-align:center;">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if(empty($plots)): ?>
+                    <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No inventory plots configured.</td></tr>
+                  <?php else: ?>
+                    <?php foreach($plots as $p): ?>
+                      <tr>
+                        <td class="td-id">#PLT-<?= htmlspecialchars($p['id']) ?></td>
+                        <td style="font-weight:700;"><?= htmlspecialchars($p['cemetery_name']) ?></td>
+                        <td>Section <?= htmlspecialchars($p['section'] ?: 'General') ?></td>
+                        <td style="font-weight:700; color:var(--damayan-dark);"><?= htmlspecialchars($p['plot_number']) ?></td>
+                        <td style="font-size:0.8rem;"><?= htmlspecialchars($p['plot_type'] ?: 'Standard') ?></td>
+                        <td>
+                          <span class="badge-status <?= $p['status'] === 'Available' ? 'badge-active' : ($p['status'] === 'Occupied' ? 'badge-info' : 'badge-danger') ?>">
+                            <?= htmlspecialchars($p['status']) ?>
+                          </span>
+                        </td>
+                        <td>
+                          <?php if(!empty($p['assigned_deceased_name'])): ?>
+                            <strong style="color:var(--text-main); font-size:0.83rem;"><?= htmlspecialchars($p['assigned_deceased_name']) ?></strong>
+                            <?php if(!empty($p['assigned_at'])): ?>
+                              <div style="font-size:0.72rem; color:var(--text-muted);"><?= date('M d, Y', strtotime($p['assigned_at'])) ?></div>
+                            <?php endif; ?>
+                          <?php else: ?>
+                            <span style="color:var(--text-muted); font-size:0.78rem;">—</span>
+                          <?php endif; ?>
+                        </td>
+                        <td style="text-align:center;">
+                          <?php if($p['status'] === 'Available'): ?>
+                            <button type="button" class="btn-topbar" style="padding:4px 10px; font-size:0.75rem; color:#dc2626;" onclick="updatePlotStatus(<?= $p['id'] ?>, 'Maintenance')">Mark Unavailable</button>
+                          <?php elseif($p['status'] === 'Maintenance' || $p['status'] === 'Reserved'): ?>
+                            <button type="button" class="btn-topbar" style="padding:4px 10px; font-size:0.75rem; color:var(--damayan-accent);" onclick="updatePlotStatus(<?= $p['id'] ?>, 'Available')">Make Available</button>
+                          <?php else: ?>
+                            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Occupied</span>
+                          <?php endif; ?>
                         </td>
                       </tr>
                     <?php endforeach; ?>
@@ -239,16 +324,125 @@
     </div>
   </div>
 
+  <!-- Add Plot Modal Dialog -->
+  <div id="addPlotModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100000; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#fff; border-radius:14px; max-width:480px; width:100%; padding:22px; box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+      <h5 style="margin:0 0 6px; font-size:1.05rem; color:var(--damayan-dark); font-weight:800;">Add Cemetery Plot to Inventory</h5>
+      <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">
+        Register a new physical burial plot in the database. Duplicate combinations of cemetery, section, and plot number are prevented.
+      </div>
+      <form id="add-plot-form" onsubmit="event.preventDefault(); submitAddPlotForm();">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Cemetery Name *</label>
+          <input type="text" id="new-cemetery-name" required value="ISCAG Designated Muslim Cemetery" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div class="form-group">
+            <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Section / Block *</label>
+            <input type="text" id="new-plot-section" required placeholder="e.g. Section A" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
+          </div>
+          <div class="form-group">
+            <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Plot Number *</label>
+            <input type="text" id="new-plot-number" required placeholder="e.g. A-125" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Plot Type</label>
+          <select id="new-plot-type" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;">
+            <option value="Standard">Standard Burial Plot</option>
+            <option value="Family">Family / Multi Plot</option>
+            <option value="Child">Child Plot</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Initial Notes / Location Details</label>
+          <textarea id="new-plot-notes" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. Near west boundary, leveled ground..."></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn-topbar" onclick="closeAddPlotModal()">Cancel</button>
+          <button type="submit" class="btn-topbar primary">Save Plot to Inventory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <?php include __DIR__ . '/burial_modal.php'; ?>
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     standardizePage('staff');
 
-    function setFilter(filter) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('filter', filter);
-      window.location.href = url.toString();
+    function toggleViewMode(mode) {
+      const btnReq = document.getElementById('btn-view-requests');
+      const btnInv = document.getElementById('btn-view-inventory');
+      const conReq = document.getElementById('container-requests');
+      const conInv = document.getElementById('container-inventory');
+
+      if(mode === 'inventory') {
+        btnInv.classList.add('active');
+        btnReq.classList.remove('active');
+        conInv.style.display = 'block';
+        conReq.style.display = 'none';
+      } else {
+        btnReq.classList.add('active');
+        btnInv.classList.remove('active');
+        conReq.style.display = 'block';
+        conInv.style.display = 'none';
+      }
+    }
+
+    function showAddPlotModal() {
+      document.getElementById('addPlotModal').style.display = 'flex';
+    }
+    function closeAddPlotModal() {
+      document.getElementById('addPlotModal').style.display = 'none';
+    }
+
+    async function submitAddPlotForm() {
+      const payload = {
+        cemetery_name: document.getElementById('new-cemetery-name').value.trim(),
+        section: document.getElementById('new-plot-section').value.trim(),
+        plot_number: document.getElementById('new-plot-number').value.trim(),
+        plot_type: document.getElementById('new-plot-type').value,
+        notes: document.getElementById('new-plot-notes').value.trim()
+      };
+
+      try {
+        const res = await fetch('<?= url('/admin/damayan/cemetery-plots/add') ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data.success) {
+          showAlert('Plot Added', 'New cemetery plot registered in database inventory.', 'success');
+          closeAddPlotModal();
+          setTimeout(() => location.reload(), 1200);
+        } else {
+          showAlert('Error', data.error || 'Failed to add cemetery plot.', 'error');
+        }
+      } catch(e) {
+        showAlert('Error', 'Network error occurred.', 'error');
+      }
+    }
+
+    async function updatePlotStatus(plotId, status) {
+      try {
+        const res = await fetch('<?= url('/admin/damayan/cemetery-plots/update-status') ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plot_id: plotId, status: status })
+        });
+        const data = await res.json();
+        if(data.success) {
+          showAlert('Updated', `Plot status changed to ${status}.`, 'success');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showAlert('Error', data.error || 'Failed to update plot status.', 'error');
+        }
+      } catch(e) {
+        showAlert('Error', 'Network error.', 'error');
+      }
     }
 
     function onSearchInput(e) {
