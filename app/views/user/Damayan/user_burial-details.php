@@ -19,7 +19,7 @@ $userName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? 
 if (empty($userName)) {
     $userName = $_SESSION['name'] ?? 'Applicant';
 }
-$userPhone = $dbUser['phone_number'] ?? $dbUser['contact_number'] ?? ($dbUser['phone'] ?? '');
+$userPhone = $dbUser['phone_number'] ?? $dbUser['contact_number'] ?? ($dbUser['phone'] ?? ($dbUser['contactnum'] ?? ''));
 $userEmail = $dbUser['email'] ?? ($_SESSION['email'] ?? '');
 $userAddress = $dbUser['address'] ?? '';
 
@@ -40,20 +40,24 @@ if (!empty($reqId)) {
             $activeBurial = [
                 'ref_id' => $foundCase['case_number'],
                 'deceased_name' => trim($foundCase['deceased_first_name'] . ' ' . ($foundCase['deceased_middle_name'] ? $foundCase['deceased_middle_name'] . ' ' : '') . $foundCase['deceased_last_name']),
+                'deceased_sex' => $foundCase['deceased_sex'] ?? 'Male',
+                'date_of_birth' => $foundCase['deceased_dob'] ?? null,
                 'date_of_death' => $foundCase['deceased_dod'],
                 'place_of_death' => $foundCase['deceased_place_of_death'],
                 'residence' => $foundCase['deceased_address'],
                 'religion' => $foundCase['deceased_religion'] ?? 'Islam',
+                'civil_status' => $foundCase['deceased_civil_status'] ?? 'Married',
                 'relationship' => $foundCase['informant_relationship'] ?? 'Relative',
+                'informant_name' => $foundCase['informant_name'] ?? $userName,
                 'status' => $foundCase['status'] ?? 'Under Review',
                 'submitted_at' => $foundCase['submitted_at'] ?? date('Y-m-d H:i:s')
             ];
         }
     }
 } else {
-    $userBurials = $burialModel->getByTenantId($userId);
+    $userBurials = $burialModel->getByTenantId((int)$userId);
     if (!empty($userBurials)) {
-        $activeBurial = $userBurials[0];
+        $activeBurial = $burialModel->findByRefId($userBurials[0]['ref_id']);
     } else {
         $userCases = $fcModel->getByTenantId($userId);
         if (!empty($userCases)) {
@@ -61,11 +65,13 @@ if (!empty($reqId)) {
             $activeBurial = [
                 'ref_id' => $fc['case_number'],
                 'deceased_name' => trim($fc['deceased_first_name'] . ' ' . ($fc['deceased_middle_name'] ? $fc['deceased_middle_name'] . ' ' : '') . $fc['deceased_last_name']),
+                'deceased_sex' => $fc['deceased_sex'] ?? 'Male',
                 'date_of_death' => $fc['deceased_dod'],
                 'place_of_death' => $fc['deceased_place_of_death'],
                 'residence' => $fc['deceased_address'],
                 'religion' => $fc['deceased_religion'] ?? 'Islam',
                 'relationship' => $fc['informant_relationship'] ?? 'Relative',
+                'informant_name' => $fc['informant_name'] ?? $userName,
                 'status' => $fc['status'] ?? 'Under Review',
                 'submitted_at' => $fc['submitted_at'] ?? date('Y-m-d H:i:s')
             ];
@@ -81,9 +87,14 @@ $dateSubmitted = $hasApplication && !empty($activeBurial['submitted_at']) ? date
 $deceasedName = $hasApplication ? ($activeBurial['deceased_name'] ?? '—') : 'No Deceased Listed';
 $dateOfDeath = $hasApplication && !empty($activeBurial['date_of_death']) ? date('M d, Y', strtotime($activeBurial['date_of_death'])) : '—';
 $placeOfDeath = $hasApplication && !empty($activeBurial['place_of_death']) ? $activeBurial['place_of_death'] : 'ISCAG Area';
-$requesterName = $userName;
+$requesterName = $hasApplication && !empty($activeBurial['informant_name']) ? $activeBurial['informant_name'] : $userName;
 $relationship = $hasApplication && !empty($activeBurial['relationship']) ? $activeBurial['relationship'] : 'Family Member';
 $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery Plot & Coordination", "Burial Transport"];
+
+$stLower = strtolower($status);
+$isInfoRequired = ($stLower === 'additional information required');
+$isCompleted = ($stLower === 'burial completed' || $stLower === 'completed');
+$isRejected = ($stLower === 'rejected');
 
 $autoOpenForm = isset($startWithFormOpen) && $startWithFormOpen === true;
 if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fill'])) {
@@ -246,75 +257,84 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             color: var(--warning-text);
             border-color: #fde68a;
         }
+        .status-badge.coordination {
+            background: #e0f2fe;
+            color: #0284c7;
+            border-color: #bae6fd;
+        }
+        .status-badge.rejected {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fecaca;
+        }
         .status-badge.none {
             background: #f1f5f9;
-            color: #475569;
-            border-color: #cbd5e1;
+            color: #64748b;
         }
 
-        /* ── Primary Action Button (Request Form) ── */
+        /* ── Request Form Button ── */
         .btn-request-form {
-            background: linear-gradient(135deg, var(--primary) 0%, #2e7d32 100%);
+            background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
+            padding: 10px 22px;
+            border-radius: var(--radius-md);
             font-weight: 700;
-            font-size: 0.92rem;
+            font-size: 0.88rem;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 14px rgba(27,94,32,0.25);
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            text-decoration: none;
+            gap: 8px;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(27,94,32,0.22);
         }
         .btn-request-form:hover {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            background: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(27,94,32,0.35);
-            color: white;
-        }
-        .btn-request-form:active {
-            transform: translateY(0);
+            box-shadow: 0 6px 18px rgba(27,94,32,0.3);
         }
         .btn-request-form svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             fill: none;
             stroke: currentColor;
             stroke-width: 2.2;
-            transition: transform 0.2s;
-        }
-        .btn-request-form:hover svg {
-            transform: scale(1.1);
         }
 
-        /* ── Body Content ── */
-        .app-body { padding: 36px 40px; }
+        /* ── Card Body ── */
+        .app-body {
+            padding: 36px 40px;
+        }
 
+        /* ── Informational Grid ── */
         .info-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 32px;
-            margin-bottom: 36px;
+            gap: 28px;
+            margin-bottom: 32px;
         }
         .info-group {
             background: #fbfcfd;
             border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 20px;
+            border-radius: 14px;
+            padding: 22px;
+            transition: all 0.2s;
+        }
+        .info-group:hover {
+            border-color: #cbd5e1;
+            background: #fff;
+            box-shadow: var(--shadow-sm);
         }
         .info-group h4 {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
             margin: 0 0 10px;
-            font-weight: 800;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
         .info-group h4 svg {
             width: 16px;
@@ -322,103 +342,90 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             color: var(--primary);
         }
         .info-value {
-            font-size: 1.18rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: var(--text-main);
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .info-sub {
-            font-size: 0.85rem;
-            color: var(--text-muted);
+            font-size: 0.88rem;
+            color: #4b5563;
             line-height: 1.5;
         }
 
-        /* ── Services Checklist ── */
+        /* ── Services Box ── */
         .services-box {
-            background: #f8fafc;
-            border-radius: 16px;
-            padding: 26px;
+            background: #fbfcfd;
             border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
             margin-bottom: 32px;
         }
         .services-box h4 {
-            font-family: 'Lora', serif;
-            font-size: 1.05rem;
-            color: var(--primary-dark);
             margin: 0 0 16px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary-dark);
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
         .services-grid-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 12px;
         }
         .service-item-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: white;
-            border: 1px solid #eef2f6;
-            border-radius: 10px;
+            gap: 10px;
+            font-size: 0.85rem;
             font-weight: 600;
-            font-size: 0.9rem;
             color: var(--text-main);
-            transition: border-color 0.2s;
-        }
-        .service-item-card:hover {
-            border-color: #a7f3d0;
-            background: #fafffc;
         }
         .service-item-card svg {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             fill: var(--primary);
             flex-shrink: 0;
         }
 
-        /* ── Guidelines Alert Box ── */
+        /* ── Notice Banner ── */
         .guidelines-notice {
-            background: linear-gradient(135deg, #f0fdf4 0%, #e6f7ec 100%);
-            border: 1.5px solid #bbf7d0;
-            border-radius: var(--radius-md);
-            padding: 20px 24px;
+            background: #f8fafc;
+            border-left: 4px solid var(--primary);
+            border-radius: 0 12px 12px 0;
+            padding: 18px 22px;
             display: flex;
+            gap: 14px;
             align-items: flex-start;
-            gap: 16px;
-            margin-bottom: 8px;
         }
         .guidelines-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: white;
             color: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin-top: 2px;
             flex-shrink: 0;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
         .guidelines-text h5 {
             margin: 0 0 4px;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
+            font-weight: 700;
             color: var(--primary-dark);
-            font-weight: 800;
         }
         .guidelines-text p {
             margin: 0;
             font-size: 0.85rem;
-            color: #166534;
-            line-height: 1.55;
+            color: #4b5563;
+            line-height: 1.5;
         }
 
-        /* ── Footer / Actions ── */
+        /* ── Footer ── */
         .app-footer {
-            background: #fafbfc;
-            padding: 24px 40px;
+            background: #f8fafc;
+            padding: 20px 40px;
             border-top: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -427,19 +434,19 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             gap: 16px;
         }
         .btn-outline {
-            padding: 10px 20px;
             background: white;
             border: 1.5px solid var(--border);
             color: var(--text-main);
-            border-radius: 10px;
+            padding: 9px 20px;
+            border-radius: var(--radius-md);
             font-weight: 700;
             font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             text-decoration: none;
+            transition: all 0.2s;
         }
         .btn-outline:hover {
             border-color: var(--primary);
@@ -447,53 +454,39 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             background: var(--primary-light);
         }
 
-        /* ══════════════════════════════════════════════════════════════════════ */
-        /* 📝 FILL UP FORM SECTION (Appears when clicking Request Form button)     */
-        /* ══════════════════════════════════════════════════════════════════════ */
+        /* ── Form Card ── */
         #burial-form-container {
             display: <?= $autoOpenForm ? 'block' : 'none' ?>;
-            animation: formSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             margin-top: 36px;
+            animation: fadeInCard 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        @keyframes formSlideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .form-card {
             background: white;
             border-radius: var(--radius-lg);
-            box-shadow: 0 15px 45px rgba(0,0,0,0.08);
-            border: 1.5px solid #d1fae5;
+            box-shadow: var(--shadow-lg);
+            border: 1.5px solid #a7f3d0;
             overflow: hidden;
             position: relative;
         }
         .form-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             height: 5px;
-            background: linear-gradient(90deg, #1b5e20, #2e7d32, #c9a84c);
+            background: linear-gradient(90deg, var(--primary) 0%, #2e7d32 100%);
         }
-
         .form-card-header {
-            background: linear-gradient(135deg, #f7faf8 0%, #ffffff 100%);
             padding: 32px 40px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
         }
         .form-card-title-area h2 {
             font-family: 'Lora', serif;
@@ -709,7 +702,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             display: none;
             animation: slideUpToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            max-width: 420px;
+            max-width: 440px;
             border-left: 5px solid #34d399;
         }
         @keyframes slideUpToast {
@@ -779,7 +772,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                             REFERENCE: #<?= htmlspecialchars($appId) ?>
                         </div>
-                        <h1>Burial Service Overview &amp; Details</h1>
+                        <h1>Burial Service Overview &amp; Tracking</h1>
                         <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
                             Submitted: <strong><?= htmlspecialchars($dateSubmitted) ?></strong> • Applicant: <strong><?= htmlspecialchars($requesterName) ?></strong>
                         </div>
@@ -787,11 +780,16 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                     <div class="app-header-actions">
                         <?php
                             $statusClass = 'none';
-                            $stLower = strtolower($status);
-                            if (strpos($stLower, 'approved') !== false || strpos($stLower, 'verified') !== false || strpos($stLower, 'completed') !== false) {
+                            if ($isCompleted) {
                                 $statusClass = 'approved';
-                            } elseif (strpos($stLower, 'review') !== false || strpos($stLower, 'pending') !== false || strpos($stLower, 'submitted') !== false) {
+                            } elseif ($isRejected) {
+                                $statusClass = 'rejected';
+                            } elseif ($isInfoRequired) {
                                 $statusClass = 'pending';
+                            } elseif (strpos($stLower, 'review') !== false || strpos($stLower, 'pending') !== false || strpos($stLower, 'new') !== false) {
+                                $statusClass = 'pending';
+                            } else {
+                                $statusClass = 'coordination';
                             }
                         ?>
                         <span class="status-badge <?= $statusClass ?>">
@@ -799,7 +797,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                             <?= htmlspecialchars($status) ?>
                         </span>
 
-                        <!-- 🔘 CLICK REQUEST FORM BUTTON (Reveals the fill-up form) -->
+                        <!-- CLICK REQUEST FORM BUTTON (Reveals the fill-up form) -->
                         <button type="button" class="btn-request-form" id="btn-request-form-top" onclick="toggleRequestForm()">
                             <svg viewBox="0 0 24 24">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -814,6 +812,62 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
 
                 <!-- Body -->
                 <div class="app-body">
+
+                    <!-- Alert / Banner: Action Required (Additional Information Requested) -->
+                    <?php if ($isInfoRequired): ?>
+                    <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b; border-radius: 14px; padding: 22px 24px; margin-bottom: 28px;">
+                      <div style="display: flex; align-items: flex-start; gap: 14px;">
+                        <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        </div>
+                        <div style="flex: 1;">
+                          <h4 style="margin: 0 0 6px; font-size: 1.05rem; color: #92400e; font-family: 'Lora', serif;">Action Required: Additional Information or Documents Needed</h4>
+                          <p style="margin: 0 0 14px; font-size: 0.9rem; color: #78350f; line-height: 1.5;">
+                            <strong>Message from Damayan Coordinator (<?= htmlspecialchars($activeBurial['assigned_staff_name'] ?? 'Staff') ?>):</strong><br>
+                            <?= nl2br(htmlspecialchars($activeBurial['info_request_notes'] ?? 'Please provide the requested details to proceed.')) ?>
+                          </p>
+                          
+                          <!-- Form to respond to additional requirements -->
+                          <form id="respond-info-form" onsubmit="submitRequirementsResponse(event)" style="background: white; border: 1.5px solid #fed7aa; border-radius: 12px; padding: 18px 20px;">
+                            <input type="hidden" id="resp-ref-id" value="<?= htmlspecialchars($appId) ?>">
+                            <div class="form-group" style="margin-bottom: 12px;">
+                              <label class="form-label" style="color: #92400e;">Your Explanation / Requested Details <span class="req">*</span></label>
+                              <textarea id="resp-info-text" class="form-control" rows="3" placeholder="Provide the requested details or explanation..." required></textarea>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                              <label class="form-label" style="color: #92400e;">Upload Supporting Document (Optional)</label>
+                              <input type="file" id="resp-doc-file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                              <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Allowed: PDF, JPG, PNG (Max 10MB)</span>
+                            </div>
+                            <div style="display:flex; justify-content:flex-end;">
+                              <button type="submit" class="btn-submit" id="btn-submit-resp" style="background:#b45309; padding:10px 24px; font-size:0.88rem;">
+                                Submit Information
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($activeBurial['additional_info_submitted'])): ?>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; font-size: 0.85rem; color: #166534;">
+                      <strong>Latest Update Submitted on <?= !empty($activeBurial['info_submitted_at']) ? date('M d, Y g:i A', strtotime($activeBurial['info_submitted_at'])) : '—' ?>:</strong><br>
+                      <?= htmlspecialchars($activeBurial['additional_info_submitted']) ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($isCompleted): ?>
+                    <div style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 18px 22px; margin-bottom: 28px; display: flex; align-items: center; gap: 14px;">
+                      <div style="width: 36px; height: 36px; border-radius: 50%; background: #059669; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                      <div style="font-size: 0.9rem; color: #065f46; line-height: 1.5;">
+                        <strong>Burial Service Completed:</strong> All Islamic funeral arrangements and burial rites for <strong><?= htmlspecialchars($deceasedName) ?></strong> were respectfully fulfilled on <strong><?= !empty($activeBurial['actual_burial_date']) ? date('F d, Y \a\t g:i A', strtotime($activeBurial['actual_burial_date'])) : '—' ?></strong> at <strong><?= htmlspecialchars($activeBurial['final_cemetery'] ?? 'ISCAG Cemetery') ?></strong>.
+                      </div>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Informative Grid -->
                     <div class="info-grid">
                         <div class="info-group">
@@ -823,8 +877,11 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                             </h4>
                             <div class="info-value"><?= htmlspecialchars($deceasedName) ?></div>
                             <div class="info-sub">
+                                Gender: <strong><?= htmlspecialchars($activeBurial['deceased_sex'] ?? 'Male') ?></strong><br>
                                 Date of Death: <strong><?= htmlspecialchars($dateOfDeath) ?></strong><br>
-                                Location: <?= htmlspecialchars($placeOfDeath) ?>
+                                Place of Death: <?= htmlspecialchars($placeOfDeath) ?><br>
+                                Usual Residence: <?= htmlspecialchars($activeBurial['residence'] ?? 'N/A') ?><br>
+                                Religion: <?= htmlspecialchars($activeBurial['religion'] ?? 'Islam') ?>
                             </div>
                         </div>
 
@@ -836,24 +893,137 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                             <div class="info-value"><?= htmlspecialchars($requesterName) ?></div>
                             <div class="info-sub">
                                 Relationship: <strong><?= htmlspecialchars($relationship) ?></strong><br>
-                                Contact: <?= htmlspecialchars($userPhone ?: 'On File') ?> • <?= htmlspecialchars($userEmail) ?>
+                                Contact Number: <?= htmlspecialchars($activeBurial['informant_contact'] ?? ($userPhone ?: 'On File')) ?><br>
+                                Email: <?= htmlspecialchars($activeBurial['informant_email'] ?? $userEmail) ?><br>
+                                Address: <?= htmlspecialchars($activeBurial['informant_address'] ?? ($userAddress ?: 'On File')) ?>
                             </div>
+                            <?php if (!empty($activeBurial['supporting_document'])): ?>
+                            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);">
+                                <a href="<?= asset($activeBurial['supporting_document']) ?>" target="_blank" class="btn-outline" style="padding: 6px 12px; font-size: 0.78rem;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                    View Uploaded Document
+                                </a>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
-                    <!-- Services Included in Islamic Burial -->
-                    <div class="services-box">
+                    <!-- Live Islamic Funeral Coordination Tracking Cards -->
+                    <div class="services-box" style="margin-bottom: 28px;">
                         <h4>
-                            <span>Islamic Funeral Services Provided by ISCAG Damayan</span>
-                            <span style="font-size:0.75rem; color:var(--primary); font-family:'Inter'; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Compliant with Islamic Sunnah</span>
+                            <span>Islamic Funeral Coordination &amp; Service Schedules</span>
+                            <span style="font-size:0.75rem; color:var(--primary); font-family:'Inter'; font-weight:700; text-transform:uppercase;">
+                                Assigned Coordinator: <?= htmlspecialchars($activeBurial['assigned_staff_name'] ?? 'Damayan Team') ?>
+                            </span>
                         </h4>
-                        <div class="services-grid-list">
-                            <?php foreach($services as $srv): ?>
-                            <div class="service-item-card">
-                                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                                <span><?= htmlspecialchars($srv) ?></span>
+                        
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 14px;">
+                            <!-- 1. Ghusl -->
+                            <div style="background:white; border:1px solid var(--border); border-radius:12px; padding:16px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="color:var(--primary); font-size:0.92rem;">1. Bathing (Ghusl)</strong>
+                                    <span style="font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:6px; background:<?= ($activeBurial['ghusl_status'] ?? '') === 'Completed' ? 'var(--success-bg)' : '#eff6ff' ?>; color:<?= ($activeBurial['ghusl_status'] ?? '') === 'Completed' ? 'var(--success-text)' : '#1e40af' ?>;">
+                                        <?= htmlspecialchars($activeBurial['ghusl_status'] ?? 'Pending') ?>
+                                    </span>
+                                </div>
+                                <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+                                    <strong>Facility:</strong> <?= htmlspecialchars($activeBurial['ghusl_venue'] ?? 'ISCAG Ghusl Facility') ?><br>
+                                    <?php if (!empty($activeBurial['ghusl_date'])): ?>
+                                        <strong>Schedule:</strong> <?= date('M d, Y', strtotime($activeBurial['ghusl_date'])) ?> <?= !empty($activeBurial['ghusl_time']) ? date('g:i A', strtotime($activeBurial['ghusl_time'])) : '' ?><br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($activeBurial['ghusl_assigned_volunteers'])): ?>
+                                        <strong>Assigned Volunteers:</strong> <?= htmlspecialchars($activeBurial['ghusl_assigned_volunteers']) ?> (<?= htmlspecialchars($activeBurial['ghusl_volunteer_status'] ?? 'Assigned') ?>)<br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($activeBurial['ghusl_remarks'])): ?>
+                                        <strong>Notes:</strong> <?= htmlspecialchars($activeBurial['ghusl_remarks']) ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                            <?php endforeach; ?>
+
+                            <!-- 2. Kafan -->
+                            <div style="background:white; border:1px solid var(--border); border-radius:12px; padding:16px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="color:var(--primary); font-size:0.92rem;">2. Shrouding (Kafn)</strong>
+                                    <span style="font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:6px; background:<?= in_array($activeBurial['kafan_status'] ?? '', ['Ready', 'Completed']) ? 'var(--success-bg)' : '#eff6ff' ?>; color:<?= in_array($activeBurial['kafan_status'] ?? '', ['Ready', 'Completed']) ? 'var(--success-text)' : '#1e40af' ?>;">
+                                        <?= htmlspecialchars($activeBurial['kafan_status'] ?? 'Pending') ?>
+                                    </span>
+                                </div>
+                                <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+                                    <strong>Shroud:</strong> <?= htmlspecialchars($activeBurial['kafan_type'] ?? 'Standard Shroud') ?><br>
+                                    <?php if (!empty($activeBurial['kafan_prepared_by'])): ?>
+                                        <strong>Prepared By:</strong> <?= htmlspecialchars($activeBurial['kafan_prepared_by']) ?><br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($activeBurial['kafan_remarks'])): ?>
+                                        <strong>Notes:</strong> <?= htmlspecialchars($activeBurial['kafan_remarks']) ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <!-- 3. Janazah -->
+                            <div style="background:white; border:1px solid var(--border); border-radius:12px; padding:16px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="color:var(--primary); font-size:0.92rem;">3. Janazah Prayer</strong>
+                                    <span style="font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:6px; background:<?= ($activeBurial['janazah_status'] ?? '') === 'Completed' ? 'var(--success-bg)' : '#eff6ff' ?>; color:<?= ($activeBurial['janazah_status'] ?? '') === 'Completed' ? 'var(--success-text)' : '#1e40af' ?>;">
+                                        <?= htmlspecialchars($activeBurial['janazah_status'] ?? 'Pending') ?>
+                                    </span>
+                                </div>
+                                <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+                                    <strong>Masjid:</strong> <?= htmlspecialchars($activeBurial['janazah_masjid'] ?? 'ISCAG Main Masjid') ?><br>
+                                    <?php if (!empty($activeBurial['janazah_date'])): ?>
+                                        <strong>Date &amp; Time:</strong> <?= date('M d, Y', strtotime($activeBurial['janazah_date'])) ?> (<?= htmlspecialchars($activeBurial['janazah_prayer_time'] ?? 'After Dhuhr') ?>)<br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($activeBurial['janazah_imam_name'])): ?>
+                                        <strong>Officiating Imam:</strong> <?= htmlspecialchars($activeBurial['janazah_imam_name']) ?><br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($activeBurial['janazah_remarks'])): ?>
+                                        <strong>Notes:</strong> <?= htmlspecialchars($activeBurial['janazah_remarks']) ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <!-- 4. Transport -->
+                            <div style="background:white; border:1px solid var(--border); border-radius:12px; padding:16px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="color:var(--primary); font-size:0.92rem;">4. Transport &amp; Hearse</strong>
+                                    <span style="font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:6px; background:<?= ($activeBurial['transport_status'] ?? '') === 'Completed' ? 'var(--success-bg)' : '#eff6ff' ?>; color:<?= ($activeBurial['transport_status'] ?? '') === 'Completed' ? 'var(--success-text)' : '#1e40af' ?>;">
+                                        <?= htmlspecialchars($activeBurial['transport_status'] ?? 'Pending') ?>
+                                    </span>
+                                </div>
+                                <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+                                    <strong>Vehicle:</strong> <?= htmlspecialchars($activeBurial['transport_vehicle_type'] ?? 'ISCAG Ambulance') ?><br>
+                                    <?php if (!empty($activeBurial['transport_driver_name'])): ?>
+                                        <strong>Driver:</strong> <?= htmlspecialchars($activeBurial['transport_driver_name']) ?><br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($activeBurial['transport_pickup_location'])): ?>
+                                        <strong>Route:</strong> <?= htmlspecialchars($activeBurial['transport_pickup_location']) ?> &rarr; <?= htmlspecialchars($activeBurial['transport_destination'] ?? 'Cemetery') ?><br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($activeBurial['transport_remarks'])): ?>
+                                        <strong>Status Notes:</strong> <?= htmlspecialchars($activeBurial['transport_remarks']) ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <!-- 5. Cemetery -->
+                            <div style="background:white; border:1px solid var(--border); border-radius:12px; padding:16px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <strong style="color:var(--primary); font-size:0.92rem;">5. Cemetery &amp; Burial</strong>
+                                    <span style="font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:6px; background:<?= ($activeBurial['cemetery_status'] ?? '') === 'Completed' ? 'var(--success-bg)' : '#eff6ff' ?>; color:<?= ($activeBurial['cemetery_status'] ?? '') === 'Completed' ? 'var(--success-text)' : '#1e40af' ?>;">
+                                        <?= htmlspecialchars($activeBurial['cemetery_status'] ?? 'Pending') ?>
+                                    </span>
+                                </div>
+                                <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+                                    <strong>Cemetery:</strong> <?= htmlspecialchars($activeBurial['cemetery_name'] ?? 'ISCAG Designated Muslim Cemetery') ?><br>
+                                    <?php if (!empty($activeBurial['cemetery_plot_number'])): ?>
+                                        <strong>Plot / Grave #:</strong> <?= htmlspecialchars($activeBurial['cemetery_plot_number']) ?><br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($activeBurial['cemetery_scheduled_date'])): ?>
+                                        <strong>Scheduled:</strong> <?= date('M d, Y', strtotime($activeBurial['cemetery_scheduled_date'])) ?> <?= !empty($activeBurial['cemetery_scheduled_time']) ? date('g:i A', strtotime($activeBurial['cemetery_scheduled_time'])) : '' ?><br>
+                                    <?php endif; ?>
+                                    <?php if (!empty($activeBurial['actual_burial_date'])): ?>
+                                        <strong>Actual Burial:</strong> <?= date('M d, Y g:i A', strtotime($activeBurial['actual_burial_date'])) ?><br>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -864,7 +1034,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                         </div>
                         <div class="guidelines-text">
                             <h5>Immediate Damayan Coordination</h5>
-                            <p>To request a burial or report a death immediately, click the <strong>Request Form</strong> button above or below. After submitting, please coordinate with the Damayan Coordinator at the ISCAG office or call our 24/7 emergency hotline for immediate Ghusl and Janazah arrangements.</p>
+                            <p>To request burial assistance or report a death immediately, click the <strong>Request Form</strong> button above or below. For urgent coordination, please contact the Damayan Coordinator at the ISCAG office or through our 24/7 hotline.</p>
                         </div>
                     </div>
                 </div>
@@ -882,7 +1052,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                         <a href="<?= url('/user/services/burial-dashboard') ?>" class="btn-outline">
                             View Request History
                         </a>
-                        <!-- 🔘 CLICK REQUEST FORM BUTTON (Reveals the fill-up form) -->
+                        <!-- CLICK REQUEST FORM BUTTON (Reveals the fill-up form) -->
                         <button type="button" class="btn-request-form" id="btn-request-form-bottom" onclick="toggleRequestForm()">
                             <svg viewBox="0 0 24 24">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -938,10 +1108,10 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
 
                         <div class="form-grid">
                             <div class="form-group">
-                                <label class="form-label">Sex <span class="req">*</span></label>
+                                <label class="form-label">Sex / Gender <span class="req">*</span></label>
                                 <select id="deceased-sex" class="form-select" required>
-                                    <option value="Male" selected>Male</option>
-                                    <option value="Female">Female</option>
+                                    <option value="Male" selected>Male (Brother)</option>
+                                    <option value="Female">Female (Sister)</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -957,7 +1127,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                         <div class="form-grid cols-2">
                             <div class="form-group">
                                 <label class="form-label">Place of Death <span class="req">*</span></label>
-                                <input type="text" id="deceased-pod" class="form-control" placeholder="Hospital name, residence, or complete address" required />
+                                <input type="text" id="deceased-pod" class="form-control" placeholder="Hospital name, residence, or complete location" required />
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Usual Residence Address <span class="req">*</span></label>
@@ -982,6 +1152,15 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                             <div class="form-group">
                                 <label class="form-label">Nationality</label>
                                 <input type="text" id="deceased-citizenship" class="form-control" value="Filipino" />
+                            </div>
+                        </div>
+
+                        <!-- Supporting Document Upload -->
+                        <div class="form-grid cols-1">
+                            <div class="form-group">
+                                <label class="form-label">Upload Supporting Document (Optional)</label>
+                                <input type="file" id="supporting-document-file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                                <span style="font-size:0.75rem; color:var(--text-muted);">Attach Medical Certificate, Death Certificate, Barangay Certificate, or Valid ID (PDF, JPG, PNG - Max 10MB)</span>
                             </div>
                         </div>
 
@@ -1024,11 +1203,18 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                             <div class="form-group">
                                 <label class="form-label">Target Burial Time</label>
                                 <select id="burial-timing" class="form-select">
-                                    <option value="Immediate (As soon as possible - Sunnah)">Immediate (As soon as possible — Sunnah)</option>
+                                    <option value="Immediate (Sunnah)">Immediate (As soon as possible — Sunnah)</option>
                                     <option value="After Dhuhr Prayer">After Dhuhr Prayer</option>
                                     <option value="After Asr Prayer">After Asr Prayer</option>
                                     <option value="Morning (Following Day)">Morning (Following Day)</option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <div class="form-grid cols-1">
+                            <div class="form-group">
+                                <label class="form-label">Additional Arrangements / Relevant Information</label>
+                                <textarea id="additional-notes" class="form-control" rows="2" placeholder="Any special arrangements, family requests, or instructions..."></textarea>
                             </div>
                         </div>
 
@@ -1040,7 +1226,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
 
                         <div class="form-grid">
                             <div class="form-group">
-                                <label class="form-label">Applicant Name <span class="req">*</span></label>
+                                <label class="form-label">Applicant / Representative Name <span class="req">*</span></label>
                                 <input type="text" id="informant-name" class="form-control" value="<?= htmlspecialchars($userName) ?>" required />
                             </div>
                             <div class="form-group">
@@ -1150,29 +1336,42 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = '<svg class="animate-spin" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:white;stroke-width:2.5;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"></path></svg> Submitting Request...';
 
-        const payload = {
-            firstName: document.getElementById('deceased-first-name').value.trim(),
-            middleName: document.getElementById('deceased-middle-name').value.trim(),
-            lastName: document.getElementById('deceased-last-name').value.trim(),
-            sex: document.getElementById('deceased-sex').value,
-            dob: document.getElementById('deceased-dob').value || null,
-            dod: document.getElementById('deceased-dod').value,
-            pod: document.getElementById('deceased-pod').value.trim(),
-            residence: document.getElementById('deceased-residence').value.trim(),
-            religion: document.getElementById('deceased-religion').value || 'Islam',
-            civilStatus: document.getElementById('deceased-civil-status').value,
-            citizenship: document.getElementById('deceased-citizenship').value || 'Filipino',
-            relationship: document.getElementById('informant-rel').value,
-            informantName: document.getElementById('informant-name').value.trim(),
-            informantContact: document.getElementById('informant-phone').value.trim(),
-            informantAddress: document.getElementById('informant-address').value.trim()
-        };
+        // Gather services requested
+        const serviceBoxes = document.querySelectorAll('input[name="services_req"]:checked');
+        const servicesList = Array.from(serviceBoxes).map(cb => cb.value);
+
+        // Package as FormData to support file upload
+        const formData = new FormData();
+        formData.append('firstName', document.getElementById('deceased-first-name').value.trim());
+        formData.append('middleName', document.getElementById('deceased-middle-name').value.trim());
+        formData.append('lastName', document.getElementById('deceased-last-name').value.trim());
+        formData.append('sex', document.getElementById('deceased-sex').value);
+        formData.append('dob', document.getElementById('deceased-dob').value || '');
+        formData.append('dod', document.getElementById('deceased-dod').value);
+        formData.append('pod', document.getElementById('deceased-pod').value.trim());
+        formData.append('residence', document.getElementById('deceased-residence').value.trim());
+        formData.append('religion', document.getElementById('deceased-religion').value || 'Islam');
+        formData.append('civilStatus', document.getElementById('deceased-civil-status').value);
+        formData.append('citizenship', document.getElementById('deceased-citizenship').value || 'Filipino');
+        formData.append('relationship', document.getElementById('informant-rel').value);
+        formData.append('informantName', document.getElementById('informant-name').value.trim());
+        formData.append('informantContact', document.getElementById('informant-phone').value.trim());
+        formData.append('informantEmail', document.getElementById('informant-email').value.trim());
+        formData.append('informantAddress', document.getElementById('informant-address').value.trim());
+        formData.append('cemetery', document.getElementById('deceased-cemetery').value.trim());
+        formData.append('targetTiming', document.getElementById('burial-timing').value);
+        formData.append('additionalNotes', document.getElementById('additional-notes').value.trim());
+        formData.append('services', JSON.stringify(servicesList));
+
+        const fileInput = document.getElementById('supporting-document-file');
+        if (fileInput && fileInput.files.length > 0) {
+            formData.append('supporting_document', fileInput.files[0]);
+        }
 
         try {
             const response = await fetch('<?= url("/user/services/burial/submit") ?>', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: formData
             });
 
             const data = await response.json();
@@ -1180,21 +1379,69 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             if (data.success) {
                 const toast = document.getElementById('burial-toast');
                 const ref = data.ref_id || 'Submitted';
-                toast.innerHTML = '<strong>Success!</strong> Burial Service request filed successfully.<br>Reference ID: <code>' + ref + '</code><br><span style="font-size:0.8rem;opacity:0.9;">Updating record details...</span>';
+                toast.innerHTML = '<strong>Success!</strong> Burial Service request filed successfully.<br>Reference ID: <code>' + ref + '</code><br><span style="font-size:0.8rem;opacity:0.9;">Loading request details...</span>';
                 toast.style.display = 'block';
 
                 setTimeout(() => {
-                    // Reload with the new reference ID so details update automatically
                     window.location.href = '<?= url("/user/services/burial-details") ?>?id=' + encodeURIComponent(ref);
-                }, 1600);
+                }, 1500);
             } else {
                 throw new Error(data.message || 'Failed to submit burial request.');
             }
         } catch (error) {
             console.error('Submission error:', error);
-            alert('Failed to submit burial request. Please check your inputs and try again.');
+            alert(error.message || 'Failed to submit burial request. Please check your inputs and try again.');
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = originalText;
+        }
+    }
+
+    // ── Submit Additional Requirements Response via AJAX ──
+    async function submitRequirementsResponse(event) {
+        event.preventDefault();
+        const refId = document.getElementById('resp-ref-id').value;
+        const infoText = document.getElementById('resp-info-text').value.trim();
+        const btn = document.getElementById('btn-submit-resp');
+        const originalText = btn.innerHTML;
+
+        if (!infoText) {
+            alert('Please provide the requested details or explanation.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = 'Submitting...';
+
+        const formData = new FormData();
+        formData.append('ref_id', refId);
+        formData.append('additional_info', infoText);
+
+        const fileInput = document.getElementById('resp-doc-file');
+        if (fileInput && fileInput.files.length > 0) {
+            formData.append('additional_doc', fileInput.files[0]);
+        }
+
+        try {
+            const res = await fetch('<?= url("/user/services/burial/respond-info") ?>', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+                const toast = document.getElementById('burial-toast');
+                toast.innerHTML = '<strong>Success!</strong> Additional information submitted to Damayan staff.<br><span style="font-size:0.8rem;opacity:0.9;">Updating record...</span>';
+                toast.style.display = 'block';
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1400);
+            } else {
+                throw new Error(data.message || 'Failed to submit information.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert(err.message || 'Error submitting response.');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         }
     }
 </script>

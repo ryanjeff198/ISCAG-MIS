@@ -2127,19 +2127,22 @@ class AdminController extends Controller
             'burial' => $burialAnalytics['total'],
             'charity' => 0, // Charity module still placeholder
             'completed' => $burialAnalytics['completed'],
-            'pending' => $burialAnalytics['pending']
+            'pending' => $burialAnalytics['pending'],
+            'coordination' => $burialAnalytics['coordination'] ?? 0
         ];
 
         // Format burial records for the dashboard table
         $records = [];
-        foreach(array_slice($allBurials, 0, 10) as $b) {
+        foreach(array_slice($allBurials, 0, 15) as $b) {
             $records[] = [
                 'id' => $b['ref_id'],
+                'burial_id' => $b['id'],
                 'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
+                'deceased' => $b['deceased_name'] ?? 'N/A',
                 'type' => 'burial',
                 'service_label' => 'Burial Service',
                 'date' => date('Y-m-d', strtotime($b['submitted_at'])),
-                'status' => ucfirst($b['status']),
+                'status' => $b['status'],
                 'status_class' => $this->getBurialStatusClass($b['status'])
             ];
         }
@@ -2177,24 +2180,40 @@ class AdminController extends Controller
         $dbUser = $userModel->findById($_SESSION['user_id']);
 
         $burialModel = new BurialRequest();
-        $rawBurials = $burialModel->getAll();
+        $filter = $_GET['filter'] ?? 'all';
+        $search = $_GET['search'] ?? '';
+        $rawBurials = $burialModel->getAll($filter, $search);
+        $analytics = $burialModel->getAnalytics();
+        $staffList = $burialModel->getAllStaff();
+        $volunteers = $burialModel->getVolunteers();
 
         $records = [];
         foreach($rawBurials as $b) {
             $records[] = [
                 'id' => $b['ref_id'],
+                'burial_id' => $b['id'],
                 'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
                 'deceased' => $b['deceased_name'] ?? 'N/A',
+                'deceased_sex' => $b['deceased_sex'] ?? 'Male',
                 'date' => date('Y-m-d', strtotime($b['submitted_at'])),
-                'status' => ucfirst($b['status']),
-                'status_class' => $this->getBurialStatusClass($b['status'])
+                'status' => $b['status'],
+                'status_class' => $this->getBurialStatusClass($b['status']),
+                'ghusl_status' => $b['ghusl_status'] ?? 'Pending',
+                'janazah_status' => $b['janazah_status'] ?? 'Pending',
+                'transport_status' => $b['transport_status'] ?? 'Pending',
+                'cemetery_status' => $b['cemetery_status'] ?? 'Pending'
             ];
         }
 
         $this->view('admin/Staff_Admin/Admin-Damayan_Department/burial', [
             'active_page' => 'burial',
             'dbUser' => $dbUser,
-            'records' => $records
+            'records' => $records,
+            'analytics' => $analytics,
+            'staffList' => $staffList,
+            'volunteers' => $volunteers,
+            'currentFilter' => $filter,
+            'searchQuery' => $search
         ]);
     }
 
@@ -2207,33 +2226,51 @@ class AdminController extends Controller
         $dbUser = $userModel->findById($_SESSION['user_id']);
 
         $burialModel = new BurialRequest();
-        $rawBurials = $burialModel->getAll();
+        $filter = $_GET['filter'] ?? 'all';
+        $search = $_GET['search'] ?? '';
+        $rawBurials = $burialModel->getAll($filter, $search);
+        $analytics = $burialModel->getAnalytics();
+        $staffList = $burialModel->getAllStaff();
+        $volunteers = $burialModel->getVolunteers();
 
         $records = [];
         foreach($rawBurials as $b) {
             $records[] = [
                 'id' => $b['ref_id'],
+                'burial_id' => $b['id'],
                 'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
                 'deceased' => $b['deceased_name'] ?? 'N/A',
+                'deceased_sex' => $b['deceased_sex'] ?? 'Male',
                 'date' => date('Y-m-d', strtotime($b['submitted_at'])),
-                'status' => ucfirst($b['status']),
-                'status_class' => $this->getBurialStatusClass($b['status'])
+                'status' => $b['status'],
+                'status_class' => $this->getBurialStatusClass($b['status']),
+                'ghusl_status' => $b['ghusl_status'] ?? 'Pending',
+                'janazah_status' => $b['janazah_status'] ?? 'Pending',
+                'transport_status' => $b['transport_status'] ?? 'Pending',
+                'cemetery_status' => $b['cemetery_status'] ?? 'Pending'
             ];
         }
 
         $this->view('admin/Staff_Admin/Admin-Damayan_Department/burial_requests', [
             'active_page' => 'burial_requests',
             'dbUser' => $dbUser,
-            'records' => $records
+            'records' => $records,
+            'analytics' => $analytics,
+            'staffList' => $staffList,
+            'volunteers' => $volunteers,
+            'currentFilter' => $filter,
+            'searchQuery' => $search
         ]);
     }
 
     private function getBurialStatusClass(string $status): string {
-        $status = strtolower($status);
-        if ($status === 'pending') return 'badge-pending';
-        if ($status === 'arrived') return 'badge-info';
-        if ($status === 'completed') return 'badge-active';
-        return 'badge-approved'; // For 'Approved' or 'Verified'
+        $st = strtolower(trim($status));
+        if ($st === 'new request' || $st === 'pending' || $st === 'under review') return 'badge-pending';
+        if ($st === 'additional information required') return 'badge-warning';
+        if ($st === 'accepted for coordination' || strpos($st, 'scheduled') !== false || strpos($st, 'arranged') !== false || strpos($st, 'confirmed') !== false || strpos($st, 'prepared') !== false) return 'badge-info';
+        if ($st === 'burial completed' || $st === 'completed') return 'badge-active';
+        if ($st === 'rejected') return 'badge-danger';
+        return 'badge-approved';
     }
 
     public function damayanCharity(): void {
@@ -2248,11 +2285,8 @@ class AdminController extends Controller
         $stats = $donationModel->getStats();
         $recentRequests = $donationModel->getRecentRequests();
         
-        // Fetch all donations to pass to the view for modal rendering
-        // In a real app, you might fetch these via AJAX when the card is clicked, 
-        // but for now we'll pass them all if the dataset is small.
         $allDonations = [];
-        $programs = [1, 2, 3]; // Our known program IDs
+        $programs = [1, 2, 3];
         foreach($programs as $pid) {
             $allDonations[$pid] = $donationModel->getByProgram($pid);
         }
@@ -2277,38 +2311,271 @@ class AdminController extends Controller
         ]);
     }
 
+    public function getBurialDetails(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $id = $_GET['id'] ?? '';
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing ID']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $burial = is_numeric($id) ? $model->findById((int)$id) : $model->findByRefId($id);
+
+        if (!$burial) {
+            echo json_encode(['success' => false, 'error' => 'Burial case not found']);
+            return;
+        }
+
+        $gender = $burial['deceased_sex'] ?? 'Male';
+        $volunteers = $model->getVolunteers($gender);
+        $allVolunteers = $model->getVolunteers();
+        $staffList = $model->getAllStaff();
+
+        echo json_encode([
+            'success' => true,
+            'burial' => $burial,
+            'gender_volunteers' => $volunteers,
+            'all_volunteers' => $allVolunteers,
+            'staff_list' => $staffList
+        ]);
+        return;
+    }
+
+    public function acceptBurialRequest(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $staffId = !empty($input['staff_id']) ? (int)$input['staff_id'] : (int)$_SESSION['user_id'];
+        $staffName = trim($input['staff_name'] ?? ($_SESSION['name'] ?? 'Damayan Coordinator'));
+        $notes = trim($input['notes'] ?? '');
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->acceptRequest($id, $staffId, $staffName, $notes);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function requestBurialInfo(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $explanation = trim($input['explanation'] ?? ($input['notes'] ?? ''));
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($explanation)) {
+            echo json_encode(['success' => false, 'error' => 'Please provide the details or documents required.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->requestAdditionalInfo($id, $explanation, $staffName);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function rejectBurialRequest(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $reason = trim($input['reason'] ?? '');
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($reason)) {
+            echo json_encode(['success' => false, 'error' => 'A rejection reason is required.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->rejectRequest($id, $reason, $staffName);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function assignBurialStaff(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $staffId = (int)($input['staff_id'] ?? 0);
+        $staffName = trim($input['staff_name'] ?? '');
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->assignStaff($id, $staffId, $staffName);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function updateBurialDeceased(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->updateDeceasedRecord($id, $input, $staffName);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function updateBurialGhusl(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->updateGhusl($id, $input, $staffName);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function updateBurialKafan(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->updateKafan($id, $input, $staffName);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function updateBurialJanazah(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->updateJanazah($id, $input, $staffName);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function updateBurialTransport(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->updateTransport($id, $input, $staffName);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function updateBurialCemetery(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->updateCemetery($id, $input, $staffName);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function completeBurialCase(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->completeBurialCase($id, $input, $staffName);
+
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
+    public function getBurialVolunteers(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $gender = $_GET['gender'] ?? null;
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $volunteers = $model->getVolunteers($gender);
+        echo json_encode(['success' => true, 'volunteers' => $volunteers]);
+        return;
+    }
+
+    public function updateVolunteerStatus(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $status = trim($input['status'] ?? 'Available');
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $success = $model->updateVolunteerStatus($id, $status);
+        echo json_encode(['success' => $success]);
+        return;
+    }
+
     public function updateBurialStatus(): void {
         Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
             $id = $input['id'] ?? null;
             $status = $input['status'] ?? null;
+            $notes = $input['notes'] ?? '';
+            $staffName = $_SESSION['name'] ?? 'Damayan Staff';
             
             require_once BASE_PATH . '/app/models/BurialRequest.php';
-            require_once BASE_PATH . '/app/models/Notification.php';
-            
             $model = new BurialRequest();
-            $notifModel = new Notification();
-            
-            $burial = $model->findByRefId($id);
-            $success = $model->updateStatus($id, $status);
+            $success = $model->updateStatus($id, $status, $notes, $staffName);
 
-            if ($success && $burial && isset($burial['tenant_id'])) {
-                $title = "Burial Service Update";
-                $msg = "";
-                
-                if ($status === 'arrived') {
-                    $msg = "Peace be upon you. We would like to inform you that the deceased (" . ($burial['deceased_name'] ?? 'your loved one') . ") has been respectfully received at the Damayan facility. We are now proceeding with the necessary burial preparations.";
-                } else {
-                    $msg = "Your burial service request (#{$id}) for " . ($burial['deceased_name'] ?? 'your loved one') . " has been " . strtoupper($status) . ".";
-                }
-                
-                $notifModel->create((int)$burial['tenant_id'], $title, $msg, 'burial');
-            }
-
-            header('Content-Type: application/json');
             echo json_encode(['success' => $success]);
-            exit;
+            return;
         }
     }
 

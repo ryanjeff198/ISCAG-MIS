@@ -14,7 +14,7 @@ $init = strtoupper(substr($d['first_name']??'S',0,1));
 // Fetch Actual Burial Requests from DB
 require_once BASE_PATH . '/app/models/BurialRequest.php';
 $burialModel = new BurialRequest();
-$allRequests = $burialModel->getByTenantId($_SESSION['user_id']);
+$allRequests = $burialModel->getByTenantId((int)$_SESSION['user_id']);
 
 require_once BASE_PATH . '/app/models/FuneralCase.php';
 $fcModel = new FuneralCase();
@@ -30,12 +30,44 @@ $activeBurial = !empty($allRequests) ? $allRequests[0] : [
     'date_of_death' => null,
     'place_of_death' => 'N/A',
     'religion' => 'N/A',
-    'relationship' => 'N/A'
+    'relationship' => 'N/A',
+    'ghusl_status' => 'Pending',
+    'kafan_status' => 'Pending',
+    'janazah_status' => 'Pending',
+    'cemetery_status' => 'Pending'
 ];
 
-$hasPending = strtolower($activeBurial['status']) === 'pending';
-$hasApproved = strtolower($activeBurial['status']) === 'approved' || strtolower($activeBurial['status']) === 'verified' || strtolower($activeBurial['status']) === 'arrived';
-$services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery Coordination"];
+$rawStatus = $activeBurial['status'] ?? 'No active request';
+$st = strtolower($rawStatus);
+$hasRequest = !empty($activeBurial['ref_id']) && $activeBurial['ref_id'] !== 'NONE';
+
+$isInfoRequired = ($st === 'additional information required');
+$isPending = in_array($st, ['new request', 'pending', 'under review', 'additional information required']);
+$isAccepted = in_array($st, [
+    'accepted for coordination', 'pending volunteer assignment', 'volunteers confirmed',
+    'ghusl scheduled', 'ghusl completed', 'kafan prepared', 'janazah scheduled',
+    'janazah completed', 'transportation arranged', 'burial scheduled', 'burial completed', 'approved', 'verified', 'arrived'
+]);
+$isRitesActive = in_array($st, [
+    'ghusl scheduled', 'ghusl completed', 'kafan prepared', 'janazah scheduled',
+    'janazah completed', 'transportation arranged', 'burial scheduled', 'burial completed'
+]);
+$isCompleted = ($st === 'burial completed' || $st === 'completed');
+$isRejected = ($st === 'rejected');
+
+// Calculate progress tracker fill width
+$progressWidth = '0%';
+if ($hasRequest) {
+    if ($isCompleted) {
+        $progressWidth = '100%';
+    } elseif ($isRitesActive) {
+        $progressWidth = '75%';
+    } elseif ($isAccepted) {
+        $progressWidth = '50%';
+    } elseif ($isPending) {
+        $progressWidth = '25%';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -84,7 +116,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
   .progress-card h3{margin:0 0 16px;font-size:1.1rem;font-weight:700;}
   .progress-tracker{display:flex;justify-content:space-between;align-items:flex-start;margin-top:24px;position:relative;padding:0 10px;}
   .progress-line{position:absolute;top:14px;left:20px;right:20px;height:2px;background:#e5e7eb;z-index:1;}
-  .progress-line-fill{position:absolute;top:14px;left:20px;height:2px;background:var(--primary);z-index:2;transition:width .5s ease;width:<?= $hasApproved ? '100%' : ($hasPending ? '25%' : '0%') ?>;}
+  .progress-line-fill{position:absolute;top:14px;left:20px;height:2px;background:var(--primary);z-index:2;transition:width .5s ease;width:<?= $progressWidth ?>;}
   .step{display:flex;flex-direction:column;align-items:center;position:relative;z-index:3;gap:10px;width:100px;}
   .step-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--white);border:2px solid #e5e7eb;color:#9ca3af;font-weight:700;font-size:.8rem;transition:.3s;}
   .step.completed .step-icon{background:var(--primary);border-color:var(--primary);color:var(--white);}
@@ -156,42 +188,38 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
 <div class="burial-wrapper">
 
 <div class="greeting">
-  <h1>Assalamu Alaikum, <?= $name ?> <span style="color:var(--primary);">🕊️</span></h1>
+  <h1>Assalamu Alaikum, <?= $name ?></h1>
   <p>May Allah grant you strength. Here is the status of your burial service request.</p>
 </div>
 
-<?php if ($activeCase): ?>
-<div style="background: white; border: 1.5px solid var(--border); border-left: 5px solid var(--primary); border-radius: 16px; padding: 20px 24px; margin-bottom: 28px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+<!-- Alert: Additional Information Required -->
+<?php if ($isInfoRequired): ?>
+<div style="background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b; border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
   <div style="display: flex; align-items: center; gap: 16px;">
-    <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-      <svg viewBox="0 0 24 24" style="width:26px; height:26px; fill:currentColor;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <div style="width: 48px; height: 48px; border-radius: 12px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
     </div>
     <div>
-      <div style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Death Certificate Tracking System</div>
-      <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-top: 2px;">
-        Request ID: <strong style="font-family:monospace;"><?= htmlspecialchars($activeCase['case_number']) ?></strong> — <span style="color:var(--primary); font-weight:800;"><?= htmlspecialchars($activeCase['certificate_status'] ?? 'Requested') ?></span>
+      <div style="font-size: 0.75rem; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 0.05em;">Action Required — Additional Information Needed</div>
+      <div style="font-size: 1.05rem; font-weight: 700; color: #78350f; margin-top: 2px;">
+        Request #<?= htmlspecialchars($activeBurial['ref_id']) ?>: <?= htmlspecialchars($activeBurial['info_request_notes'] ?? 'The coordinator has requested additional details or documents.') ?>
       </div>
-      <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">
-        <?php if (!empty($activeCase['scheduled_release_date'])): ?>
-          Scheduled for release on <strong><?= date('F j, Y', strtotime($activeCase['scheduled_release_date'])) ?></strong> at <?= date('g:i A', strtotime($activeCase['scheduled_release_time'])) ?> at <?= htmlspecialchars($activeCase['release_location'] ?: 'Masjid Office') ?>
-        <?php else: ?>
-          Deceased: <?= htmlspecialchars(trim(($activeCase['deceased_first_name'] ?? '') . ' ' . ($activeCase['deceased_last_name'] ?? ''))) ?> (Submitted on <?= !empty($activeCase['submitted_at']) ? date('M d, Y', strtotime($activeCase['submitted_at'])) : '—' ?>)
-        <?php endif; ?>
+      <div style="font-size: 0.85rem; color: #92400e; margin-top: 2px;">
+        Please review the instructions and submit the required information to continue Islamic funeral coordination.
       </div>
     </div>
   </div>
   <div>
-    <a href="<?= url('/user/services/funeral/tracking?case=' . urlencode($activeCase['case_number']) . '&tab=tracking') ?>" class="btn-action btn-primary-act" style="text-decoration:none; padding:10px 22px; font-size:0.85rem;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-      Track Certificate &amp; Timeline →
+    <a href="<?= url('/user/services/burial-details?id=' . urlencode($activeBurial['ref_id'])) ?>" class="btn-action" style="background:#b45309; color:white; text-decoration:none; padding:10px 22px; font-size:0.85rem;">
+      View &amp; Submit Requirements →
     </a>
   </div>
 </div>
 <?php endif; ?>
 
+<!-- Summary Cards -->
 <div class="grid-container">
 
-  <!-- Summary Cards -->
   <div class="summary-row">
     <div class="summary-card active">
       <div class="summary-icon">
@@ -199,7 +227,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       </div>
       <div class="summary-info">
         <h4>Reference ID</h4>
-        <div class="val"><?= $activeBurial['ref_id'] ?></div>
+        <div class="val"><?= htmlspecialchars($activeBurial['ref_id']) ?></div>
         <p>Keep this for tracking</p>
       </div>
     </div>
@@ -214,14 +242,23 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       </div>
     </div>
     <div class="summary-card">
-      <div class="summary-icon" style="background:<?= $hasApproved ? 'var(--success-light)' : '#fffbeb' ?>;color:<?= $hasApproved ? 'var(--success)' : 'var(--gold)' ?>;">
+      <div class="summary-icon" style="background:<?= $isCompleted ? 'var(--success-light)' : ($isAccepted ? '#e0f2fe' : '#fffbeb') ?>;color:<?= $isCompleted ? 'var(--success)' : ($isAccepted ? '#0284c7' : 'var(--gold)') ?>;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </div>
       <div class="summary-info">
         <h4>Status</h4>
-        <?php if ($hasApproved): ?>
-          <div class="val" style="color:var(--success);">Approved</div>
-          <p>Ready for Burial</p>
+        <?php if ($isCompleted): ?>
+          <div class="val" style="color:var(--success);">Completed</div>
+          <p>Burial Rites Fulfilled</p>
+        <?php elseif ($isAccepted): ?>
+          <div class="val" style="color:#0284c7;"><?= htmlspecialchars($rawStatus) ?></div>
+          <p>Coordination in Progress</p>
+        <?php elseif ($isInfoRequired): ?>
+          <div class="val" style="color:#b45309;">Info Required</div>
+          <p>Action needed from you</p>
+        <?php elseif ($isRejected): ?>
+          <div class="val" style="color:#dc2626;">Rejected</div>
+          <p>Please contact Damayan</p>
         <?php else: ?>
           <div class="val" style="color:var(--gold);">Under Review</div>
           <p>Processing request</p>
@@ -236,42 +273,139 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
     <div class="progress-tracker">
       <div class="progress-line"></div>
       <div class="progress-line-fill"></div>
-      <div class="step completed">
+      
+      <!-- Step 1: Submitted -->
+      <div class="step <?= $hasRequest ? 'completed' : '' ?>">
         <div class="step-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
         <div class="step-label">Submitted</div>
         <div class="step-date"><?= !empty($activeBurial['submitted_at']) ? date('M d', strtotime($activeBurial['submitted_at'])) : '—' ?></div>
       </div>
-      <div class="step <?= $hasPending ? 'active' : 'completed' ?>">
+
+      <!-- Step 2: Under Review -->
+      <div class="step <?= $isAccepted || $isCompleted ? 'completed' : ($hasRequest ? 'active' : '') ?>">
         <div class="step-icon">
-          <?php if($hasPending): ?>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <?php else: ?>
+          <?php if ($isAccepted || $isCompleted): ?>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <?php else: ?>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <?php endif; ?>
         </div>
         <div class="step-label">Under<br>Review</div>
-        <div class="step-date"><?= $hasPending ? 'Current' : '' ?></div>
+        <div class="step-date"><?= $isPending ? 'Current' : '' ?></div>
       </div>
-      <div class="step <?= $hasApproved ? 'completed' : '' ?>">
-        <div class="step-icon"></div>
-        <div class="step-label">Burial<br>Approved</div>
-        <div class="step-date">&nbsp;</div>
+
+      <!-- Step 3: Accepted for Coordination -->
+      <div class="step <?= $isCompleted ? 'completed' : ($isAccepted ? 'active' : '') ?>">
+        <div class="step-icon">
+          <?php if ($isCompleted): ?>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <?php elseif ($isAccepted): ?>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <?php endif; ?>
+        </div>
+        <div class="step-label">Coordination<br>Accepted</div>
+        <div class="step-date"><?= $isAccepted && !$isRitesActive && !$isCompleted ? 'Current' : '' ?></div>
       </div>
-      <div class="step">
-        <div class="step-icon"></div>
-        <div class="step-label">Ghusl &<br>Janazah</div>
-        <div class="step-date">&nbsp;</div>
+
+      <!-- Step 4: Ghusl & Janazah -->
+      <div class="step <?= $isCompleted ? 'completed' : ($isRitesActive ? 'active' : '') ?>">
+        <div class="step-icon">
+          <?php if ($isCompleted): ?>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <?php elseif ($isRitesActive): ?>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <?php endif; ?>
+        </div>
+        <div class="step-label">Ghusl &amp;<br>Janazah</div>
+        <div class="step-date"><?= $isRitesActive && !$isCompleted ? 'Active' : '' ?></div>
       </div>
-      <div class="step">
-        <div class="step-icon"></div>
+
+      <!-- Step 5: Burial Completed -->
+      <div class="step <?= $isCompleted ? 'completed' : '' ?>">
+        <div class="step-icon">
+          <?php if ($isCompleted): ?>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <?php endif; ?>
+        </div>
         <div class="step-label">Burial<br>Completed</div>
-        <div class="step-date">&nbsp;</div>
+        <div class="step-date"><?= $isCompleted ? 'Completed' : '' ?></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services Checklist -->
+  <div class="card services-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+      <h3 style="margin:0;">Islamic Funeral Services Status</h3>
+      <span style="font-size:0.8rem; font-weight:700; color:var(--primary); background:var(--primary-light); padding:4px 12px; border-radius:100px;">According to Quran &amp; Sunnah</span>
+    </div>
+    <div class="services-grid">
+      <?php
+        $ghuslDone = in_array(strtolower($activeBurial['ghusl_status'] ?? ''), ['completed']);
+        $kafanDone = in_array(strtolower($activeBurial['kafan_status'] ?? ''), ['ready', 'completed']);
+        $janazahDone = in_array(strtolower($activeBurial['janazah_status'] ?? ''), ['completed']);
+        $cemeteryDone = in_array(strtolower($activeBurial['cemetery_status'] ?? ''), ['completed']) || $isCompleted;
+      ?>
+      <div class="service-item">
+        <div class="service-check <?= $ghuslDone ? 'included' : 'pending' ?>">
+          <?php if ($ghuslDone): ?>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <?php else: ?>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <?php endif; ?>
+        </div>
+        <div>
+          <div class="service-name">Bathing (Ghusl)</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);"><?= htmlspecialchars($activeBurial['ghusl_status'] ?? 'Pending') ?></div>
+        </div>
+      </div>
+
+      <div class="service-item">
+        <div class="service-check <?= $kafanDone ? 'included' : 'pending' ?>">
+          <?php if ($kafanDone): ?>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <?php else: ?>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <?php endif; ?>
+        </div>
+        <div>
+          <div class="service-name">Shrouding (Kafn)</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);"><?= htmlspecialchars($activeBurial['kafan_status'] ?? 'Pending') ?></div>
+        </div>
+      </div>
+
+      <div class="service-item">
+        <div class="service-check <?= $janazahDone ? 'included' : 'pending' ?>">
+          <?php if ($janazahDone): ?>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <?php else: ?>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <?php endif; ?>
+        </div>
+        <div>
+          <div class="service-name">Janazah Prayer</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);"><?= htmlspecialchars($activeBurial['janazah_status'] ?? 'Pending') ?></div>
+        </div>
+      </div>
+
+      <div class="service-item">
+        <div class="service-check <?= $cemeteryDone ? 'included' : 'pending' ?>">
+          <?php if ($cemeteryDone): ?>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <?php else: ?>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <?php endif; ?>
+        </div>
+        <div>
+          <div class="service-name">Cemetery &amp; Burial</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);"><?= htmlspecialchars($activeBurial['cemetery_status'] ?? 'Pending') ?></div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Request History Table -->
-  <div class="card services-card" style="margin-top: 24px;">
+  <div class="card services-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h3 style="margin: 0;">My Burial Requests</h3>
       <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); background: var(--bg); padding: 4px 12px; border-radius: 100px;">Total: <?= count($allRequests) ?></span>
@@ -290,26 +424,35 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
         </thead>
         <tbody>
           <?php if(empty($allRequests)): ?>
-            <tr><td colspan="6" style="padding: 30px; text-align: center; color: var(--text-muted);">No requests found.</td></tr>
+            <tr><td colspan="6" style="padding: 30px; text-align: center; color: var(--text-muted);">No requests found. Click 'Submit New Request' below to request burial assistance.</td></tr>
           <?php else: ?>
             <?php foreach($allRequests as $r): ?>
             <tr style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 16px 12px; font-weight: 700; color: var(--primary);">#<?= $r['ref_id'] ?></td>
+              <td style="padding: 16px 12px; font-weight: 700; color: var(--primary);">#<?= htmlspecialchars($r['ref_id']) ?></td>
               <td style="padding: 16px 12px; font-weight: 600;"><?= htmlspecialchars($r['deceased_name']) ?></td>
-              <td style="padding: 16px 12px;"><?= htmlspecialchars($r['relationship']) ?></td>
-              <td style="padding: 16px 12px; color: var(--text-muted);"><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
+              <td style="padding: 16px 12px;"><?= htmlspecialchars($r['relationship'] ?? 'Relative') ?></td>
+              <td style="padding: 16px 12px; color: var(--text-muted);"><?= !empty($r['submitted_at']) ? date('M d, Y', strtotime($r['submitted_at'])) : '—' ?></td>
               <td style="padding: 16px 12px;">
                 <?php 
-                  $st = strtolower($r['status']);
-                  $sc = $st === 'pending' ? '#fffbeb' : ($st === 'completed' ? 'var(--success-light)' : '#e0f2fe');
-                  $tc = $st === 'pending' ? 'var(--gold)' : ($st === 'completed' ? 'var(--success)' : '#0369a1');
+                  $rst = strtolower($r['status'] ?? '');
+                  if ($rst === 'burial completed' || $rst === 'completed') {
+                      $sc = 'var(--success-light)'; $tc = 'var(--success)';
+                  } elseif ($rst === 'additional information required') {
+                      $sc = '#fef3c7'; $tc = '#b45309';
+                  } elseif ($rst === 'rejected') {
+                      $sc = '#fee2e2'; $tc = '#dc2626';
+                  } elseif (in_array($rst, ['new request', 'pending', 'under review'])) {
+                      $sc = '#fffbeb'; $tc = 'var(--gold)';
+                  } else {
+                      $sc = '#e0f2fe'; $tc = '#0284c7';
+                  }
                 ?>
                 <span style="padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; background: <?= $sc ?>; color: <?= $tc ?>;">
-                  <?= ucfirst($r['status']) ?>
+                  <?= htmlspecialchars($r['status']) ?>
                 </span>
               </td>
               <td style="padding: 16px 12px;">
-                <a href="<?= url('/user/services/burial-details?id=' . $r['ref_id']) ?>" style="color: var(--primary); font-weight: 700; text-decoration: none; font-size: 0.85rem;">View Details</a>
+                <a href="<?= url('/user/services/burial-details?id=' . urlencode($r['ref_id'])) ?>" style="color: var(--primary); font-weight: 700; text-decoration: none; font-size: 0.85rem;">View Details &amp; Tracking</a>
               </td>
             </tr>
             <?php endforeach; ?>
@@ -321,7 +464,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
   
   <!-- Details + Guidelines -->
   <div class="card details-card">
-    <h3>Submitted Information</h3>
+    <h3>Submitted Request Information</h3>
     <div class="info-grid">
       <div class="info-group">
         <span class="info-label">Deceased Name</span>
@@ -337,11 +480,11 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       </div>
       <div class="info-group">
         <span class="info-label">Religion</span>
-        <span class="info-value"><?= htmlspecialchars($activeBurial['religion']) ?></span>
+        <span class="info-value"><?= htmlspecialchars($activeBurial['religion'] ?? 'Islam') ?></span>
       </div>
       <div class="info-group">
         <span class="info-label">Relationship to Deceased</span>
-        <span class="info-value"><?= htmlspecialchars($activeBurial['relationship']) ?></span>
+        <span class="info-value"><?= htmlspecialchars($activeBurial['relationship'] ?? 'Family Member') ?></span>
       </div>
       <div class="info-group">
         <span class="info-label">Date Submitted</span>
@@ -355,22 +498,22 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
     <div class="guide-item">
       <div class="guide-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
       <div class="guide-text">
-        <h5>Document Verification</h5>
-        <p>Our Damayan team is reviewing your Death Certificate and forms.</p>
+        <h5>1. Request Verification</h5>
+        <p>Our Damayan team reviews the details and medical/death records promptly.</p>
       </div>
     </div>
     <div class="guide-item">
       <div class="guide-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
       <div class="guide-text">
-        <h5>Coordination</h5>
-        <p>Once approved, we will coordinate the Ghusl (washing) and Janazah (prayer).</p>
+        <h5>2. Islamic Rites Coordination</h5>
+        <p>We coordinate gender-appropriate volunteers for Ghusl, Kafan shroud, and Salat al-Janazah with the Imam.</p>
       </div>
     </div>
     <div class="guide-item">
       <div class="guide-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
       <div class="guide-text">
-        <h5>Emergency Contact</h5>
-        <p>For immediate concerns, call our emergency hotline.</p>
+        <h5>3. Ambulance &amp; Cemetery</h5>
+        <p>Transport to the Islamic cemetery is scheduled immediately according to the Sunnah.</p>
       </div>
     </div>
   </div>
@@ -381,7 +524,7 @@ $services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery 
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
       Print Record
     </button>
-    <a href="<?= url('/user/services/burial-form') ?>" class="btn-action btn-primary-act" style="text-decoration:none;">
+    <a href="<?= url('/user/services/burial-form?action=request') ?>" class="btn-action btn-primary-act" style="text-decoration:none;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Submit New Request
     </a>

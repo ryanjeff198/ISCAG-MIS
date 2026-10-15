@@ -123,6 +123,7 @@
       </div>
     </div>
   </div>
+  <?php include __DIR__ . '/burial_modal.php'; ?>
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     syncSessionUser('<?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>', '<?= $dbUser['email'] ?? '' ?>', '<?= $_SESSION['role'] ?? '' ?>');
@@ -148,7 +149,7 @@
           <td>${r.date}</td>
           <td><span class="badge-status ${r.status_class}">${r.status}</span></td>
           <td>
-            <button class="btn-action" style="color:var(--damayan-accent);" onclick="${r.type === 'burial' ? `manageBurial('${r.id}')` : `location.href='<?= url('/admin/damayan/charity') ?>'`}">Notify</button>
+            <button class="btn-action" style="color:var(--damayan-accent);font-weight:700;" onclick="${r.type === 'burial' ? `openCaseModal('${r.id}')` : `location.href='<?= url('/admin/damayan/charity') ?>'`}">Manage</button>
           </td>
         </tr>
       `).join('');
@@ -160,45 +161,15 @@
       renderTable(type);
     }
     
-    // Manage Burial Logic
-    let activeBurialId = null;
     function manageBurial(id) {
-      activeBurialId = id;
-      showConfirm(
-        'Manage Burial Request', 
-        `Update the status for request #${id}? This will automatically notify the family.`,
-        'Notify Arrival',
-        () => updateStatus('arrived'),
-        'Notify & Complete',
-        () => updateStatus('completed')
-      );
-    }
-
-    async function updateStatus(newStatus) {
-      try {
-        const res = await fetch('<?= url('/admin/damayan/burial/update') ?>', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: activeBurialId, status: newStatus })
-        });
-        const data = await res.json();
-        if(data.success) {
-          showAlert('Success', 'Status updated and family notified.', 'success');
-          setTimeout(() => location.reload(), 1500);
-        } else {
-          showAlert('Error', 'Failed to update status.', 'error');
-        }
-      } catch (e) {
-        console.error(e);
-        showAlert('Error', 'An unexpected error occurred.', 'error');
-      }
+      openCaseModal(id);
     }
 
     // Interactive Insights
-    document.querySelectorAll('.insight-card')[0].onclick = () => location.href = "<?= url('/admin/damayan/burial') ?>";
+    document.querySelectorAll('.insight-card')[0].onclick = () => location.href = "<?= url('/admin/damayan/burial-requests') ?>";
     document.querySelectorAll('.insight-card')[1].onclick = () => location.href = "<?= url('/admin/damayan/charity') ?>";
-    document.querySelectorAll('.insight-card')[2].style.cursor = 'default';
-    document.querySelectorAll('.insight-card')[3].onclick = () => location.href = "<?= url('/admin/damayan/notifications') ?>";
+    document.querySelectorAll('.insight-card')[2].onclick = () => location.href = "<?= url('/admin/damayan/burial?filter=completed') ?>";
+    document.querySelectorAll('.insight-card')[3].onclick = () => location.href = "<?= url('/admin/damayan/burial-requests?filter=pending') ?>";
 
     // Stats
     document.getElementById('stat-burial').textContent = analytics.burial || 0;
