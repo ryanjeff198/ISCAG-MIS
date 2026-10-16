@@ -734,12 +734,9 @@ class UserController extends Controller
 
         // Validation based on cert action type
         if ($certActionType === 'copy') {
-            if (empty($fName) && empty($lName) && empty($input['deceased_name'])) {
-                echo json_encode(['success' => false, 'message' => 'Deceased name is required.']);
-                return;
-            }
-            if (empty($dod)) {
-                echo json_encode(['success' => false, 'message' => 'Date of death is required to locate the existing certificate.']);
+            $decName = trim($input['deceased_name'] ?? ($input['deceasedName'] ?? "$fName $lName"));
+            if (empty($decName) && empty($input['existing_cert_no'])) {
+                echo json_encode(['success' => false, 'message' => 'Deceased name as appearing on the certificate is required.']);
                 return;
             }
             if (empty($informantName) || empty($informantContact)) {
@@ -837,7 +834,7 @@ class UserController extends Controller
             'deceased_last_name' => $lName,
             'deceased_sex' => in_array(ucfirst($sex), ['Male', 'Female']) ? ucfirst($sex) : 'Male',
             'date_of_birth' => !empty($input['dob']) ? $input['dob'] : null,
-            'date_of_death' => $dod,
+            'date_of_death' => !empty($dod) ? $dod : date('Y-m-d'),
             'place_of_death' => $pod ?: 'On File',
             'residence' => $residence ?: 'On File',
             'religion' => $input['religion'] ?? 'Islam',

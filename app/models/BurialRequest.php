@@ -1058,20 +1058,42 @@ class BurialRequest
     /**
      * Staff updates plot status/notes in inventory
      */
-    public function updatePlotInventory(int $plotId, array $data): bool {
+    public function updatePlotInventory(int $plotId, $statusOrData, string $notes = '', string $staffName = 'Staff'): array {
         try {
-            $stmt = $this->db->prepare("UPDATE cemetery_plots 
+            $stmt = $this->db->prepare("SELECT * FROM cemetery_plots WHERE id = :id LIMIT 1");
+            $stmt->execute(['id' => $plotId]);
+            $current = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$current) {
+                return ['success' => false, 'error' => 'Plot not found'];
+            }
+
+            if (is_array($statusOrData)) {
+                $status = $statusOrData['status'] ?? ($current['status'] ?? 'Available');
+                $newNotes = array_key_exists('notes', $statusOrData) ? $statusOrData['notes'] : $current['notes'];
+                $section = $statusOrData['section'] ?? $current['section'];
+                $plotNumber = $statusOrData['plot_number'] ?? $current['plot_number'];
+            } else {
+                $status = (string)$statusOrData;
+                $newNotes = ($notes !== '') ? $notes : $current['notes'];
+                $section = $current['section'];
+                $plotNumber = $current['plot_number'];
+            }
+
+            $upStmt = $this->db->prepare("UPDATE cemetery_plots 
                 SET status = :st, notes = :notes, section = :sec, plot_number = :pnum 
                 WHERE id = :id");
-            return $stmt->execute([
-                'st' => $data['status'] ?? 'Available',
-                'notes' => $data['notes'] ?? null,
-                'sec' => $data['section'] ?? 'Section A',
-                'pnum' => $data['plot_number'] ?? '',
+            $ok = $upStmt->execute([
+                'st' => $status,
+                'notes' => $newNotes,
+                'sec' => $section,
+                'pnum' => $plotNumber,
                 'id' => $plotId
             ]);
+
+            return ['success' => $ok];
         } catch (\PDOException $e) {
-            return false;
+            error_log("updatePlotInventory error: " . $e->getMessage());
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 

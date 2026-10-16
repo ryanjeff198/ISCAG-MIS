@@ -2,8 +2,8 @@
      DAMAYAN CASE MANAGEMENT MODAL
      Death Certificate Processing & Cemetery Plot Management
 ══════════════════════════════════════════════════════════════════ -->
-<div id="damayanCaseModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.55); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:20px;">
-  <div class="mis-modal-content" style="background:#fff; border-radius:18px; width:100%; max-width:880px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.25); overflow:hidden; animation:modalSlideUp 0.3s ease;">
+<div id="damayanCaseModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.55); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div class="mis-modal-content" style="background:#fff; border-radius:18px; width:96%; max-width:1060px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.25); overflow:hidden; animation:modalSlideUp 0.3s ease;">
     
     <!-- Modal Header -->
     <div class="mis-modal-header" style="padding:18px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:#fafbfc;">
@@ -27,13 +27,28 @@
       <button type="button" class="close-btn" onclick="closeCaseModal()" style="background:transparent; border:none; font-size:1.6rem; line-height:1; cursor:pointer; color:var(--text-muted);">&times;</button>
     </div>
 
-    <!-- Modal Sub-Navigation Tabs -->
-    <div style="display:flex; gap:4px; padding:8px 20px 0; background:#f4f7f5; border-bottom:1px solid var(--border); overflow-x:auto;" id="modalTabsBar">
-      <button type="button" class="case-tab-btn active" onclick="switchCaseTab('overview')">1. Overview & Verification</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('deceased')">2. Deceased Record</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('death_cert')">3. Death Certificate Processing</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('cemetery_plot')">4. Cemetery Plot Management</button>
-      <button type="button" class="case-tab-btn" onclick="switchCaseTab('logs')">5. Activity Logs</button>
+    <!-- Modal Sub-Navigation Tabs (Visible whole, never scrollable) -->
+    <div id="modalTabsBar" style="display:flex; gap:6px; padding:8px 16px 0; background:#f1f5f3; border-bottom:2px solid #e2e8f0; overflow:hidden; width:100%; box-sizing:border-box;">
+      <button type="button" class="case-tab-btn active" data-tab="overview" onclick="switchCaseTab('overview', this)">
+        <span class="tab-badge">1</span>
+        <span class="tab-label">Overview &amp; Verification</span>
+      </button>
+      <button type="button" class="case-tab-btn" data-tab="deceased" onclick="switchCaseTab('deceased', this)">
+        <span class="tab-badge">2</span>
+        <span class="tab-label">Deceased Record</span>
+      </button>
+      <button type="button" class="case-tab-btn" data-tab="death_cert" onclick="switchCaseTab('death_cert', this)">
+        <span class="tab-badge">3</span>
+        <span class="tab-label">Death Certificate</span>
+      </button>
+      <button type="button" class="case-tab-btn" data-tab="cemetery_plot" onclick="switchCaseTab('cemetery_plot', this)">
+        <span class="tab-badge">4</span>
+        <span class="tab-label">Cemetery Plot</span>
+      </button>
+      <button type="button" class="case-tab-btn" data-tab="logs" onclick="switchCaseTab('logs', this)">
+        <span class="tab-badge">5</span>
+        <span class="tab-label">Activity Logs</span>
+      </button>
     </div>
 
     <!-- Modal Body (Scrollable) -->
@@ -635,27 +650,88 @@
 </div>
 
 <style>
+  :root {
+    --damayan-accent: #176b45;
+    --damayan-dark: #0f5c3a;
+    --damayan-light: #e8f5ed;
+  }
+  #modalTabsBar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 16px 0;
+    background: #f1f5f3;
+    border-bottom: 2px solid #e2e8f0;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
   .case-tab-btn {
-    padding: 10px 18px;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 11px 6px;
     font-size: 0.82rem;
     font-weight: 700;
-    color: var(--text-muted);
+    color: #4b5563;
     background: transparent;
     border: none;
     border-bottom: 3px solid transparent;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
     white-space: nowrap;
+    outline: none;
   }
   .case-tab-btn:hover {
     color: var(--damayan-dark);
+    background: rgba(255, 255, 255, 0.75);
   }
   .case-tab-btn.active {
     color: var(--damayan-accent) !important;
-    border-bottom-color: var(--damayan-accent) !important;
-    background: #fff;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
+    background: #ffffff !important;
+    border-bottom: 3px solid var(--damayan-accent) !important;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+    font-weight: 800;
+  }
+  .case-tab-btn .tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.72rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+  .case-tab-btn.active .tab-badge {
+    background: var(--damayan-accent);
+    color: #ffffff;
+  }
+  .case-tab-btn .tab-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  @media (max-width: 900px) {
+    .case-tab-btn {
+      padding: 9px 4px;
+      font-size: 0.75rem;
+      gap: 4px;
+    }
+    .case-tab-btn .tab-badge {
+      width: 18px;
+      height: 18px;
+      font-size: 0.68rem;
+    }
   }
   @keyframes modalSlideUp {
     from { opacity: 0; transform: translateY(20px); }
@@ -669,20 +745,23 @@
   let activeAvailablePlots = [];
   let activeAllPlots = [];
   let activeAuditLogs = [];
+  let currentCaseTab = 'overview';
 
-  function switchCaseTab(tabKey) {
+  function switchCaseTab(tabKey, btnElement) {
+    currentCaseTab = tabKey;
     document.querySelectorAll('.case-tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.case-tab-pane').forEach(p => p.style.display = 'none');
     
-    // Activate clicked button
-    if (window.event && window.event.target) {
-      window.event.target.classList.add('active');
+    // Activate target button
+    const targetBtn = btnElement || document.querySelector(`.case-tab-btn[data-tab="${tabKey}"]`);
+    if (targetBtn) {
+      targetBtn.classList.add('active');
     }
     const pane = document.getElementById('tab-' + tabKey);
     if(pane) pane.style.display = 'block';
   }
 
-  async function openCaseModal(caseIdOrRef) {
+  async function openCaseModal(caseIdOrRef, preserveTab = false) {
     const modal = document.getElementById('damayanCaseModal');
     const loading = document.getElementById('modal-loading');
     const content = document.getElementById('modal-content-container');
@@ -691,11 +770,9 @@
     loading.style.display = 'block';
     content.style.display = 'none';
 
-    // Reset tabs to Overview
-    document.querySelectorAll('.case-tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.case-tab-btn')[0].classList.add('active');
-    document.querySelectorAll('.case-tab-pane').forEach(p => p.style.display = 'none');
-    document.getElementById('tab-overview').style.display = 'block';
+    // Set active tab (preserving user position if specified)
+    const activeTabToSelect = (preserveTab && currentCaseTab) ? currentCaseTab : 'overview';
+    switchCaseTab(activeTabToSelect);
 
     try {
       const res = await fetch('<?= url('/admin/damayan/burial/details') ?>?id=' + encodeURIComponent(caseIdOrRef));
@@ -827,8 +904,9 @@
     // Supporting document
     const docContainer = document.getElementById('v-doc-container');
     if(c.supporting_document) {
+      const docUrl = c.supporting_document.startsWith('http') ? c.supporting_document : ('<?= url('') ?>/' + c.supporting_document.replace(/^\/+/, ''));
       docContainer.innerHTML = `
-        <a href="<?= url('/') ?>/${c.supporting_document}" target="_blank" class="btn-topbar" style="display:inline-flex; align-items:center; gap:6px; color:var(--damayan-accent); font-weight:700; text-decoration:none;">
+        <a href="${docUrl}" target="_blank" class="btn-topbar" style="display:inline-flex; align-items:center; gap:6px; color:var(--damayan-accent); font-weight:700; text-decoration:none;">
           <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
           View Attached Document
         </a>
@@ -846,7 +924,8 @@
         document.getElementById('info-response-container').style.display = 'block';
         document.getElementById('info-submitted-text').textContent = ' ' + c.additional_info_submitted;
         if(c.additional_doc_path) {
-          document.getElementById('info-submitted-doc').innerHTML = `<a href="<?= url('/') ?>/${c.additional_doc_path}" target="_blank" style="color:var(--damayan-accent);font-weight:700;">View Submitted File</a>`;
+          const addDocUrl = c.additional_doc_path.startsWith('http') ? c.additional_doc_path : ('<?= url('') ?>/' + c.additional_doc_path.replace(/^\/+/, ''));
+          document.getElementById('info-submitted-doc').innerHTML = `<a href="${addDocUrl}" target="_blank" style="color:var(--damayan-accent);font-weight:700;">View Submitted File</a>`;
         } else {
           document.getElementById('info-submitted-doc').innerHTML = '';
         }
@@ -1062,7 +1141,7 @@
       const data = await res.json();
       if(data.success) {
         showAlert('Death Certificate Updated', 'Death certificate processing stage and details saved.', 'success');
-        openCaseModal(activeCase.id);
+        openCaseModal(activeCase.id, true);
       } else {
         showAlert('Error', data.error || 'Failed to update death certificate status.', 'error');
       }
@@ -1094,7 +1173,7 @@
       const data = await res.json();
       if(data.success) {
         showAlert('Plot Assigned', 'Cemetery plot assignment and availability records updated.', 'success');
-        openCaseModal(activeCase.id);
+        openCaseModal(activeCase.id, true);
       } else {
         showAlert('Assignment Error', data.error || 'Failed to assign cemetery plot.', 'error');
       }
@@ -1129,7 +1208,7 @@
       const data = await res.json();
       if(data.success) {
         showAlert('Updated', 'Deceased record details successfully updated.', 'success');
-        openCaseModal(activeCase.id);
+        openCaseModal(activeCase.id, true);
       } else {
         showAlert('Error', data.error || 'Failed to update deceased details.', 'error');
       }
@@ -1157,7 +1236,7 @@
       const data = await res.json();
       if(data.success) {
         showAlert('Staff Assigned', 'Coordinator assigned to case.', 'success');
-        openCaseModal(activeCase.id);
+        openCaseModal(activeCase.id, true);
       } else {
         showAlert('Error', data.error || 'Failed to assign staff.', 'error');
       }
@@ -1178,7 +1257,7 @@
         const data = await res.json();
         if(data.success) {
           showAlert('Accepted', 'Burial request accepted for processing.', 'success');
-          openCaseModal(activeCase.id);
+          openCaseModal(activeCase.id, true);
         } else {
           showAlert('Error', data.error || 'Failed to accept request.', 'error');
         }
@@ -1209,7 +1288,7 @@
       if(data.success) {
         closeReqInfoModal();
         showAlert('Notice Sent', 'The family has been requested to provide additional information.', 'success');
-        openCaseModal(activeCase.id);
+        openCaseModal(activeCase.id, true);
       } else {
         showAlert('Error', data.error || 'Failed to send request.', 'error');
       }
@@ -1239,7 +1318,7 @@
       if(data.success) {
         closeRejectModal();
         showAlert('Case Rejected', 'Request rejected and family notified.', 'success');
-        openCaseModal(activeCase.id);
+        openCaseModal(activeCase.id, true);
       } else {
         showAlert('Error', data.error || 'Failed to reject request.', 'error');
       }
@@ -1333,7 +1412,7 @@
       if(data.success) {
         closeSearchDeceasedModal();
         showAlert('Record Linked', 'Existing deceased record successfully linked and verified. No duplicate record was created.', 'success');
-        openCaseModal(activeCase.id);
+        openCaseModal(activeCase.id, true);
       } else {
         showAlert('Error', data.error || 'Failed to link record.', 'error');
       }
@@ -1361,7 +1440,7 @@
       const data = await res.json();
       if(data.success) {
         showAlert('Copy Issued', 'Death certificate copy has been officially issued with reference #' + ref + '. The user can now confirm receipt.', 'success');
-        openCaseModal(activeCase.id);
+        openCaseModal(activeCase.id, true);
       } else {
         showAlert('Error', data.error || 'Failed to issue copy.', 'error');
       }
@@ -1369,4 +1448,22 @@
       showAlert('Error', 'Network error occurred.', 'error');
     }
   }
+
+  // Backdrop and Escape key listeners for smooth dismissal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const m = document.getElementById('damayanCaseModal');
+      if (m && m.style.display === 'flex') closeCaseModal();
+      const r = document.getElementById('damayanReqInfoModal');
+      if (r && r.style.display === 'flex') closeReqInfoModal();
+      const j = document.getElementById('damayanRejectModal');
+      if (j && j.style.display === 'flex') closeRejectModal();
+      const s = document.getElementById('searchDeceasedModal');
+      if (s && s.style.display === 'flex') closeSearchDeceasedModal();
+    }
+  });
+
+  document.getElementById('damayanCaseModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeCaseModal();
+  });
 </script>

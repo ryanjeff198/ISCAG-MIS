@@ -76,7 +76,7 @@ $dcRank = $dcStageRanks[strtolower($currentDcStatus)] ?? 1;
 $dcPercentages = [1 => 0, 2 => 20, 3 => 40, 4 => 60, 5 => 80, 6 => 100];
 $dcProgressPercent = ($hasRequest && !empty($activeBurial['death_cert_requested'])) ? ($dcPercentages[$dcRank] ?? 0) : 0;
 
-// Cemetery Plot Stages Rank (1 to 4)
+// Burial Stages Rank (1 to 4)
 $plotStageRanks = [
     'pending review' => 1,
     'request received' => 1,
@@ -213,7 +213,7 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
 <div class="top-bar">
     <div class="top-bar-left">
         <div class="top-bar-title">Damayan Services Dashboard</div>
-        <div class="top-bar-subtitle">Death Certificate Processing &amp; Cemetery Plot Management</div>
+        <div class="top-bar-subtitle">Burial Assistance &amp; Death Certificate Processing</div>
     </div>
     <div class="top-bar-actions">
         <a href="<?= url('/user/dashboard') ?>" class="btn-topbar">Main Dashboard</a>
@@ -224,7 +224,7 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
 
 <div class="greeting">
   <h1>Assalamu Alaikum, <?= $name ?></h1>
-  <p>Track your Death Certificate civil registration progress and Cemetery Burial Plot allocation below.</p>
+  <p>Track your Death Certificate civil registration progress and Burial service assistance below.</p>
 </div>
 
 <!-- Alert: Additional Information Required -->
@@ -263,10 +263,10 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
     </div>
     <h2 style="font-family:'Lora',serif; font-size:1.5rem; margin:0 0 8px; color:var(--text-main);">No Damayan Requests Filed Yet</h2>
     <p style="color:var(--text-muted); max-width:540px; margin:0 auto 22px; font-size:0.92rem; line-height:1.6;">
-      Assalamu Alaikum. You have not filed any death certificate processing or cemetery plot requests. Click below to begin your application.
+      Assalamu Alaikum. You have not filed any death certificate processing or burial requests. Click below to begin your application.
     </p>
     <a href="<?= url('/user/services/burial-details?action=request') ?>" class="btn-action btn-primary-act" style="display:inline-flex; text-decoration:none; margin:0 auto;">
-      Submit Death Certificate or Cemetery Plot Request →
+      Submit Death Certificate or Burial Request →
     </a>
   </div>
 <?php else: ?>
@@ -445,12 +445,12 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
     <?php endif; ?>
   </div>
 
-  <!-- Card 2: Cemetery Plot Management Tracker -->
+  <!-- Card 2: Burial Assistance Tracker -->
   <div class="card dual-card">
     <h3>
       <span style="display:flex;align-items:center;gap:8px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color:var(--primary);"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
-        Cemetery Plot Request
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color:var(--primary);"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        Burial Service
       </span>
       <span class="badge-tag <?= $isPlotAssigned ? 'success' : (strtolower($currentPlotStatus) === 'rejected' ? 'danger' : 'info') ?>">
         <?= htmlspecialchars($currentPlotStatus) ?>
@@ -461,22 +461,22 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
       <div style="background:<?= $isPlotAssigned ? '#ecfdf5' : '#fafbfc' ?>; border:1px solid <?= $isPlotAssigned ? '#a7f3d0' : 'var(--border)' ?>; border-radius:12px; padding:16px; margin-bottom:16px;">
         <div style="display:flex; flex-direction:column; gap:10px; font-size:0.86rem;">
           <div style="display:flex; justify-content:space-between;">
-            <span style="color:var(--text-muted);">Burial Cemetery:</span>
+            <span style="color:var(--text-muted);">Burial Location:</span>
             <strong><?= htmlspecialchars($activeBurial['assigned_cemetery_name'] ?: ($activeBurial['cemetery_preference'] ?: 'ISCAG Designated Muslim Cemetery')) ?></strong>
           </div>
           <div style="display:flex; justify-content:space-between;">
-            <span style="color:var(--text-muted);">Plot Assignment:</span>
+            <span style="color:var(--text-muted);">Burial Allocation:</span>
             <?php if(!empty($activeBurial['assigned_plot_number'])): ?>
               <strong style="color:#047857; font-size:0.95rem;">
-                Sec <?= htmlspecialchars($activeBurial['assigned_section'] ?: 'General') ?> - Plot #<?= htmlspecialchars($activeBurial['assigned_plot_number']) ?>
+                Sec <?= htmlspecialchars($activeBurial['assigned_section'] ?: 'General') ?> - Space #<?= htmlspecialchars($activeBurial['assigned_plot_number']) ?>
               </strong>
             <?php else: ?>
-              <span style="color:var(--text-muted); font-style:italic;">Awaiting Plot Availability &amp; Assignment</span>
+              <span style="color:var(--text-muted); font-style:italic;">Awaiting Burial Coordination &amp; Allocation</span>
             <?php endif; ?>
           </div>
           <?php if(!empty($activeBurial['plot_assigned_date'])): ?>
             <div style="display:flex; justify-content:space-between;">
-              <span style="color:var(--text-muted);">Assignment Date:</span>
+              <span style="color:var(--text-muted);">Allocation Date:</span>
               <span><?= date('M d, Y', strtotime($activeBurial['plot_assigned_date'])) ?></span>
             </div>
           <?php endif; ?>
@@ -489,11 +489,11 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
       </div>
 
       <div style="font-size:0.8rem; color:var(--text-muted); line-height:1.5;">
-        Each burial plot is reserved uniquely in the database to prevent duplicate assignments, oriented towards the Qiblah in accordance with Islamic Sunnah.
+        Burial services and cemetery arrangements are coordinated in accordance with Islamic Sunnah, oriented towards the Qiblah.
       </div>
     <?php else: ?>
       <div style="padding:20px; text-align:center; color:var(--text-muted); background:#fafbfc; border-radius:12px;">
-        Burial plot was not requested in this case.
+        Burial assistance was not requested in this case.
       </div>
     <?php endif; ?>
   </div>
@@ -596,11 +596,11 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
   <div class="card progress-card" style="margin-top:0;">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <div>
-        <h3 style="margin:0 0 4px;">Cemetery Plot Allocation Pipeline</h3>
-        <div style="font-size:0.82rem; color:var(--text-muted);">Tracking cemetery site inspection, plot reservation, and burial preparation</div>
+        <h3 style="margin:0 0 4px;">Burial Service Pipeline</h3>
+        <div style="font-size:0.82rem; color:var(--text-muted);">Tracking site verification, cemetery arrangements, and burial preparation</div>
       </div>
       <span class="badge-tag <?= $isPlotAssigned ? 'success' : (strtolower($currentPlotStatus) === 'rejected' ? 'danger' : 'info') ?>" style="font-size:0.8rem; padding:5px 12px;">
-        Plot Status: <?= htmlspecialchars($currentPlotStatus) ?>
+        Burial Status: <?= htmlspecialchars($currentPlotStatus) ?>
       </span>
     </div>
 
@@ -610,10 +610,10 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
       
       <?php
         $plotStepList = [
-          1 => 'Plot Request<br>Received',
-          2 => 'Site & Availability<br>Verification',
-          3 => 'Burial Plot<br>Assigned',
-          4 => 'Burial Service<br>Ready / Completed'
+          1 => 'Burial Request<br>Received',
+          2 => 'Site & Schedule<br>Verification',
+          3 => 'Burial Space<br>Allocated',
+          4 => 'Burial Service<br>Completed'
         ];
         foreach ($plotStepList as $sNum => $label):
           $stepClass = '';
@@ -652,14 +652,14 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
             <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Deceased Person</th>
             <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Services</th>
             <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Death Cert Stage</th>
-            <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Cemetery Plot</th>
+            <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Burial Status</th>
             <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Date</th>
             <th style="padding: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Action</th>
           </tr>
         </thead>
         <tbody>
           <?php if(empty($allRequests)): ?>
-            <tr><td colspan="7" style="padding: 30px; text-align: center; color: var(--text-muted);">No requests found. Click 'Submit New Request' below to request Death Certificate or Cemetery Plot assistance.</td></tr>
+            <tr><td colspan="7" style="padding: 30px; text-align: center; color: var(--text-muted);">No requests found. Click 'Submit New Request' below to request Death Certificate or Burial assistance.</td></tr>
           <?php else: ?>
             <?php foreach($allRequests as $r): 
               $isCurrentRow = ($r['ref_id'] === $activeBurial['ref_id']);
@@ -742,7 +742,7 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
           <?php if ($isCopyRequest): ?>
             Request Another Death Certificate (<?= (int)($activeBurial['num_copies'] ?? 1) ?> <?= (int)($activeBurial['num_copies'] ?? 1) > 1 ? 'copies' : 'copy' ?>)
           <?php else: ?>
-            <?= ($activeBurial['request_type'] === 'both') ? 'Death Certificate & Cemetery Plot' : (($activeBurial['request_type'] === 'death_certificate') ? 'Death Certificate Registration' : 'Cemetery Plot Allocation') ?>
+            <?= ($activeBurial['request_type'] === 'both') ? 'Death Certificate & Burial Service' : (($activeBurial['request_type'] === 'death_certificate') ? 'Death Certificate Registration' : 'Burial Assistance') ?>
           <?php endif; ?>
         </span>
       </div>
@@ -757,12 +757,12 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
         </div>
       <?php else: ?>
         <div class="info-group">
-          <span class="info-label">Cemetery Plot Details</span>
+          <span class="info-label">Burial Details</span>
           <span class="info-value">
             <?php if(!empty($activeBurial['assigned_plot_number'])): ?>
               <strong style="color:var(--primary);">Plot #<?= htmlspecialchars($activeBurial['assigned_plot_number']) ?> (Sec: <?= htmlspecialchars($activeBurial['assigned_section'] ?: 'General') ?>)</strong>
             <?php else: ?>
-              <?= htmlspecialchars($activeBurial['cemetery_preference'] ?: 'ISCAG Designated Cemetery') ?> (Pending Assignment)
+              <?= htmlspecialchars($activeBurial['cemetery_preference'] ?: 'ISCAG Designated Cemetery') ?> (Pending Allocation)
             <?php endif; ?>
           </span>
         </div>
@@ -798,8 +798,8 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
     <div class="guide-item">
       <div class="guide-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
       <div class="guide-text">
-        <h5>3. Cemetery Plot Assignment</h5>
-        <p>Available burial plots in ISCAG Designated Muslim Cemeteries are verified and assigned with duplicate prevention.</p>
+        <h5>3. Burial Coordination</h5>
+        <p>Burial arrangements and designated Muslim cemetery allocations are verified and coordinated promptly according to the Sunnah.</p>
       </div>
     </div>
   </div>
