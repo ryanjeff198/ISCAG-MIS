@@ -57,7 +57,13 @@
             <div class="top-bar-subtitle">Managing burial services, charity programs, and community assistance</div>
           </div>
         </div>
-        <div class="top-bar-actions">
+        <div class="top-bar-actions" style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="btn-topbar primary" onclick="openEncodeModal()" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Encode Death Certificate
+          </button>
+          <a href="<?= url('/admin/damayan/encoded-certificates') ?>" class="btn-topbar" style="text-decoration:none;font-weight:600;">
+            Encoded Archive
+          </a>
           <a href="<?= url('/admin/damayan') ?>" class="btn-topbar active" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:700;color:var(--damayan-accent);">
             <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Dashboard
           </a>
@@ -131,6 +137,7 @@
     </div>
   </div>
   <?php include __DIR__ . '/burial_modal.php'; ?>
+  <?php include __DIR__ . '/encode_modal.php'; ?>
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     syncSessionUser('<?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>', '<?= $dbUser['email'] ?? '' ?>', '<?= $_SESSION['role'] ?? '' ?>');
@@ -164,6 +171,11 @@
         <tr>
           <td class="td-id">
             <span style="font-weight:700; color:var(--damayan-accent);">#${r.id}</span>
+            ${r.is_encoded_linked ? `
+              <div style="font-size:0.65rem; font-weight:700; color:#065f46; background:#bbf7d0; padding:1px 6px; border-radius:4px; display:inline-block; margin-top:2px;" title="Linked with Encoded Death Certificate #${escapeHtml(r.encoded_reg_no || '')}">
+                ✓ Encoded Linked
+              </div>
+            ` : ''}
           </td>
           <td>
             <div style="font-weight:700; color:var(--text-main);">${escapeHtml(r.deceased)}</div>

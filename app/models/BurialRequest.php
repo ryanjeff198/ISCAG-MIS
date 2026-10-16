@@ -17,6 +17,19 @@ class BurialRequest
     }
 
     /**
+     * Normalize registration number for robust matching:
+     * Strips leading '#', 'No.', '№', whitespace, dashes, slashes, and lowercases.
+     * e.g. '#2023-2-0001113' -> '202320001113'
+     *      '2023-2-0001113'  -> '202320001113'
+     */
+    public static function normalizeRegNo(?string $val): string {
+        if ($val === null) return '';
+        $val = trim($val);
+        $val = preg_replace('/^(#|no\.?|№)\s*/i', '', $val);
+        return strtolower(preg_replace('/[\s\-_#\/]/', '', $val));
+    }
+
+    /**
      * Ensure all tables and columns exist
      */
     private function initTables(): void {
@@ -160,6 +173,15 @@ class BurialRequest
             try {
                 $this->db->exec("ALTER TABLE burial_requests ADD COLUMN deceased_id INT NULL AFTER tenant_id");
             } catch (\Throwable $e) {}
+            try {
+                $this->db->exec("ALTER TABLE burial_requests ADD COLUMN encoded_cert_id INT NULL AFTER deceased_id");
+            } catch (\Throwable $e) {}
+            try {
+                $this->db->exec("ALTER TABLE encoded_death_certificates ADD COLUMN burial_request_id INT NULL AFTER representative_name");
+            } catch (\Throwable $e) {}
+            try {
+                $this->db->exec("ALTER TABLE encoded_death_certificates CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
+            } catch (\Throwable $e) {}
 
             $colsToAdd = [
                 "cert_action_type VARCHAR(50) DEFAULT 'register'",
@@ -167,6 +189,7 @@ class BurialRequest
                 "copy_reason TEXT NULL",
                 "num_copies INT DEFAULT 1",
                 "existing_record_verified TINYINT(1) DEFAULT 0",
+                "encoded_cert_id INT NULL",
                 "copy_issued_at DATETIME NULL",
                 "copy_received_at DATETIME NULL",
                 "copy_received_confirmed TINYINT(1) DEFAULT 0"
@@ -267,10 +290,44 @@ class BurialRequest
                     }
                 }
 
-                // If not found yet, try searching by existing_cert_no or deceased name
-                if (!$deceasedId && $existingCertNo) {
-                    $certStmt = $this->db->prepare("SELECT deceased_id FROM burial_requests WHERE (death_cert_registry_no = :cno1 OR ref_id = :cno2) AND deceased_id IS NOT NULL LIMIT 1");
-                    $certStmt->execute(['cno1' => $existingCertNo, 'cno2' => $existingCertNo]);
+                // If not found yet, check encoded_death_certificates by registration number
+                $encodedCertId = !empty($data['encoded_cert_id']) ? (int)$data['encoded_cert_id'] : null;
+                if (!$encodedCertId && $existingCertNo) {
+                    $normCertNo = self::normalizeRegNo($existingCertNo);
+                    $encStmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
+                                                   WHERE LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))
+                                                      OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm
+                                                   ORDER BY (LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))) DESC
+                                                   LIMIT 1");
+                    $encStmt->execute(['cno' => $existingCertNo, 'norm' => $normCertNo]);
+                    $foundEnc = $encStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($foundEnc) {
+                        $encodedCertId = (int)$foundEnc['id'];
+                        $existingRecordVerified = 1;
+                        if (empty($fullName) || $fullName === 'Applicant') {
+                            $fullName = $foundEnc['deceased_name'];
+                        }
+                    }
+                } elseif ($encodedCertId) {
+                    $encStmt = $this->db->prepare("SELECT * FROM encoded_death_certificates WHERE id = :eid LIMIT 1");
+                    $encStmt->execute(['eid' => $encodedCertId]);
+                    $foundEnc = $encStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($foundEnc) {
+                        $existingRecordVerified = 1;
+                        if (empty($fullName) || $fullName === 'Applicant') {
+                            $fullName = $foundEnc['deceased_name'];
+                        }
+                    }
+                }
+
+                // Try searching burial_requests by death_cert_registry_no or ref_id
+                if (!$deceasedId && !$encodedCertId && $existingCertNo) {
+                    $normCertNo = self::normalizeRegNo($existingCertNo);
+                    $certStmt = $this->db->prepare("SELECT deceased_id FROM burial_requests 
+                                                    WHERE (death_cert_registry_no = :cno1 OR ref_id = :cno2
+                                                       OR (death_cert_registry_no IS NOT NULL AND death_cert_registry_no != '' AND REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(death_cert_registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm)) 
+                                                      AND deceased_id IS NOT NULL LIMIT 1");
+                    $certStmt->execute(['cno1' => $existingCertNo, 'cno2' => $existingCertNo, 'norm' => $normCertNo]);
                     $foundId = $certStmt->fetchColumn();
                     if ($foundId) {
                         $deceasedId = (int)$foundId;
@@ -278,7 +335,7 @@ class BurialRequest
                     }
                 }
 
-                if (!$deceasedId && !empty($fullName)) {
+                if (!$deceasedId && !$encodedCertId && !empty($fullName)) {
                     $sqlName = "SELECT id FROM deceased_records WHERE (LOWER(TRIM(full_name)) = LOWER(TRIM(:dname1)) OR LOWER(TRIM(CONCAT(first_name, ' ', last_name))) = LOWER(TRIM(:dname2)))";
                     $paramsName = ['dname1' => $fullName, 'dname2' => $fullName];
                     if (!empty($data['date_of_death'])) {
@@ -294,12 +351,28 @@ class BurialRequest
                         $existingRecordVerified = 1;
                     }
                 }
+            } else {
+                $encodedCertId = !empty($data['encoded_cert_id']) ? (int)$data['encoded_cert_id'] : null;
+                if (!$encodedCertId && !empty($existingCertNo)) {
+                    $normCertNo = self::normalizeRegNo($existingCertNo);
+                    $encStmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
+                                                   WHERE LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))
+                                                      OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm
+                                                   ORDER BY (LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))) DESC
+                                                   LIMIT 1");
+                    $encStmt->execute(['cno' => $existingCertNo, 'norm' => $normCertNo]);
+                    $foundEnc = $encStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($foundEnc) {
+                        $encodedCertId = (int)$foundEnc['id'];
+                        $existingRecordVerified = 1;
+                    }
+                }
             }
 
             $initialStatus = 'Request Received';
 
             $sql = "INSERT INTO burial_requests (
-                        ref_id, tenant_id, deceased_id, deceased_name, deceased_first_name, deceased_middle_name, deceased_last_name,
+                        ref_id, tenant_id, deceased_id, encoded_cert_id, deceased_name, deceased_first_name, deceased_middle_name, deceased_last_name,
                         deceased_sex, date_of_birth, date_of_death, time_of_death, place_of_death, residence, religion, civil_status,
                         nationality, relationship, informant_name, informant_contact, informant_email, informant_address,
                         request_type, death_cert_requested, death_cert_status,
@@ -308,7 +381,7 @@ class BurialRequest
                         cert_action_type, existing_cert_no, copy_reason, num_copies, existing_record_verified,
                         submitted_at
                     ) VALUES (
-                        :ref_id, :tenant_id, :deceased_id, :deceased_name, :deceased_first_name, :deceased_middle_name, :deceased_last_name,
+                        :ref_id, :tenant_id, :deceased_id, :encoded_cert_id, :deceased_name, :deceased_first_name, :deceased_middle_name, :deceased_last_name,
                         :deceased_sex, :dob, :dod, :tod, :pod, :residence, :religion, :civil_status,
                         :nationality, :relationship, :informant_name, :informant_contact, :informant_email, :informant_address,
                         :request_type, :death_cert_requested, :death_cert_status,
@@ -323,6 +396,7 @@ class BurialRequest
                 'ref_id' => $refId,
                 'tenant_id' => (int)$data['tenant_id'],
                 'deceased_id' => $deceasedId,
+                'encoded_cert_id' => $encodedCertId,
                 'deceased_name' => $fullName,
                 'deceased_first_name' => $fName,
                 'deceased_middle_name' => $mName,
@@ -358,6 +432,24 @@ class BurialRequest
             ]);
 
             $burialId = (int)$this->db->lastInsertId();
+
+            if ($encodedCertId) {
+                try {
+                    $this->db->prepare("UPDATE encoded_death_certificates SET burial_request_id = :bid WHERE id = :eid")->execute([
+                        'bid' => $burialId,
+                        'eid' => $encodedCertId
+                    ]);
+                    $this->logActivity(
+                        $burialId,
+                        $refId,
+                        'encoded_link',
+                        'Linked to Encoded Death Certificate',
+                        "Automatically recognized and linked to Encoded Death Certificate #{$existingCertNo} (Deceased: {$fullName})",
+                        'System',
+                        'System'
+                    );
+                } catch (\Throwable $e) {}
+            }
 
             // 1. Only create Deceased Record if registering new death (cert_action_type === 'register')
             // Important: Do not create a new death registration record when processing a request for another certificate copy.
@@ -509,17 +601,52 @@ class BurialRequest
                            t.first_name AS user_first_name, t.last_name AS user_last_name, 
                            t.email AS user_email, t.contactnum AS user_contact,
                            d.id AS deceased_record_id, d.first_name AS dec_fname, d.middle_name AS dec_mname, d.last_name AS dec_lname,
-                           p.cemetery_name AS plot_cemetery, p.section AS plot_section, p.plot_number AS plot_num, p.status AS plot_current_status
+                           p.cemetery_name AS plot_cemetery, p.section AS plot_section, p.plot_number AS plot_num, p.status AS plot_current_status,
+                           enc.id AS encoded_cert_id,
+                           enc.registration_number AS encoded_reg_no,
+                           enc.deceased_name AS encoded_deceased_name,
+                           enc.representative_name AS encoded_representative_name,
+                           enc.encoded_by_name AS encoded_by_name,
+                           enc.encoded_at AS encoded_at
                     FROM burial_requests b
                     LEFT JOIN tenant_accounts t ON b.tenant_id = t.tenant_id
                     LEFT JOIN deceased_records d ON (b.deceased_id = d.id OR (b.deceased_id IS NULL AND b.id = d.burial_request_id))
                     LEFT JOIN cemetery_plots p ON b.cemetery_plot_id = p.id
+                    LEFT JOIN encoded_death_certificates enc ON (
+                        b.encoded_cert_id = enc.id 
+                        OR (b.existing_cert_no IS NOT NULL AND b.existing_cert_no != '' AND (
+                            enc.registration_number COLLATE utf8mb4_general_ci = b.existing_cert_no COLLATE utf8mb4_general_ci
+                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(enc.registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci = REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(b.existing_cert_no)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci
+                        ))
+                        OR (b.death_cert_registry_no IS NOT NULL AND b.death_cert_registry_no != '' AND (
+                            enc.registration_number COLLATE utf8mb4_general_ci = b.death_cert_registry_no COLLATE utf8mb4_general_ci
+                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(enc.registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci = REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(b.death_cert_registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci
+                        ))
+                    )
                     WHERE b.ref_id = :ref_id
                     LIMIT 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute(['ref_id' => $refId]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$row) return null;
+
+            if (!empty($row['encoded_cert_id'])) {
+                $row['is_encoded_linked'] = true;
+                $row['existing_record_verified'] = 1;
+                // If persistent link in burial_requests wasn't set yet, persist it
+                try {
+                    $this->db->prepare("UPDATE burial_requests 
+                                        SET encoded_cert_id = :eid, existing_record_verified = 1 
+                                        WHERE id = :bid AND (encoded_cert_id IS NULL OR existing_record_verified = 0)")
+                             ->execute(['eid' => $row['encoded_cert_id'], 'bid' => $row['id']]);
+                    $this->db->prepare("UPDATE encoded_death_certificates 
+                                        SET burial_request_id = :bid 
+                                        WHERE id = :eid AND burial_request_id IS NULL")
+                             ->execute(['bid' => $row['id'], 'eid' => $row['encoded_cert_id']]);
+                } catch (\Throwable $e) {}
+            } else {
+                $row['is_encoded_linked'] = false;
+            }
 
             $row['activity_logs'] = $this->getActivityLogs((int)$row['id']);
             return $row;
@@ -549,14 +676,33 @@ class BurialRequest
     public function getByTenantId(int $tenantId): array {
         try {
             $sql = "SELECT b.*, 
-                           p.cemetery_name AS plot_cemetery, p.section AS plot_section, p.plot_number AS plot_num
+                           p.cemetery_name AS plot_cemetery, p.section AS plot_section, p.plot_number AS plot_num,
+                           enc.id AS encoded_cert_id,
+                           enc.registration_number AS encoded_reg_no,
+                           enc.deceased_name AS encoded_deceased_name,
+                           enc.representative_name AS encoded_representative_name
                     FROM burial_requests b
                     LEFT JOIN cemetery_plots p ON b.cemetery_plot_id = p.id
+                    LEFT JOIN encoded_death_certificates enc ON (
+                        b.encoded_cert_id = enc.id 
+                        OR (b.existing_cert_no IS NOT NULL AND b.existing_cert_no != '' AND (
+                            enc.registration_number COLLATE utf8mb4_general_ci = b.existing_cert_no COLLATE utf8mb4_general_ci
+                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(enc.registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci = REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(b.existing_cert_no)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci
+                        ))
+                        OR (b.death_cert_registry_no IS NOT NULL AND b.death_cert_registry_no != '' AND (
+                            enc.registration_number COLLATE utf8mb4_general_ci = b.death_cert_registry_no COLLATE utf8mb4_general_ci
+                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(enc.registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci = REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(b.death_cert_registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci
+                        ))
+                    )
                     WHERE b.tenant_id = :tid 
                     ORDER BY b.submitted_at DESC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute(['tid' => $tenantId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($rows as &$r) {
+                $r['is_encoded_linked'] = (!empty($r['encoded_cert_id']) || !empty($r['encoded_reg_no']));
+            }
+            return $rows;
         } catch (\PDOException $e) {
             return [];
         }
@@ -570,10 +716,27 @@ class BurialRequest
             $params = [];
             $sql = "SELECT b.*, 
                            t.first_name, t.last_name, t.email, t.contactnum,
-                           p.cemetery_name AS plot_cemetery, p.section AS plot_section, p.plot_number AS plot_num
+                           p.cemetery_name AS plot_cemetery, p.section AS plot_section, p.plot_number AS plot_num,
+                           enc.id AS encoded_cert_id,
+                           enc.registration_number AS encoded_reg_no,
+                           enc.deceased_name AS encoded_deceased_name,
+                           enc.representative_name AS encoded_representative_name,
+                           enc.encoded_by_name AS encoded_by_name,
+                           enc.encoded_at AS encoded_at
                     FROM burial_requests b
                     LEFT JOIN tenant_accounts t ON b.tenant_id = t.tenant_id
                     LEFT JOIN cemetery_plots p ON b.cemetery_plot_id = p.id
+                    LEFT JOIN encoded_death_certificates enc ON (
+                        b.encoded_cert_id = enc.id 
+                        OR (b.existing_cert_no IS NOT NULL AND b.existing_cert_no != '' AND (
+                            enc.registration_number COLLATE utf8mb4_general_ci = b.existing_cert_no COLLATE utf8mb4_general_ci
+                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(enc.registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci = REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(b.existing_cert_no)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci
+                        ))
+                        OR (b.death_cert_registry_no IS NOT NULL AND b.death_cert_registry_no != '' AND (
+                            enc.registration_number COLLATE utf8mb4_general_ci = b.death_cert_registry_no COLLATE utf8mb4_general_ci
+                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(enc.registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci = REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(b.death_cert_registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') COLLATE utf8mb4_general_ci
+                        ))
+                    )
                     WHERE 1=1";
 
             $filter = strtolower(trim($filter));
@@ -600,7 +763,11 @@ class BurialRequest
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($rows as &$r) {
+                $r['is_encoded_linked'] = (!empty($r['encoded_cert_id']) || !empty($r['encoded_reg_no']));
+            }
+            return $rows;
         } catch (\PDOException $e) {
             error_log("BurialRequest::getAll error: " . $e->getMessage());
             return [];
@@ -1233,10 +1400,10 @@ class BurialRequest
      */
     public function getAllStaff(): array {
         try {
-            $stmt = $this->db->query("SELECT tenant_id AS id, CONCAT(first_name, ' ', last_name) AS name, email, role 
+            $stmt = $this->db->query("SELECT tenant_id, tenant_id AS id, first_name, last_name, CONCAT(first_name, ' ', last_name) AS name, email, role 
                                       FROM tenant_accounts 
                                       WHERE role IN ('Staff_Damayan', 'Admin') 
-                                      ORDER BY role ASC, first_name ASC");
+                                      ORDER BY (role = 'Staff_Damayan') DESC, first_name ASC");
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\PDOException $e) {
             return [];
@@ -1262,35 +1429,78 @@ class BurialRequest
 
     /**
      * Search deceased records across system (for linking or verifying copy requests)
+     * Searches both registered deceased records AND encoded death certificates
      */
     public function searchDeceasedRecords(string $query = ''): array {
         try {
-            $query = trim($query);
+            $query = ltrim(trim($query), '# ');
+            $results = [];
+
+            // 1. Search encoded_death_certificates
             if (empty($query)) {
-                $stmt = $this->db->query("SELECT d.*, b.ref_id, b.death_cert_registry_no 
+                $encStmt = $this->db->query("SELECT id, registration_number AS death_cert_registry_no, registration_number,
+                                                    deceased_name, representative_name, encoded_by_name, encoded_at,
+                                                    'encoded_death_certificates' AS source, 1 AS is_encoded,
+                                                    DATE(encoded_at) AS date_of_death
+                                             FROM encoded_death_certificates 
+                                             ORDER BY encoded_at DESC LIMIT 25");
+                $encRecords = $encStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } else {
+                $encStmt = $this->db->prepare("SELECT id, registration_number AS death_cert_registry_no, registration_number,
+                                                      deceased_name, representative_name, encoded_by_name, encoded_at,
+                                                      'encoded_death_certificates' AS source, 1 AS is_encoded,
+                                                      DATE(encoded_at) AS date_of_death
+                                               FROM encoded_death_certificates 
+                                               WHERE registration_number LIKE :q1 
+                                                  OR deceased_name LIKE :q2 
+                                                  OR representative_name LIKE :q3 
+                                               ORDER BY encoded_at DESC LIMIT 25");
+                $searchTerm = "%$query%";
+                $encStmt->execute([
+                    'q1' => $searchTerm,
+                    'q2' => $searchTerm,
+                    'q3' => $searchTerm
+                ]);
+                $encRecords = $encStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            }
+            foreach ($encRecords as $er) {
+                $results[] = $er;
+            }
+
+            // 2. Search deceased_records
+            if (empty($query)) {
+                $stmt = $this->db->query("SELECT d.*, d.full_name AS deceased_name, b.ref_id, b.death_cert_registry_no,
+                                                 'deceased_records' AS source, 0 AS is_encoded
                                           FROM deceased_records d
                                           LEFT JOIN burial_requests b ON (d.id = b.deceased_id OR d.burial_request_id = b.id)
-                                          ORDER BY d.created_at DESC LIMIT 50");
-                return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                                          ORDER BY d.created_at DESC LIMIT 25");
+                $decRecords = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } else {
+                $stmt = $this->db->prepare("SELECT d.*, d.full_name AS deceased_name, b.ref_id, b.death_cert_registry_no,
+                                                   'deceased_records' AS source, 0 AS is_encoded
+                                            FROM deceased_records d
+                                            LEFT JOIN burial_requests b ON (d.id = b.deceased_id OR d.burial_request_id = b.id)
+                                            WHERE d.full_name LIKE :q1 
+                                               OR d.first_name LIKE :q2 
+                                               OR d.last_name LIKE :q3 
+                                               OR d.ref_id LIKE :q4 
+                                               OR b.death_cert_registry_no LIKE :q5
+                                            ORDER BY d.created_at DESC LIMIT 25");
+                $searchTerm = "%$query%";
+                $stmt->execute([
+                    'q1' => $searchTerm,
+                    'q2' => $searchTerm,
+                    'q3' => $searchTerm,
+                    'q4' => $searchTerm,
+                    'q5' => $searchTerm
+                ]);
+                $decRecords = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             }
-            $stmt = $this->db->prepare("SELECT d.*, d.full_name AS deceased_name, b.ref_id, b.death_cert_registry_no 
-                                        FROM deceased_records d
-                                        LEFT JOIN burial_requests b ON (d.id = b.deceased_id OR d.burial_request_id = b.id)
-                                        WHERE d.full_name LIKE :q1 
-                                           OR d.first_name LIKE :q2 
-                                           OR d.last_name LIKE :q3 
-                                           OR d.ref_id LIKE :q4 
-                                           OR b.death_cert_registry_no LIKE :q5
-                                        ORDER BY d.created_at DESC LIMIT 50");
-            $searchTerm = "%$query%";
-            $stmt->execute([
-                'q1' => $searchTerm,
-                'q2' => $searchTerm,
-                'q3' => $searchTerm,
-                'q4' => $searchTerm,
-                'q5' => $searchTerm
-            ]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($decRecords as $dr) {
+                $results[] = $dr;
+            }
+
+            return $results;
         } catch (\PDOException $e) {
             error_log("searchDeceasedRecords error: " . $e->getMessage());
             return [];
@@ -1299,23 +1509,74 @@ class BurialRequest
 
     /**
      * Verify and link existing death certificate record for copy request
-     * (Requirement 2 & 3: Staff must verify existing death certificate record is available)
+     * Supports both registered deceased records and encoded death certificates
      */
-    public function verifyExistingRecord(int $burialId, ?int $deceasedId = null, string $staffName = 'Staff Admin'): array {
+    public function verifyExistingRecord(int $burialId, ?int $recordId = null, string $staffName = 'Staff Admin', string $source = 'deceased_records'): array {
         try {
             $burial = $this->findById($burialId);
             if (!$burial) return ['success' => false, 'error' => 'Case not found'];
 
+            if ($source === 'encoded_death_certificates' || $source === 'encoded') {
+                $eid = $recordId ?: (!empty($burial['encoded_cert_id']) ? (int)$burial['encoded_cert_id'] : null);
+                if (!$eid && !empty($burial['existing_cert_no'])) {
+                    $foundEnc = $this->findEncodedByRegistrationNo($burial['existing_cert_no']);
+                    if ($foundEnc) $eid = (int)$foundEnc['id'];
+                }
+
+                if (!$eid) {
+                    return ['success' => false, 'error' => 'Encoded certificate record not found'];
+                }
+
+                $stmt = $this->db->prepare("SELECT * FROM encoded_death_certificates WHERE id = :id LIMIT 1");
+                $stmt->execute(['id' => $eid]);
+                $enc = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (!$enc) return ['success' => false, 'error' => 'Encoded death certificate not found'];
+
+                $updateSql = "UPDATE burial_requests 
+                              SET encoded_cert_id = :eid,
+                                  existing_cert_no = COALESCE(NULLIF(existing_cert_no, ''), :reg_no),
+                                  existing_record_verified = 1,
+                                  deceased_name = COALESCE(NULLIF(deceased_name, ''), :dname),
+                                  death_cert_status = IF(death_cert_status = 'Request Received', 'Under Review', death_cert_status),
+                                  updated_at = NOW()
+                              WHERE id = :id";
+                $this->db->prepare($updateSql)->execute([
+                    'eid' => $enc['id'],
+                    'reg_no' => $enc['registration_number'],
+                    'dname' => $enc['deceased_name'],
+                    'id' => $burialId
+                ]);
+
+                $this->db->prepare("UPDATE encoded_death_certificates SET burial_request_id = :bid WHERE id = :eid")->execute([
+                    'bid' => $burialId,
+                    'eid' => $enc['id']
+                ]);
+
+                $this->logActivity(
+                    $burialId,
+                    $burial['ref_id'],
+                    'record_verified',
+                    'Linked to Encoded Death Certificate',
+                    "Verified and linked to Encoded Death Certificate #{$enc['registration_number']} (Deceased: {$enc['deceased_name']}, Representative: {$enc['representative_name']}) by {$staffName}",
+                    $staffName,
+                    'Staff_Damayan'
+                );
+
+                return [
+                    'success' => true,
+                    'message' => "Successfully linked to Encoded Death Certificate #{$enc['registration_number']}",
+                    'is_encoded' => true,
+                    'encoded' => $enc
+                ];
+            }
+
+            // Otherwise, link to registered deceased_records
+            $deceasedId = $recordId ?: (!empty($burial['deceased_id']) ? (int)$burial['deceased_id'] : null);
             $decRecord = null;
             if ($deceasedId) {
                 $decStmt = $this->db->prepare("SELECT * FROM deceased_records WHERE id = :did LIMIT 1");
                 $decStmt->execute(['did' => $deceasedId]);
                 $decRecord = $decStmt->fetch(PDO::FETCH_ASSOC);
-            } elseif (!empty($burial['deceased_id'])) {
-                $decStmt = $this->db->prepare("SELECT * FROM deceased_records WHERE id = :did LIMIT 1");
-                $decStmt->execute(['did' => (int)$burial['deceased_id']]);
-                $decRecord = $decStmt->fetch(PDO::FETCH_ASSOC);
-                $deceasedId = (int)$burial['deceased_id'];
             }
 
             if (!$decRecord && $deceasedId) {
@@ -1482,5 +1743,298 @@ class BurialRequest
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
+
+    /**
+     * Look up an encoded death certificate by registration number
+     */
+    public function findEncodedByRegistrationNo(string $regNo): ?array {
+        $regNo = trim($regNo);
+        if (empty($regNo)) return null;
+        $norm = self::normalizeRegNo($regNo);
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
+                WHERE LOWER(TRIM(registration_number)) = LOWER(TRIM(:reg))
+                   OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm
+                ORDER BY (LOWER(TRIM(registration_number)) = LOWER(TRIM(:reg))) DESC
+                LIMIT 1");
+            $stmt->execute(['reg' => $regNo, 'norm' => $norm]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (\PDOException $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Check if a Death Certificate Registration Number is a duplicate across:
+     * 1. encoded_death_certificates
+     * 2. burial_requests (official civil registrations: death_cert_registry_no)
+     * 3. death_records (registry_no)
+     */
+    public function isDuplicateDeathCertRegNo(string $regNo, ?int $excludeEncodedId = null): ?array {
+        $regNo = trim($regNo);
+        if (empty($regNo)) return null;
+        $norm = self::normalizeRegNo($regNo);
+
+        try {
+            // Check 1: encoded_death_certificates
+            $sql1 = "SELECT id, registration_number, deceased_name, representative_name, encoded_by_name, encoded_at 
+                     FROM encoded_death_certificates 
+                     WHERE (LOWER(registration_number) = LOWER(:reg)
+                        OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm)";
+            if ($excludeEncodedId) {
+                $sql1 .= " AND id != " . (int)$excludeEncodedId;
+            }
+            $stmt1 = $this->db->prepare($sql1);
+            $stmt1->execute(['reg' => $regNo, 'norm' => $norm]);
+            $row1 = $stmt1->fetch(PDO::FETCH_ASSOC);
+            if ($row1) {
+                return [
+                    'is_duplicate' => true,
+                    'source' => 'Encoded Certificates Archive',
+                    'registration_number' => $row1['registration_number'],
+                    'deceased_name' => $row1['deceased_name'],
+                    'representative_name' => $row1['representative_name'],
+                    'encoded_by' => $row1['encoded_by_name'],
+                    'date' => $row1['encoded_at']
+                ];
+            }
+
+            // Check 2: burial_requests (official completed registrations only)
+            $stmt2 = $this->db->prepare("SELECT id, ref_id, death_cert_registry_no, deceased_name, informant_name, submitted_at 
+                                         FROM burial_requests 
+                                         WHERE (LOWER(death_cert_registry_no) = LOWER(:reg)
+                                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(death_cert_registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm) 
+                                         LIMIT 1");
+            $stmt2->execute(['reg' => $regNo, 'norm' => $norm]);
+            $row2 = $stmt2->fetch(PDO::FETCH_ASSOC);
+            if ($row2) {
+                return [
+                    'is_duplicate' => true,
+                    'source' => 'Official Registered Records (# ' . $row2['ref_id'] . ')',
+                    'registration_number' => $row2['death_cert_registry_no'],
+                    'deceased_name' => $row2['deceased_name'],
+                    'representative_name' => $row2['informant_name'],
+                    'date' => $row2['submitted_at']
+                ];
+            }
+
+            // Check 3: death_records
+            $stmt3 = $this->db->prepare("SELECT deceased_id, registry_no, CONCAT_WS(' ', dfirst_name, dmiddle_name, last_name) as deceased_name 
+                                         FROM death_records 
+                                         WHERE (LOWER(registry_no) = LOWER(:reg)
+                                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm) 
+                                         LIMIT 1");
+            $stmt3->execute(['reg' => $regNo, 'norm' => $norm]);
+            $row3 = $stmt3->fetch(PDO::FETCH_ASSOC);
+            if ($row3) {
+                return [
+                    'is_duplicate' => true,
+                    'source' => 'Civil Registry Records',
+                    'registration_number' => $row3['registry_no'],
+                    'deceased_name' => trim($row3['deceased_name']),
+                    'representative_name' => 'N/A'
+                ];
+            }
+
+            return null;
+        } catch (\PDOException $e) {
+            error_log("isDuplicateDeathCertRegNo error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Encode an existing death certificate (Registration #, Deceased Name, Representative Name)
+     * Automatically links any burial request having the same registration number!
+     */
+    public function encodeDeathCertificate(array $data, int $staffId, string $staffName): array {
+        $regNo = trim($data['registration_number'] ?? '');
+        $deceasedName = trim($data['deceased_name'] ?? '');
+        $representativeName = trim($data['representative_name'] ?? '');
+
+        if (empty($regNo)) {
+            return ['success' => false, 'error' => 'Death Certificate Registration Number is required.', 'message' => 'Death Certificate Registration Number is required.'];
+        }
+        if (empty($deceasedName)) {
+            return ['success' => false, 'error' => 'Full Name of the Deceased is required.', 'message' => 'Full Name of the Deceased is required.'];
+        }
+        if (empty($representativeName)) {
+            return ['success' => false, 'error' => 'Full Name of the Representative is required.', 'message' => 'Full Name of the Representative is required.'];
+        }
+
+        // Check for duplicate registration number
+        $dup = $this->isDuplicateDeathCertRegNo($regNo);
+        if ($dup) {
+            $msg = "Registration number '{$regNo}' already exists in {$dup['source']} (Deceased: {$dup['deceased_name']}). Duplicate records are prevented.";
+            return [
+                'success' => false,
+                'error' => $msg,
+                'message' => $msg
+            ];
+        }
+
+        try {
+            $stmt = $this->db->prepare("INSERT INTO encoded_death_certificates 
+                (registration_number, deceased_name, representative_name, encoded_by_id, encoded_by_name, encoded_at) 
+                VALUES (:reg, :dec, :rep, :staff_id, :staff_name, NOW())");
+            $res = $stmt->execute([
+                'reg' => $regNo,
+                'dec' => $deceasedName,
+                'rep' => $representativeName,
+                'staff_id' => $staffId ?: null,
+                'staff_name' => $staffName ?: 'Damayan Staff'
+            ]);
+
+            if ($res) {
+                $newId = (int)$this->db->lastInsertId();
+
+                // Automatically recognize and link any requests with the SAME registration number
+                $norm = self::normalizeRegNo($regNo);
+                $findReqs = $this->db->prepare("SELECT id, ref_id, deceased_name FROM burial_requests 
+                                                WHERE LOWER(TRIM(existing_cert_no)) = LOWER(TRIM(:reg1)) 
+                                                   OR LOWER(TRIM(death_cert_registry_no)) = LOWER(TRIM(:reg2))
+                                                   OR (existing_cert_no IS NOT NULL AND existing_cert_no != '' AND REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(existing_cert_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm1)
+                                                   OR (death_cert_registry_no IS NOT NULL AND death_cert_registry_no != '' AND REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(death_cert_registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm2)");
+                $findReqs->execute(['reg1' => $regNo, 'reg2' => $regNo, 'norm1' => $norm, 'norm2' => $norm]);
+                $matchedReqs = $findReqs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+                $linkedCases = [];
+                foreach ($matchedReqs as $mr) {
+                    $this->db->prepare("UPDATE burial_requests 
+                                        SET encoded_cert_id = :eid, 
+                                            existing_record_verified = 1,
+                                            updated_at = NOW() 
+                                        WHERE id = :bid")->execute([
+                        'eid' => $newId,
+                        'bid' => $mr['id']
+                    ]);
+
+                    $this->db->prepare("UPDATE encoded_death_certificates 
+                                        SET burial_request_id = :bid 
+                                        WHERE id = :eid")->execute([
+                        'bid' => $mr['id'],
+                        'eid' => $newId
+                    ]);
+
+                    $this->logActivity(
+                        (int)$mr['id'],
+                        $mr['ref_id'],
+                        'encoded_link',
+                        'Linked to Encoded Death Certificate',
+                        "Automatically recognized and linked to Encoded Death Certificate #{$regNo} (Deceased: {$deceasedName}, Representative: {$representativeName}) by {$staffName}",
+                        $staffName,
+                        'Staff_Damayan'
+                    );
+
+                    $linkedCases[] = $mr['ref_id'];
+                }
+
+                $msg = "Death certificate registration #{$regNo} successfully encoded and recorded in the database.";
+                if (!empty($linkedCases)) {
+                    $msg .= " Automatically recognized and linked to request(s): " . implode(', ', $linkedCases) . ".";
+                }
+
+                return [
+                    'success' => true,
+                    'id' => $newId,
+                    'message' => $msg,
+                    'linked_cases' => $linkedCases,
+                    'record' => [
+                        'id' => $newId,
+                        'registration_number' => $regNo,
+                        'deceased_name' => $deceasedName,
+                        'representative_name' => $representativeName,
+                        'encoded_by_name' => $staffName,
+                        'encoded_at' => date('Y-m-d H:i:s')
+                    ]
+                ];
+            }
+
+            return ['success' => false, 'error' => 'Failed to save encoded death certificate into database.', 'message' => 'Failed to save encoded death certificate into database.'];
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '23000' || strpos($e->getMessage(), 'Duplicate') !== false) {
+                $msg = "Registration number '{$regNo}' already exists in database.";
+                return ['success' => false, 'error' => $msg, 'message' => $msg];
+            }
+            error_log("encodeDeathCertificate error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error: ' . $e->getMessage(), 'message' => 'Database error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Retrieve encoded death certificates with search support
+     */
+    public function getEncodedDeathCertificates(string $search = '', int $limit = 100, int $offset = 0): array {
+        try {
+            $search = trim($search);
+            if (!empty($search)) {
+                $term = "%{$search}%";
+                $stmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
+                    WHERE registration_number LIKE :q1 
+                       OR deceased_name LIKE :q2 
+                       OR representative_name LIKE :q3 
+                       OR encoded_by_name LIKE :q4 
+                    ORDER BY encoded_at DESC 
+                    LIMIT :limit OFFSET :offset");
+                $stmt->bindValue(':q1', $term, PDO::PARAM_STR);
+                $stmt->bindValue(':q2', $term, PDO::PARAM_STR);
+                $stmt->bindValue(':q3', $term, PDO::PARAM_STR);
+                $stmt->bindValue(':q4', $term, PDO::PARAM_STR);
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+                $stmt->execute();
+            } else {
+                $stmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
+                    ORDER BY encoded_at DESC 
+                    LIMIT :limit OFFSET :offset");
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+                $stmt->execute();
+            }
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\PDOException $e) {
+            error_log("getEncodedDeathCertificates error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Count total encoded records
+     */
+    public function countEncodedDeathCertificates(string $search = ''): int {
+        try {
+            $search = trim($search);
+            if (!empty($search)) {
+                $term = "%{$search}%";
+                $stmt = $this->db->prepare("SELECT COUNT(*) FROM encoded_death_certificates 
+                    WHERE registration_number LIKE :q1 
+                       OR deceased_name LIKE :q2 
+                       OR representative_name LIKE :q3 
+                       OR encoded_by_name LIKE :q4");
+                $stmt->execute(['q1' => $term, 'q2' => $term, 'q3' => $term, 'q4' => $term]);
+                return (int)$stmt->fetchColumn();
+            } else {
+                $stmt = $this->db->query("SELECT COUNT(*) FROM encoded_death_certificates");
+                return (int)$stmt->fetchColumn();
+            }
+        } catch (\PDOException $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Get single encoded record by ID
+     */
+    public function getEncodedDeathCertificateById(int $id): ?array {
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM encoded_death_certificates WHERE id = :id LIMIT 1");
+            $stmt->execute(['id' => $id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (\PDOException $e) {
+            return null;
+        }
+    }
 }
+
 

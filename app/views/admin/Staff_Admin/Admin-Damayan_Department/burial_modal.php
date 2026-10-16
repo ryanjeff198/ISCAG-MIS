@@ -130,6 +130,9 @@
             </div>
           </div>
 
+          <!-- Section: Encoded Death Certificate Recognized Banner -->
+          <div id="v-encoded-cert-overview-banner" style="display:none; margin-bottom:16px;"></div>
+
           <!-- Section: Applicant & Deceased Information Summary -->
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
             
@@ -851,17 +854,70 @@
     sexBadge.style.color = (c.deceased_sex === 'Female') ? '#9d174d' : '#3730a3';
 
     // ──────────────── TAB 1: OVERVIEW ────────────────
+    const isEncodedLinked = Boolean(c.is_encoded_linked || c.encoded_cert_id || c.encoded_reg_no);
+    const encBanner = document.getElementById('v-encoded-cert-overview-banner');
+    if (encBanner) {
+      if (isEncodedLinked && !isCopy) {
+        encBanner.style.display = 'block';
+        encBanner.innerHTML = `
+          <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:36px; height:36px; border-radius:50%; background:#d1fae5; display:flex; align-items:center; justify-content:center; color:#059669; flex-shrink:0;">
+                <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              </div>
+              <div>
+                <div style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.04em;">Recognized &amp; Linked to Encoded Death Certificate</div>
+                <div style="font-size:0.95rem; font-weight:700; color:#064e3b; margin-top:1px;">
+                  Registration #: <strong>${escapeHtml(c.encoded_reg_no || c.death_cert_registry_no || c.existing_cert_no || '')}</strong>
+                  <span style="font-weight:500; color:#047857; margin-left:8px;">Deceased: ${escapeHtml(c.encoded_deceased_name || c.deceased_name || '')} · Rep: ${escapeHtml(c.encoded_representative_name || c.informant_name || 'N/A')}</span>
+                </div>
+                <div style="font-size:0.72rem; color:#6b7280; margin-top:2px;">
+                  Encoded by: <strong>${escapeHtml(c.encoded_by_name || 'Damayan Staff')}</strong> on ${escapeHtml(c.encoded_at || 'N/A')}
+                </div>
+              </div>
+            </div>
+            <span class="badge-status badge-active" style="font-size:0.75rem;">Verified Link</span>
+          </div>
+        `;
+      } else {
+        encBanner.style.display = 'none';
+      }
+    }
+
     const copyPanel = document.getElementById('copy-request-panel');
     if (copyPanel) {
       if (isCopy) {
         copyPanel.style.display = 'block';
-        document.getElementById('v-copy-existing-cert').textContent = c.existing_cert_no || 'Not Provided';
+        document.getElementById('v-copy-existing-cert').textContent = c.encoded_reg_no || c.existing_cert_no || 'Not Provided';
         document.getElementById('v-copy-num-copies').textContent = (c.num_copies || 1) + (parseInt(c.num_copies) > 1 ? ' copies' : ' copy');
         document.getElementById('v-copy-reason').textContent = c.copy_reason || 'Personal / Official Use';
 
         const copyVerifiedBadge = document.getElementById('v-copy-verified-badge');
         const recordLinkDesc = document.getElementById('v-copy-record-link-desc');
-        if (parseInt(c.existing_record_verified) === 1) {
+        if (isEncodedLinked) {
+          copyVerifiedBadge.textContent = 'Record Verified & Linked (Encoded Death Cert)';
+          copyVerifiedBadge.className = 'badge-status badge-active';
+          recordLinkDesc.innerHTML = `
+            <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:12px; margin-top:4px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                <span style="color:#065f46; font-weight:800; font-size:0.75rem; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
+                  <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                  Linked to Encoded Death Certificate (Same Registration # Matched)
+                </span>
+                <span class="badge-status badge-active" style="font-size:0.68rem;">Verified in Archive</span>
+              </div>
+              <div style="font-size:0.95rem; font-weight:800; color:#064e3b;">
+                Registration #: ${escapeHtml(c.encoded_reg_no || c.existing_cert_no || '')}
+              </div>
+              <div style="font-size:0.82rem; color:#047857; margin-top:2px;">
+                Deceased: <strong>${escapeHtml(c.encoded_deceased_name || c.deceased_name || '')}</strong> · Representative: <strong>${escapeHtml(c.encoded_representative_name || c.informant_name || 'N/A')}</strong>
+              </div>
+              <div style="font-size:0.72rem; color:#6b7280; margin-top:4px;">
+                Encoded by: <strong>${escapeHtml(c.encoded_by_name || 'Damayan Staff')}</strong> on ${escapeHtml(c.encoded_at || 'N/A')}
+              </div>
+            </div>
+          `;
+        } else if (parseInt(c.existing_record_verified) === 1) {
           copyVerifiedBadge.textContent = 'Record Verified & Linked';
           copyVerifiedBadge.className = 'badge-status badge-active';
           recordLinkDesc.innerHTML = `<span style="color:#059669;">Linked to Registered Deceased Record #${escapeHtml(c.deceased_id || '')}: ${escapeHtml(c.deceased_name || '')} (DOD: ${escapeHtml(c.date_of_death || 'N/A')})</span>`;
@@ -948,11 +1004,15 @@
     // Coordinator name & staff dropdown
     document.getElementById('v-coordinator-name').textContent = c.assigned_staff_name || 'Unassigned';
     const staffSelect = document.getElementById('assign-staff-select');
-    staffSelect.innerHTML = '<option value="">-- Select Staff --</option>' + (data.staff_list || []).map(s => `
-      <option value="${s.tenant_id}" ${s.tenant_id == c.assigned_staff_id ? 'selected' : ''}>
-        ${s.first_name} ${s.last_name} (${s.role})
-      </option>
-    `).join('');
+    staffSelect.innerHTML = '<option value="">-- Select Staff --</option>' + (data.staff_list || []).map(s => {
+      const sId = s.tenant_id || s.id;
+      const sName = (s.first_name && s.last_name) ? (s.first_name + ' ' + s.last_name).trim() : (s.name || 'Staff');
+      return `
+        <option value="${sId}" ${sId == c.assigned_staff_id ? 'selected' : ''}>
+          ${sName} (${s.role || 'Staff'})
+        </option>
+      `;
+    }).join('');
 
     // ──────────────── TAB 2: DECEASED RECORD ────────────────
     const names = (c.deceased_name || '').split(' ');
@@ -1380,38 +1440,49 @@
         return;
       }
 
-      resultsContainer.innerHTML = data.records.map(r => `
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; font-size:0.85rem;">
+      resultsContainer.innerHTML = data.records.map(r => {
+        const isEncoded = Boolean(r.is_encoded);
+        return `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:${isEncoded ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isEncoded ? '#bbf7d0' : '#e2e8f0'}; border-radius:10px; font-size:0.85rem; margin-bottom:8px;">
           <div>
-            <div style="font-weight:700; color:var(--damayan-dark);">${escapeHtml(r.deceased_name)}</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <strong style="color:var(--damayan-dark);">${escapeHtml(r.deceased_name)}</strong>
+              ${isEncoded ? '<span class="badge-status badge-active" style="font-size:0.68rem; padding:2px 8px;">Encoded Certificate Archive</span>' : '<span class="badge-status" style="font-size:0.68rem; padding:2px 8px; background:#e0e7ff; color:#3730a3;">Registered Civil Case</span>'}
+            </div>
             <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
-              DOD: <strong>${escapeHtml(r.date_of_death || 'N/A')}</strong> · POD: ${escapeHtml(r.place_of_death || 'N/A')}
-              ${r.death_cert_registry_no ? ' · <span style="color:#047857; font-weight:700;">Reg #' + escapeHtml(r.death_cert_registry_no) + '</span>' : ''}
+              ${r.death_cert_registry_no ? '<strong>Registration #: ' + escapeHtml(r.death_cert_registry_no) + '</strong> · ' : ''}
+              ${isEncoded ? 'Representative: <strong>' + escapeHtml(r.representative_name || 'N/A') + '</strong> · Encoded by: ' + escapeHtml(r.encoded_by_name || 'Staff') : 'DOD: ' + escapeHtml(r.date_of_death || 'N/A') + ' · POD: ' + escapeHtml(r.place_of_death || 'N/A')}
               ${r.ref_id ? ' (Case #' + escapeHtml(r.ref_id) + ')' : ''}
             </div>
           </div>
-          <button type="button" class="btn-topbar primary" style="padding:6px 14px; font-size:0.78rem;" onclick="linkDeceasedRecord(${r.id})">
+          <button type="button" class="btn-topbar primary" style="padding:6px 14px; font-size:0.78rem;" onclick="linkDeceasedRecord(${r.id}, '${isEncoded ? 'encoded' : 'deceased_records'}')">
             Link to Record
           </button>
         </div>
-      `).join('');
+      `;}).join('');
     } catch(e) {
       resultsContainer.innerHTML = '<div style="color:#dc2626; padding:10px; text-align:center;">Error searching records.</div>';
     }
   }
 
-  async function linkDeceasedRecord(deceasedId) {
-    if(!activeCase || !deceasedId) return;
+  async function linkDeceasedRecord(recordId, source = 'deceased_records') {
+    if(!activeCase || !recordId) return;
     try {
+      const payload = { id: activeCase.id, source: source };
+      if (source === 'encoded' || source === 'encoded_death_certificates') {
+        payload.encoded_cert_id = recordId;
+      } else {
+        payload.deceased_id = recordId;
+      }
       const res = await fetch('<?= url('/admin/damayan/burial/verify-record') ?>', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activeCase.id, deceased_id: deceasedId })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if(data.success) {
         closeSearchDeceasedModal();
-        showAlert('Record Linked', 'Existing deceased record successfully linked and verified. No duplicate record was created.', 'success');
+        showAlert('Record Linked', 'Existing certificate record successfully linked and verified. No duplicate record was created.', 'success');
         openCaseModal(activeCase.id, true);
       } else {
         showAlert('Error', data.error || 'Failed to link record.', 'error');

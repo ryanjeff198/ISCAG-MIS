@@ -1316,8 +1316,9 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Existing Certificate / Registry Number (If Available)</label>
-                                    <input type="text" id="existing-cert-no" class="form-control" placeholder="e.g. 2026-00412 or LCRO Registry #" />
-                                    <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Allows staff to locate and link the existing record immediately.</span>
+                                    <input type="text" id="existing-cert-no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkExistingCertNumber(this.value)" oninput="debouncedCheckCert(this.value)" />
+                                    <input type="hidden" id="linked-encoded-cert-id" value="" />
+                                    <span id="existing-cert-feedback" style="font-size:0.75rem; color:var(--text-muted); margin-top:2px; display:block;">Allows staff to locate and link the existing record immediately.</span>
                                 </div>
                             </div>
 
@@ -1730,6 +1731,76 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }
     }
 
+    let certLookupTimeout = null;
+    function debouncedCheckCert(val) {
+        clearTimeout(certLookupTimeout);
+        certLookupTimeout = setTimeout(() => {
+            checkExistingCertNumber(val);
+        }, 300);
+    }
+
+    function autoFillExistingCopyDeceased(selectEl) {
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (!opt || !opt.value) return;
+        const fullname = opt.getAttribute('data-fullname') || '';
+        const dod = opt.getAttribute('data-dod') || '';
+        const ref = opt.getAttribute('data-ref') || '';
+
+        const nameInput = document.getElementById('copy-deceased-name');
+        if (nameInput && fullname) nameInput.value = fullname;
+
+        const dodInput = document.getElementById('copy-deceased-dod');
+        if (dodInput && dod) dodInput.value = dod;
+
+        const certInput = document.getElementById('existing-cert-no');
+        if (certInput && ref) {
+            certInput.value = ref;
+            checkExistingCertNumber(ref);
+        }
+    }
+
+    async function checkExistingCertNumber(val) {
+        val = (val || '').trim();
+        const fb = document.getElementById('existing-cert-feedback');
+        const hiddenEncId = document.getElementById('linked-encoded-cert-id');
+        if (!val) {
+            if (fb) fb.innerHTML = 'Allows staff to locate and link the existing record immediately.';
+            if (hiddenEncId) hiddenEncId.value = '';
+            return;
+        }
+        try {
+            const res = await fetch('<?= url('/user/damayan/lookup-cert') ?>?reg=' + encodeURIComponent(val));
+            const data = await res.json();
+            if (data && data.found && data.record) {
+                if (hiddenEncId) hiddenEncId.value = data.record.id;
+                if (fb) {
+                    fb.innerHTML = `
+                        <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:10px 14px; margin-top:6px;">
+                            <div style="color:#059669; font-weight:800; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
+                                <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                ✓ Recognized in Damayan Archive
+                            </div>
+                            <div style="font-size:0.8rem; color:#064e3b; margin-top:4px; line-height:1.4;">
+                                <strong>Deceased:</strong> ${escapeHtml(data.record.deceased_name)}<br>
+                                <strong>Representative:</strong> ${escapeHtml(data.record.representative_name || 'N/A')}<br>
+                                <strong>Registered #:</strong> ${escapeHtml(data.record.registration_number)}
+                            </div>
+                        </div>
+                    `;
+                }
+                const decInput = document.getElementById('copy-deceased-name');
+                if (decInput && !decInput.value.trim()) {
+                    decInput.value = data.record.deceased_name;
+                }
+            } else {
+                if (hiddenEncId) hiddenEncId.value = '';
+                if (fb) {
+                    fb.innerHTML = '<span style="color:var(--text-muted); display:block; margin-top:4px;">Will be verified and linked by staff upon review.</span>';
+                }
+            }
+        } catch(e) {}
+    }
+
     // ── Submit Request via AJAX ──
     async function submitBurialRequest(event) {
         event.preventDefault();
@@ -1769,6 +1840,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             formData.append('deceased_name', decName);
             formData.append('copy_reason', reason);
             formData.append('existing_cert_no', document.getElementById('existing-cert-no')?.value.trim() || '');
+            formData.append('encoded_cert_id', document.getElementById('linked-encoded-cert-id')?.value || '');
             formData.append('num_copies', document.getElementById('num-copies')?.value || '1');
             formData.append('dod', document.getElementById('copy-deceased-dod')?.value || '');
 

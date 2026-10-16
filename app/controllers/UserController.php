@@ -853,6 +853,7 @@ class UserController extends Controller
             'supporting_document' => $uploadedDocPath,
             'cert_action_type' => $certActionType,
             'existing_cert_no' => trim($input['existing_cert_no'] ?? ''),
+            'encoded_cert_id' => !empty($input['encoded_cert_id']) ? (int)$input['encoded_cert_id'] : null,
             'copy_reason' => trim($input['copy_reason'] ?? ''),
             'num_copies' => max(1, (int)($input['num_copies'] ?? 1))
         ];

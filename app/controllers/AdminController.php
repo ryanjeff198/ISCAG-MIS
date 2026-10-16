@@ -2228,6 +2228,13 @@ class AdminController extends Controller
                 'death_cert_requested' => (int)($b['death_cert_requested'] ?? 1),
                 'death_cert_status' => $b['death_cert_status'] ?? 'Request Received',
                 'death_cert_registry_no' => $b['death_cert_registry_no'] ?? '',
+                'encoded_cert_id' => !empty($b['encoded_cert_id']) ? (int)$b['encoded_cert_id'] : null,
+                'encoded_reg_no' => $b['encoded_reg_no'] ?? null,
+                'encoded_deceased_name' => $b['encoded_deceased_name'] ?? null,
+                'encoded_representative_name' => $b['encoded_representative_name'] ?? null,
+                'encoded_by_name' => $b['encoded_by_name'] ?? null,
+                'encoded_at' => $b['encoded_at'] ?? null,
+                'is_encoded_linked' => !empty($b['encoded_cert_id']) || !empty($b['encoded_reg_no']),
                 'cemetery_plot_requested' => (int)($b['cemetery_plot_requested'] ?? 1),
                 'cemetery_plot_status' => $b['cemetery_plot_status'] ?? 'Pending Review',
                 'assigned_cemetery_name' => $b['assigned_cemetery_name'] ?? '',
@@ -2294,6 +2301,13 @@ class AdminController extends Controller
                 'death_cert_requested' => (int)($b['death_cert_requested'] ?? 1),
                 'death_cert_status' => $b['death_cert_status'] ?? 'Request Received',
                 'death_cert_registry_no' => $b['death_cert_registry_no'] ?? '',
+                'encoded_cert_id' => !empty($b['encoded_cert_id']) ? (int)$b['encoded_cert_id'] : null,
+                'encoded_reg_no' => $b['encoded_reg_no'] ?? null,
+                'encoded_deceased_name' => $b['encoded_deceased_name'] ?? null,
+                'encoded_representative_name' => $b['encoded_representative_name'] ?? null,
+                'encoded_by_name' => $b['encoded_by_name'] ?? null,
+                'encoded_at' => $b['encoded_at'] ?? null,
+                'is_encoded_linked' => !empty($b['encoded_cert_id']) || !empty($b['encoded_reg_no']),
                 'cemetery_plot_requested' => (int)($b['cemetery_plot_requested'] ?? 1),
                 'cemetery_plot_status' => $b['cemetery_plot_status'] ?? 'Pending Review',
                 'assigned_cemetery_name' => $b['assigned_cemetery_name'] ?? '',
@@ -2520,7 +2534,8 @@ class AdminController extends Controller
 
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
         $id = (int)($input['id'] ?? 0);
-        $deceasedId = !empty($input['deceased_id']) ? (int)$input['deceased_id'] : null;
+        $recordId = !empty($input['encoded_cert_id']) ? (int)$input['encoded_cert_id'] : (!empty($input['deceased_id']) ? (int)$input['deceased_id'] : null);
+        $source = trim($input['source'] ?? (!empty($input['encoded_cert_id']) ? 'encoded' : 'deceased_records'));
         $staffName = $_SESSION['name'] ?? 'Damayan Staff';
 
         if (empty($id)) {
@@ -2529,9 +2544,43 @@ class AdminController extends Controller
 
         require_once BASE_PATH . '/app/models/BurialRequest.php';
         $model = new BurialRequest();
-        $result = $model->verifyExistingRecord($id, $deceasedId, $staffName);
+        $result = $model->verifyExistingRecord($id, $recordId, $staffName, $source);
 
         echo json_encode($result);
+        return;
+    }
+
+    /**
+     * Lookup encoded certificate by registration number
+     */
+    public function lookupEncodedCertificate(): void {
+        header('Content-Type: application/json');
+        $reg = trim($_GET['reg'] ?? ($_POST['reg'] ?? ''));
+        if (empty($reg)) {
+            echo json_encode(['success' => false, 'found' => false]);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $record = $model->findEncodedByRegistrationNo($reg);
+
+        if ($record) {
+            echo json_encode([
+                'success' => true,
+                'found' => true,
+                'record' => [
+                    'id' => $record['id'],
+                    'registration_number' => $record['registration_number'],
+                    'deceased_name' => $record['deceased_name'],
+                    'representative_name' => $record['representative_name'],
+                    'encoded_by_name' => $record['encoded_by_name'],
+                    'encoded_at' => $record['encoded_at']
+                ]
+            ]);
+        } else {
+            echo json_encode(['success' => true, 'found' => false]);
+        }
         return;
     }
 
@@ -3086,14 +3135,21 @@ class AdminController extends Controller
         $analytics = $fcModel->getCertificateAnalytics();
         $staffList = $fcModel->getStaffList();
 
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $burialModel = new BurialRequest();
+        $encodedRecords = $burialModel->getEncodedDeathCertificates($search);
+        $encodedCount = $burialModel->countEncodedDeathCertificates();
+
         $this->view('admin/Staff_Admin/Admin-Damayan_Department/certificate_tracking', [
-            'active_page'   => 'certificate_tracking',
-            'dbUser'        => $dbUser,
-            'certificates'  => $certificates,
-            'analytics'     => $analytics,
-            'staffList'     => $staffList,
-            'currentFilter' => $statusFilter,
-            'search'        => $search
+            'active_page'    => 'certificate_tracking',
+            'dbUser'         => $dbUser,
+            'certificates'   => $certificates,
+            'analytics'      => $analytics,
+            'staffList'      => $staffList,
+            'encodedRecords' => $encodedRecords,
+            'encodedCount'   => $encodedCount,
+            'currentFilter'  => $statusFilter,
+            'search'         => $search
         ]);
     }
 
@@ -3233,6 +3289,139 @@ class AdminController extends Controller
 
         $result = $fcModel->markAsReleased($caseId, $input, $adminId, $adminName);
         echo json_encode($result);
+        exit;
+    }
+
+    /**
+     * View / List Encoded Death Certificates
+     */
+    public function damayanEncodedCertificates(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        $search = trim($_GET['search'] ?? '');
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $records = $model->getEncodedDeathCertificates($search);
+        $totalCount = $model->countEncodedDeathCertificates($search);
+
+        if (isset($_GET['format']) && $_GET['format'] === 'json') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'records' => $records, 'total' => $totalCount]);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/encoded_certificates', [
+            'active_page' => 'encoded_certificates',
+            'dbUser' => $dbUser,
+            'records' => $records,
+            'totalCount' => $totalCount,
+            'search' => $search
+        ]);
+    }
+
+    /**
+     * Save an encoded death certificate
+     * Only 3 fields required: registration_number, deceased_name, representative_name
+     */
+    public function saveEncodedCertificate(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid request method.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+
+        $regNo = trim($input['registration_number'] ?? '');
+        $deceasedName = trim($input['deceased_name'] ?? '');
+        $representativeName = trim($input['representative_name'] ?? '');
+
+        if (empty($regNo)) {
+            echo json_encode(['success' => false, 'error' => 'Death Certificate Registration Number is required.']);
+            exit;
+        }
+        if (empty($deceasedName)) {
+            echo json_encode(['success' => false, 'error' => 'Full Name of the Deceased is required.']);
+            exit;
+        }
+        if (empty($representativeName)) {
+            echo json_encode(['success' => false, 'error' => 'Full Name of the Representative is required.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+
+        $staffId = (int)($_SESSION['user_id'] ?? 0);
+        $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
+
+        $result = $model->encodeDeathCertificate([
+            'registration_number' => $regNo,
+            'deceased_name' => $deceasedName,
+            'representative_name' => $representativeName
+        ], $staffId, $staffName);
+
+        echo json_encode($result);
+        exit;
+    }
+
+    /**
+     * Check if a registration number already exists in database
+     */
+    public function checkDuplicateRegistrationNo(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        $regNo = trim($_GET['reg'] ?? ($_POST['reg'] ?? ''));
+        if (empty($regNo)) {
+            echo json_encode(['exists' => false]);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $dup = $model->isDuplicateDeathCertRegNo($regNo);
+
+        if ($dup) {
+            echo json_encode([
+                'exists' => true,
+                'message' => "Registration #{$regNo} already exists in {$dup['source']} (Deceased: {$dup['deceased_name']}).",
+                'duplicate' => $dup
+            ]);
+        } else {
+            echo json_encode(['exists' => false]);
+        }
+        exit;
+    }
+
+    /**
+     * Get single encoded death certificate details
+     */
+    public function getEncodedCertificateDetail(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Invalid ID.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $record = $model->getEncodedDeathCertificateById($id);
+
+        if (!$record) {
+            echo json_encode(['success' => false, 'error' => 'Encoded record not found.']);
+            exit;
+        }
+
+        echo json_encode(['success' => true, 'record' => $record]);
         exit;
     }
 

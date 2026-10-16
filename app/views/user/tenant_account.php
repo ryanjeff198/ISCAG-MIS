@@ -163,7 +163,7 @@ $phpUser = [
                             <div style="flex:1;min-width:220px;">
                                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
                                     <h4 style="font-family:'Lora',serif;font-weight:700;color:var(--primary-dark);margin:0;font-size:1.15rem;"
-                                        id="profile-fullname">Muhammad Usman</h4>
+                                        id="profile-fullname"><?= htmlspecialchars(trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')) ?: ($_SESSION['name'] ?? 'User')) ?></h4>
                                     <span
                                         style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:rgba(46,125,85,0.1);color:var(--success);">
                                         <span style="width:8px;height:8px;background:currentColor;border-radius:50%;"></span>
@@ -175,7 +175,7 @@ $phpUser = [
                                     </span>
                                 </div>
                                 <p style="color:var(--text-muted);font-size:0.83rem;margin:0 0 10px;"
-                                    id="profile-email">musman@example.com</p>
+                                    id="profile-email"><?= htmlspecialchars($account['email'] ?? ($_SESSION['email'] ?? '')) ?></p>
 
                                 <!-- info badges -->
                                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
@@ -637,8 +637,11 @@ $phpUser = [
         // Inlined nav helper (from js/auth.js)
         // ══════════════════════════════════════════
         function loadUserNav() {
-            const u = getUser();
             const navName = document.getElementById('nav-name');
+            if (navName && (navName.hasAttribute('data-preserve') || navName.hasAttribute('data-force-sync'))) {
+                return;
+            }
+            const u = getUser();
             const navAvatar = document.getElementById('nav-avatar');
             if (navName) navName.textContent = u.name;
             if (navAvatar) {
@@ -699,8 +702,15 @@ $phpUser = [
                 }
             }
         });
+        const dbFullName = '<?= addslashes(trim(($account['first_name'] ?? '') . ' ' . ($account['last_name'] ?? '')) ?: ($_SESSION['name'] ?? '')) ?>';
+        const dbEmail = '<?= addslashes($account['email'] ?? ($_SESSION['email'] ?? '')) ?>';
+        if (dbFullName) user.name = dbFullName;
+        if (dbEmail) user.email = dbEmail;
         document.getElementById('profile-fullname').textContent = user.name;
         document.getElementById('profile-email').textContent = user.email;
+        if (dbFullName) {
+            localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+        }
 
         // ── Set verification role from SESSION (not localStorage) ──
         const SESSION_ROLE = '<?= htmlspecialchars($_SESSION['role'] ?? '') ?>';
@@ -1197,8 +1207,11 @@ $phpUser = [
             }
         };
         function loadUserNav() {
-            const u = getUser();
             const navName = document.getElementById('nav-name');
+            if (navName && (navName.hasAttribute('data-preserve') || navName.hasAttribute('data-force-sync'))) {
+                return;
+            }
+            const u = getUser();
             const navAvatar = document.getElementById('nav-avatar');
             if (navName) navName.textContent = u.name;
             if (navAvatar) {

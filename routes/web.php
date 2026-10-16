@@ -174,6 +174,13 @@ $routes = [
     '/admin/damayan/certificate-tracking/schedule'   => ['AdminController', 'scheduleCertificateRelease'],
     '/admin/damayan/certificate-tracking/reschedule' => ['AdminController', 'rescheduleCertificateRelease'],
     '/admin/damayan/certificate-tracking/release'    => ['AdminController', 'markCertificateReleased'],
+    // Death Certificate Encoding (Admin)
+    '/admin/damayan/encoded-certificates'            => ['AdminController', 'damayanEncodedCertificates'],
+    '/admin/damayan/encoded-certificates/save'       => ['AdminController', 'saveEncodedCertificate'],
+    '/admin/damayan/encoded-certificates/check-reg'  => ['AdminController', 'checkDuplicateRegistrationNo'],
+    '/admin/damayan/encoded-certificates/detail'     => ['AdminController', 'getEncodedCertificateDetail'],
+    '/admin/damayan/encoded-certificates/lookup'     => ['AdminController', 'lookupEncodedCertificate'],
+    '/user/damayan/lookup-cert'                      => ['AdminController', 'lookupEncodedCertificate'],
     // Funeral Case Management (User)
     '/user/services/funeral/report'       => ['UserController', 'funeralReport'],
     '/user/services/funeral/submit'       => ['UserController', 'submitFuneralReport'],
