@@ -209,17 +209,40 @@
             $advItems[] = ['name' => 'Parking Fee (Advance)', 'amount' => 1000.00];
         }
     }
+
+    // Count paid advance credits
+    $paidAdvanceCount = 0;
+    $paidAdvanceTotal = 0;
+    foreach ($payments as $p) {
+        if ($p['payment_status'] === 'Paid' && in_array(strtolower($p['payment_type']), ['rent-advance', 'advance', 'water-advance', 'contribution-advance', 'parking-advance'])) {
+            $paidAdvanceTotal += (float)$p['amount'];
+            if (in_array(strtolower($p['payment_type']), ['rent-advance', 'advance'])) {
+                $paidAdvanceCount++;
+            }
+        }
+    }
 ?>
                     <!-- Hero Banner -->
                     <div class="payment-banner">
-                        <h2 class="payment-banner-title"><?= $allInitialPaid ? 'Your Billing Dashboard' : 'Welcome to ISCAG!' ?></h2>
-                        <p class="payment-banner-subtitle">
-                            <?php if (!$allInitialPaid): ?>
-                                To activate your lease for <strong><?= htmlspecialchars($lease['roomtype'] ?? $lease['unit_type'] ?? 'Apartment') ?></strong>, please complete your initial payments below.
-                            <?php else: ?>
-                                All your charges, payments, and balances are consolidated here. Stay on top of your dues easily.
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+                            <div>
+                                <h2 class="payment-banner-title"><?= $allInitialPaid ? 'Your Billing Dashboard' : 'Welcome to ISCAG!' ?></h2>
+                                <p class="payment-banner-subtitle">
+                                    <?php if (!$allInitialPaid): ?>
+                                        To activate your lease for <strong><?= htmlspecialchars($lease['roomtype'] ?? $lease['unit_type'] ?? 'Apartment') ?></strong>, please complete your initial payments below.
+                                    <?php else: ?>
+                                        All your charges, payments, and balances are consolidated here. Stay on top of your dues easily.
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                            <?php if ($paidAdvanceCount > 1): ?>
+                            <div style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:12px; padding:12px 18px; text-align:right;">
+                                <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; opacity:0.9;">Advance Deposit Credits</div>
+                                <div style="font-size:1.3rem; font-weight:800; font-family:'Lora',serif; margin-top:2px;">₱<?= number_format($paidAdvanceTotal, 2) ?></div>
+                                <div style="font-size:0.75rem; color:#bbf7d0; margin-top:2px;">Covering upcoming months automatically</div>
+                            </div>
                             <?php endif; ?>
-                        </p>
+                        </div>
                     </div>
 
                     <!-- ═══════════ SECTION A: INITIAL PAYMENTS ═══════════ -->
@@ -446,7 +469,7 @@
                             <p>No outstanding monthly charges yet. Your next billing cycle will appear here automatically.</p>
                             <div style="margin-top:24px; display:flex; justify-content:center; gap:12px;">
                                 <?php if (!$moveout || ($moveout['status'] !== 'Processing' && $moveout['status'] !== 'Completed')): ?>
-                                <button class="btn-pay" style="padding: 10px 20px; font-size:0.9rem; background:white; color:var(--primary); border:2px solid var(--border); box-shadow:none;" onclick='openAdvancePaymentModal(<?= json_encode($advPayload) ?>, <?= json_encode($advItems) ?>, <?= $advCost ?>)'>
+                                <button class="btn-pay" style="padding: 10px 20px; font-size:0.9rem; background:white; color:var(--primary); border:2px solid var(--border); box-shadow:none;" onclick="openAdvancePaymentModal()">
                                     Pay 1 Month Advance Package
                                 </button>
                                 <?php endif; ?>
@@ -551,7 +574,7 @@
                             Download Official Receipt (SOA)
                         </a>
                         <?php if (!$moveout || ($moveout['status'] !== 'Processing' && $moveout['status'] !== 'Completed')): ?>
-                        <button class="btn-pay" style="padding: 12px 24px; font-size:0.95rem; display:inline-flex; align-items:center; gap:8px;" onclick='openAdvancePaymentModal(<?= json_encode($advPayload) ?>, <?= json_encode($advItems) ?>, <?= $advCost ?>)'>
+                        <button class="btn-pay" style="padding: 12px 24px; font-size:0.95rem; display:inline-flex; align-items:center; gap:8px;" onclick="openAdvancePaymentModal()">
                             <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
                             Pay 1 Month Advance Package
                         </button>
@@ -582,21 +605,28 @@
                 </div>
                 
                 <p style="margin: 0 0 10px; font-weight: 600; font-size: 0.88rem;">Select Payment Method</p>
-                <div class="payment-options">
-                    <div class="payment-option selected" id="opt-gcash" onclick="selectMethod('gcash')">
-                        <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                        <span>GCash</span>
+                <div class="payment-options" style="grid-template-columns: 1fr 1fr;">
+                    <div class="payment-option selected" id="opt-paymongo" onclick="selectMethod('paymongo')">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                        <span>PayMongo (GCash / Maya / Card)</span>
                     </div>
                     <div class="payment-option" id="opt-bank" onclick="selectMethod('bank')">
                         <svg viewBox="0 0 24 24"><path d="M12 3L1 9h4v12h14V9h4L12 3zm-1 16H8v-7h3v7zm6 0h-3v-7h3v7z"/></svg>
-                        <span>Bank Transfer</span>
+                        <span>Manual / Bank Reference</span>
                     </div>
                 </div>
 
-                <p style="margin: 0 0 6px; font-weight: 600; font-size: 0.88rem;">Reference Number / Receipt ID</p>
-                <input type="text" id="refNumber" class="mock-input" placeholder="e.g. 100234567890" autocomplete="off">
+                <div id="manualRefSection" style="display:none;">
+                    <p style="margin: 0 0 6px; font-weight: 600; font-size: 0.88rem;">Reference Number / Receipt ID</p>
+                    <input type="text" id="refNumber" class="mock-input" placeholder="e.g. 100234567890" autocomplete="off">
+                </div>
 
-                <button class="btn-submit" id="btnConfirmPay" onclick="submitPayment()">Confirm Payment of ₱<span id="modalAmount">0</span></button>
+                <div id="paymongoNote" style="background: rgba(23, 107, 69, 0.06); border: 1px solid rgba(23, 107, 69, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 0.82rem; color: var(--primary-dark); display: flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-6h-2v6zm0-8h2V7h-2v2z"/></svg>
+                    <span>You will be redirected to <strong>PayMongo</strong> to complete payment via GCash, Maya, or Card (Test Mode).</span>
+                </div>
+
+                <button class="btn-submit" id="btnConfirmPay" onclick="submitPayment()">Pay ₱<span id="modalAmount">0</span> via PayMongo</button>
             </div>
         </div>
     </div>
@@ -608,9 +638,15 @@
         const unpaidIds = <?= json_encode($unpaidIds ?? []) ?>;
         const unpaidItems = <?= json_encode($unpaidItems ?? []) ?>;
         const grandTotal = <?= $grandTotal ?? 0 ?>;
+        const advPayloadDataDefault = <?= json_encode($advPayload ?? ['Rent-Advance']) ?>;
+        const advItemsDefault = <?= json_encode($advItems ?? []) ?>;
+        const advCostDefault = <?= (float)($advCost ?? 0) ?>;
         
-        let selectedMethod = 'gcash';
+        let selectedMethod = 'paymongo';
         let isAdvanceMode = false;
+        let currentModalItems = [];
+        let currentModalAmount = 0;
+        let advancePayloadData = advPayloadDataDefault;
 
         function showToast(msg, isErr = false) {
             const t = document.getElementById('toastMsg');
@@ -627,8 +663,11 @@
             }
             
             isAdvanceMode = false;
+            currentModalItems = unpaidItems;
+            currentModalAmount = parseFloat(grandTotal);
+
             document.getElementById('modalPayType').textContent = 'All Outstanding Balances';
-            document.getElementById('modalAmount').textContent = parseFloat(grandTotal).toFixed(2);
+            document.getElementById('modalAmount').textContent = currentModalAmount.toFixed(2);
             document.getElementById('refNumber').value = 'PAY-BLK-' + Math.floor(Math.random() * 10000000);
             
             // Build itemized list UI
@@ -641,30 +680,43 @@
             html += '</ul>';
             listDiv.innerHTML = html;
 
+            selectMethod(selectedMethod || 'paymongo');
             document.getElementById('paymentModal').classList.add('show');
         }
 
-        let advancePayloadData = ['Rent-Advance'];
-
         function openAdvancePaymentModal(payloadArray, itemsArray, totalCost) {
             isAdvanceMode = true;
-            advancePayloadData = payloadArray;
+            advancePayloadData = (payloadArray && payloadArray.length) ? payloadArray : advPayloadDataDefault;
+            currentModalItems = (itemsArray && itemsArray.length) ? itemsArray : advItemsDefault;
+            currentModalAmount = parseFloat(totalCost !== undefined ? totalCost : advCostDefault);
+
             document.getElementById('modalPayType').textContent = 'Advance Payment (1 Month Package)';
-            document.getElementById('modalAmount').textContent = parseFloat(totalCost).toFixed(2);
+            document.getElementById('modalAmount').textContent = currentModalAmount.toFixed(2);
             document.getElementById('refNumber').value = 'PAY-ADV-' + Math.floor(Math.random() * 10000000);
             
             // Build itemized list UI using the passed items array
             const listDiv = document.getElementById('modalItemList');
             listDiv.style.display = 'block';
             let html = '<ul style="margin:0; padding-left:18px; padding-right:8px;">';
-            itemsArray.forEach(item => {
+            currentModalItems.forEach(item => {
                 html += `<li style="margin-bottom:6px;"><span style="font-weight:600;">${item.name}</span> <span style="float:right; font-family:monospace;">₱${parseFloat(item.amount).toFixed(2)}</span></li>`;
             });
             html += '</ul>';
             listDiv.innerHTML = html;
 
+            selectMethod(selectedMethod || 'paymongo');
             document.getElementById('paymentModal').classList.add('show');
         }
+
+        // Auto show toast if redirected back from successful PayMongo checkout
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('paid') === '1') {
+                const ref = params.get('ref') || '';
+                showToast('PayMongo payment confirmed! Ref: ' + ref);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
 
         function closeModal() {
             document.getElementById('paymentModal').classList.remove('show');
@@ -672,23 +724,73 @@
 
         function selectMethod(method) {
             selectedMethod = method;
-            document.getElementById('opt-gcash').classList.remove('selected');
+            document.getElementById('opt-paymongo').classList.remove('selected');
             document.getElementById('opt-bank').classList.remove('selected');
             document.getElementById('opt-' + method).classList.add('selected');
+
+            const manualSection = document.getElementById('manualRefSection');
+            const paymongoNote  = document.getElementById('paymongoNote');
+            const btn = document.getElementById('btnConfirmPay');
+            const amt = document.getElementById('modalAmount').textContent;
+
+            if (method === 'paymongo') {
+                manualSection.style.display = 'none';
+                paymongoNote.style.display  = 'flex';
+                btn.innerHTML = 'Pay ₱' + amt + ' via PayMongo';
+            } else {
+                manualSection.style.display = 'block';
+                paymongoNote.style.display  = 'none';
+                btn.innerHTML = 'Confirm Manual Payment of ₱' + amt;
+            }
         }
 
         function submitPayment() {
-            const refNo = document.getElementById('refNumber').value.trim();
-            if (!refNo) {
-                showToast('Please enter a reference number.', true);
+            const btn = document.getElementById('btnConfirmPay');
+            let paymentPayload = isAdvanceMode ? advancePayloadData : unpaidIds;
+            let amount = currentModalAmount;
+            let items = currentModalItems;
+
+            if (selectedMethod === 'paymongo') {
+                btn.disabled = true;
+                btn.innerHTML = 'Connecting to PayMongo...';
+
+                fetch('<?= url("/user/apartment/payment/paymongo-checkout") ?>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        payment_id: paymentPayload,
+                        amount: amount,
+                        items: items
+                    })
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success && res.checkout_url) {
+                        btn.innerHTML = 'Redirecting...';
+                        window.location.href = res.checkout_url;
+                    } else {
+                        showToast(res.message || 'Could not initiate PayMongo checkout.', true);
+                        btn.disabled = false;
+                        btn.innerHTML = 'Pay ₱' + document.getElementById('modalAmount').textContent + ' via PayMongo';
+                    }
+                })
+                .catch(err => {
+                    showToast('Network error connecting to payment gateway.', true);
+                    btn.disabled = false;
+                    btn.innerHTML = 'Pay ₱' + document.getElementById('modalAmount').textContent + ' via PayMongo';
+                });
                 return;
             }
 
-            const btn = document.getElementById('btnConfirmPay');
+            // Manual / Bank Transfer Reference Flow
+            const refNo = document.getElementById('refNumber').value.trim();
+            if (!refNo) {
+                showToast('Please enter your reference number or deposit slip ID.', true);
+                return;
+            }
+
             btn.disabled = true;
             btn.innerHTML = 'Processing...';
-
-            let paymentPayload = isAdvanceMode ? advancePayloadData : unpaidIds;
 
             fetch('<?= url("/user/apartment/payment/submit") ?>', {
                 method: 'POST',
@@ -704,13 +806,13 @@
                 } else {
                     showToast(res.message || 'Payment failed.', true);
                     btn.disabled = false;
-                    btn.innerHTML = 'Confirm Payment of ₱<span id="modalAmount">' + document.getElementById('modalAmount').textContent + '</span>';
+                    btn.innerHTML = 'Confirm Manual Payment of ₱' + document.getElementById('modalAmount').textContent;
                 }
             })
             .catch(err => {
                 showToast('Network error.', true);
                 btn.disabled = false;
-                btn.innerHTML = 'Confirm Payment';
+                btn.innerHTML = 'Confirm Manual Payment';
             });
         }
     </script>
