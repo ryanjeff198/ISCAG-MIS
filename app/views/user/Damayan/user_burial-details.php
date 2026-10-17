@@ -46,7 +46,10 @@ $existingDeceased = $burialModel->getDeceasedRecords((int)$userId);
 // Status text and style mappings
 $hasApplication = !empty($activeBurial);
 $appId = $hasApplication ? ($activeBurial['ref_id'] ?? 'BR-PENDING') : 'NONE';
-$status = $hasApplication ? ($activeBurial['status'] ?? 'Under Review') : 'No Active Request';
+$status = $hasApplication ? ($activeBurial['status'] ?? 'Pending') : 'No Active Request';
+if ($hasApplication && !in_array($status, ['Accepted', 'Rejected', 'Completed'])) {
+    $status = 'Pending';
+}
 $dateSubmitted = $hasApplication && !empty($activeBurial['submitted_at']) ? date('M d, Y', strtotime($activeBurial['submitted_at'])) : '—';
 $deceasedName = $hasApplication ? ($activeBurial['deceased_name'] ?? '—') : 'No Deceased Listed';
 $dateOfDeath = $hasApplication && !empty($activeBurial['date_of_death']) ? date('M d, Y', strtotime($activeBurial['date_of_death'])) : '—';
@@ -85,27 +88,21 @@ if (!function_exists('getBurialBadgeMeta')) {
     function getBurialBadgeMeta(string $rawStatus, bool $isCompleted = false, bool $isRejected = false): array {
         $st = strtolower(trim($rawStatus));
         if ($isCompleted || in_array($st, ['completed', 'burial completed', 'registered', 'plot assigned', 'copy received', 'copy received & confirmed'])) {
-            return ['class' => 'approved', 'label' => $rawStatus ?: 'Completed'];
+            return ['class' => 'approved', 'label' => 'Completed'];
         }
         if ($isRejected || $st === 'rejected') {
             return ['class' => 'rejected', 'label' => 'Rejected'];
         }
+        if ($st === 'accepted' || strpos($st, 'accepted') !== false) {
+            return ['class' => 'approved', 'label' => 'Accepted'];
+        }
         if ($st === 'additional information required' || $st === 'action required') {
             return ['class' => 'warning', 'label' => 'Action Required'];
-        }
-        if (in_array($st, ['request received', 'new request', 'submitted', 'pending search', 'awaiting record search'])) {
-            return ['class' => 'received', 'label' => 'Request Received'];
-        }
-        if (in_array($st, ['under review', 'pending', 'pending review', 'under verification'])) {
-            return ['class' => 'pending', 'label' => $rawStatus ?: 'Under Review'];
-        }
-        if (in_array($st, ['accepted for coordination', 'coordination', 'hospital certified', 'submitted to lcro', 'certificate prepared and certified', 'copy issued', 'record verified'])) {
-            return ['class' => 'coordination', 'label' => $rawStatus ?: 'In Coordination'];
         }
         if ($st === 'no active request') {
             return ['class' => 'none', 'label' => 'No Active Request'];
         }
-        return ['class' => 'received', 'label' => $rawStatus ?: 'Request Received'];
+        return ['class' => 'pending', 'label' => 'Pending'];
     }
 }
 $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);

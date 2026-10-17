@@ -1,1540 +1,1129 @@
 <!-- ══════════════════════════════════════════════════════════════════
-     DAMAYAN CASE MANAGEMENT MODAL
-     Death Certificate Processing & Cemetery Plot Management
+     DAMAYAN SIMPLE DEATH CERTIFICATE VERIFICATION MODAL
+     Focused verification against the physical death certificate
 ══════════════════════════════════════════════════════════════════ -->
-<div id="damayanCaseModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.55); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
-  <div class="mis-modal-content" style="background:#fff; border-radius:18px; width:96%; max-width:1060px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.25); overflow:hidden; animation:modalSlideUp 0.3s ease;">
+
+<!-- 1. COMPACT VERIFICATION MODAL -->
+<div id="damayanCaseModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.6); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div class="mis-modal-content" style="background:#fff; border-radius:16px; width:98%; max-width:1120px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideUp 0.25s ease;">
     
     <!-- Modal Header -->
-    <div class="mis-modal-header" style="padding:18px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:#fafbfc;">
+    <div class="mis-modal-header" style="padding:16px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; background:#fafbfc;">
       <div style="display:flex; align-items:center; gap:12px;">
-        <div style="width:40px; height:40px; border-radius:10px; background:var(--damayan-light); color:var(--damayan-accent); display:flex; align-items:center; justify-content:center;">
+        <div style="width:38px; height:38px; border-radius:10px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
           <svg viewBox="0 0 24 24" style="width:22px; height:22px; fill:currentColor;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
         </div>
         <div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <h5 id="modal-ref-id" style="margin:0; font-size:1.15rem; font-weight:800; color:var(--damayan-dark);">Case #BR-0000</h5>
-            <span id="modal-status-badge" class="badge-status badge-pending">New Request</span>
-            <span id="modal-reqtype-badge" class="badge-status badge-info" style="font-size:0.7rem;">Both Services</span>
-            <span id="modal-actiontype-badge" class="badge-status" style="font-size:0.7rem; background:#dbeafe; color:#1e40af;">New Registration</span>
-            <span id="modal-sex-badge" class="badge-status" style="font-size:0.7rem; background:#e0e7ff; color:#3730a3;">Male</span>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <h5 id="modal-ref-id" style="margin:0; font-size:1.15rem; font-weight:800; color:#064e3b;">#BR-0000</h5>
+            <span id="modal-status-badge" class="badge-status badge-pending">Pending Review</span>
+            <span id="modal-reqtype-badge" class="badge-status" style="font-size:0.72rem; background:#d1fae5; color:#065f46;">Register Death Certificate</span>
+            <span id="modal-verification-status-badge" class="badge-status" style="font-size:0.72rem; background:#f3f4f6; color:#4b5563;">Unverified</span>
           </div>
-          <div id="modal-deceased-title" style="font-size:0.85rem; color:var(--text-muted); margin-top:2px; font-weight:600;">
-            Deceased: <span id="modal-deceased-name" style="color:var(--text-main); font-weight:700;">Loading...</span>
+          <div style="font-size:0.8rem; color:#6b7280; margin-top:2px;">
+            Death Certificate Verification &amp; Document Comparison
           </div>
         </div>
       </div>
-      <button type="button" class="close-btn" onclick="closeCaseModal()" style="background:transparent; border:none; font-size:1.6rem; line-height:1; cursor:pointer; color:var(--text-muted);">&times;</button>
-    </div>
-
-    <!-- Modal Sub-Navigation Tabs (Visible whole, never scrollable) -->
-    <div id="modalTabsBar" style="display:flex; gap:6px; padding:8px 16px 0; background:#f1f5f3; border-bottom:2px solid #e2e8f0; overflow:hidden; width:100%; box-sizing:border-box;">
-      <button type="button" class="case-tab-btn active" data-tab="overview" onclick="switchCaseTab('overview', this)">
-        <span class="tab-badge">1</span>
-        <span class="tab-label">Overview &amp; Verification</span>
-      </button>
-      <button type="button" class="case-tab-btn" data-tab="deceased" onclick="switchCaseTab('deceased', this)">
-        <span class="tab-badge">2</span>
-        <span class="tab-label">Deceased Record</span>
-      </button>
-      <button type="button" class="case-tab-btn" data-tab="death_cert" onclick="switchCaseTab('death_cert', this)">
-        <span class="tab-badge">3</span>
-        <span class="tab-label">Death Certificate</span>
-      </button>
-      <button type="button" class="case-tab-btn" data-tab="cemetery_plot" onclick="switchCaseTab('cemetery_plot', this)">
-        <span class="tab-badge">4</span>
-        <span class="tab-label">Cemetery Plot</span>
-      </button>
-      <button type="button" class="case-tab-btn" data-tab="logs" onclick="switchCaseTab('logs', this)">
-        <span class="tab-badge">5</span>
-        <span class="tab-label">Activity Logs</span>
-      </button>
+      <button type="button" class="close-btn" onclick="closeCaseModal()" style="background:transparent; border:none; font-size:1.6rem; line-height:1; cursor:pointer; color:#9ca3af; padding:4px 8px;" title="Close Modal">&times;</button>
     </div>
 
     <!-- Modal Body (Scrollable) -->
-    <div class="mis-modal-body" style="padding:22px 24px; overflow-y:auto; flex:1;">
+    <div class="mis-modal-body" style="padding:20px; overflow-y:auto; flex:1; background:#f8fafc;">
       
       <!-- Loading State -->
-      <div id="modal-loading" style="text-align:center; padding:50px 20px; color:var(--text-muted);">
-        <div style="font-size:1rem; font-weight:600;">Loading case details from database...</div>
+      <div id="modal-loading" style="text-align:center; padding:60px 20px; color:#6b7280;">
+        <div style="font-size:1rem; font-weight:700; color:#065f46;">Loading request information...</div>
+        <div style="font-size:0.82rem; margin-top:4px;">Retrieving physical death certificate and submitted details.</div>
       </div>
 
-      <!-- Content Container -->
+      <!-- Main Verification Content (Side-by-Side Grid) -->
       <div id="modal-content-container" style="display:none;">
-
-        <!-- ─────────────────────────────────────────────────────────────
-             TAB 1: OVERVIEW & VERIFICATION
-        ───────────────────────────────────────────────────────────── -->
-        <div id="tab-overview" class="case-tab-pane">
-          
-          <!-- Alert Banner for Additional Info Request / Response if applicable -->
-          <div id="info-request-alert" style="display:none; padding:14px 16px; border-radius:10px; margin-bottom:18px; background:#fffbeb; border:1px solid #fde68a;">
+        
+        <!-- Potential Duplicate Warning Card (Shown if duplicate records found) -->
+        <div id="duplicate-warning-container" style="display:none; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:16px; margin-bottom:18px;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
             <div style="display:flex; align-items:flex-start; gap:10px;">
-              <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:#d97706; flex-shrink:0; margin-top:2px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              <svg viewBox="0 0 24 24" style="width:22px; height:22px; fill:#d97706; flex-shrink:0; margin-top:2px;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
               <div>
-                <strong style="color:#92400e; font-size:0.85rem;">Additional Information Required:</strong>
-                <div id="info-request-notes-text" style="font-size:0.82rem; color:#78350f; margin-top:3px;"></div>
-                <div id="info-response-container" style="margin-top:6px; padding-top:6px; border-top:1px dashed #fcd34d; font-size:0.82rem;">
-                  <span style="font-weight:700; color:#047857;">User Submitted Response:</span>
-                  <span id="info-submitted-text" style="color:#065f46;"></span>
-                  <div id="info-submitted-doc" style="margin-top:4px;"></div>
+                <strong style="color:#92400e; font-size:0.92rem; display:block;">Potential Duplicate Match Detected</strong>
+                <div style="font-size:0.82rem; color:#78350f; margin-top:2px;">
+                  The deceased name or certificate registration number matches existing records in the database. Please review the identifying details below before taking action.
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- Rejection Banner if Rejected -->
-          <div id="rejection-alert" style="display:none; padding:12px 16px; border-radius:10px; margin-bottom:18px; background:#fef2f2; border:1px solid #fecaca; color:#991b1b; font-size:0.85rem;">
-            <strong>Rejection Reason:</strong> <span id="rejection-reason-text"></span>
-          </div>
-
-          <!-- Copy Request Verification & Record Link Panel -->
-          <div id="copy-request-panel" style="display:none; background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:18px; margin-bottom:20px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="background:#2563eb; color:#fff; font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:6px; text-transform:uppercase;">Copy Request</span>
-                <strong style="color:#1e40af; font-size:0.95rem;">Request for Another Death Certificate Copy</strong>
-              </div>
-              <span id="v-copy-verified-badge" class="badge-status badge-info" style="font-size:0.75rem;">Awaiting Record Verification</span>
-            </div>
-
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; font-size:0.84rem; background:#fff; padding:14px; border-radius:10px; border:1px solid #dbeafe; margin-bottom:14px;">
-              <div>
-                <span style="color:var(--text-muted); font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Existing Cert / Reg #</span>
-                <strong id="v-copy-existing-cert" style="color:var(--damayan-dark);">—</strong>
-              </div>
-              <div>
-                <span style="color:var(--text-muted); font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Copies Requested</span>
-                <strong id="v-copy-num-copies">1 copy</strong>
-              </div>
-              <div>
-                <span style="color:var(--text-muted); font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Reason for Request</span>
-                <span id="v-copy-reason" style="color:#1f2937; font-weight:600;">—</span>
-              </div>
-            </div>
-
-            <!-- Verification Status & Actions -->
-            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; background:#f8fafc; padding:12px 14px; border-radius:8px; border:1px solid #e2e8f0;">
-              <div>
-                <span style="font-size:0.75rem; font-weight:700; color:#475569; text-transform:uppercase; display:block;">Registered Deceased Record Link</span>
-                <div id="v-copy-record-link-desc" style="font-size:0.86rem; font-weight:700; color:#0f172a; margin-top:2px;">Checking database linkage...</div>
-              </div>
-              <div style="display:flex; gap:8px;">
-                <button type="button" id="btn-search-link-record" class="btn-topbar primary" style="padding:6px 14px; font-size:0.8rem; background:#2563eb; border-color:#2563eb;" onclick="showSearchDeceasedModal()">
-                  Search &amp; Link Existing Record
-                </button>
-                <button type="button" class="btn-topbar" style="padding:6px 14px; font-size:0.8rem; color:#b45309; border-color:#fde68a; background:#fffbeb;" onclick="showRequestInfoModal()">
-                  Request More Info
-                </button>
-              </div>
+            <div id="duplicate-review-status" style="font-size:0.75rem; font-weight:700; padding:3px 10px; border-radius:6px; background:#fef3c7; color:#92400e;">
+              Pending Review
             </div>
           </div>
 
-          <!-- Section: Encoded Death Certificate Recognized Banner -->
-          <div id="v-encoded-cert-overview-banner" style="display:none; margin-bottom:16px;"></div>
+          <!-- Matched Duplicate Records List -->
+          <div id="duplicate-records-list" style="margin-top:12px; display:flex; flex-direction:column; gap:8px;"></div>
 
-          <!-- Section: Applicant & Deceased Information Summary -->
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+          <!-- Staff Duplicate Review Action -->
+          <div style="margin-top:14px; padding-top:12px; border-top:1px dashed #fcd34d; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:14px; font-size:0.84rem;">
+              <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; color:#065f46;">
+                <input type="radio" name="dup_decision" value="Confirmed Different Individual" id="dup-radio-diff" onchange="onDuplicateRadioChange()" />
+                Different Person (Same Name)
+              </label>
+              <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; color:#b91c1c;">
+                <input type="radio" name="dup_decision" value="Duplicate Request" id="dup-radio-dup" onchange="onDuplicateRadioChange()" />
+                Genuinely Duplicate Request
+              </label>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <input type="text" id="dup-review-notes" placeholder="Optional staff review notes..." style="padding:6px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:0.8rem; width:220px;" />
+              <button type="button" class="btn-topbar primary" style="padding:6px 14px; font-size:0.78rem; background:#059669; border-color:#059669;" onclick="saveDuplicateReviewDecision()">
+                Save Decision
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-COLUMN VERIFICATION LAYOUT -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px;">
+          
+          <!-- LEFT COLUMN: SUBMITTED INFORMATION & VERIFICATION RESULT -->
+          <div style="display:flex; flex-direction:column; gap:16px;">
             
-            <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px;">
-              <div class="panel-section-title" style="font-size:0.75rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--damayan-accent);"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                Family Representative / Applicant
+            <!-- SECTION A: REQUEST INFORMATION -->
+            <div class="panel-section" style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px;">
+              <div style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#059669;"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                A. Request Information
               </div>
-              <div style="display:flex; flex-direction:column; gap:8px; font-size:0.84rem;">
-                <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Full Name</span><strong id="v-applicant-name">—</strong></div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Relationship to Deceased</span><span id="v-relationship">—</span></div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Contact Number</span><span id="v-applicant-phone">—</span></div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Email Address</span><span id="v-applicant-email">—</span></div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Residential Address</span><span id="v-applicant-address">—</span></div>
-              </div>
-            </div>
-
-            <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px;">
-              <div class="panel-section-title" style="font-size:0.75rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--damayan-accent);"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-                Deceased Summary & Services
-              </div>
-              <div style="display:flex; flex-direction:column; gap:8px; font-size:0.84rem;">
-                <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Deceased Full Name</span><strong id="v-deceased-fullname">—</strong></div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Gender & Nationality</span><span id="v-deceased-gender">—</span> · <span id="v-nationality">Filipino</span></div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Date & Place of Death</span><span id="v-death-date">—</span> · <span id="v-death-place">—</span></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:0.84rem;">
                 <div>
-                  <span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Requested Services</span>
-                  <div style="margin-top:4px; display:flex; gap:6px; flex-wrap:wrap;">
-                    <span id="v-dc-badge" class="badge-status badge-pending" style="font-size:0.75rem;">Death Certificate</span>
-                    <span id="v-plot-badge" class="badge-status badge-pending" style="font-size:0.75rem;">Cemetery Plot</span>
-                  </div>
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Reference Number</span>
+                  <strong id="v-ref-id" style="color:#111827; font-size:0.9rem;">—</strong>
                 </div>
-                <div><span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block;">Cemetery Preference</span><span id="v-cemetery-pref">—</span></div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Section: Supporting Document & Notes -->
-          <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:20px;">
-            <div class="panel-section-title" style="font-size:0.75rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
-              Verification & Supporting Documents
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:0.84rem;">
-              <div>
-                <span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block; margin-bottom:4px;">Supporting Document</span>
-                <div id="v-doc-container">
-                  <span style="color:var(--text-muted);">No document uploaded</span>
-                </div>
-              </div>
-              <div>
-                <span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; display:block; margin-bottom:4px;">Family Notes / Instructions</span>
-                <div id="v-family-notes" style="font-style:italic; color:#4b5563;">None provided.</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Coordinator Assignment -->
-          <div class="panel-section" style="background:var(--damayan-light); border:1px solid #c7e6d4; border-radius:12px; padding:16px; margin-bottom:20px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-              <div>
-                <div style="font-size:0.75rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; letter-spacing:0.04em;">Assigned Damayan Staff Coordinator</div>
-                <div id="v-coordinator-name" style="font-size:0.95rem; font-weight:700; color:var(--damayan-accent); margin-top:2px;">Not Assigned</div>
-              </div>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <select id="assign-staff-select" style="padding:7px 12px; font-size:0.82rem; border-radius:8px; border:1px solid var(--border); outline:none; background:#fff;">
-                  <option value="">-- Select Staff --</option>
-                </select>
-                <button type="button" class="btn-topbar primary" style="padding:7px 14px; font-size:0.82rem;" onclick="submitAssignStaff()">Reassign</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section: Staff Review Actions -->
-          <div style="background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:10px;">
-            <div style="font-size:0.85rem; font-weight:800; color:var(--damayan-dark); margin-bottom:12px;">Case Review Actions & Workflow Control</div>
-            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-              <button type="button" id="btn-action-accept" class="btn-topbar primary" style="padding:9px 18px; font-size:0.84rem;" onclick="triggerAcceptRequest()">
-                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                Accept Case for Processing
-              </button>
-              <button type="button" class="btn-topbar" style="padding:9px 18px; font-size:0.84rem; color:#b45309; border-color:#fde68a; background:#fffbeb;" onclick="showRequestInfoModal()">
-                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                Request Additional Information
-              </button>
-              <button type="button" class="btn-topbar" style="padding:9px 18px; font-size:0.84rem; color:#dc2626; border-color:#fecaca; background:#fef2f2;" onclick="showRejectModal()">
-                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                Reject Request
-              </button>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- ─────────────────────────────────────────────────────────────
-             TAB 2: DECEASED RECORD (Linked Deceased Case)
-        ───────────────────────────────────────────────────────────── -->
-        <div id="tab-deceased" class="case-tab-pane" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <h6 style="color:var(--damayan-dark); margin:0 0 4px; font-size:0.95rem;">Deceased Person Record</h6>
-            <div style="font-size:0.78rem; color:var(--text-muted);">
-              View and verify information about the deceased. Updates here keep both Death Certificate and Cemetery Plot records synchronized.
-            </div>
-          </div>
-
-          <form id="deceased-record-form" onsubmit="event.preventDefault(); submitDeceasedForm();">
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">First Name *</label>
-                <input type="text" id="df-fname" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Middle Name</label>
-                <input type="text" id="df-mname" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Last Name *</label>
-                <input type="text" id="df-lname" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Gender / Sex *</label>
-                <select id="df-sex" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;">
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Date of Birth</label>
-                <input type="date" id="df-dob" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Date of Death *</label>
-                <input type="date" id="df-dod" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Place of Death *</label>
-                <input type="text" id="df-pod" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Last Residence</label>
-                <input type="text" id="df-residence" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:20px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Civil Status</label>
-                <select id="df-civil-status" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;">
-                  <option value="Single">Single</option>
-                  <option value="Married">Married</option>
-                  <option value="Widowed">Widowed</option>
-                  <option value="Divorced">Divorced</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Nationality</label>
-                <input type="text" id="df-nationality" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Religion</label>
-                <input type="text" id="df-religion" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-              </div>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn-topbar primary" style="padding:10px 22px; font-size:0.85rem;">Save Deceased Record</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- ─────────────────────────────────────────────────────────────
-             TAB 3: DEATH CERTIFICATE PROCESSING
-        ───────────────────────────────────────────────────────────── -->
-        <div id="tab-death_cert" class="case-tab-pane" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <h6 style="color:var(--damayan-dark); margin:0; font-size:0.95rem;">Death Certificate Tracking &amp; Coordination</h6>
-              <span id="dc-current-stage-badge" class="badge-status badge-pending">Request Received</span>
-            </div>
-            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">
-              Track the official preparation, hospital coordination, transmittal to Local Civil Registrar (LCRO), and civil registration progress.
-            </div>
-          </div>
-
-          <div id="dc-not-requested-alert" style="display:none; padding:14px 16px; background:#f3f4f6; border-radius:10px; margin-bottom:18px; color:#4b5563; font-size:0.85rem;">
-            Notice: Death certificate was not initially flagged for this request (Applicant selected Cemetery Plot only). You may still initiate processing if requested by the family below.
-          </div>
-
-          <!-- Specialized Copy Issuance & Tracking Section -->
-          <div id="copy-issuance-section" style="display:none; background:#fafbfc; border:1px solid #93c5fd; border-radius:12px; padding:18px; margin-bottom:18px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-              <h6 style="color:#1e40af; margin:0; font-size:0.95rem; font-weight:800;">Issue Additional Death Certificate Copy</h6>
-              <span id="copy-issuance-status-badge" class="badge-status badge-pending">Pending Issuance</span>
-            </div>
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">
-              Staff must verify the existing registered record before issuing. Official copies are marked received only when confirmed by the requester.
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Copy Tracking / Reference Number *</label>
-                <input type="text" id="copy-issue-ref" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. CPY-2026-0084 or PSA-CC-5521" />
-              </div>
-              <div class="form-group">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Staff Issuance Remarks</label>
-                <input type="text" id="copy-issue-remarks" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. 1 official copy prepared for family reference..." />
-              </div>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px dashed #cbd5e1; flex-wrap:wrap; gap:10px;">
-              <div id="copy-receipt-status-info" style="font-size:0.82rem; color:#475569;">
-                <strong>Receipt Status:</strong> <span id="copy-receipt-status-text">Not issued</span>
-              </div>
-              <button type="button" class="btn-topbar primary" style="background:#2563eb; border-color:#2563eb; padding:8px 18px; font-size:0.84rem;" onclick="submitIssueCopy()">
-                Confirm &amp; Issue Certificate Copy
-              </button>
-            </div>
-          </div>
-
-          <form id="death-cert-form" onsubmit="event.preventDefault(); submitDeathCertForm();">
-            
-            <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
-              <div class="form-group" style="margin-bottom:14px;">
-                <label style="font-size:0.82rem; font-weight:800; color:var(--damayan-dark); display:block; margin-bottom:6px;">Current Processing Stage *</label>
-                <select id="dc-status" required style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.88rem; font-weight:600; color:var(--damayan-dark); background:#fff;">
-                  <option value="Request Received">1. Request Received</option>
-                  <option value="Under Review">2. Under Review</option>
-                  <option value="Additional Information Required">3. Additional Information Required</option>
-                  <option value="Awaiting Authorized Certificate Preparation">4. Awaiting Authorized Certificate Preparation</option>
-                  <option value="Certificate Prepared and Certified">5. Certificate Prepared and Certified</option>
-                  <option value="Submitted for Civil Registration">6. Submitted for Civil Registration</option>
-                  <option value="Registered">7. Registered</option>
-                  <option value="Certified Copy Requested or Received">8. Certified Copy Requested or Received</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-              </div>
-
-              <!-- Stage Dates -->
-              <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-bottom:14px;">
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Preparation Date</label>
-                  <input type="date" id="dc-prep-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-                </div>
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Certified Date</label>
-                  <input type="date" id="dc-certified-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-                </div>
-              </div>
-
-              <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-bottom:14px;">
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Submitted to LCRO Date</label>
-                  <input type="date" id="dc-submitted-lcro-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-                </div>
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Official Registered Date</label>
-                  <input type="date" id="dc-registered-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Civil Registry and Document References -->
-            <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
-              <div style="font-size:0.75rem; font-weight:800; color:var(--damayan-dark); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px;">
-                Official Document References &amp; Registry Identifiers
-              </div>
-              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">LCRO Registry Number</label>
-                  <input type="text" id="dc-registry-no" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. 2026-00412" />
-                </div>
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">LCRO Transmittal Ref</label>
-                  <input type="text" id="dc-lcro-ref" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. TR-2026-088" />
-                </div>
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Certified Copy / PSA Ref</label>
-                  <input type="text" id="dc-certified-copy-ref" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. PSA-CC-9912" />
-                </div>
-              </div>
-
-              <div class="form-group" style="margin-bottom:14px;">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Responsible Personnel / Hospital / Office Contact</label>
-                <input type="text" id="dc-responsible-personnel" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. Dr. A. Usman (Hospital Lying-in) / Officer B. Ramos (LCRO)" />
-              </div>
-
-              <div class="form-group" style="margin-bottom:10px;">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Staff Remarks &amp; Progress Notes</label>
-                <textarea id="dc-remarks" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Hospital coordination notes, verification updates, transmittal receipt details..."></textarea>
-              </div>
-
-              <div id="dc-rejection-row" class="form-group" style="display:none; margin-top:10px;">
-                <label style="font-size:0.8rem; font-weight:700; color:#dc2626; display:block; margin-bottom:4px;">Death Certificate Rejection Reason *</label>
-                <textarea id="dc-rejection-reason" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid #fca5a5; font-size:0.85rem; background:#fff5f5;" placeholder="Specify why the death certificate request cannot be processed..."></textarea>
-              </div>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn-topbar primary" style="padding:10px 22px; font-size:0.85rem;">Update Death Certificate Status</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- ─────────────────────────────────────────────────────────────
-             TAB 4: CEMETERY PLOT MANAGEMENT
-        ───────────────────────────────────────────────────────────── -->
-        <div id="tab-cemetery_plot" class="case-tab-pane" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <h6 style="color:var(--damayan-dark); margin:0; font-size:0.95rem;">Cemetery Plot Management &amp; Assignment</h6>
-              <span id="cp-current-status-badge" class="badge-status badge-pending">Pending Review</span>
-            </div>
-            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">
-              Manage plot availability, prevent duplicate allocations, and assign burial plots for the deceased.
-            </div>
-          </div>
-
-          <div id="cp-not-requested-alert" style="display:none; padding:14px 16px; background:#f3f4f6; border-radius:10px; margin-bottom:18px; color:#4b5563; font-size:0.85rem;">
-            Notice: Cemetery plot was not initially selected by the family (Applicant requested Death Certificate only). You may allocate a plot if requested below.
-          </div>
-
-          <!-- Currently Assigned Plot Highlight -->
-          <div id="cp-assigned-highlight" style="display:none; padding:14px 18px; border-radius:12px; margin-bottom:16px; background:#ecfdf5; border:1px solid #a7f3d0;">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:var(--damayan-accent);"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                 <div>
-                  <div style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase;">Currently Assigned Burial Plot</div>
-                  <div id="cp-assigned-display-text" style="font-size:0.92rem; font-weight:700; color:var(--damayan-dark); margin-top:1px;">
-                    ISCAG Cemetery - Section A, Plot #101
-                  </div>
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Request Type</span>
+                  <span id="v-request-type" style="font-weight:700; color:#065f46;">—</span>
+                </div>
+                <div>
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Date Submitted</span>
+                  <span id="v-date-submitted" style="color:#374151;">—</span>
+                </div>
+                <div>
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Current Request Status</span>
+                  <span id="v-current-status" style="font-weight:700;">—</span>
                 </div>
               </div>
-              <span class="badge-status badge-active" style="font-size:0.75rem;">Assigned</span>
             </div>
+
+            <!-- SECTION B: REQUESTER INFORMATION -->
+            <div class="panel-section" style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px;">
+              <div style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#059669;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                B. Requester Information
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:0.84rem;">
+                <div style="grid-column: span 2;">
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Requester / Representative Name</span>
+                  <strong id="v-requester-name" style="color:#111827; font-size:0.92rem;">—</strong>
+                </div>
+                <div>
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Relationship to Deceased</span>
+                  <span id="v-relationship" style="font-weight:600; color:#374151;">—</span>
+                </div>
+                <div>
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Contact Number</span>
+                  <span id="v-contact-number" style="font-weight:600; color:#374151;">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION C: DEATH CERTIFICATE INFORMATION -->
+            <div class="panel-section" style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px;">
+              <div style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#059669;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                C. Recorded Death Certificate Information
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:0.84rem;">
+                <div style="grid-column: span 2; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px;">
+                  <span style="color:#166534; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:800;">Certificate Registration Number</span>
+                  <strong id="v-cert-reg-no" style="font-size:1.05rem; color:#065f46; letter-spacing:0.03em;">—</strong>
+                </div>
+                <div style="grid-column: span 2;">
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Full Name of Deceased</span>
+                  <strong id="v-deceased-name" style="color:#111827; font-size:1rem;">—</strong>
+                </div>
+                <div>
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Sex / Gender</span>
+                  <span id="v-deceased-sex" style="font-weight:600; color:#374151;">—</span>
+                </div>
+                <div>
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Date of Death</span>
+                  <span id="v-death-date" style="font-weight:600; color:#374151;">—</span>
+                </div>
+                <div style="grid-column: span 2;">
+                  <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; display:block; font-weight:700;">Place of Death</span>
+                  <span id="v-death-place" style="color:#374151;">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 3: VERIFICATION PROCESS (RESULT & REMARKS) -->
+            <div class="panel-section" style="background:#fff; border:2px solid #a7f3d0; border-radius:12px; padding:16px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <div style="font-size:0.8rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.04em;">
+                  Verification Decision
+                </div>
+                <div id="v-result-summary-badge" class="badge-status badge-pending" style="font-size:0.72rem;">
+                  Pending Verification
+                </div>
+              </div>
+              <div style="font-size:0.8rem; color:#4b5563; margin-bottom:12px;">
+                Select the verification result based on your comparison with the physical certificate:
+              </div>
+
+              <!-- 3 Result Radio Buttons -->
+              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:12px;">
+                
+                <label id="btn-result-matched" class="verify-choice-btn" style="border:2px solid #d1d5db; border-radius:8px; padding:10px 8px; text-align:center; cursor:pointer; background:#fff; transition:all 0.15s ease;" onclick="selectVerificationResult('Matched')">
+                  <input type="radio" name="verify_result_choice" value="Matched" id="radio-matched" style="display:none;" />
+                  <div style="font-size:1.1rem; color:#059669; line-height:1; margin-bottom:4px;">✓</div>
+                  <strong style="display:block; font-size:0.82rem; color:#065f46;">Matched</strong>
+                  <span style="font-size:0.68rem; color:#6b7280; display:block; margin-top:2px;">Details match certificate</span>
+                </label>
+
+                <label id="btn-result-mismatch" class="verify-choice-btn" style="border:2px solid #d1d5db; border-radius:8px; padding:10px 8px; text-align:center; cursor:pointer; background:#fff; transition:all 0.15s ease;" onclick="selectVerificationResult('Mismatch')">
+                  <input type="radio" name="verify_result_choice" value="Mismatch" id="radio-mismatch" style="display:none;" />
+                  <div style="font-size:1.1rem; color:#d97706; line-height:1; margin-bottom:4px;">✕</div>
+                  <strong style="display:block; font-size:0.82rem; color:#b45309;">Mismatch</strong>
+                  <span style="font-size:0.68rem; color:#6b7280; display:block; margin-top:2px;">Details do not match</span>
+                </label>
+
+                <label id="btn-result-unable" class="verify-choice-btn" style="border:2px solid #d1d5db; border-radius:8px; padding:10px 8px; text-align:center; cursor:pointer; background:#fff; transition:all 0.15s ease;" onclick="selectVerificationResult('Unable to Verify')">
+                  <input type="radio" name="verify_result_choice" value="Unable to Verify" id="radio-unable" style="display:none;" />
+                  <div style="font-size:1.1rem; color:#6b7280; line-height:1; margin-bottom:4px;">?</div>
+                  <strong style="display:block; font-size:0.82rem; color:#4b5563;">Unable to Verify</strong>
+                  <span style="font-size:0.68rem; color:#6b7280; display:block; margin-top:2px;">Unreadable / Missing</span>
+                </label>
+
+              </div>
+
+              <!-- Remarks Input Field -->
+              <div style="margin-bottom:12px;">
+                <label for="v-remarks-input" style="display:block; font-size:0.75rem; font-weight:700; color:#374151; margin-bottom:4px;">
+                  Verification Remarks <span id="v-remarks-req-star" style="color:#dc2626; display:none;">*</span>
+                </label>
+                <textarea id="v-remarks-input" rows="2" placeholder="Enter findings, notes, or discrepancies..." style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:8px 10px; font-size:0.82rem; font-family:inherit; resize:vertical;"></textarea>
+              </div>
+
+              <!-- Save Verification Result Button -->
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                <div id="v-verified-meta" style="font-size:0.72rem; color:#6b7280;"></div>
+                <button type="button" id="btn-save-verification" class="btn-topbar primary" style="padding:6px 16px; font-size:0.8rem; background:#059669; border-color:#059669;" onclick="saveVerificationResult()">
+                  Save Verification Result
+                </button>
+              </div>
+
+            </div>
+
           </div>
 
-          <form id="cemetery-plot-form" onsubmit="event.preventDefault(); submitCemeteryPlotForm();">
+          <!-- RIGHT COLUMN: SECTION D: PHYSICAL DEATH CERTIFICATE PREVIEW & SIDE-BY-SIDE COMPARISON -->
+          <div style="display:flex; flex-direction:column; gap:12px;">
             
-            <div class="panel-section" style="background:#fafbfc; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;">
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-                <div class="form-group">
-                  <label style="font-size:0.82rem; font-weight:800; color:var(--damayan-dark); display:block; margin-bottom:6px;">Plot Request Status *</label>
-                  <select id="cp-status" required style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.88rem; font-weight:600; color:var(--damayan-dark); background:#fff;" onchange="handlePlotStatusChange()">
-                    <option value="Pending Review">Pending Review</option>
-                    <option value="Under Review">Under Review</option>
-                    <option value="Available for Assignment">Available for Assignment</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Plot Assigned">Plot Assigned</option>
-                    <option value="Awaiting Plot Availability">Awaiting Plot Availability</option>
-                    <option value="Unavailable">Unavailable</option>
-                    <option value="Rejected">Rejected</option>
-                  </select>
+            <div class="panel-section" style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; display:flex; flex-direction:column; flex:1;">
+              
+              <!-- Section D Header with Direct Open Button -->
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                <div style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:6px;">
+                  <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#059669;"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                  D. Physical Death Certificate Document
                 </div>
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:6px;">Family Cemetery Preference</label>
-                  <input type="text" id="cp-family-pref" readonly style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#f3f4f6; color:#4b5563;" />
+                <a id="v-open-doc-link" href="#" target="_blank" class="btn-topbar" style="padding:4px 10px; font-size:0.74rem; font-weight:700; color:#065f46; border:1px solid #a7f3d0; background:#ecfdf5; text-decoration:none; display:none; align-items:center; gap:4px;">
+                  <span>Open for Closer Inspection</span>
+                  <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:currentColor;"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                </a>
+              </div>
+
+              <!-- Side-by-Side Comparison Callout Banner -->
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                <div>
+                  <span style="font-size:0.7rem; color:#166534; text-transform:uppercase; display:block; font-weight:800;">Recorded Registration Number:</span>
+                  <strong id="compare-reg-no" style="font-size:0.95rem; color:#064e3b; letter-spacing:0.02em;">—</strong>
+                </div>
+                <div style="text-align:right;">
+                  <span style="font-size:0.7rem; color:#166534; text-transform:uppercase; display:block; font-weight:800;">Deceased Full Name:</span>
+                  <strong id="compare-deceased-name" style="font-size:0.95rem; color:#064e3b;">—</strong>
                 </div>
               </div>
 
-              <!-- Available Inventory Dropdown Selection -->
-              <div class="form-group" style="margin-bottom:14px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                  <label style="font-size:0.8rem; font-weight:700; color:var(--damayan-dark);">Select from Available Cemetery Inventory (Unique Assignment)</label>
-                  <span style="font-size:0.75rem; color:var(--damayan-accent); font-weight:600;">Prevents Duplicate Plots</span>
+              <!-- Physical Certificate Document Viewer Box -->
+              <div id="v-doc-viewer-container" style="flex:1; min-height:360px; max-height:460px; background:#f3f4f6; border:1px dashed #d1d5db; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative;">
+                
+                <!-- Image Preview -->
+                <img id="v-doc-img-preview" src="" alt="Death Certificate" style="display:none; max-width:100%; max-height:450px; object-fit:contain; cursor:pointer;" onclick="openPreviewFullscreen()" title="Click to view larger in new tab" />
+                
+                <!-- PDF Preview -->
+                <iframe id="v-doc-pdf-preview" src="" style="display:none; width:100%; height:100%; min-height:380px; border:none;"></iframe>
+
+                <!-- Empty State (No Document) -->
+                <div id="v-doc-empty" style="text-align:center; padding:30px; color:#6b7280;">
+                  <svg viewBox="0 0 24 24" style="width:48px; height:48px; fill:#9ca3af; margin-bottom:8px;"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+                  <div style="font-size:0.9rem; font-weight:700; color:#374151;">No Physical Certificate Uploaded</div>
+                  <div style="font-size:0.78rem; color:#6b7280; margin-top:2px;">The applicant did not attach a document file with this request.</div>
                 </div>
-                <select id="cp-inventory-select" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#fff;" onchange="onSelectInventoryPlot(this)">
-                  <option value="">-- Choose an Available Plot from Database --</option>
-                </select>
+
               </div>
 
-              <!-- Assignment Fields -->
-              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Cemetery Name *</label>
-                  <input type="text" id="cp-cemetery-name" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. ISCAG Muslim Cemetery" />
-                </div>
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Section / Block</label>
-                  <input type="text" id="cp-section" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. Section A" />
-                </div>
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Plot / Grave Number *</label>
-                  <input type="text" id="cp-plot-number" required style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. A-101" />
-                </div>
+              <div style="font-size:0.74rem; color:#6b7280; margin-top:8px; text-align:center;">
+                Carefully compare the registration number and deceased's name on the physical document with the recorded information on the left.
               </div>
 
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Plot Assignment Date</label>
-                  <input type="date" id="cp-assigned-date" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" />
-                </div>
-                <div class="form-group">
-                  <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Cemetery Plot ID (Internal)</label>
-                  <input type="text" id="cp-plot-id" readonly style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem; background:#f3f4f6; color:#6b7280;" placeholder="Auto-linked" />
-                </div>
-              </div>
-
-              <div class="form-group" style="margin-bottom:10px;">
-                <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Plot Remarks &amp; Caretaker Notes</label>
-                <textarea id="cp-remarks" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Grave preparation, caretaker instructions, orientation (Qiblah)..."></textarea>
-              </div>
-
-              <div id="cp-rejection-row" class="form-group" style="display:none; margin-top:10px;">
-                <label style="font-size:0.8rem; font-weight:700; color:#dc2626; display:block; margin-bottom:4px;">Plot Rejection / Unavailability Reason *</label>
-                <textarea id="cp-rejection-reason" rows="2" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid #fca5a5; font-size:0.85rem; background:#fff5f5;" placeholder="Specify why the burial plot cannot be allocated or why the request was rejected..."></textarea>
-              </div>
             </div>
 
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="btn-topbar primary" style="padding:10px 22px; font-size:0.85rem;">Save Cemetery Plot Assignment</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- ─────────────────────────────────────────────────────────────
-             TAB 5: ACTIVITY LOGS & AUDIT TRAIL
-        ───────────────────────────────────────────────────────────── -->
-        <div id="tab-logs" class="case-tab-pane" style="display:none;">
-          <div style="margin-bottom:16px;">
-            <h6 style="color:var(--damayan-dark); margin:0 0 4px; font-size:0.95rem;">Chronological Case Audit Trail</h6>
-            <div style="font-size:0.78rem; color:var(--text-muted);">
-              Every status change, staff action, Death Certificate update, and Cemetery Plot assignment is recorded with responsible actor and timestamp.
-            </div>
           </div>
 
-          <div id="activity-logs-container" style="display:flex; flex-direction:column; gap:12px;">
-            <!-- Populated dynamically via renderActivityLogs() -->
-          </div>
         </div>
 
       </div>
 
     </div>
 
-    <!-- Modal Footer -->
-    <div class="mis-modal-footer" style="padding:14px 24px; border-top:1px solid var(--border); background:#fafbfc; display:flex; align-items:center; justify-content:space-between;">
-      <div style="font-size:0.75rem; color:var(--text-muted);">
-        ISCAG Damayan Death Certificate &amp; Cemetery Plot Management System
+    <!-- Modal Footer Actions -->
+    <div class="mis-modal-footer" style="padding:14px 22px; border-top:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; background:#fafbfc;">
+      <div id="modal-footer-status-text" style="font-size:0.8rem; color:#4b5563;">
+        <!-- Dynamic verification advice -->
       </div>
-      <button type="button" class="btn-topbar" style="padding:6px 18px; font-size:0.82rem;" onclick="closeCaseModal()">Close</button>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span id="modal-final-status-badge" style="display:none; font-size:0.8rem; font-weight:700; padding:6px 14px; border-radius:6px;"></span>
+        <button type="button" id="modal-btn-reject" class="btn-topbar" style="padding:6px 14px; font-size:0.82rem; background:#fff; color:#dc2626; border:1px solid #fca5a5; font-weight:700;" onclick="onModalRejectClick()">
+          Reject Request
+        </button>
+        <button type="button" id="modal-btn-accept" class="btn-topbar primary" style="padding:6px 18px; font-size:0.82rem; background:#059669; border-color:#059669; color:#fff; font-weight:700;" onclick="onModalAcceptClick()">
+          Accept Request
+        </button>
+        <button type="button" class="btn-topbar" style="padding:6px 14px; font-size:0.82rem; border:1px solid #d1d5db; background:#fff; color:#374151;" onclick="closeCaseModal()">
+          Close
+        </button>
+      </div>
     </div>
 
   </div>
 </div>
 
-<!-- Modal: Request Additional Info Dialog -->
-<div id="damayanReqInfoModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100000; align-items:center; justify-content:center; padding:20px;">
-  <div style="background:#fff; border-radius:14px; max-width:500px; width:100%; padding:22px; box-shadow:0 20px 40px rgba(0,0,0,0.2);">
-    <h5 style="margin:0 0 6px; font-size:1.05rem; color:var(--damayan-dark); font-weight:800;">Request Additional Information</h5>
-    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">
-      Notify the family representative of missing documents or clarification needed for this case.
+
+<!-- 2. REJECTION MODAL (WITH DROPDOWN AND CONDITIONAL OTHERS INPUT) -->
+<div id="damayanRejectModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.65); backdrop-filter:blur(4px); z-index:100000; align-items:center; justify-content:center; padding:16px;">
+  <div class="mis-modal-content" style="background:#fff; border-radius:14px; width:95%; max-width:520px; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideUp 0.2s ease;">
+    
+    <div class="mis-modal-header" style="padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; background:#fef2f2;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:32px; height:32px; border-radius:8px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center;">
+          <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+        <div>
+          <h5 style="margin:0; font-size:1.05rem; font-weight:800; color:#991b1b;">Reject Request</h5>
+          <div id="reject-case-label" style="font-size:0.75rem; color:#7f1d1d; margin-top:2px;">Case #BR-0000</div>
+        </div>
+      </div>
+      <button type="button" onclick="closeRejectModal()" style="background:transparent; border:none; font-size:1.4rem; line-height:1; cursor:pointer; color:#9ca3af;">&times;</button>
     </div>
-    <form onsubmit="event.preventDefault(); submitRequestInfo();">
-      <div class="form-group" style="margin-bottom:16px;">
-        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Requirements / Details Needed *</label>
-        <textarea id="reqinfo-explanation" rows="4" required style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="e.g. Please provide a clearer copy of the hospital death summary, medical certificate, or valid ID of the representative..."></textarea>
+
+    <div class="mis-modal-body" style="padding:18px 20px;">
+      <p style="font-size:0.84rem; color:#4b5563; margin:0 0 14px 0;">
+        Please select the official reason for rejecting this death certificate request. The applicant will be notified with this reason.
+      </p>
+
+      <!-- Rejection Reason Dropdown -->
+      <div style="margin-bottom:14px;">
+        <label for="reject-reason-select" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:6px;">
+          Rejection Reason <span style="color:#dc2626;">*</span>
+        </label>
+        <select id="reject-reason-select" style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:8px 10px; font-size:0.84rem; background:#fff; font-family:inherit;" onchange="onRejectReasonChange(this.value)">
+          <option value="">-- Select Rejection Reason --</option>
+          <option value="Information does not match the physical death certificate">Information does not match the physical death certificate</option>
+          <option value="Invalid or incorrect registration number">Invalid or incorrect registration number</option>
+          <option value="Duplicate request">Duplicate request</option>
+          <option value="Incomplete or incorrect information">Incomplete or incorrect information</option>
+          <option value="Supporting document is unreadable or invalid">Supporting document is unreadable or invalid</option>
+          <option value="Others">Others</option>
+        </select>
       </div>
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button type="button" class="btn-topbar" onclick="closeReqInfoModal()">Cancel</button>
-        <button type="submit" class="btn-topbar primary" style="background:#d97706; border-color:#d97706;">Send Requirement Notice</button>
+
+      <!-- Conditional Input Field for 'Others' -->
+      <div id="reject-others-container" style="display:none; margin-bottom:14px;">
+        <label for="reject-specific-reason" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:6px;">
+          Specify Rejection Reason <span style="color:#dc2626;">*</span>
+        </label>
+        <textarea id="reject-specific-reason" rows="3" placeholder="Provide a detailed explanation for this rejection..." style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:8px 10px; font-size:0.82rem; font-family:inherit; resize:vertical;"></textarea>
       </div>
-    </form>
+
+    </div>
+
+    <div class="mis-modal-footer" style="padding:14px 20px; border-top:1px solid #e5e7eb; display:flex; align-items:center; justify-content:flex-end; gap:10px; background:#fafbfc;">
+      <button type="button" class="btn-topbar" style="padding:6px 14px; font-size:0.82rem; border:1px solid #d1d5db; background:#fff; color:#374151;" onclick="closeRejectModal()">
+        Cancel
+      </button>
+      <button type="button" id="btn-confirm-rejection" class="btn-topbar" style="padding:6px 16px; font-size:0.82rem; background:#dc2626; color:#fff; border:1px solid #dc2626; font-weight:700;" onclick="submitRejectRequest()">
+        Confirm Rejection
+      </button>
+    </div>
+
   </div>
 </div>
 
-<!-- Modal: Reject Case Dialog -->
-<div id="damayanRejectModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100000; align-items:center; justify-content:center; padding:20px;">
-  <div style="background:#fff; border-radius:14px; max-width:500px; width:100%; padding:22px; box-shadow:0 20px 40px rgba(0,0,0,0.2);">
-    <h5 style="margin:0 0 6px; font-size:1.05rem; color:#dc2626; font-weight:800;">Reject Burial Request</h5>
-    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">
-      State the clear reason for rejecting this application. The family will be notified.
+
+<!-- 3. ACCEPT CONFIRMATION MODAL -->
+<div id="damayanAcceptConfirmModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.65); backdrop-filter:blur(4px); z-index:100000; align-items:center; justify-content:center; padding:16px;">
+  <div class="mis-modal-content" style="background:#fff; border-radius:14px; width:95%; max-width:480px; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideUp 0.2s ease;">
+    
+    <div class="mis-modal-header" style="padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; background:#ecfdf5;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:32px; height:32px; border-radius:8px; background:#d1fae5; color:#059669; display:flex; align-items:center; justify-content:center;">
+          <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+        </div>
+        <div>
+          <h5 style="margin:0; font-size:1.05rem; font-weight:800; color:#064e3b;">Confirm Acceptance</h5>
+          <div id="accept-case-label" style="font-size:0.75rem; color:#065f46; margin-top:2px;">Case #BR-0000</div>
+        </div>
+      </div>
+      <button type="button" onclick="closeAcceptModal()" style="background:transparent; border:none; font-size:1.4rem; line-height:1; cursor:pointer; color:#9ca3af;">&times;</button>
     </div>
-    <form onsubmit="event.preventDefault(); submitRejectRequest();">
-      <div class="form-group" style="margin-bottom:16px;">
-        <label style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Rejection Reason *</label>
-        <textarea id="reject-reason" rows="3" required style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #fca5a5; font-size:0.85rem;" placeholder="e.g. Duplicate submission, invalid deceased credentials, out of service jurisdiction..."></textarea>
+
+    <div class="mis-modal-body" style="padding:18px 20px;">
+      <p style="font-size:0.86rem; color:#374151; margin:0 0 12px 0;">
+        Are you sure you want to accept <strong id="accept-modal-target-label">this request</strong>?
+      </p>
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.8rem; color:#166534; margin-bottom:14px;">
+        ✓ Certificate has been verified as <strong>Matched</strong> against the physical document. Once accepted, the request status will change to <strong>Accepted</strong> and the requester will be notified.
       </div>
-      <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button type="button" class="btn-topbar" onclick="closeRejectModal()">Cancel</button>
-        <button type="submit" class="btn-topbar" style="background:#dc2626; color:#fff; border-color:#dc2626;">Confirm Rejection</button>
+      <div>
+        <label for="accept-optional-notes" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:4px;">
+          Optional Notes / Remarks
+        </label>
+        <textarea id="accept-optional-notes" rows="2" placeholder="Optional notes for the record..." style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:8px 10px; font-size:0.82rem; font-family:inherit; resize:vertical;"></textarea>
       </div>
-    </form>
+    </div>
+
+    <div class="mis-modal-footer" style="padding:14px 20px; border-top:1px solid #e5e7eb; display:flex; align-items:center; justify-content:flex-end; gap:10px; background:#fafbfc;">
+      <button type="button" class="btn-topbar" style="padding:6px 14px; font-size:0.82rem; border:1px solid #d1d5db; background:#fff; color:#374151;" onclick="closeAcceptModal()">
+        Cancel
+      </button>
+      <button type="button" id="btn-confirm-accept" class="btn-topbar primary" style="padding:6px 18px; font-size:0.82rem; background:#059669; border-color:#059669; color:#fff; font-weight:700;" onclick="submitAcceptRequest()">
+        Confirm Acceptance
+      </button>
+    </div>
+
   </div>
 </div>
 
-<!-- Modal: Search & Link Existing Deceased Record -->
-<div id="searchDeceasedModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(3px); z-index:100001; align-items:center; justify-content:center; padding:20px;">
-  <div style="background:#fff; border-radius:16px; max-width:640px; width:100%; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 25px 50px rgba(0,0,0,0.25); overflow:hidden;">
-    <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:#fafbfc;">
-      <h5 style="margin:0; font-size:1.05rem; color:var(--damayan-dark); font-weight:800;">Link Existing Registered Deceased Record</h5>
-      <button type="button" onclick="closeSearchDeceasedModal()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-muted);">&times;</button>
-    </div>
-    <div style="padding:18px 20px; flex:1; overflow-y:auto;">
-      <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:14px;">
-        Important: Do not create duplicate records. Search and select the existing registered deceased person from previous ISCAG records or death registrations.
-      </div>
-      <div style="display:flex; gap:8px; margin-bottom:16px;">
-        <input type="text" id="deceased-search-query" style="flex:1; padding:8px 14px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;" placeholder="Search deceased name, date of death, or ref #..." onkeyup="if(event.key==='Enter') executeSearchDeceased()" />
-        <button type="button" class="btn-topbar primary" style="padding:8px 16px; font-size:0.82rem;" onclick="executeSearchDeceased()">Search</button>
-      </div>
 
-      <div id="deceased-search-results" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
-        <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.85rem;">Click 'Search' to search existing deceased records.</div>
-      </div>
-    </div>
-    <div style="padding:12px 20px; border-top:1px solid var(--border); background:#fafbfc; display:flex; justify-content:flex-end; gap:8px;">
-      <button type="button" class="btn-topbar" onclick="closeSearchDeceasedModal()">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<style>
-  :root {
-    --damayan-accent: #176b45;
-    --damayan-dark: #0f5c3a;
-    --damayan-light: #e8f5ed;
-  }
-  #modalTabsBar {
-    display: flex;
-    gap: 6px;
-    padding: 8px 16px 0;
-    background: #f1f5f3;
-    border-bottom: 2px solid #e2e8f0;
-    overflow: hidden;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  .case-tab-btn {
-    flex: 1 1 0;
-    min-width: 0;
-    padding: 11px 6px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: #4b5563;
-    background: transparent;
-    border: none;
-    border-bottom: 3px solid transparent;
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    text-align: center;
-    white-space: nowrap;
-    outline: none;
-  }
-  .case-tab-btn:hover {
-    color: var(--damayan-dark);
-    background: rgba(255, 255, 255, 0.75);
-  }
-  .case-tab-btn.active {
-    color: var(--damayan-accent) !important;
-    background: #ffffff !important;
-    border-bottom: 3px solid var(--damayan-accent) !important;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
-    font-weight: 800;
-  }
-  .case-tab-btn .tab-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #e2e8f0;
-    color: #475569;
-    font-size: 0.72rem;
-    font-weight: 800;
-    flex-shrink: 0;
-    transition: all 0.2s ease;
-  }
-  .case-tab-btn.active .tab-badge {
-    background: var(--damayan-accent);
-    color: #ffffff;
-  }
-  .case-tab-btn .tab-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  @media (max-width: 900px) {
-    .case-tab-btn {
-      padding: 9px 4px;
-      font-size: 0.75rem;
-      gap: 4px;
-    }
-    .case-tab-btn .tab-badge {
-      width: 18px;
-      height: 18px;
-      font-size: 0.68rem;
-    }
-  }
-  @keyframes modalSlideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
-
+<!-- JAVASCRIPT LOGIC FOR VERIFICATION, ACCEPT, AND REJECT -->
 <script>
   let activeCase = null;
-  let activeStaffList = [];
-  let activeAvailablePlots = [];
-  let activeAllPlots = [];
-  let activeAuditLogs = [];
-  let currentCaseTab = 'overview';
+  let targetRejectCaseId = null;
+  let targetAcceptCaseId = null;
+  let selectedVerificationResult = null;
 
-  function switchCaseTab(tabKey, btnElement) {
-    currentCaseTab = tabKey;
-    document.querySelectorAll('.case-tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.case-tab-pane').forEach(p => p.style.display = 'none');
-    
-    // Activate target button
-    const targetBtn = btnElement || document.querySelector(`.case-tab-btn[data-tab="${tabKey}"]`);
-    if (targetBtn) {
-      targetBtn.classList.add('active');
-    }
-    const pane = document.getElementById('tab-' + tabKey);
-    if(pane) pane.style.display = 'block';
-  }
-
-  async function openCaseModal(caseIdOrRef, preserveTab = false) {
+  // ─────────────────────────────────────────────────────────────
+  // 1. OPEN VERIFICATION MODAL
+  // ─────────────────────────────────────────────────────────────
+  async function openCaseModal(caseIdOrRef) {
     const modal = document.getElementById('damayanCaseModal');
     const loading = document.getElementById('modal-loading');
     const content = document.getElementById('modal-content-container');
     
+    if(!modal) return;
     modal.style.display = 'flex';
     loading.style.display = 'block';
     content.style.display = 'none';
 
-    // Set active tab (preserving user position if specified)
-    const activeTabToSelect = (preserveTab && currentCaseTab) ? currentCaseTab : 'overview';
-    switchCaseTab(activeTabToSelect);
-
     try {
       const res = await fetch('<?= url('/admin/damayan/burial/details') ?>?id=' + encodeURIComponent(caseIdOrRef));
       const data = await res.json();
+      
       if(!data.success || !data.burial) {
-        showAlert('Error', data.error || 'Failed to load burial case details.', 'error');
+        if(typeof showAlert === 'function') showAlert('Error', data.error || 'Failed to load case details.', 'error');
+        else alert(data.error || 'Failed to load case details.');
         closeCaseModal();
         return;
       }
 
       activeCase = data.burial;
-      activeStaffList = data.staff_list || [];
-      activeAvailablePlots = data.available_plots || [];
-      activeAllPlots = data.all_plots || [];
-      activeAuditLogs = data.audit_logs || [];
-
-      populateCaseModal(data);
+      populateVerificationModal(data);
       loading.style.display = 'none';
       content.style.display = 'block';
     } catch(err) {
       console.error(err);
-      showAlert('Error', 'An error occurred while fetching case details.', 'error');
+      if(typeof showAlert === 'function') showAlert('Error', 'An error occurred while fetching request details.', 'error');
+      else alert('An error occurred while fetching request details.');
       closeCaseModal();
     }
   }
 
   function closeCaseModal() {
-    document.getElementById('damayanCaseModal').style.display = 'none';
+    const modal = document.getElementById('damayanCaseModal');
+    if(modal) modal.style.display = 'none';
     activeCase = null;
   }
 
-  function populateCaseModal(data) {
+  // ─────────────────────────────────────────────────────────────
+  // 2. POPULATE MODAL CONTENT
+  // ─────────────────────────────────────────────────────────────
+  function populateVerificationModal(data) {
     const c = data.burial;
+    const duplicates = data.duplicates || [];
 
     // Header
-    document.getElementById('modal-ref-id').textContent = '#' + c.ref_id;
-    document.getElementById('modal-deceased-name').textContent = c.deceased_name || (c.first_name + ' ' + c.last_name);
+    document.getElementById('modal-ref-id').textContent = '#' + (c.ref_id || 'BR-0000');
     
-    // Status Badge
+    // Status Badge (Must be Pending unless Accepted or Rejected by Admin)
+    const rawSt = (c.status || 'Pending').toLowerCase().trim();
+    const dcSt = (c.death_cert_status || '').toLowerCase().trim();
+    const displayStatus = (rawSt === 'accepted' || rawSt.startsWith('accept') || dcSt === 'awaiting authorized certificate preparation')
+      ? 'Accepted'
+      : ((rawSt === 'rejected' || dcSt === 'rejected')
+        ? 'Rejected'
+        : ((rawSt === 'completed' || dcSt === 'registered' || dcSt === 'certified copy requested or received') ? 'Completed' : 'Pending'));
+
     const statusBadge = document.getElementById('modal-status-badge');
-    statusBadge.textContent = c.status;
-    statusBadge.className = 'badge-status ' + getBadgeClass(c.status);
+    statusBadge.textContent = displayStatus;
+    statusBadge.className = 'badge-status ' + getBadgeClass(displayStatus);
 
     // Request Type Badge
     const reqTypeBadge = document.getElementById('modal-reqtype-badge');
-    const rType = (c.request_type || 'both').toLowerCase();
-    if (rType === 'death_certificate') {
-      reqTypeBadge.textContent = 'Death Certificate Only';
-      reqTypeBadge.className = 'badge-status badge-info';
-    } else if (rType === 'cemetery_plot') {
-      reqTypeBadge.textContent = 'Cemetery Plot Only';
-      reqTypeBadge.className = 'badge-status badge-info';
-    } else {
-      reqTypeBadge.textContent = 'Both Services';
-      reqTypeBadge.className = 'badge-status badge-active';
-    }
-
-    // Action Type Badge (Register vs Copy)
-    const actionBadge = document.getElementById('modal-actiontype-badge');
     const isCopy = (c.cert_action_type === 'copy');
-    if (actionBadge) {
-      if (isCopy) {
-        actionBadge.textContent = 'Copy Request';
-        actionBadge.style.background = '#dbeafe';
-        actionBadge.style.color = '#1e40af';
-      } else {
-        actionBadge.textContent = 'New Registration';
-        actionBadge.style.background = '#d1fae5';
-        actionBadge.style.color = '#065f46';
-      }
+    if (isCopy) {
+      reqTypeBadge.textContent = 'Request Another Death Certificate';
+      reqTypeBadge.style.background = '#dbeafe';
+      reqTypeBadge.style.color = '#1e40af';
+    } else {
+      reqTypeBadge.textContent = 'Register Death Certificate';
+      reqTypeBadge.style.background = '#d1fae5';
+      reqTypeBadge.style.color = '#065f46';
     }
 
-    const sexBadge = document.getElementById('modal-sex-badge');
-    sexBadge.textContent = c.deceased_sex || 'Male';
-    sexBadge.style.background = (c.deceased_sex === 'Female') ? '#fce7f3' : '#e0e7ff';
-    sexBadge.style.color = (c.deceased_sex === 'Female') ? '#9d174d' : '#3730a3';
+    // Verification Result Badge in Header
+    updateHeaderVerificationBadge(c.verification_result);
 
-    // ──────────────── TAB 1: OVERVIEW ────────────────
-    const isEncodedLinked = Boolean(c.is_encoded_linked || c.encoded_cert_id || c.encoded_reg_no);
-    const encBanner = document.getElementById('v-encoded-cert-overview-banner');
-    if (encBanner) {
-      if (isEncodedLinked && !isCopy) {
-        encBanner.style.display = 'block';
-        encBanner.innerHTML = `
-          <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <div style="width:36px; height:36px; border-radius:50%; background:#d1fae5; display:flex; align-items:center; justify-content:center; color:#059669; flex-shrink:0;">
-                <svg viewBox="0 0 24 24" style="width:20px; height:20px; fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-              </div>
-              <div>
-                <div style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.04em;">Recognized &amp; Linked to Encoded Death Certificate</div>
-                <div style="font-size:0.95rem; font-weight:700; color:#064e3b; margin-top:1px;">
-                  Registration #: <strong>${escapeHtml(c.encoded_reg_no || c.death_cert_registry_no || c.existing_cert_no || '')}</strong>
-                  <span style="font-weight:500; color:#047857; margin-left:8px;">Deceased: ${escapeHtml(c.encoded_deceased_name || c.deceased_name || '')} · Rep: ${escapeHtml(c.encoded_representative_name || c.informant_name || 'N/A')}</span>
-                </div>
-                <div style="font-size:0.72rem; color:#6b7280; margin-top:2px;">
-                  Encoded by: <strong>${escapeHtml(c.encoded_by_name || 'Damayan Staff')}</strong> on ${escapeHtml(c.encoded_at || 'N/A')}
-                </div>
-              </div>
-            </div>
-            <span class="badge-status badge-active" style="font-size:0.75rem;">Verified Link</span>
-          </div>
-        `;
-      } else {
-        encBanner.style.display = 'none';
-      }
-    }
+    // SECTION A: Request Information
+    document.getElementById('v-ref-id').textContent = '#' + (c.ref_id || '—');
+    document.getElementById('v-request-type').textContent = isCopy ? 'Request Another Death Certificate' : 'Register Death Certificate';
+    document.getElementById('v-date-submitted').textContent = c.submitted_at ? new Date(c.submitted_at).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : '—';
+    document.getElementById('v-current-status').textContent = displayStatus;
 
-    const copyPanel = document.getElementById('copy-request-panel');
-    if (copyPanel) {
-      if (isCopy) {
-        copyPanel.style.display = 'block';
-        document.getElementById('v-copy-existing-cert').textContent = c.encoded_reg_no || c.existing_cert_no || 'Not Provided';
-        document.getElementById('v-copy-num-copies').textContent = (c.num_copies || 1) + (parseInt(c.num_copies) > 1 ? ' copies' : ' copy');
-        document.getElementById('v-copy-reason').textContent = c.copy_reason || 'Personal / Official Use';
+    // SECTION B: Requester Information
+    const applicantName = (c.first_name || '') + ' ' + (c.last_name || '');
+    document.getElementById('v-requester-name').textContent = applicantName.trim() || (c.informant_name || 'N/A');
+    document.getElementById('v-relationship').textContent = c.relationship || (c.informant_relationship || 'Representative');
+    document.getElementById('v-contact-number').textContent = c.contact_number || (c.informant_contact || 'N/A');
 
-        const copyVerifiedBadge = document.getElementById('v-copy-verified-badge');
-        const recordLinkDesc = document.getElementById('v-copy-record-link-desc');
-        if (isEncodedLinked) {
-          copyVerifiedBadge.textContent = 'Record Verified & Linked (Encoded Death Cert)';
-          copyVerifiedBadge.className = 'badge-status badge-active';
-          recordLinkDesc.innerHTML = `
-            <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:12px; margin-top:4px;">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                <span style="color:#065f46; font-weight:800; font-size:0.75rem; text-transform:uppercase; display:flex; align-items:center; gap:4px;">
-                  <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                  Linked to Encoded Death Certificate (Same Registration # Matched)
-                </span>
-                <span class="badge-status badge-active" style="font-size:0.68rem;">Verified in Archive</span>
-              </div>
-              <div style="font-size:0.95rem; font-weight:800; color:#064e3b;">
-                Registration #: ${escapeHtml(c.encoded_reg_no || c.existing_cert_no || '')}
-              </div>
-              <div style="font-size:0.82rem; color:#047857; margin-top:2px;">
-                Deceased: <strong>${escapeHtml(c.encoded_deceased_name || c.deceased_name || '')}</strong> · Representative: <strong>${escapeHtml(c.encoded_representative_name || c.informant_name || 'N/A')}</strong>
-              </div>
-              <div style="font-size:0.72rem; color:#6b7280; margin-top:4px;">
-                Encoded by: <strong>${escapeHtml(c.encoded_by_name || 'Damayan Staff')}</strong> on ${escapeHtml(c.encoded_at || 'N/A')}
-              </div>
-            </div>
-          `;
-        } else if (parseInt(c.existing_record_verified) === 1) {
-          copyVerifiedBadge.textContent = 'Record Verified & Linked';
-          copyVerifiedBadge.className = 'badge-status badge-active';
-          recordLinkDesc.innerHTML = `<span style="color:#059669;">Linked to Registered Deceased Record #${escapeHtml(c.deceased_id || '')}: ${escapeHtml(c.deceased_name || '')} (DOD: ${escapeHtml(c.date_of_death || 'N/A')})</span>`;
-        } else {
-          copyVerifiedBadge.textContent = 'Awaiting Record Search';
-          copyVerifiedBadge.className = 'badge-status badge-warning';
-          recordLinkDesc.innerHTML = `<span style="color:#dc2626;">No existing registered record linked yet. Search and link to an existing record, or request additional information from the applicant.</span>`;
-        }
-      } else {
-        copyPanel.style.display = 'none';
-      }
-    }
-    const applicantName = c.informant_name || ((c.user_first_name || '') + ' ' + (c.user_last_name || '')) || 'Applicant';
-    document.getElementById('v-applicant-name').textContent = applicantName;
-    document.getElementById('v-relationship').textContent = c.relationship || 'Family Member';
-    document.getElementById('v-applicant-phone').textContent = c.informant_contact || c.user_contact || 'N/A';
-    document.getElementById('v-applicant-email').textContent = c.informant_email || c.user_email || 'N/A';
-    document.getElementById('v-applicant-address').textContent = c.informant_address || c.residence || 'N/A';
-
-    document.getElementById('v-deceased-fullname').textContent = c.deceased_name;
-    document.getElementById('v-deceased-gender').textContent = (c.deceased_sex === 'Female' ? 'Female' : 'Male');
-    document.getElementById('v-nationality').textContent = c.nationality || 'Filipino';
-    document.getElementById('v-death-date').textContent = c.date_of_death || 'N/A';
+    // SECTION C: Death Certificate Information
+    const regNo = c.existing_cert_no || c.death_cert_registry_no || 'N/A';
+    document.getElementById('v-cert-reg-no').textContent = regNo;
+    document.getElementById('v-deceased-name').textContent = c.deceased_name || 'N/A';
+    document.getElementById('v-deceased-sex').textContent = c.deceased_sex || 'Male';
+    document.getElementById('v-death-date').textContent = c.date_of_death ? new Date(c.date_of_death).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : 'N/A';
     document.getElementById('v-death-place').textContent = c.place_of_death || 'N/A';
-    document.getElementById('v-cemetery-pref').textContent = c.cemetery_preference || c.assigned_cemetery_name || 'ISCAG Muslim Cemetery';
-    document.getElementById('v-family-notes').textContent = c.additional_notes || 'None provided.';
 
-    // Requested Services Badges
-    const dcRequested = (parseInt(c.death_cert_requested) === 1) || (rType === 'both') || (rType === 'death_certificate');
-    const plotRequested = (parseInt(c.cemetery_plot_requested) === 1) || (rType === 'both') || (rType === 'cemetery_plot');
-    
-    const dcBadge = document.getElementById('v-dc-badge');
-    dcBadge.textContent = 'Death Certificate: ' + (c.death_cert_status || (dcRequested ? 'Requested' : 'Not Requested'));
-    dcBadge.className = 'badge-status ' + (dcRequested ? getBadgeClass(c.death_cert_status) : 'badge-disabled');
+    // SIDE-BY-SIDE Comparison Bar
+    document.getElementById('compare-reg-no').textContent = regNo;
+    document.getElementById('compare-deceased-name').textContent = c.deceased_name || 'N/A';
 
-    const plotBadge = document.getElementById('v-plot-badge');
-    plotBadge.textContent = 'Cemetery Plot: ' + (c.cemetery_plot_status || (plotRequested ? 'Requested' : 'Not Requested'));
-    plotBadge.className = 'badge-status ' + (plotRequested ? getBadgeClass(c.cemetery_plot_status) : 'badge-disabled');
+    // SECTION D: Physical Death Certificate Document
+    const docPath = c.uploaded_document || (data.documents && data.documents[0] ? data.documents[0].file_path : '');
+    const imgPreview = document.getElementById('v-doc-img-preview');
+    const pdfPreview = document.getElementById('v-doc-pdf-preview');
+    const docEmpty = document.getElementById('v-doc-empty');
+    const openDocLink = document.getElementById('v-open-doc-link');
 
-    // Supporting document
-    const docContainer = document.getElementById('v-doc-container');
-    if(c.supporting_document) {
-      const docUrl = c.supporting_document.startsWith('http') ? c.supporting_document : ('<?= url('') ?>/' + c.supporting_document.replace(/^\/+/, ''));
-      docContainer.innerHTML = `
-        <a href="${docUrl}" target="_blank" class="btn-topbar" style="display:inline-flex; align-items:center; gap:6px; color:var(--damayan-accent); font-weight:700; text-decoration:none;">
-          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-          View Attached Document
-        </a>
-      `;
-    } else {
-      docContainer.innerHTML = '<span style="color:var(--text-muted); font-style:italic;">No supporting document uploaded</span>';
-    }
+    imgPreview.style.display = 'none';
+    pdfPreview.style.display = 'none';
+    docEmpty.style.display = 'none';
+    openDocLink.style.display = 'none';
 
-    // Additional info banner
-    const infoAlert = document.getElementById('info-request-alert');
-    if(c.info_request_notes) {
-      infoAlert.style.display = 'block';
-      document.getElementById('info-request-notes-text').textContent = c.info_request_notes;
-      if(c.additional_info_submitted) {
-        document.getElementById('info-response-container').style.display = 'block';
-        document.getElementById('info-submitted-text').textContent = ' ' + c.additional_info_submitted;
-        if(c.additional_doc_path) {
-          const addDocUrl = c.additional_doc_path.startsWith('http') ? c.additional_doc_path : ('<?= url('') ?>/' + c.additional_doc_path.replace(/^\/+/, ''));
-          document.getElementById('info-submitted-doc').innerHTML = `<a href="${addDocUrl}" target="_blank" style="color:var(--damayan-accent);font-weight:700;">View Submitted File</a>`;
-        } else {
-          document.getElementById('info-submitted-doc').innerHTML = '';
-        }
+    if (docPath) {
+      let resolvedUrl = docPath;
+      if (!resolvedUrl.startsWith('http://') && !resolvedUrl.startsWith('https://') && !resolvedUrl.startsWith('/')) {
+        resolvedUrl = '<?= url('/') ?>' + (resolvedUrl.startsWith('/') ? '' : '/') + resolvedUrl;
+      }
+      openDocLink.href = resolvedUrl;
+      openDocLink.style.display = 'inline-flex';
+
+      const isPdf = docPath.toLowerCase().endsWith('.pdf');
+      if (isPdf) {
+        pdfPreview.src = resolvedUrl;
+        pdfPreview.style.display = 'block';
       } else {
-        document.getElementById('info-response-container').style.display = 'none';
+        imgPreview.src = resolvedUrl;
+        imgPreview.style.display = 'block';
       }
     } else {
-      infoAlert.style.display = 'none';
+      docEmpty.style.display = 'block';
     }
 
-    // Rejection banner
-    const rejAlert = document.getElementById('rejection-alert');
-    if(c.status === 'Rejected' && c.rejection_reason) {
-      rejAlert.style.display = 'block';
-      document.getElementById('rejection-reason-text').textContent = c.rejection_reason;
-    } else {
-      rejAlert.style.display = 'none';
-    }
+    // DUPLICATE DETECTION WARNING
+    const dupContainer = document.getElementById('duplicate-warning-container');
+    const dupList = document.getElementById('duplicate-records-list');
+    const dupDecisionBadge = document.getElementById('duplicate-review-status');
+    const radioDiff = document.getElementById('dup-radio-diff');
+    const radioDup = document.getElementById('dup-radio-dup');
+    const dupNotes = document.getElementById('dup-review-notes');
 
-    // Coordinator name & staff dropdown
-    document.getElementById('v-coordinator-name').textContent = c.assigned_staff_name || 'Unassigned';
-    const staffSelect = document.getElementById('assign-staff-select');
-    staffSelect.innerHTML = '<option value="">-- Select Staff --</option>' + (data.staff_list || []).map(s => {
-      const sId = s.tenant_id || s.id;
-      const sName = (s.first_name && s.last_name) ? (s.first_name + ' ' + s.last_name).trim() : (s.name || 'Staff');
-      return `
-        <option value="${sId}" ${sId == c.assigned_staff_id ? 'selected' : ''}>
-          ${sName} (${s.role || 'Staff'})
-        </option>
-      `;
-    }).join('');
-
-    // ──────────────── TAB 2: DECEASED RECORD ────────────────
-    const names = (c.deceased_name || '').split(' ');
-    document.getElementById('df-fname').value = c.deceased_first_name || names[0] || '';
-    document.getElementById('df-mname').value = c.deceased_middle_name || (names.length > 2 ? names.slice(1, -1).join(' ') : '');
-    document.getElementById('df-lname').value = c.deceased_last_name || (names.length > 1 ? names[names.length - 1] : '');
-    document.getElementById('df-sex').value = c.deceased_sex || 'Male';
-    document.getElementById('df-dob').value = c.date_of_birth ? c.date_of_birth.substring(0, 10) : '';
-    document.getElementById('df-dod').value = c.date_of_death ? c.date_of_death.substring(0, 10) : '';
-    document.getElementById('df-pod').value = c.place_of_death || '';
-    document.getElementById('df-residence').value = c.residence || '';
-    document.getElementById('df-civil-status').value = c.civil_status || 'Married';
-    document.getElementById('df-nationality').value = c.nationality || 'Filipino';
-    document.getElementById('df-religion').value = c.religion || 'Islam';
-
-    // ──────────────── TAB 3: DEATH CERTIFICATE ────────────────
-    const dcStatus = c.death_cert_status || 'Request Received';
-    document.getElementById('dc-status').value = dcStatus;
-    const dcBadgeHeader = document.getElementById('dc-current-stage-badge');
-    dcBadgeHeader.textContent = dcStatus;
-    dcBadgeHeader.className = 'badge-status ' + getBadgeClass(dcStatus);
-
-    const copyIssueSec = document.getElementById('copy-issuance-section');
-    if (copyIssueSec) {
-      if (isCopy) {
-        copyIssueSec.style.display = 'block';
-        document.getElementById('copy-issue-ref').value = c.death_cert_certified_copy_ref || '';
-        document.getElementById('copy-issue-remarks').value = c.death_cert_remarks || '';
-
-        const issueBadge = document.getElementById('copy-issuance-status-badge');
-        const receiptText = document.getElementById('copy-receipt-status-text');
-        if (c.copy_issued_at) {
-          issueBadge.textContent = 'Copy Issued';
-          issueBadge.className = 'badge-status badge-active';
-        } else {
-          issueBadge.textContent = 'Pending Issuance';
-          issueBadge.className = 'badge-status badge-pending';
-        }
-
-        if (parseInt(c.copy_received_confirmed) === 1) {
-          receiptText.innerHTML = `<strong style="color:var(--damayan-accent);">Confirmed Received on ${formatLogTime(c.copy_received_at)}</strong>`;
-        } else if (c.copy_issued_at) {
-          receiptText.innerHTML = `<span style="color:#d97706; font-weight:700;">Issued on ${formatLogTime(c.copy_issued_at)} — Awaiting Physical Receipt Confirmation by Requester</span>`;
-        } else {
-          receiptText.textContent = 'Awaiting Record Verification & Staff Issuance';
-        }
-      } else {
-        copyIssueSec.style.display = 'none';
-      }
-    }
-
-    document.getElementById('dc-not-requested-alert').style.display = dcRequested ? 'none' : 'block';
-    document.getElementById('dc-prep-date').value = c.death_cert_prep_date ? c.death_cert_prep_date.substring(0, 10) : '';
-    document.getElementById('dc-certified-date').value = c.death_cert_certified_date ? c.death_cert_certified_date.substring(0, 10) : '';
-    document.getElementById('dc-submitted-lcro-date').value = c.death_cert_submitted_lcro_date ? c.death_cert_submitted_lcro_date.substring(0, 10) : '';
-    document.getElementById('dc-registered-date').value = c.death_cert_registered_date ? c.death_cert_registered_date.substring(0, 10) : '';
-    document.getElementById('dc-registry-no').value = c.death_cert_registry_no || '';
-    document.getElementById('dc-lcro-ref').value = c.death_cert_lcro_ref || '';
-    document.getElementById('dc-certified-copy-ref').value = c.death_cert_certified_copy_ref || '';
-    document.getElementById('dc-responsible-personnel').value = c.death_cert_responsible_personnel || '';
-    document.getElementById('dc-remarks').value = c.death_cert_remarks || '';
-    document.getElementById('dc-rejection-reason').value = c.death_cert_rejection_reason || '';
-    document.getElementById('dc-rejection-row').style.display = (dcStatus === 'Rejected') ? 'block' : 'none';
-
-    document.getElementById('dc-status').onchange = function() {
-      document.getElementById('dc-rejection-row').style.display = (this.value === 'Rejected') ? 'block' : 'none';
-    };
-
-    // ──────────────── TAB 4: CEMETERY PLOT ────────────────
-    const cpStatus = c.cemetery_plot_status || 'Pending Review';
-    document.getElementById('cp-status').value = cpStatus;
-    const cpBadgeHeader = document.getElementById('cp-current-status-badge');
-    cpBadgeHeader.textContent = cpStatus;
-    cpBadgeHeader.className = 'badge-status ' + getBadgeClass(cpStatus);
-
-    document.getElementById('cp-not-requested-alert').style.display = plotRequested ? 'none' : 'block';
-    document.getElementById('cp-family-pref').value = c.cemetery_preference || 'ISCAG Muslim Cemetery';
-
-    // Populate Available Plots Dropdown
-    const invSelect = document.getElementById('cp-inventory-select');
-    invSelect.innerHTML = '<option value="">-- Choose an Available Plot from Database --</option>';
-    (data.available_plots || []).forEach(p => {
-      invSelect.innerHTML += `
-        <option value="${p.id}" data-cemetery="${p.cemetery_name}" data-section="${p.section || ''}" data-plot="${p.plot_number}">
-          ${p.cemetery_name} | Sec ${p.section || 'General'} - Plot #${p.plot_number} (${p.plot_type || 'Standard'})
-        </option>
-      `;
-    });
-
-    // Populate plot fields
-    document.getElementById('cp-cemetery-name').value = c.assigned_cemetery_name || c.cemetery_name || c.cemetery_preference || 'ISCAG Muslim Cemetery';
-    document.getElementById('cp-section').value = c.assigned_section || c.section || '';
-    document.getElementById('cp-plot-number').value = c.assigned_plot_number || c.plot_number || '';
-    document.getElementById('cp-assigned-date').value = c.plot_assigned_date ? c.plot_assigned_date.substring(0, 10) : '';
-    document.getElementById('cp-plot-id').value = c.cemetery_plot_id || '';
-    document.getElementById('cp-remarks').value = c.cemetery_plot_remarks || '';
-    document.getElementById('cp-rejection-reason').value = c.cemetery_plot_rejection_reason || '';
-    document.getElementById('cp-rejection-row').style.display = (cpStatus === 'Rejected') ? 'block' : 'none';
-
-    // Assigned Highlight
-    const assignHighlight = document.getElementById('cp-assigned-highlight');
-    if (c.assigned_plot_number || cpStatus === 'Plot Assigned') {
-      assignHighlight.style.display = 'block';
-      document.getElementById('cp-assigned-display-text').textContent = 
-        `${c.assigned_cemetery_name || 'ISCAG Cemetery'} - Section ${c.assigned_section || 'A'}, Plot #${c.assigned_plot_number || 'N/A'}`;
-    } else {
-      assignHighlight.style.display = 'none';
-    }
-
-    // ──────────────── TAB 5: ACTIVITY LOGS ────────────────
-    renderActivityLogs(data.audit_logs || []);
-  }
-
-  function handlePlotStatusChange() {
-    const st = document.getElementById('cp-status').value;
-    document.getElementById('cp-rejection-row').style.display = (st === 'Rejected') ? 'block' : 'none';
-    if (st === 'Plot Assigned' && !document.getElementById('cp-assigned-date').value) {
-      document.getElementById('cp-assigned-date').value = new Date().toISOString().substring(0, 10);
-    }
-  }
-
-  function onSelectInventoryPlot(selectElem) {
-    const opt = selectElem.options[selectElem.selectedIndex];
-    if (!opt || !opt.value) return;
-
-    document.getElementById('cp-cemetery-name').value = opt.getAttribute('data-cemetery') || '';
-    document.getElementById('cp-section').value = opt.getAttribute('data-section') || '';
-    document.getElementById('cp-plot-number').value = opt.getAttribute('data-plot') || '';
-    document.getElementById('cp-plot-id').value = opt.value;
-    document.getElementById('cp-status').value = 'Plot Assigned';
-    if (!document.getElementById('cp-assigned-date').value) {
-      document.getElementById('cp-assigned-date').value = new Date().toISOString().substring(0, 10);
-    }
-    handlePlotStatusChange();
-  }
-
-  function renderActivityLogs(logs) {
-    const container = document.getElementById('activity-logs-container');
-    if(!logs || logs.length === 0) {
-      container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--text-muted); font-size:0.85rem;">No activity recorded for this case yet.</div>';
-      return;
-    }
-
-    container.innerHTML = logs.map(l => `
-      <div style="display:flex; gap:12px; font-size:0.83rem; padding-bottom:12px; border-bottom:1px solid #f0f0f0;">
-        <div style="width:30px; height:30px; border-radius:50%; background:var(--damayan-light); color:var(--damayan-accent); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-          <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-        </div>
-        <div style="flex:1;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-            <strong style="color:var(--damayan-dark);">${escapeHtml(l.title || l.activity_type || l.action || 'Case Activity')}</strong>
-            <span style="font-size:0.75rem; color:var(--text-muted);">${formatLogTime(l.created_at)}</span>
+    if (duplicates && duplicates.length > 0) {
+      dupContainer.style.display = 'block';
+      dupList.innerHTML = duplicates.map(d => `
+        <div style="background:#fff; border:1px solid #fde68a; border-radius:8px; padding:8px 12px; font-size:0.8rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+          <div>
+            <span style="font-weight:700; color:#92400e;">${escapeHtml(d.match_type)}</span>: 
+            <strong>${escapeHtml(d.deceased_name || 'N/A')}</strong>
+            ${d.reg_no ? ' (Reg #: <code>' + escapeHtml(d.reg_no) + '</code>)' : ''}
           </div>
-          <div style="color:#4b5563;">${escapeHtml(l.details || '')}</div>
-          <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">By: <strong>${escapeHtml(l.actor_name || 'System')}</strong> (${escapeHtml(l.actor_role || 'Staff')})</div>
+          <div style="font-size:0.75rem; color:#6b7280;">
+            Source: <strong>${escapeHtml(d.source)}</strong> · Status: <strong>${escapeHtml(d.status || 'Active')}</strong>
+          </div>
         </div>
-      </div>
-    `).join('');
-  }
+      `).join('');
 
-  // ──────────────── SUBMISSION HANDLERS ────────────────
-
-  async function submitDeathCertForm() {
-    if(!activeCase) return;
-    const payload = {
-      id: activeCase.id,
-      death_cert_status: document.getElementById('dc-status').value,
-      death_cert_prep_date: document.getElementById('dc-prep-date').value,
-      death_cert_certified_date: document.getElementById('dc-certified-date').value,
-      death_cert_submitted_lcro_date: document.getElementById('dc-submitted-lcro-date').value,
-      death_cert_registered_date: document.getElementById('dc-registered-date').value,
-      death_cert_registry_no: document.getElementById('dc-registry-no').value.trim(),
-      death_cert_lcro_ref: document.getElementById('dc-lcro-ref').value.trim(),
-      death_cert_certified_copy_ref: document.getElementById('dc-certified-copy-ref').value.trim(),
-      death_cert_responsible_personnel: document.getElementById('dc-responsible-personnel').value.trim(),
-      death_cert_remarks: document.getElementById('dc-remarks').value.trim(),
-      death_cert_rejection_reason: document.getElementById('dc-rejection-reason').value.trim()
-    };
-
-    try {
-      const res = await fetch('<?= url('/admin/damayan/death-cert/update') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Death Certificate Updated', 'Death certificate processing stage and details saved.', 'success');
-        openCaseModal(activeCase.id, true);
+      // Existing decision if previously recorded
+      if (c.duplicate_review_decision) {
+        dupDecisionBadge.textContent = 'Decision: ' + c.duplicate_review_decision;
+        dupDecisionBadge.style.background = (c.duplicate_review_decision === 'Duplicate Request') ? '#fee2e2' : '#d1fae5';
+        dupDecisionBadge.style.color = (c.duplicate_review_decision === 'Duplicate Request') ? '#991b1b' : '#065f46';
+        if (c.duplicate_review_decision === 'Duplicate Request') radioDup.checked = true;
+        else radioDiff.checked = true;
       } else {
-        showAlert('Error', data.error || 'Failed to update death certificate status.', 'error');
+        dupDecisionBadge.textContent = 'Pending Staff Review (' + duplicates.length + ' found)';
+        dupDecisionBadge.style.background = '#fef3c7';
+        dupDecisionBadge.style.color = '#92400e';
+        radioDiff.checked = false;
+        radioDup.checked = false;
       }
-    } catch(e) {
-      showAlert('Error', 'Network error occurred.', 'error');
+      dupNotes.value = c.duplicate_review_notes || '';
+    } else {
+      dupContainer.style.display = 'none';
+      dupList.innerHTML = '';
+    }
+
+    // SECTION 3: VERIFICATION RESULT & REMARKS
+    selectedVerificationResult = c.verification_result || null;
+    highlightVerificationChoice(selectedVerificationResult);
+    document.getElementById('v-remarks-input').value = c.verification_remarks || '';
+    
+    const verifiedMeta = document.getElementById('v-verified-meta');
+    if (c.verified_by && c.verified_at) {
+      verifiedMeta.textContent = 'Last recorded by ' + c.verified_by + ' on ' + new Date(c.verified_at).toLocaleDateString();
+    } else {
+      verifiedMeta.textContent = 'Not yet verified.';
+    }
+
+    // Update Modal Action Buttons based on final decision status
+    const btnAccept = document.getElementById('modal-btn-accept');
+    const btnReject = document.getElementById('modal-btn-reject');
+    const badgeFinal = document.getElementById('modal-final-status-badge');
+    const footAdvice = document.getElementById('modal-footer-status-text');
+
+    if (displayStatus === 'Accepted') {
+      if (btnAccept) btnAccept.style.display = 'none';
+      if (btnReject) btnReject.style.display = 'none';
+      if (badgeFinal) {
+        badgeFinal.style.display = 'inline-flex';
+        badgeFinal.style.background = '#d1fae5';
+        badgeFinal.style.color = '#065f46';
+        badgeFinal.style.border = '1px solid #a7f3d0';
+        badgeFinal.textContent = '✓ Request Accepted';
+      }
+      if (footAdvice) {
+        footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ This request has already been accepted and approved for processing.</span>';
+      }
+    } else if (displayStatus === 'Rejected') {
+      if (btnAccept) btnAccept.style.display = 'none';
+      if (btnReject) btnReject.style.display = 'none';
+      if (badgeFinal) {
+        badgeFinal.style.display = 'inline-flex';
+        badgeFinal.style.background = '#fee2e2';
+        badgeFinal.style.color = '#991b1b';
+        badgeFinal.style.border = '1px solid #fecaca';
+        badgeFinal.textContent = '✕ Request Rejected';
+      }
+      if (footAdvice) {
+        footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700;">✕ This request has been rejected.</span>';
+      }
+    } else {
+      if (btnAccept) btnAccept.style.display = 'inline-flex';
+      if (btnReject) btnReject.style.display = 'inline-flex';
+      if (badgeFinal) badgeFinal.style.display = 'none';
+      updateFooterAdvice();
     }
   }
 
-  async function submitCemeteryPlotForm() {
-    if(!activeCase) return;
-    const payload = {
-      id: activeCase.id,
-      cemetery_plot_status: document.getElementById('cp-status').value,
-      cemetery_plot_id: document.getElementById('cp-plot-id').value,
-      cemetery_name: document.getElementById('cp-cemetery-name').value.trim(),
-      section: document.getElementById('cp-section').value.trim(),
-      plot_number: document.getElementById('cp-plot-number').value.trim(),
-      plot_assigned_date: document.getElementById('cp-assigned-date').value,
-      cemetery_plot_remarks: document.getElementById('cp-remarks').value.trim(),
-      cemetery_plot_rejection_reason: document.getElementById('cp-rejection-reason').value.trim()
-    };
+  function updateHeaderVerificationBadge(res) {
+    const badge = document.getElementById('modal-verification-status-badge');
+    const summaryBadge = document.getElementById('v-result-summary-badge');
+    if(!badge) return;
 
-    try {
-      const res = await fetch('<?= url('/admin/damayan/cemetery-plot/update') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Plot Assigned', 'Cemetery plot assignment and availability records updated.', 'success');
-        openCaseModal(activeCase.id, true);
-      } else {
-        showAlert('Assignment Error', data.error || 'Failed to assign cemetery plot.', 'error');
+    if (res === 'Matched') {
+      badge.textContent = '✓ Verified: Matched';
+      badge.style.background = '#d1fae5';
+      badge.style.color = '#065f46';
+      if(summaryBadge) {
+        summaryBadge.textContent = 'Verified: Matched';
+        summaryBadge.className = 'badge-status badge-active';
       }
-    } catch(e) {
-      showAlert('Error', 'Network error occurred.', 'error');
+    } else if (res === 'Mismatch') {
+      badge.textContent = '✕ Mismatch Found';
+      badge.style.background = '#fee2e2';
+      badge.style.color = '#991b1b';
+      if(summaryBadge) {
+        summaryBadge.textContent = 'Mismatch Recorded';
+        summaryBadge.className = 'badge-status badge-danger';
+      }
+    } else if (res === 'Unable to Verify') {
+      badge.textContent = '? Unable to Verify';
+      badge.style.background = '#fef3c7';
+      badge.style.color = '#92400e';
+      if(summaryBadge) {
+        summaryBadge.textContent = 'Unable to Verify';
+        summaryBadge.className = 'badge-status badge-warning';
+      }
+    } else {
+      badge.textContent = 'Unverified';
+      badge.style.background = '#f3f4f6';
+      badge.style.color = '#4b5563';
+      if(summaryBadge) {
+        summaryBadge.textContent = 'Pending Verification';
+        summaryBadge.className = 'badge-status badge-pending';
+      }
     }
   }
 
-  async function submitDeceasedForm() {
-    if(!activeCase) return;
-    const payload = {
-      id: activeCase.id,
-      deceased_first_name: document.getElementById('df-fname').value.trim(),
-      deceased_middle_name: document.getElementById('df-mname').value.trim(),
-      deceased_last_name: document.getElementById('df-lname').value.trim(),
-      deceased_sex: document.getElementById('df-sex').value,
-      date_of_birth: document.getElementById('df-dob').value,
-      date_of_death: document.getElementById('df-dod').value,
-      place_of_death: document.getElementById('df-pod').value.trim(),
-      residence: document.getElementById('df-residence').value.trim(),
-      civil_status: document.getElementById('df-civil-status').value,
-      nationality: document.getElementById('df-nationality').value.trim(),
-      religion: document.getElementById('df-religion').value.trim()
-    };
+  function updateFooterAdvice() {
+    const footAdvice = document.getElementById('modal-footer-status-text');
+    if(!footAdvice) return;
 
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/update-deceased') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Updated', 'Deceased record details successfully updated.', 'success');
-        openCaseModal(activeCase.id, true);
-      } else {
-        showAlert('Error', data.error || 'Failed to update deceased details.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
+    const rawSt = activeCase ? (activeCase.status || '').toLowerCase().trim() : '';
+    const dcSt = activeCase ? (activeCase.death_cert_status || '').toLowerCase().trim() : '';
+    if (rawSt === 'accepted' || rawSt.startsWith('accept') || dcSt === 'awaiting authorized certificate preparation') {
+      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ This request has already been accepted and approved for processing.</span>';
+      return;
     }
-  }
-
-  async function submitAssignStaff() {
-    if(!activeCase) return;
-    const staffSelect = document.getElementById('assign-staff-select');
-    const staffId = staffSelect.value;
-    const staffName = staffSelect.options[staffSelect.selectedIndex]?.text.split('(')[0].trim();
-    if(!staffId) {
-      showAlert('Notice', 'Please choose a staff coordinator from the list.', 'warning');
+    if (rawSt === 'rejected' || dcSt === 'rejected') {
+      footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700;">✕ This request has been rejected.</span>';
       return;
     }
 
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/assign-staff') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activeCase.id, staff_id: staffId, staff_name: staffName })
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Staff Assigned', 'Coordinator assigned to case.', 'success');
-        openCaseModal(activeCase.id, true);
-      } else {
-        showAlert('Error', data.error || 'Failed to assign staff.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
+    const res = selectedVerificationResult || (activeCase ? activeCase.verification_result : null);
+    if (res === 'Matched') {
+      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ Information matches physical certificate. Request can now be accepted.</span>';
+    } else if (res === 'Mismatch') {
+      footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700;">✕ Discrepancies found. Resolve issues or proceed with rejection.</span>';
+    } else if (res === 'Unable to Verify') {
+      footAdvice.innerHTML = '<span style="color:#d97706; font-weight:700;">⚠ Certificate unreadable or unavailable. Request cannot be accepted.</span>';
+    } else {
+      footAdvice.innerHTML = '<span style="color:#6b7280;">Verification required: Check registration number and deceased name before accepting.</span>';
     }
   }
 
-  async function triggerAcceptRequest() {
+  // ─────────────────────────────────────────────────────────────
+  // 3. SELECT & SAVE VERIFICATION RESULT
+  // ─────────────────────────────────────────────────────────────
+  function selectVerificationResult(res) {
+    selectedVerificationResult = res;
+    highlightVerificationChoice(res);
+
+    const star = document.getElementById('v-remarks-req-star');
+    if (star) {
+      star.style.display = (res === 'Mismatch' || res === 'Unable to Verify') ? 'inline' : 'none';
+    }
+    updateFooterAdvice();
+  }
+
+  function highlightVerificationChoice(res) {
+    const btnMatched = document.getElementById('btn-result-matched');
+    const btnMismatch = document.getElementById('btn-result-mismatch');
+    const btnUnable = document.getElementById('btn-result-unable');
+
+    if(!btnMatched || !btnMismatch || !btnUnable) return;
+
+    // Reset styles
+    btnMatched.style.borderColor = '#d1d5db';
+    btnMatched.style.background = '#fff';
+    btnMismatch.style.borderColor = '#d1d5db';
+    btnMismatch.style.background = '#fff';
+    btnUnable.style.borderColor = '#d1d5db';
+    btnUnable.style.background = '#fff';
+
+    if (res === 'Matched') {
+      btnMatched.style.borderColor = '#059669';
+      btnMatched.style.background = '#ecfdf5';
+      document.getElementById('radio-matched').checked = true;
+    } else if (res === 'Mismatch') {
+      btnMismatch.style.borderColor = '#dc2626';
+      btnMismatch.style.background = '#fef2f2';
+      document.getElementById('radio-mismatch').checked = true;
+    } else if (res === 'Unable to Verify') {
+      btnUnable.style.borderColor = '#d97706';
+      btnUnable.style.background = '#fffbeb';
+      document.getElementById('radio-unable').checked = true;
+    }
+  }
+
+  async function saveVerificationResult() {
     if(!activeCase) return;
-    showConfirm('Accept Request', `Accept burial case #${activeCase.ref_id} for processing? This moves the request into active coordination.`, async () => {
-      try {
-        const res = await fetch('<?= url('/admin/damayan/burial/accept') ?>', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: activeCase.id })
-        });
-        const data = await res.json();
-        if(data.success) {
-          showAlert('Accepted', 'Burial request accepted for processing.', 'success');
-          openCaseModal(activeCase.id, true);
+    if(!selectedVerificationResult) {
+      if(typeof showAlert === 'function') showAlert('Verification Selection Required', 'Please select a verification result (Matched, Mismatch, or Unable to Verify).', 'warning');
+      else alert('Please select a verification result.');
+      return;
+    }
+
+    const remarks = document.getElementById('v-remarks-input').value.trim();
+
+    // Remarks required if Mismatch or Unable to Verify
+    if((selectedVerificationResult === 'Mismatch' || selectedVerificationResult === 'Unable to Verify') && !remarks) {
+      if(typeof showAlert === 'function') showAlert('Remarks Required', 'Please enter verification remarks explaining the discrepancy or issue found.', 'warning');
+      else alert('Please enter verification remarks explaining the discrepancy or issue found.');
+      document.getElementById('v-remarks-input').focus();
+      return;
+    }
+
+    const btn = document.getElementById('btn-save-verification');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/record-verification') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: activeCase.id,
+          result: selectedVerificationResult,
+          remarks: remarks
+        })
+      });
+      const data = await res.json();
+
+      if(data.success) {
+        activeCase.verification_result = selectedVerificationResult;
+        activeCase.verification_remarks = remarks;
+        updateHeaderVerificationBadge(selectedVerificationResult);
+        updateFooterAdvice();
+
+        document.getElementById('v-verified-meta').textContent = 'Last recorded by ' + (data.verified_by || 'Staff') + ' just now.';
+        if(typeof showAlert === 'function') showAlert('Verification Saved', 'Verification result marked as ' + selectedVerificationResult + ' and recorded in database.', 'success');
+        else alert('Verification result saved.');
+      } else {
+        if(typeof showAlert === 'function') showAlert('Error', data.error || 'Failed to save verification result.', 'error');
+        else alert(data.error || 'Failed to save verification result.');
+      }
+    } catch(err) {
+      console.error(err);
+      if(typeof showAlert === 'function') showAlert('Error', 'Network error occurred while saving verification result.', 'error');
+      else alert('Network error occurred.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Verification Result';
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 4. DUPLICATE REVIEW DECISION
+  // ─────────────────────────────────────────────────────────────
+  function onDuplicateRadioChange() {
+    // optional helper
+  }
+
+  async function saveDuplicateReviewDecision() {
+    if(!activeCase) return;
+    const selectedRadio = document.querySelector('input[name="dup_decision"]:checked');
+    if(!selectedRadio) {
+      if(typeof showAlert === 'function') showAlert('Decision Required', 'Please select whether this is a Different Person or a Duplicate Request.', 'warning');
+      else alert('Please select a duplicate review decision.');
+      return;
+    }
+
+    const decision = selectedRadio.value;
+    const notes = document.getElementById('dup-review-notes').value.trim();
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/review-duplicate') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: activeCase.id,
+          decision: decision,
+          notes: notes
+        })
+      });
+      const data = await res.json();
+
+      if(data.success) {
+        const badge = document.getElementById('duplicate-review-status');
+        badge.textContent = 'Decision: ' + decision;
+        badge.style.background = (decision === 'Duplicate Request') ? '#fee2e2' : '#d1fae5';
+        badge.style.color = (decision === 'Duplicate Request') ? '#991b1b' : '#065f46';
+        if(typeof showAlert === 'function') showAlert('Review Saved', 'Duplicate review decision saved: ' + decision, 'success');
+        else alert('Duplicate review saved.');
+      } else {
+        if(typeof showAlert === 'function') showAlert('Error', data.error || 'Failed to record duplicate decision.', 'error');
+        else alert(data.error || 'Failed to record duplicate decision.');
+      }
+    } catch(err) {
+      console.error(err);
+      if(typeof showAlert === 'function') showAlert('Error', 'Network error occurred.', 'error');
+      else alert('Network error occurred.');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 5. ACCEPT PROCESS (GUARDED BY VERIFICATION)
+  // ─────────────────────────────────────────────────────────────
+  function tableAcceptRequest(refId, verificationResult, deceasedName) {
+    if (verificationResult !== 'Matched') {
+      if(typeof showAlert === 'function') {
+        showAlert(
+          'Verification Required',
+          'Physical death certificate verification is required before accepting this request. Please review the certificate and mark it as "Matched".',
+          'warning'
+        );
+      } else {
+        alert('Physical death certificate verification is required before accepting this request.');
+      }
+      openCaseModal(refId);
+      return;
+    }
+
+    openAcceptModal(refId, deceasedName);
+  }
+
+  function onModalAcceptClick() {
+    if(!activeCase) return;
+    const currentRes = activeCase.verification_result;
+
+    if (currentRes !== 'Matched') {
+      if(typeof showAlert === 'function') {
+        showAlert(
+          'Verification Required',
+          'Cannot accept request: The verification result must be marked and saved as "Matched" before this request can be accepted. Current status: ' + (currentRes || 'Unverified') + '.',
+          'warning'
+        );
+      } else {
+        alert('Verification must be marked and saved as "Matched" before acceptance.');
+      }
+      return;
+    }
+
+    openAcceptModal(activeCase.id, activeCase.deceased_name || ('#' + activeCase.ref_id));
+  }
+
+  function openAcceptModal(caseId, deceasedName) {
+    targetAcceptCaseId = caseId;
+    document.getElementById('accept-case-label').textContent = 'Case #' + caseId;
+    document.getElementById('accept-modal-target-label').textContent = deceasedName ? ('request for ' + deceasedName) : 'this request';
+    document.getElementById('accept-optional-notes').value = '';
+    document.getElementById('damayanAcceptConfirmModal').style.display = 'flex';
+  }
+
+  function closeAcceptModal() {
+    document.getElementById('damayanAcceptConfirmModal').style.display = 'none';
+    targetAcceptCaseId = null;
+  }
+
+  async function submitAcceptRequest() {
+    if(!targetAcceptCaseId) return;
+
+    const notes = document.getElementById('accept-optional-notes').value.trim();
+    const btn = document.getElementById('btn-confirm-accept');
+    btn.disabled = true;
+    btn.textContent = 'Accepting...';
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/accept') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: targetAcceptCaseId,
+          notes: notes
+        })
+      });
+      const data = await res.json();
+
+      if(data.success) {
+        closeAcceptModal();
+        closeCaseModal();
+        if(typeof showAlert === 'function') {
+          showAlert('Request Accepted', 'The death certificate request has been accepted for processing, and the requester has been notified.', 'success');
         } else {
-          showAlert('Error', data.error || 'Failed to accept request.', 'error');
+          alert('Request accepted successfully.');
         }
-      } catch(e) {
-        showAlert('Error', 'Network error.', 'error');
-      }
-    });
-  }
-
-  function showRequestInfoModal() {
-    document.getElementById('damayanReqInfoModal').style.display = 'flex';
-  }
-  function closeReqInfoModal() {
-    document.getElementById('damayanReqInfoModal').style.display = 'none';
-  }
-
-  async function submitRequestInfo() {
-    if(!activeCase) return;
-    const text = document.getElementById('reqinfo-explanation').value.trim();
-    if(!text) return;
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/request-info') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activeCase.id, explanation: text })
-      });
-      const data = await res.json();
-      if(data.success) {
-        closeReqInfoModal();
-        showAlert('Notice Sent', 'The family has been requested to provide additional information.', 'success');
-        openCaseModal(activeCase.id, true);
+        // Redirect to accepted list so the accepted case is immediately visible in the Accepted view
+        setTimeout(() => { 
+          window.location.href = '<?= url('/admin/damayan/burial-requests?filter=accepted') ?>'; 
+        }, 1000);
       } else {
-        showAlert('Error', data.error || 'Failed to send request.', 'error');
+        if(typeof showAlert === 'function') showAlert('Acceptance Failed', data.error || 'Failed to accept request.', 'error');
+        else alert(data.error || 'Failed to accept request.');
       }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
+    } catch(err) {
+      console.error(err);
+      if(typeof showAlert === 'function') showAlert('Error', 'Network error occurred.', 'error');
+      else alert('Network error occurred.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Confirm Acceptance';
     }
   }
 
-  function showRejectModal() {
+  // ─────────────────────────────────────────────────────────────
+  // 6. REJECT PROCESS (DROPDOWN WITH CONDITIONAL OTHERS)
+  // ─────────────────────────────────────────────────────────────
+  function onModalRejectClick() {
+    if(!activeCase) return;
+    openRejectModal(activeCase.id);
+  }
+
+  function openRejectModal(caseId) {
+    targetRejectCaseId = caseId;
+    document.getElementById('reject-case-label').textContent = 'Case #' + caseId;
+    
+    // Reset dropdown and conditional field
+    const select = document.getElementById('reject-reason-select');
+    select.value = '';
+    document.getElementById('reject-others-container').style.display = 'none';
+    document.getElementById('reject-specific-reason').value = '';
+
     document.getElementById('damayanRejectModal').style.display = 'flex';
   }
+
   function closeRejectModal() {
     document.getElementById('damayanRejectModal').style.display = 'none';
+    targetRejectCaseId = null;
+  }
+
+  function onRejectReasonChange(val) {
+    const othersContainer = document.getElementById('reject-others-container');
+    const specificInput = document.getElementById('reject-specific-reason');
+
+    if (val === 'Others') {
+      othersContainer.style.display = 'block';
+      specificInput.focus();
+    } else {
+      othersContainer.style.display = 'none';
+      specificInput.value = ''; // Clear entered explanation when different reason chosen
+    }
   }
 
   async function submitRejectRequest() {
-    if(!activeCase) return;
-    const reason = document.getElementById('reject-reason').value.trim();
-    if(!reason) return;
+    if(!targetRejectCaseId) return;
+
+    const select = document.getElementById('reject-reason-select');
+    const reasonCategory = select.value.trim();
+    const specificReason = document.getElementById('reject-specific-reason').value.trim();
+
+    if(!reasonCategory) {
+      if(typeof showAlert === 'function') showAlert('Reason Required', 'Please select a rejection reason from the dropdown.', 'warning');
+      else alert('Please select a rejection reason from the dropdown.');
+      select.focus();
+      return;
+    }
+
+    if(reasonCategory === 'Others' && !specificReason) {
+      if(typeof showAlert === 'function') showAlert('Specific Reason Required', 'Please specify the rejection reason in the provided field.', 'warning');
+      else alert('Please specify the rejection reason.');
+      document.getElementById('reject-specific-reason').focus();
+      return;
+    }
+
+    const btn = document.getElementById('btn-confirm-rejection');
+    btn.disabled = true;
+    btn.textContent = 'Rejecting...';
+
     try {
       const res = await fetch('<?= url('/admin/damayan/burial/reject') ?>', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activeCase.id, reason: reason })
+        body: JSON.stringify({
+          id: targetRejectCaseId,
+          reason_category: reasonCategory,
+          specific_reason: specificReason
+        })
       });
       const data = await res.json();
+
       if(data.success) {
         closeRejectModal();
-        showAlert('Case Rejected', 'Request rejected and family notified.', 'success');
-        openCaseModal(activeCase.id, true);
+        closeCaseModal();
+        if(typeof showAlert === 'function') {
+          showAlert('Request Rejected', 'The request has been rejected and the requester has been notified with the reason.', 'success');
+        } else {
+          alert('Request rejected successfully.');
+        }
+        // Redirect to rejected list so the rejected case is immediately visible in the Rejected view
+        setTimeout(() => { 
+          window.location.href = '<?= url('/admin/damayan/burial-requests?filter=rejected') ?>'; 
+        }, 1000);
       } else {
-        showAlert('Error', data.error || 'Failed to reject request.', 'error');
+        if(typeof showAlert === 'function') showAlert('Rejection Failed', data.error || 'Failed to reject request.', 'error');
+        else alert(data.error || 'Failed to reject request.');
       }
-    } catch(e) {
-      showAlert('Error', 'Network error.', 'error');
+    } catch(err) {
+      console.error(err);
+      if(typeof showAlert === 'function') showAlert('Error', 'Network error occurred.', 'error');
+      else alert('Network error occurred.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Confirm Rejection';
     }
   }
 
-  // Formatting helpers
+  // ─────────────────────────────────────────────────────────────
+  // 7. UTILITIES & KEYBOARD / BACKDROP DISMISSAL
+  // ─────────────────────────────────────────────────────────────
+  function openPreviewFullscreen() {
+    const img = document.getElementById('v-doc-img-preview');
+    if(img && img.src) window.open(img.src, '_blank');
+  }
+
   function getBadgeClass(status) {
-    const s = (status || '').toLowerCase();
-    if(s.includes('new') || s.includes('pending') || s.includes('review') || s.includes('awaiting')) return 'badge-pending';
-    if(s.includes('additional') || s.includes('warning') || s.includes('info required')) return 'badge-warning';
-    if(s.includes('accepted') || s.includes('available') || s.includes('certified') || s.includes('submitted') || s.includes('prepared')) return 'badge-info';
-    if(s.includes('completed') || s.includes('assigned') || s.includes('registered') || s.includes('approved')) return 'badge-active';
-    if(s.includes('rejected') || s.includes('unavailable')) return 'badge-danger';
-    return 'badge-approved';
+    const st = String(status || '').toLowerCase().trim();
+    if(st === 'accepted' || st === 'burial completed' || st === 'completed') return 'badge-active';
+    if(st === 'rejected') return 'badge-danger';
+    if(st === 'additional information required' || st === 'mismatch') return 'badge-warning';
+    return 'badge-pending';
   }
 
-  function formatLogTime(val) {
-    if(!val) return '';
-    const d = new Date(val);
-    return isNaN(d) ? val : d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+  function escapeHtml(str) {
+    if(!str) return '';
+    return String(str).replace(/[&<>"']/g, function(m) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
   }
 
-  function escapeHtml(text) {
-    if(!text) return '';
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return String(text).replace(/[&<>"']/g, m => map[m]);
-  }
-
-  function showSearchDeceasedModal() {
-    document.getElementById('searchDeceasedModal').style.display = 'flex';
-    if(activeCase) {
-      document.getElementById('deceased-search-query').value = activeCase.deceased_name || '';
-      executeSearchDeceased();
-    }
-  }
-
-  function closeSearchDeceasedModal() {
-    document.getElementById('searchDeceasedModal').style.display = 'none';
-  }
-
-  async function executeSearchDeceased() {
-    const q = document.getElementById('deceased-search-query').value.trim();
-    const resultsContainer = document.getElementById('deceased-search-results');
-    resultsContainer.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-muted);">Searching records...</div>';
-
-    try {
-      const res = await fetch('<?= url('/admin/damayan/deceased-records/search') ?>?q=' + encodeURIComponent(q));
-      const data = await res.json();
-      if(!data.success || !data.records || data.records.length === 0) {
-        resultsContainer.innerHTML = `
-          <div style="padding:20px; text-align:center; color:var(--text-muted); background:#f9fafb; border-radius:10px;">
-            <div>No matching deceased record found.</div>
-            <div style="font-size:0.78rem; margin-top:4px;">Do not create a duplicate. You may use "Request More Info" to request more information from the family.</div>
-          </div>
-        `;
-        return;
-      }
-
-      resultsContainer.innerHTML = data.records.map(r => {
-        const isEncoded = Boolean(r.is_encoded);
-        return `
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:${isEncoded ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isEncoded ? '#bbf7d0' : '#e2e8f0'}; border-radius:10px; font-size:0.85rem; margin-bottom:8px;">
-          <div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <strong style="color:var(--damayan-dark);">${escapeHtml(r.deceased_name)}</strong>
-              ${isEncoded ? '<span class="badge-status badge-active" style="font-size:0.68rem; padding:2px 8px;">Encoded Certificate Archive</span>' : '<span class="badge-status" style="font-size:0.68rem; padding:2px 8px; background:#e0e7ff; color:#3730a3;">Registered Civil Case</span>'}
-            </div>
-            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
-              ${r.death_cert_registry_no ? '<strong>Registration #: ' + escapeHtml(r.death_cert_registry_no) + '</strong> · ' : ''}
-              ${isEncoded ? 'Representative: <strong>' + escapeHtml(r.representative_name || 'N/A') + '</strong> · Encoded by: ' + escapeHtml(r.encoded_by_name || 'Staff') : 'DOD: ' + escapeHtml(r.date_of_death || 'N/A') + ' · POD: ' + escapeHtml(r.place_of_death || 'N/A')}
-              ${r.ref_id ? ' (Case #' + escapeHtml(r.ref_id) + ')' : ''}
-            </div>
-          </div>
-          <button type="button" class="btn-topbar primary" style="padding:6px 14px; font-size:0.78rem;" onclick="linkDeceasedRecord(${r.id}, '${isEncoded ? 'encoded' : 'deceased_records'}')">
-            Link to Record
-          </button>
-        </div>
-      `;}).join('');
-    } catch(e) {
-      resultsContainer.innerHTML = '<div style="color:#dc2626; padding:10px; text-align:center;">Error searching records.</div>';
-    }
-  }
-
-  async function linkDeceasedRecord(recordId, source = 'deceased_records') {
-    if(!activeCase || !recordId) return;
-    try {
-      const payload = { id: activeCase.id, source: source };
-      if (source === 'encoded' || source === 'encoded_death_certificates') {
-        payload.encoded_cert_id = recordId;
-      } else {
-        payload.deceased_id = recordId;
-      }
-      const res = await fetch('<?= url('/admin/damayan/burial/verify-record') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if(data.success) {
-        closeSearchDeceasedModal();
-        showAlert('Record Linked', 'Existing certificate record successfully linked and verified. No duplicate record was created.', 'success');
-        openCaseModal(activeCase.id, true);
-      } else {
-        showAlert('Error', data.error || 'Failed to link record.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error occurred.', 'error');
-    }
-  }
-
-  async function submitIssueCopy() {
-    if(!activeCase) return;
-    const ref = document.getElementById('copy-issue-ref').value.trim();
-    const remarks = document.getElementById('copy-issue-remarks').value.trim();
-
-    if(!ref) {
-      showAlert('Reference Required', 'Please enter a Certificate Copy Tracking / Reference number.', 'warning');
-      return;
-    }
-
-    try {
-      const res = await fetch('<?= url('/admin/damayan/burial/issue-copy') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: activeCase.id, copy_ref: ref, remarks: remarks })
-      });
-      const data = await res.json();
-      if(data.success) {
-        showAlert('Copy Issued', 'Death certificate copy has been officially issued with reference #' + ref + '. The user can now confirm receipt.', 'success');
-        openCaseModal(activeCase.id, true);
-      } else {
-        showAlert('Error', data.error || 'Failed to issue copy.', 'error');
-      }
-    } catch(e) {
-      showAlert('Error', 'Network error occurred.', 'error');
-    }
-  }
-
-  // Backdrop and Escape key listeners for smooth dismissal
+  // Keyboard Escape listener
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      const m = document.getElementById('damayanCaseModal');
-      if (m && m.style.display === 'flex') closeCaseModal();
-      const r = document.getElementById('damayanReqInfoModal');
-      if (r && r.style.display === 'flex') closeReqInfoModal();
-      const j = document.getElementById('damayanRejectModal');
-      if (j && j.style.display === 'flex') closeRejectModal();
-      const s = document.getElementById('searchDeceasedModal');
-      if (s && s.style.display === 'flex') closeSearchDeceasedModal();
+      const caseModal = document.getElementById('damayanCaseModal');
+      const rejectModal = document.getElementById('damayanRejectModal');
+      const acceptModal = document.getElementById('damayanAcceptConfirmModal');
+
+      if (rejectModal && rejectModal.style.display === 'flex') {
+        closeRejectModal();
+        return;
+      }
+      if (acceptModal && acceptModal.style.display === 'flex') {
+        closeAcceptModal();
+        return;
+      }
+      if (caseModal && caseModal.style.display === 'flex') {
+        closeCaseModal();
+      }
     }
   });
 
+  // Backdrop click listener
   document.getElementById('damayanCaseModal')?.addEventListener('click', function(e) {
-    if (e.target === this) closeCaseModal();
+    if(e.target === this) closeCaseModal();
+  });
+  document.getElementById('damayanRejectModal')?.addEventListener('click', function(e) {
+    if(e.target === this) closeRejectModal();
+  });
+  document.getElementById('damayanAcceptConfirmModal')?.addEventListener('click', function(e) {
+    if(e.target === this) closeAcceptModal();
   });
 </script>

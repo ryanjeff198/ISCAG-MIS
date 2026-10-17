@@ -173,6 +173,7 @@
           <div class="filter-pills">
             <button type="button" class="filter-pill <?= ($currentFilter ?? 'all') === 'all' ? 'active' : '' ?>" onclick="setFilter('all')">All Requests</button>
             <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'pending' ? 'active' : '' ?>" onclick="setFilter('pending')">Pending Review</button>
+            <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'accepted' ? 'active' : '' ?>" onclick="setFilter('accepted')">Accepted</button>
             <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'death_cert' ? 'active' : '' ?>" onclick="setFilter('death_cert')">Death Certificate</button>
             <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'cemetery_plot' ? 'active' : '' ?>" onclick="setFilter('cemetery_plot')">Cemetery Plot</button>
             <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'completed' ? 'active' : '' ?>" onclick="setFilter('completed')">Completed</button>
@@ -204,7 +205,7 @@
                     <th>Death Certificate Stage</th>
                     <th>Cemetery Plot Status</th>
                     <th>Overall Status</th>
-                    <th style="text-align:center;">Action</th>
+                    <th style="text-align:center; min-width:180px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="burial-tbody">
@@ -271,8 +272,37 @@
                           <?php endif; ?>
                         </td>
                         <td><span class="badge-status <?= htmlspecialchars($r['status_class']) ?>"><?= htmlspecialchars($r['status']) ?></span></td>
-                        <td style="text-align:center;">
-                          <button type="button" class="btn-topbar primary" style="padding:5px 12px; font-size:0.78rem;" onclick="openCaseModal('<?= htmlspecialchars($r['id']) ?>')">Manage</button>
+                        <td style="text-align:center; white-space:nowrap;">
+                          <div style="display:inline-flex; align-items:center; gap:6px; justify-content:center;">
+                            <?php 
+                              $st = strtolower(trim($r['status'] ?? 'pending'));
+                              if ($st === 'accepted'): 
+                            ?>
+                              <span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; font-size:0.75rem; font-weight:700; background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; border-radius:6px;">
+                                ✓ Accepted
+                              </span>
+                              <button type="button" class="btn-topbar" style="padding:4px 10px; font-size:0.75rem; border:1px solid #d1d5db; background:#fff; color:#374151; font-weight:700;" onclick="openCaseModal('<?= htmlspecialchars($r['id']) ?>')">
+                                View
+                              </button>
+                            <?php elseif ($st === 'rejected'): ?>
+                              <span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; font-size:0.75rem; font-weight:700; background:#fee2e2; color:#991b1b; border:1px solid #fecaca; border-radius:6px;">
+                                ✕ Rejected
+                              </span>
+                              <button type="button" class="btn-topbar" style="padding:4px 10px; font-size:0.75rem; border:1px solid #d1d5db; background:#fff; color:#374151; font-weight:700;" onclick="openCaseModal('<?= htmlspecialchars($r['id']) ?>')">
+                                View
+                              </button>
+                            <?php else: ?>
+                              <button type="button" class="btn-topbar primary" style="padding:4px 10px; font-size:0.75rem; background:#059669; border-color:#059669; color:#fff; font-weight:700;" onclick="tableAcceptRequest('<?= htmlspecialchars($r['id']) ?>', '<?= htmlspecialchars($r['verification_result'] ?? '') ?>', '<?= htmlspecialchars(addslashes($r['deceased'])) ?>')">
+                                Accept
+                              </button>
+                              <button type="button" class="btn-topbar" style="padding:4px 10px; font-size:0.75rem; background:#fff; color:#dc2626; border:1px solid #fca5a5; font-weight:700;" onclick="openRejectModal('<?= htmlspecialchars($r['id']) ?>')">
+                                Reject
+                              </button>
+                              <button type="button" class="btn-topbar" style="padding:4px 10px; font-size:0.75rem; border:1px solid #d1d5db; background:#fff; color:#374151; font-weight:700;" onclick="openCaseModal('<?= htmlspecialchars($r['id']) ?>')">
+                                View
+                              </button>
+                            <?php endif; ?>
+                          </div>
                         </td>
                       </tr>
                     <?php endforeach; ?>
