@@ -73,14 +73,25 @@
         .empty-recurring p { font-size: 0.85rem; margin: 0; }
 
         /* Modal */
-        .modal-overlay { position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.2s; }
+        .modal-overlay { position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.2s; overflow-y: auto; }
         .modal-overlay.show { display: flex; opacity: 1; }
-        .modal-content { background: white; border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); overflow: hidden; }
+        .modal-content { background: white; border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 40px rgba(0,0,0,0.2); transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); overflow: hidden; margin: auto; }
         .modal-overlay.show .modal-content { transform: translateY(0); }
-        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .modal-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
         .modal-header h3 { margin: 0; font-family: 'Lora', serif; font-size: 1.2rem; color: var(--primary-dark); }
-        .modal-close { background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; }
-        .modal-body { padding: 24px; }
+        .modal-close { background: none; border: none; font-size: 1.4rem; color: var(--text-muted); cursor: pointer; padding: 2px 6px; line-height: 1; border-radius: 4px; transition: color 0.2s; }
+        .modal-close:hover { color: var(--text-main); }
+        .modal-body { padding: 24px; overflow-y: auto; flex: 1 1 auto; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f8f9fa; }
+        .modal-body::-webkit-scrollbar { width: 6px; }
+        .modal-body::-webkit-scrollbar-track { background: #f8f9fa; border-radius: 4px; }
+        .modal-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .modal-body::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        .modal-item-list { background:#f8f9fa; border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin-bottom:20px; font-size:0.88rem; color:var(--text-main); max-height: 180px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9; }
+        .modal-item-list::-webkit-scrollbar { width: 6px; }
+        .modal-item-list::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .modal-item-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .modal-item-list::-webkit-scrollbar-thumb:hover { background: var(--primary); }
         .payment-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
         .payment-option { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px; border: 1.5px solid var(--border); border-radius: 12px; cursor: pointer; transition: all 0.2s; }
         .payment-option:hover { border-color: var(--primary); background: #fbfdfc; }
@@ -556,17 +567,17 @@
     </div>
 
     <!-- Payment Modal -->
-    <div class="modal-overlay" id="paymentModal">
+    <div class="modal-overlay" id="paymentModal" onclick="if(event.target===this) closeModal()">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Submit Payment</h3>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button class="modal-close" onclick="closeModal()" title="Close">&times;</button>
             </div>
             <div class="modal-body">
                 <p style="margin: 0 0 4px; color: var(--text-muted); font-size: 0.85rem;">Payment For:</p>
                 <h2 style="margin: 0 0 10px; color: var(--primary-dark); font-family: 'Lora', serif;" id="modalPayType">Deposit</h2>
                 
-                <div id="modalItemList" style="background:#f8f9fa; border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:20px; font-size:0.88rem; color:var(--text-main); display:none;">
+                <div id="modalItemList" class="modal-item-list" style="display:none;">
                     <!-- JS injects the list here -->
                 </div>
                 
@@ -623,7 +634,7 @@
             // Build itemized list UI
             const listDiv = document.getElementById('modalItemList');
             listDiv.style.display = 'block';
-            let html = '<ul style="margin:0; padding-left:18px;">';
+            let html = '<ul style="margin:0; padding-left:18px; padding-right:8px;">';
             unpaidItems.forEach(item => {
                 html += `<li style="margin-bottom:6px;"><span style="font-weight:600;">${item.name}</span> <span style="float:right; font-family:monospace;">₱${parseFloat(item.amount).toFixed(2)}</span></li>`;
             });
@@ -645,7 +656,7 @@
             // Build itemized list UI using the passed items array
             const listDiv = document.getElementById('modalItemList');
             listDiv.style.display = 'block';
-            let html = '<ul style="margin:0; padding-left:18px;">';
+            let html = '<ul style="margin:0; padding-left:18px; padding-right:8px;">';
             itemsArray.forEach(item => {
                 html += `<li style="margin-bottom:6px;"><span style="font-weight:600;">${item.name}</span> <span style="float:right; font-family:monospace;">₱${parseFloat(item.amount).toFixed(2)}</span></li>`;
             });
