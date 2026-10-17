@@ -13,8 +13,8 @@
       <?= strtoupper(substr($dbUser['first_name'] ?? 'D', 0, 1) . substr($dbUser['last_name'] ?? 'M', 0, 1)) ?>
     </div>
     <div class="user-info">
-      <strong id="nav-name"><?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: 'Damayan Staff' ?></strong>
-      <span id="nav-role" data-preserve-role>Damayan Manager</span>
+      <strong id="nav-name" data-preserve="true" data-force-sync="true"><?= htmlspecialchars(trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: ($_SESSION['name'] ?? 'Damayan Staff')) ?></strong>
+      <span id="nav-role" data-preserve="true" data-preserve-role>Damayan Manager</span>
     </div>
   </div>
   <nav class="sidebar-nav">
@@ -40,6 +40,10 @@
     <a href="<?= url('/admin/damayan/certificate-tracking') ?>" class="nav-item <?= ($active_page ?? '') == 'certificate_tracking' ? 'active' : '' ?>" data-tooltip="Certificate Tracking">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
       <span class="nav-item-label">Certificate Tracking</span>
+    </a>
+    <a href="<?= url('/admin/damayan/encoded-certificates') ?>" class="nav-item <?= ($active_page ?? '') == 'encoded_certificates' ? 'active' : '' ?>" data-tooltip="Encoded Certificates">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+      <span class="nav-item-label">Encoded Certificates</span>
     </a>
     <a href="<?= url('/admin/damayan/burial') ?>" class="nav-item <?= ($active_page ?? '') == 'burial' ? 'active' : '' ?>" data-tooltip="Burial Records">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>

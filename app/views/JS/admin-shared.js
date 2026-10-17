@@ -77,7 +77,7 @@ const DEFAULT_ALL_USERS = [
 const DEFAULT_STAFF = [
   { id:'STF-001', name:'Abdul Karim',    email:'akarim@iscag.org',   department:'Apartment',   status:'active', joined:'2025-06-01' },
   { id:'STF-002', name:'Siti Nurhaliza', email:'snurhaliza@iscag.org', department:"Da'wah (F)", status:'active', joined:'2025-08-15' },
-  { id:'STF-003', name:'Rashid Pendatun',email:'rpendatun@iscag.org', department:'Damayan',     status:'active', joined:'2025-09-01' },
+  { id:'STF-003', name:'Ethan Santos',   email:'addysedric30@gmail.com', department:'Damayan', status:'active', joined:'2025-09-01' },
   { id:'STF-004', name:'Amira Lucman',   email:'alucman@iscag.org',   department:"Da'wah (M)", status:'active', joined:'2025-10-20' }
 ];
 
@@ -120,6 +120,20 @@ function initAdminData() {
   }
   if (!localStorage.getItem(STORAGE_KEYS.staffList)) {
     localStorage.setItem(STORAGE_KEYS.staffList, JSON.stringify(DEFAULT_STAFF));
+  } else {
+    // Migration: replace example account Rashid Pendatun with real account Ethan Santos
+    const rawStaffList = localStorage.getItem(STORAGE_KEYS.staffList);
+    if (rawStaffList && rawStaffList.includes('Rashid Pendatun')) {
+      try {
+        const parsed = JSON.parse(rawStaffList).map(s => {
+          if (s.name === 'Rashid Pendatun' || s.department === 'Damayan') {
+            return { ...s, name: 'Ethan Santos', email: 'addysedric30@gmail.com' };
+          }
+          return s;
+        });
+        localStorage.setItem(STORAGE_KEYS.staffList, JSON.stringify(parsed));
+      } catch(e) {}
+    }
   }
   if (!localStorage.getItem(STORAGE_KEYS.billing)) {
     localStorage.setItem(STORAGE_KEYS.billing, JSON.stringify(DEFAULT_BILLING));
@@ -410,8 +424,8 @@ function loadUserNav() {
   const navRole = document.querySelector('.sidebar-user .user-info span');
   const navAvatar = document.getElementById('nav-avatar');
 
-  // PROTECTION: If we are on a User/Tenant page with preserve attribute, DO NOT let localStorage overwrite
-  if (navName && (navName.hasAttribute('data-preserve') || navName.hasAttribute('data-force-sync'))) {
+  // PROTECTION: If we are on a User/Tenant or Damayan Staff page with preserve attribute, DO NOT let localStorage overwrite
+  if (navName && (navName.hasAttribute('data-preserve') || navName.hasAttribute('data-force-sync') || document.querySelector('.sidebar[style*="--active-accent: #176b45"]'))) {
     console.log('[DEBUG] loadUserNav ABORTED - Preservation attribute detected');
     return; // Exit completely if we detect preservation intent
   }

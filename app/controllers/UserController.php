@@ -38,6 +38,10 @@ class UserController extends Controller
         $conversionModel = new ConversionRequest();
         $conversionRequests = $userId ? $conversionModel->getByUser((int)$userId) : [];
 
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $burialModel = new BurialRequest();
+        $burialRequests = $userId ? $burialModel->getByTenantId((int)$userId) : [];
+
         // Run automated billing reminder check
         try {
             require_once BASE_PATH . '/app/helpers/BillingReminder.php';
@@ -50,7 +54,8 @@ class UserController extends Controller
             'application' => $application,
             'counselingRequests' => $counselingRequests,
             'marriageRequests' => $marriageRequests,
-            'conversionRequests' => $conversionRequests
+            'conversionRequests' => $conversionRequests,
+            'burialRequests' => $burialRequests
         ]);
     }
     public function profile(): void
@@ -700,65 +705,301 @@ class UserController extends Controller
         header('Content-Type: application/json');
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false]); return;
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            return;
         }
 
-        $input = json_decode(file_get_contents('php://input'), true);
-        require_once BASE_PATH . '/app/models/BurialRequest.php';
-        $model = new BurialRequest();
-        
-        $refId = 'BR-' . date('Ymd') . '-' . substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 4);
-        
-        $data = [
-            'ref_id' => $refId,
-            'tenant_id' => $_SESSION['user_id'],
-            'deceased_name' => ($input['firstName'] ?? '') . ' ' . ($input['lastName'] ?? ''),
-            'date_of_birth' => $input['dob'] ?? null,
-            'date_of_death' => $input['dod'] ?? date('Y-m-d'),
-            'place_of_death' => $input['pod'] ?? 'N/A',
-            'residence' => $input['residence'] ?? 'N/A',
-            'religion' => $input['religion'] ?? 'Islam',
-            'relationship' => $input['relationship'] ?? 'Relative'
-        ];
+        // Support both FormData (multipart/form-data) and JSON
+        $input = !empty($_POST) ? $_POST : json_decode(file_get_contents('php://input'), true);
+        if (!$input) {
+            echo json_encode(['success' => false, 'message' => 'No request data provided.']);
+            return;
+        }
 
-        $success = $model->create($data);
-        $caseNumber = null;
+        $certActionType = strtolower(trim($input['cert_action_type'] ?? 'register'));
+        if (!in_array($certActionType, ['register', 'copy'])) {
+            $certActionType = 'register';
+        }
 
-        // Also create death certificate tracking record so it connects to the Certificate Tracking System
-        if ($success) {
-            try {
-                require_once BASE_PATH . '/app/models/FuneralCase.php';
-                $fcModel = new FuneralCase();
-                $caseId = $fcModel->create([
-                    'tenant_id' => $_SESSION['user_id'],
-                    'deceased_first_name' => $input['firstName'] ?? '',
-                    'deceased_middle_name' => $input['middleName'] ?? '',
-                    'deceased_last_name' => $input['lastName'] ?? '',
-                    'deceased_sex' => $input['sex'] ?? null,
-                    'deceased_dob' => !empty($input['dob']) ? $input['dob'] : null,
-                    'deceased_dod' => !empty($input['dod']) ? $input['dod'] : date('Y-m-d'),
-                    'deceased_place_of_death' => $input['pod'] ?? 'N/A',
-                    'deceased_address' => $input['residence'] ?? 'N/A',
-                    'deceased_civil_status' => $input['civilStatus'] ?? '',
-                    'deceased_nationality' => $input['citizenship'] ?? 'Filipino',
-                    'deceased_religion' => $input['religion'] ?? 'Islam',
-                    'deceased_occupation' => $input['occupation'] ?? '',
-                    'informant_name' => !empty($input['informantName']) ? $input['informantName'] : ($_SESSION['name'] ?? 'Requester'),
-                    'informant_relationship' => $input['relationship'] ?? 'Relative',
-                    'informant_contact' => $input['informantContact'] ?? '',
-                    'informant_address' => $input['informantAddress'] ?? ($input['residence'] ?? '')
-                ]);
-                if ($caseId) {
-                    $createdCase = $fcModel->find($caseId);
-                    $caseNumber = $createdCase['case_number'] ?? null;
-                }
-            } catch (\Throwable $te) {
-                error_log("submitBurial auto-case error: " . $te->getMessage());
+        $fName = trim($input['firstName'] ?? ($input['deceased_first_name'] ?? ''));
+        $mName = trim($input['middleName'] ?? ($input['deceased_middle_name'] ?? ''));
+        $lName = trim($input['lastName'] ?? ($input['deceased_last_name'] ?? ''));
+        $sex   = trim($input['sex'] ?? ($input['deceased_sex'] ?? 'Male'));
+        $dod   = trim($input['dod'] ?? ($input['date_of_death'] ?? ''));
+        $pod   = trim($input['pod'] ?? ($input['place_of_death'] ?? ''));
+        $residence = trim($input['residence'] ?? ($input['deceased_address'] ?? ''));
+        $informantName = trim($input['informantName'] ?? ($input['informant_name'] ?? ''));
+        $informantContact = trim($input['informantContact'] ?? ($input['informant_contact'] ?? ''));
+        $relationship = trim($input['relationship'] ?? 'Relative');
+
+        // Validation based on cert action type
+        if ($certActionType === 'copy') {
+            $decName = trim($input['deceased_name'] ?? ($input['deceasedName'] ?? "$fName $lName"));
+            if (empty($decName) && empty($input['existing_cert_no'])) {
+                echo json_encode(['success' => false, 'message' => 'Deceased name as appearing on the certificate is required.']);
+                return;
+            }
+            if (empty($informantName) || empty($informantContact)) {
+                echo json_encode(['success' => false, 'message' => 'Requester name and contact number are required.']);
+                return;
+            }
+            if (empty($input['copy_reason'])) {
+                echo json_encode(['success' => false, 'message' => 'Please provide the reason for requesting another death certificate copy.']);
+                return;
+            }
+        } else {
+            if (empty($fName) || empty($lName)) {
+                echo json_encode(['success' => false, 'message' => 'Deceased first and last name are required.']);
+                return;
+            }
+            if (empty($dod)) {
+                echo json_encode(['success' => false, 'message' => 'Date of death is required.']);
+                return;
+            }
+            if (empty($pod)) {
+                echo json_encode(['success' => false, 'message' => 'Place of death is required.']);
+                return;
+            }
+            if (empty($residence)) {
+                echo json_encode(['success' => false, 'message' => 'Deceased usual residence address is required.']);
+                return;
+            }
+            if (empty($informantName) || empty($informantContact)) {
+                echo json_encode(['success' => false, 'message' => 'Applicant/Informant name and contact number are required.']);
+                return;
             }
         }
 
-        echo json_encode(['success' => $success, 'ref_id' => $refId, 'case_number' => $caseNumber]);
-        exit;
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+
+        $fullName = trim("$fName $mName $lName");
+        if (empty($fullName)) {
+            $fullName = trim($input['deceased_name'] ?? '');
+        }
+
+        // Duplicate check (for new registrations only)
+        if ($certActionType === 'register' && $model->checkDuplicate((int)$_SESSION['user_id'], $fullName, $dod)) {
+            echo json_encode([
+                'success' => false, 
+                'message' => 'An active death certificate registration request for this deceased person has already been submitted within the last 24 hours.'
+            ]);
+            return;
+        }
+
+        // Handle file upload if present
+        $uploadedDocPath = null;
+        if (isset($_FILES['supporting_document']) && $_FILES['supporting_document']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['supporting_document'];
+            $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+            if (in_array($ext, $allowedExtensions)) {
+                $uploadDir = BASE_PATH . '/public/uploads/burial/';
+                if (!is_dir($uploadDir)) {
+                    @mkdir($uploadDir, 0777, true);
+                }
+                $filename = 'burial_' . time() . '_' . substr(md5(uniqid()), 0, 8) . '.' . $ext;
+                $targetFile = $uploadDir . $filename;
+                if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+                    $uploadedDocPath = 'uploads/burial/' . $filename;
+                }
+            }
+        }
+
+        // Services requested & Request Type
+        $requestType = ($certActionType === 'copy') ? 'death_certificate' : ($input['request_type'] ?? 'both');
+        $deathCertReq = 1;
+        $cemeteryPlotReq = ($certActionType === 'copy') ? 0 : (isset($input['cemetery_plot_requested']) ? (int)$input['cemetery_plot_requested'] : ($requestType === 'death_certificate' ? 0 : 1));
+        $deceasedId = !empty($input['deceased_id']) ? (int)$input['deceased_id'] : null;
+        $cemeteryPref = $input['cemetery_preference'] ?? ($input['cemetery'] ?? 'ISCAG Designated Muslim Cemetery');
+        $preferredSection = $input['preferred_section'] ?? null;
+
+        $services = ($certActionType === 'copy') ? ["Death Certificate Copy"] : ($input['services'] ?? ($input['services_req'] ?? ["Death Certificate", "Cemetery Plot"]));
+        if (is_string($services)) {
+            $decoded = json_decode($services, true);
+            if ($decoded) $services = $decoded;
+            else $services = array_map('trim', explode(',', $services));
+        }
+
+        $data = [
+            'tenant_id' => $_SESSION['user_id'],
+            'deceased_id' => $deceasedId,
+            'request_type' => $requestType,
+            'death_cert_requested' => $deathCertReq,
+            'cemetery_plot_requested' => $cemeteryPlotReq,
+            'deceased_name' => $fullName,
+            'deceased_first_name' => $fName,
+            'deceased_middle_name' => $mName,
+            'deceased_last_name' => $lName,
+            'deceased_sex' => in_array(ucfirst($sex), ['Male', 'Female']) ? ucfirst($sex) : 'Male',
+            'date_of_birth' => !empty($input['dob']) ? $input['dob'] : null,
+            'date_of_death' => !empty($dod) ? $dod : date('Y-m-d'),
+            'place_of_death' => $pod ?: 'On File',
+            'residence' => $residence ?: 'On File',
+            'religion' => $input['religion'] ?? 'Islam',
+            'civil_status' => $input['civilStatus'] ?? 'Married',
+            'nationality' => $input['citizenship'] ?? 'Filipino',
+            'relationship' => $relationship,
+            'informant_name' => $informantName,
+            'informant_contact' => $informantContact,
+            'informant_email' => $input['informantEmail'] ?? ($_SESSION['email'] ?? ''),
+            'informant_address' => $input['informantAddress'] ?? $residence,
+            'requested_services' => $services,
+            'cemetery_preference' => $cemeteryPref,
+            'preferred_section' => $preferredSection,
+            'target_timing' => $input['targetTiming'] ?? 'Standard Processing',
+            'additional_notes' => $input['additionalNotes'] ?? null,
+            'supporting_document' => $uploadedDocPath,
+            'cert_action_type' => $certActionType,
+            'existing_cert_no' => trim($input['existing_cert_no'] ?? ''),
+            'encoded_cert_id' => !empty($input['encoded_cert_id']) ? (int)$input['encoded_cert_id'] : null,
+            'copy_reason' => trim($input['copy_reason'] ?? ''),
+            'num_copies' => max(1, (int)($input['num_copies'] ?? 1))
+        ];
+
+        $result = $model->create($data);
+
+        if (!$result || empty($result['success'])) {
+            echo json_encode(['success' => false, 'message' => 'Failed to save request to database.']);
+            return;
+        }
+
+        $refId = $result['ref_id'];
+
+        // Cross-module compatibility with FuneralCase only for new registrations
+        if ($certActionType === 'register') {
+            try {
+                require_once BASE_PATH . '/app/models/FuneralCase.php';
+                $fcModel = new FuneralCase();
+                $fcModel->create([
+                    'tenant_id' => $_SESSION['user_id'],
+                    'deceased_first_name' => $fName,
+                    'deceased_middle_name' => $mName,
+                    'deceased_last_name' => $lName,
+                    'deceased_sex' => $sex,
+                    'deceased_dob' => !empty($input['dob']) ? $input['dob'] : null,
+                    'deceased_dod' => $dod,
+                    'deceased_place_of_death' => $pod,
+                    'deceased_address' => $residence,
+                    'deceased_civil_status' => $input['civilStatus'] ?? 'Married',
+                    'deceased_nationality' => $input['citizenship'] ?? 'Filipino',
+                    'deceased_religion' => $input['religion'] ?? 'Islam',
+                    'informant_name' => $informantName,
+                    'informant_relationship' => $relationship,
+                    'informant_contact' => $informantContact,
+                    'informant_address' => $input['informantAddress'] ?? $residence
+                ]);
+            } catch (\Throwable $te) {}
+        }
+
+        $successMsg = ($certActionType === 'copy') 
+            ? 'Request for another death certificate copy submitted successfully.' 
+            : 'Death certificate registration submitted successfully.';
+
+        echo json_encode([
+            'success' => true,
+            'ref_id' => $refId,
+            'message' => $successMsg
+        ]);
+        return;
+    }
+
+    public function confirmBurialCopyReceipt(): void {
+        Auth::protect();
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            return;
+        }
+
+        $input = !empty($_POST) ? $_POST : json_decode(file_get_contents('php://input'), true);
+        $refId = trim($input['ref_id'] ?? '');
+
+        if (empty($refId)) {
+            echo json_encode(['success' => false, 'message' => 'Reference ID is required.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $burial = $model->findByRefId($refId);
+
+        if (!$burial) {
+            echo json_encode(['success' => false, 'message' => 'Request record not found.']);
+            return;
+        }
+
+        if ((int)$burial['tenant_id'] !== (int)$_SESSION['user_id'] && !Auth::hasRole(['Admin', 'Staff_Damayan'])) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized access.']);
+            return;
+        }
+
+        $userName = $_SESSION['name'] ?? 'Applicant';
+        $result = $model->confirmCopyReceipt((int)$burial['id'], (int)$_SESSION['user_id'], $userName);
+
+        echo json_encode($result);
+        return;
+    }
+
+    public function respondBurialInfo(): void {
+        Auth::protect();
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            return;
+        }
+
+        $input = !empty($_POST) ? $_POST : json_decode(file_get_contents('php://input'), true);
+        $refId = trim($input['ref_id'] ?? '');
+        $infoText = trim($input['additional_info'] ?? '');
+
+        if (empty($refId) || empty($infoText)) {
+            echo json_encode(['success' => false, 'message' => 'Reference ID and information details are required.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $burial = $model->findByRefId($refId);
+
+        if (!$burial) {
+            echo json_encode(['success' => false, 'message' => 'Burial request not found.']);
+            return;
+        }
+
+        if ((int)$burial['tenant_id'] !== (int)$_SESSION['user_id'] && !Auth::hasRole(['Admin', 'Staff_Damayan'])) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized access.']);
+            return;
+        }
+
+        // Handle uploaded document
+        $docPath = null;
+        if (isset($_FILES['additional_doc']) && $_FILES['additional_doc']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['additional_doc'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if (in_array($ext, ['pdf', 'jpg', 'jpeg', 'png'])) {
+                $uploadDir = BASE_PATH . '/public/uploads/burial/';
+                if (!is_dir($uploadDir)) {
+                    @mkdir($uploadDir, 0777, true);
+                }
+                $filename = 'addinfo_' . time() . '_' . substr(md5(uniqid()), 0, 8) . '.' . $ext;
+                if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                    $docPath = 'uploads/burial/' . $filename;
+                }
+            }
+        }
+
+        $userName = $_SESSION['name'] ?? 'Applicant';
+        $success = $model->submitAdditionalInfo((int)$burial['id'], (int)$burial['tenant_id'], $infoText, $docPath, $userName);
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? 'Additional information submitted successfully.' : 'Failed to submit additional information.'
+        ]);
+        return;
     }
 
     public function submitDonation(): void {
@@ -789,16 +1030,12 @@ class UserController extends Controller
      *  FUNERAL CASE MANAGEMENT
      * ==================================================================== */
 
-    /** Show the death report form */
+    /** Show the death report / burial form */
     public function funeralReport(): void
     {
         Auth::protect();
-        require_once BASE_PATH . '/app/models/User.php';
-        $u = new User();
-        $dbUser = $u->findById($_SESSION['user_id']) ?: [];
-        $extra  = $u->getAdditionalInfo($_SESSION['user_id']) ?: [];
-        $dbUser = array_merge($dbUser, $extra);
-        $this->view('user/Damayan/user_funeral-report', ['dbUser' => $dbUser]);
+        header('Location: ' . url('/user/services/burial-details?action=request'));
+        exit;
     }
 
     /** Submit the death report (POST, JSON) */
@@ -829,50 +1066,12 @@ class UserController extends Controller
         exit;
     }
 
-    /** Show user's funeral case dashboard */
+    /** Show user's burial dashboard (legacy funeral case route) */
     public function funeralCase(): void
     {
         Auth::protect();
-        require_once BASE_PATH . '/app/models/FuneralCase.php';
-        require_once BASE_PATH . '/app/models/User.php';
-
-        $model = new FuneralCase();
-        $cases = $model->getByTenantId($_SESSION['user_id']);
-
-        // Get case details if ?case= is provided
-        $caseDetail = null;
-        $documents  = [];
-        $psaRequest = null;
-        $logs       = [];
-        $caseNum    = $_GET['case'] ?? '';
-
-        if ($caseNum) {
-            $caseDetail = $model->findByCaseNumber($caseNum);
-            if ($caseDetail && $caseDetail['tenant_id'] == $_SESSION['user_id']) {
-                $documents  = $model->getDocuments($caseDetail['id']);
-                $psaRequest = $model->getPsaRequest($caseDetail['id']);
-                $logs       = $model->getLogs($caseDetail['id']);
-            } else {
-                $caseDetail = null;
-            }
-        } elseif (!empty($cases)) {
-            $caseDetail = $cases[0];
-            $documents  = $model->getDocuments($caseDetail['id']);
-            $psaRequest = $model->getPsaRequest($caseDetail['id']);
-            $logs       = $model->getLogs($caseDetail['id']);
-        }
-
-        $u = new User();
-        $dbUser = $u->findById($_SESSION['user_id']) ?: [];
-
-        $this->view('user/Damayan/user_funeral-case', [
-            'cases'      => $cases,
-            'caseDetail' => $caseDetail,
-            'documents'  => $documents,
-            'psaRequest' => $psaRequest,
-            'logs'       => $logs,
-            'dbUser'     => $dbUser
-        ]);
+        header('Location: ' . url('/user/services/burial-dashboard'));
+        exit;
     }
 
     /** Upload a document for a funeral case (POST, multipart) */

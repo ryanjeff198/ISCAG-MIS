@@ -314,7 +314,7 @@
       localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
       closeModal();
       if (typeof showToast === 'function') {
-        showToast('✅ Profile updated successfully!', 'var(--success)');
+        showToast('Profile updated successfully!', 'var(--success)');
       }
       render();
     }
@@ -351,7 +351,7 @@
       if (pendingAvatarUrl) {
         localStorage.setItem('mis_damayan_photo', pendingAvatarUrl);
         if (typeof showToast === 'function') {
-          showToast('✅ Profile photo updated!', 'var(--success)');
+          showToast('Profile photo updated!', 'var(--success)');
         }
       }
       document.getElementById('avatar-input').value = '';

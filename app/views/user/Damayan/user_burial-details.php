@@ -7,7 +7,6 @@ Auth::protect();
 
 require_once BASE_PATH . '/app/models/User.php';
 require_once BASE_PATH . '/app/models/BurialRequest.php';
-require_once BASE_PATH . '/app/models/FuneralCase.php';
 
 $userId = $_SESSION['user_id'] ?? 0;
 $userModel = new User();
@@ -19,12 +18,11 @@ $userName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? 
 if (empty($userName)) {
     $userName = $_SESSION['name'] ?? 'Applicant';
 }
-$userPhone = $dbUser['phone_number'] ?? $dbUser['contact_number'] ?? ($dbUser['phone'] ?? '');
+$userPhone = $dbUser['phone_number'] ?? $dbUser['contact_number'] ?? ($dbUser['phone'] ?? ($dbUser['contactnum'] ?? ''));
 $userEmail = $dbUser['email'] ?? ($_SESSION['email'] ?? '');
 $userAddress = $dbUser['address'] ?? '';
 
 $burialModel = new BurialRequest();
-$fcModel = new FuneralCase();
 
 // Fetch request by ID if provided in query string, otherwise load user's most recent request
 $reqId = $_GET['id'] ?? ($_GET['case'] ?? '');
@@ -34,44 +32,16 @@ if (!empty($reqId)) {
     $foundBurial = $burialModel->findByRefId($reqId);
     if ($foundBurial && ($foundBurial['tenant_id'] == $userId || Auth::hasRole(['Admin', 'Staff_Damayan']))) {
         $activeBurial = $foundBurial;
-    } else {
-        $foundCase = $fcModel->findByCaseNumber($reqId);
-        if ($foundCase && ($foundCase['tenant_id'] == $userId || Auth::hasRole(['Admin', 'Staff_Damayan']))) {
-            $activeBurial = [
-                'ref_id' => $foundCase['case_number'],
-                'deceased_name' => trim($foundCase['deceased_first_name'] . ' ' . ($foundCase['deceased_middle_name'] ? $foundCase['deceased_middle_name'] . ' ' : '') . $foundCase['deceased_last_name']),
-                'date_of_death' => $foundCase['deceased_dod'],
-                'place_of_death' => $foundCase['deceased_place_of_death'],
-                'residence' => $foundCase['deceased_address'],
-                'religion' => $foundCase['deceased_religion'] ?? 'Islam',
-                'relationship' => $foundCase['informant_relationship'] ?? 'Relative',
-                'status' => $foundCase['status'] ?? 'Under Review',
-                'submitted_at' => $foundCase['submitted_at'] ?? date('Y-m-d H:i:s')
-            ];
-        }
     }
 } else {
-    $userBurials = $burialModel->getByTenantId($userId);
+    $userBurials = $burialModel->getByTenantId((int)$userId);
     if (!empty($userBurials)) {
-        $activeBurial = $userBurials[0];
-    } else {
-        $userCases = $fcModel->getByTenantId($userId);
-        if (!empty($userCases)) {
-            $fc = $userCases[0];
-            $activeBurial = [
-                'ref_id' => $fc['case_number'],
-                'deceased_name' => trim($fc['deceased_first_name'] . ' ' . ($fc['deceased_middle_name'] ? $fc['deceased_middle_name'] . ' ' : '') . $fc['deceased_last_name']),
-                'date_of_death' => $fc['deceased_dod'],
-                'place_of_death' => $fc['deceased_place_of_death'],
-                'residence' => $fc['deceased_address'],
-                'religion' => $fc['deceased_religion'] ?? 'Islam',
-                'relationship' => $fc['informant_relationship'] ?? 'Relative',
-                'status' => $fc['status'] ?? 'Under Review',
-                'submitted_at' => $fc['submitted_at'] ?? date('Y-m-d H:i:s')
-            ];
-        }
+        $activeBurial = $burialModel->findByRefId($userBurials[0]['ref_id']);
     }
 }
+
+// Existing deceased records to allow auto-fill and prevent duplicate data entry
+$existingDeceased = $burialModel->getDeceasedRecords((int)$userId);
 
 // Status text and style mappings
 $hasApplication = !empty($activeBurial);
@@ -81,21 +51,71 @@ $dateSubmitted = $hasApplication && !empty($activeBurial['submitted_at']) ? date
 $deceasedName = $hasApplication ? ($activeBurial['deceased_name'] ?? '—') : 'No Deceased Listed';
 $dateOfDeath = $hasApplication && !empty($activeBurial['date_of_death']) ? date('M d, Y', strtotime($activeBurial['date_of_death'])) : '—';
 $placeOfDeath = $hasApplication && !empty($activeBurial['place_of_death']) ? $activeBurial['place_of_death'] : 'ISCAG Area';
-$requesterName = $userName;
+$requesterName = $hasApplication && !empty($activeBurial['informant_name']) ? $activeBurial['informant_name'] : $userName;
 $relationship = $hasApplication && !empty($activeBurial['relationship']) ? $activeBurial['relationship'] : 'Family Member';
-$services = ["Bathing (Ghusl)", "Shrouding (Kafn)", "Janazah Prayer", "Cemetery Plot & Coordination", "Burial Transport"];
+
+$certActionType = $activeBurial['cert_action_type'] ?? 'register';
+$isCopyRequest = ($certActionType === 'copy');
+$existingCertNo = $activeBurial['existing_cert_no'] ?? '';
+$copyReason = $activeBurial['copy_reason'] ?? '';
+$numCopies = (int)($activeBurial['num_copies'] ?? 1);
+$isRecordVerified = !empty($activeBurial['existing_record_verified']);
+$isCopyIssued = !empty($activeBurial['copy_issued_at']);
+$copyIssuedDate = $isCopyIssued ? date('M d, Y', strtotime($activeBurial['copy_issued_at'])) : '';
+$isCopyReceived = !empty($activeBurial['copy_received_confirmed']);
+$copyReceivedDate = (!empty($activeBurial['copy_received_at'])) ? date('M d, Y', strtotime($activeBurial['copy_received_at'])) : '';
+
+$stLower = strtolower($status);
+$isInfoRequired = ($stLower === 'additional information required');
+$isCompleted = ($stLower === 'burial completed' || $stLower === 'completed' || ($isCopyRequest && $isCopyReceived));
+$isRejected = ($stLower === 'rejected');
+
+$requestType = $activeBurial['request_type'] ?? ($isCopyRequest ? 'death_certificate' : 'both');
+$deathCertReq = !empty($activeBurial['death_cert_requested']) || $isCopyRequest;
+$cemeteryPlotReq = !$isCopyRequest && !empty($activeBurial['cemetery_plot_requested']);
+$dcStatus = $activeBurial['death_cert_status'] ?? 'Request Received';
+$cpStatus = $activeBurial['cemetery_plot_status'] ?? 'Pending Review';
 
 $autoOpenForm = isset($startWithFormOpen) && $startWithFormOpen === true;
-if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fill'])) {
+if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fill', 'copy'])) {
     $autoOpenForm = true;
 }
+
+if (!function_exists('getBurialBadgeMeta')) {
+    function getBurialBadgeMeta(string $rawStatus, bool $isCompleted = false, bool $isRejected = false): array {
+        $st = strtolower(trim($rawStatus));
+        if ($isCompleted || in_array($st, ['completed', 'burial completed', 'registered', 'plot assigned', 'copy received', 'copy received & confirmed'])) {
+            return ['class' => 'approved', 'label' => $rawStatus ?: 'Completed'];
+        }
+        if ($isRejected || $st === 'rejected') {
+            return ['class' => 'rejected', 'label' => 'Rejected'];
+        }
+        if ($st === 'additional information required' || $st === 'action required') {
+            return ['class' => 'warning', 'label' => 'Action Required'];
+        }
+        if (in_array($st, ['request received', 'new request', 'submitted', 'pending search', 'awaiting record search'])) {
+            return ['class' => 'received', 'label' => 'Request Received'];
+        }
+        if (in_array($st, ['under review', 'pending', 'pending review', 'under verification'])) {
+            return ['class' => 'pending', 'label' => $rawStatus ?: 'Under Review'];
+        }
+        if (in_array($st, ['accepted for coordination', 'coordination', 'hospital certified', 'submitted to lcro', 'certificate prepared and certified', 'copy issued', 'record verified'])) {
+            return ['class' => 'coordination', 'label' => $rawStatus ?: 'In Coordination'];
+        }
+        if ($st === 'no active request') {
+            return ['class' => 'none', 'label' => 'No Active Request'];
+        }
+        return ['class' => 'received', 'label' => $rawStatus ?: 'Request Received'];
+    }
+}
+$headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Burial Service Details & Request — ISCAG Damayan</title>
+    <title>Burial &amp; Death Certificate Management — ISCAG Damayan</title>
     <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
     <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -206,15 +226,14 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-family: 'Inter', monospace;
-            font-weight: 700;
-            color: var(--text-muted);
-            font-size: 0.82rem;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            background: rgba(0,0,0,0.03);
-            padding: 3px 10px;
-            border-radius: 6px;
         }
         .app-header-actions {
             display: flex;
@@ -222,203 +241,247 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             gap: 12px;
             flex-wrap: wrap;
         }
-
-        /* ── Status Badges ── */
+        /* ── Modern Status Badges ── */
         .status-badge {
-            padding: 8px 18px;
-            border-radius: 100px;
-            font-weight: 800;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            border: 1px solid transparent;
-        }
-        .status-badge.approved {
-            background: var(--success-bg);
-            color: var(--success-text);
-            border-color: #a7f3d0;
-        }
-        .status-badge.pending, .status-badge.under-review {
-            background: var(--warning-bg);
-            color: var(--warning-text);
-            border-color: #fde68a;
-        }
-        .status-badge.none {
-            background: #f1f5f9;
-            color: #475569;
-            border-color: #cbd5e1;
+            padding: 7px 18px;
+            border-radius: 50px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            line-height: 1.2;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            white-space: nowrap;
         }
 
-        /* ── Primary Action Button (Request Form) ── */
+        /* Status Dot Indicator with gentle pulse */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: currentColor;
+            display: inline-block;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background-color: currentColor;
+            opacity: 0.35;
+            animation: statusPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes statusPulse {
+            0%, 100% { transform: scale(1); opacity: 0.35; }
+            50% { transform: scale(1.6); opacity: 0; }
+        }
+
+        /* 1. Request Received - Crisp, High-Contrast Soft Blue */
+        .status-badge.received {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1.5px solid #93c5fd;
+            box-shadow: 0 2px 8px rgba(29, 78, 216, 0.08);
+        }
+
+        /* 2. Pending / Under Review - Warm Amber */
+        .status-badge.pending {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1.5px solid #fde68a;
+            box-shadow: 0 2px 8px rgba(180, 83, 9, 0.08);
+        }
+
+        /* 3. In Coordination / In Progress - Fresh Teal */
+        .status-badge.coordination {
+            background: #f0fdfa;
+            color: #0f766e;
+            border: 1.5px solid #99f6e4;
+            box-shadow: 0 2px 8px rgba(15, 118, 110, 0.08);
+        }
+
+        /* 4. Action Required / Additional Information - Warning Orange */
+        .status-badge.warning, .status-badge.action-required {
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1.5px solid #fed7aa;
+            box-shadow: 0 2px 8px rgba(194, 65, 12, 0.08);
+        }
+
+        /* 5. Approved / Completed / Registered - Vibrant Forest Green */
+        .status-badge.approved, .status-badge.completed {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1.5px solid #a7f3d0;
+            box-shadow: 0 2px 8px rgba(4, 120, 87, 0.08);
+        }
+
+        /* 6. Rejected - Red */
+        .status-badge.rejected {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1.5px solid #fecaca;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
+        }
+
+        /* 7. None / Neutral */
+        .status-badge.none, .status-badge.neutral {
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1.5px solid #e5e7eb;
+        }
+
         .btn-request-form {
-            background: linear-gradient(135deg, var(--primary) 0%, #2e7d32 100%);
+            background: var(--primary);
             color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
+            padding: 10px 22px;
+            border-radius: var(--radius-md);
             font-weight: 700;
-            font-size: 0.92rem;
+            font-size: 0.9rem;
+            border: none;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 14px rgba(27,94,32,0.25);
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            text-decoration: none;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(27,94,32,0.25);
+            transition: all 0.2s;
         }
         .btn-request-form:hover {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            background: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(27,94,32,0.35);
-            color: white;
-        }
-        .btn-request-form:active {
-            transform: translateY(0);
+            box-shadow: 0 6px 16px rgba(27,94,32,0.35);
         }
         .btn-request-form svg {
             width: 18px;
             height: 18px;
             fill: none;
             stroke: currentColor;
-            stroke-width: 2.2;
-            transition: transform 0.2s;
-        }
-        .btn-request-form:hover svg {
-            transform: scale(1.1);
+            stroke-width: 2.5;
         }
 
-        /* ── Body Content ── */
-        .app-body { padding: 36px 40px; }
-
+        /* ── Body ── */
+        .app-body {
+            padding: 40px;
+        }
         .info-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 32px;
-            margin-bottom: 36px;
-        }
-        .info-group {
-            background: #fbfcfd;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 20px;
+            margin-bottom: 32px;
         }
         .info-group h4 {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-muted);
-            margin: 0 0 10px;
-            font-weight: 800;
+            font-family: 'Lora', serif;
+            font-size: 1.05rem;
+            color: var(--primary-dark);
+            margin: 0 0 12px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
         .info-group h4 svg {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             color: var(--primary);
         }
         .info-value {
-            font-size: 1.18rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: var(--text-main);
             margin-bottom: 4px;
         }
         .info-sub {
-            font-size: 0.85rem;
+            font-size: 0.88rem;
             color: var(--text-muted);
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
-        /* ── Services Checklist ── */
-        .services-box {
-            background: #f8fafc;
-            border-radius: 16px;
-            padding: 26px;
-            border: 1px solid var(--border);
+        /* ── Dual Tracking Cards ── */
+        .dual-tracking-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
             margin-bottom: 32px;
         }
-        .services-box h4 {
-            font-family: 'Lora', serif;
-            font-size: 1.05rem;
-            color: var(--primary-dark);
-            margin: 0 0 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .services-grid-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 12px;
-        }
-        .service-item-card {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: white;
-            border: 1px solid #eef2f6;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text-main);
+        .track-box {
+            background: #fafbfc;
+            border: 1.5px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
             transition: border-color 0.2s;
         }
-        .service-item-card:hover {
+        .track-box.active-box {
             border-color: #a7f3d0;
-            background: #fafffc;
+            background: #f0fdf4;
         }
-        .service-item-card svg {
-            width: 20px;
-            height: 20px;
-            fill: var(--primary);
-            flex-shrink: 0;
-        }
-
-        /* ── Guidelines Alert Box ── */
-        .guidelines-notice {
-            background: linear-gradient(135deg, #f0fdf4 0%, #e6f7ec 100%);
-            border: 1.5px solid #bbf7d0;
-            border-radius: var(--radius-md);
-            padding: 20px 24px;
+        .track-box-header {
             display: flex;
-            align-items: flex-start;
-            gap: 16px;
-            margin-bottom: 8px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
         }
-        .guidelines-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: white;
-            color: var(--primary);
+        .track-box-title {
+            font-family: 'Lora', serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--primary-dark);
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 8px;
+        }
+        .track-field-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.86rem;
+            margin-bottom: 8px;
+        }
+        .track-field-label {
+            color: var(--text-muted);
+        }
+        .track-field-val {
+            font-weight: 700;
+            color: var(--text-main);
+            text-align: right;
+        }
+
+        /* ── Notice Banner ── */
+        .guidelines-notice {
+            background: #f8fafc;
+            border-left: 4px solid var(--primary);
+            border-radius: 0 12px 12px 0;
+            padding: 18px 22px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+        .guidelines-icon {
+            color: var(--primary);
+            margin-top: 2px;
             flex-shrink: 0;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
         .guidelines-text h5 {
             margin: 0 0 4px;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
+            font-weight: 700;
             color: var(--primary-dark);
-            font-weight: 800;
         }
         .guidelines-text p {
             margin: 0;
             font-size: 0.85rem;
-            color: #166534;
-            line-height: 1.55;
+            color: #4b5563;
+            line-height: 1.5;
         }
 
-        /* ── Footer / Actions ── */
+        /* ── Footer ── */
         .app-footer {
-            background: #fafbfc;
-            padding: 24px 40px;
+            background: #f8fafc;
+            padding: 20px 40px;
             border-top: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -427,19 +490,19 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             gap: 16px;
         }
         .btn-outline {
-            padding: 10px 20px;
             background: white;
             border: 1.5px solid var(--border);
             color: var(--text-main);
-            border-radius: 10px;
+            padding: 9px 20px;
+            border-radius: var(--radius-md);
             font-weight: 700;
             font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             text-decoration: none;
+            transition: all 0.2s;
         }
         .btn-outline:hover {
             border-color: var(--primary);
@@ -447,53 +510,39 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             background: var(--primary-light);
         }
 
-        /* ══════════════════════════════════════════════════════════════════════ */
-        /* 📝 FILL UP FORM SECTION (Appears when clicking Request Form button)     */
-        /* ══════════════════════════════════════════════════════════════════════ */
+        /* ── Form Card ── */
         #burial-form-container {
             display: <?= $autoOpenForm ? 'block' : 'none' ?>;
-            animation: formSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             margin-top: 36px;
+            animation: fadeInCard 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        @keyframes formSlideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .form-card {
             background: white;
             border-radius: var(--radius-lg);
-            box-shadow: 0 15px 45px rgba(0,0,0,0.08);
-            border: 1.5px solid #d1fae5;
+            box-shadow: var(--shadow-lg);
+            border: 1.5px solid #a7f3d0;
             overflow: hidden;
             position: relative;
         }
         .form-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             height: 5px;
-            background: linear-gradient(90deg, #1b5e20, #2e7d32, #c9a84c);
+            background: linear-gradient(90deg, var(--primary) 0%, #2e7d32 100%);
         }
-
         .form-card-header {
-            background: linear-gradient(135deg, #f7faf8 0%, #ffffff 100%);
             padding: 32px 40px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
         }
         .form-card-title-area h2 {
             font-family: 'Lora', serif;
@@ -595,56 +644,56 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(27,94,32,0.12);
         }
-        .form-control[readonly] {
-            background: #f8fafc;
-            color: #64748b;
-        }
 
-        /* ── Service Options Grid ── */
-        .services-select-grid {
+        /* ── Radio / Type Cards ── */
+        .type-selector-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
             margin-bottom: 28px;
         }
-        .service-checkbox-card {
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            padding: 14px 16px;
-            background: #fbfcfd;
+        .type-option-card {
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 18px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #fff;
+        }
+        .type-option-card:hover {
+            border-color: #a7f3d0;
+            background: #f8fafc;
+        }
+        .type-option-card.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        .type-option-title {
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--primary-dark);
+            display: flex;
             align-items: center;
-            gap: 12px;
-            user-select: none;
+            gap: 8px;
         }
-        .service-checkbox-card:hover {
-            border-color: #86efac;
-            background: #f0fdf4;
-        }
-        .service-checkbox-card input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--primary);
-            cursor: pointer;
-        }
-        .service-checkbox-label {
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: var(--text-main);
+        .type-option-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
         }
 
-        /* ── Terms & Submit Bar ── */
         .form-terms-box {
-            background: #f0fdf4;
-            border: 1.5px solid #bbf7d0;
+            background: #f9fafb;
+            border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 18px 20px;
-            margin-bottom: 28px;
+            padding: 16px 20px;
             display: flex;
-            align-items: flex-start;
             gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 28px;
         }
         .form-terms-box input[type="checkbox"] {
             margin-top: 3px;
@@ -652,27 +701,25 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             height: 18px;
             accent-color: var(--primary);
             cursor: pointer;
-            flex-shrink: 0;
         }
         .form-terms-label {
             font-size: 0.85rem;
-            color: #166534;
+            color: #4b5563;
             line-height: 1.5;
-            font-weight: 500;
+            cursor: pointer;
         }
 
         .form-actions-row {
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            gap: 14px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
+            gap: 16px;
+            padding-top: 10px;
         }
         .btn-submit {
-            background: linear-gradient(135deg, var(--primary) 0%, #2e7d32 100%);
+            background: var(--primary);
             color: white;
-            padding: 13px 32px;
+            padding: 14px 32px;
             border-radius: 12px;
             font-weight: 700;
             font-size: 0.95rem;
@@ -681,79 +728,55 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 4px 16px rgba(27,94,32,0.25);
-            transition: all 0.25s;
+            box-shadow: 0 4px 14px rgba(27,94,32,0.3);
+            transition: all 0.2s;
         }
         .btn-submit:hover {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            background: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 6px 22px rgba(27,94,32,0.35);
-        }
-        .btn-submit:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+            box-shadow: 0 8px 20px rgba(27,94,32,0.4);
         }
 
-        /* ── Toast Notification ── */
         .toast-notify {
             position: fixed;
-            bottom: 24px;
-            right: 24px;
-            z-index: 9999;
-            background: #064e3b;
+            bottom: 30px;
+            right: 30px;
+            background: #1f2937;
             color: white;
             padding: 16px 24px;
-            border-radius: 14px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 999999;
             display: none;
-            animation: slideUpToast 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            max-width: 420px;
-            border-left: 5px solid #34d399;
+            animation: slideInToast 0.3s ease;
         }
-        @keyframes slideUpToast {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes slideInToast {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
-        /* ── Print Media ── */
-        @media print {
-            .app-wrapper { display: block; }
-            .sidebar, .top-bar, .app-header-actions, .app-footer, .breadcrumb-nav, #burial-form-container {
-                display: none !important;
-            }
-            .details-container { margin: 0; padding: 0; max-width: 100%; }
-            .app-card { box-shadow: none; border: 1px solid #111; }
-        }
-
-        @media (max-width: 768px) {
-            .app-header { flex-direction: column; align-items: flex-start; }
-            .info-grid { grid-template-columns: 1fr; }
-            .form-grid { grid-template-columns: 1fr; }
-            .form-grid.cols-2 { grid-template-columns: 1fr; }
-            .app-body, .form-card-body { padding: 24px; }
-            .app-header, .form-card-header { padding: 24px; }
-            .app-footer { flex-direction: column; align-items: stretch; text-align: center; }
-            .btn-request-form { width: 100%; justify-content: center; }
+        @media (max-width: 900px) {
+            .app-header { padding: 24px; }
+            .app-body { padding: 24px; }
+            .info-grid, .dual-tracking-grid, .form-grid, .form-grid.cols-2, .type-selector-grid { grid-template-columns: 1fr; }
+            .details-container { padding: 16px 16px 40px; }
         }
     </style>
 </head>
 <body>
 
 <div class="app-wrapper">
-    <!-- Sidebar -->
-    <?php $active_page = 'burial_service'; include BASE_PATH . '/app/views/user/sidebar.php'; ?>
+    <?php $active_page = (!empty($autoOpenForm) ? 'burial_service' : 'burial'); include BASE_PATH . '/app/views/user/sidebar.php'; ?>
 
     <div class="main-content">
         <!-- Top Bar -->
         <div class="top-bar">
             <div class="top-bar-left">
-                <div class="top-bar-title">Burial Service Details</div>
-                <div class="top-bar-subtitle">Damayan Department — Islamic Funeral Care</div>
+                <div class="top-bar-title">Damayan Service Details</div>
+                <div class="top-bar-subtitle">Burial Assistance &amp; Death Certificate Processing</div>
             </div>
             <div class="top-bar-actions">
-                <a href="<?= url('/user/services/burial-dashboard') ?>" class="btn-topbar">Burial Dashboard</a>
                 <a href="<?= url('/user/dashboard') ?>" class="btn-topbar">Main Dashboard</a>
             </div>
         </div>
@@ -765,11 +788,11 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                 <span class="sep">/</span>
                 <a href="<?= url('/user/services/burial-dashboard') ?>">Burial Dashboard</a>
                 <span class="sep">/</span>
-                <span class="current">Burial Details &amp; Request Form</span>
+                <span class="current">Burial &amp; Death Certificate Coordination</span>
             </div>
 
             <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!-- CARD 1: BURIAL SERVICE DETAILS                                 -->
+            <!-- CARD 1: ACTIVE REQUEST STATUS & TRACKING                        -->
             <!-- ═══════════════════════════════════════════════════════════════ -->
             <div class="app-card">
                 <!-- Header -->
@@ -777,29 +800,36 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                     <div class="app-header-left">
                         <div class="app-id-tag">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                            REFERENCE: #<?= htmlspecialchars($appId) ?>
+                            CASE REFERENCE: #<?= htmlspecialchars($appId) ?>
+                            <?php if ($isCopyRequest): ?>
+                                <span style="background:rgba(27,94,32,0.12); color:var(--primary); padding:2px 8px; border-radius:6px; margin-left:6px; font-size:0.72rem; font-weight:800;">ADDITIONAL COPY</span>
+                            <?php else: ?>
+                                <span style="background:rgba(27,94,32,0.12); color:var(--primary); padding:2px 8px; border-radius:6px; margin-left:6px; font-size:0.72rem; font-weight:800;">NEW REGISTRATION</span>
+                            <?php endif; ?>
                         </div>
-                        <h1>Burial Service Overview &amp; Details</h1>
+                        <h1><?= htmlspecialchars($deceasedName) ?></h1>
                         <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
                             Submitted: <strong><?= htmlspecialchars($dateSubmitted) ?></strong> • Applicant: <strong><?= htmlspecialchars($requesterName) ?></strong>
+                            • Service: <strong style="color:var(--primary);">
+                                <?php if ($isCopyRequest): ?>
+                                    Request Another Death Certificate (Copy)
+                                <?php elseif ($requestType === 'both' || ($deathCertReq && $cemeteryPlotReq)): ?>
+                                    Death Certificate &amp; Burial Assistance
+                                <?php elseif ($cemeteryPlotReq || $requestType === 'cemetery_plot'): ?>
+                                    Burial Assistance
+                                <?php else: ?>
+                                    Death Certificate Registration
+                                <?php endif; ?>
+                            </strong>
                         </div>
                     </div>
                     <div class="app-header-actions">
-                        <?php
-                            $statusClass = 'none';
-                            $stLower = strtolower($status);
-                            if (strpos($stLower, 'approved') !== false || strpos($stLower, 'verified') !== false || strpos($stLower, 'completed') !== false) {
-                                $statusClass = 'approved';
-                            } elseif (strpos($stLower, 'review') !== false || strpos($stLower, 'pending') !== false || strpos($stLower, 'submitted') !== false) {
-                                $statusClass = 'pending';
-                            }
-                        ?>
-                        <span class="status-badge <?= $statusClass ?>">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                            <?= htmlspecialchars($status) ?>
+                        <span class="status-badge <?= $headerBadge['class'] ?>">
+                            <span class="status-dot"></span>
+                            <?= htmlspecialchars($headerBadge['label']) ?>
                         </span>
 
-                        <!-- 🔘 CLICK REQUEST FORM BUTTON (Reveals the fill-up form) -->
+                        <!-- CLICK REQUEST FORM BUTTON (Reveals the fill-up form) -->
                         <button type="button" class="btn-request-form" id="btn-request-form-top" onclick="toggleRequestForm()">
                             <svg viewBox="0 0 24 24">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -807,14 +837,59 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                                 <line x1="12" y1="18" x2="12" y2="12"></line>
                                 <line x1="9" y1="15" x2="15" y2="15"></line>
                             </svg>
-                            <span id="btn-request-text-top"><?= $autoOpenForm ? 'Close Request Form' : 'Request Form' ?></span>
+                            <span id="btn-request-text-top"><?= $autoOpenForm ? 'Close Request Form' : 'Submit New Request' ?></span>
                         </button>
                     </div>
                 </header>
 
                 <!-- Body -->
                 <div class="app-body">
-                    <!-- Informative Grid -->
+
+                    <!-- Alert: Action Required (Additional Information Requested) -->
+                    <?php if ($isInfoRequired): ?>
+                    <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b; border-radius: 14px; padding: 22px 24px; margin-bottom: 28px;">
+                      <div style="display: flex; align-items: flex-start; gap: 14px;">
+                        <div style="width: 38px; height: 38px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        </div>
+                        <div style="flex: 1;">
+                          <h4 style="margin: 0 0 6px; font-size: 1.05rem; color: #92400e; font-family: 'Lora', serif;">Action Required: Additional Information or Documents Needed</h4>
+                          <p style="margin: 0 0 14px; font-size: 0.9rem; color: #78350f; line-height: 1.5;">
+                            <strong>Message from Damayan Coordinator (<?= htmlspecialchars($activeBurial['assigned_staff_name'] ?? 'Staff') ?>):</strong><br>
+                            <?= nl2br(htmlspecialchars($activeBurial['info_request_notes'] ?? 'Please provide the requested details to proceed.')) ?>
+                          </p>
+                          
+                          <!-- Form to respond to additional requirements -->
+                          <form id="respond-info-form" onsubmit="submitRequirementsResponse(event)" style="background: white; border: 1.5px solid #fed7aa; border-radius: 12px; padding: 18px 20px;">
+                            <input type="hidden" id="resp-ref-id" value="<?= htmlspecialchars($appId) ?>">
+                            <div class="form-group" style="margin-bottom: 12px;">
+                              <label class="form-label" style="color: #92400e;">Your Explanation / Requested Details <span class="req">*</span></label>
+                              <textarea id="resp-info-text" class="form-control" rows="3" placeholder="Provide the requested details or explanation..." required></textarea>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                              <label class="form-label" style="color: #92400e;">Upload Supporting Document (Optional)</label>
+                              <input type="file" id="resp-doc-file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                              <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Allowed: PDF, JPG, PNG (Max 10MB)</span>
+                            </div>
+                            <div style="display:flex; justify-content:flex-end;">
+                              <button type="submit" class="btn-submit" id="btn-submit-resp" style="background:#b45309; padding:10px 24px; font-size:0.88rem;">
+                                Submit Information
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($activeBurial['additional_info_submitted'])): ?>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; font-size: 0.85rem; color: #166534;">
+                      <strong>Latest Update Submitted on <?= !empty($activeBurial['info_submitted_at']) ? date('M d, Y g:i A', strtotime($activeBurial['info_submitted_at'])) : '—' ?>:</strong><br>
+                      <?= htmlspecialchars($activeBurial['additional_info_submitted']) ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Deceased & Representative Information Summary -->
                     <div class="info-grid">
                         <div class="info-group">
                             <h4>
@@ -823,38 +898,286 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                             </h4>
                             <div class="info-value"><?= htmlspecialchars($deceasedName) ?></div>
                             <div class="info-sub">
+                                Gender: <strong><?= htmlspecialchars($activeBurial['deceased_sex'] ?? 'Male') ?></strong><br>
                                 Date of Death: <strong><?= htmlspecialchars($dateOfDeath) ?></strong><br>
-                                Location: <?= htmlspecialchars($placeOfDeath) ?>
+                                Place of Death: <?= htmlspecialchars($placeOfDeath) ?><br>
+                                Residence: <?= htmlspecialchars($activeBurial['residence'] ?? 'N/A') ?><br>
+                                Civil Status: <?= htmlspecialchars($activeBurial['civil_status'] ?? 'Married') ?> • Nationality: <?= htmlspecialchars($activeBurial['nationality'] ?? 'Filipino') ?>
                             </div>
                         </div>
 
                         <div class="info-group">
                             <h4>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                Applicant / Informant Information
+                                Applicant / Representative Details
                             </h4>
                             <div class="info-value"><?= htmlspecialchars($requesterName) ?></div>
                             <div class="info-sub">
                                 Relationship: <strong><?= htmlspecialchars($relationship) ?></strong><br>
-                                Contact: <?= htmlspecialchars($userPhone ?: 'On File') ?> • <?= htmlspecialchars($userEmail) ?>
+                                Contact: <?= htmlspecialchars($activeBurial['informant_contact'] ?? ($userPhone ?: 'On File')) ?><br>
+                                Email: <?= htmlspecialchars($activeBurial['informant_email'] ?? $userEmail) ?><br>
+                                Address: <?= htmlspecialchars($activeBurial['informant_address'] ?? ($userAddress ?: 'On File')) ?>
                             </div>
+                            <?php if (!empty($activeBurial['supporting_document'])): ?>
+                            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);">
+                                <a href="<?= asset($activeBurial['supporting_document']) ?>" target="_blank" class="btn-outline" style="padding: 6px 12px; font-size: 0.78rem;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                    View Attached Document
+                                </a>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
-                    <!-- Services Included in Islamic Burial -->
-                    <div class="services-box">
-                        <h4>
-                            <span>Islamic Funeral Services Provided by ISCAG Damayan</span>
-                            <span style="font-size:0.75rem; color:var(--primary); font-family:'Inter'; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">Compliant with Islamic Sunnah</span>
-                        </h4>
-                        <div class="services-grid-list">
-                            <?php foreach($services as $srv): ?>
-                            <div class="service-item-card">
-                                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                                <span><?= htmlspecialchars($srv) ?></span>
+                    <!-- DUAL PARALLEL TRACKING CARDS (Connected to Same Case Record) -->
+                    <div class="dual-tracking-grid">
+                        
+                        <?php if ($isCopyRequest): ?>
+                        <!-- Track A: Death Certificate Copy Request Tracking -->
+                        <div class="track-box active-box">
+                            <div class="track-box-header">
+                                <div class="track-box-title">
+                                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                                    Death Certificate Copy Request
+                                </div>
+                                <?php $copyBadge = getBurialBadgeMeta($dcStatus, $isCopyReceived, false); ?>
+                                <span class="status-badge <?= $copyBadge['class'] ?>" style="padding:4px 12px; font-size:0.75rem;">
+                                    <span class="status-dot" style="width:6px; height:6px;"></span>
+                                    <?= htmlspecialchars($copyBadge['label']) ?>
+                                </span>
                             </div>
-                            <?php endforeach; ?>
+
+                            <div class="track-field-row">
+                                <span class="track-field-label">Current Stage:</span>
+                                <span class="track-field-val" style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($dcStatus) ?></span>
+                            </div>
+                            <div class="track-field-row">
+                                <span class="track-field-label">Existing Record Verification:</span>
+                                <span class="track-field-val">
+                                    <?php if ($isRecordVerified): ?>
+                                        <span style="color:#047857; font-weight:700;">Verified &amp; Linked to Existing Record</span>
+                                    <?php else: ?>
+                                        <span style="color:#b45309; font-weight:700;">Pending Staff Record Verification</span>
+                                    <?php endif; ?>
+                                </span>
+                            </div>
+                            <?php if (!empty($existingCertNo)): ?>
+                                <div class="track-field-row">
+                                    <span class="track-field-label">Existing Certificate / Registry #:</span>
+                                    <span class="track-field-val"><?= htmlspecialchars($existingCertNo) ?></span>
+                                </div>
+                            <?php endif; ?>
+                            <div class="track-field-row">
+                                <span class="track-field-label">Reason for Request:</span>
+                                <span class="track-field-val"><?= htmlspecialchars($copyReason ?: 'Personal / Official Records') ?></span>
+                            </div>
+                            <div class="track-field-row">
+                                <span class="track-field-label">Copies Requested:</span>
+                                <span class="track-field-val"><?= htmlspecialchars($numCopies) ?> Copy<?= $numCopies > 1 ? 'ies' : '' ?></span>
+                            </div>
+                            <div class="track-field-row">
+                                <span class="track-field-label">Copy Issuance:</span>
+                                <span class="track-field-val">
+                                    <?php if ($isCopyIssued): ?>
+                                        <strong style="color:#047857;">Issued on <?= $copyIssuedDate ?></strong>
+                                        <?php if (!empty($activeBurial['death_cert_certified_copy_ref'])): ?>
+                                            (Ref: <?= htmlspecialchars($activeBurial['death_cert_certified_copy_ref']) ?>)
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span style="color:var(--text-muted); font-style:italic;">Processing / Awaiting Staff Issuance</span>
+                                    <?php endif; ?>
+                                </span>
+                            </div>
+                            <div class="track-field-row">
+                                <span class="track-field-label">Receipt Confirmation:</span>
+                                <span class="track-field-val">
+                                    <?php if ($isCopyReceived): ?>
+                                        <strong style="color:#047857;">Confirmed Received on <?= $copyReceivedDate ?></strong>
+                                    <?php elseif ($isCopyIssued): ?>
+                                        <span style="color:#b45309; font-weight:700;">Issued — Awaiting Your Receipt Confirmation</span>
+                                    <?php else: ?>
+                                        <span style="color:var(--text-muted); font-style:italic;">Not marked received until confirmed</span>
+                                    <?php endif; ?>
+                                </span>
+                            </div>
+
+                            <?php if ($isCopyIssued && !$isCopyReceived): ?>
+                                <div style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--border); text-align:center;">
+                                    <button type="button" class="btn-submit" onclick="confirmCopyReceipt('<?= htmlspecialchars($appId) ?>')" style="padding:10px 20px; font-size:0.85rem; background:#059669; width:100%; justify-content:center;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        I Confirm Receipt of Death Certificate Copy
+                                    </button>
+                                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Click once you have physically or officially collected your requested copy.</div>
+                                </div>
+                            <?php endif; ?>
+
+                            <?php if (!empty($activeBurial['death_cert_remarks'])): ?>
+                                <div style="font-size:0.8rem; color:var(--text-muted); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
+                                    <strong>Staff Remarks:</strong> <?= htmlspecialchars($activeBurial['death_cert_remarks']) ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
+
+                        <!-- Track B: Verification & Record Safeguards -->
+                        <div class="track-box active-box">
+                            <div class="track-box-header">
+                                <div class="track-box-title">
+                                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                                    Record Verification Safeguards
+                                </div>
+                                <span class="status-badge approved" style="padding:4px 10px; font-size:0.75rem;">
+                                    Security Policy
+                                </span>
+                            </div>
+
+                            <div style="display:flex; flex-direction:column; gap:12px; font-size:0.84rem; line-height:1.5; color:#374151;">
+                                <div>
+                                    <strong style="color:var(--primary-dark); display:block;">1. Existing Record Verification</strong>
+                                    Staff verifies the original death registration record exists in the system before an additional copy is released.
+                                </div>
+                                <div>
+                                    <strong style="color:var(--primary-dark); display:block;">2. Non-Duplicate Record Integrity</strong>
+                                    Requests for copies are connected to the original deceased record without creating duplicate entries.
+                                </div>
+                                <div>
+                                    <strong style="color:var(--primary-dark); display:block;">3. Mandatory Receipt Confirmation</strong>
+                                    In accordance with civil guidelines, copies are not closed until user confirmation is logged in the audit trail.
+                                </div>
+                                <div>
+                                    <strong style="color:var(--primary-dark); display:block;">4. Authorized Office Coordination</strong>
+                                    Official death certificates are certified and recorded exclusively by authorized civil registrars.
+                                </div>
+                            </div>
+                        </div>
+
+                        <?php else: ?>
+                        <!-- Track A: Death Certificate Processing Tracking -->
+                        <div class="track-box <?= $deathCertReq ? 'active-box' : '' ?>">
+                            <div class="track-box-header">
+                                <div class="track-box-title">
+                                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                                    Death Certificate Registration
+                                </div>
+                                <?php $dcBadge = getBurialBadgeMeta($dcStatus, in_array(strtolower($dcStatus), ['registered', 'certified copy requested or received']), false); ?>
+                                <span class="status-badge <?= $dcBadge['class'] ?>" style="padding:4px 12px; font-size:0.75rem;">
+                                    <span class="status-dot" style="width:6px; height:6px;"></span>
+                                    <?= htmlspecialchars($dcBadge['label']) ?>
+                                </span>
+                            </div>
+
+                            <div class="track-field-row">
+                                <span class="track-field-label">Current Stage:</span>
+                                <span class="track-field-val" style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($dcStatus) ?></span>
+                            </div>
+                            <div class="track-field-row">
+                                <span class="track-field-label">LCRO Registry Number:</span>
+                                <span class="track-field-val"><?= htmlspecialchars(($activeBurial['death_cert_registry_no'] ?? '') ?: 'Pending Registration') ?></span>
+                            </div>
+                            <?php if (!empty($activeBurial['death_cert_registered_date'])): ?>
+                                <div class="track-field-row">
+                                    <span class="track-field-label">Registration Date:</span>
+                                    <span class="track-field-val"><?= date('M d, Y', strtotime($activeBurial['death_cert_registered_date'])) ?></span>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($activeBurial['death_cert_lcro_ref'])): ?>
+                                <div class="track-field-row">
+                                    <span class="track-field-label">LCRO Transmittal Ref:</span>
+                                    <span class="track-field-val"><?= htmlspecialchars($activeBurial['death_cert_lcro_ref']) ?></span>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($activeBurial['death_cert_certified_copy_ref'])): ?>
+                                <div class="track-field-row">
+                                    <span class="track-field-label">PSA / Certified Copy:</span>
+                                    <span class="track-field-val"><?= htmlspecialchars($activeBurial['death_cert_certified_copy_ref']) ?></span>
+                                </div>
+                            <?php endif; ?>
+                            <div class="track-field-row">
+                                <span class="track-field-label">Responsible Personnel:</span>
+                                <span class="track-field-val"><?= htmlspecialchars(($activeBurial['death_cert_responsible_personnel'] ?? '') ?: 'Damayan Coordinator') ?></span>
+                            </div>
+                            <?php if (!empty($activeBurial['death_cert_remarks'])): ?>
+                                <div style="font-size:0.8rem; color:var(--text-muted); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
+                                    <strong>Staff Remarks:</strong> <?= htmlspecialchars($activeBurial['death_cert_remarks']) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php if ($cemeteryPlotReq || !empty($activeBurial['cemetery_plot_requested'])): ?>
+                        <!-- Track B: Burial Assistance & Allocation -->
+                        <div class="track-box active-box">
+                            <div class="track-box-header">
+                                <div class="track-box-title">
+                                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                                    Burial Service &amp; Allocation
+                                </div>
+                                <?php $burialBadge = getBurialBadgeMeta($cpStatus, strtolower($cpStatus) === 'plot assigned', strtolower($cpStatus) === 'rejected'); ?>
+                                <span class="status-badge <?= $burialBadge['class'] ?>" style="padding:4px 12px; font-size:0.75rem;">
+                                    <span class="status-dot" style="width:6px; height:6px;"></span>
+                                    <?= htmlspecialchars($burialBadge['label']) ?>
+                                </span>
+                            </div>
+
+                            <div class="track-field-row">
+                                <span class="track-field-label">Burial Status:</span>
+                                <span class="track-field-val" style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($cpStatus) ?></span>
+                            </div>
+                            <div class="track-field-row">
+                                <span class="track-field-label">Burial Location:</span>
+                                <span class="track-field-val"><?= htmlspecialchars($activeBurial['assigned_cemetery_name'] ?: ($activeBurial['cemetery_preference'] ?: 'ISCAG Designated Muslim Cemetery')) ?></span>
+                            </div>
+                            <?php if (!empty($activeBurial['assigned_plot_number'])): ?>
+                            <div class="track-field-row">
+                                <span class="track-field-label">Allocated Space / Plot:</span>
+                                <span class="track-field-val" style="color:#047857; font-weight:700;">Sec <?= htmlspecialchars($activeBurial['assigned_section'] ?: 'General') ?> - Space #<?= htmlspecialchars($activeBurial['assigned_plot_number']) ?></span>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (!empty($activeBurial['plot_assigned_date'])): ?>
+                            <div class="track-field-row">
+                                <span class="track-field-label">Allocation Date:</span>
+                                <span class="track-field-val"><?= date('M d, Y', strtotime($activeBurial['plot_assigned_date'])) ?></span>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (!empty($activeBurial['cemetery_plot_remarks'])): ?>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
+                                <strong>Caretaker Notes:</strong> <?= htmlspecialchars($activeBurial['cemetery_plot_remarks']) ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php else: ?>
+                        <!-- Track B: Civil Registry Coordination Safeguards -->
+                        <div class="track-box active-box">
+                            <div class="track-box-header">
+                                <div class="track-box-title">
+                                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                    Civil Registration Coordination
+                                </div>
+                                <span class="status-badge approved" style="padding:4px 10px; font-size:0.75rem;">
+                                    LCRO Process
+                                </span>
+                            </div>
+
+                            <div style="display:flex; flex-direction:column; gap:12px; font-size:0.84rem; line-height:1.5; color:#374151;">
+                                <div>
+                                    <strong style="color:var(--primary-dark); display:block;">1. Initial Verification</strong>
+                                    Damayan staff reviews deceased personal details and supporting documents before civil filing.
+                                </div>
+                                <div>
+                                    <strong style="color:var(--primary-dark); display:block;">2. Hospital &amp; Medical Certification</strong>
+                                    Coordination with authorized certifying physicians or health officers for death certification.
+                                </div>
+                                <div>
+                                    <strong style="color:var(--primary-dark); display:block;">3. Civil Registration (LCRO)</strong>
+                                    Transmittal to the Local Civil Registrar for official registration and entry in the civil register.
+                                </div>
+                                <div>
+                                    <strong style="color:var(--primary-dark); display:block;">4. Tracking &amp; Certified Copies</strong>
+                                    Monitor progress until registration is completed and certified true copies are available.
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                        <?php endif; ?>
+
                     </div>
 
                     <!-- Notice / Coordination Guidelines -->
@@ -863,8 +1186,8 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                         </div>
                         <div class="guidelines-text">
-                            <h5>Immediate Damayan Coordination</h5>
-                            <p>To request a burial or report a death immediately, click the <strong>Request Form</strong> button above or below. After submitting, please coordinate with the Damayan Coordinator at the ISCAG office or call our 24/7 emergency hotline for immediate Ghusl and Janazah arrangements.</p>
+                            <h5>Damayan Coordination Guidelines</h5>
+                            <p>To submit a new Death Certificate or Burial request, click <strong>Submit New Request</strong> below. Our Damayan Staff coordinates civil registration with official government registries and facilitates Islamic burial arrangements.</p>
                         </div>
                     </div>
                 </div>
@@ -872,7 +1195,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                 <!-- Footer / Action Row -->
                 <footer class="app-footer">
                     <div style="font-size: 0.85rem; color: var(--text-muted);">
-                        Need a new service request? Click <strong>Request Form</strong> to fill up the form.
+                        Need a new request? Click <strong>Submit New Request</strong> to fill up the form.
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                         <button type="button" class="btn-outline" onclick="window.print()">
@@ -880,9 +1203,8 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                             Print Details
                         </button>
                         <a href="<?= url('/user/services/burial-dashboard') ?>" class="btn-outline">
-                            View Request History
+                            View Dashboard
                         </a>
-                        <!-- 🔘 CLICK REQUEST FORM BUTTON (Reveals the fill-up form) -->
                         <button type="button" class="btn-request-form" id="btn-request-form-bottom" onclick="toggleRequestForm()">
                             <svg viewBox="0 0 24 24">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -890,22 +1212,22 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                                 <line x1="12" y1="18" x2="12" y2="12"></line>
                                 <line x1="9" y1="15" x2="15" y2="15"></line>
                             </svg>
-                            <span id="btn-request-text-bottom"><?= $autoOpenForm ? 'Close Request Form' : 'Request Form' ?></span>
+                            <span id="btn-request-text-bottom"><?= $autoOpenForm ? 'Close Request Form' : 'Submit New Request' ?></span>
                         </button>
                     </div>
                 </footer>
             </div>
 
             <!-- ═══════════════════════════════════════════════════════════════ -->
-            <!-- CARD 2: THE FILL UP FORM (APPEARS ON CLICKING "REQUEST FORM")   -->
+            <!-- CARD 2: THE REQUEST FORM (APPEARS ON CLICKING "SUBMIT REQUEST") -->
             <!-- ═══════════════════════════════════════════════════════════════ -->
             <div id="burial-form-container">
                 <div class="form-card" id="burial-form-card">
                     <!-- Form Header -->
                     <div class="form-card-header">
                         <div class="form-card-title-area">
-                            <h2>Burial Service Request Form</h2>
-                            <p>Please fill out the deceased and informant details below. Our Damayan coordinators will immediately review and prepare the arrangements.</p>
+                            <h2>Burial &amp; Death Certificate Request Form</h2>
+                            <p>Register a death record and request burial assistance, or request an additional copy of an existing registered death certificate.</p>
                         </div>
                         <button type="button" class="btn-close-form" onclick="toggleRequestForm(false)">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -915,132 +1237,247 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
 
                     <!-- Form Body -->
                     <form id="burial-request-form" class="form-card-body" onsubmit="submitBurialRequest(event)">
-                        <!-- Section 1: Deceased Personal Information -->
-                        <div class="form-section-title">
-                            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                            1. Deceased's Information
-                        </div>
-
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label">First Name <span class="req">*</span></label>
-                                <input type="text" id="deceased-first-name" class="form-control" placeholder="e.g. Abdullah" required />
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Middle Name</label>
-                                <input type="text" id="deceased-middle-name" class="form-control" placeholder="e.g. Masoud" />
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Last Name <span class="req">*</span></label>
-                                <input type="text" id="deceased-last-name" class="form-control" placeholder="e.g. Al-Mansoor" required />
-                            </div>
-                        </div>
-
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label">Sex <span class="req">*</span></label>
-                                <select id="deceased-sex" class="form-select" required>
-                                    <option value="Male" selected>Male</option>
-                                    <option value="Female">Female</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Date of Birth</label>
-                                <input type="date" id="deceased-dob" class="form-control" />
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Date of Death <span class="req">*</span></label>
-                                <input type="date" id="deceased-dod" class="form-control" value="<?= date('Y-m-d') ?>" required />
-                            </div>
-                        </div>
-
-                        <div class="form-grid cols-2">
-                            <div class="form-group">
-                                <label class="form-label">Place of Death <span class="req">*</span></label>
-                                <input type="text" id="deceased-pod" class="form-control" placeholder="Hospital name, residence, or complete address" required />
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Usual Residence Address <span class="req">*</span></label>
-                                <input type="text" id="deceased-residence" class="form-control" placeholder="Barangay, City / Municipality, Province" required />
-                            </div>
-                        </div>
-
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label">Religion</label>
-                                <input type="text" id="deceased-religion" class="form-control" value="Islam" readonly />
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Civil Status</label>
-                                <select id="deceased-civil-status" class="form-select">
-                                    <option value="Married">Married</option>
-                                    <option value="Single">Single</option>
-                                    <option value="Widowed">Widowed</option>
-                                    <option value="Divorced">Divorced</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Nationality</label>
-                                <input type="text" id="deceased-citizenship" class="form-control" value="Filipino" />
-                            </div>
-                        </div>
-
-                        <!-- Section 2: Islamic Rites & Arrangements -->
-                        <div class="form-section-title" style="margin-top: 16px;">
-                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                            2. Islamic Rites &amp; Services Requested
-                        </div>
-
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">Select all Islamic Damayan assistance needed for the deceased:</p>
                         
-                        <div class="services-select-grid">
-                            <label class="service-checkbox-card">
-                                <input type="checkbox" name="services_req" value="Ghusl" checked />
-                                <span class="service-checkbox-label">Bathing / Ghusl (الغسل)</span>
-                            </label>
-                            <label class="service-checkbox-card">
-                                <input type="checkbox" name="services_req" value="Kafn" checked />
-                                <span class="service-checkbox-label">Shrouding / Kafn (الكفن)</span>
-                            </label>
-                            <label class="service-checkbox-card">
-                                <input type="checkbox" name="services_req" value="Janazah" checked />
-                                <span class="service-checkbox-label">Janazah Prayer (صلاة الجنازة)</span>
-                            </label>
-                            <label class="service-checkbox-card">
-                                <input type="checkbox" name="services_req" value="Plot" checked />
-                                <span class="service-checkbox-label">Islamic Cemetery Plot</span>
-                            </label>
-                            <label class="service-checkbox-card">
-                                <input type="checkbox" name="services_req" value="Transport" checked />
-                                <span class="service-checkbox-label">Hearse / Transport Support</span>
-                            </label>
+                        <!-- Functionality Selector: 1. Register Death & Burial OR 2. Request Another Death Certificate -->
+                        <div class="form-section-title">
+                            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                            1. Select Damayan Service Type
                         </div>
 
-                        <div class="form-grid cols-2">
-                            <div class="form-group">
-                                <label class="form-label">Preferred Cemetery / Burial Site</label>
-                                <input type="text" id="deceased-cemetery" class="form-control" placeholder="e.g. Dasmariñas Islamic Cemetery / ISCAG Ground" value="ISCAG Designated Muslim Cemetery" />
+                        <div class="type-selector-grid" style="grid-template-columns: repeat(2, 1fr);">
+                            <div class="type-option-card selected" id="opt-type-register" onclick="selectCertFunction('register')">
+                                <div class="type-option-title">
+                                    <input type="radio" name="cert_function_radio" value="register" checked style="accent-color:var(--primary);" />
+                                    Register Death &amp; Burial Assistance
+                                </div>
+                                <div class="type-option-desc">
+                                    For reporting a newly deceased person for death registration and Islamic burial coordination.
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Target Burial Time</label>
-                                <select id="burial-timing" class="form-select">
-                                    <option value="Immediate (As soon as possible - Sunnah)">Immediate (As soon as possible — Sunnah)</option>
-                                    <option value="After Dhuhr Prayer">After Dhuhr Prayer</option>
-                                    <option value="After Asr Prayer">After Asr Prayer</option>
-                                    <option value="Morning (Following Day)">Morning (Following Day)</option>
+                            <div class="type-option-card" id="opt-type-copy" onclick="selectCertFunction('copy')">
+                                <div class="type-option-title">
+                                    <input type="radio" name="cert_function_radio" value="copy" style="accent-color:var(--primary);" />
+                                    Request Another Death Certificate
+                                </div>
+                                <div class="type-option-desc">
+                                    Exclusively for users who already have an existing death certificate and want to request another copy.
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="selected-cert-action" name="cert_action_type" value="register" />
+
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <!-- A. COPY-SPECIFIC CONTAINER (Existing Certificate Details)    -->
+                        <!-- Displayed ONLY when 'Request Another Death Certificate' is on -->
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <div id="copy-specific-container" style="display: none; margin-bottom: 28px;">
+                            <div class="form-section-title">
+                                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                                2. Existing Certificate Details &amp; Purpose of Request
+                            </div>
+
+                            <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 20px 24px; margin-bottom: 22px;">
+                                <div style="font-weight: 800; font-size: 0.95rem; color: var(--primary-dark); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                                    Existing Record Verification Policy
+                                </div>
+                                <p style="margin: 0; font-size: 0.83rem; color: #4b5563; line-height: 1.5;">
+                                    Provide the details of your existing registered certificate. Staff will locate and verify the record in civil archives before an additional copy is issued. No duplicate death registration record will be created.
+                                </p>
+                            </div>
+
+                            <?php if (!empty($existingDeceased)): ?>
+                            <div style="background:#f9fafb; border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin-bottom:20px;">
+                                <label class="form-label" style="color:var(--primary-dark); margin-bottom:6px; display:block;">
+                                    Select Registered Deceased Person (Optional — if already in ISCAG records):
+                                </label>
+                                <select id="copy-select-deceased" class="form-select" onchange="autoFillCopyDeceased(this)">
+                                    <option value="">-- Or enter certificate details manually below --</option>
+                                    <?php foreach($existingDeceased as $ed): 
+                                        $decFullName = trim(($ed['first_name'] ?? '') . ' ' . ($ed['last_name'] ?? ''));
+                                        if (!empty($ed['full_name'])) $decFullName = $ed['full_name'];
+                                    ?>
+                                        <option value="<?= $ed['id'] ?>"
+                                            data-fullname="<?= htmlspecialchars($decFullName) ?>"
+                                            data-dod="<?= htmlspecialchars($ed['date_of_death'] ?? '') ?>"
+                                            data-ref="<?= htmlspecialchars($ed['ref_id'] ?? '') ?>">
+                                            <?= htmlspecialchars($decFullName) ?> (DOD: <?= htmlspecialchars($ed['date_of_death'] ?? 'N/A') ?>)
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
+                            <?php endif; ?>
+
+                            <div class="form-grid cols-2" style="margin-bottom: 14px;">
+                                <div class="form-group">
+                                    <label class="form-label">Deceased Person Full Name (as appearing on Certificate) <span class="req">*</span></label>
+                                    <input type="text" id="copy-deceased-name" class="form-control" placeholder="e.g. Abdullah Masoud Al-Mansoor" />
+                                    <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Name as recorded on the original death certificate.</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Existing Certificate / Registry Number (If Available)</label>
+                                    <input type="text" id="existing-cert-no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkExistingCertNumber(this.value)" oninput="debouncedCheckCert(this.value)" />
+                                    <input type="hidden" id="linked-encoded-cert-id" value="" />
+                                    <span id="existing-cert-feedback" style="font-size:0.75rem; color:var(--text-muted); margin-top:2px; display:block;">Allows staff to locate and link the existing record immediately.</span>
+                                </div>
+                            </div>
+
+                            <div class="form-grid cols-2" style="margin-bottom: 14px;">
+                                <div class="form-group">
+                                    <label class="form-label">Number of Copies Requested <span class="req">*</span></label>
+                                    <input type="number" id="num-copies" class="form-control" value="1" min="1" max="10" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date of Death on Certificate (Optional)</label>
+                                    <input type="date" id="copy-deceased-dod" class="form-control" />
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label">Reason / Purpose for Requesting Another Copy <span class="req">*</span></label>
+                                <textarea id="copy-reason" class="form-control" rows="2" placeholder="e.g. Required for estate settlement, insurance claim, pension benefits, legal proceedings, personal records archive..."></textarea>
+                                <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Please specify the exact purpose or requesting authority for this additional copy.</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Upload Supporting Document or Existing Certificate Copy (Optional)</label>
+                                <input type="file" id="copy-supporting-document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                                <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Upload existing certificate copy, photo, or authorization ID (PDF, JPG, PNG - Max 10MB)</span>
+                            </div>
                         </div>
 
-                        <!-- Section 3: Applicant / Informant Details -->
-                        <div class="form-section-title" style="margin-top: 16px;">
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <!-- B. REGISTRATION DECEASED FIELDS CONTAINER                   -->
+                        <!-- Displayed ONLY when 'Register Death & Burial' is on         -->
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <div id="registration-deceased-fields" style="display: block;">
+                            <!-- Existing Deceased Auto-Fill Selector (Avoid duplicate data entry - Req 4) -->
+                            <?php if (!empty($existingDeceased)): ?>
+                            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px 20px; margin-bottom:24px;">
+                                <label class="form-label" style="color:var(--primary-dark); margin-bottom:6px; display:block;">
+                                    Select Registered Deceased Person (Link to Existing Record):
+                                </label>
+                                <select id="select-existing-deceased" class="form-select" onchange="autoFillExistingDeceased(this)">
+                                    <option value="">-- Or enter deceased person details below --</option>
+                                    <?php foreach($existingDeceased as $ed): ?>
+                                        <option value="<?= $ed['id'] ?>"
+                                            data-fname="<?= htmlspecialchars($ed['first_name'] ?? '') ?>"
+                                            data-mname="<?= htmlspecialchars($ed['middle_name'] ?? '') ?>"
+                                            data-lname="<?= htmlspecialchars($ed['last_name'] ?? '') ?>"
+                                            data-sex="<?= htmlspecialchars($ed['sex'] ?? 'Male') ?>"
+                                            data-dob="<?= htmlspecialchars($ed['date_of_birth'] ?? '') ?>"
+                                            data-dod="<?= htmlspecialchars($ed['date_of_death'] ?? '') ?>"
+                                            data-pod="<?= htmlspecialchars($ed['place_of_death'] ?? '') ?>"
+                                            data-residence="<?= htmlspecialchars($ed['residence'] ?? '') ?>"
+                                            data-civil="<?= htmlspecialchars($ed['civil_status'] ?? 'Married') ?>"
+                                            data-nationality="<?= htmlspecialchars($ed['nationality'] ?? 'Filipino') ?>"
+                                            data-religion="<?= htmlspecialchars($ed['religion'] ?? 'Islam') ?>">
+                                            <?= htmlspecialchars(trim(($ed['first_name'] ?? '') . ' ' . ($ed['last_name'] ?? ''))) ?> (DOD: <?= htmlspecialchars($ed['date_of_death'] ?? 'N/A') ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input type="hidden" id="selected-deceased-id" value="" />
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- Section 2: Deceased Personal Information -->
+                            <div class="form-section-title" id="form-deceased-section-title">
+                                <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+                                2. Deceased Person Information
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">First Name <span class="req">*</span></label>
+                                    <input type="text" id="deceased-first-name" class="form-control" placeholder="e.g. Abdullah" required />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Middle Name</label>
+                                    <input type="text" id="deceased-middle-name" class="form-control" placeholder="e.g. Masoud" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Last Name <span class="req">*</span></label>
+                                    <input type="text" id="deceased-last-name" class="form-control" placeholder="e.g. Al-Mansoor" required />
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Sex / Gender <span class="req">*</span></label>
+                                    <select id="deceased-sex" class="form-select" required>
+                                        <option value="Male" selected>Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date of Birth</label>
+                                    <input type="date" id="deceased-dob" class="form-control" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Date of Death <span class="req">*</span></label>
+                                    <input type="date" id="deceased-dod" class="form-control" value="<?= date('Y-m-d') ?>" required />
+                                </div>
+                            </div>
+
+                            <div class="form-grid cols-2">
+                                <div class="form-group">
+                                    <label class="form-label">Place of Death <span class="req">*</span></label>
+                                    <input type="text" id="deceased-pod" class="form-control" placeholder="Hospital name, residence, or complete address" required />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Usual Residence Address <span class="req">*</span></label>
+                                    <input type="text" id="deceased-residence" class="form-control" placeholder="Barangay, City / Municipality, Province" required />
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Religion</label>
+                                    <input type="text" id="deceased-religion" class="form-control" value="Islam" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Civil Status</label>
+                                    <select id="deceased-civil-status" class="form-select">
+                                        <option value="Married">Married</option>
+                                        <option value="Single">Single</option>
+                                        <option value="Widowed">Widowed</option>
+                                        <option value="Divorced">Divorced</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nationality</label>
+                                    <input type="text" id="deceased-citizenship" class="form-control" value="Filipino" />
+                                </div>
+                            </div>
+
+                            <!-- Supporting Document Upload -->
+                            <div class="form-grid cols-1">
+                                <div class="form-group">
+                                    <label class="form-label">Upload Supporting Document or Hospital Death Certificate (Optional)</label>
+                                    <input type="file" id="supporting-document-file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                                    <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Upload Hospital Certificate of Death, Medical Certificate, or Valid Representative ID (PDF, JPG, PNG - Max 10MB)</span>
+                                </div>
+                            </div>
+
+                            <!-- Cemetery Preference Section Hidden per Restriction 4 -->
+                            <div id="cemetery-preference-section" style="display:none;">
+                                <input type="hidden" id="deceased-cemetery" value="ISCAG Designated Muslim Cemetery" />
+                                <input type="hidden" id="deceased-pref-section" value="" />
+                            </div>
+                        </div>
+
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <!-- C. REQUESTER / AUTHORIZED REPRESENTATIVE INFORMATION        -->
+                        <!-- Always displayed for both request types                     -->
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <div class="form-section-title" id="requester-section-title" style="margin-top: 16px;">
                             <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                            3. Applicant &amp; Informant Information
+                            3. Requester / Authorized Representative Information
                         </div>
 
                         <div class="form-grid">
                             <div class="form-group">
-                                <label class="form-label">Applicant Name <span class="req">*</span></label>
+                                <label class="form-label">Requester Name <span class="req">*</span></label>
                                 <input type="text" id="informant-name" class="form-control" value="<?= htmlspecialchars($userName) ?>" required />
                             </div>
                             <div class="form-group">
@@ -1054,7 +1491,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                                     <option value="Brother">Brother</option>
                                     <option value="Sister">Sister</option>
                                     <option value="Relative" selected>Relative</option>
-                                    <option value="Legal Guardian / Representative">Legal Guardian / Representative</option>
+                                    <option value="Authorized Representative">Authorized Representative</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -1069,8 +1506,15 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                                 <input type="email" id="informant-email" class="form-control" value="<?= htmlspecialchars($userEmail) ?>" placeholder="name@example.com" />
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Applicant Residential Address</label>
+                                <label class="form-label">Residential Address</label>
                                 <input type="text" id="informant-address" class="form-control" value="<?= htmlspecialchars($userAddress) ?>" placeholder="Current residence address" />
+                            </div>
+                        </div>
+
+                        <div class="form-grid cols-1">
+                            <div class="form-group">
+                                <label class="form-label">Additional Instructions / Notes</label>
+                                <textarea id="additional-notes" class="form-control" rows="2" placeholder="Any special notes, family coordination details, or registry liaison instructions..."></textarea>
                             </div>
                         </div>
 
@@ -1078,7 +1522,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                         <div class="form-terms-box">
                             <input type="checkbox" id="burial-certify" required />
                             <label for="burial-certify" class="form-terms-label">
-                                I hereby certify that the information provided is correct and truthful to the best of my knowledge. I request the Islamic Studies, Call and Guidance (ISCAG) Damayan Department to administer the Islamic funeral and burial arrangements according to Quran and Sunnah.
+                                I hereby certify that the information provided is true and correct. I authorize the ISCAG Damayan Department to coordinate death certificate processing, verification, and burial arrangements with authorized offices.
                             </label>
                         </div>
 
@@ -1087,7 +1531,7 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
                             <button type="button" class="btn-outline" onclick="toggleRequestForm(false)">Cancel</button>
                             <button type="submit" class="btn-submit" id="btn-submit-burial">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                Submit Burial Request
+                                <span id="btn-submit-burial-text">Submit Registration &amp; Burial Request</span>
                             </button>
                         </div>
                     </form>
@@ -1096,8 +1540,8 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
 
             <!-- Back to Dashboard Link -->
             <div style="text-align: center; margin-top: 36px;">
-                <a href="<?= url('/user/dashboard') ?>" style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                    ← Back to My Dashboard
+                <a href="<?= url('/user/services/burial-dashboard') ?>" style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                    ← Back to Burial &amp; Death Certificate Dashboard
                 </a>
             </div>
         </div>
@@ -1108,6 +1552,127 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
 <div class="toast-notify" id="burial-toast"></div>
 
 <script>
+    // ── Function Selector Switching (Register vs Copy) ──
+    function selectCertFunction(func) {
+        document.getElementById('selected-cert-action').value = func;
+        const isCopy = (func === 'copy');
+        
+        const regCard = document.getElementById('opt-type-register');
+        const copyCard = document.getElementById('opt-type-copy');
+        const copyContainer = document.getElementById('copy-specific-container');
+        const regContainer = document.getElementById('registration-deceased-fields');
+        const requesterTitle = document.getElementById('requester-section-title');
+        const btnSubmitText = document.getElementById('btn-submit-burial-text');
+
+        // List of registration inputs that have required attributes
+        const regRequiredIds = [
+            'deceased-first-name',
+            'deceased-last-name',
+            'deceased-dod',
+            'deceased-pod',
+            'deceased-residence'
+        ];
+        
+        if (isCopy) {
+            if (copyCard) {
+                copyCard.classList.add('selected');
+                const r = copyCard.querySelector('input[type="radio"]');
+                if (r) r.checked = true;
+            }
+            if (regCard) regCard.classList.remove('selected');
+
+            // Show ONLY Existing Certificate Details & Purpose of Request + Requester
+            if (copyContainer) copyContainer.style.display = 'block';
+            if (regContainer) regContainer.style.display = 'none';
+
+            // Remove required attribute from hidden registration inputs so HTML5 validation passes
+            regRequiredIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.removeAttribute('required');
+            });
+
+            // Add required attribute to copy fields
+            document.getElementById('copy-deceased-name')?.setAttribute('required', 'required');
+            document.getElementById('copy-reason')?.setAttribute('required', 'required');
+
+            if (requesterTitle) {
+                requesterTitle.innerHTML = '<svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 2. Requester / Authorized Representative Information';
+            }
+            if (btnSubmitText) btnSubmitText.textContent = 'Submit Copy Request';
+        } else {
+            if (regCard) {
+                regCard.classList.add('selected');
+                const r = regCard.querySelector('input[type="radio"]');
+                if (r) r.checked = true;
+            }
+            if (copyCard) copyCard.classList.remove('selected');
+
+            // Show Registration Deceased inputs + Requester
+            if (copyContainer) copyContainer.style.display = 'none';
+            if (regContainer) regContainer.style.display = 'block';
+
+            // Restore required attribute to registration inputs
+            regRequiredIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.setAttribute('required', 'required');
+            });
+
+            // Remove required attribute from hidden copy fields
+            document.getElementById('copy-deceased-name')?.removeAttribute('required');
+            document.getElementById('copy-reason')?.removeAttribute('required');
+
+            if (requesterTitle) {
+                requesterTitle.innerHTML = '<svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 3. Requester / Authorized Representative Information';
+            }
+            if (btnSubmitText) btnSubmitText.textContent = 'Submit Registration & Burial Request';
+        }
+    }
+
+    // ── Auto-fill Existing Deceased (For Registration Form) ──
+    function autoFillExistingDeceased(selectElem) {
+        const opt = selectElem.options[selectElem.selectedIndex];
+        if(!opt || !opt.value) {
+            document.getElementById('selected-deceased-id').value = '';
+            return;
+        }
+
+        document.getElementById('selected-deceased-id').value = opt.value;
+        document.getElementById('deceased-first-name').value = opt.getAttribute('data-fname') || '';
+        document.getElementById('deceased-middle-name').value = opt.getAttribute('data-mname') || '';
+        document.getElementById('deceased-last-name').value = opt.getAttribute('data-lname') || '';
+        document.getElementById('deceased-sex').value = opt.getAttribute('data-sex') || 'Male';
+        document.getElementById('deceased-dob').value = (opt.getAttribute('data-dob') || '').substring(0, 10);
+        document.getElementById('deceased-dod').value = (opt.getAttribute('data-dod') || '').substring(0, 10);
+        document.getElementById('deceased-pod').value = opt.getAttribute('data-pod') || '';
+        document.getElementById('deceased-residence').value = opt.getAttribute('data-residence') || '';
+        document.getElementById('deceased-civil-status').value = opt.getAttribute('data-civil') || 'Married';
+        document.getElementById('deceased-citizenship').value = opt.getAttribute('data-nationality') || 'Filipino';
+        document.getElementById('deceased-religion').value = opt.getAttribute('data-religion') || 'Islam';
+    }
+
+    // ── Auto-fill Existing Deceased (For Copy Request Form) ──
+    function autoFillCopyDeceased(selectElem) {
+        const opt = selectElem.options[selectElem.selectedIndex];
+        if(!opt || !opt.value) {
+            document.getElementById('selected-deceased-id').value = '';
+            return;
+        }
+
+        document.getElementById('selected-deceased-id').value = opt.value;
+        const fullName = opt.getAttribute('data-fullname') || opt.text.split('(')[0].trim();
+        if (fullName && document.getElementById('copy-deceased-name')) {
+            document.getElementById('copy-deceased-name').value = fullName;
+        }
+        const dod = (opt.getAttribute('data-dod') || '').substring(0, 10);
+        if (dod && document.getElementById('copy-deceased-dod')) {
+            document.getElementById('copy-deceased-dod').value = dod;
+        }
+        const refNo = opt.getAttribute('data-ref') || '';
+        if (refNo && document.getElementById('existing-cert-no') && !document.getElementById('existing-cert-no').value) {
+            document.getElementById('existing-cert-no').value = refNo;
+        }
+    }
+
     // ── Toggle Request Form Visibility ──
     function toggleRequestForm(forceState = null) {
         const container = document.getElementById('burial-form-container');
@@ -1121,21 +1686,122 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
 
         if (isOpen) {
             container.style.display = 'none';
-            if (btnTopText) btnTopText.textContent = 'Request Form';
-            if (btnBottomText) btnBottomText.textContent = 'Request Form';
+            if (btnTopText) btnTopText.textContent = 'Submit New Request';
+            if (btnBottomText) btnBottomText.textContent = 'Submit New Request';
         } else {
             container.style.display = 'block';
             if (btnTopText) btnTopText.textContent = 'Close Request Form';
             if (btnBottomText) btnBottomText.textContent = 'Close Request Form';
             
-            // Smoothly scroll down to the form card
             setTimeout(() => {
                 container.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 50);
         }
     }
 
-    // ── Submit Burial Request via AJAX ──
+    // ── Confirm Receipt of Certificate Copy ──
+    async function confirmCopyReceipt(refId) {
+        if (!confirm('Have you physically or officially received your requested Death Certificate copy?')) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('ref_id', refId);
+
+            const res = await fetch('<?= url("/user/services/burial/confirm-copy") ?>', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                const toast = document.getElementById('burial-toast');
+                toast.innerHTML = '<strong>Receipt Confirmed!</strong> Your receipt of the certificate copy has been recorded.<br><span style="font-size:0.8rem;opacity:0.9;">Updating request status...</span>';
+                toast.style.display = 'block';
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1300);
+            } else {
+                alert(data.error || data.message || 'Failed to confirm receipt.');
+            }
+        } catch(err) {
+            console.error(err);
+            alert('An error occurred while confirming receipt.');
+        }
+    }
+
+    let certLookupTimeout = null;
+    function debouncedCheckCert(val) {
+        clearTimeout(certLookupTimeout);
+        certLookupTimeout = setTimeout(() => {
+            checkExistingCertNumber(val);
+        }, 300);
+    }
+
+    function autoFillExistingCopyDeceased(selectEl) {
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (!opt || !opt.value) return;
+        const fullname = opt.getAttribute('data-fullname') || '';
+        const dod = opt.getAttribute('data-dod') || '';
+        const ref = opt.getAttribute('data-ref') || '';
+
+        const nameInput = document.getElementById('copy-deceased-name');
+        if (nameInput && fullname) nameInput.value = fullname;
+
+        const dodInput = document.getElementById('copy-deceased-dod');
+        if (dodInput && dod) dodInput.value = dod;
+
+        const certInput = document.getElementById('existing-cert-no');
+        if (certInput && ref) {
+            certInput.value = ref;
+            checkExistingCertNumber(ref);
+        }
+    }
+
+    async function checkExistingCertNumber(val) {
+        val = (val || '').trim();
+        const fb = document.getElementById('existing-cert-feedback');
+        const hiddenEncId = document.getElementById('linked-encoded-cert-id');
+        if (!val) {
+            if (fb) fb.innerHTML = 'Allows staff to locate and link the existing record immediately.';
+            if (hiddenEncId) hiddenEncId.value = '';
+            return;
+        }
+        try {
+            const res = await fetch('<?= url('/user/damayan/lookup-cert') ?>?reg=' + encodeURIComponent(val));
+            const data = await res.json();
+            if (data && data.found && data.record) {
+                if (hiddenEncId) hiddenEncId.value = data.record.id;
+                if (fb) {
+                    fb.innerHTML = `
+                        <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:10px 14px; margin-top:6px;">
+                            <div style="color:#059669; font-weight:800; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
+                                <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                ✓ Recognized in Damayan Archive
+                            </div>
+                            <div style="font-size:0.8rem; color:#064e3b; margin-top:4px; line-height:1.4;">
+                                <strong>Deceased:</strong> ${escapeHtml(data.record.deceased_name)}<br>
+                                <strong>Representative:</strong> ${escapeHtml(data.record.representative_name || 'N/A')}<br>
+                                <strong>Registered #:</strong> ${escapeHtml(data.record.registration_number)}
+                            </div>
+                        </div>
+                    `;
+                }
+                const decInput = document.getElementById('copy-deceased-name');
+                if (decInput && !decInput.value.trim()) {
+                    decInput.value = data.record.deceased_name;
+                }
+            } else {
+                if (hiddenEncId) hiddenEncId.value = '';
+                if (fb) {
+                    fb.innerHTML = '<span style="color:var(--text-muted); display:block; margin-top:4px;">Will be verified and linked by staff upon review.</span>';
+                }
+            }
+        } catch(e) {}
+    }
+
+    // ── Submit Request via AJAX ──
     async function submitBurialRequest(event) {
         event.preventDefault();
         
@@ -1147,32 +1813,82 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
 
         const btnSubmit = document.getElementById('btn-submit-burial');
         const originalText = btnSubmit.innerHTML;
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<svg class="animate-spin" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:white;stroke-width:2.5;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="white"></path></svg> Submitting Request...';
 
-        const payload = {
-            firstName: document.getElementById('deceased-first-name').value.trim(),
-            middleName: document.getElementById('deceased-middle-name').value.trim(),
-            lastName: document.getElementById('deceased-last-name').value.trim(),
-            sex: document.getElementById('deceased-sex').value,
-            dob: document.getElementById('deceased-dob').value || null,
-            dod: document.getElementById('deceased-dod').value,
-            pod: document.getElementById('deceased-pod').value.trim(),
-            residence: document.getElementById('deceased-residence').value.trim(),
-            religion: document.getElementById('deceased-religion').value || 'Islam',
-            civilStatus: document.getElementById('deceased-civil-status').value,
-            citizenship: document.getElementById('deceased-citizenship').value || 'Filipino',
-            relationship: document.getElementById('informant-rel').value,
-            informantName: document.getElementById('informant-name').value.trim(),
-            informantContact: document.getElementById('informant-phone').value.trim(),
-            informantAddress: document.getElementById('informant-address').value.trim()
-        };
+        const certAction = document.getElementById('selected-cert-action').value;
+
+        // Package as FormData to support file upload
+        const formData = new FormData();
+        formData.append('cert_action_type', certAction);
+
+        if (certAction === 'copy') {
+            const decName = document.getElementById('copy-deceased-name')?.value.trim();
+            const reason = document.getElementById('copy-reason')?.value.trim();
+            if (!decName) {
+                alert('Please enter the deceased person full name as appearing on the certificate.');
+                document.getElementById('copy-deceased-name')?.focus();
+                return;
+            }
+            if (!reason) {
+                alert('Please specify the reason for requesting another copy of the death certificate.');
+                document.getElementById('copy-reason')?.focus();
+                return;
+            }
+
+            formData.append('request_type', 'death_certificate');
+            formData.append('death_cert_requested', '1');
+            formData.append('cemetery_plot_requested', '0');
+            formData.append('deceased_name', decName);
+            formData.append('copy_reason', reason);
+            formData.append('existing_cert_no', document.getElementById('existing-cert-no')?.value.trim() || '');
+            formData.append('encoded_cert_id', document.getElementById('linked-encoded-cert-id')?.value || '');
+            formData.append('num_copies', document.getElementById('num-copies')?.value || '1');
+            formData.append('dod', document.getElementById('copy-deceased-dod')?.value || '');
+
+            const copyDoc = document.getElementById('copy-supporting-document');
+            if (copyDoc && copyDoc.files.length > 0) {
+                formData.append('supporting_document', copyDoc.files[0]);
+            }
+        } else {
+            formData.append('request_type', 'both');
+            formData.append('death_cert_requested', '1');
+            formData.append('cemetery_plot_requested', '1');
+            formData.append('firstName', document.getElementById('deceased-first-name')?.value.trim() || '');
+            formData.append('middleName', document.getElementById('deceased-middle-name')?.value.trim() || '');
+            formData.append('lastName', document.getElementById('deceased-last-name')?.value.trim() || '');
+            formData.append('sex', document.getElementById('deceased-sex')?.value || 'Male');
+            formData.append('dob', document.getElementById('deceased-dob')?.value || '');
+            formData.append('dod', document.getElementById('deceased-dod')?.value || '');
+            formData.append('pod', document.getElementById('deceased-pod')?.value.trim() || '');
+            formData.append('residence', document.getElementById('deceased-residence')?.value.trim() || '');
+            formData.append('religion', document.getElementById('deceased-religion')?.value || 'Islam');
+            formData.append('civilStatus', document.getElementById('deceased-civil-status')?.value || 'Married');
+            formData.append('citizenship', document.getElementById('deceased-citizenship')?.value || 'Filipino');
+
+            const fileInput = document.getElementById('supporting-document-file');
+            if (fileInput && fileInput.files.length > 0) {
+                formData.append('supporting_document', fileInput.files[0]);
+            }
+        }
+
+        const deceasedId = document.getElementById('selected-deceased-id')?.value;
+        if(deceasedId) {
+            formData.append('deceased_id', deceasedId);
+        }
+
+        formData.append('relationship', document.getElementById('informant-rel').value);
+        formData.append('informantName', document.getElementById('informant-name').value.trim());
+        formData.append('informantContact', document.getElementById('informant-phone').value.trim());
+        formData.append('informantEmail', document.getElementById('informant-email').value.trim());
+        formData.append('informantAddress', document.getElementById('informant-address').value.trim());
+        formData.append('additionalNotes', document.getElementById('additional-notes').value.trim());
+
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = 'Submitting Request...';
 
         try {
             const response = await fetch('<?= url("/user/services/burial/submit") ?>', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: formData
             });
 
             const data = await response.json();
@@ -1180,23 +1896,79 @@ if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fil
             if (data.success) {
                 const toast = document.getElementById('burial-toast');
                 const ref = data.ref_id || 'Submitted';
-                toast.innerHTML = '<strong>Success!</strong> Burial Service request filed successfully.<br>Reference ID: <code>' + ref + '</code><br><span style="font-size:0.8rem;opacity:0.9;">Updating record details...</span>';
+                const successTitle = (certAction === 'copy') ? 'Copy Request Submitted!' : 'Registration & Burial Request Submitted!';
+                toast.innerHTML = '<strong>' + successTitle + '</strong><br>Reference ID: <code>#' + ref + '</code><br><span style="font-size:0.8rem;opacity:0.9;">Opening tracking details...</span>';
                 toast.style.display = 'block';
 
                 setTimeout(() => {
-                    // Reload with the new reference ID so details update automatically
                     window.location.href = '<?= url("/user/services/burial-details") ?>?id=' + encodeURIComponent(ref);
-                }, 1600);
+                }, 1500);
             } else {
-                throw new Error(data.message || 'Failed to submit burial request.');
+                throw new Error(data.message || 'Failed to submit request.');
             }
         } catch (error) {
             console.error('Submission error:', error);
-            alert('Failed to submit burial request. Please check your inputs and try again.');
+            alert(error.message || 'Failed to submit request. Please check your inputs and try again.');
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = originalText;
         }
     }
+
+    // ── Submit Additional Requirements Response via AJAX ──
+    async function submitRequirementsResponse(event) {
+        event.preventDefault();
+        const refId = document.getElementById('resp-ref-id').value;
+        const infoText = document.getElementById('resp-info-text').value.trim();
+        const btn = document.getElementById('btn-submit-resp');
+        const originalText = btn.innerHTML;
+
+        if (!infoText) {
+            alert('Please provide the requested details or explanation.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = 'Submitting...';
+
+        const formData = new FormData();
+        formData.append('ref_id', refId);
+        formData.append('additional_info', infoText);
+
+        const fileInput = document.getElementById('resp-doc-file');
+        if (fileInput && fileInput.files.length > 0) {
+            formData.append('additional_doc', fileInput.files[0]);
+        }
+
+        try {
+            const res = await fetch('<?= url("/user/services/burial/respond-info") ?>', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.success) {
+                const toast = document.getElementById('burial-toast');
+                toast.innerHTML = '<strong>Success!</strong> Additional information submitted to Damayan staff.<br><span style="font-size:0.8rem;opacity:0.9;">Updating record...</span>';
+                toast.style.display = 'block';
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1400);
+            } else {
+                throw new Error(data.message || 'Failed to submit information.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert(err.message || 'Error submitting response.');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'copy') {
+            selectCertFunction('copy');
+        }
+    });
 </script>
 
 </body>

@@ -702,6 +702,18 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                   'link' => url('/user/apartment/status')
               ];
           }
+
+          foreach ($burialRequests ?? [] as $br) {
+              $serviceLabel = ($br['request_type'] === 'both') ? 'Death Cert & Cemetery Plot' : (($br['request_type'] === 'death_certificate') ? 'Death Certificate' : 'Cemetery Plot');
+              $dbRecentRequests[] = [
+                  'id' => $br['ref_id'],
+                  'type' => 'Damayan: ' . $serviceLabel . ' (' . htmlspecialchars($br['deceased_name']) . ')',
+                  'date' => !empty($br['submitted_at']) ? date('M d, Y', strtotime($br['submitted_at'])) : date('M d, Y'),
+                  'status' => $br['status'],
+                  'updatedAt' => !empty($br['updated_at']) ? date('M d, Y', strtotime($br['updated_at'])) : date('M d, Y'),
+                  'link' => url('/user/services/burial-dashboard?id=' . urlencode($br['ref_id']))
+              ];
+          }
         ?>
 
         <!-- WELCOME BANNER -->
@@ -909,18 +921,24 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                         <td style="font-weight:600;"><?= htmlspecialchars($r['type']) ?></td>
                         <td><?= htmlspecialchars($r['date']) ?></td>
                         <td>
-                          <?php if (in_array(strtolower($r['status']), ['approved', 'assigned'])): ?>
-                            <span class="badge-status badge-approved" style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;font-weight:700;">Confirmed</span>
-                          <?php elseif (in_array(strtolower($r['status']), ['pending', 'under review', 'queued'])): ?>
-                            <span class="badge-status badge-pending" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-weight:700;">Under Review</span>
+                          <?php 
+                            $stL = strtolower($r['status'] ?? '');
+                            if (in_array($stL, ['approved', 'assigned', 'registered', 'burial completed', 'completed', 'plot assigned'])): ?>
+                            <span class="badge-status badge-approved" style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;font-weight:700;">Completed</span>
+                          <?php elseif (in_array($stL, ['pending', 'under review', 'queued', 'request received', 'awaiting authorized certificate preparation', 'certificate prepared and certified', 'submitted for civil registration'])): ?>
+                            <span class="badge-status badge-pending" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-weight:700;">In Progress</span>
+                          <?php elseif ($stL === 'additional information required'): ?>
+                            <span class="badge-status" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-weight:700;">Action Required</span>
+                          <?php elseif ($stL === 'rejected'): ?>
+                            <span class="badge-status badge-rejected" style="font-weight:700;">Rejected</span>
                           <?php else: ?>
-                            <span class="badge-status badge-rejected" style="font-weight:700;"><?= htmlspecialchars(ucfirst($r['status'])) ?></span>
+                            <span class="badge-status" style="background:#f3f4f6;color:#4b5563;font-weight:700;"><?= htmlspecialchars(ucwords($r['status'])) ?></span>
                           <?php endif; ?>
                         </td>
                         <td>
-                          <a href="<?= $r['link'] ?>" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:8px; background:<?= in_array(strtolower($r['status']), ['approved', 'assigned']) ? '#166534' : '#f8faf9' ?>; color:<?= in_array(strtolower($r['status']), ['approved', 'assigned']) ? 'white' : 'var(--primary-dark)' ?>; border:1px solid <?= in_array(strtolower($r['status']), ['approved', 'assigned']) ? '#166534' : '#e2e8f0' ?>; font-size:0.8rem; font-weight:700; text-decoration:none; transition:all 0.2s;">
+                          <a href="<?= $r['link'] ?>" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:8px; background:<?= in_array($stL, ['approved', 'assigned', 'registered', 'burial completed', 'completed', 'plot assigned']) ? '#166534' : '#f8faf9' ?>; color:<?= in_array($stL, ['approved', 'assigned', 'registered', 'burial completed', 'completed', 'plot assigned']) ? 'white' : 'var(--primary-dark)' ?>; border:1px solid <?= in_array($stL, ['approved', 'assigned', 'registered', 'burial completed', 'completed', 'plot assigned']) ? '#166534' : '#e2e8f0' ?>; font-size:0.8rem; font-weight:700; text-decoration:none; transition:all 0.2s;">
                             <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                            <?= in_array(strtolower($r['status']), ['approved', 'assigned']) ? 'View Pass / Schedule' : 'Track Status' ?>
+                            <?= in_array($stL, ['approved', 'assigned', 'registered', 'burial completed', 'completed', 'plot assigned']) ? 'View Record' : 'Track Status' ?>
                           </a>
                         </td>
                       </tr>
@@ -1181,12 +1199,12 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
     const services = [
       {
         id: 'damayan',
-        title: 'Damayan — Burial Services',
-        desc: 'Submit a formal request for burial services for the deceased. Fill in the necessary details about the deceased, family contact, and burial preferences.',
+        title: 'Damayan — Death Certificate & Cemetery Plot',
+        desc: 'Submit and track requests for Death Certificate civil registration processing and Islamic Cemetery Burial Plot assistance.',
         icon: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>',
         iconClass: '',
-        href: '<?= url('/user/services/burial-form') ?>',
-        btnText: 'Request Service'
+        href: '<?= url('/user/services/burial-dashboard') ?>',
+        btnText: 'View Dashboard'
       },
       {
         id: 'dawah',
@@ -1578,8 +1596,8 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                   <div style="width:64px;height:64px;border-radius:18px;background:var(--primary-light);color:white;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 20px rgba(23,107,69,0.2);">
                     <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                   </div>
-                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Burial Service</h6>
-                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Request assistance for funeral and burial arrangements</p>
+                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Death Certificate &amp; Cemetery Plot</h6>
+                  <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Death certificate civil registration and Islamic cemetery plot assistance</p>
                 </div>
 
                 <!-- Charity -->
@@ -1590,7 +1608,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                   <div style="width:64px;height:64px;border-radius:18px;background:rgba(224,184,74,0.1);color:#c79a2b;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
                     <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:currentColor;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                   </div>
-                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Charity & Donation</h6>
+                  <h6 style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:var(--primary-dark);margin:0 0 6px;">Charity &amp; Donation</h6>
                   <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.5;">Sadaqah, Zakat, and benevolent community support</p>
                 </div>
               </div>
@@ -1634,7 +1652,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
         modal.onclick = (e) => { if (e.target === modal) closeModal(); };
 
         document.getElementById('opt-burial').onclick = () => {
-          window.location.href = '<?= url('/user/services/burial-form') ?>';
+          window.location.href = '<?= url('/user/services/burial-dashboard') ?>';
         };
 
         document.getElementById('opt-charity').onclick = () => {
