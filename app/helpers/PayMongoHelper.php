@@ -28,7 +28,9 @@ class PayMongoHelper
         array $lineItems,
         string $successUrl,
         string $cancelUrl,
-        array $metadata = []
+        array $metadata = [],
+        ?string $referenceNumber = null,
+        ?array $billingInfo = null
     ): array {
         $config = self::getConfig();
         $secretKey = $config['secret_key'];
@@ -60,23 +62,34 @@ class PayMongoHelper
             ];
         }
 
+        $billing = [
+            'name'  => !empty($billingInfo['name']) ? $billingInfo['name'] : ($_SESSION['name'] ?? 'Valued Tenant'),
+            'email' => !empty($billingInfo['email']) ? $billingInfo['email'] : ($_SESSION['email'] ?? 'tenant@iscag.local')
+        ];
+        if (!empty($billingInfo['phone'])) {
+            $billing['phone'] = $billingInfo['phone'];
+        }
+
+        $attributes = [
+            'billing'              => $billing,
+            'send_email_receipt'   => true,
+            'show_description'     => true,
+            'show_line_items'      => true,
+            'description'          => substr($description, 0, 255),
+            'line_items'           => $formattedLineItems,
+            'payment_method_types' => $config['payment_method_types'],
+            'success_url'          => $successUrl,
+            'cancel_url'           => $cancelUrl,
+            'metadata'             => $metadata
+        ];
+
+        if (!empty($referenceNumber)) {
+            $attributes['reference_number'] = substr($referenceNumber, 0, 255);
+        }
+
         $payload = [
             'data' => [
-                'attributes' => [
-                    'billing' => [
-                        'name'  => $_SESSION['name'] ?? 'Tenant',
-                        'email' => $_SESSION['email'] ?? 'tenant@iscag.local'
-                    ],
-                    'send_email_receipt'   => true,
-                    'show_description'     => true,
-                    'show_line_items'      => true,
-                    'description'          => substr($description, 0, 255),
-                    'line_items'           => $formattedLineItems,
-                    'payment_method_types' => $config['payment_method_types'],
-                    'success_url'          => $successUrl,
-                    'cancel_url'           => $cancelUrl,
-                    'metadata'             => $metadata
-                ]
+                'attributes' => $attributes
             ]
         ];
 

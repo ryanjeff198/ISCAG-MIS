@@ -786,14 +786,28 @@ class ApartmentController extends Controller {
             }
         }
 
-        $description = 'Payment for ISCAG Apartment (' . count($paymentIds) . ' item' . (count($paymentIds) > 1 ? 's' : '') . ')';
+        // Retrieve tenant account info for accurate PayMongo receipt delivery
+        $db = getDbConnection();
+        $uStmt = $db->prepare("SELECT email, first_name, last_name FROM tenant_accounts WHERE tenant_id = ?");
+        $uStmt->execute([$userId]);
+        $tAcct = $uStmt->fetch(\PDO::FETCH_ASSOC);
+
+        $tenantEmail = !empty($tAcct['email']) ? trim($tAcct['email']) : ($_SESSION['email'] ?? '');
+        $tenantName  = trim(($tAcct['first_name'] ?? '') . ' ' . ($tAcct['last_name'] ?? '')) ?: ($_SESSION['name'] ?? 'Valued Tenant');
+
+        // Generate official ISCAG payment reference number
+        $refNo = 'ISCAG-PAY-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+
+        $itemCount = count($paymentIds);
+        $description = "ISCAG Apartment Payment [Ref: {$refNo}] (" . $itemCount . ' item' . ($itemCount > 1 ? 's' : '') . ')';
 
         // Set session state for verification on return
         $_SESSION['paymongo_pending_payment'] = [
-            'tenant_id'   => $userId,
-            'payment_ids' => $paymentIds,
-            'amount'      => $totalAmount,
-            'timestamp'   => time()
+            'tenant_id'        => $userId,
+            'payment_ids'      => $paymentIds,
+            'amount'           => $totalAmount,
+            'reference_number' => $refNo,
+            'timestamp'        => time()
         ];
 
         // Construct absolute return URLs for external gateway
@@ -807,8 +821,14 @@ class ApartmentController extends Controller {
             $successUrl,
             $cancelUrl,
             [
-                'tenant_id'   => (string)$userId,
-                'payment_ids' => json_encode($paymentIds)
+                'tenant_id'        => (string)$userId,
+                'payment_ids'      => json_encode($paymentIds),
+                'reference_number' => $refNo
+            ],
+            $refNo,
+            [
+                'name'  => $tenantName,
+                'email' => $tenantEmail
             ]
         );
 
@@ -846,7 +866,7 @@ class ApartmentController extends Controller {
         $logEntry .= "pending session data: " . json_encode($pending) . "\n";
         
         $paymentIds = [];
-        $refNo = 'PM-' . substr(md5($sessionId . time()), 0, 10);
+        $refNo = $pending['reference_number'] ?? ('ISCAG-PAY-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)));
 
         if (!empty($sessionId)) {
             $sessionData = PayMongoHelper::getCheckoutSession($sessionId);
@@ -858,8 +878,14 @@ class ApartmentController extends Controller {
                 $logEntry .= "Payments array: " . json_encode($attrs['payments'] ?? []) . "\n";
                 $logEntry .= "Metadata: " . json_encode($attrs['metadata'] ?? []) . "\n";
                 
-                // Get real payment ID from PayMongo
-                if (!empty($attrs['payments'][0]['id'])) {
+                // Prioritize synchronized reference number from PayMongo checkout / metadata / session
+                if (!empty($attrs['reference_number'])) {
+                    $refNo = $attrs['reference_number'];
+                } elseif (!empty($attrs['metadata']['reference_number'])) {
+                    $refNo = $attrs['metadata']['reference_number'];
+                } elseif (!empty($pending['reference_number'])) {
+                    $refNo = $pending['reference_number'];
+                } elseif (!empty($attrs['payments'][0]['id'])) {
                     $refNo = $attrs['payments'][0]['id'];
                 }
 
@@ -913,12 +939,16 @@ class ApartmentController extends Controller {
             $db = getDbConnection();
             $allOk = true;
 
+            $paidItemsList = [];
+            $totalPaidAmount = 0.0;
+
             foreach ($paymentIds as $pid) {
                 if (is_string($pid) && strpos($pid, '-') !== false) {
                     $parts = explode('-', $pid);
                     $type = ucfirst($parts[0]); 
                     $amount = 0;
                     $exactType = ucfirst(strtolower($pid));
+                    $displayName = $exactType;
 
                     if (strtolower($type) === 'settlement') {
                         require_once BASE_PATH . '/app/models/MoveOut.php';
@@ -928,23 +958,39 @@ class ApartmentController extends Controller {
                             $field = ($parts[1] === 'damage') ? 'damage_costs' : 'utility_deductions';
                             $amount = (float)$mo[$field];
                             $exactType = 'Move-Out ' . ucfirst($parts[1]);
+                            $displayName = $exactType;
                         }
                     } elseif ($type === 'Rent') {
                         $amount = (float)$lease['monthly_rent'];
+                        $displayName = 'Monthly Rent (' . (isset($parts[1]) ? $parts[1] : 'Recurring') . ')';
                     } elseif ($type === 'Water') {
                         $stmt = $db->prepare("SELECT COUNT(*) FROM tenant_family_members WHERE tenant_id = ?");
                         $stmt->execute([$userId]);
                         $occupants = (int)$stmt->fetchColumn() + 1;
                         $amount = (float)($occupants * 100);
+                        $displayName = "Water Bill ({$occupants} occupants)";
                     } elseif ($type === 'Parking') {
                         $amount = 1000.00;
+                        $displayName = 'Parking Fee';
                     } elseif ($type === 'Contribution') {
                         $amount = 150.00;
+                        $displayName = 'Contribution (Security/Garbage)';
                     }
                     
                     $stmt = $db->prepare("INSERT INTO payments (lease_id, tenant_id, amount, payment_type, reference_number, payment_status, payment_date) VALUES (?, ?, ?, ?, ?, 'Paid', NOW())");
                     $stmt->execute([$lease['lease_id'], $userId, $amount, $exactType, $refNo]);
+                    
+                    $paidItemsList[] = ['name' => $displayName, 'amount' => $amount];
+                    $totalPaidAmount += $amount;
                 } else {
+                    $pRow = $paymentModel->getPaymentById((int)$pid);
+                    if ($pRow) {
+                        $paidItemsList[] = [
+                            'name' => ucfirst($pRow['payment_type'] ?? 'Initial Fee'),
+                            'amount' => (float)($pRow['amount'] ?? 0)
+                        ];
+                        $totalPaidAmount += (float)($pRow['amount'] ?? 0);
+                    }
                     $paymentModel->markAsPaid((int) $pid, $refNo);
                 }
             }
@@ -969,6 +1015,8 @@ class ApartmentController extends Controller {
                 $userId,
                 '/admin/mis_admin/billing'
             );
+
+
         }
 
         header('Location: ' . url('/user/apartment/payment?paid=1&ref=' . urlencode($refNo)));

@@ -763,7 +763,14 @@
                         items: items
                     })
                 })
-                .then(r => r.json())
+                .then(async r => {
+                    const text = await r.text();
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error(text || ('HTTP ' + r.status));
+                    }
+                })
                 .then(res => {
                     if (res.success && res.checkout_url) {
                         btn.innerHTML = 'Redirecting...';
@@ -775,7 +782,8 @@
                     }
                 })
                 .catch(err => {
-                    showToast('Network error connecting to payment gateway.', true);
+                    console.error('PayMongo Checkout Error:', err);
+                    showToast(err.message || 'Error connecting to payment gateway.', true);
                     btn.disabled = false;
                     btn.innerHTML = 'Pay ₱' + document.getElementById('modalAmount').textContent + ' via PayMongo';
                 });

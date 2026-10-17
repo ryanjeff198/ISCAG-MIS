@@ -68,7 +68,7 @@ $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // Remove the base URL prefix to get the clean route
 $route = $requestUri;
-if (BASE_URL !== '' && strpos($route, BASE_URL) === 0) {
+if (BASE_URL !== '' && stripos($route, BASE_URL) === 0) {
     $route = substr($route, strlen(BASE_URL));
 }
 

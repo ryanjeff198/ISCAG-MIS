@@ -525,7 +525,7 @@
                 $runningBalance = $balanceForwarded ?? 0; 
                 $totalCharges = 0; 
                 $totalPayments = 0;
-                $lastCat = '';
+                $lastPeriod = '';
 
                 if (($filterMonth ?? 'all') !== 'all' && $runningBalance != 0): ?>
                   <tr>
@@ -535,10 +535,10 @@
                 <?php endif;
 
                 foreach ($transactions as $t): 
-                  $cat = getCategoryLabel($t['type']);
-                  if ($cat !== $lastCat): ?>
-                    <tr><td colspan="7" class="soa-section-title"><?= $cat ?></td></tr>
-                    <?php $lastCat = $cat; 
+                  $period = $t['period'] ?? getCategoryLabel($t['type']);
+                  if ($period !== $lastPeriod): ?>
+                    <tr><td colspan="7" class="soa-section-title"><?= $period ?></td></tr>
+                    <?php $lastPeriod = $period; 
                   endif;
 
                   $runningBalance += ($t['charge'] - $t['payment']);
