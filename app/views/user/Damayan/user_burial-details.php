@@ -863,11 +863,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                               <label class="form-label" style="color: #92400e;">Your Explanation / Requested Details <span class="req">*</span></label>
                               <textarea id="resp-info-text" class="form-control" rows="3" placeholder="Provide the requested details or explanation..." required></textarea>
                             </div>
-                            <div class="form-group" style="margin-bottom: 16px;">
-                              <label class="form-label" style="color: #92400e;">Upload Supporting Document (Optional)</label>
-                              <input type="file" id="resp-doc-file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
-                              <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Allowed: PDF, JPG, PNG (Max 10MB)</span>
-                            </div>
                             <div style="display:flex; justify-content:flex-end;">
                               <button type="submit" class="btn-submit" id="btn-submit-resp" style="background:#b45309; padding:10px 24px; font-size:0.88rem;">
                                 Submit Information
@@ -915,14 +910,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                 Email: <?= htmlspecialchars($activeBurial['informant_email'] ?? $userEmail) ?><br>
                                 Address: <?= htmlspecialchars($activeBurial['informant_address'] ?? ($userAddress ?: 'On File')) ?>
                             </div>
-                            <?php if (!empty($activeBurial['supporting_document'])): ?>
-                            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);">
-                                <a href="<?= asset($activeBurial['supporting_document']) ?>" target="_blank" class="btn-outline" style="padding: 6px 12px; font-size: 0.78rem;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                                    View Attached Document
-                                </a>
-                            </div>
-                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -1336,11 +1323,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                 <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Please specify the exact purpose or requesting authority for this additional copy.</span>
                             </div>
 
-                            <div class="form-group">
-                                <label class="form-label">Upload Supporting Document or Existing Certificate Copy (Optional)</label>
-                                <input type="file" id="copy-supporting-document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
-                                <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Upload existing certificate copy, photo, or authorization ID (PDF, JPG, PNG - Max 10MB)</span>
-                            </div>
                         </div>
 
                         <!-- ═══════════════════════════════════════════════════════════ -->
@@ -1447,14 +1429,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                 </div>
                             </div>
 
-                            <!-- Supporting Document Upload -->
-                            <div class="form-grid cols-1">
-                                <div class="form-group">
-                                    <label class="form-label">Upload Supporting Document or Hospital Death Certificate (Optional)</label>
-                                    <input type="file" id="supporting-document-file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
-                                    <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Upload Hospital Certificate of Death, Medical Certificate, or Valid Representative ID (PDF, JPG, PNG - Max 10MB)</span>
-                                </div>
-                            </div>
 
                             <!-- Cemetery Preference Section Hidden per Restriction 4 -->
                             <div id="cemetery-preference-section" style="display:none;">

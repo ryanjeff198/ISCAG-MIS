@@ -33,26 +33,43 @@
     </a>
 
     <div class="nav-section-label">Services</div>
-    <a href="<?= url('/admin/damayan/burial-requests') ?>" class="nav-item <?= ($active_page ?? '') == 'burial_requests' ? 'active' : '' ?>" data-tooltip="Manage Requests">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-      <span class="nav-item-label">Burial Requests</span>
-    </a>
-    <a href="<?= url('/admin/damayan/certificate-tracking') ?>" class="nav-item <?= ($active_page ?? '') == 'certificate_tracking' ? 'active' : '' ?>" data-tooltip="Certificate Tracking">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-      <span class="nav-item-label">Certificate Tracking</span>
-    </a>
-    <a href="<?= url('/admin/damayan/encoded-certificates') ?>" class="nav-item <?= ($active_page ?? '') == 'encoded_certificates' ? 'active' : '' ?>" data-tooltip="Encoded Certificates">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-      <span class="nav-item-label">Encoded Certificates</span>
-    </a>
-    <a href="<?= url('/admin/damayan/burial') ?>" class="nav-item <?= ($active_page ?? '') == 'burial' ? 'active' : '' ?>" data-tooltip="Burial Records">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
-      <span class="nav-item-label">Burial Records</span>
-    </a>
-    <a href="<?= url('/admin/damayan/charity') ?>" class="nav-item <?= ($active_page ?? '') == 'charity' ? 'active' : '' ?>" data-tooltip="Charity Programs">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-      <span class="nav-item-label">Charity Programs</span>
-    </a>
+    <?php
+      $__ap = $active_page ?? '';
+      $__burialPages  = ['burial_requests', 'encoded_certificates', 'burial'];
+      $__charityPages = ['charity', 'charity_donations', 'charity_available', 'charity_allocations', 'charity_distributions'];
+      $__burialOpen   = in_array($__ap, $__burialPages, true);
+      $__charityOpen  = in_array($__ap, $__charityPages, true);
+    ?>
+
+    <!-- Burial Service Dropdown -->
+    <div class="nav-dropdown-wrap">
+      <button type="button" class="nav-dropdown-trigger <?= $__burialOpen ? 'open' : '' ?>" data-menu="nav-dd-burial" data-href="<?= url('/admin/damayan/burial-requests') ?>" data-tooltip="Burial Service" aria-expanded="<?= $__burialOpen ? 'true' : 'false' ?>" aria-controls="nav-dd-burial">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+        <span class="nav-item-label">Burial Service</span>
+        <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+      </button>
+      <div class="nav-dropdown <?= $__burialOpen ? 'open' : '' ?>" id="nav-dd-burial">
+        <a href="<?= url('/admin/damayan/burial-requests') ?>" class="<?= $__ap === 'burial_requests' ? 'active-submenu' : '' ?>">Burial Request</a>
+        <a href="<?= url('/admin/damayan/encoded-certificates') ?>" class="<?= $__ap === 'encoded_certificates' ? 'active-submenu' : '' ?>">Registered Certificate</a>
+        <a href="<?= url('/admin/damayan/burial') ?>" class="<?= $__ap === 'burial' ? 'active-submenu' : '' ?>">Burial Records</a>
+      </div>
+    </div>
+
+    <!-- Charity Programs Dropdown -->
+    <div class="nav-dropdown-wrap">
+      <button type="button" class="nav-dropdown-trigger <?= $__charityOpen ? 'open' : '' ?>" data-menu="nav-dd-charity" data-href="<?= url('/admin/damayan/charity') ?>" data-tooltip="Charity Programs" aria-expanded="<?= $__charityOpen ? 'true' : 'false' ?>" aria-controls="nav-dd-charity">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <span class="nav-item-label">Charity Programs</span>
+        <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+      </button>
+      <div class="nav-dropdown <?= $__charityOpen ? 'open' : '' ?>" id="nav-dd-charity">
+        <a href="<?= url('/admin/damayan/charity') ?>" class="<?= $__ap === 'charity' ? 'active-submenu' : '' ?>">Charity Dashboard</a>
+        <a href="<?= url('/admin/damayan/charity/donations') ?>" class="<?= $__ap === 'charity_donations' ? 'active-submenu' : '' ?>">Donation Records</a>
+        <a href="<?= url('/admin/damayan/charity/available') ?>" class="<?= $__ap === 'charity_available' ? 'active-submenu' : '' ?>">Available Donations</a>
+        <a href="<?= url('/admin/damayan/charity/allocations') ?>" class="<?= $__ap === 'charity_allocations' ? 'active-submenu' : '' ?>">Donation Allocation</a>
+        <a href="<?= url('/admin/damayan/charity/distributions') ?>" class="<?= $__ap === 'charity_distributions' ? 'active-submenu' : '' ?>">Distribution Records</a>
+      </div>
+    </div>
     <a href="<?= url('/admin/damayan/finance') ?>" class="nav-item <?= ($active_page ?? '') == 'finance' ? 'active' : '' ?>" data-tooltip="Financial Management">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
       <span class="nav-item-label">Finance</span>

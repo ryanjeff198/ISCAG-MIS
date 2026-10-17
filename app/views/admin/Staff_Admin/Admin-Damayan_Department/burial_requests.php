@@ -127,16 +127,16 @@
             <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:currentColor;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
           </div>
           <div>
-            <div class="top-bar-title">Burial Service Case Management</div>
-            <div class="top-bar-subtitle">Review applications, process death certificates with civil registry, and manage cemetery plot assignments</div>
+            <div class="top-bar-title">Death Certificate Case Management</div>
+            <div class="top-bar-subtitle">Review death certificate applications and coordinate civil registration</div>
           </div>
         </div>
         <div class="top-bar-actions" style="display:flex;align-items:center;gap:8px;">
           <button type="button" class="btn-topbar primary" onclick="openEncodeModal()" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;">
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Encode Death Certificate
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Register Death Certificate
           </button>
           <a href="<?= url('/admin/damayan/encoded-certificates') ?>" class="btn-topbar" style="text-decoration:none;font-weight:600;">
-            Encoded Archive
+            Registered Certificates Archive
           </a>
           <a href="<?= url('/admin/damayan') ?>" class="btn-topbar" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:700;color:var(--damayan-accent);">
             <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Dashboard
@@ -154,30 +154,27 @@
             <div class="insight-label">Total Requests</div>
             <div class="insight-value"><?= $analytics['total'] ?? 0 ?></div>
           </div>
-          <div class="insight-card" style="border-left-color:#3b82f6;">
-            <div class="insight-label">Death Certificates in Pipeline</div>
-            <div class="insight-value info"><?= $analytics['death_cert_in_progress'] ?? ($analytics['pending'] ?? 0) ?></div>
+          <div class="insight-card" style="border-left-color:#f59e0b;">
+            <div class="insight-label">Pending Review</div>
+            <div class="insight-value warning"><?= $analytics['pending'] ?? 0 ?></div>
           </div>
           <div class="insight-card" style="border-left-color:#10b981;">
-            <div class="insight-label">Cemetery Plots Assigned</div>
-            <div class="insight-value success"><?= $analytics['plot_assigned'] ?? 0 ?></div>
+            <div class="insight-label">Accepted Requests</div>
+            <div class="insight-value success"><?= $analytics['accepted'] ?? 0 ?></div>
           </div>
-          <div class="insight-card" style="border-left-color:#8b5cf6;">
-            <div class="insight-label">Fully Completed / Registered</div>
-            <div class="insight-value"><?= $analytics['completed'] ?? 0 ?></div>
+          <div class="insight-card" style="border-left-color:#ef4444;">
+            <div class="insight-label">Rejected Requests</div>
+            <div class="insight-value danger"><?= $analytics['rejected'] ?? 0 ?></div>
           </div>
         </div>
 
         <!-- Filter & Search Bar -->
         <div class="filter-bar">
           <div class="filter-pills">
-            <button type="button" class="filter-pill <?= ($currentFilter ?? 'all') === 'all' ? 'active' : '' ?>" onclick="setFilter('all')">All Requests</button>
-            <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'pending' ? 'active' : '' ?>" onclick="setFilter('pending')">Pending Review</button>
+            <button type="button" class="filter-pill <?= ($currentFilter ?? 'pending') === 'pending' ? 'active' : '' ?>" onclick="setFilter('pending')">Pending Review</button>
             <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'accepted' ? 'active' : '' ?>" onclick="setFilter('accepted')">Accepted</button>
-            <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'death_cert' ? 'active' : '' ?>" onclick="setFilter('death_cert')">Death Certificate</button>
-            <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'cemetery_plot' ? 'active' : '' ?>" onclick="setFilter('cemetery_plot')">Cemetery Plot</button>
-            <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'completed' ? 'active' : '' ?>" onclick="setFilter('completed')">Completed</button>
             <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'rejected' ? 'active' : '' ?>" onclick="setFilter('rejected')">Rejected</button>
+            <button type="button" class="filter-pill <?= ($currentFilter ?? '') === 'all' ? 'active' : '' ?>" onclick="setFilter('all')">All Requests</button>
           </div>
           <div class="search-box">
             <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
@@ -190,7 +187,7 @@
           <div class="section-card-header">
             <h6 style="color: var(--damayan-dark);">
               <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--damayan-accent);margin-right:8px;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              Death Certificate &amp; Cemetery Plot Management Registry
+              Death Certificate Management Registry
             </h6>
           </div>
           <div class="section-card-body" style="padding:0;">
@@ -203,14 +200,13 @@
                     <th>Deceased</th>
                     <th>Date Requested</th>
                     <th>Death Certificate Stage</th>
-                    <th>Cemetery Plot Status</th>
-                    <th>Overall Status</th>
+                    <th>Status</th>
                     <th style="text-align:center; min-width:180px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="burial-tbody">
                   <?php if(empty($records)): ?>
-                    <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No requests found matching criteria.</td></tr>
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No requests found matching criteria.</td></tr>
                   <?php else: ?>
                     <?php foreach($records as $r): ?>
                       <tr>
@@ -222,8 +218,8 @@
                             <div style="font-size:0.68rem; font-weight:700; color:#065f46; background:#d1fae5; padding:1px 6px; border-radius:4px; display:inline-block; margin-top:3px;">New Death Reg</div>
                           <?php endif; ?>
                           <?php if (!empty($r['is_encoded_linked'])): ?>
-                            <div style="font-size:0.68rem; font-weight:700; color:#065f46; background:#bbf7d0; padding:1px 6px; border-radius:4px; display:inline-block; margin-top:3px;" title="Linked to Encoded Death Certificate #<?= htmlspecialchars($r['encoded_reg_no'] ?? '') ?>">
-                              ✓ Encoded Cert Linked
+                            <div style="font-size:0.68rem; font-weight:700; color:#065f46; background:#bbf7d0; padding:1px 6px; border-radius:4px; display:inline-block; margin-top:3px;" title="Linked to Registered Death Certificate #<?= htmlspecialchars($r['encoded_reg_no'] ?? '') ?>">
+                              ✓ Registered Cert Linked
                             </div>
                           <?php endif; ?>
                         </td>
@@ -241,7 +237,7 @@
                         <td>
                           <?php if (($r['cert_action_type'] ?? '') === 'copy'): ?>
                             <span class="mini-badge <?= !empty($r['copy_received_confirmed']) ? 'done' : (!empty($r['copy_issued_at']) ? 'active' : 'pending') ?>">
-                              <?= !empty($r['copy_received_confirmed']) ? 'Copy Received' : (!empty($r['copy_issued_at']) ? 'Copy Issued' : (!empty($r['is_encoded_linked']) ? 'Encoded Record Verified' : ($r['existing_record_verified'] ? 'Record Verified' : 'Awaiting Verification'))) ?>
+                              <?= !empty($r['copy_received_confirmed']) ? 'Copy Received' : (!empty($r['copy_issued_at']) ? 'Copy Issued' : (!empty($r['is_encoded_linked']) ? 'Registered Record Verified' : ($r['existing_record_verified'] ? 'Record Verified' : 'Awaiting Verification'))) ?>
                             </span>
                             <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
                               <?= (int)($r['num_copies'] ?? 1) ?> <?= (int)($r['num_copies'] ?? 1) > 1 ? 'copies' : 'copy' ?>
@@ -252,20 +248,6 @@
                             </span>
                             <?php if(!empty($r['death_cert_registry_no'])): ?>
                               <div style="font-size:0.72rem; color:var(--damayan-accent); font-weight:600; margin-top:2px;">Reg: <?= htmlspecialchars($r['death_cert_registry_no']) ?></div>
-                            <?php endif; ?>
-                          <?php else: ?>
-                            <span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">Not Requested</span>
-                          <?php endif; ?>
-                        </td>
-                        <td>
-                          <?php if(!empty($r['cemetery_plot_requested'])): ?>
-                            <span class="mini-badge <?= strtolower($r['cemetery_plot_status'] ?? '') === 'plot assigned' ? 'done' : (in_array(strtolower($r['cemetery_plot_status'] ?? ''), ['approved', 'available for assignment']) ? 'active' : 'pending') ?>">
-                              <?= htmlspecialchars($r['cemetery_plot_status'] ?? 'Pending Review') ?>
-                            </span>
-                            <?php if(!empty($r['assigned_plot_number'])): ?>
-                              <div style="font-size:0.72rem; color:var(--damayan-dark); font-weight:700; margin-top:2px;">
-                                Plot: <?= htmlspecialchars(($r['assigned_section'] ? $r['assigned_section'] . ' - ' : '') . $r['assigned_plot_number']) ?>
-                              </div>
                             <?php endif; ?>
                           <?php else: ?>
                             <span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">Not Requested</span>

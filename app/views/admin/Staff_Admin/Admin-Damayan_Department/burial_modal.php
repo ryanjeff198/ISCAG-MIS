@@ -5,7 +5,7 @@
 
 <!-- 1. COMPACT VERIFICATION MODAL -->
 <div id="damayanCaseModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.6); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
-  <div class="mis-modal-content" style="background:#fff; border-radius:16px; width:98%; max-width:1120px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideUp 0.25s ease;">
+  <div class="mis-modal-content" style="background:#fff; border-radius:16px; width:98%; max-width:760px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideUp 0.25s ease;">
     
     <!-- Modal Header -->
     <div class="mis-modal-header" style="padding:16px 22px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; background:#fafbfc;">
@@ -21,7 +21,7 @@
             <span id="modal-verification-status-badge" class="badge-status" style="font-size:0.72rem; background:#f3f4f6; color:#4b5563;">Unverified</span>
           </div>
           <div style="font-size:0.8rem; color:#6b7280; margin-top:2px;">
-            Death Certificate Verification &amp; Document Comparison
+            Death Certificate Verification
           </div>
         </div>
       </div>
@@ -34,7 +34,7 @@
       <!-- Loading State -->
       <div id="modal-loading" style="text-align:center; padding:60px 20px; color:#6b7280;">
         <div style="font-size:1rem; font-weight:700; color:#065f46;">Loading request information...</div>
-        <div style="font-size:0.82rem; margin-top:4px;">Retrieving physical death certificate and submitted details.</div>
+        <div style="font-size:0.82rem; margin-top:4px;">Retrieving request details and civil registry information.</div>
       </div>
 
       <!-- Main Verification Content (Side-by-Side Grid) -->
@@ -81,11 +81,8 @@
           </div>
         </div>
 
-        <!-- 2-COLUMN VERIFICATION LAYOUT -->
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px;">
-          
-          <!-- LEFT COLUMN: SUBMITTED INFORMATION & VERIFICATION RESULT -->
-          <div style="display:flex; flex-direction:column; gap:16px;">
+        <!-- VERIFICATION CONTENT -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
             
             <!-- SECTION A: REQUEST INFORMATION -->
             <div class="panel-section" style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px;">
@@ -176,7 +173,7 @@
                 </div>
               </div>
               <div style="font-size:0.8rem; color:#4b5563; margin-bottom:12px;">
-                Select the verification result based on your comparison with the physical certificate:
+                Select the verification result based on recorded civil registry data:
               </div>
 
               <!-- 3 Result Radio Buttons -->
@@ -224,63 +221,6 @@
             </div>
 
           </div>
-
-          <!-- RIGHT COLUMN: SECTION D: PHYSICAL DEATH CERTIFICATE PREVIEW & SIDE-BY-SIDE COMPARISON -->
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            
-            <div class="panel-section" style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; display:flex; flex-direction:column; flex:1;">
-              
-              <!-- Section D Header with Direct Open Button -->
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                <div style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:6px;">
-                  <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#059669;"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                  D. Physical Death Certificate Document
-                </div>
-                <a id="v-open-doc-link" href="#" target="_blank" class="btn-topbar" style="padding:4px 10px; font-size:0.74rem; font-weight:700; color:#065f46; border:1px solid #a7f3d0; background:#ecfdf5; text-decoration:none; display:none; align-items:center; gap:4px;">
-                  <span>Open for Closer Inspection</span>
-                  <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:currentColor;"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-                </a>
-              </div>
-
-              <!-- Side-by-Side Comparison Callout Banner -->
-              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-                <div>
-                  <span style="font-size:0.7rem; color:#166534; text-transform:uppercase; display:block; font-weight:800;">Recorded Registration Number:</span>
-                  <strong id="compare-reg-no" style="font-size:0.95rem; color:#064e3b; letter-spacing:0.02em;">—</strong>
-                </div>
-                <div style="text-align:right;">
-                  <span style="font-size:0.7rem; color:#166534; text-transform:uppercase; display:block; font-weight:800;">Deceased Full Name:</span>
-                  <strong id="compare-deceased-name" style="font-size:0.95rem; color:#064e3b;">—</strong>
-                </div>
-              </div>
-
-              <!-- Physical Certificate Document Viewer Box -->
-              <div id="v-doc-viewer-container" style="flex:1; min-height:360px; max-height:460px; background:#f3f4f6; border:1px dashed #d1d5db; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative;">
-                
-                <!-- Image Preview -->
-                <img id="v-doc-img-preview" src="" alt="Death Certificate" style="display:none; max-width:100%; max-height:450px; object-fit:contain; cursor:pointer;" onclick="openPreviewFullscreen()" title="Click to view larger in new tab" />
-                
-                <!-- PDF Preview -->
-                <iframe id="v-doc-pdf-preview" src="" style="display:none; width:100%; height:100%; min-height:380px; border:none;"></iframe>
-
-                <!-- Empty State (No Document) -->
-                <div id="v-doc-empty" style="text-align:center; padding:30px; color:#6b7280;">
-                  <svg viewBox="0 0 24 24" style="width:48px; height:48px; fill:#9ca3af; margin-bottom:8px;"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
-                  <div style="font-size:0.9rem; font-weight:700; color:#374151;">No Physical Certificate Uploaded</div>
-                  <div style="font-size:0.78rem; color:#6b7280; margin-top:2px;">The applicant did not attach a document file with this request.</div>
-                </div>
-
-              </div>
-
-              <div style="font-size:0.74rem; color:#6b7280; margin-top:8px; text-align:center;">
-                Carefully compare the registration number and deceased's name on the physical document with the recorded information on the left.
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
 
       </div>
 
@@ -338,11 +278,10 @@
         </label>
         <select id="reject-reason-select" style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:8px 10px; font-size:0.84rem; background:#fff; font-family:inherit;" onchange="onRejectReasonChange(this.value)">
           <option value="">-- Select Rejection Reason --</option>
-          <option value="Information does not match the physical death certificate">Information does not match the physical death certificate</option>
+          <option value="Information does not match civil registry records">Information does not match civil registry records</option>
           <option value="Invalid or incorrect registration number">Invalid or incorrect registration number</option>
           <option value="Duplicate request">Duplicate request</option>
           <option value="Incomplete or incorrect information">Incomplete or incorrect information</option>
-          <option value="Supporting document is unreadable or invalid">Supporting document is unreadable or invalid</option>
           <option value="Others">Others</option>
         </select>
       </div>
@@ -392,7 +331,7 @@
         Are you sure you want to accept <strong id="accept-modal-target-label">this request</strong>?
       </p>
       <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.8rem; color:#166534; margin-bottom:14px;">
-        ✓ Certificate has been verified as <strong>Matched</strong> against the physical document. Once accepted, the request status will change to <strong>Accepted</strong> and the requester will be notified.
+        ✓ Certificate details verified as <strong>Matched</strong>. Once accepted, the request status will change to <strong>Accepted</strong> and the requester will be notified.
       </div>
       <div>
         <label for="accept-optional-notes" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:4px;">
@@ -523,41 +462,7 @@
     document.getElementById('v-death-date').textContent = c.date_of_death ? new Date(c.date_of_death).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : 'N/A';
     document.getElementById('v-death-place').textContent = c.place_of_death || 'N/A';
 
-    // SIDE-BY-SIDE Comparison Bar
-    document.getElementById('compare-reg-no').textContent = regNo;
-    document.getElementById('compare-deceased-name').textContent = c.deceased_name || 'N/A';
 
-    // SECTION D: Physical Death Certificate Document
-    const docPath = c.uploaded_document || (data.documents && data.documents[0] ? data.documents[0].file_path : '');
-    const imgPreview = document.getElementById('v-doc-img-preview');
-    const pdfPreview = document.getElementById('v-doc-pdf-preview');
-    const docEmpty = document.getElementById('v-doc-empty');
-    const openDocLink = document.getElementById('v-open-doc-link');
-
-    imgPreview.style.display = 'none';
-    pdfPreview.style.display = 'none';
-    docEmpty.style.display = 'none';
-    openDocLink.style.display = 'none';
-
-    if (docPath) {
-      let resolvedUrl = docPath;
-      if (!resolvedUrl.startsWith('http://') && !resolvedUrl.startsWith('https://') && !resolvedUrl.startsWith('/')) {
-        resolvedUrl = '<?= url('/') ?>' + (resolvedUrl.startsWith('/') ? '' : '/') + resolvedUrl;
-      }
-      openDocLink.href = resolvedUrl;
-      openDocLink.style.display = 'inline-flex';
-
-      const isPdf = docPath.toLowerCase().endsWith('.pdf');
-      if (isPdf) {
-        pdfPreview.src = resolvedUrl;
-        pdfPreview.style.display = 'block';
-      } else {
-        imgPreview.src = resolvedUrl;
-        imgPreview.style.display = 'block';
-      }
-    } else {
-      docEmpty.style.display = 'block';
-    }
 
     // DUPLICATE DETECTION WARNING
     const dupContainer = document.getElementById('duplicate-warning-container');
@@ -711,7 +616,7 @@
 
     const res = selectedVerificationResult || (activeCase ? activeCase.verification_result : null);
     if (res === 'Matched') {
-      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ Information matches physical certificate. Request can now be accepted.</span>';
+      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ Information verified and matches records. Request can now be accepted.</span>';
     } else if (res === 'Mismatch') {
       footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700;">✕ Discrepancies found. Resolve issues or proceed with rejection.</span>';
     } else if (res === 'Unable to Verify') {
@@ -875,40 +780,11 @@
   // 5. ACCEPT PROCESS (GUARDED BY VERIFICATION)
   // ─────────────────────────────────────────────────────────────
   function tableAcceptRequest(refId, verificationResult, deceasedName) {
-    if (verificationResult !== 'Matched') {
-      if(typeof showAlert === 'function') {
-        showAlert(
-          'Verification Required',
-          'Physical death certificate verification is required before accepting this request. Please review the certificate and mark it as "Matched".',
-          'warning'
-        );
-      } else {
-        alert('Physical death certificate verification is required before accepting this request.');
-      }
-      openCaseModal(refId);
-      return;
-    }
-
     openAcceptModal(refId, deceasedName);
   }
 
   function onModalAcceptClick() {
     if(!activeCase) return;
-    const currentRes = activeCase.verification_result;
-
-    if (currentRes !== 'Matched') {
-      if(typeof showAlert === 'function') {
-        showAlert(
-          'Verification Required',
-          'Cannot accept request: The verification result must be marked and saved as "Matched" before this request can be accepted. Current status: ' + (currentRes || 'Unverified') + '.',
-          'warning'
-        );
-      } else {
-        alert('Verification must be marked and saved as "Matched" before acceptance.');
-      }
-      return;
-    }
-
     openAcceptModal(activeCase.id, activeCase.deceased_name || ('#' + activeCase.ref_id));
   }
 
@@ -1075,10 +951,6 @@
   // ─────────────────────────────────────────────────────────────
   // 7. UTILITIES & KEYBOARD / BACKDROP DISMISSAL
   // ─────────────────────────────────────────────────────────────
-  function openPreviewFullscreen() {
-    const img = document.getElementById('v-doc-img-preview');
-    if(img && img.src) window.open(img.src, '_blank');
-  }
 
   function getBadgeClass(status) {
     const st = String(status || '').toLowerCase().trim();
