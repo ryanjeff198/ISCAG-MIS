@@ -29,6 +29,17 @@ function url(string $path = ''): string
 }
 
 /**
+ * Generate an absolute URL including scheme and HTTP_HOST.
+ * Useful for external redirects like payment gateways.
+ */
+function full_url(string $path = ''): string
+{
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    return $scheme . '://' . $host . url($path);
+}
+
+/**
  * Generate a path to a public asset file.
  * Usage in views: <?= asset('css/homepage.css') ?>
  */
@@ -39,6 +50,8 @@ function asset(string $path): string
 
 // Start session with security settings
 ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_path', '/');
+ini_set('session.cookie_samesite', 'Lax');
 // ini_set('session.cookie_secure', 1); // Enable if using HTTPS
 session_start();
 

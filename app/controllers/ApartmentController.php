@@ -503,7 +503,15 @@ class ApartmentController extends Controller {
             // Generate monthly charges from lease start
             $leaseStart = new \DateTime($lease['start_date']);
             $leaseEnd = $lease['end_date'] ? new \DateTime($lease['end_date']) : null;
-            $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
+            $maxAdv = max($advancePaymentCount, $advanceWaterCount, $advanceContributionCount, $advanceParkingCount);
+            
+            // Advance packages paid for Month 1 (Initial) are consumed in Month 0,
+            // so each additional advance package covers 1 subsequent calendar month.
+            $effectiveAdv = max(0, $maxAdv - 1);
+            $limitDate = ($leaseEnd && $leaseEnd < $now) ? clone $leaseEnd : clone $now;
+            if ($effectiveAdv > 0) {
+                $limitDate->modify("+{$effectiveAdv} month");
+            }
 
             $currentDate = clone $leaseStart;
             $monthCount = 0;
@@ -738,6 +746,233 @@ class ApartmentController extends Controller {
         } else {
             echo json_encode(['success' => false, 'message' => 'Some payments could not be processed.']);
         }
+    }
+
+    /**
+     * Create PayMongo Checkout Session for GCash / Maya / Card
+     */
+    public function createPayMongoCheckout() {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+
+        $body = json_decode(file_get_contents('php://input'), true);
+        $paymentIds = $body['payment_id'] ?? [];
+        if (!is_array($paymentIds)) {
+            $paymentIds = [$paymentIds];
+        }
+
+        $items = $body['items'] ?? []; // [{name: '...', amount: 5000}]
+        $totalAmount = (float)($body['amount'] ?? 0);
+        $userId = $_SESSION['user_id'];
+
+        if (empty($paymentIds) || $totalAmount <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid payment request or zero balance.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/helpers/PayMongoHelper.php';
+
+        // Prepare line items
+        $lineItems = [];
+        if (!empty($items)) {
+            foreach ($items as $it) {
+                $amt = (float)($it['amount'] ?? 0);
+                if ($amt <= 0) continue;
+                $lineItems[] = [
+                    'name'     => $it['name'] ?? 'Fee',
+                    'amount'   => $amt,
+                    'quantity' => 1
+                ];
+            }
+        }
+
+        $description = 'Payment for ISCAG Apartment (' . count($paymentIds) . ' item' . (count($paymentIds) > 1 ? 's' : '') . ')';
+
+        // Set session state for verification on return
+        $_SESSION['paymongo_pending_payment'] = [
+            'tenant_id'   => $userId,
+            'payment_ids' => $paymentIds,
+            'amount'      => $totalAmount,
+            'timestamp'   => time()
+        ];
+
+        // Construct absolute return URLs for external gateway
+        $successUrl = full_url('/user/apartment/payment/paymongo-success?session_id={CHECKOUT_SESSION_ID}');
+        $cancelUrl  = full_url('/user/apartment/payment');
+
+        $response = PayMongoHelper::createCheckoutSession(
+            $totalAmount,
+            $description,
+            $lineItems,
+            $successUrl,
+            $cancelUrl,
+            [
+                'tenant_id'   => (string)$userId,
+                'payment_ids' => json_encode($paymentIds)
+            ]
+        );
+
+        if ($response['success'] && !empty($response['data']['attributes']['checkout_url'])) {
+            echo json_encode([
+                'success'      => true,
+                'checkout_url' => $response['data']['attributes']['checkout_url']
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => $response['message'] ?? 'Could not create checkout session with PayMongo.'
+            ]);
+        }
+    }
+
+    /**
+     * Handle return from PayMongo checkout
+     */
+    public function payMongoSuccess() {
+        Auth::protectRole(['Guest', 'Tenant']);
+        $sessionId = $_GET['session_id'] ?? '';
+        $userId = $_SESSION['user_id'];
+
+        // === DEBUG LOG ===
+        $debugLog = BASE_PATH . '/scratch/paymongo_debug.log';
+        $logEntry = "\n\n====== PAYMONGO SUCCESS @ " . date('Y-m-d H:i:s') . " ======\n";
+        $logEntry .= "session_id (GET): $sessionId\n";
+        $logEntry .= "user_id: $userId\n";
+        $logEntry .= "PHP session_id: " . session_id() . "\n";
+
+        require_once BASE_PATH . '/app/helpers/PayMongoHelper.php';
+
+        $pending = $_SESSION['paymongo_pending_payment'] ?? null;
+        $logEntry .= "pending session data: " . json_encode($pending) . "\n";
+        
+        $paymentIds = [];
+        $refNo = 'PM-' . substr(md5($sessionId . time()), 0, 10);
+
+        if (!empty($sessionId)) {
+            $sessionData = PayMongoHelper::getCheckoutSession($sessionId);
+            $logEntry .= "PayMongo API success: " . ($sessionData['success'] ? 'YES' : 'NO') . "\n";
+            
+            if ($sessionData['success']) {
+                $attrs = $sessionData['data']['attributes'] ?? [];
+                $logEntry .= "Checkout status: " . ($attrs['status'] ?? 'UNKNOWN') . "\n";
+                $logEntry .= "Payments array: " . json_encode($attrs['payments'] ?? []) . "\n";
+                $logEntry .= "Metadata: " . json_encode($attrs['metadata'] ?? []) . "\n";
+                
+                // Get real payment ID from PayMongo
+                if (!empty($attrs['payments'][0]['id'])) {
+                    $refNo = $attrs['payments'][0]['id'];
+                }
+
+                // If session state was lost during cross-origin redirect, restore payment IDs from metadata
+                if (empty($pending) || (int)$pending['tenant_id'] !== (int)$userId) {
+                    $logEntry .= "FALLBACK: Session lost, trying metadata recovery\n";
+                    $meta = $attrs['metadata'] ?? [];
+                    if (!empty($meta['tenant_id']) && (int)$meta['tenant_id'] === (int)$userId && !empty($meta['payment_ids'])) {
+                        $decodedIds = json_decode($meta['payment_ids'], true);
+                        if (is_array($decodedIds)) {
+                            $paymentIds = $decodedIds;
+                            $logEntry .= "RECOVERED payment_ids from metadata: " . json_encode($paymentIds) . "\n";
+                        }
+                    } else {
+                        $logEntry .= "METADATA RECOVERY FAILED: tenant_id match=" . ((int)($meta['tenant_id'] ?? 0) === (int)$userId ? 'yes' : 'no') . ", payment_ids present=" . (!empty($meta['payment_ids']) ? 'yes' : 'no') . "\n";
+                    }
+                } else {
+                    $logEntry .= "Session data INTACT, using pending session\n";
+                }
+            } else {
+                $logEntry .= "PayMongo API ERROR: " . json_encode($sessionData) . "\n";
+            }
+        } else {
+            $logEntry .= "WARNING: No session_id in GET params!\n";
+        }
+
+        if (empty($paymentIds) && !empty($pending['payment_ids'])) {
+            $paymentIds = $pending['payment_ids'];
+            $logEntry .= "Using session pending payment_ids: " . json_encode($paymentIds) . "\n";
+        }
+
+        unset($_SESSION['paymongo_pending_payment']);
+
+        $logEntry .= "FINAL paymentIds: " . json_encode($paymentIds) . "\n";
+        $logEntry .= "FINAL refNo: $refNo\n";
+
+        if (empty($paymentIds)) {
+            $logEntry .= "ABORT: paymentIds is empty, redirecting without processing!\n";
+            file_put_contents($debugLog, $logEntry, FILE_APPEND);
+            header('Location: ' . url('/user/apartment/payment'));
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/Payment.php';
+        require_once BASE_PATH . '/app/models/Lease.php';
+        
+        $paymentModel = new Payment();
+        $lease = (new Lease())->getLeaseByTenantId($userId);
+        
+        if ($lease) {
+            $db = getDbConnection();
+            $allOk = true;
+
+            foreach ($paymentIds as $pid) {
+                if (is_string($pid) && strpos($pid, '-') !== false) {
+                    $parts = explode('-', $pid);
+                    $type = ucfirst($parts[0]); 
+                    $amount = 0;
+                    $exactType = ucfirst(strtolower($pid));
+
+                    if (strtolower($type) === 'settlement') {
+                        require_once BASE_PATH . '/app/models/MoveOut.php';
+                        $moveOutModel = new MoveOut();
+                        $mo = $moveOutModel->getSettlementForTenant($userId, ['Processing']);
+                        if ($mo) {
+                            $field = ($parts[1] === 'damage') ? 'damage_costs' : 'utility_deductions';
+                            $amount = (float)$mo[$field];
+                            $exactType = 'Move-Out ' . ucfirst($parts[1]);
+                        }
+                    } elseif ($type === 'Rent') {
+                        $amount = (float)$lease['monthly_rent'];
+                    } elseif ($type === 'Water') {
+                        $stmt = $db->prepare("SELECT COUNT(*) FROM tenant_family_members WHERE tenant_id = ?");
+                        $stmt->execute([$userId]);
+                        $occupants = (int)$stmt->fetchColumn() + 1;
+                        $amount = (float)($occupants * 100);
+                    } elseif ($type === 'Parking') {
+                        $amount = 1000.00;
+                    } elseif ($type === 'Contribution') {
+                        $amount = 150.00;
+                    }
+                    
+                    $stmt = $db->prepare("INSERT INTO payments (lease_id, tenant_id, amount, payment_type, reference_number, payment_status, payment_date) VALUES (?, ?, ?, ?, ?, 'Paid', NOW())");
+                    $stmt->execute([$lease['lease_id'], $userId, $amount, $exactType, $refNo]);
+                } else {
+                    $paymentModel->markAsPaid((int) $pid, $refNo);
+                }
+            }
+
+            AuditLogger::log('BILLING', 'PAYMONGO_SUCCESS', "PayMongo payment verified for " . count($paymentIds) . " items. Ref: $refNo");
+            
+            require_once BASE_PATH . '/app/models/Notification.php';
+            (new Notification())->create(
+                $userId,
+                'Online Payment Successful',
+                'Your payment via PayMongo has been confirmed (Ref: ' . htmlspecialchars($refNo, ENT_QUOTES) . '). Thank you!',
+                'payment'
+            );
+
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            $tenantName = $_SESSION['name'] ?? 'A tenant';
+            (new AdminNotification())->create(
+                'Online Payment Received',
+                $tenantName . ' paid via PayMongo (Ref: ' . htmlspecialchars($refNo, ENT_QUOTES) . ').',
+                'payment',
+                $tenantName,
+                $userId,
+                '/admin/mis_admin/billing'
+            );
+        }
+
+        header('Location: ' . url('/user/apartment/payment?paid=1&ref=' . urlencode($refNo)));
+        exit;
     }
 
     /**
