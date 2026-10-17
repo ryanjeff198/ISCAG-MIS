@@ -2198,7 +2198,8 @@ class AdminController extends Controller
         $burialModel = new BurialRequest();
         $filter = $_GET['filter'] ?? 'all';
         $search = $_GET['search'] ?? '';
-        $rawBurials = $burialModel->getAll($filter, $search);
+        $rawBurials = $burialModel->getAll($filter, $search, false);
+        $rawArchived = $burialModel->getAll('all', $search, true);
         $analytics = $burialModel->getAnalytics();
         $staffList = $burialModel->getAllStaff();
         $volunteers = $burialModel->getVolunteers();
@@ -2208,6 +2209,20 @@ class AdminController extends Controller
         $availablePlots = $burialModel->getAvailablePlots();
 
         foreach($rawBurials as $b) {
+            $rawStatus = trim($b['status'] ?? 'Pending');
+            $rawLower = strtolower($rawStatus);
+            $dcLower = strtolower(trim($b['death_cert_status'] ?? ''));
+
+            if ($rawLower === 'accepted' || str_starts_with($rawLower, 'accept') || $rawLower === 'completed' || in_array($dcLower, ['awaiting authorized certificate preparation', 'registered', 'certified copy requested or received'])) {
+                $displayStatus = 'Accepted';
+            } elseif ($rawLower === 'rejected' || $dcLower === 'rejected') {
+                $displayStatus = 'Rejected';
+            } else {
+                $displayStatus = 'Pending';
+            }
+
+            $certDateRaw = !empty($b['death_cert_registered_date']) ? $b['death_cert_registered_date'] : (!empty($b['copy_issued_at']) ? $b['copy_issued_at'] : (!empty($b['encoded_at']) ? $b['encoded_at'] : null));
+
             $records[] = [
                 'id' => $b['ref_id'],
                 'burial_id' => $b['id'],
@@ -2215,8 +2230,10 @@ class AdminController extends Controller
                 'deceased' => $b['deceased_name'] ?? 'N/A',
                 'deceased_sex' => $b['deceased_sex'] ?? 'Male',
                 'date' => date('Y-m-d', strtotime($b['submitted_at'])),
-                'status' => $b['status'],
-                'status_class' => $this->getBurialStatusClass($b['status']),
+                'submitted_at' => $b['submitted_at'],
+                'cert_date' => $certDateRaw ? date('Y-m-d', strtotime($certDateRaw)) : null,
+                'status' => $displayStatus,
+                'status_class' => $this->getBurialStatusClass($displayStatus),
                 'request_type' => $b['request_type'] ?? 'both',
                 'cert_action_type' => $b['cert_action_type'] ?? 'register',
                 'existing_cert_no' => $b['existing_cert_no'] ?? '',
@@ -2248,10 +2265,44 @@ class AdminController extends Controller
             ];
         }
 
+        $archivedRecords = [];
+        foreach($rawArchived as $b) {
+            $rawStatus = trim($b['status'] ?? 'Pending');
+            $rawLower = strtolower($rawStatus);
+            $dcLower = strtolower(trim($b['death_cert_status'] ?? ''));
+
+            if ($rawLower === 'accepted' || str_starts_with($rawLower, 'accept') || $rawLower === 'completed' || in_array($dcLower, ['awaiting authorized certificate preparation', 'registered', 'certified copy requested or received'])) {
+                $displayStatus = 'Accepted';
+            } elseif ($rawLower === 'rejected' || $dcLower === 'rejected') {
+                $displayStatus = 'Rejected';
+            } else {
+                $displayStatus = 'Pending';
+            }
+
+            $certDateRaw = !empty($b['death_cert_registered_date']) ? $b['death_cert_registered_date'] : (!empty($b['copy_issued_at']) ? $b['copy_issued_at'] : (!empty($b['encoded_at']) ? $b['encoded_at'] : null));
+
+            $archivedRecords[] = [
+                'id' => $b['ref_id'],
+                'burial_id' => $b['id'],
+                'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
+                'deceased' => $b['deceased_name'] ?? 'N/A',
+                'deceased_sex' => $b['deceased_sex'] ?? 'Male',
+                'date' => date('Y-m-d', strtotime($b['submitted_at'])),
+                'submitted_at' => $b['submitted_at'],
+                'cert_date' => $certDateRaw ? date('Y-m-d', strtotime($certDateRaw)) : null,
+                'archived_at' => $b['archived_at'] ?? null,
+                'archived_by' => $b['archived_by'] ?? null,
+                'status' => $displayStatus,
+                'status_class' => $this->getBurialStatusClass($displayStatus),
+                'cert_action_type' => $b['cert_action_type'] ?? 'register',
+            ];
+        }
+
         $this->view('admin/Staff_Admin/Admin-Damayan_Department/burial', [
             'active_page' => 'burial',
             'dbUser' => $dbUser,
             'records' => $records,
+            'archivedRecords' => $archivedRecords,
             'analytics' => $analytics,
             'staffList' => $staffList,
             'volunteers' => $volunteers,
@@ -2271,7 +2322,7 @@ class AdminController extends Controller
         $dbUser = $userModel->findById($_SESSION['user_id']);
 
         $burialModel = new BurialRequest();
-        $filter = $_GET['filter'] ?? 'all';
+        $filter = $_GET['filter'] ?? 'pending';
         $search = $_GET['search'] ?? '';
         $rawBurials = $burialModel->getAll($filter, $search);
         $analytics = $burialModel->getAnalytics();
@@ -2285,12 +2336,10 @@ class AdminController extends Controller
             $rawLower = strtolower($rawStatus);
             $dcLower = strtolower(trim($b['death_cert_status'] ?? ''));
 
-            if ($rawLower === 'accepted' || str_starts_with($rawLower, 'accept') || $dcLower === 'awaiting authorized certificate preparation') {
+            if ($rawLower === 'accepted' || str_starts_with($rawLower, 'accept') || $rawLower === 'completed' || in_array($dcLower, ['awaiting authorized certificate preparation', 'registered', 'certified copy requested or received'])) {
                 $displayStatus = 'Accepted';
             } elseif ($rawLower === 'rejected' || $dcLower === 'rejected') {
                 $displayStatus = 'Rejected';
-            } elseif ($rawLower === 'completed' || $dcLower === 'registered' || $dcLower === 'certified copy requested or received') {
-                $displayStatus = 'Completed';
             } else {
                 $displayStatus = 'Pending';
             }
@@ -2364,30 +2413,425 @@ class AdminController extends Controller
         return 'badge-pending';
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // CHARITY PROGRAMS MODULE (DAMAYAN / DAWAH COLLABORATIVE SYSTEM)
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Section 1: Charity Dashboard
+     */
     public function damayanCharity(): void {
         Auth::protectRole(['Admin', 'Staff_Damayan']);
         require_once BASE_PATH . '/app/models/User.php';
-        require_once BASE_PATH . '/app/models/CharityDonation.php';
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
 
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
+        $staffName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: ($_SESSION['name'] ?? 'Damayan Staff');
 
-        $donationModel = new CharityDonation();
-        $stats = $donationModel->getStats();
-        $recentRequests = $donationModel->getRecentRequests();
-        
-        $allDonations = [];
-        $programs = [1, 2, 3];
-        foreach($programs as $pid) {
-            $allDonations[$pid] = $donationModel->getByProgram($pid);
-        }
+        $charity = new CharityProgram();
+        $charity->seedInitialDataIfEmpty($staffName);
+
+        $stats = $charity->getDashboardStats();
+        $recentDonations = array_slice($charity->getAllDonations(), 0, 6);
+        $recentDistributions = array_slice($charity->getDistributions(), 0, 6);
+        $activityLogs = $charity->getActivityLogs(8);
 
         $this->view('admin/Staff_Admin/Admin-Damayan_Department/charity', [
             'active_page' => 'charity',
             'dbUser' => $dbUser,
             'stats' => $stats,
-            'requests' => $recentRequests,
-            'donations' => $allDonations
+            'recentDonations' => $recentDonations,
+            'recentDistributions' => $recentDistributions,
+            'activityLogs' => $activityLogs
+        ]);
+    }
+
+    /**
+     * Section 2: Donation Records
+     */
+    public function damayanCharityDonations(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $charity = new CharityProgram();
+        $filters = [
+            'search' => $_GET['search'] ?? '',
+            'donation_type' => $_GET['type'] ?? '',
+            'status' => $_GET['status'] ?? '',
+            'date_from' => $_GET['date_from'] ?? '',
+            'date_to' => $_GET['date_to'] ?? ''
+        ];
+
+        $donations = $charity->getAllDonations($filters);
+        $stats = $charity->getDashboardStats();
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/charity_donations', [
+            'active_page' => 'charity_donations',
+            'dbUser' => $dbUser,
+            'donations' => $donations,
+            'filters' => $filters,
+            'stats' => $stats
+        ]);
+    }
+
+    /**
+     * Save / Edit Donation Record (AJAX)
+     */
+    public function saveCharityDonation(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+
+        $action = $_POST['action'] ?? 'create';
+
+        if ($action === 'edit') {
+            $id = (int)($_POST['id'] ?? 0);
+            $res = $charity->updateDonation($id, $_POST, $staffName, $userId);
+        } else {
+            $res = $charity->recordDonation($_POST, $staffName, $userId);
+        }
+
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * Get Donation Detail (AJAX)
+     */
+    public function getCharityDonationDetail(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $id = (int)($_GET['id'] ?? ($_POST['id'] ?? 0));
+        $donation = $charity->getDonationById($id);
+
+        if (!$donation) {
+            echo json_encode(['success' => false, 'error' => 'Donation record not found.']);
+            exit;
+        }
+
+        echo json_encode(['success' => true, 'donation' => $donation]);
+        exit;
+    }
+
+    /**
+     * Issue / Toggle Acknowledgment Receipt (AJAX)
+     */
+    public function toggleCharityAcknowledgment(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+
+        $res = $charity->issueAcknowledgment($id, $staffName, $userId);
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * Printable Acknowledgment Receipt View
+     */
+    public function printCharityAcknowledgment(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+
+        $id = (int)($_GET['id'] ?? 0);
+        $charity = new CharityProgram();
+        $donation = $charity->getDonationById($id);
+
+        if (!$donation) {
+            header('Location: ' . url('/admin/damayan/charity/donations'));
+            exit;
+        }
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/charity_ack_print', [
+            'dbUser' => $dbUser,
+            'donation' => $donation
+        ]);
+    }
+
+    /**
+     * Section 3: Available Donations
+     */
+    public function damayanCharityAvailable(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $charity = new CharityProgram();
+        $filters = [
+            'search' => $_GET['search'] ?? '',
+            'donation_type' => $_GET['type'] ?? '',
+            'date_from' => $_GET['date_from'] ?? '',
+            'date_to' => $_GET['date_to'] ?? ''
+        ];
+
+        $availableDonations = $charity->getAvailableDonations($filters);
+        $stats = $charity->getDashboardStats();
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/charity_available', [
+            'active_page' => 'charity_available',
+            'dbUser' => $dbUser,
+            'availableDonations' => $availableDonations,
+            'filters' => $filters,
+            'stats' => $stats
+        ]);
+    }
+
+    /**
+     * Section 4: Donation Allocation
+     */
+    public function damayanCharityAllocations(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $charity = new CharityProgram();
+        $filters = [
+            'search' => $_GET['search'] ?? '',
+            'department' => $_GET['department'] ?? '',
+            'status' => $_GET['status'] ?? '',
+            'donation_ref' => $_GET['donation_ref'] ?? '',
+            'date_from' => $_GET['date_from'] ?? '',
+            'date_to' => $_GET['date_to'] ?? ''
+        ];
+
+        $allocations = $charity->getAllocations($filters);
+        $availableDonations = $charity->getAvailableDonations();
+        $stats = $charity->getDashboardStats();
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/charity_allocations', [
+            'active_page' => 'charity_allocations',
+            'dbUser' => $dbUser,
+            'allocations' => $allocations,
+            'availableDonations' => $availableDonations,
+            'filters' => $filters,
+            'stats' => $stats
+        ]);
+    }
+
+    /**
+     * Save Allocation (AJAX)
+     */
+    public function saveCharityAllocation(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+
+        $res = $charity->createAllocation($_POST, $staffName, $userId);
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * Cancel Allocation (AJAX)
+     */
+    public function cancelCharityAllocation(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $reason = trim($_POST['reason'] ?? '');
+        $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+
+        $res = $charity->cancelAllocation($id, $staffName, $reason, $userId);
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * Get Allocation Detail (AJAX)
+     */
+    public function getCharityAllocationDetail(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $id = (int)($_GET['id'] ?? ($_POST['id'] ?? 0));
+        $alloc = $charity->getAllocationById($id);
+
+        if (!$alloc) {
+            echo json_encode(['success' => false, 'error' => 'Allocation record not found.']);
+            exit;
+        }
+
+        echo json_encode(['success' => true, 'allocation' => $alloc]);
+        exit;
+    }
+
+    /**
+     * Section 5: Distribution Records
+     */
+    public function damayanCharityDistributions(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $charity = new CharityProgram();
+        $filters = [
+            'search' => $_GET['search'] ?? '',
+            'department' => $_GET['department'] ?? '',
+            'status' => $_GET['status'] ?? '',
+            'donation_ref' => $_GET['donation_ref'] ?? '',
+            'date_from' => $_GET['date_from'] ?? '',
+            'date_to' => $_GET['date_to'] ?? ''
+        ];
+
+        $distributions = $charity->getDistributions($filters);
+        $awaitingAllocations = $charity->getUndistributedAllocations();
+        $stats = $charity->getDashboardStats();
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/charity_distributions', [
+            'active_page' => 'charity_distributions',
+            'dbUser' => $dbUser,
+            'distributions' => $distributions,
+            'awaitingAllocations' => $awaitingAllocations,
+            'filters' => $filters,
+            'stats' => $stats
+        ]);
+    }
+
+    /**
+     * Save Distribution Record (AJAX with file upload)
+     */
+    public function saveCharityDistribution(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+
+        $docPath = null;
+        if (!empty($_FILES['supporting_document']['name']) && $_FILES['supporting_document']['error'] === UPLOAD_ERR_OK) {
+            $allowedExts = ['png', 'jpg', 'jpeg', 'webp', 'pdf'];
+            $fileInfo = pathinfo($_FILES['supporting_document']['name']);
+            $ext = strtolower($fileInfo['extension'] ?? '');
+
+            if (!in_array($ext, $allowedExts)) {
+                echo json_encode(['success' => false, 'error' => 'Supporting document must be an image (PNG, JPG, WEBP) or PDF file.']);
+                exit;
+            }
+
+            if ($_FILES['supporting_document']['size'] > 10 * 1024 * 1024) {
+                echo json_encode(['success' => false, 'error' => 'Supporting document file size exceeds the 10MB limit.']);
+                exit;
+            }
+
+            $uploadDir = BASE_PATH . '/public/uploads/charity/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            $fileName = 'dist_proof_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $destPath = $uploadDir . $fileName;
+
+            if (move_uploaded_file($_FILES['supporting_document']['tmp_name'], $destPath)) {
+                $docPath = 'uploads/charity/' . $fileName;
+            }
+        }
+
+        $res = $charity->recordDistribution($_POST, $docPath, $staffName, $userId);
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * Get Distribution Detail (AJAX)
+     */
+    public function getCharityDistributionDetail(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $id = (int)($_GET['id'] ?? ($_POST['id'] ?? 0));
+        $dist = $charity->getDistributionById($id);
+
+        if (!$dist) {
+            echo json_encode(['success' => false, 'error' => 'Distribution record not found.']);
+            exit;
+        }
+
+        echo json_encode(['success' => true, 'distribution' => $dist]);
+        exit;
+    }
+
+    /**
+     * Reports View (Printable / Exportable Summary)
+     */
+    public function damayanCharityReports(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $charity = new CharityProgram();
+        $filters = [
+            'date_from' => $_GET['date_from'] ?? date('Y-01-01'),
+            'date_to' => $_GET['date_to'] ?? date('Y-m-d')
+        ];
+
+        $donations = $charity->getAllDonations($filters);
+        $allocations = $charity->getAllocations($filters);
+        $distributions = $charity->getDistributions($filters);
+        $stats = $charity->getDashboardStats();
+
+        $this->view('admin/Staff_Admin/Admin-Damayan_Department/charity_reports', [
+            'active_page' => 'charity',
+            'dbUser' => $dbUser,
+            'filters' => $filters,
+            'donations' => $donations,
+            'allocations' => $allocations,
+            'distributions' => $distributions,
+            'stats' => $stats
         ]);
     }
 
@@ -2512,7 +2956,7 @@ class AdminController extends Controller
 
         require_once BASE_PATH . '/app/models/BurialRequest.php';
         $model = new BurialRequest();
-        $res = $model->acceptRequest($id, $staffId, $staffName, $notes);
+        $res = $model->acceptRequest($id, $staffId, $staffName, $notes, true);
 
         echo json_encode($res);
         return;
@@ -2569,6 +3013,82 @@ class AdminController extends Controller
         $model = new BurialRequest();
         $res = $model->rejectRequest($id, $reasonCategory, $specificReason, $staffName);
 
+        echo json_encode($res);
+        return;
+    }
+
+    public function deleteBurialRequest(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = $input['id'] ?? ($input['ref_id'] ?? 0);
+
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing Request ID']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+        $ok = $model->archiveRequest($id, $staffName);
+
+        if ($ok) {
+            echo json_encode(['success' => true, 'message' => 'Burial record moved to archive.']);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to archive burial record.']);
+        }
+        return;
+    }
+
+    public function restoreBurialRequest(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = $input['id'] ?? ($input['ref_id'] ?? 0);
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing Request ID']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $ok = $model->restoreRequest($id, $staffName);
+
+        if ($ok) {
+            echo json_encode(['success' => true, 'message' => 'Burial record restored to active records.']);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to restore burial record.']);
+        }
+        return;
+    }
+
+    public function markBurialCertificateReceived(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = $input['id'] ?? ($input['ref_id'] ?? 0);
+        $date = !empty($input['received_date']) ? trim($input['received_date']) : date('Y-m-d');
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing Request ID']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $res = $model->markCertificateReceived($id, $date, $staffName);
         echo json_encode($res);
         return;
     }
@@ -3200,36 +3720,8 @@ class AdminController extends Controller
     /** Certificate Tracking List View */
     public function damayanCertificateTracking(): void {
         Auth::protectRole(['Admin', 'Staff_Damayan']);
-        require_once BASE_PATH . '/app/models/User.php';
-        require_once BASE_PATH . '/app/models/FuneralCase.php';
-
-        $userModel = new User();
-        $dbUser = $userModel->findById($_SESSION['user_id']);
-
-        $fcModel = new FuneralCase();
-        $statusFilter = $_GET['status'] ?? '';
-        $search = $_GET['search'] ?? '';
-
-        $certificates = $fcModel->getAllCertificates($statusFilter, $search);
-        $analytics = $fcModel->getCertificateAnalytics();
-        $staffList = $fcModel->getStaffList();
-
-        require_once BASE_PATH . '/app/models/BurialRequest.php';
-        $burialModel = new BurialRequest();
-        $encodedRecords = $burialModel->getEncodedDeathCertificates($search);
-        $encodedCount = $burialModel->countEncodedDeathCertificates();
-
-        $this->view('admin/Staff_Admin/Admin-Damayan_Department/certificate_tracking', [
-            'active_page'    => 'certificate_tracking',
-            'dbUser'         => $dbUser,
-            'certificates'   => $certificates,
-            'analytics'      => $analytics,
-            'staffList'      => $staffList,
-            'encodedRecords' => $encodedRecords,
-            'encodedCount'   => $encodedCount,
-            'currentFilter'  => $statusFilter,
-            'search'         => $search
-        ]);
+        header('Location: ' . url('/admin/damayan/burial-requests'));
+        exit;
     }
 
     /** Certificate Details (JSON for tracking panel) */
@@ -3416,20 +3908,21 @@ class AdminController extends Controller
 
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
 
-        $regNo = trim($input['registration_number'] ?? '');
+        $regNo = trim($input['registration_number'] ?? ($input['registry_number'] ?? ''));
+        $firstName = trim($input['first_name'] ?? '');
+        $middleName = trim($input['middle_name'] ?? '');
+        $lastName = trim($input['last_name'] ?? '');
         $deceasedName = trim($input['deceased_name'] ?? '');
-        $representativeName = trim($input['representative_name'] ?? '');
+        if (empty($deceasedName) && (!empty($firstName) || !empty($lastName))) {
+            $deceasedName = trim($firstName . ' ' . ($middleName ? $middleName . ' ' : '') . $lastName);
+        }
 
         if (empty($regNo)) {
-            echo json_encode(['success' => false, 'error' => 'Death Certificate Registration Number is required.']);
+            echo json_encode(['success' => false, 'error' => 'Registry Number is required.']);
             exit;
         }
         if (empty($deceasedName)) {
-            echo json_encode(['success' => false, 'error' => 'Full Name of the Deceased is required.']);
-            exit;
-        }
-        if (empty($representativeName)) {
-            echo json_encode(['success' => false, 'error' => 'Full Name of the Representative is required.']);
+            echo json_encode(['success' => false, 'error' => 'Full Name of the Deceased (First and Last Name) is required.']);
             exit;
         }
 
@@ -3439,11 +3932,13 @@ class AdminController extends Controller
         $staffId = (int)($_SESSION['user_id'] ?? 0);
         $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
 
-        $result = $model->encodeDeathCertificate([
-            'registration_number' => $regNo,
-            'deceased_name' => $deceasedName,
-            'representative_name' => $representativeName
-        ], $staffId, $staffName);
+        $input['registration_number'] = $regNo;
+        $input['deceased_name'] = $deceasedName;
+        $input['first_name'] = $firstName;
+        $input['middle_name'] = $middleName;
+        $input['last_name'] = $lastName;
+
+        $result = $model->encodeDeathCertificate($input, $staffId, $staffName);
 
         echo json_encode($result);
         exit;

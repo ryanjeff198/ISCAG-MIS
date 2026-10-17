@@ -183,6 +183,53 @@ class BurialRequest
                 $this->db->exec("ALTER TABLE encoded_death_certificates CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
             } catch (\Throwable $e) {}
 
+            $encCols = [
+                "province VARCHAR(150) NULL",
+                "city_municipality VARCHAR(150) NULL",
+                "first_name VARCHAR(100) NULL",
+                "middle_name VARCHAR(100) NULL",
+                "last_name VARCHAR(100) NULL",
+                "sex ENUM('Male','Female') DEFAULT 'Male'",
+                "date_of_death_day INT NULL",
+                "date_of_death_month INT NULL",
+                "date_of_death_year INT NULL",
+                "date_of_death DATE NULL",
+                "time_of_death TIME NULL",
+                "date_of_birth_day INT NULL",
+                "date_of_birth_month INT NULL",
+                "date_of_birth_year INT NULL",
+                "date_of_birth DATE NULL",
+                "age_years INT NULL",
+                "age_months INT NULL",
+                "age_days INT NULL",
+                "age_hours INT NULL",
+                "age_unit VARCHAR(20) DEFAULT 'years'",
+                "age_display VARCHAR(100) NULL",
+                "place_of_death_hospital VARCHAR(255) NULL",
+                "place_of_death_house_no VARCHAR(100) NULL",
+                "place_of_death_street VARCHAR(255) NULL",
+                "place_of_death_barangay VARCHAR(150) NULL",
+                "place_of_death_city VARCHAR(150) NULL",
+                "place_of_death_province VARCHAR(150) NULL",
+                "place_of_death TEXT NULL",
+                "civil_status VARCHAR(50) NULL",
+                "religion VARCHAR(100) DEFAULT 'Islam'",
+                "citizenship VARCHAR(100) DEFAULT 'Filipino'",
+                "residence_house_no VARCHAR(100) NULL",
+                "residence_street VARCHAR(255) NULL",
+                "residence_barangay VARCHAR(150) NULL",
+                "residence_city VARCHAR(150) NULL",
+                "residence_province VARCHAR(150) NULL",
+                "residence_country VARCHAR(100) DEFAULT 'Philippines'",
+                "residence TEXT NULL",
+                "occupation VARCHAR(150) NULL"
+            ];
+            foreach ($encCols as $ecDef) {
+                try {
+                    $this->db->exec("ALTER TABLE encoded_death_certificates ADD COLUMN $ecDef");
+                } catch (\Throwable $e) {}
+            }
+
             $colsToAdd = [
                 "cert_action_type VARCHAR(50) DEFAULT 'register'",
                 "existing_cert_no VARCHAR(100) NULL",
@@ -204,7 +251,10 @@ class BurialRequest
                 "duplicate_reviewed_at DATETIME NULL",
                 "duplicate_review_notes TEXT NULL",
                 "rejected_by VARCHAR(200) NULL",
-                "rejected_at DATETIME NULL"
+                "rejected_at DATETIME NULL",
+                "is_archived TINYINT(1) DEFAULT 0",
+                "archived_at DATETIME NULL",
+                "archived_by VARCHAR(200) NULL"
             ];
             foreach ($colsToAdd as $colDef) {
                 try {
@@ -733,7 +783,7 @@ class BurialRequest
     /**
      * Get all requests for Staff Admin dashboard with filter & search
      */
-    public function getAll(string $filter = 'all', string $search = ''): array {
+    public function getAll(string $filter = 'all', string $search = '', bool $archivedOnly = false): array {
         try {
             $params = [];
             $sql = "SELECT b.*, 
@@ -761,21 +811,23 @@ class BurialRequest
                     )
                     WHERE 1=1";
 
+            if ($archivedOnly) {
+                $sql .= " AND b.is_archived = 1";
+            } else {
+                $sql .= " AND (b.is_archived = 0 OR b.is_archived IS NULL)";
+            }
+
             $filter = strtolower(trim($filter));
             if ($filter === 'pending') {
-                $sql .= " AND ((b.status = 'Pending' OR (b.status NOT IN ('Accepted', 'Rejected', 'Completed') AND b.status NOT LIKE 'Accepted%')) AND b.death_cert_status NOT IN ('Rejected', 'Awaiting Authorized Certificate Preparation') AND b.status != 'Rejected')";
+                $sql .= " AND (b.status NOT IN ('Accepted', 'Rejected', 'Completed') AND b.status NOT LIKE 'Accept%' AND COALESCE(b.death_cert_status, '') NOT IN ('Rejected', 'Awaiting Authorized Certificate Preparation', 'Registered', 'Certified Copy Requested or Received'))";
             } elseif ($filter === 'accepted') {
-                $sql .= " AND (b.status = 'Accepted' OR b.status LIKE 'Accepted%' OR b.death_cert_status = 'Awaiting Authorized Certificate Preparation')";
+                $sql .= " AND (b.status IN ('Accepted', 'Completed') OR b.status LIKE 'Accept%' OR COALESCE(b.death_cert_status, '') IN ('Awaiting Authorized Certificate Preparation', 'Registered', 'Certified Copy Requested or Received'))";
             } elseif ($filter === 'rejected') {
-                $sql .= " AND (b.status = 'Rejected' OR b.death_cert_status = 'Rejected')";
+                $sql .= " AND (b.status = 'Rejected' OR COALESCE(b.death_cert_status, '') = 'Rejected')";
             } elseif ($filter === 'additional_info') {
                 $sql .= " AND (b.death_cert_status = 'Additional Information Required' OR b.cemetery_plot_status = 'Additional Information Required')";
             } elseif ($filter === 'death_cert') {
                 $sql .= " AND b.death_cert_requested = 1";
-            } elseif ($filter === 'cemetery_plot') {
-                $sql .= " AND b.cemetery_plot_requested = 1";
-            } elseif ($filter === 'completed') {
-                $sql .= " AND (b.status = 'Completed' OR b.death_cert_status IN ('Registered', 'Certified Copy Requested or Received') OR b.cemetery_plot_status = 'Plot Assigned')";
             }
 
             if (!empty($search)) {
@@ -806,16 +858,16 @@ class BurialRequest
             $totalCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests")->fetchColumn();
             
             // Pending Review (unprocessed)
-            $pendingCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE (status = 'Pending' OR (status NOT IN ('Accepted', 'Rejected', 'Completed') AND status NOT LIKE 'Accepted%')) AND death_cert_status NOT IN ('Rejected', 'Awaiting Authorized Certificate Preparation') AND status != 'Rejected'")->fetchColumn();
+            $pendingCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE status NOT IN ('Accepted', 'Rejected', 'Completed') AND status NOT LIKE 'Accept%' AND COALESCE(death_cert_status, '') NOT IN ('Rejected', 'Awaiting Authorized Certificate Preparation', 'Registered', 'Certified Copy Requested or Received')")->fetchColumn();
 
             // Accepted Requests
-            $acceptedCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE status = 'Accepted' OR status LIKE 'Accepted%' OR death_cert_status = 'Awaiting Authorized Certificate Preparation'")->fetchColumn();
+            $acceptedCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE status IN ('Accepted', 'Completed') OR status LIKE 'Accept%' OR COALESCE(death_cert_status, '') IN ('Awaiting Authorized Certificate Preparation', 'Registered', 'Certified Copy Requested or Received')")->fetchColumn();
 
             // Rejected Requests
-            $rejectedCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE status = 'Rejected' OR death_cert_status = 'Rejected'")->fetchColumn();
+            $rejectedCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE status = 'Rejected' OR COALESCE(death_cert_status, '') = 'Rejected'")->fetchColumn();
 
-            // Completed Cases
-            $completedCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE status = 'Completed' OR death_cert_status IN ('Registered', 'Certified Copy Requested or Received') OR cemetery_plot_status = 'Plot Assigned'")->fetchColumn();
+            // Completed Cases (retained for backward compatibility)
+            $completedCases = $acceptedCases;
 
             // Death Certificate stages
             $dcPending = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE death_cert_requested = 1 AND death_cert_status IN ('Request Received', 'Under Review')")->fetchColumn();
@@ -1542,7 +1594,7 @@ class BurialRequest
     /**
      * Accept & Approve death certificate request for processing
      */
-    public function acceptRequest(int|string $burialId, int $staffId = 0, string $staffName = 'Damayan Coordinator', string $notes = '', bool $skipVerification = false): array {
+    public function acceptRequest(int|string $burialId, int $staffId = 0, string $staffName = 'Damayan Coordinator', string $notes = '', bool $skipVerification = true): array {
         try {
             $burial = is_numeric($burialId) ? $this->findById((int)$burialId) : $this->findByRefId((string)$burialId);
             if (!$burial && !is_numeric($burialId)) {
@@ -1557,22 +1609,13 @@ class BurialRequest
             $refId = $burial['ref_id'];
             $tenantId = (int)$burial['tenant_id'];
 
-            // Requirement: Must be verified as 'Matched'
-            if (!$skipVerification && ($burial['verification_result'] ?? '') !== 'Matched') {
-                return [
-                    'success' => false,
-                    'code' => 'VERIFICATION_REQUIRED',
-                    'current_result' => $burial['verification_result'] ?? 'Pending',
-                    'error' => 'Verification required: The physical death certificate must be reviewed and marked as "Matched" before accepting.'
-                ];
-            }
-
             $newStatus = 'Accepted';
             $dcStatus = 'Awaiting Authorized Certificate Preparation';
 
             $sql = "UPDATE burial_requests 
                     SET status = :st, 
                         death_cert_status = :dc_st,
+                        verification_result = 'Matched',
                         cemetery_plot_status = IF(cemetery_plot_requested = 1 AND cemetery_plot_status = 'Pending Review', 'Available for Assignment', cemetery_plot_status),
                         rejection_reason = NULL,
                         death_cert_rejection_reason = NULL,
@@ -2318,18 +2361,21 @@ class BurialRequest
      * Automatically links any burial request having the same registration number!
      */
     public function encodeDeathCertificate(array $data, int $staffId, string $staffName): array {
-        $regNo = trim($data['registration_number'] ?? '');
+        $regNo = trim($data['registration_number'] ?? ($data['registry_number'] ?? ''));
+        $firstName = trim($data['first_name'] ?? '');
+        $middleName = trim($data['middle_name'] ?? '');
+        $lastName = trim($data['last_name'] ?? '');
         $deceasedName = trim($data['deceased_name'] ?? '');
+        if (empty($deceasedName) && (!empty($firstName) || !empty($lastName))) {
+            $deceasedName = trim($firstName . ' ' . ($middleName ? $middleName . ' ' : '') . $lastName);
+        }
         $representativeName = trim($data['representative_name'] ?? '');
 
         if (empty($regNo)) {
-            return ['success' => false, 'error' => 'Death Certificate Registration Number is required.', 'message' => 'Death Certificate Registration Number is required.'];
+            return ['success' => false, 'error' => 'Registry Number is required.', 'message' => 'Registry Number is required.'];
         }
         if (empty($deceasedName)) {
-            return ['success' => false, 'error' => 'Full Name of the Deceased is required.', 'message' => 'Full Name of the Deceased is required.'];
-        }
-        if (empty($representativeName)) {
-            return ['success' => false, 'error' => 'Full Name of the Representative is required.', 'message' => 'Full Name of the Representative is required.'];
+            return ['success' => false, 'error' => 'Full Name of the Deceased (First and Last Name) is required.', 'message' => 'Full Name of the Deceased (First and Last Name) is required.'];
         }
 
         // Check for duplicate registration number
@@ -2343,14 +2389,144 @@ class BurialRequest
             ];
         }
 
+        // Additional registration and deceased details
+        $province = trim($data['province'] ?? '');
+        $cityMunicipality = trim($data['city_municipality'] ?? '');
+        $sex = in_array(trim($data['sex'] ?? ''), ['Male', 'Female']) ? trim($data['sex']) : 'Male';
+
+        $dodDay = !empty($data['date_of_death_day']) ? (int)$data['date_of_death_day'] : null;
+        $dodMonth = !empty($data['date_of_death_month']) ? (int)$data['date_of_death_month'] : null;
+        $dodYear = !empty($data['date_of_death_year']) ? (int)$data['date_of_death_year'] : null;
+        $dateOfDeath = null;
+        if ($dodYear && $dodMonth && $dodDay) {
+            $dateOfDeath = sprintf('%04d-%02d-%02d', $dodYear, $dodMonth, $dodDay);
+        } elseif (!empty($data['date_of_death'])) {
+            $dateOfDeath = date('Y-m-d', strtotime($data['date_of_death']));
+        }
+
+        $timeOfDeath = null;
+        if (!empty($data['time_of_death'])) {
+            $timeOfDeath = date('H:i:s', strtotime($data['time_of_death']));
+        }
+
+        $dobDay = !empty($data['date_of_birth_day']) ? (int)$data['date_of_birth_day'] : null;
+        $dobMonth = !empty($data['date_of_birth_month']) ? (int)$data['date_of_birth_month'] : null;
+        $dobYear = !empty($data['date_of_birth_year']) ? (int)$data['date_of_birth_year'] : null;
+        $dateOfBirth = null;
+        if ($dobYear && $dobMonth && $dobDay) {
+            $dateOfBirth = sprintf('%04d-%02d-%02d', $dobYear, $dobMonth, $dobDay);
+        } elseif (!empty($data['date_of_birth'])) {
+            $dateOfBirth = date('Y-m-d', strtotime($data['date_of_birth']));
+        }
+
+        $ageYears = isset($data['age_years']) && $data['age_years'] !== '' ? (int)$data['age_years'] : null;
+        $ageMonths = isset($data['age_months']) && $data['age_months'] !== '' ? (int)$data['age_months'] : null;
+        $ageDays = isset($data['age_days']) && $data['age_days'] !== '' ? (int)$data['age_days'] : null;
+        $ageHours = isset($data['age_hours']) && $data['age_hours'] !== '' ? (int)$data['age_hours'] : null;
+        $ageUnit = trim($data['age_unit'] ?? 'years');
+        $ageDisplay = trim($data['age_display'] ?? '');
+        if (empty($ageDisplay)) {
+            if ($ageYears !== null && $ageYears > 0) $ageDisplay = "{$ageYears} yrs";
+            elseif ($ageMonths !== null && $ageMonths > 0) $ageDisplay = "{$ageMonths} mos";
+            elseif ($ageDays !== null && $ageDays > 0) $ageDisplay = "{$ageDays} days";
+            elseif ($ageHours !== null && $ageHours > 0) $ageDisplay = "{$ageHours} hrs";
+        }
+
+        $podHospital = trim($data['place_of_death_hospital'] ?? '');
+        $podHouseNo = trim($data['place_of_death_house_no'] ?? '');
+        $podStreet = trim($data['place_of_death_street'] ?? '');
+        $podBarangay = trim($data['place_of_death_barangay'] ?? '');
+        $podCity = trim($data['place_of_death_city'] ?? '');
+        $podProvince = trim($data['place_of_death_province'] ?? '');
+        $placeOfDeath = trim($data['place_of_death'] ?? '');
+        if (empty($placeOfDeath)) {
+            $placeParts = array_filter([$podHospital, $podHouseNo, $podStreet, $podBarangay, $podCity, $podProvince]);
+            $placeOfDeath = implode(', ', $placeParts);
+        }
+
+        $civilStatus = trim($data['civil_status'] ?? '');
+        $religion = trim($data['religion'] ?? 'Islam');
+        $citizenship = trim($data['citizenship'] ?? 'Filipino');
+
+        $resHouseNo = trim($data['residence_house_no'] ?? '');
+        $resStreet = trim($data['residence_street'] ?? '');
+        $resBarangay = trim($data['residence_barangay'] ?? '');
+        $resCity = trim($data['residence_city'] ?? '');
+        $resProvince = trim($data['residence_province'] ?? '');
+        $resCountry = trim($data['residence_country'] ?? 'Philippines');
+        $residence = trim($data['residence'] ?? '');
+        if (empty($residence)) {
+            $resParts = array_filter([$resHouseNo, $resStreet, $resBarangay, $resCity, $resProvince, $resCountry]);
+            $residence = implode(', ', $resParts);
+        }
+
+        $occupation = trim($data['occupation'] ?? '');
+
         try {
             $stmt = $this->db->prepare("INSERT INTO encoded_death_certificates 
-                (registration_number, deceased_name, representative_name, encoded_by_id, encoded_by_name, encoded_at) 
-                VALUES (:reg, :dec, :rep, :staff_id, :staff_name, NOW())");
+                (registration_number, deceased_name, representative_name, province, city_municipality,
+                 first_name, middle_name, last_name, sex,
+                 date_of_death_day, date_of_death_month, date_of_death_year, date_of_death, time_of_death,
+                 date_of_birth_day, date_of_birth_month, date_of_birth_year, date_of_birth,
+                 age_years, age_months, age_days, age_hours, age_unit, age_display,
+                 place_of_death_hospital, place_of_death_house_no, place_of_death_street, place_of_death_barangay, place_of_death_city, place_of_death_province, place_of_death,
+                 civil_status, religion, citizenship,
+                 residence_house_no, residence_street, residence_barangay, residence_city, residence_province, residence_country, residence,
+                 occupation, encoded_by_id, encoded_by_name, encoded_at) 
+                VALUES 
+                (:reg, :dec, :rep, :prov, :city,
+                 :fname, :mname, :lname, :sex,
+                 :dod_d, :dod_m, :dod_y, :dod, :tod,
+                 :dob_d, :dob_m, :dob_y, :dob,
+                 :age_y, :age_m, :age_d, :age_h, :age_u, :age_disp,
+                 :pod_hosp, :pod_hno, :pod_str, :pod_brgy, :pod_city, :pod_prov, :pod,
+                 :civil, :rel, :citz,
+                 :res_hno, :res_str, :res_brgy, :res_city, :res_prov, :res_cntry, :res,
+                 :occ, :staff_id, :staff_name, NOW())");
+            
             $res = $stmt->execute([
                 'reg' => $regNo,
                 'dec' => $deceasedName,
-                'rep' => $representativeName,
+                'rep' => $representativeName ?: null,
+                'prov' => $province ?: null,
+                'city' => $cityMunicipality ?: null,
+                'fname' => $firstName ?: null,
+                'mname' => $middleName ?: null,
+                'lname' => $lastName ?: null,
+                'sex' => $sex,
+                'dod_d' => $dodDay,
+                'dod_m' => $dodMonth,
+                'dod_y' => $dodYear,
+                'dod' => $dateOfDeath,
+                'tod' => $timeOfDeath ?: null,
+                'dob_d' => $dobDay,
+                'dob_m' => $dobMonth,
+                'dob_y' => $dobYear,
+                'dob' => $dateOfBirth,
+                'age_y' => $ageYears,
+                'age_m' => $ageMonths,
+                'age_d' => $ageDays,
+                'age_h' => $ageHours,
+                'age_u' => $ageUnit,
+                'age_disp' => $ageDisplay ?: null,
+                'pod_hosp' => $podHospital ?: null,
+                'pod_hno' => $podHouseNo ?: null,
+                'pod_str' => $podStreet ?: null,
+                'pod_brgy' => $podBarangay ?: null,
+                'pod_city' => $podCity ?: null,
+                'pod_prov' => $podProvince ?: null,
+                'pod' => $placeOfDeath ?: null,
+                'civil' => $civilStatus ?: null,
+                'rel' => $religion ?: 'Islam',
+                'citz' => $citizenship ?: 'Filipino',
+                'res_hno' => $resHouseNo ?: null,
+                'res_str' => $resStreet ?: null,
+                'res_brgy' => $resBarangay ?: null,
+                'res_city' => $resCity ?: null,
+                'res_prov' => $resProvince ?: null,
+                'res_cntry' => $resCountry ?: 'Philippines',
+                'res' => $residence ?: null,
+                'occ' => $occupation ?: null,
                 'staff_id' => $staffId ?: null,
                 'staff_name' => $staffName ?: 'Damayan Staff'
             ]);
@@ -2505,6 +2681,218 @@ class BurialRequest
             return null;
         }
     }
+
+    /**
+     * Archive a burial request (soft-delete into archive records)
+     */
+    public function archiveRequest(int|string $idOrRef, string $actorName = 'Staff Admin'): bool {
+        try {
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare("SELECT id, ref_id, cemetery_plot_id FROM burial_requests WHERE id = :id OR ref_id = :ref LIMIT 1");
+            $stmt->execute([
+                'id' => is_numeric($idOrRef) ? (int)$idOrRef : 0,
+                'ref' => (string)$idOrRef
+            ]);
+            $req = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$req) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $reqId = (int)$req['id'];
+            $refId = $req['ref_id'];
+            $plotId = !empty($req['cemetery_plot_id']) ? (int)$req['cemetery_plot_id'] : null;
+
+            // 1. Reset assigned cemetery plot if any so resources are freed
+            if ($plotId) {
+                $plotStmt = $this->db->prepare("UPDATE cemetery_plots 
+                                                SET status = 'Available', 
+                                                    assigned_deceased_name = NULL, 
+                                                    assigned_burial_request_id = NULL, 
+                                                    assigned_tenant_id = NULL, 
+                                                    assigned_date = NULL 
+                                                WHERE id = :pid");
+                $plotStmt->execute(['pid' => $plotId]);
+            }
+
+            $plotStmt2 = $this->db->prepare("UPDATE cemetery_plots 
+                                             SET status = 'Available', 
+                                                 assigned_deceased_name = NULL, 
+                                                 assigned_burial_request_id = NULL, 
+                                                 assigned_tenant_id = NULL, 
+                                                 assigned_date = NULL 
+                                             WHERE assigned_burial_request_id = :req_id");
+            $plotStmt2->execute(['req_id' => $reqId]);
+
+            // 2. Soft-delete by setting is_archived = 1
+            $upStmt = $this->db->prepare("UPDATE burial_requests 
+                                          SET is_archived = 1, 
+                                              archived_at = NOW(), 
+                                              archived_by = :actor,
+                                              updated_at = NOW() 
+                                          WHERE id = :id");
+            $upStmt->execute(['actor' => $actorName, 'id' => $reqId]);
+
+            // 3. Log activity
+            $this->logActivity($reqId, $refId, 'Archived', 'Burial Record Archived', "Burial request was moved to archive records by {$actorName}.", $actorName, 'Staff_Damayan');
+
+            $this->db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log("BurialRequest::archiveRequest error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Restore an archived burial request back to active records
+     */
+    public function restoreRequest(int|string $idOrRef, string $actorName = 'Staff Admin'): bool {
+        try {
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare("SELECT id, ref_id FROM burial_requests WHERE id = :id OR ref_id = :ref LIMIT 1");
+            $stmt->execute([
+                'id' => is_numeric($idOrRef) ? (int)$idOrRef : 0,
+                'ref' => (string)$idOrRef
+            ]);
+            $req = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$req) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $reqId = (int)$req['id'];
+            $refId = $req['ref_id'];
+
+            $upStmt = $this->db->prepare("UPDATE burial_requests 
+                                          SET is_archived = 0, 
+                                              archived_at = NULL, 
+                                              archived_by = NULL,
+                                              updated_at = NOW() 
+                                          WHERE id = :id");
+            $upStmt->execute(['id' => $reqId]);
+
+            // Log activity
+            $this->logActivity($reqId, $refId, 'Restored', 'Burial Record Restored', "Burial request was restored from archive to active records by {$actorName}.", $actorName, 'Staff_Damayan');
+
+            $this->db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log("BurialRequest::restoreRequest error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function deleteRequest(int|string $idOrRef, string $actorName = 'Staff Admin'): bool {
+        return $this->archiveRequest($idOrRef, $actorName);
+    }
+
+    /**
+     * Mark death certificate as received by staff/applicant
+     */
+    public function markCertificateReceived(int|string $idOrRef, ?string $receivedDate = null, string $actorName = 'Staff Admin'): array {
+        try {
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare("SELECT id, ref_id, tenant_id, cert_action_type, death_cert_status, copy_issued_at, death_cert_registered_date FROM burial_requests WHERE id = :id OR ref_id = :ref LIMIT 1");
+            $stmt->execute([
+                'id' => is_numeric($idOrRef) ? (int)$idOrRef : 0,
+                'ref' => (string)$idOrRef
+            ]);
+            $req = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$req) {
+                $this->db->rollBack();
+                return ['success' => false, 'error' => 'Burial case record not found.'];
+            }
+
+            $reqId = (int)$req['id'];
+            $refId = $req['ref_id'];
+            $certDate = !empty($receivedDate) ? $receivedDate : date('Y-m-d');
+            $nowTs = date('Y-m-d H:i:s');
+            $isCopy = (($req['cert_action_type'] ?? '') === 'copy');
+
+            if ($isCopy) {
+                $upStmt = $this->db->prepare("UPDATE burial_requests 
+                                              SET copy_received_confirmed = 1,
+                                                  copy_received_at = :ts,
+                                                  copy_issued_at = COALESCE(copy_issued_at, :ts),
+                                                  death_cert_registered_date = COALESCE(death_cert_registered_date, :dt),
+                                                  death_cert_status = 'Certified Copy Requested or Received',
+                                                  updated_at = NOW() 
+                                              WHERE id = :id");
+                $upStmt->execute([
+                    'ts' => $nowTs,
+                    'dt' => $certDate,
+                    'id' => $reqId
+                ]);
+            } else {
+                $upStmt = $this->db->prepare("UPDATE burial_requests 
+                                              SET death_cert_registered_date = :dt,
+                                                  death_cert_status = CASE 
+                                                      WHEN death_cert_status IN ('Request Received', 'Under Review', 'Awaiting Authorized Certificate Preparation', 'Submitted for Civil Registration', 'Certificate Prepared and Certified') 
+                                                      THEN 'Registered' 
+                                                      ELSE death_cert_status 
+                                                  END,
+                                                  updated_at = NOW() 
+                                              WHERE id = :id");
+                $upStmt->execute([
+                    'dt' => $certDate,
+                    'id' => $reqId
+                ]);
+            }
+
+            $this->logActivity(
+                $reqId,
+                $refId,
+                'Certificate Received',
+                'Death Certificate Received',
+                "Death certificate was marked as received on " . date('M d, Y', strtotime($certDate)) . " by {$actorName}.",
+                $actorName,
+                'Staff_Damayan'
+            );
+
+            // Notify User
+            if (!empty($req['tenant_id'])) {
+                try {
+                    require_once BASE_PATH . '/app/models/Notification.php';
+                    $notif = new Notification();
+                    $notif->create(
+                        (int)$req['tenant_id'],
+                        "Death Certificate Received: #{$refId}",
+                        "Assalamu Alaikum. The death certificate for case #{$refId} has been officially recorded as received.",
+                        'damayan'
+                    );
+                } catch (\Throwable $e) {}
+            }
+
+            $this->db->commit();
+
+            return [
+                'success' => true,
+                'message' => 'Death certificate successfully marked as received.',
+                'received_date' => $certDate,
+                'formatted_date' => date('M d, Y', strtotime($certDate))
+            ];
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log("BurialRequest::markCertificateReceived error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
+        }
+    }
 }
+
 
 

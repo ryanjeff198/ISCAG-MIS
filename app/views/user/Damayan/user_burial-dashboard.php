@@ -243,7 +243,7 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
         Request #<?= htmlspecialchars($activeBurial['ref_id']) ?>: <?= htmlspecialchars($activeBurial['info_request_notes'] ?? 'The coordinator has requested additional details or documents.') ?>
       </div>
       <div style="font-size: 0.85rem; color: #92400e; margin-top: 2px;">
-        Please review the required details and upload the necessary supporting document to proceed.
+        Please review the required details and provide the necessary response to proceed.
       </div>
     </div>
   </div>
@@ -773,10 +773,6 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
       <div class="info-group">
         <span class="info-label">Date Submitted</span>
         <span class="info-value"><?= !empty($activeBurial['submitted_at']) ? date('F d, Y \a\t h:i A', strtotime($activeBurial['submitted_at'])) : 'N/A' ?></span>
-      </div>
-      <div class="info-group">
-        <span class="info-label">Supporting Document</span>
-        <span class="info-value"><?= !empty($activeBurial['supporting_document']) ? 'Hospital / Medical Certificate Attached' : 'None Uploaded' ?></span>
       </div>
     </div>
   </div>

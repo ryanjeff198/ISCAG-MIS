@@ -59,10 +59,10 @@
         </div>
         <div class="top-bar-actions" style="display:flex;align-items:center;gap:8px;">
           <button type="button" class="btn-topbar primary" onclick="openEncodeModal()" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;">
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Encode Death Certificate
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Register Death Certificate
           </button>
           <a href="<?= url('/admin/damayan/encoded-certificates') ?>" class="btn-topbar" style="text-decoration:none;font-weight:600;">
-            Encoded Archive
+            Registered Certificates Archive
           </a>
           <a href="<?= url('/admin/damayan') ?>" class="btn-topbar active" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:700;color:var(--damayan-accent);">
             <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Dashboard
@@ -75,32 +75,31 @@
         </div>
 
         <div class="admin-insights">
-          <div class="insight-card" onclick="location.href='<?= url('/admin/damayan/burial-requests') ?>'">
+          <div class="insight-card" onclick="location.href='<?= url('/admin/damayan/burial-requests?filter=all') ?>'">
             <div class="insight-label">Total Cases</div>
             <div class="insight-value" id="stat-total">0</div>
             <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">All registered applications</div>
-          </div>
-          <div class="insight-card" onclick="location.href='<?= url('/admin/damayan/burial-requests?filter=death_cert') ?>'">
-            <div class="insight-label">Death Certificates</div>
-            <div class="insight-value" id="stat-dc-registered" style="color:var(--damayan-accent);">0</div>
-            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;"><span id="stat-dc-pending">0</span> awaiting / in review</div>
-          </div>
-          <div class="insight-card" onclick="location.href='<?= url('/admin/damayan/burial') ?>'">
-            <div class="insight-label">Available Plots</div>
-            <div class="insight-value" id="stat-plots-avail" style="color:#0284c7;">0</div>
-            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;"><span id="stat-plots-occupied">0</span> plots assigned</div>
           </div>
           <div class="insight-card" onclick="location.href='<?= url('/admin/damayan/burial-requests?filter=pending') ?>'">
             <div class="insight-label">Pending Action</div>
             <div class="insight-value warning" id="stat-pending">0</div>
             <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Requires staff coordination</div>
           </div>
+          <div class="insight-card" onclick="location.href='<?= url('/admin/damayan/burial-requests?filter=accepted') ?>'">
+            <div class="insight-label">Accepted Requests</div>
+            <div class="insight-value" id="stat-accepted" style="color:var(--damayan-accent);">0</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Approved for processing</div>
+          </div>
+          <div class="insight-card" onclick="location.href='<?= url('/admin/damayan/encoded-certificates') ?>'">
+            <div class="insight-label">Registered Certificates</div>
+            <div class="insight-value" id="stat-dc-registered" style="color:#0284c7;">0</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;"><span id="stat-dc-pending">0</span> awaiting civil registry</div>
+          </div>
         </div>
 
         <div class="tab-nav">
           <button class="tab-btn active" onclick="switchTab(this, 'all')">All Cases</button>
           <button class="tab-btn" onclick="switchTab(this, 'death_certificate')">Death Certificates</button>
-          <button class="tab-btn" onclick="switchTab(this, 'cemetery_plot')">Cemetery Plots</button>
           <button class="tab-btn" onclick="switchTab(this, 'pending')">Pending Review</button>
         </div>
 
@@ -108,7 +107,7 @@
           <div class="section-card-header">
             <h6 style="color: var(--damayan-dark); display:flex; align-items:center; gap:8px;">
               <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--damayan-accent);"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-              Death Certificate &amp; Cemetery Plot Request Overview
+              Death Certificate Request Overview
             </h6>
           </div>
           <div class="section-card-body" style="padding:0;">
@@ -121,13 +120,12 @@
                     <th>Applicant / Rep</th>
                     <th>Service Type</th>
                     <th>Death Cert Stage</th>
-                    <th>Cemetery Plot</th>
                     <th>Date Submitted</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="request-tbody">
-                  <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No records found.</td></tr>
+                  <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No records found.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -151,19 +149,16 @@
       
       if(filter === 'death_certificate') {
         filtered = records.filter(r => r.death_cert_requested == 1);
-      } else if(filter === 'cemetery_plot') {
-        filtered = records.filter(r => r.cemetery_plot_requested == 1);
       } else if(filter === 'pending') {
         filtered = records.filter(r => {
           const s = (r.status || '').toLowerCase();
           const dc = (r.death_cert_status || '').toLowerCase();
-          const cp = (r.cemetery_plot_status || '').toLowerCase();
-          return s.includes('pending') || s.includes('review') || dc.includes('review') || cp.includes('review') || s.includes('additional');
+          return s.includes('pending') || s.includes('review') || dc.includes('review') || s.includes('additional');
         });
       }
       
       if(filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No records found for this category.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No records found for this category.</td></tr>';
         return;
       }
       
@@ -172,8 +167,8 @@
           <td class="td-id">
             <span style="font-weight:700; color:var(--damayan-accent);">#${r.id}</span>
             ${r.is_encoded_linked ? `
-              <div style="font-size:0.65rem; font-weight:700; color:#065f46; background:#bbf7d0; padding:1px 6px; border-radius:4px; display:inline-block; margin-top:2px;" title="Linked with Encoded Death Certificate #${escapeHtml(r.encoded_reg_no || '')}">
-                ✓ Encoded Linked
+              <div style="font-size:0.65rem; font-weight:700; color:#065f46; background:#bbf7d0; padding:1px 6px; border-radius:4px; display:inline-block; margin-top:2px;" title="Linked with Registered Death Certificate #${escapeHtml(r.encoded_reg_no || '')}">
+                ✓ Registered Linked
               </div>
             ` : ''}
           </td>
@@ -189,12 +184,6 @@
             ${r.death_cert_requested ? `
               <span class="badge-status ${getBadgeClass(r.death_cert_status)}">${r.death_cert_status}</span>
               ${r.death_cert_registry_no ? `<div style="font-size:0.7rem; font-weight:700; color:#15803d; margin-top:2px;">Reg: ${escapeHtml(r.death_cert_registry_no)}</div>` : ''}
-            ` : '<span style="color:var(--text-muted); font-size:0.8rem; font-style:italic;">Not Requested</span>'}
-          </td>
-          <td>
-            ${r.cemetery_plot_requested ? `
-              <span class="badge-status ${getBadgeClass(r.cemetery_plot_status)}">${r.cemetery_plot_status}</span>
-              ${r.assigned_plot_number ? `<div style="font-size:0.7rem; font-weight:700; color:var(--damayan-accent); margin-top:2px;">Plot #${escapeHtml(r.assigned_plot_number)}</div>` : ''}
             ` : '<span style="color:var(--text-muted); font-size:0.8rem; font-style:italic;">Not Requested</span>'}
           </td>
           <td style="color:var(--text-muted); font-size:0.82rem;">${r.date}</td>
@@ -217,11 +206,10 @@
 
     // Populate Stats
     document.getElementById('stat-total').textContent = analytics.total || analytics.burial || 0;
+    document.getElementById('stat-pending').textContent = analytics.pending || 0;
+    if(document.getElementById('stat-accepted')) document.getElementById('stat-accepted').textContent = analytics.accepted || 0;
     document.getElementById('stat-dc-registered').textContent = analytics.death_cert_registered || 0;
     document.getElementById('stat-dc-pending').textContent = analytics.death_cert_pending || 0;
-    document.getElementById('stat-plots-avail').textContent = analytics.available_plots || 0;
-    document.getElementById('stat-plots-occupied').textContent = analytics.occupied_plots || 0;
-    document.getElementById('stat-pending').textContent = analytics.pending || 0;
     
     renderTable();
   </script>

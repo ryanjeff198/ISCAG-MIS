@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ISCAG MIS — Encoded Death Certificates</title>
+  <title>ISCAG MIS — Registered Death Certificates</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
@@ -90,17 +90,14 @@
             <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:currentColor;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
           </div>
           <div>
-            <div class="top-bar-title">Death Certificate Encoding</div>
-            <div class="top-bar-subtitle">Record and archive existing civil registry death certificates with minimal manual data entry</div>
+            <div class="top-bar-title">Registered Death Certificates</div>
+            <div class="top-bar-subtitle">Archive and directory of registered civil registry death certificates</div>
           </div>
         </div>
         <div class="top-bar-actions" style="display:flex; align-items:center; gap:8px;">
           <button type="button" class="btn-topbar primary" onclick="openEncodeModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700;">
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Encode Death Certificate
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Register Death Certificate
           </button>
-          <a href="<?= url('/admin/damayan/certificate-tracking') ?>" class="btn-topbar" style="text-decoration:none; font-weight:600;">
-            Certificate Tracking
-          </a>
           <a href="<?= url('/admin/damayan') ?>" class="btn-topbar" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:700;color:var(--damayan-accent);">
             <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Dashboard
           </a>
@@ -110,13 +107,13 @@
       <div class="page-body">
         <div class="breadcrumb-bar">
           <a href="<?= url('/admin/damayan') ?>">Dashboard</a><span class="sep">›</span>
-          <span class="current">Encoded Death Certificates</span>
+          <span class="current">Registered Death Certificates</span>
         </div>
 
         <!-- Metric Insights Cards -->
         <div class="admin-insights">
           <div class="insight-card">
-            <div class="insight-label">Total Encoded Records</div>
+            <div class="insight-label">Total Registered Records</div>
             <div class="insight-value"><?= (int)($totalCount ?? 0) ?></div>
             <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Existing certificates on file</div>
           </div>
@@ -126,7 +123,7 @@
             <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Verified civil registry entries</div>
           </div>
           <div class="insight-card">
-            <div class="insight-label">Encoding Status</div>
+            <div class="insight-label">Registration Status</div>
             <div class="insight-value" style="color:#0284c7; font-size:1.4rem;">Streamlined</div>
             <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Fast 3-field recording active</div>
           </div>
@@ -146,7 +143,7 @@
           </form>
 
           <button type="button" class="btn-topbar primary" onclick="openEncodeModal()" style="display:inline-flex; align-items:center; gap:6px;">
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Encode New Certificate
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Register New Certificate
           </button>
         </div>
 
@@ -166,8 +163,8 @@
                     <th>Registration #</th>
                     <th>Deceased Full Name</th>
                     <th>Representative / Informant</th>
-                    <th>Encoded By</th>
-                    <th>Encoding Date &amp; Time</th>
+                    <th>Registered By</th>
+                    <th>Registration Date &amp; Time</th>
                     <th style="text-align:center;">Actions</th>
                   </tr>
                 </thead>
@@ -175,12 +172,12 @@
                   <?php if(empty($records)): ?>
                     <tr>
                       <td colspan="6" style="text-align:center; padding:50px 20px; color:var(--text-muted);">
-                        <div style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin-bottom:6px;">No Encoded Death Certificates Found</div>
+                        <div style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin-bottom:6px;">No Registered Death Certificates Found</div>
                         <div style="font-size:0.85rem; margin-bottom:16px;">
-                          <?= !empty($search) ? 'No records matched your search query.' : 'No existing death certificates have been encoded yet.' ?>
+                          <?= !empty($search) ? 'No records matched your search query.' : 'No existing death certificates have been registered yet.' ?>
                         </div>
                         <button type="button" class="btn-topbar primary" onclick="openEncodeModal()" style="display:inline-flex; align-items:center; gap:6px;">
-                          <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Encode First Death Certificate
+                          <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Register First Death Certificate
                         </button>
                       </td>
                     </tr>
