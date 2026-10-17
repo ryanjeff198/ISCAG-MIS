@@ -54,6 +54,7 @@
     .type-badge.water { background: rgba(6,182,212,0.1); color: #0891b2; }
     .type-badge.payment { background: rgba(34,197,94,0.1); color: #16a34a; }
     .type-badge.contribution { background: rgba(156,163,175,0.15); color: #4b5563; }
+    .type-badge.moveout { background: rgba(220,38,38,0.1); color: #dc2626; }
     .soa-summary { width: 100%; max-width: 400px; margin-left: auto; }
     .soa-summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
     .soa-summary-row.total { font-size: 1.2rem; font-weight: 700; color: var(--primary-dark); border-bottom: none; border-top: 2px solid var(--primary-dark); margin-top: 10px; padding-top: 15px; }
@@ -153,7 +154,11 @@
           <div class="soa-details">
             <div class="soa-details-left">
               <p>Bill To:</p>
-              <p><strong style="font-size:1.2rem;"><?= htmlspecialchars($_SESSION['user_full_name'] ?? 'Tenant') ?></strong></p>
+              <?php
+                $tName = trim(($lease['first_name'] ?? '') . ' ' . ($lease['last_name'] ?? ''));
+                if (!$tName) $tName = $_SESSION['user_full_name'] ?? $_SESSION['name'] ?? 'Tenant';
+              ?>
+              <p><strong style="font-size:1.2rem;"><?= htmlspecialchars($tName) ?></strong></p>
               <p>Unit: <strong><?= (!empty($lease['building']) && !empty($lease['room_number'])) ? htmlspecialchars($lease['building'] . '-' . $lease['room_number']) : 'Unassigned' ?></strong></p>
               <p>Email: <?= htmlspecialchars($lease['email'] ?? '') ?></p>
             </div>
@@ -169,9 +174,9 @@
           <div class="breakdown-grid">
             <?php if ($metrics['Rent'] > 0): ?>
             <div class="breakdown-card">
-              <div class="bk-label">Monthly Rent</div>
+              <div class="bk-label"><?= $filterMonth === 'all' ? 'Total Rent' : 'Monthly Rent' ?></div>
               <div class="bk-value">₱<?= number_format($metrics['Rent'], 2) ?></div>
-              <div class="bk-sub"><?= htmlspecialchars($lease['roomtype'] ?? 'Unit Fee') ?></div>
+              <div class="bk-sub"><?= htmlspecialchars($lease['roomtype'] ?? 'Unit Fee') ?><?= $filterMonth === 'all' ? ' (₱' . number_format($lease['monthly_rent'], 2) . '/mo)' : '' ?></div>
             </div>
             <?php endif; ?>
 
@@ -179,19 +184,20 @@
             <div class="breakdown-card">
               <div class="bk-label">Security Deposit</div>
               <div class="bk-value">₱<?= number_format($metrics['Deposit'], 2) ?></div>
+              <div class="bk-sub">Refundable at end of lease</div>
             </div>
             <?php endif; ?>
 
             <?php if ($metrics['Parking'] > 0): ?>
             <div class="breakdown-card">
-              <div class="bk-label">Parking Fee</div>
+              <div class="bk-label"><?= $filterMonth === 'all' ? 'Total Parking' : 'Parking Fee' ?></div>
               <div class="bk-value">₱<?= number_format($metrics['Parking'], 2) ?></div>
             </div>
             <?php endif; ?>
 
             <?php if ($metrics['Water'] > 0): ?>
             <div class="breakdown-card">
-              <div class="bk-label">Water Bill</div>
+              <div class="bk-label"><?= $filterMonth === 'all' ? 'Total Water' : 'Water Bill' ?></div>
               <div class="bk-value">₱<?= number_format($metrics['Water'], 2) ?></div>
               <div class="bk-sub"><?= $occupants ?> person(s)</div>
             </div>
@@ -199,9 +205,17 @@
 
             <?php if ($metrics['Contribution'] > 0): ?>
             <div class="breakdown-card">
-              <div class="bk-label">Monthly Contribution</div>
+              <div class="bk-label"><?= $filterMonth === 'all' ? 'Total Contribution' : 'Monthly Contribution' ?></div>
               <div class="bk-value">₱<?= number_format($metrics['Contribution'], 2) ?></div>
               <div class="bk-sub">Security & Garbage</div>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($advanceCreditsTotal) && $advanceCreditsTotal > 0): ?>
+            <div class="breakdown-card" style="border-color: #bbf7d0; background: #f0fdf4;">
+              <div class="bk-label" style="color: #166534;">Advance Credits</div>
+              <div class="bk-value" style="color: #166534;">₱<?= number_format($advanceCreditsTotal, 2) ?></div>
+              <div class="bk-sub" style="color: #166534; font-size:0.75rem;">Covering upcoming dues</div>
             </div>
             <?php endif; ?>
           </div>
@@ -230,6 +244,14 @@
                 <tr>
                   <td colspan="6"><strong>Balance Forwarded from Previous Months (<?= $runningBalance < 0 ? 'Overpayment Credit' : 'Unpaid Balance' ?>)</strong></td>
                   <td style="text-align:right; font-weight:700; color:<?= $runningBalance > 0 ? 'var(--danger)' : 'var(--success)' ?>"><?= $runningBalance < 0 ? '-' : '' ?>₱<?= number_format(abs($runningBalance), 2) ?></td>
+                </tr>
+              <?php endif;
+
+              if (empty($transactions)): ?>
+                <tr>
+                  <td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted); font-size:0.95rem;">
+                    No billing transactions found for this period.
+                  </td>
                 </tr>
               <?php endif;
 
@@ -294,6 +316,7 @@ function getCategoryLabel($type) {
   if (strpos($t, 'parking') !== false) return 'Parking';
   if (strpos($t, 'water') !== false) return 'Water Consumption';
   if (strpos($t, 'contribution') !== false) return 'Contribution';
+  if (strpos($t, 'damage') !== false || strpos($t, 'move-out') !== false) return 'Move-Out Settlement';
   if (strpos($t, 'payment') !== false) return 'Payment Records';
   return 'Other';
 }
@@ -305,6 +328,7 @@ function getBadgeClass($type) {
   if (strpos($t, 'parking') !== false) return 'parking';
   if (strpos($t, 'water') !== false) return 'water';
   if (strpos($t, 'contribution') !== false) return 'contribution';
+  if (strpos($t, 'damage') !== false || strpos($t, 'move-out') !== false) return 'moveout';
   if (strpos($t, 'payment') !== false) return 'payment';
   return '';
 }

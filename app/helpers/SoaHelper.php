@@ -35,6 +35,17 @@ class SoaHelper {
         $leaseId = (int)$lease['lease_id'];
         $payments = $paymentModel->getPaymentsByLease($leaseId);
 
+        // Auto-generate initial payments if accepted/active and missing
+        if (empty($payments) && in_array($lease['lease_status'] ?? '', ['Accepted', 'Active'])) {
+            $paymentModel->generateInitialPayments(
+                $leaseId,
+                $tenantId,
+                (float)($lease['deposit_amount'] ?? 0),
+                (float)($lease['advance_amount'] ?? 0)
+            );
+            $payments = $paymentModel->getPaymentsByLease($leaseId);
+        }
+
         // Occupants (Tenant + Registered Family members)
         $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM tenant_family_members WHERE tenant_id = ?");
         $stmt->execute([$tenantId]);
@@ -52,7 +63,7 @@ class SoaHelper {
         $billingRecords = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         // Categorize payments from DB
-        $directPayments = []; // [lower_key] => payment row
+        $directPayments = []; // [lower_key] => array of payment rows
         $advanceQueues = [
             'deposit' => [],
             'rent-advance' => [],
@@ -71,9 +82,15 @@ class SoaHelper {
             $typeLower = strtolower(trim($p['payment_type']));
 
             if (strpos($typeLower, 'settlement') !== false || strpos($typeLower, 'move-out') !== false) {
-                $settlementPayments[$typeLower] = $p;
+                if (!isset($settlementPayments[$typeLower])) {
+                    $settlementPayments[$typeLower] = [];
+                }
+                $settlementPayments[$typeLower][] = $p;
             } elseif (strpos($typeLower, '-') !== false && !strpos($typeLower, 'advance')) {
-                $directPayments[$typeLower] = $p;
+                if (!isset($directPayments[$typeLower])) {
+                    $directPayments[$typeLower] = [];
+                }
+                $directPayments[$typeLower][] = $p;
             } else {
                 $norm = $typeLower;
                 if ($norm === 'advance') $norm = 'rent-advance';
@@ -288,8 +305,8 @@ class SoaHelper {
                     'payment'     => 0
                 ];
 
-                if (isset($directPayments[$rentKey])) {
-                    $p = $directPayments[$rentKey];
+                if (!empty($directPayments[$rentKey])) {
+                    $p = array_shift($directPayments[$rentKey]);
                     $usedPaymentIds[] = $p['payment_id'];
                     $transactions[] = [
                         'tenant_id'   => $tenantId,
@@ -331,8 +348,8 @@ class SoaHelper {
                     'payment'     => 0
                 ];
 
-                if (isset($directPayments[$waterKey])) {
-                    $p = $directPayments[$waterKey];
+                if (!empty($directPayments[$waterKey])) {
+                    $p = array_shift($directPayments[$waterKey]);
                     $usedPaymentIds[] = $p['payment_id'];
                     $transactions[] = [
                         'tenant_id'   => $tenantId,
@@ -373,8 +390,8 @@ class SoaHelper {
                     'payment'     => 0
                 ];
 
-                if (isset($directPayments[$contribKey])) {
-                    $p = $directPayments[$contribKey];
+                if (!empty($directPayments[$contribKey])) {
+                    $p = array_shift($directPayments[$contribKey]);
                     $usedPaymentIds[] = $p['payment_id'];
                     $transactions[] = [
                         'tenant_id'   => $tenantId,
@@ -405,7 +422,7 @@ class SoaHelper {
                 foreach ($parkingApps as $pa) {
                     $parkStart = new \DateTime($pa['datestarted'] ?: $pa['date']);
                     $parkStart->modify('+1 month');
-                    if ($currentDate >= $parkStart) {
+                    if ($currentDate >= $parkStart || $currentDate->format('Y-m') >= $parkStart->format('Y-m')) {
                         $pKey = 'parking-' . $pa['parking_id'] . '-' . $monthKey;
                         $chargeRef = 'PKG-' . $pa['parking_id'] . '-' . $currentDate->format('my');
                         $transactions[] = [
@@ -419,8 +436,8 @@ class SoaHelper {
                             'payment'     => 0
                         ];
 
-                        if (isset($directPayments[$pKey])) {
-                            $p = $directPayments[$pKey];
+                        if (!empty($directPayments[$pKey])) {
+                            $p = array_shift($directPayments[$pKey]);
                             $usedPaymentIds[] = $p['payment_id'];
                             $transactions[] = [
                                 'tenant_id'   => $tenantId,
@@ -476,8 +493,13 @@ class SoaHelper {
                     'charge'      => $excessDamage,
                     'payment'     => 0
                 ];
-                if (isset($settlementPayments['move-out damage']) || isset($settlementPayments['settlement-damage'])) {
-                    $p = $settlementPayments['move-out damage'] ?? $settlementPayments['settlement-damage'];
+                $p = null;
+                if (!empty($settlementPayments['move-out damage'])) {
+                    $p = array_shift($settlementPayments['move-out damage']);
+                } elseif (!empty($settlementPayments['settlement-damage'])) {
+                    $p = array_shift($settlementPayments['settlement-damage']);
+                }
+                if ($p) {
                     $usedPaymentIds[] = $p['payment_id'];
                     $transactions[] = [
                         'tenant_id'   => $tenantId,
@@ -504,8 +526,13 @@ class SoaHelper {
                     'charge'      => $utilityDeductions,
                     'payment'     => 0
                 ];
-                if (isset($settlementPayments['move-out utility']) || isset($settlementPayments['settlement-utility'])) {
-                    $p = $settlementPayments['move-out utility'] ?? $settlementPayments['settlement-utility'];
+                $p = null;
+                if (!empty($settlementPayments['move-out utility'])) {
+                    $p = array_shift($settlementPayments['move-out utility']);
+                } elseif (!empty($settlementPayments['settlement-utility'])) {
+                    $p = array_shift($settlementPayments['settlement-utility']);
+                }
+                if ($p) {
                     $usedPaymentIds[] = $p['payment_id'];
                     $transactions[] = [
                         'tenant_id'   => $tenantId,

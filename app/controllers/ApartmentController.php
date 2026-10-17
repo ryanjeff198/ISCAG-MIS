@@ -1131,261 +1131,54 @@ class ApartmentController extends Controller {
 
     /**
      * Official Statement of Account (Tenant View)
+     * Fully synchronized with tenant_payment.php via unified SoaHelper.
      */
     public function soa() {
         Auth::protectRole(['Guest', 'Tenant']);
-        $userId = $_SESSION['user_id'];
-        $db = getDbConnection();
+        $userId = (int)$_SESSION['user_id'];
 
-        require_once BASE_PATH . '/app/models/Lease.php';
-        require_once BASE_PATH . '/app/models/Payment.php';
-        $leaseModel = new Lease();
-        $paymentModel = new Payment();
-        $lease = $leaseModel->getLeaseByTenantId($userId);
+        require_once BASE_PATH . '/app/helpers/SoaHelper.php';
+        $soaData = SoaHelper::buildTransactions($userId);
 
-        if (!$lease) {
-            $this->view('user/Apartment/tenant_soa', [
-                'lease' => null, 
-                'transactions' => [],
-                'balanceForwarded' => 0,
-                'filterMonth' => 'all',
-                'availableMonths' => [],
-                'occupants' => 1
-            ]);
-            return;
-        }
+        $lease               = $soaData['lease'];
+        $occupants           = $soaData['occupants'];
+        $allTransactions     = $soaData['transactions'];
+        $availableMonths     = $soaData['availableMonths'];
+        $advanceCreditsTotal = $soaData['advanceCreditsTotal'] ?? 0;
+        $advanceCreditsCount = $soaData['advanceCreditsCount'] ?? 0;
 
-        // --- FETCH DATA FOR SIMULATION ---
-        $payments = $paymentModel->getPaymentsByLease($lease['lease_id']);
-
-        // Occupants (Tenant + Family)
-        $stmt = $db->prepare("SELECT COUNT(*) as cnt FROM tenant_family_members WHERE tenant_id = ?");
-        $stmt->execute([$userId]);
-        $resCount = $stmt->fetch(PDO::FETCH_ASSOC);
-        $occupants = (int)($resCount['cnt'] ?? 0) + 1;
-
-        // Parking
-        $stmt = $db->prepare("SELECT parking_id, vehiclename, plateno, datestarted, date FROM tenant_parking WHERE tenant_id = ? AND status = 'Approved'");
-        $stmt->execute([$userId]);
-        $parkingApps = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // Manual Billing
-        $stmt = $db->prepare("SELECT * FROM billing WHERE tenant_id = ? ORDER BY due_date ASC");
-        $stmt->execute([$userId]);
-        $billingRecords = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // 1. Categorize Advances & Consumable Payments
-        $advanceQueues = [];
-        $consumedPaymentIds = [];
-
-        foreach ($payments as $p) {
-            if ($p['payment_status'] === 'Paid') {
-                $lowType = strtolower($p['payment_type']);
-                // Normalize: bare 'advance' is really 'rent-advance'
-                if ($lowType === 'advance') $lowType = 'rent-advance';
-                if (strpos($lowType, 'advance') !== false || $lowType === 'deposit') {
-                    if (!isset($advanceQueues[$lowType])) $advanceQueues[$lowType] = [];
-                    $advanceQueues[$lowType][] = $p;
-                }
-            }
-        }
-
-        $transactions = [];
-        $totalAdvances = isset($advanceQueues['rent-advance']) ? count($advanceQueues['rent-advance']) : 0;
-
-        $now = TimeSim::now();
-        
-        $leaseStart = new \DateTime($lease['start_date']);
-        $leaseEnd = $lease['end_date'] ? (new \DateTime($lease['end_date'])) : null;
-        $limitDate = ($leaseEnd && $leaseEnd < $now) ? $leaseEnd : $now;
-
-        // 2. Simulated Timeline (Monthly Cycles)
-        $currentDate = clone $leaseStart;
-        $monthCount = 0;
-        while ($currentDate <= $limitDate) {
-            $monthName = $currentDate->format('F Y');
-            $simDate = $currentDate->format('Y-m-d');
-            $tid = $userId;
-
-            // Helper to apply advance if available
-            $applyAdvance = function($type, $desc, $amt) use (&$advanceQueues, $tid, &$transactions, $simDate, &$consumedPaymentIds) {
-                if (!empty($advanceQueues[$type])) {
-                    $p = array_shift($advanceQueues[$type]);
-                    $consumedPaymentIds[] = $p['payment_id'];
-                    $transactions[] = [
-                        'date'       => $simDate,
-                        'type'       => 'Payment',
-                        'description'=> "Payment Applied from Advance — $desc",
-                        'ref'        => $p['reference_number'] ?: 'ADV-' . str_pad($p['payment_id'], 4, '0', STR_PAD_LEFT),
-                        'charge'     => 0,
-                        'payment'    => (float)$amt
-                    ];
-                    return true;
-                }
-                return false;
-            };
-
-            // Initial Payments (Month 0)
-            if ($monthCount === 0) {
-                if ($lease['deposit_amount'] > 0) {
-                    $transactions[] = [
-                        'date' => $simDate, 'type' => 'Deposit', 'description' => 'Security Deposit',
-                        'ref' => 'LSE-DEP-'.$lease['lease_id'], 'charge' => (float)$lease['deposit_amount'], 'payment' => 0
-                    ];
-                    $applyAdvance('deposit', 'Security Deposit', (float)$lease['deposit_amount']);
-                }
-                if ($lease['advance_amount'] > 0) {
-                    $transactions[] = [
-                        'date' => $simDate, 'type' => 'Advance Rent', 'description' => 'Advance Rent (Month 1)',
-                        'ref' => 'LSE-ADV-'.$lease['lease_id'], 'charge' => (float)$lease['advance_amount'], 'payment' => 0
-                    ];
-                    $applyAdvance('rent-advance', "Rent for $monthName", (float)$lease['advance_amount']);
-                }
-            }
-
-            // Recurring Cycles (Month 1+)
-            if ($monthCount > 0) {
-                // Rent
-                $rentAmt = (float)$lease['monthly_rent'];
-                $transactions[] = [
-                    'date' => $simDate, 'type' => 'Monthly Rent', 'description' => "Monthly Rent — $monthName",
-                    'charge' => $rentAmt, 'payment' => 0, 'ref' => 'LSE-R' . $lease['lease_id'] . '-' . $currentDate->format('my')
-                ];
-                $applyAdvance('rent-advance', "Rent for $monthName", $rentAmt);
-            }
-
-            // Water (All months including Month 0)
-            $waterAmt = (float)($occupants * 100);
-            $transactions[] = [
-                'date' => $simDate, 'type' => 'Water', 'description' => "Water Consumption ($occupants occupants) — $monthName",
-                'charge' => $waterAmt, 'payment' => 0, 'ref' => 'LSE-W' . $lease['lease_id'] . '-' . $currentDate->format('my')
-            ];
-            $applyAdvance('water-advance', "Water for $monthName", $waterAmt);
-
-            // Contribution (All months including Month 0)
-            $transactions[] = [
-                'date' => $simDate, 'type' => 'Contribution', 'description' => "Monthly Contribution (Security & Garbage) — $monthName",
-                'charge' => 150.00, 'payment' => 0, 'ref' => 'LSE-C' . $lease['lease_id'] . '-' . $currentDate->format('my')
-            ];
-            $applyAdvance('contribution-advance', "Contribution for $monthName", 150.00);
-
-
-
-            $currentDate->modify('+1 month');
-            $monthCount++;
-            if ($currentDate > $limitDate && $currentDate->format('mY') === $limitDate->format('mY')) break;
-        }
-        // Independent loop for Parking Fees to compute precise dates
-        foreach ($parkingApps as $pa) {
-            $parkStart = new \DateTime($pa['datestarted'] ?: $pa['date']);
-            $parkStart->modify('+1 month'); // Align to 1 month after application
-            
-            $pDate = clone $parkStart;
-            while ($pDate <= $limitDate) {
-                $pSimDate = $pDate->format('Y-m-d');
-                $pMonthName = $pDate->format('F Y');
-                
-                $transactions[] = [
-                    'date' => $pSimDate, 'type' => 'Parking Fee', 'description' => 'Parking Fee — ' . ($pa['vehiclename'] ?: 'Vehicle') . ' — ' . $pMonthName,
-                    'charge' => 1000.00, 'payment' => 0, 'ref' => 'PKG-' . $pa['parking_id'] . '-' . $pDate->format('my')
-                ];
-                
-                // We use a custom apply for advance just for this item if needed
-                if (!empty($advanceQueues['parking-advance'])) {
-                    $pArr = array_shift($advanceQueues['parking-advance']);
-                    $consumedPaymentIds[] = $pArr['payment_id'];
-                    $transactions[] = [
-                        'date' => $pSimDate, 'type' => 'Payment', 'description' => 'Payment Applied from Advance — Parking for ' . $pMonthName,
-                        'ref' => $pArr['reference_number'] ?: 'ADV-' . str_pad($pArr['payment_id'], 4, '0', STR_PAD_LEFT),
-                        'charge' => 0, 'payment' => 1000.00
-                    ];
-                }
-                
-                $pDate->modify('+1 month');
-                if ($pDate > $limitDate && $pDate->format('mY') === $limitDate->format('mY')) break;
-            }
-        }
-        
-        // 3. Process Non-Consumed Payments (Direct payments made after move-in)
-        foreach ($payments as $p) {
-            if (in_array($p['payment_id'], $consumedPaymentIds)) continue;
-
-            $isPaid = $p['payment_status'] === 'Paid';
-            $chargeDate = date('Y-m-d', strtotime($p['created_at']));
-            $payDate = $p['payment_date'] ? date('Y-m-d', strtotime($p['payment_date'])) : $chargeDate;
-
-            // Optional Charge row for the payment if it is a manual payment entry?
-            // Usually, these are already in 'transactions' via cycle billing or billingRecords.
-            // But if it's a floating payment without a matched charge, we show it.
-            if ($p['payment_status'] === 'Paid') {
-                $displayName = str_replace('-', ' ', $p['payment_type']);
-                $transactions[] = [
-                    'date' => $payDate,
-                    'type' => 'Payment',
-                    'description' => "Payment Received — " . ucwords($displayName),
-                    'ref' => $p['reference_number'] ?: 'REF-PAY-'.$p['payment_id'],
-                    'charge' => 0,
-                    'payment' => (float)$p['amount']
-                ];
-            }
-        }
-
-        // D) Manual Billing Records
-        foreach ($billingRecords as $b) {
-            $transactions[] = [
-                'date' => $b['due_date'], 'type' => 'Invoice', 'description' => 'Monthly Rent Invoice',
-                'charge' => (float)$b['amount'], 'payment' => 0, 'ref' => 'INV-' . str_pad($b['billing_id'], 4, '0', STR_PAD_LEFT)
-            ];
-            if ($b['status'] === 'Paid') {
-                $transactions[] = [
-                    'date' => $b['due_date'], 'type' => 'Payment', 'description' => 'Payment Received — Rent',
-                    'charge' => 0, 'payment' => (float)$b['amount'], 'ref' => 'PAY-INV-' . $b['billing_id']
-                ];
-            }
-        }
-
-        // Sort transactions chronologically
-        usort($transactions, function($a, $b) {
-            return strtotime($a['date']) <=> strtotime($b['date']);
-        });
-
-        // 1. Gather all available months first
-        $availableMonths = [];
-        foreach ($transactions as $t) {
-            $tMonth = substr($t['date'], 0, 7);
-            if (!in_array($tMonth, $availableMonths)) $availableMonths[] = $tMonth;
-        }
-        sort($availableMonths);
-
-        // 2. Determine selected filter month (default to first month instead of 'all')
-        $firstMonth = !empty($availableMonths) ? $availableMonths[0] : 'all';
-        $filterMonth = $_GET['month'] ?? $firstMonth;
-
-        // 3. Apply the filter and calculate balance forwarded
         $balanceForwarded = 0;
         $filteredTransactions = [];
-        
-        foreach ($transactions as $t) {
-            $tMonth = substr($t['date'], 0, 7);
-            
-            if ($filterMonth !== 'all') {
-                if ($tMonth < $filterMonth) {
-                    $balanceForwarded += ($t['charge'] - $t['payment']);
-                } elseif ($tMonth === $filterMonth) {
+
+        if ($lease) {
+            // Default to 'all' so tenant sees all billing history and records in full sync with tenant_payment.php
+            $filterMonth = $_GET['month'] ?? 'all';
+
+            foreach ($allTransactions as $t) {
+                $tMonth = substr($t['date'], 0, 7);
+                if ($filterMonth !== 'all') {
+                    if ($tMonth < $filterMonth) {
+                        $balanceForwarded += ($t['charge'] - $t['payment']);
+                    } elseif ($tMonth === $filterMonth) {
+                        $filteredTransactions[] = $t;
+                    }
+                } else {
                     $filteredTransactions[] = $t;
                 }
-            } else {
-                $filteredTransactions[] = $t;
             }
+        } else {
+            $filterMonth = 'all';
         }
 
         $this->view('user/Apartment/tenant_soa', [
-            'lease' => $lease,
-            'transactions' => $filteredTransactions,
-            'balanceForwarded' => $balanceForwarded,
-            'filterMonth' => $filterMonth,
-            'availableMonths' => $availableMonths,
-            'occupants' => $occupants
+            'lease'               => $lease,
+            'transactions'        => $filteredTransactions,
+            'balanceForwarded'    => $balanceForwarded,
+            'filterMonth'         => $filterMonth,
+            'availableMonths'     => $availableMonths,
+            'occupants'           => $occupants,
+            'advanceCreditsTotal' => $advanceCreditsTotal,
+            'advanceCreditsCount' => $advanceCreditsCount
         ]);
     }
 
