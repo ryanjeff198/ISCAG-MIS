@@ -33,7 +33,10 @@ if (!$activeBurial && !empty($allRequests)) {
 
 $hasRequest = !empty($activeBurial) && !empty($activeBurial['id']);
 
-$rawStatus = $hasRequest ? ($activeBurial['status'] ?? 'Request Received') : 'No active request';
+$rawStatus = $hasRequest ? ($activeBurial['status'] ?? 'Pending') : 'No active request';
+if ($hasRequest && !in_array($rawStatus, ['Accepted', 'Rejected', 'Completed'])) {
+    $rawStatus = 'Pending';
+}
 $st = strtolower($rawStatus);
 
 $isInfoRequired = $hasRequest && ($st === 'additional information required' || strtolower($activeBurial['death_cert_status'] ?? '') === 'additional information required');
@@ -283,7 +286,7 @@ $isPlotAssigned = $hasRequest && ((strtolower($currentPlotStatus) === 'plot assi
       <select id="switchCaseSelect" onchange="if(this.value) location.href='<?= url('/user/services/burial-dashboard?id=') ?>' + encodeURIComponent(this.value)" style="padding:6px 12px; border-radius:8px; border:1px solid #d1d5db; font-size:0.85rem; font-family:inherit;">
         <?php foreach($allRequests as $ar): ?>
           <option value="<?= htmlspecialchars($ar['ref_id']) ?>" <?= $ar['ref_id'] === $activeBurial['ref_id'] ? 'selected' : '' ?>>
-            #<?= htmlspecialchars($ar['ref_id']) ?> - <?= htmlspecialchars($ar['deceased_name']) ?> (<?= htmlspecialchars($ar['status']) ?>)
+            #<?= htmlspecialchars($ar['ref_id']) ?> - <?= htmlspecialchars($ar['deceased_name']) ?> (<?= htmlspecialchars(in_array($ar['status'], ['Accepted', 'Rejected', 'Completed']) ? $ar['status'] : 'Pending') ?>)
           </option>
         <?php endforeach; ?>
       </select>

@@ -2281,6 +2281,20 @@ class AdminController extends Controller
 
         $records = [];
         foreach($rawBurials as $b) {
+            $rawStatus = trim($b['status'] ?? 'Pending');
+            $rawLower = strtolower($rawStatus);
+            $dcLower = strtolower(trim($b['death_cert_status'] ?? ''));
+
+            if ($rawLower === 'accepted' || str_starts_with($rawLower, 'accept') || $dcLower === 'awaiting authorized certificate preparation') {
+                $displayStatus = 'Accepted';
+            } elseif ($rawLower === 'rejected' || $dcLower === 'rejected') {
+                $displayStatus = 'Rejected';
+            } elseif ($rawLower === 'completed' || $dcLower === 'registered' || $dcLower === 'certified copy requested or received') {
+                $displayStatus = 'Completed';
+            } else {
+                $displayStatus = 'Pending';
+            }
+
             $records[] = [
                 'id' => $b['ref_id'],
                 'burial_id' => $b['id'],
@@ -2288,8 +2302,8 @@ class AdminController extends Controller
                 'deceased' => $b['deceased_name'] ?? 'N/A',
                 'deceased_sex' => $b['deceased_sex'] ?? 'Male',
                 'date' => date('Y-m-d', strtotime($b['submitted_at'])),
-                'status' => $b['status'],
-                'status_class' => $this->getBurialStatusClass($b['status']),
+                'status' => $displayStatus,
+                'status_class' => $this->getBurialStatusClass($displayStatus),
                 'request_type' => $b['request_type'] ?? 'both',
                 'cert_action_type' => $b['cert_action_type'] ?? 'register',
                 'existing_cert_no' => $b['existing_cert_no'] ?? '',
@@ -2317,7 +2331,15 @@ class AdminController extends Controller
                 'ghusl_status' => $b['ghusl_status'] ?? 'Pending',
                 'janazah_status' => $b['janazah_status'] ?? 'Pending',
                 'transport_status' => $b['transport_status'] ?? 'Pending',
-                'cemetery_status' => $b['cemetery_status'] ?? 'Pending'
+                'cemetery_status' => $b['cemetery_status'] ?? 'Pending',
+                'verification_result' => $b['verification_result'] ?? 'Pending',
+                'verification_remarks' => $b['verification_remarks'] ?? '',
+                'verified_by' => $b['verified_by'] ?? '',
+                'verified_at' => $b['verified_at'] ?? '',
+                'duplicate_review_decision' => $b['duplicate_review_decision'] ?? '',
+                'rejection_reason_category' => $b['rejection_reason_category'] ?? '',
+                'rejection_specific_reason' => $b['rejection_specific_reason'] ?? '',
+                'uploaded_document' => $b['uploaded_document'] ?? ''
             ];
         }
 
@@ -2336,12 +2358,10 @@ class AdminController extends Controller
 
     private function getBurialStatusClass(string $status): string {
         $st = strtolower(trim($status));
-        if ($st === 'new request' || $st === 'pending' || $st === 'under review') return 'badge-pending';
-        if ($st === 'additional information required') return 'badge-warning';
-        if ($st === 'accepted for coordination' || strpos($st, 'scheduled') !== false || strpos($st, 'arranged') !== false || strpos($st, 'confirmed') !== false || strpos($st, 'prepared') !== false) return 'badge-info';
-        if ($st === 'burial completed' || $st === 'completed') return 'badge-active';
+        if ($st === 'accepted') return 'badge-approved';
         if ($st === 'rejected') return 'badge-danger';
-        return 'badge-approved';
+        if ($st === 'completed' || $st === 'burial completed') return 'badge-active';
+        return 'badge-pending';
     }
 
     public function damayanCharity(): void {
@@ -2408,10 +2428,12 @@ class AdminController extends Controller
         $allPlots = $model->getAllPlots();
         $auditLogs = $model->getAuditLogs((int)$burial['id']);
         $documents = $model->getDocuments((int)$burial['id']);
+        $duplicates = $model->checkPotentialDuplicates($burial);
 
         echo json_encode([
             'success' => true,
             'burial' => $burial,
+            'duplicates' => $duplicates,
             'gender_volunteers' => $volunteers,
             'all_volunteers' => $allVolunteers,
             'staff_list' => $staffList,
@@ -2423,6 +2445,54 @@ class AdminController extends Controller
         return;
     }
 
+    public function recordDeathCertVerification(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = $input['id'] ?? ($input['ref_id'] ?? 0);
+        $result = trim($input['result'] ?? '');
+        $remarks = trim($input['remarks'] ?? '');
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing Request ID']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $res = $model->recordVerification($id, $result, $remarks, $staffName);
+        echo json_encode($res);
+        return;
+    }
+
+    public function reviewDuplicateDecision(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = $input['id'] ?? ($input['ref_id'] ?? 0);
+        $decision = trim($input['decision'] ?? '');
+        $notes = trim($input['notes'] ?? '');
+        $staffName = $_SESSION['name'] ?? 'Damayan Staff';
+
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing Request ID']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $res = $model->reviewDuplicate($id, $decision, $notes, $staffName);
+        echo json_encode($res);
+        return;
+    }
+
     public function acceptBurialRequest(): void {
         Auth::protectRole(['Admin', 'Staff_Damayan']);
         header('Content-Type: application/json');
@@ -2431,16 +2501,20 @@ class AdminController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
-        $id = (int)($input['id'] ?? 0);
+        $id = $input['id'] ?? ($input['ref_id'] ?? 0);
         $staffId = !empty($input['staff_id']) ? (int)$input['staff_id'] : (int)$_SESSION['user_id'];
         $staffName = trim($input['staff_name'] ?? ($_SESSION['name'] ?? 'Damayan Coordinator'));
         $notes = trim($input['notes'] ?? '');
 
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing Request ID']); return;
+        }
+
         require_once BASE_PATH . '/app/models/BurialRequest.php';
         $model = new BurialRequest();
-        $success = $model->acceptRequest($id, $staffId, $staffName, $notes);
+        $res = $model->acceptRequest($id, $staffId, $staffName, $notes);
 
-        echo json_encode(['success' => $success]);
+        echo json_encode($res);
         return;
     }
 
@@ -2477,20 +2551,25 @@ class AdminController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
-        $id = (int)($input['id'] ?? 0);
-        $reason = trim($input['reason'] ?? '');
+        $id = $input['id'] ?? ($input['ref_id'] ?? 0);
+        $reasonCategory = trim($input['reason_category'] ?? ($input['reason'] ?? ''));
+        $specificReason = trim($input['specific_reason'] ?? '');
         $staffName = $_SESSION['name'] ?? 'Damayan Staff';
 
-        if (empty($reason)) {
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing Request ID']); return;
+        }
+
+        if (empty($reasonCategory)) {
             echo json_encode(['success' => false, 'error' => 'A rejection reason is required.']);
             return;
         }
 
         require_once BASE_PATH . '/app/models/BurialRequest.php';
         $model = new BurialRequest();
-        $success = $model->rejectRequest($id, $reason, $staffName);
+        $res = $model->rejectRequest($id, $reasonCategory, $specificReason, $staffName);
 
-        echo json_encode(['success' => $success]);
+        echo json_encode($res);
         return;
     }
 
