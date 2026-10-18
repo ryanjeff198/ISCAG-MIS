@@ -87,59 +87,261 @@ $programsSummary = $charityProgramModel->getProgramsSummary();
       font-weight: 600;
     }
 
-    /* ── Hero Section (Centered) ── */
-    .charity-hero-section {
-      text-align: center;
-      padding: 36px 24px 44px;
-      background: white;
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border-light);
-      box-shadow: 0 4px 18px rgba(15, 92, 58, 0.04);
-      margin-bottom: 36px;
+    /* ── Hero Carousel ── */
+    .charity-hero {
       position: relative;
+      border-radius: var(--radius-lg);
       overflow: hidden;
-    }
-    .charity-hero-section::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, var(--primary-green), var(--accent-gold), var(--primary-light));
-    }
-    .hero-badge {
-      display: inline-flex;
+      margin-bottom: 36px;
+      min-height: 410px;
+      display: flex;
       align-items: center;
-      gap: 7px;
-      padding: 5px 14px;
-      background: var(--primary-soft);
-      color: var(--primary-green);
-      border-radius: 999px;
-      font-size: 0.76rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 14px;
+      background: #0f5c3a;
+      box-shadow: 0 16px 36px rgba(15, 92, 58, 0.15);
     }
-    .hero-badge svg {
+    
+    .hero-carousel-bg { 
+      position: absolute; 
+      inset: 0; 
+      z-index: 1; 
+    }
+    .hero-carousel-bg::after {
+      content: ''; 
+      position: absolute; 
+      inset: 0;
+      background: linear-gradient(to right, rgba(15, 92, 58, 0.95) 0%, rgba(15, 92, 58, 0.6) 55%, rgba(0,0,0,0.3) 100%);
+      z-index: 2;
+    }
+
+    .carousel-track { 
+      display: flex; 
+      width: 300%; 
+      height: 100%; 
+      transition: transform 1.2s cubic-bezier(0.65, 0, 0.35, 1); 
+    }
+    .carousel-slide { 
+      width: 33.333%; 
+      height: 100%; 
+      flex-shrink: 0; 
+    }
+    .carousel-slide img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+      filter: saturate(1.1); 
+    }
+
+    .hero-content-overlay {
+      position: relative; 
+      z-index: 3; 
+      color: white; 
+      padding: 60px 48px;
+      height: 100%; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center;
+      max-width: 680px;
+    }
+
+    .hero-tag {
+      display: inline-flex; 
+      align-items: center; 
+      gap: 8px; 
+      padding: 6px 16px;
+      background: rgba(199, 154, 43, 0.22); 
+      border: 1px solid rgba(199, 154, 43, 0.45);
+      border-radius: 100px; 
+      font-size: 0.78rem; 
+      font-weight: 800; 
+      color: #ffd875;
+      text-transform: uppercase; 
+      letter-spacing: 0.1em; 
+      margin-bottom: 20px; 
+      width: fit-content;
+    }
+    .hero-tag svg {
       width: 14px;
       height: 14px;
       fill: currentColor;
     }
-    .hero-title {
-      font-size: clamp(2rem, 1.6rem + 1.2vw, 2.6rem);
-      color: var(--primary-green);
-      font-weight: 700;
-      margin: 0 0 10px 0;
-      line-height: 1.2;
+
+    .hero-content-overlay h2 {
+      font-size: clamp(2rem, 1.8rem + 1.2vw, 2.75rem); 
+      line-height: 1.15; 
+      font-weight: 700; 
+      margin: 0 0 16px 0; 
+      color: white;
     }
-    .hero-subtitle {
-      font-size: 1.05rem;
-      color: var(--text-muted);
-      max-width: 620px;
-      margin: 0 auto;
+    .hero-content-overlay p {
+      font-size: 1.05rem; 
+      opacity: 0.92; 
+      max-width: 540px; 
+      margin: 0 0 28px 0; 
       line-height: 1.6;
+    }
+
+    .hero-actions { 
+      display: flex; 
+      gap: 14px; 
+      align-items: center; 
+      flex-wrap: wrap;
+    }
+    .btn-hero {
+      background: var(--accent-gold); 
+      color: #fff; 
+      padding: 12px 26px;
+      border-radius: 12px; 
+      font-weight: 700; 
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 15px rgba(199, 154, 43, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-hero:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 8px 24px rgba(199, 154, 43, 0.55); 
+      color: #fff;
+    }
+    .btn-hero-outline {
+      background: rgba(255, 255, 255, 0.12); 
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: white; 
+      padding: 12px 24px; 
+      border-radius: 12px; 
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none; 
+      backdrop-filter: blur(8px);
+      transition: all 0.25s;
+    }
+    .btn-hero-outline:hover { 
+      background: rgba(255, 255, 255, 0.25); 
+      border-color: white; 
+      color: white;
+    }
+
+    .carousel-dots {
+      position: absolute; 
+      bottom: 24px; 
+      right: 36px; 
+      z-index: 4;
+      display: flex; 
+      gap: 8px;
+    }
+    .dot {
+      width: 10px; 
+      height: 10px; 
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.45); 
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .dot.active { 
+      width: 28px; 
+      border-radius: 20px; 
+      background: var(--accent-gold); 
+    }
+
+    /* ── Non-Stop Projects Ticker Carousel ── */
+    .projects-carousel-container { 
+      position: relative; 
+      margin-top: 48px;
+      margin-bottom: 36px; 
+      overflow: hidden; 
+    }
+    .projects-section-header {
+      margin-bottom: 20px;
+    }
+    .projects-section-header h3 {
+      font-size: 1.55rem;
+      color: var(--primary-green);
+      margin: 0 0 6px 0;
+      font-weight: 700;
+    }
+    .projects-section-header p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    .projects-viewport { 
+      overflow: hidden; 
+      border-radius: 20px; 
+      padding: 12px 0; 
+    }
+    .projects-track { 
+      display: flex; 
+      gap: 24px; 
+      width: max-content;
+      animation: ticker-scroll 35s linear infinite;
+    }
+    .projects-track:hover { 
+      animation-play-state: paused; 
+    }
+    .story-card {
+      flex: 0 0 320px;
+      background: white;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .story-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 24px rgba(15, 92, 58, 0.1);
+    }
+    .story-image { 
+      height: 180px; 
+      overflow: hidden; 
+    }
+    .story-image img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+      transition: transform 0.6s ease; 
+    }
+    .story-card:hover .story-image img { 
+      transform: scale(1.06); 
+    }
+    .story-content { 
+      padding: 20px 22px; 
+    }
+    .story-content .date { 
+      font-size: 0.72rem; 
+      font-weight: 800; 
+      color: var(--accent-gold); 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em;
+      margin-bottom: 8px; 
+      display: block; 
+    }
+    .story-content h4 { 
+      font-size: 1.15rem; 
+      color: var(--primary-green); 
+      margin: 0 0 8px 0; 
+      line-height: 1.3; 
+      font-weight: 700;
+    }
+    .story-content p { 
+      font-size: 0.85rem; 
+      color: var(--text-muted); 
+      line-height: 1.5; 
+      margin: 0 0 14px 0; 
+    }
+    .story-outcome {
+      font-size: 0.78rem; 
+      font-weight: 700; 
+      color: var(--primary-green);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    @keyframes ticker-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(calc(-320px * 4 - 24px * 4)); }
     }
 
     /* ── Two-Column Layout ── */
@@ -686,10 +888,33 @@ $programsSummary = $charityProgramModel->getProgramsSummary();
       }
     }
 
+    @media (max-width: 768px) {
+      .charity-hero {
+        min-height: 350px;
+      }
+      .hero-content-overlay {
+        padding: 40px 24px;
+      }
+      .hero-content-overlay h2 {
+        font-size: 1.85rem;
+      }
+      .carousel-dots {
+        bottom: 16px;
+        right: 20px;
+      }
+    }
+
     @media (max-width: 640px) {
-      .charity-hero-section {
-        padding: 28px 18px 32px;
-        margin-bottom: 24px;
+      .hero-content-overlay h2 {
+        font-size: 1.65rem;
+      }
+      .hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .btn-hero, .btn-hero-outline {
+        justify-content: center;
+        text-align: center;
       }
       .impact-cards-grid {
         grid-template-columns: 1fr;
@@ -744,13 +969,38 @@ $programsSummary = $charityProgramModel->getProgramsSummary();
         </div>
 
         <!-- ═══ A. Hero Section (Centered) ═══ -->
-        <section class="charity-hero-section">
-          <div class="hero-badge">
-            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            <span>ISCAG Damayan Charity Fund</span>
+        <!-- ═══ Hero Section (Carousel) ═══ -->
+        <section class="charity-hero" id="charityHero" aria-label="Damayan Charity Hero">
+          <div class="hero-carousel-bg">
+            <div class="carousel-track" id="carousel-track">
+              <div class="carousel-slide"><img src="<?= asset('assets/damayanHero.png') ?>" alt="Support for families in need" /></div>
+              <div class="carousel-slide"><img src="<?= asset('assets/damayanHero2.png') ?>" alt="Islamic educational support" /></div>
+              <div class="carousel-slide"><img src="<?= asset('assets/damayanHero3.png') ?>" alt="Community medical mission" /></div>
+            </div>
           </div>
-          <h1 class="hero-title">Your Gift, Their Future</h1>
-          <p class="hero-subtitle">Choose a program and an amount to make an immediate difference in our community.</p>
+
+          <div class="hero-content-overlay">
+            <div class="hero-tag">
+              <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              Impact is our Mission
+            </div>
+            <h2>Transforming <br>Compassion into Action</h2>
+            <p>"Good deeds should be done with good intention, not for attention." — ISCAG Damayan Project</p>
+            
+            <div class="hero-actions">
+              <a href="#donate-section" class="btn-hero">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                Make a Donation
+              </a>
+              <a href="<?= url('/user/services/charity/request') ?>" class="btn-hero-outline">Apply for Assistance</a>
+            </div>
+
+            <div class="carousel-dots">
+              <div class="dot active" onclick="gotoHeroSlide(0)"></div>
+              <div class="dot" onclick="gotoHeroSlide(1)"></div>
+              <div class="dot" onclick="gotoHeroSlide(2)"></div>
+            </div>
+          </div>
         </section>
 
         <!-- ═══ Two-Column Layout (Information Left | Form Right) ═══ -->
@@ -855,7 +1105,7 @@ $programsSummary = $charityProgramModel->getProgramsSummary();
           </div>
 
           <!-- ── Right Column: Support a Program Form ── -->
-          <div class="charity-form-column">
+          <div class="charity-form-column" id="donate-section">
             <div class="donation-form-card">
               
               <div class="form-header">
@@ -952,6 +1202,125 @@ $programsSummary = $charityProgramModel->getProgramsSummary();
         </div>
 
         <!-- ═══ Contribution History (Full Width) ═══ -->
+        
+        <!-- ═══ Completed Projects Carousel Ticker ═══ -->
+        <section class="projects-carousel-container" aria-label="Completed Community Projects">
+          <div class="projects-section-header">
+            <h3>Our Impact in Action</h3>
+            <p>A glimpse into the successful programs and community relief initiatives powered by your donations.</p>
+          </div>
+
+          <div class="projects-viewport">
+            <div class="projects-track">
+              <!-- Set 1 -->
+              <article class="story-card">
+                <div class="story-image"><img src="<?= asset('assets/damayanHero2.png') ?>" alt="Ramadan Food Distribution"></div>
+                <div class="story-content">
+                  <span class="date">Ramadan Relief</span>
+                  <h4>Ramadan Food Distribution</h4>
+                  <p>Nutritious food packs and staples distributed to indigent families during the blessed month.</p>
+                  <div class="story-outcome">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    2,000+ Beneficiaries Served
+                  </div>
+                </div>
+              </article>
+
+              <article class="story-card">
+                <div class="story-image"><img src="<?= asset('assets/damayanHero3.png') ?>" alt="Medical Welfare Mission"></div>
+                <div class="story-content">
+                  <span class="date">Healthcare Aid</span>
+                  <h4>Community Medical Mission</h4>
+                  <p>Free comprehensive health check-ups and maintenance medicine for elders and reverts.</p>
+                  <div class="story-outcome">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    350+ Patients Treated
+                  </div>
+                </div>
+              </article>
+
+              <article class="story-card">
+                <div class="story-image"><img src="<?= asset('assets/damayanHero.png') ?>" alt="Educational Support"></div>
+                <div class="story-content">
+                  <span class="date">Education</span>
+                  <h4>Back-to-School Kits & Aid</h4>
+                  <p>Educational supply packs, bags, and semester study assistance provided to orphaned students.</p>
+                  <div class="story-outcome">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    120 Students Empowered
+                  </div>
+                </div>
+              </article>
+
+              <article class="story-card">
+                <div class="story-image"><img src="<?= asset('assets/ISCAG2.png') ?>" alt="Damayan Bereavement Assistance"></div>
+                <div class="story-content">
+                  <span class="date">Damayan Shroud Fund</span>
+                  <h4>Burial & Bereavement Relief</h4>
+                  <p>Subsidized dignified Islamic burial arrangements, shrouds, and transport for vulnerable families.</p>
+                  <div class="story-outcome">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    85 Families Assisted
+                  </div>
+                </div>
+              </article>
+
+              <!-- Duplicate Set for Seamless Continuous Ticker -->
+              <article class="story-card">
+                <div class="story-image"><img src="<?= asset('assets/damayanHero2.png') ?>" alt="Ramadan Food Distribution"></div>
+                <div class="story-content">
+                  <span class="date">Ramadan Relief</span>
+                  <h4>Ramadan Food Distribution</h4>
+                  <p>Nutritious food packs and staples distributed to indigent families during the blessed month.</p>
+                  <div class="story-outcome">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    2,000+ Beneficiaries Served
+                  </div>
+                </div>
+              </article>
+
+              <article class="story-card">
+                <div class="story-image"><img src="<?= asset('assets/damayanHero3.png') ?>" alt="Medical Welfare Mission"></div>
+                <div class="story-content">
+                  <span class="date">Healthcare Aid</span>
+                  <h4>Community Medical Mission</h4>
+                  <p>Free comprehensive health check-ups and maintenance medicine for elders and reverts.</p>
+                  <div class="story-outcome">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    350+ Patients Treated
+                  </div>
+                </div>
+              </article>
+
+              <article class="story-card">
+                <div class="story-image"><img src="<?= asset('assets/damayanHero.png') ?>" alt="Educational Support"></div>
+                <div class="story-content">
+                  <span class="date">Education</span>
+                  <h4>Back-to-School Kits & Aid</h4>
+                  <p>Educational supply packs, bags, and semester study assistance provided to orphaned students.</p>
+                  <div class="story-outcome">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    120 Students Empowered
+                  </div>
+                </div>
+              </article>
+
+              <article class="story-card">
+                <div class="story-image"><img src="<?= asset('assets/ISCAG2.png') ?>" alt="Damayan Bereavement Assistance"></div>
+                <div class="story-content">
+                  <span class="date">Damayan Shroud Fund</span>
+                  <h4>Burial & Bereavement Relief</h4>
+                  <p>Subsidized dignified Islamic burial arrangements, shrouds, and transport for vulnerable families.</p>
+                  <div class="story-outcome">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    85 Families Assisted
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
         <section class="history-card">
           <div class="history-header">
             <div>
@@ -1041,6 +1410,42 @@ $programsSummary = $charityProgramModel->getProgramsSummary();
 </div>
 
 <script>
+  // ── Hero Carousel Logic ──
+  const heroTrack = document.getElementById('carousel-track');
+  const heroDots = document.querySelectorAll('.carousel-dots .dot');
+  let currentHeroSlide = 0;
+  let heroTimer = null;
+
+  function gotoHeroSlide(idx) {
+    if (!heroTrack) return;
+    currentHeroSlide = idx;
+    heroTrack.style.transform = `translateX(-${currentHeroSlide * 33.333}%)`;
+    heroDots.forEach((d, i) => d.classList.toggle('active', i === currentHeroSlide));
+  }
+
+  function nextHeroSlide() {
+    currentHeroSlide = (currentHeroSlide + 1) % 3;
+    gotoHeroSlide(currentHeroSlide);
+  }
+
+  function startHeroTimer() {
+    stopHeroTimer();
+    heroTimer = setInterval(nextHeroSlide, 5000);
+  }
+
+  function stopHeroTimer() {
+    if (heroTimer) clearInterval(heroTimer);
+  }
+
+  if (heroTrack) {
+    startHeroTimer();
+    const heroEl = document.getElementById('charityHero');
+    if (heroEl) {
+      heroEl.addEventListener('mouseenter', stopHeroTimer);
+      heroEl.addEventListener('mouseleave', startHeroTimer);
+    }
+  }
+
   // ── Impact Card Selection ──
   function selectImpactCard(cardEl, amt, program) {
     // 1. Highlight clicked card and update indicators
