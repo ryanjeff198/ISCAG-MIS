@@ -658,6 +658,48 @@ class ApartmentController extends Controller {
             return;
         }
 
+        // Validate advance payments don't exceed lease end date
+        $isAdvance = false;
+        foreach ($paymentIds as $pid) {
+            if (is_string($pid) && in_array(strtolower($pid), ['rent-advance', 'water-advance', 'contribution-advance', 'parking-advance'])) {
+                $isAdvance = true;
+                break;
+            }
+        }
+        if ($isAdvance && !empty($lease['end_date']) && !empty($lease['start_date'])) {
+            $leaseEnd = new \DateTime($lease['end_date']);
+            $existingPayments = $paymentModel->getPaymentsByLease($lease['lease_id']);
+            
+            $latestCovered = new \DateTime($lease['start_date']);
+            $advCount = 0;
+            foreach ($existingPayments as $ep) {
+                if ($ep['payment_status'] !== 'Paid') continue;
+                $tLow = strtolower($ep['payment_type']);
+                if (preg_match('/^(?:rent|water|contribution|parking)-(\d{4}-\d{2})$/', $tLow, $matches)) {
+                    $chargeDate = new \DateTime($matches[1] . '-01');
+                    if ($chargeDate > $latestCovered) {
+                        $latestCovered = $chargeDate;
+                    }
+                }
+                if (in_array($tLow, ['rent-advance', 'advance'])) {
+                    $advCount++;
+                }
+            }
+
+            $extraAdvances = max(0, $advCount - 1);
+            $finalCoveredDate = clone $latestCovered;
+            if ($extraAdvances > 0) {
+                $finalCoveredDate->modify("+{$extraAdvances} month");
+            }
+            $nextAdvMonth = clone $finalCoveredDate;
+            $nextAdvMonth->modify("+1 month");
+
+            if ($nextAdvMonth->format('Y-m') > $leaseEnd->format('Y-m')) {
+                echo json_encode(['success' => false, 'message' => 'Advance payment exceeds your lease end date (' . $leaseEnd->format('M d, Y') . '). Please renew your contract first.']);
+                return;
+            }
+        }
+
         $db = getDbConnection();
         $allOk = true;
 
@@ -768,6 +810,53 @@ class ApartmentController extends Controller {
         if (empty($paymentIds) || $totalAmount <= 0) {
             echo json_encode(['success' => false, 'message' => 'Invalid payment request or zero balance.']);
             return;
+        }
+
+        // Validate advance payments don't exceed lease end date
+        $isAdvance = false;
+        foreach ($paymentIds as $pid) {
+            if (is_string($pid) && in_array(strtolower($pid), ['rent-advance', 'water-advance', 'contribution-advance', 'parking-advance'])) {
+                $isAdvance = true;
+                break;
+            }
+        }
+        if ($isAdvance) {
+            require_once BASE_PATH . '/app/models/Lease.php';
+            require_once BASE_PATH . '/app/models/Payment.php';
+            $lease = (new Lease())->getLeaseByTenantId($userId);
+            if ($lease && !empty($lease['end_date']) && !empty($lease['start_date'])) {
+                $leaseEnd = new \DateTime($lease['end_date']);
+                $existingPayments = (new Payment())->getPaymentsByLease($lease['lease_id']);
+
+                $latestCovered = new \DateTime($lease['start_date']);
+                $advCount = 0;
+                foreach ($existingPayments as $ep) {
+                    if ($ep['payment_status'] !== 'Paid') continue;
+                    $tLow = strtolower($ep['payment_type']);
+                    if (preg_match('/^(?:rent|water|contribution|parking)-(\d{4}-\d{2})$/', $tLow, $matches)) {
+                        $chargeDate = new \DateTime($matches[1] . '-01');
+                        if ($chargeDate > $latestCovered) {
+                            $latestCovered = $chargeDate;
+                        }
+                    }
+                    if (in_array($tLow, ['rent-advance', 'advance'])) {
+                        $advCount++;
+                    }
+                }
+
+                $extraAdvances = max(0, $advCount - 1);
+                $finalCoveredDate = clone $latestCovered;
+                if ($extraAdvances > 0) {
+                    $finalCoveredDate->modify("+{$extraAdvances} month");
+                }
+                $nextAdvMonth = clone $finalCoveredDate;
+                $nextAdvMonth->modify("+1 month");
+
+                if ($nextAdvMonth->format('Y-m') > $leaseEnd->format('Y-m')) {
+                    echo json_encode(['success' => false, 'message' => 'Advance payment exceeds your lease end date (' . $leaseEnd->format('M d, Y') . '). Please renew your contract first.']);
+                    return;
+                }
+            }
         }
 
         require_once BASE_PATH . '/app/helpers/PayMongoHelper.php';

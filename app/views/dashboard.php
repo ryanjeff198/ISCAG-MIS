@@ -887,68 +887,6 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
           <!-- Populated by JS -->
         </div>
 
-        <!-- MY REQUESTS HISTORY -->
-        <div class="section-card">
-          <div class="section-card-header">
-            <h6>
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9z" />
-              </svg>
-              My Recent Requests
-            </h6>
-            <span style="font-size:0.75rem;color:var(--text-muted);" id="req-count"><?= count($dbRecentRequests) ?> <?= count($dbRecentRequests) === 1 ? 'record' : 'records' ?></span>
-          </div>
-          <div class="section-card-body" style="padding:0;">
-            <div class="table-wrapper">
-              <table class="mis-table">
-                <thead>
-                  <tr>
-                    <th>Reference No.</th>
-                    <th>Service Type</th>
-                    <th>Date Submitted</th>
-                    <th>Status</th>
-                    <th>Details / Action</th>
-                  </tr>
-                </thead>
-                <tbody id="req-tbody">
-                  <?php if (empty($dbRecentRequests)): ?>
-                    <tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted);">No service requests yet. Submit your first request above.</td></tr>
-                  <?php else: ?>
-                    <?php foreach ($dbRecentRequests as $r): ?>
-                      <tr>
-                        <td class="td-id">#<?= htmlspecialchars($r['id']) ?></td>
-                        <td style="font-weight:600;"><?= htmlspecialchars($r['type']) ?></td>
-                        <td><?= htmlspecialchars($r['date']) ?></td>
-                        <td>
-                          <?php 
-                            $stL = strtolower($r['status'] ?? '');
-                            if (in_array($stL, ['approved', 'assigned', 'registered', 'burial completed', 'completed', 'plot assigned'])): ?>
-                            <span class="badge-status badge-approved" style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;font-weight:700;">Completed</span>
-                          <?php elseif (in_array($stL, ['pending', 'under review', 'queued', 'request received', 'awaiting authorized certificate preparation', 'certificate prepared and certified', 'submitted for civil registration'])): ?>
-                            <span class="badge-status badge-pending" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-weight:700;">In Progress</span>
-                          <?php elseif ($stL === 'additional information required'): ?>
-                            <span class="badge-status" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-weight:700;">Action Required</span>
-                          <?php elseif ($stL === 'rejected'): ?>
-                            <span class="badge-status badge-rejected" style="font-weight:700;">Rejected</span>
-                          <?php else: ?>
-                            <span class="badge-status" style="background:#f3f4f6;color:#4b5563;font-weight:700;"><?= htmlspecialchars(ucwords($r['status'])) ?></span>
-                          <?php endif; ?>
-                        </td>
-                        <td>
-                          <a href="<?= $r['link'] ?>" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:8px; background:<?= in_array($stL, ['approved', 'assigned', 'registered', 'burial completed', 'completed', 'plot assigned']) ? '#166534' : '#f8faf9' ?>; color:<?= in_array($stL, ['approved', 'assigned', 'registered', 'burial completed', 'completed', 'plot assigned']) ? 'white' : 'var(--primary-dark)' ?>; border:1px solid <?= in_array($stL, ['approved', 'assigned', 'registered', 'burial completed', 'completed', 'plot assigned']) ? '#166534' : '#e2e8f0' ?>; font-size:0.8rem; font-weight:700; text-decoration:none; transition:all 0.2s;">
-                            <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                            <?= in_array($stL, ['approved', 'assigned', 'registered', 'burial completed', 'completed', 'plot assigned']) ? 'View Record' : 'Track Status' ?>
-                          </a>
-                        </td>
-                      </tr>
-                    <?php endforeach; ?>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>

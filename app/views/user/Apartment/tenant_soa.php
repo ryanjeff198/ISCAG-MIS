@@ -90,7 +90,11 @@
             <div class="top-bar-subtitle">Your official billing history and current balance</div>
           </div>
         </div>
-        <div class="top-bar-actions">
+        <div class="top-bar-actions" style="display:flex; gap:10px;">
+          <button class="btn-topbar" style="background:white; color:#15803d; border:1.5px solid #bbf7d0; font-weight:700;" onclick="exportSoaToExcel()">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            Export to Excel
+          </button>
           <button class="btn-topbar primary" onclick="window.print()">
             <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
             Print Statement
@@ -305,6 +309,97 @@
       </div>
     </main>
   </div>
+
+  <script>
+    function exportSoaToExcel() {
+      const soaContainer = document.querySelector('.soa-container');
+      if (!soaContainer) return;
+
+      const table = soaContainer.querySelector('.soa-table');
+      if (!table) return;
+
+      const tenantName = "<?= addslashes(htmlspecialchars_decode(($lease['first_name'] ?? '') . ' ' . ($lease['last_name'] ?? 'Tenant'), ENT_QUOTES)) ?>";
+      const unit = "<?= addslashes((!empty($lease['building']) && !empty($lease['room_number'])) ? ($lease['building'] . '-' . $lease['room_number']) : 'Unassigned') ?>";
+      const period = "<?= addslashes(($filterMonth === 'all') ? 'All Time' : date('F Y', strtotime($filterMonth . '-01'))) ?>";
+      const dateGen = "<?= date('Y-m-d') ?>";
+
+      let html = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <!--[if gte mso 9]>
+          <xml>
+            <x:ExcelWorkbook>
+              <x:ExcelWorksheets>
+                <x:ExcelWorksheet>
+                  <x:Name>Statement of Account</x:Name>
+                  <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+                </x:ExcelWorksheet>
+              </x:ExcelWorksheets>
+            </x:ExcelWorkbook>
+          </xml>
+          <![endif]-->
+          <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
+          <style>
+            table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11pt; }
+            th { background-color: #176b45; color: #ffffff; border: 1px solid #cccccc; padding: 8px 12px; font-weight: bold; }
+            td { border: 1px solid #cccccc; padding: 6px 10px; }
+            .header-title { font-size: 14pt; font-weight: bold; color: #0e452c; }
+            .meta-label { font-weight: bold; color: #555555; }
+            .total-row { font-weight: bold; background-color: #f3f4f6; }
+          </style>
+        </head>
+        <body>
+          <table>
+            <tr><td colspan="7" class="header-title">ISCAG MANAGEMENT INFORMATION SYSTEM</td></tr>
+            <tr><td colspan="7" style="font-weight:bold; color:#176b45;">Darul Iman Apartment Complex — Statement of Account</td></tr>
+            <tr><td colspan="7">Generated on: ${dateGen}</td></tr>
+            <tr><td colspan="7"></td></tr>
+            <tr>
+              <td class="meta-label">Tenant:</td>
+              <td colspan="2">${tenantName}</td>
+              <td class="meta-label">Statement Period:</td>
+              <td colspan="3">${period}</td>
+            </tr>
+            <tr>
+              <td class="meta-label">Unit:</td>
+              <td colspan="2">${unit}</td>
+              <td class="meta-label">Total Outstanding:</td>
+              <td colspan="3" style="font-weight:bold; color:#d93025;">PHP <?= number_format($runningBalance ?? 0, 2) ?></td>
+            </tr>
+            <tr><td colspan="7"></td></tr>
+          </table>
+          ${table.outerHTML}
+          <table>
+            <tr><td colspan="7"></td></tr>
+            <tr class="total-row">
+              <td colspan="4" style="text-align:right;">Total Charges:</td>
+              <td colspan="3">PHP <?= number_format($totalCharges ?? 0, 2) ?></td>
+            </tr>
+            <tr class="total-row">
+              <td colspan="4" style="text-align:right;">Total Payments:</td>
+              <td colspan="3" style="color:#15803d;">PHP <?= number_format($totalPayments ?? 0, 2) ?></td>
+            </tr>
+            <tr class="total-row" style="font-size:12pt; background-color:#e6f4ea;">
+              <td colspan="4" style="text-align:right;">Outstanding Balance:</td>
+              <td colspan="3" style="font-weight:bold; color:<?= ($runningBalance ?? 0) > 0 ? '#d93025' : '#15803d' ?>;">PHP <?= number_format($runningBalance ?? 0, 2) ?></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeTenant = tenantName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      a.href = url;
+      a.download = `SOA_${safeTenant}_${dateGen}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
 </body>
 </html>
 
