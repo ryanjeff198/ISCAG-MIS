@@ -665,16 +665,35 @@
                 </div>
                 
                 <p style="margin: 0 0 10px; font-weight: 600; font-size: 0.88rem;">Payment Method</p>
-                <div class="payment-options" style="grid-template-columns: 1fr;">
-                    <div class="payment-option selected" id="opt-paymongo" style="cursor: default;">
-                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-                        <span>PayMongo (GCash / Maya / Card)</span>
+                <div class="payment-options" style="grid-template-columns: 1fr; margin-bottom: 16px;">
+                    <div class="payment-option selected" id="opt-paymongo" style="cursor: default; padding: 14px 16px; text-align: left; align-items: flex-start;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(23, 107, 69, 0.1); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                                    <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: currentColor;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h2v2h-2v-2zm0 2h3v2h-3v-2zm-2 2h2v2h-2v-2z"/></svg>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-main);">PayMongo Secure Gateway</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1px;">QR Ph, E-Wallets & Card Payments</div>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.7rem; font-weight: 700; color: #166534; background: #dcfce7; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 12px;">Instant</span>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; width: 100%;">
+                            <span style="font-size: 0.72rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                <svg viewBox="0 0 24 24" style="width: 12px; height: 12px; fill: currentColor;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h2v2h-2v-2zm0 2h3v2h-3v-2zm-2 2h2v2h-2v-2z"/></svg>
+                                QR Ph (Scan to Pay)
+                            </span>
+                            <span style="font-size: 0.72rem; font-weight: 700; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 3px 8px; border-radius: 6px;">GCash</span>
+                            <span style="font-size: 0.72rem; font-weight: 700; background: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; padding: 3px 8px; border-radius: 6px;">Maya</span>
+                            <span style="font-size: 0.72rem; font-weight: 700; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 3px 8px; border-radius: 6px;">Credit / Debit Card</span>
+                        </div>
                     </div>
                 </div>
 
                 <div id="paymongoNote" style="background: rgba(23, 107, 69, 0.06); border: 1px solid rgba(23, 107, 69, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 0.82rem; color: var(--primary-dark); display: flex; align-items: center; gap: 8px;">
                     <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-6h-2v6zm0-8h2V7h-2v2z"/></svg>
-                    <span>You will be redirected to <strong>PayMongo</strong> to complete payment via GCash, Maya, or Card (Test Mode).</span>
+                    <span>You will be redirected to <strong>PayMongo</strong> to scan the <strong>QR Ph code</strong> or pay via GCash, Maya, or Card (Sandbox Mode).</span>
                 </div>
 
                 <button class="btn-submit" id="btnConfirmPay" onclick="submitPayment()">Pay ₱<span id="modalAmount">0</span> via PayMongo</button>
@@ -719,7 +738,8 @@
 
             document.getElementById('modalPayType').textContent = 'All Outstanding Balances';
             document.getElementById('modalAmount').textContent = currentModalAmount.toFixed(2);
-            document.getElementById('refNumber').value = 'PAY-BLK-' + Math.floor(Math.random() * 10000000);
+            const refInput = document.getElementById('refNumber');
+            if (refInput) refInput.value = 'PAY-BLK-' + Math.floor(Math.random() * 10000000);
             
             // Build itemized list UI
             const listDiv = document.getElementById('modalItemList');

@@ -80,7 +80,7 @@ class PayMongoHelper
             'payment_method_types' => $config['payment_method_types'],
             'success_url'          => $successUrl,
             'cancel_url'           => $cancelUrl,
-            'metadata'             => $metadata
+            'metadata'             => empty($metadata) ? new \stdClass() : (object)$metadata
         ];
 
         if (!empty($referenceNumber)) {
