@@ -2315,6 +2315,7 @@ class AdminController extends Controller
         $filters = [
             'search' => $_GET['search'] ?? '',
             'donation_type' => $_GET['type'] ?? '',
+            'category' => $_GET['category'] ?? '',
             'status' => $_GET['status'] ?? '',
             'date_from' => $_GET['date_from'] ?? '',
             'date_to' => $_GET['date_to'] ?? ''
@@ -2395,6 +2396,27 @@ class AdminController extends Controller
         $userId = (int)($_SESSION['user_id'] ?? 0);
 
         $res = $charity->issueAcknowledgment($id, $staffName, $userId);
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * Verify / Update Donation Status (Digital, Cash, Food) (AJAX)
+     */
+    public function verifyCharityDonation(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $status = trim($_POST['status'] ?? 'Available');
+        $adminNotes = trim($_POST['admin_notes'] ?? '');
+        $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+
+        $res = $charity->verifyDonation($id, $status, $adminNotes, $staffName, $userId);
         echo json_encode($res);
         exit;
     }

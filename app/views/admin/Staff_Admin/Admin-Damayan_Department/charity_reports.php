@@ -76,8 +76,9 @@
       .report-card { border: 1px solid #ccc; box-shadow: none; margin-bottom: 20px; page-break-inside: avoid; }
     }
   </style>
+  <link rel="stylesheet" href="<?= asset('css/charity.css') ?>?v=<?= time() ?>" />
 </head>
-<body>
+<body class="charity-module">
   <div class="app-wrapper">
     <!-- Damayan Sidebar -->
     <?php 

@@ -212,8 +212,9 @@
     }
     .form-control:focus { border-color: var(--primary); }
   </style>
+  <link rel="stylesheet" href="<?= asset('css/charity.css') ?>?v=<?= time() ?>" />
 </head>
-<body>
+<body class="charity-module">
   <div class="app-wrapper">
     <!-- Damayan Sidebar -->
     <?php 
@@ -231,7 +232,7 @@
         </div>
         <div class="top-bar-actions">
           <button onclick="openDistModal()" class="btn-topbar" style="background:var(--primary); color:white; border:none; border-radius:8px; padding:9px 18px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> + Record Distribution
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Record Distribution
           </button>
         </div>
       </div>

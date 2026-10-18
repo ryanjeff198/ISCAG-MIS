@@ -90,6 +90,7 @@ $routes = [
     '/user/services/counseling/resources' => ['UserController', 'counselingResources'],
     '/user/services/counseling/submit' => ['UserController', 'submitCounseling'],
     '/user/services/charity' => ['UserController', 'charity'],
+    '/user/services/charity/donate' => ['UserController', 'submitDonation'],
     // '/user/apartment/apply' => ['UserController', 'apartmentApply'],
 
     // Admin Modules (New)
@@ -139,6 +140,7 @@ $routes = [
     '/admin/damayan/charity/donations/save'    => ['AdminController', 'saveCharityDonation'],
     '/admin/damayan/charity/donations/detail'  => ['AdminController', 'getCharityDonationDetail'],
     '/admin/damayan/charity/donations/ack'     => ['AdminController', 'toggleCharityAcknowledgment'],
+    '/admin/damayan/charity/donations/verify'  => ['AdminController', 'verifyCharityDonation'],
     '/admin/damayan/charity/donations/print-ack' => ['AdminController', 'printCharityAcknowledgment'],
     '/admin/damayan/charity/available'         => ['AdminController', 'damayanCharityAvailable'],
     '/admin/damayan/charity/allocations'       => ['AdminController', 'damayanCharityAllocations'],
