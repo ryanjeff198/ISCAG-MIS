@@ -341,6 +341,75 @@
     .journey-step.done .journey-lbl { color: var(--primary-male); }
     .journey-step.active .journey-lbl { color: #10b981; font-weight: 800; }
 
+    /* ── 6-Step Dynamic Lifecycle Journey ── */
+    .journey-tracker-6 {
+      display: flex; justify-content: space-between; position: relative; margin: 28px 12px 14px;
+    }
+    .journey-6-line-bg {
+      position: absolute; top: 18px; left: 24px; right: 24px; height: 3px; background: #e5e7eb; z-index: 1;
+    }
+    .journey-6-line-fill {
+      position: absolute; top: 18px; left: 24px; height: 3px;
+      background: linear-gradient(90deg, var(--primary-male), #10b981); z-index: 2; transition: width 0.4s ease;
+    }
+    .journey-6-step {
+      display: flex; flex-direction: column; align-items: center; position: relative; z-index: 3;
+      gap: 8px; width: 85px; text-align: center;
+    }
+    .journey-6-dot {
+      width: 36px; height: 36px; border-radius: 50%; background: #fff;
+      border: 3px solid #e5e7eb; color: #9ca3af; display: flex; align-items: center;
+      justify-content: center; font-size: 0.82rem; font-weight: 800; transition: all 0.3s;
+    }
+    .journey-6-step.done .journey-6-dot {
+      background: var(--primary-male); border-color: var(--primary-male); color: #fff;
+    }
+    .journey-6-step.done .journey-6-dot svg { width: 16px; height: 16px; fill: #fff; }
+    .journey-6-step.active .journey-6-dot {
+      border-color: #10b981; color: #10b981; background: #fff;
+      box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.18);
+    }
+    .journey-6-step.active .journey-6-dot svg { width: 16px; height: 16px; fill: #10b981; }
+    .journey-6-lbl { font-size: 0.70rem; font-weight: 700; text-transform: uppercase; color: #6b7280; line-height: 1.25; }
+    .journey-6-step.done .journey-6-lbl { color: var(--primary-male); font-weight: 800; }
+    .journey-6-step.active .journey-6-lbl { color: #10b981; font-weight: 800; }
+
+    /* ── 3-Step Simple Pending Timeline ── */
+    .timeline-3-wrap {
+      background: #fdfdfd; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px 20px; margin: 20px 0;
+    }
+    .timeline-3-row {
+      display: flex; justify-content: space-between; position: relative; margin-top: 10px;
+    }
+    .timeline-3-row::before {
+      content: ''; position: absolute; top: 18px; left: 14%; right: 14%; height: 3px; background: #e2e8f0; z-index: 1;
+    }
+    .timeline-3-step {
+      position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1;
+    }
+    .timeline-3-circle {
+      width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9; border: 2.5px solid #cbd5e1;
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; color: #64748b; margin-bottom: 8px;
+    }
+    .timeline-3-step.done .timeline-3-circle {
+      background: var(--primary-male); border-color: var(--primary-male); color: #fff;
+    }
+    .timeline-3-step.active .timeline-3-circle {
+      background: #fff; border-color: #f59e0b; color: #d97706; box-shadow: 0 0 0 4px rgba(245,158,11,0.2);
+    }
+    .timeline-3-title { font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 2px; }
+    .timeline-3-desc { font-size: 0.70rem; color: var(--text-muted); }
+
+    /* ── Online Meeting Callout ── */
+    .online-meeting-box {
+      background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 14px 18px; margin-top: 14px;
+    }
+    .online-meeting-btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px;
+      background: #2563eb; color: #fff; font-size: 0.85rem; font-weight: 700; text-decoration: none; margin-top: 8px; transition: all 0.2s;
+    }
+    .online-meeting-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+
     /* ── Pre-Session Checklist (Brothers) ── */
     .checklist-list { display: flex; flex-direction: column; gap: 12px; }
     .check-item {
@@ -492,44 +561,114 @@
         <span class="current">Male Counseling & Appointments</span>
       </div>
 
-      <!-- ANALYTICS DASHBOARD -->
-      <div class="user-analytics">
+      <?php 
+        $activeRequest = $activeRequest ?? null;
+        if (!$activeRequest && !empty($history)) {
+            $activeRequest = $history[0];
+        }
+
+        $curStatus = $activeRequest ? strtolower($activeRequest['status'] ?? '') : '';
+        $isConfirmed = in_array($curStatus, ['confirmed', 'approved']);
+        $isPending = in_array($curStatus, ['pending', 'under_review', 'approved_awaiting_schedule']);
+        $isRejected = ($curStatus === 'rejected');
+        $isCompleted = ($curStatus === 'completed');
+
+        $activeRef = $activeRequest ? '#MC-' . str_pad((string)$activeRequest['id'], 4, '0', STR_PAD_LEFT) : '';
+        $assignedCounselorName = !empty($activeRequest['counselor_full_name']) 
+            ? $activeRequest['counselor_full_name'] 
+            : (!empty($activeRequest['counselor_name']) ? $activeRequest['counselor_name'] : 'Ustaz Norman Ungasin');
+        $counselorRole = !empty($activeRequest['counselor_designation']) 
+            ? $activeRequest['counselor_designation'] 
+            : (!empty($activeRequest['counselor_role']) ? $activeRequest['counselor_role'] : 'Senior Islamic Counselor & Scholar');
+        $counselorContact = !empty($activeRequest['counselor_contact_info']) 
+            ? $activeRequest['counselor_contact_info'] 
+            : (!empty($activeRequest['counselor_contact']) ? $activeRequest['counselor_contact'] : 'kizumikaze1@gmail.com');
+        $counselorPhone = !empty($activeRequest['counselor_phone']) ? $activeRequest['counselor_phone'] : '+63 906 574 0819';
+        $counselorOffice = !empty($activeRequest['counselor_office']) ? $activeRequest['counselor_office'] : 'ISCAG Center, 2nd Floor Da\'wah Office Room 201';
+
+        $confirmedDate = !empty($activeRequest['appointment_date']) 
+            ? $activeRequest['appointment_date'] 
+            : (!empty($activeRequest['preferred_date']) ? $activeRequest['preferred_date'] : null);
+        $confirmedTime = !empty($activeRequest['start_time']) 
+            ? date('g:i A', strtotime($activeRequest['start_time'])) . (!empty($activeRequest['end_time']) ? ' – ' . date('g:i A', strtotime($activeRequest['end_time'])) : '')
+            : (!empty($activeRequest['preferred_time']) ? $activeRequest['preferred_time'] : '10:00 AM');
+        $sessionMode = !empty($activeRequest['final_session_type']) 
+            ? $activeRequest['final_session_type'] 
+            : (!empty($activeRequest['session_type']) ? $activeRequest['session_type'] : 'In-Person');
+        $venueLocation = !empty($activeRequest['appointment_location']) 
+            ? $activeRequest['appointment_location'] 
+            : 'ISCAG Mosque & Da\'wah Center, 2nd Floor — Brothers\' Guidance Room (Room 204)';
+        $meetingLink = !empty($activeRequest['meeting_link']) ? $activeRequest['meeting_link'] : '';
+        $meetingInstructions = !empty($activeRequest['meeting_instructions']) ? $activeRequest['meeting_instructions'] : 'Please ensure a quiet private setting and test your microphone/audio 5 minutes prior to the session.';
+
+        // 6 Lifecycle Steps for Dynamic Tracker:
+        $step1 = true;
+        $step2 = in_array($curStatus, ['under_review', 'approved_awaiting_schedule', 'confirmed', 'approved', 'completed']);
+        $step3 = in_array($curStatus, ['approved_awaiting_schedule', 'confirmed', 'approved', 'completed']);
+        $step4 = (!empty($activeRequest['counselor_id']) || !empty($activeRequest['counselor_name'])) || in_array($curStatus, ['confirmed', 'approved', 'completed']);
+        $step5 = in_array($curStatus, ['confirmed', 'approved', 'completed']);
+        $step6 = ($curStatus === 'completed');
+
+        $step2Active = ($curStatus === 'under_review');
+        $step3Active = ($curStatus === 'approved_awaiting_schedule');
+        $step5Active = in_array($curStatus, ['confirmed', 'approved']);
+      ?>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- 🌟 A. COUNSELING OVERVIEW SUMMARY CARDS                    -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div class="user-analytics" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
         <div class="stat-card">
-          <div class="stat-label">Total Applications</div>
-          <div class="stat-value" id="ana-total"><?= $analytics['total'] ?? 0 ?></div>
+          <div class="stat-label">Request Status</div>
+          <div class="stat-value <?= $isConfirmed ? 'success' : ($isPending ? 'warning' : ($isRejected ? 'danger' : '')) ?>" style="font-size: 1.25rem;">
+            <?php 
+              if ($isConfirmed) echo 'Confirmed';
+              elseif ($isPending) echo 'Pending Review';
+              elseif ($isRejected) echo 'Rejected';
+              elseif ($isCompleted) echo 'Completed';
+              else echo 'Ready to Book';
+            ?>
+          </div>
         </div>
+
         <div class="stat-card">
-          <div class="stat-label">Pending Approval</div>
-          <div class="stat-value warning" id="ana-pending"><?= $analytics['pending'] ?? 0 ?></div>
+          <div class="stat-label">Next Counseling Session</div>
+          <div class="stat-value" style="font-size: 1.05rem;">
+            <?php if ($isConfirmed && !empty($confirmedDate)): ?>
+              <?= date('M d, Y', strtotime($confirmedDate)) ?>
+            <?php elseif ($isPending): ?>
+              <span style="font-size:0.92rem; color:#b45309;">Awaiting Schedule</span>
+            <?php else: ?>
+              <span style="font-size:0.92rem; color:#6b7280;">None Scheduled</span>
+            <?php endif; ?>
+          </div>
         </div>
+
         <div class="stat-card">
-          <div class="stat-label">Confirmed Sessions</div>
-          <div class="stat-value success" id="ana-approved"><?= $analytics['approved'] ?? 0 ?></div>
+          <div class="stat-label">Assigned Counselor</div>
+          <div class="stat-value" style="font-size: 1.05rem;">
+            <?php if ($isConfirmed): ?>
+              <?= htmlspecialchars($assignedCounselorName) ?>
+            <?php elseif ($isPending): ?>
+              <span style="font-size:0.92rem; color:#b45309;">Pending Review</span>
+            <?php else: ?>
+              <span style="font-size:0.92rem; color:#6b7280;">None Assigned</span>
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Session Type</div>
+          <div class="stat-value" style="font-size: 1.05rem;">
+            <?= htmlspecialchars($sessionMode) ?>
+          </div>
         </div>
       </div>
-
-      <?php 
-        $hasApproved = false;
-        $hasPending = false;
-        $activeRequest = null;
-        foreach ($history ?? [] as $req) {
-            $st = strtolower($req['status'] ?? '');
-            if ($st === 'approved') { 
-              $hasApproved = true; 
-              $activeRequest = $req; 
-              break; 
-            }
-            if ($st === 'pending' && !$hasApproved) { 
-              $hasPending = true; 
-              $activeRequest = $req; 
-            }
-        }
-      ?>
 
       <!-- ══════════════════════════════════════════════════════════ -->
       <!-- 🌟 CASE 1: SCHEDULE APPROVED BY ADMIN (APPOINTMENT HUB)    -->
       <!-- ══════════════════════════════════════════════════════════ -->
-      <?php if ($hasApproved && $activeRequest): ?>
+      <?php if ($isConfirmed && $activeRequest): ?>
       <div class="appointment-hub-card">
         <!-- Hero Header -->
         <div class="appointment-hero-banner">
@@ -542,14 +681,14 @@
                 <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:var(--gold-accent); margin-bottom:2px;">
                   Official Counseling Confirmation
                 </div>
-                <h3>Counseling & Spiritual Guidance Appointment</h3>
-                <p>Ref No: <strong>#MC-<?= str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT) ?></strong> • Confirmed with Ustaz Counselor</p>
+                <h3>Counseling &amp; Spiritual Guidance Appointment</h3>
+                <p>Ref No: <strong><?= htmlspecialchars($activeRef) ?></strong> • Confirmed with <?= htmlspecialchars($assignedCounselorName) ?></p>
               </div>
             </div>
             <div>
               <div class="badge-live-pulse">
                 <div class="pulse-dot"></div>
-                Confirmed & Scheduled
+                Confirmed &amp; Scheduled
               </div>
             </div>
           </div>
@@ -561,7 +700,7 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
                 Session Date
               </div>
-              <div class="sched-metric-val gold"><?= !empty($activeRequest['preferred_date']) ? date('M d, Y', strtotime($activeRequest['preferred_date'])) : 'Confirmed' ?></div>
+              <div class="sched-metric-val gold"><?= !empty($confirmedDate) ? date('M d, Y', strtotime($confirmedDate)) : 'Confirmed' ?></div>
             </div>
 
             <div class="sched-metric-box">
@@ -569,15 +708,15 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
                 Session Time
               </div>
-              <div class="sched-metric-val"><?= htmlspecialchars($activeRequest['preferred_time'] ?? '10:00 AM') ?></div>
+              <div class="sched-metric-val"><?= htmlspecialchars($confirmedTime) ?></div>
             </div>
 
             <div class="sched-metric-box">
               <div class="sched-metric-lbl">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                Venue / Office
+                Session Mode &amp; Venue
               </div>
-              <div class="sched-metric-val">Counseling Room 204</div>
+              <div class="sched-metric-val"><?= htmlspecialchars($sessionMode) ?> <?= $sessionMode === 'Online' ? 'Consultation' : 'Room 204' ?></div>
             </div>
 
             <div class="sched-metric-box">
@@ -585,7 +724,7 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                 Assigned Counselor
               </div>
-              <div class="sched-metric-val">Ustaz Counselor</div>
+              <div class="sched-metric-val"><?= htmlspecialchars($assignedCounselorName) ?></div>
             </div>
           </div>
         </div>
@@ -606,8 +745,8 @@
 
             <!-- Add to Calendar -->
             <?php 
-              $calDate = !empty($activeRequest['preferred_date']) ? date('Ymd', strtotime($activeRequest['preferred_date'])) : date('Ymd');
-              $calUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" . urlencode("ISCAG Counseling Session — #" . $activeRequest['id']) . "&dates=" . $calDate . "T020000Z/" . $calDate . "T030000Z&details=" . urlencode("ISCAG Confidential Brother's Counseling Session regarding " . $activeRequest['reason'] . ". Counselor: Ustaz Da'wah Office.") . "&location=" . urlencode("ISCAG Mosque & Da'wah Center, 2nd Floor Room 204");
+              $calDate = !empty($confirmedDate) ? date('Ymd', strtotime($confirmedDate)) : date('Ymd');
+              $calUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" . urlencode("ISCAG Counseling Session — " . $activeRef) . "&dates=" . $calDate . "T020000Z/" . $calDate . "T030000Z&details=" . urlencode("ISCAG Confidential Brother's Counseling Session regarding " . ($activeRequest['reason'] ?? 'Guidance') . ". Counselor: " . $assignedCounselorName) . "&location=" . urlencode($sessionMode === 'Online' ? ($meetingLink ?: 'Online Google Meet') : $venueLocation);
             ?>
             <a href="<?= $calUrl ?>" target="_blank" class="btn-action-tool btn-tool-cal">
               <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm-7-7h5v5h-5z"/></svg>
@@ -625,89 +764,181 @@
         <div class="schedule-hub-grid">
           <!-- Left Column -->
           <div>
-            <!-- Session Summary Card -->
+            <!-- 🌟 B. DEDICATED APPOINTMENT SCHEDULE SECTION -->
+            <div class="hub-card" style="margin-bottom:24px; border-left: 4px solid var(--primary-male);">
+              <h5 class="hub-card-title">
+                <span>
+                  <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+                  Confirmed Appointment Schedule
+                </span>
+                <span class="detail-badge-pill" style="background:#dcfce7; color:#166534; font-weight:800;"><?= htmlspecialchars($sessionMode) ?> Consultation</span>
+              </h5>
+
+              <div class="detail-table">
+                <div class="detail-row">
+                  <span class="detail-key">Appointment Date</span>
+                  <span class="detail-val highlight"><?= !empty($confirmedDate) ? date('l, F j, Y', strtotime($confirmedDate)) : 'Confirmed' ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Start &amp; End Time</span>
+                  <span class="detail-val"><?= htmlspecialchars($confirmedTime) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Assigned Counselor</span>
+                  <span class="detail-val"><?= htmlspecialchars($assignedCounselorName) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Session Type</span>
+                  <span class="detail-val"><?= htmlspecialchars($sessionMode) ?></span>
+                </div>
+                <?php if ($sessionMode === 'Online'): ?>
+                  <div class="detail-row">
+                    <span class="detail-key">Online Meeting Link</span>
+                    <span class="detail-val">
+                      <?php if (!empty($meetingLink)): ?>
+                        <a href="<?= htmlspecialchars($meetingLink) ?>" target="_blank" style="color:#2563eb; font-weight:800; text-decoration:underline;">
+                          <?= htmlspecialchars($meetingLink) ?>
+                        </a>
+                      <?php else: ?>
+                        <span style="color:#64748b;">Meeting link will be active 15 mins prior</span>
+                      <?php endif; ?>
+                    </span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-key">Meeting Instructions</span>
+                    <span class="detail-val" style="font-size:0.84rem; color:#475569;"><?= htmlspecialchars($meetingInstructions) ?></span>
+                  </div>
+                <?php else: ?>
+                  <div class="detail-row">
+                    <span class="detail-key">Room / Location</span>
+                    <span class="detail-val"><?= htmlspecialchars($venueLocation) ?></span>
+                  </div>
+                <?php endif; ?>
+                <div class="detail-row">
+                  <span class="detail-key">Appointment Status</span>
+                  <span class="detail-val" style="color:#166534; font-weight:800;">Confirmed by Administrator</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Reference Number</span>
+                  <span class="detail-val" style="font-family:monospace; font-weight:800;"><?= htmlspecialchars($activeRef) ?></span>
+                </div>
+              </div>
+
+              <?php if ($sessionMode === 'Online' && !empty($meetingLink)): ?>
+                <div class="online-meeting-box">
+                  <strong>Online Consultation Access:</strong>
+                  <p style="margin:4px 0 8px; font-size:0.82rem; color:#1e40af;">Click the button below to join your counselor online at the scheduled time.</p>
+                  <a href="<?= htmlspecialchars($meetingLink) ?>" target="_blank" class="online-meeting-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                    Join Online Meeting Now
+                  </a>
+                </div>
+              <?php endif; ?>
+            </div>
+
+            <!-- 🌟 D. COUNSELING REQUEST DETAILS SECTION (CONFIDENTIAL) -->
             <div class="hub-card" style="margin-bottom:24px;">
               <h5 class="hub-card-title">
                 <span>
                   <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                  Confirmed Session Details
+                  Submitted Request Details
                 </span>
-                <span class="detail-badge-pill">In-Person Consultation</span>
+                <span class="detail-badge-pill" style="background:#f1f5f9; color:#475569;">Confidential Amanah</span>
               </h5>
 
               <div class="detail-table">
                 <div class="detail-row">
                   <span class="detail-key">Primary Concern</span>
-                  <span class="detail-val highlight"><?= htmlspecialchars(ucfirst($activeRequest['reason'])) ?></span>
+                  <span class="detail-val highlight"><?= htmlspecialchars(ucfirst($activeRequest['reason'] ?? 'General Guidance')) ?></span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-key">Appointment Day & Date</span>
-                  <span class="detail-val"><?= !empty($activeRequest['preferred_date']) ? date('l, F j, Y', strtotime($activeRequest['preferred_date'])) : 'Confirmed' ?></span>
+                  <span class="detail-key">Preferred Schedule</span>
+                  <span class="detail-val">
+                    <?= !empty($activeRequest['preferred_date']) ? date('M d, Y', strtotime($activeRequest['preferred_date'])) : 'Flexible Date' ?>
+                    <?= !empty($activeRequest['preferred_time']) ? ' at ' . htmlspecialchars($activeRequest['preferred_time']) : '' ?>
+                  </span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-key">Confirmed Time Slot</span>
-                  <span class="detail-val"><?= htmlspecialchars($activeRequest['preferred_time'] ?? '10:00 AM') ?></span>
+                  <span class="detail-key">Preferred Session Type</span>
+                  <span class="detail-val"><?= htmlspecialchars($activeRequest['session_type'] ?? 'In-Person') ?></span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-key">Location / Venue</span>
-                  <span class="detail-val">ISCAG Mosque, 2nd Floor — Brothers' Guidance Room (Room 204)</span>
+                  <span class="detail-key">Reference Number</span>
+                  <span class="detail-val" style="font-family:monospace; font-weight:800; color:var(--primary-male);"><?= htmlspecialchars($activeRef) ?></span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-key">Assigned Counselor</span>
-                  <span class="detail-val">Ustaz Male Da'wah Counselor</span>
+                  <span class="detail-key">Submission Date</span>
+                  <span class="detail-val"><?= !empty($activeRequest['created_at']) ? date('F j, Y — g:i A', strtotime($activeRequest['created_at'])) : '—' ?></span>
                 </div>
-                <div class="detail-row">
-                  <span class="detail-key">Client Reference</span>
-                  <span class="detail-val"><?= htmlspecialchars($_SESSION['name'] ?? 'Brother') ?> (ID: #<?= $activeRequest['tenant_id'] ?>)</span>
-                </div>
+              </div>
+              <div style="margin-top:12px; padding:10px 14px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; font-size:0.78rem; color:#166534; display:flex; align-items:center; gap:8px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                <span>Client records are confidential and protected under Da'wah Department Islamic privacy standards.</span>
               </div>
             </div>
 
-            <!-- Counseling Journey Tracker -->
+            <!-- 🌟 E. 6-STEP DYNAMIC LIFECYCLE JOURNEY TRACKER -->
             <div class="hub-card">
               <h5 class="hub-card-title">
                 <span>
                   <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                  Service Lifecycle Tracker
+                  Counseling Journey Lifecycle
                 </span>
-                <span style="font-size:0.75rem; color:#10b981; font-weight:800;">Step 4 of 5</span>
+                <span style="font-size:0.75rem; color:#10b981; font-weight:800;">
+                  Step <?= $step6 ? '6 of 6' : ($step5 ? '5 of 6' : ($step4 ? '4 of 6' : ($step3 ? '3 of 6' : ($step2 ? '2 of 6' : '1 of 6')))) ?>
+                </span>
               </h5>
 
-              <div class="journey-tracker">
-                <div class="journey-line-bg"></div>
-                <div class="journey-line-fill"></div>
+              <div class="journey-tracker-6">
+                <div class="journey-6-line-bg"></div>
+                <div class="journey-6-line-fill" style="width: <?= $step6 ? '100%' : ($step5 ? '80%' : ($step4 ? '60%' : ($step3 ? '40%' : ($step2 ? '20%' : '5%')))) ?>;"></div>
 
-                <div class="journey-step done">
-                  <div class="journey-dot">
-                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <!-- 1: Request Submitted -->
+                <div class="journey-6-step <?= $step1 ? 'done' : '' ?>">
+                  <div class="journey-6-dot">
+                    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                   </div>
-                  <span class="journey-lbl">Request<br>Filed</span>
+                  <span class="journey-6-lbl">Request<br>Submitted</span>
                 </div>
 
-                <div class="journey-step done">
-                  <div class="journey-dot">
-                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <!-- 2: Under Review -->
+                <div class="journey-6-step <?= $step2 ? 'done' : ($step2Active ? 'active' : '') ?>">
+                  <div class="journey-6-dot">
+                    <?= $step2 ? '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : '2' ?>
                   </div>
-                  <span class="journey-lbl">Counselor<br>Review</span>
+                  <span class="journey-6-lbl">Under<br>Review</span>
                 </div>
 
-                <div class="journey-step done">
-                  <div class="journey-dot">
-                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <!-- 3: Approved -->
+                <div class="journey-6-step <?= $step3 ? 'done' : ($step3Active ? 'active' : '') ?>">
+                  <div class="journey-6-dot">
+                    <?= $step3 ? '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : '3' ?>
                   </div>
-                  <span class="journey-lbl">Schedule<br>Approved</span>
+                  <span class="journey-6-lbl">Approved</span>
                 </div>
 
-                <div class="journey-step active">
-                  <div class="journey-dot">
-                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                <!-- 4: Counselor Assigned -->
+                <div class="journey-6-step <?= $step4 ? 'done' : '' ?>">
+                  <div class="journey-6-dot">
+                    <?= $step4 ? '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : '4' ?>
                   </div>
-                  <span class="journey-lbl">Session<br>Ready</span>
+                  <span class="journey-6-lbl">Counselor<br>Assigned</span>
                 </div>
 
-                <div class="journey-step">
-                  <div class="journey-dot">5</div>
-                  <span class="journey-lbl">Completed<br>& Follow-up</span>
+                <!-- 5: Appointment Confirmed -->
+                <div class="journey-6-step <?= $step5 ? 'done' : ($step5Active ? 'active' : '') ?>">
+                  <div class="journey-6-dot">
+                    <?= $step5 ? '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : '5' ?>
+                  </div>
+                  <span class="journey-6-lbl">Appointment<br>Confirmed</span>
+                </div>
+
+                <!-- 6: Completed -->
+                <div class="journey-6-step <?= $step6 ? 'done' : '' ?>">
+                  <div class="journey-6-dot">
+                    <?= $step6 ? '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' : '6' ?>
+                  </div>
+                  <span class="journey-6-lbl">Completed</span>
                 </div>
               </div>
             </div>
@@ -715,6 +946,48 @@
 
           <!-- Right Column -->
           <div>
+            <!-- 🌟 C. ASSIGNED COUNSELOR INFORMATION SECTION -->
+            <div class="hub-card counselor-card" style="margin-bottom:24px;">
+              <div class="counselor-header">
+                <div class="counselor-avatar" style="width: 56px; height: 56px; border-radius: 14px; background: #fef3c7; color: #b45309; font-size: 1.3rem;">
+                  <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div class="counselor-info">
+                  <h5 style="margin:0 0 2px; font-size:1rem; font-weight:700; color:#1f2937;"><?= htmlspecialchars($assignedCounselorName) ?></h5>
+                  <p style="margin:0 0 4px; font-size:0.78rem; color:#b45309; font-weight:700;"><?= htmlspecialchars($counselorRole) ?></p>
+                  <span style="font-size:0.72rem; color:#6b7280;">Resident Islamic Guidance Scholar</span>
+                </div>
+              </div>
+
+              <div class="counselor-contacts">
+                <div class="contact-item">
+                  <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                  <span>Direct Line: <strong><?= htmlspecialchars($counselorPhone) ?></strong></span>
+                </div>
+                <div class="contact-item">
+                  <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                  <span>Official Email: <strong><?= htmlspecialchars($counselorContact) ?></strong></span>
+                </div>
+                <div class="contact-item">
+                  <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  <span>Office: <strong><?= htmlspecialchars($counselorOffice) ?></strong></span>
+                </div>
+              </div>
+
+              <div style="background:#fff; border-radius:10px; padding:12px; border:1px solid #fed7aa; margin-bottom:14px;">
+                <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:4px;">Scheduled Session With Counselor</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#1f2937;">
+                  <?= !empty($confirmedDate) ? date('l, F j, Y', strtotime($confirmedDate)) : 'Confirmed' ?> • <?= htmlspecialchars($confirmedTime) ?>
+                </div>
+              </div>
+
+              <!-- Quick Inquiry Message Box -->
+              <div>
+                <input type="text" class="inquiry-box-input" id="inquiry-text" placeholder="Have a quick question for Ustaz before your session?" />
+                <button type="button" class="btn-send-inquiry" onclick="sendInquiryNote()">Send Note to Counselor</button>
+              </div>
+            </div>
+
             <!-- Pre-Session Guidance & Islamic Etiquette -->
             <div class="hub-card" style="margin-bottom:24px;">
               <h5 class="hub-card-title">
@@ -728,7 +1001,7 @@
                 <div class="check-item">
                   <div class="check-num">1</div>
                   <div class="check-content">
-                    <strong>State of Taharah (Purity & Wudu)</strong>
+                    <strong>State of Taharah (Purity &amp; Wudu)</strong>
                     <p>Perform ablution before coming to prepare your heart and mind with calmness.</p>
                   </div>
                 </div>
@@ -752,7 +1025,7 @@
                 <div class="check-item">
                   <div class="check-num">4</div>
                   <div class="check-content">
-                    <strong>Specific Questions & Notes</strong>
+                    <strong>Specific Questions &amp; Notes</strong>
                     <p>Feel free to prepare written questions to make the best use of your 1-hour session.</p>
                   </div>
                 </div>
@@ -760,103 +1033,158 @@
 
               <div style="margin-top:16px; text-align:center;">
                 <a href="<?= url('/user/services/counseling/resources') ?>" style="font-size:0.82rem; font-weight:800; color:var(--primary-male); text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-                  Explore Brothers' Guidance Articles & Topics →
+                  Explore Brothers' Guidance Articles &amp; Topics →
                 </a>
-              </div>
-            </div>
-
-            <!-- Counselor Inquiries / Mosque Contact Card -->
-            <div class="hub-card counselor-card">
-              <div class="counselor-header">
-                <div class="counselor-avatar">
-                  <svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                </div>
-                <div class="counselor-info">
-                  <h5>Da'wah Department Helpdesk</h5>
-                  <p>Male Guidance & Consultation Desk</p>
-                </div>
-              </div>
-
-              <div class="counselor-contacts">
-                <div class="contact-item">
-                  <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-                  <span>Office: <strong>(02) 888-ISCAG</strong></span>
-                </div>
-                <div class="contact-item">
-                  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                  <span>WhatsApp / Mobile: <strong>0917-DAWAH-01</strong></span>
-                </div>
-                <div class="contact-item">
-                  <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/></svg>
-                  <span>Mon – Sat: 8:00 AM – 5:00 PM</span>
-                </div>
-              </div>
-
-              <!-- Quick Inquiry Message Box -->
-              <div>
-                <input type="text" class="inquiry-box-input" id="inquiry-text" placeholder="Have a quick question before your session?" />
-                <button type="button" class="btn-send-inquiry" onclick="sendInquiryNote()">Send Note to Counselor</button>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Toggle Button to File Another Request -->
+        <div style="padding: 16px 36px 24px; background: #fafafa; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; align-items: center; gap: 12px;">
+          <span style="font-size:0.85rem; color:#6b7280;">Need to submit another counseling request?</span>
+          <button type="button" class="btn-action-tool btn-tool-cal" onclick="toggleBookingForm()">
+            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            <span>Book Another Session</span>
+          </button>
+        </div>
       </div>
 
       <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- ⏳ CASE 2: PENDING REVIEW HERO                             -->
+      <!-- ⏳ CASE 2: PENDING REVIEW HERO (REQUIREMENT 1)             -->
       <!-- ══════════════════════════════════════════════════════════ -->
-      <?php elseif ($hasPending && $activeRequest): ?>
-      <div class="status-hero" style="background: white; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06); overflow: hidden; margin-bottom: 24px;">
-        <div class="status-hero-top" style="background: linear-gradient(135deg, #14532D, #166534); padding: 28px 32px 24px; position: relative; overflow: hidden;">
+      <?php elseif ($isPending && $activeRequest): ?>
+      <div class="status-hero" style="background: white; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06); overflow: hidden; margin-bottom: 24px;">
+        <div class="status-hero-top" style="background: linear-gradient(135deg, #14532D, #166534); padding: 32px 32px 28px; position: relative; overflow: hidden; color: #fff;">
             <div style="position: absolute; right: -20px; bottom: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 255, 255, 0.1);"></div>
             <div style="position: absolute; right: 100px; bottom: -30px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 255, 255, 0.05);"></div>
             
-            <div class="status-hero-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; position: relative; z-index: 1;">
+            <div class="status-hero-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; position: relative; z-index: 1; flex-wrap: wrap;">
                 <div class="status-hero-header-left" style="display: flex; align-items: center; gap: 16px;">
                     <div class="status-hero-avatar" style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.25); flex-shrink: 0;">
                         <svg viewBox="0 0 24 24" style="width: 28px; height: 28px; fill: white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                     </div>
                     <div>
-                        <h5 class="status-hero-name" style="font-family: 'Lora', serif; font-size: 1.2rem; font-weight: 700; color: white; margin: 0 0 2px;">Counseling Request Under Review</h5>
-                        <p class="status-hero-subtitle" style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.7); margin: 0;">Ref No: <strong>#MC-<?= str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT) ?></strong> • Preferred Date: <?= !empty($activeRequest['preferred_date']) ? date('M d, Y', strtotime($activeRequest['preferred_date'])) : 'Pending' ?></p>
+                        <h4 style="font-family: 'Lora', serif; font-size: 1.35rem; font-weight: 700; color: white; margin: 0 0 4px;">Your Counseling Request Has Been Submitted</h4>
+                        <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin: 0;">Ref No: <strong><?= htmlspecialchars($activeRef) ?></strong> • Date Submitted: <?= !empty($activeRequest['created_at']) ? date('M d, Y', strtotime($activeRequest['created_at'])) : date('M d, Y') ?></p>
                     </div>
                 </div>
-                <div class="status-badge pending" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 22px; border-radius: 24px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; backdrop-filter: blur(8px); background: rgba(245, 158, 11, 0.25); color: #fef08a; border: 1px solid rgba(253, 224, 71, 0.4);">
+                <div class="status-badge pending" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 22px; border-radius: 24px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; backdrop-filter: blur(8px); background: rgba(245, 158, 11, 0.25); color: #fef08a; border: 1px solid rgba(253, 224, 71, 0.4);">
                     <div class="status-badge-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #fef08a;"></div>
-                    Awaiting Approval
+                    Awaiting Review
                 </div>
             </div>
         </div>
 
-        <div class="status-summary" style="padding: 18px 32px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; background: #f9fafb; border-top: 1px solid var(--border);">
+        <!-- Official Status Message (Requirement 1) -->
+        <div style="padding: 24px 32px 16px; background: #fff; border-bottom: 1px solid var(--border);">
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px 22px; text-align: center; margin-bottom: 20px;">
+            <p style="font-family: 'Lora', serif; font-size: 1.05rem; font-style: italic; color: #166534; line-height: 1.6; margin: 0 0 8px;">
+              "Thank you for reaching out to the Counseling and Guidance service. Your request is now pending review by our administrator. You will be notified once your request has been reviewed."
+            </p>
+            <span style="font-size: 0.78rem; font-weight: 700; color: #15803d; text-transform: uppercase; letter-spacing: 0.05em;">
+              ISCAG Guidance &amp; Counseling Desk
+            </span>
+          </div>
+
+          <!-- 3-Step Simple Status Timeline (Requirement 1) -->
+          <div class="timeline-3-wrap">
+            <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); text-align: center; margin-bottom: 16px;">
+              Request Status Timeline
+            </div>
+            <div class="timeline-3-row">
+              <div class="timeline-3-step done">
+                <div class="timeline-3-circle">✓</div>
+                <div class="timeline-3-title">Request Submitted</div>
+                <div class="timeline-3-desc"><?= !empty($activeRequest['created_at']) ? date('M d, Y', strtotime($activeRequest['created_at'])) : 'Completed' ?></div>
+              </div>
+              <div class="timeline-3-step <?= ($curStatus === 'under_review') ? 'active' : '' ?>">
+                <div class="timeline-3-circle"><?= ($curStatus === 'under_review') ? '2' : '2' ?></div>
+                <div class="timeline-3-title">Under Review</div>
+                <div class="timeline-3-desc">Administrator Review</div>
+              </div>
+              <div class="timeline-3-step <?= ($curStatus === 'approved_awaiting_schedule') ? 'active' : '' ?>">
+                <div class="timeline-3-circle">3</div>
+                <div class="timeline-3-title">Awaiting Confirmation</div>
+                <div class="timeline-3-desc">Final Schedule &amp; Counselor</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Request Summary Key Details -->
+        <div class="status-summary" style="padding: 18px 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; background: #f9fafb; border-bottom: 1px solid var(--border);">
             <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Request Concern</div>
+                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Reference No.</div>
+                <div class="summary-stat-value" style="font-family: monospace; font-size: 1rem; font-weight: 800; color: #14532D;"><?= htmlspecialchars($activeRef) ?></div>
+            </div>
+            <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
+                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Primary Concern</div>
                 <div class="summary-stat-value" style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D;"><?= htmlspecialchars(ucfirst($activeRequest['reason'])) ?></div>
             </div>
             <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Requested Slot</div>
-                <div class="summary-stat-value" style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D;"><?= htmlspecialchars($activeRequest['preferred_time'] ?? 'Pending') ?></div>
+                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Preferred Session</div>
+                <div class="summary-stat-value" style="font-size: 0.92rem; font-weight: 700; color: #14532D;"><?= htmlspecialchars($sessionMode) ?></div>
             </div>
             <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Status</div>
-                <div class="summary-stat-value" style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #f59e0b;">Under Review</div>
+                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Preferred Schedule</div>
+                <div class="summary-stat-value" style="font-size: 0.88rem; font-weight: 700; color: #14532D;">
+                  <?= !empty($activeRequest['preferred_date']) ? date('M d', strtotime($activeRequest['preferred_date'])) : 'Pending' ?>
+                  <?= !empty($activeRequest['preferred_time']) ? ' (' . htmlspecialchars($activeRequest['preferred_time']) . ')' : '' ?>
+                </div>
             </div>
         </div>
 
-        <div style="padding: 24px 32px; text-align: center; background: #fff;">
-          <p style="font-size: 0.92rem; color: #4b5563; line-height: 1.6; max-width: 600px; margin: 0 auto 16px;">
-            Our male counseling staff are evaluating your preferred schedule. Once approved by the administrator, your official appointment confirmation and admission slip will appear right here.
-          </p>
-          <a href="<?= url('/user/services/counseling/resources') ?>" class="btn-action-tool btn-tool-guidance">
-            Browse Pre-Counseling Guidance Portal
-          </a>
+        <!-- Strict Rule Notice & Action Buttons (Requirement 1) -->
+        <div style="padding: 24px 32px; background: #fff; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <div style="font-size: 0.85rem; color: #4b5563; max-width: 540px; line-height: 1.5;">
+            <strong>Appointment Notice:</strong> An assigned counselor and confirmed appointment schedule will be displayed only after the administrator reviews and finalizes your session details.
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="<?= url('/user/dashboard') ?>" class="btn-action-tool btn-tool-cal">
+              ← Return to Dashboard
+            </a>
+            <a href="<?= url('/user/services/counseling/status?id=' . $activeRequest['id']) ?>" class="btn-action-tool btn-tool-guidance">
+              View Request Status Page →
+            </a>
+            <button type="button" class="btn-action-tool btn-tool-cal" onclick="toggleBookingForm()">
+              Submit Another Request
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- 📝 CASE 3: NO ACTIVE REQUEST -> BOOKING FORM               -->
+      <!-- ❌ CASE 3: REJECTED REQUEST NOTICE                         -->
       <!-- ══════════════════════════════════════════════════════════ -->
-      <?php else: ?>
+      <?php elseif ($isRejected && $activeRequest): ?>
+      <div class="section-card" style="margin-bottom:24px; border-left: 4px solid #ef4444;">
+        <div style="padding: 24px 28px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px;">
+            <div>
+              <span class="badge-status badge-rejected" style="margin-bottom: 8px;">Request Disapproved</span>
+              <h4 style="font-family: 'Lora', serif; margin: 0; color: #991b1b;">Counseling Request <?= htmlspecialchars($activeRef) ?> Could Not Be Scheduled</h4>
+            </div>
+            <button type="button" class="btn-action-tool btn-tool-print" onclick="toggleBookingForm()">
+              Submit a New Request
+            </button>
+          </div>
+          <div style="background: #fee2e2; border: 1px solid #fecaca; border-radius: 10px; padding: 14px 18px; margin-bottom: 14px; font-size: 0.9rem; color: #991b1b;">
+            <strong>Reason Provided by Administrator:</strong><br>
+            <?= nl2br(htmlspecialchars($activeRequest['rejection_reason'] ?: 'The requested schedule could not be accommodated. Please submit an alternative schedule.')) ?>
+          </div>
+          <p style="margin: 0; font-size: 0.85rem; color: #6b7280;">
+            You may review our available counseling schedule and submit another counseling request using the form below.
+          </p>
+        </div>
+      </div>
+      <?php endif; ?>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- 📝 BOOKING FORM WRAPPER (PRESERVES EXISTING FORM INTACT)   -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div id="counseling-booking-form-wrap" style="<?= ($isConfirmed || $isPending) ? 'display:none;' : '' ?>;">
+
       <!-- FORM HEADER BANNER -->
       <div class="section-card" style="margin-bottom:20px;">
         <div class="form-page-header">
@@ -1044,7 +1372,7 @@
           </div>
         </div>
       </div>
-      <?php endif; ?>
+      </div> <!-- end counseling-booking-form-wrap -->
 
       <!-- ══════════════════════════════════════════════════════════ -->
       <!-- 📜 MY APPLICATION HISTORY TABLE                            -->
@@ -1053,7 +1381,7 @@
         <div class="section-card-header">
           <h6>
             <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);margin-right:8px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-            My Counseling History & Records
+            My Counseling History &amp; Records
           </h6>
         </div>
         <div class="section-card-body" style="padding:0;">
@@ -1063,7 +1391,7 @@
                 <tr>
                   <th>Ref #</th>
                   <th>Reason for Request</th>
-                  <th>Preferred Schedule</th>
+                  <th>Appointment / Preferred Schedule</th>
                   <th>Date Filed</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -1074,31 +1402,43 @@
                   <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No applications found.</td></tr>
                 <?php else: ?>
                   <?php foreach ($history as $h): ?>
+                    <?php 
+                      $hSt = strtolower($h['status'] ?? '');
+                      $hRef = '#MC-' . str_pad((string)$h['id'], 4, '0', STR_PAD_LEFT);
+                      $hDate = !empty($h['appointment_date']) ? $h['appointment_date'] : (!empty($h['preferred_date']) ? $h['preferred_date'] : null);
+                      $hTime = !empty($h['start_time']) ? date('g:i A', strtotime($h['start_time'])) . (!empty($h['end_time']) ? ' – ' . date('g:i A', strtotime($h['end_time'])) : '') : (!empty($h['preferred_time']) ? $h['preferred_time'] : '');
+                    ?>
                     <tr>
-                      <td class="td-id">#MC-<?= str_pad($h['id'], 4, '0', STR_PAD_LEFT) ?></td>
+                      <td class="td-id"><strong><?= $hRef ?></strong></td>
                       <td style="font-weight:600;"><?= htmlspecialchars(ucfirst($h['reason'])) ?></td>
                       <td>
-                        <?= !empty($h['preferred_date']) ? date('M d, Y', strtotime($h['preferred_date'])) : 'TBD' ?>
-                        <?= !empty($h['preferred_time']) ? ' • ' . htmlspecialchars($h['preferred_time']) : '' ?>
+                        <?= !empty($hDate) ? date('M d, Y', strtotime($hDate)) : 'Flexible Schedule' ?>
+                        <?= !empty($hTime) ? ' • ' . htmlspecialchars($hTime) : '' ?>
                       </td>
                       <td><?= date('M d, Y', strtotime($h['created_at'])) ?></td>
                       <td>
-                        <?php if ($h['status'] === 'approved'): ?>
-                          <span class="badge-status badge-approved" style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;">Approved</span>
-                        <?php elseif ($h['status'] === 'pending'): ?>
-                          <span class="badge-status badge-pending" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;">Under Review</span>
+                        <?php if (in_array($hSt, ['confirmed', 'approved'])): ?>
+                          <span class="badge-status badge-approved" style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;">Confirmed</span>
+                        <?php elseif (in_array($hSt, ['pending', 'under_review', 'approved_awaiting_schedule'])): ?>
+                          <span class="badge-status badge-pending" style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;">
+                            <?= ($hSt === 'approved_awaiting_schedule') ? 'Awaiting Schedule' : ucfirst(str_replace('_', ' ', $hSt)) ?>
+                          </span>
+                        <?php elseif ($hSt === 'completed'): ?>
+                          <span class="badge-status" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;">Completed</span>
                         <?php else: ?>
-                          <span class="badge-status badge-rejected">Rejected</span>
+                          <span class="badge-status badge-rejected" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;"><?= ucfirst($hSt) ?></span>
                         <?php endif; ?>
                       </td>
                       <td>
-                        <?php if ($h['status'] === 'approved'): ?>
+                        <?php if (in_array($hSt, ['confirmed', 'approved', 'completed'])): ?>
                           <button type="button" class="btn-view-doc" onclick='openAppointmentPassModal(<?= json_encode($h) ?>)' title="View Official Pass">
                             <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
                             View Pass
                           </button>
                         <?php else: ?>
-                          <span style="font-size:0.75rem; color:var(--text-muted);">—</span>
+                          <a href="<?= url('/user/services/counseling/status?id=' . $h['id']) ?>" class="btn-view-doc" style="text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                            Track Status →
+                          </a>
                         <?php endif; ?>
                       </td>
                     </tr>
@@ -1141,7 +1481,7 @@
         </div>
         <div class="slip-item">
           <div class="slip-item-label">Consultation Mode</div>
-          <div class="slip-item-val">In-Person Consultation</div>
+          <div class="slip-item-val" id="pass-session-mode">In-Person Consultation</div>
         </div>
         <div class="slip-item">
           <div class="slip-item-label">Applicant Name</div>
@@ -1149,7 +1489,7 @@
         </div>
         <div class="slip-item">
           <div class="slip-item-label">Assigned Counselor</div>
-          <div class="slip-item-val">Ustaz Male Da'wah Counselor</div>
+          <div class="slip-item-val" id="pass-counselor-name">Ustaz Norman Ungasin</div>
         </div>
         <div class="slip-item">
           <div class="slip-item-label">Confirmed Date</div>
@@ -1161,7 +1501,7 @@
         </div>
         <div class="slip-item full">
           <div class="slip-item-label">Venue & Room Instructions</div>
-          <div class="slip-item-val">ISCAG Mosque & Da'wah Center, 2nd Floor — Brothers' Guidance Room (Room 204)</div>
+          <div class="slip-item-val" id="pass-venue">ISCAG Mosque & Da'wah Center, 2nd Floor — Brothers' Guidance Room (Room 204)</div>
         </div>
         <div class="slip-item full">
           <div class="slip-item-label">Consultation Concern / Topic</div>
@@ -1222,19 +1562,48 @@
     document.getElementById('pass-barcode-text').innerText = 'ISCAG-MC-' + refPad;
     document.getElementById('pass-reason').innerText = data.reason || 'General Spiritual Guidance';
     
-    if(data.preferred_date) {
-      const d = new Date(data.preferred_date);
+    const counselorName = data.counselor_full_name || data.counselor_name || 'Ustaz Norman Ungasin';
+    const cEl = document.getElementById('pass-counselor-name');
+    if(cEl) cEl.innerText = counselorName;
+
+    const sessionMode = data.final_session_type || data.session_type || 'In-Person';
+    const modeEl = document.getElementById('pass-session-mode');
+    if(modeEl) modeEl.innerText = sessionMode + ' Consultation';
+
+    const venue = sessionMode === 'Online' 
+      ? 'Online Session: ' + (data.meeting_link || 'Link provided in portal') 
+      : (data.appointment_location || 'ISCAG Center, 2nd Floor — Brothers\' Guidance Room (Room 204)');
+    const venueEl = document.getElementById('pass-venue');
+    if(venueEl) venueEl.innerText = venue;
+    
+    const aptDate = data.appointment_date || data.preferred_date;
+    if(aptDate) {
+      const d = new Date(aptDate);
       document.getElementById('pass-date').innerText = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     } else {
       document.getElementById('pass-date').innerText = 'Confirmed';
     }
     
-    document.getElementById('pass-time').innerText = data.preferred_time || '10:00 AM';
+    const timeSlot = data.start_time 
+      ? (data.start_time + (data.end_time ? ' – ' + data.end_time : '')) 
+      : (data.preferred_time || '10:00 AM');
+    document.getElementById('pass-time').innerText = timeSlot;
     modal.classList.add('active');
   }
 
   function closeAppointmentPassModal() {
     document.getElementById('appointment-pass-modal').classList.remove('active');
+  }
+
+  function toggleBookingForm() {
+    const wrap = document.getElementById('counseling-booking-form-wrap');
+    if (!wrap) return;
+    if (wrap.style.display === 'none' || wrap.style.display === '') {
+      wrap.style.display = 'block';
+      wrap.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      wrap.style.display = 'none';
+    }
   }
 
   function sendInquiryNote() {
@@ -1382,9 +1751,11 @@
         submitBtn.innerText = 'Submitting Request...';
       }
 
+      const sessionType = document.querySelector('input[name="session_type"]:checked')?.value || 'In-Person';
       const payload = {
         gender: 'male',
         reason: reason,
+        session_type: sessionType,
         preferred_date: prefDate,
         preferred_time: prefTime,
         description: desc
@@ -1398,8 +1769,12 @@
 
       const res = await response.json();
       if (res.success) {
-        alert('As-salamu alaykum. Your counseling request has been successfully submitted! Our counselors will review your schedule.');
-        location.reload();
+        if (res.redirect) {
+          window.location.href = res.redirect;
+        } else {
+          window.location.href = '<?= url('/user/services/counseling/status') ?>?id=' + (res.id || '');
+        }
+        return;
       } else {
         alert(res.message || 'Failed to submit request. Please verify your information.');
         if(submitBtn) {

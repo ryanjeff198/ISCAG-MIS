@@ -1465,6 +1465,8 @@ class AdminController extends Controller
         
         $counselingModel = new CounselingRequest();
         $records = $counselingModel->getByGender($dawah_type);
+        $counselors = $counselingModel->getActiveCounselors($dawah_type);
+        $analytics = $counselingModel->getAnalytics($dawah_type);
 
         $viewPath = ($dawah_type === 'female') 
             ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/counseling'
@@ -1474,7 +1476,9 @@ class AdminController extends Controller
             'active_page' => 'counseling',
             'dawah_type' => $dawah_type,
             'dbUser' => $dbUser,
-            'records' => $records
+            'records' => $records,
+            'counselors' => $counselors,
+            'analytics' => $analytics
         ]);
     }
 
@@ -1833,74 +1837,244 @@ class AdminController extends Controller
         }
     }
 
-    public function approveCounseling(): void {
+    public function acceptAndScheduleCounseling(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
-            $id = (int)($input['id'] ?? 0);
-            
-            require_once BASE_PATH . '/app/models/CounselingRequest.php';
-            require_once BASE_PATH . '/app/models/Notification.php';
-            $model = new CounselingRequest();
-            $success = $model->updateStatus($id, 'approved');
+        header('Content-Type: application/json');
 
-            if ($success && $id) {
-                $db = getDbConnection();
-                $stmt = $db->prepare("SELECT tenant_id, preferred_date, preferred_time, reason FROM counseling_requests WHERE id = ?");
-                $stmt->execute([$id]);
-                $req = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($req && !empty($req['tenant_id'])) {
-                    $notif = new Notification();
-                    $dateStr = !empty($req['preferred_date']) ? date('M d, Y', strtotime($req['preferred_date'])) : 'Confirmed Date';
-                    $timeStr = !empty($req['preferred_time']) ? ' at ' . $req['preferred_time'] : '';
-                    $notif->create(
-                        (int)$req['tenant_id'],
-                        'Counseling Schedule Confirmed',
-                        "As-salamu alaykum. Your counseling appointment for {$req['reason']} has been approved for {$dateStr}{$timeStr}. Please check your schedule dashboard for details.",
-                        'success'
-                    );
-                    $this->logAudit('DAWAH', 'APPROVE_COUNSELING', "Approved counseling request ID: $id for Tenant ID: {$req['tenant_id']}");
-                }
-            }
-
-            header('Content-Type: application/json');
-            echo json_encode(['success' => $success]);
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
             exit;
         }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $counselorId = (int)($input['counselor_id'] ?? 0);
+        $aptDate = trim($input['appointment_date'] ?? '');
+        $startTime = trim($input['start_time'] ?? '');
+        $endTime = trim($input['end_time'] ?? '');
+        $sessionType = trim($input['final_session_type'] ?? 'In-Person');
+        $location = trim($input['appointment_location'] ?? 'ISCAG Center, 2nd Floor Da\'wah Counseling Office');
+        $meetingLink = trim($input['meeting_link'] ?? '');
+        $meetingInstructions = trim($input['meeting_instructions'] ?? '');
+        $notes = trim($input['counselor_notes'] ?? '');
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+            exit;
+        }
+
+        if (!$counselorId) {
+            echo json_encode(['success' => false, 'message' => 'Please select an authorized counselor to assign to this session.']);
+            exit;
+        }
+
+        if (empty($aptDate) || empty($startTime)) {
+            echo json_encode(['success' => false, 'message' => 'Please set the finalized appointment date and start time.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $model = new CounselingRequest();
+
+        // Prevent scheduling conflicts: check if counselor already has an appointment at this time
+        $conflict = $model->checkConflict($counselorId, $aptDate, $startTime, $endTime, $id);
+        if ($conflict) {
+            $cName = $conflict['counselor_name'] ?? 'The selected counselor';
+            $cDate = date('M d, Y', strtotime($conflict['appointment_date']));
+            $cStart = $conflict['start_time'];
+            $cEnd = $conflict['end_time'] ? " - {$conflict['end_time']}" : '';
+            echo json_encode([
+                'success' => false,
+                'conflict' => true,
+                'message' => "Scheduling Conflict: {$cName} already has a confirmed session ({$conflict['reason']}) on {$cDate} at {$cStart}{$cEnd}. Please select an alternate time or counselor."
+            ]);
+            exit;
+        }
+
+        $success = $model->acceptAndSchedule($id, [
+            'counselor_id' => $counselorId,
+            'appointment_date' => $aptDate,
+            'start_time' => $startTime,
+            'end_time' => $endTime ?: date('h:i A', strtotime("$aptDate $startTime +1 hour")),
+            'final_session_type' => $sessionType,
+            'appointment_location' => $location,
+            'meeting_link' => $meetingLink,
+            'meeting_instructions' => $meetingInstructions,
+            'counselor_notes' => $notes
+        ]);
+
+        if ($success) {
+            $req = $model->getById($id);
+            if ($req && !empty($req['tenant_id'])) {
+                $refNo = '#MC-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+                $dateFormatted = date('M d, Y', strtotime($aptDate));
+                $cName = $req['counselor_full_name'] ?? 'Your Assigned Counselor';
+                
+                $notif = new Notification();
+                $notif->create(
+                    (int)$req['tenant_id'],
+                    'Counseling Appointment Confirmed',
+                    "As-salamu alaykum. Your counseling appointment ($refNo) has been confirmed for {$dateFormatted} at {$startTime}. {$cName} has been assigned. Please visit your Counseling Portal to view details.",
+                    'success'
+                );
+                $this->logAudit('DAWAH', 'ACCEPT_SCHEDULE_COUNSELING', "Confirmed counseling appointment ID: $id on $aptDate at $startTime with Counselor ID: $counselorId");
+            }
+        }
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? 'Appointment confirmed and counselor assigned successfully.' : 'Failed to finalize schedule.'
+        ]);
+        exit;
+    }
+
+    public function checkCounselorConflict(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $counselorId = (int)($input['counselor_id'] ?? 0);
+        $date = trim($input['appointment_date'] ?? '');
+        $startTime = trim($input['start_time'] ?? '');
+        $endTime = trim($input['end_time'] ?? '');
+        $excludeId = (int)($input['exclude_id'] ?? 0);
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $model = new CounselingRequest();
+        $conflict = $model->checkConflict($counselorId, $date, $startTime, $endTime, $excludeId ?: null);
+
+        echo json_encode([
+            'conflict' => (bool)$conflict,
+            'details' => $conflict
+        ]);
+        exit;
+    }
+
+    public function reviewCounselingRequest(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $model = new CounselingRequest();
+        $success = $model->setUnderReview($id);
+
+        echo json_encode(['success' => $success]);
+        exit;
     }
 
     public function rejectCounseling(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
-            $id = (int)($input['id'] ?? 0);
-            
-            require_once BASE_PATH . '/app/models/CounselingRequest.php';
-            require_once BASE_PATH . '/app/models/Notification.php';
-            $model = new CounselingRequest();
-            $success = $model->updateStatus($id, 'rejected');
+        header('Content-Type: application/json');
 
-            if ($success && $id) {
-                $db = getDbConnection();
-                $stmt = $db->prepare("SELECT tenant_id, reason FROM counseling_requests WHERE id = ?");
-                $stmt->execute([$id]);
-                $req = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($req && !empty($req['tenant_id'])) {
-                    $notif = new Notification();
-                    $notif->create(
-                        (int)$req['tenant_id'],
-                        'Counseling Request Update',
-                        "Your counseling appointment request for {$req['reason']} could not be scheduled at this time. Please contact the Da'wah office or submit an alternate date.",
-                        'warning'
-                    );
-                    $this->logAudit('DAWAH', 'REJECT_COUNSELING', "Rejected counseling request ID: $id for Tenant ID: {$req['tenant_id']}");
-                }
-            }
-
-            header('Content-Type: application/json');
-            echo json_encode(['success' => $success]);
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
             exit;
         }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $reason = trim($input['reason'] ?? ($input['rejection_reason'] ?? ''));
+
+        if (empty($reason)) {
+            echo json_encode(['success' => false, 'message' => 'A rejection reason is strictly required.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $model = new CounselingRequest();
+        $success = $model->rejectRequest($id, $reason);
+
+        if ($success && $id) {
+            $req = $model->getById($id);
+            if ($req && !empty($req['tenant_id'])) {
+                $refNo = '#MC-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+                $notif = new Notification();
+                $notif->create(
+                    (int)$req['tenant_id'],
+                    'Counseling Request Update',
+                    "Your counseling consultation request ($refNo) could not be scheduled at this time. Reason: {$reason}.",
+                    'warning'
+                );
+                $this->logAudit('DAWAH', 'REJECT_COUNSELING', "Rejected counseling request ID: $id. Reason: $reason");
+            }
+        }
+
+        echo json_encode(['success' => $success]);
+        exit;
+    }
+
+    public function completeCounseling(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $notes = trim($input['notes'] ?? ($input['completed_notes'] ?? ''));
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $model = new CounselingRequest();
+        $req = $model->getById($id);
+
+        if (!$req) {
+            echo json_encode(['success' => false, 'message' => 'Request not found.']);
+            exit;
+        }
+
+        // Check if appointment date has passed or is today; if in future, check for justification
+        $aptDate = $req['appointment_date'] ?? $req['preferred_date'];
+        $today = date('Y-m-d');
+        if ($aptDate && $aptDate > $today && empty($notes)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'This appointment is scheduled for a future date (' . date('M d, Y', strtotime($aptDate)) . '). Please provide an administrative justification in the notes to mark it completed ahead of time.'
+            ]);
+            exit;
+        }
+
+        $success = $model->markCompleted($id, $notes ?: 'Session successfully concluded.');
+
+        if ($success) {
+            if (!empty($req['tenant_id'])) {
+                $refNo = '#MC-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+                $notif = new Notification();
+                $notif->create(
+                    (int)$req['tenant_id'],
+                    'Counseling Consultation Completed',
+                    "Alhamdulillah. Your counseling consultation ($refNo) has been marked as Completed. May Allah grant you ease, peace of heart, and guidance.",
+                    'success'
+                );
+                $this->logAudit('DAWAH', 'COMPLETE_COUNSELING', "Marked counseling session ID: $id as Completed");
+            }
+        }
+
+        echo json_encode(['success' => $success]);
+        exit;
+    }
+
+    public function getCounselorsList(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        $role = $_SESSION['role'] ?? '';
+        $gender = ($role === 'Staff_Female') ? 'female' : 'male';
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $model = new CounselingRequest();
+        $counselors = $model->getActiveCounselors($gender);
+
+        echo json_encode(['success' => true, 'counselors' => $counselors]);
+        exit;
+    }
+
+    public function approveCounseling(): void {
+        // Kept for backward compatibility; redirects to acceptAndScheduleCounseling logic
+        $this->acceptAndScheduleCounseling();
     }
 
     public function dawahAnalytics(): void {
