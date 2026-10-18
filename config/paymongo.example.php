@@ -12,6 +12,7 @@ return [
     'api_base'    => 'https://api.paymongo.com/v1',
     'currency'    => 'PHP',
     'payment_method_types' => [
+        'qrph',
         'gcash',
         'paymaya',
         'card',
