@@ -1007,22 +1007,79 @@ class UserController extends Controller
         header('Content-Type: application/json');
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false]); return;
+            echo json_encode(['success' => false, 'error' => 'Invalid request method.']);
+            exit;
         }
 
-        $input = json_decode(file_get_contents('php://input'), true);
-        require_once BASE_PATH . '/app/models/CharityDonation.php';
-        $model = new CharityDonation();
-        
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        require_once BASE_PATH . '/app/models/User.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $tenantName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: ($_SESSION['name'] ?? 'Tenant Donor');
+
+        // Check if multipart form or JSON
+        $amount = 0;
+        $targetProgram = 'General Welfare & Relief';
+        $paymentMethod = 'GCash';
+        $paymentRef = '';
+        $remarks = '';
+        $receiptPath = null;
+
+        if (!empty($_POST)) {
+            $amount = (float)($_POST['amount'] ?? 0);
+            $targetProgram = trim($_POST['target_program'] ?? 'General Welfare & Relief');
+            $paymentMethod = trim($_POST['payment_method'] ?? 'GCash');
+            $paymentRef = trim($_POST['payment_reference'] ?? '');
+            $remarks = trim($_POST['remarks'] ?? '');
+
+            // Handle receipt upload if provided
+            if (isset($_FILES['receipt']) && $_FILES['receipt']['error'] === UPLOAD_ERR_OK) {
+                $ext = strtolower(pathinfo($_FILES['receipt']['name'], PATHINFO_EXTENSION));
+                $allowed = ['jpg', 'jpeg', 'png', 'pdf', 'webp'];
+                if (in_array($ext, $allowed)) {
+                    $uploadDir = BASE_PATH . '/public/uploads/charity/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+                    $filename = 'receipt_' . uniqid() . '.' . $ext;
+                    if (move_uploaded_file($_FILES['receipt']['tmp_name'], $uploadDir . $filename)) {
+                        $receiptPath = 'uploads/charity/' . $filename;
+                    }
+                }
+            }
+        } else {
+            $input = json_decode(file_get_contents('php://input'), true) ?? [];
+            $amount = (float)($input['amount'] ?? 0);
+            $targetProgram = trim($input['target_program'] ?? 'General Welfare & Relief');
+            $paymentMethod = trim($input['payment_method'] ?? 'GCash');
+            $paymentRef = trim($input['payment_reference'] ?? '');
+            $remarks = trim($input['remarks'] ?? '');
+        }
+
+        if ($amount <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Please enter a valid donation amount greater than 0.']);
+            exit;
+        }
+
+        $charity = new CharityProgram();
         $data = [
-            'tenant_id' => $_SESSION['user_id'],
-            'donor_name' => $_SESSION['name'] ?? 'Self',
-            'amount' => $input['amount'] ?? 0,
-            'program_id' => $input['program_id'] ?? 1
+            'tenant_id' => (int)$_SESSION['user_id'],
+            'donor_name' => $tenantName,
+            'donor_address' => $dbUser['email'] ?? '',
+            'donation_type' => 'monetary',
+            'amount' => $amount,
+            'target_program' => $targetProgram,
+            'date_received' => date('Y-m-d'),
+            'payment_method' => $paymentMethod,
+            'payment_reference' => $paymentRef,
+            'received_by' => 'Online Portal (Self-Service)',
+            'remarks' => $remarks ?: "Online donation for {$targetProgram}",
+            'receipt_path' => $receiptPath
         ];
 
-        $success = $model->create($data);
-        echo json_encode(['success' => $success]);
+        $res = $charity->recordDonation($data, $tenantName, (int)$_SESSION['user_id']);
+        echo json_encode($res);
         exit;
     }
 

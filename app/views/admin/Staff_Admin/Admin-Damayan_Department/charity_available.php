@@ -204,8 +204,9 @@
       border-color: var(--primary);
     }
   </style>
+  <link rel="stylesheet" href="<?= asset('css/charity.css') ?>?v=<?= time() ?>" />
 </head>
-<body>
+<body class="charity-module">
   <div class="app-wrapper">
     <!-- Damayan Sidebar -->
     <?php 

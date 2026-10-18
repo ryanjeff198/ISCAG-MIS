@@ -237,8 +237,9 @@
       background: rgba(23, 107, 69, 0.04);
     }
   </style>
+  <link rel="stylesheet" href="<?= asset('css/charity.css') ?>?v=<?= time() ?>" />
 </head>
-<body>
+<body class="charity-module">
   <div class="app-wrapper">
     <!-- Damayan Sidebar -->
     <?php 
@@ -256,7 +257,7 @@
         </div>
         <div class="top-bar-actions">
           <button onclick="openRecordModal()" class="btn-topbar" style="background:var(--primary); color:white; border:none; border-radius:8px; padding:9px 18px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
-            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> + Record New Donation
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Record New Donation
           </button>
         </div>
       </div>
@@ -367,6 +368,11 @@
                         </td>
                         <td>
                           <div style="font-weight:700; color:var(--text-main);"><?= htmlspecialchars($d['donor_name']) ?></div>
+                          <?php if (!empty($d['target_program'])): ?>
+                            <div style="font-size:0.73rem; font-weight:700; color:var(--primary); margin-top:2px;">
+                              🎯 <?= htmlspecialchars($d['target_program']) ?>
+                            </div>
+                          <?php endif; ?>
                           <?php if (!empty($d['donor_address'])): ?>
                             <div style="font-size:0.75rem; color:var(--text-muted);"><?= htmlspecialchars($d['donor_address']) ?></div>
                           <?php endif; ?>

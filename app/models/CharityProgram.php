@@ -208,20 +208,24 @@ class CharityProgram
             }
         }
 
+        $tenantId = !empty($data['tenant_id']) ? (int)$data['tenant_id'] : null;
+        $targetProgram = trim($data['target_program'] ?? '');
+        $receiptPath = trim($data['receipt_path'] ?? '');
+
         $donationRef = $this->generateDonationRef();
 
         try {
             $stmt = $this->db->prepare("INSERT INTO charity_donations_records (
-                donation_ref, donor_name, donor_address, donation_type,
-                amount, item_description, quantity, allocated_amount, allocated_quantity,
-                date_received, payment_method, payment_reference, received_by, remarks,
+                tenant_id, donation_ref, donor_name, donor_address, donation_type,
+                amount, item_description, target_program, quantity, allocated_amount, allocated_quantity,
+                date_received, payment_method, payment_reference, received_by, remarks, receipt_path,
                 ack_issued, status, created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0.00, 0, ?, ?, ?, ?, ?, 0, 'Available', ?)");
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, 0, ?, ?, ?, ?, ?, ?, 0, 'Available', ?)");
 
             $stmt->execute([
-                $donationRef, $donorName, $donorAddress, $donationType,
-                $amount, $itemDesc, $quantity,
-                $dateReceived, $paymentMethod, $paymentRef, $receivedBy, $remarks,
+                $tenantId, $donationRef, $donorName, $donorAddress, $donationType,
+                $amount, $itemDesc, $targetProgram, $quantity,
+                $dateReceived, $paymentMethod, $paymentRef, $receivedBy, $remarks, $receiptPath,
                 $userId
             ]);
 
@@ -434,6 +438,32 @@ class CharityProgram
         }
 
         return $rows;
+    }
+
+    /**
+     * Get donations made by a specific tenant
+     */
+    public function getDonationsByTenant(int $tenantId): array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM charity_donations_records WHERE tenant_id = ? ORDER BY date_received DESC, id DESC");
+        $stmt->execute([$tenantId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Get summary breakdown by target program
+     */
+    public function getProgramsSummary(): array
+    {
+        $sql = "SELECT 
+                    COALESCE(NULLIF(target_program, ''), 'General Welfare & Relief') as program_name,
+                    SUM(amount) as total_amount,
+                    COUNT(*) as donation_count
+                FROM charity_donations_records
+                WHERE status != 'Cancelled'
+                GROUP BY COALESCE(NULLIF(target_program, ''), 'General Welfare & Relief')
+                ORDER BY total_amount DESC";
+        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /**

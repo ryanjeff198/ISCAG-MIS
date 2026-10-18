@@ -221,8 +221,9 @@
       background: #fafbfb;
     }
   </style>
+  <link rel="stylesheet" href="<?= asset('css/charity.css') ?>?v=<?= time() ?>" />
 </head>
-<body>
+<body class="charity-module">
   <div class="app-wrapper">
     <!-- Damayan Sidebar -->
     <?php 
@@ -256,11 +257,37 @@
           <span class="current">Charity Dashboard</span>
         </div>
 
+        <?php
+          $__received    = (float) ($stats['received']['monetary'] ?? 0);
+          $__distributed = (float) ($stats['distributed']['monetary'] ?? 0);
+          $__utilPct     = $__received > 0 ? min(100, round(($__distributed / $__received) * 100)) : 0;
+        ?>
+        <!-- Hero Banner -->
+        <section class="ch-hero">
+          <div class="ch-hero-text">
+            <span class="ch-hero-eyebrow">
+              <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              Damayan Charity Programs
+            </span>
+            <h1>Charity Dashboard</h1>
+            <p>Track every peso and item from the moment it is received, through department allocation, all the way to the hands of beneficiaries.</p>
+          </div>
+          <div class="ch-hero-stat">
+            <div class="ch-hero-stat-label">Funds Distributed</div>
+            <div class="ch-hero-stat-value"><?= $__utilPct ?>%</div>
+            <div class="ch-hero-progress"><span style="width:<?= $__utilPct ?>%;"></span></div>
+            <div class="ch-hero-stat-sub">₱<?= number_format($__distributed, 2) ?> of ₱<?= number_format($__received, 2) ?> received</div>
+          </div>
+        </section>
+
         <!-- 5 Summary Cards (Accurate DB totals) -->
         <div class="admin-insights">
           <!-- 1. Total Received -->
           <div class="insight-card total">
-            <div class="insight-label">Total Donations Received</div>
+            <div class="insight-head">
+              <div class="insight-label">Total Donations Received</div>
+              <span class="insight-icon"><svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4l3.38 4.6L17 10.83 14.92 8H20v6z"/></svg></span>
+            </div>
             <div class="insight-value">₱<?= number_format($stats['received']['monetary'], 2) ?></div>
             <div class="insight-sub">
               <span><?= number_format($stats['received']['in_kind']) ?> physical item(s)</span>
@@ -271,7 +298,10 @@
 
           <!-- 2. Total Available -->
           <div class="insight-card available">
-            <div class="insight-label">Total Available Donations</div>
+            <div class="insight-head">
+              <div class="insight-label">Total Available Donations</div>
+              <span class="insight-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
+            </div>
             <div class="insight-value" style="color:var(--success);">₱<?= number_format($stats['available']['monetary'], 2) ?></div>
             <div class="insight-sub">
               <span><?= number_format($stats['available']['in_kind']) ?> available item(s)</span>
@@ -282,7 +312,10 @@
 
           <!-- 3. Total Allocated -->
           <div class="insight-card allocated">
-            <div class="insight-label">Total Donations Allocated</div>
+            <div class="insight-head">
+              <div class="insight-label">Total Donations Allocated</div>
+              <span class="insight-icon"><svg viewBox="0 0 24 24"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z"/></svg></span>
+            </div>
             <div class="insight-value" style="color:var(--accent);">₱<?= number_format($stats['allocated']['monetary'], 2) ?></div>
             <div class="insight-sub">
               <span>Damayan: ₱<?= number_format($stats['allocated']['damayan_monetary']) ?></span>
@@ -293,7 +326,10 @@
 
           <!-- 4. Total Distributed -->
           <div class="insight-card distributed">
-            <div class="insight-label">Total Donations Distributed</div>
+            <div class="insight-head">
+              <div class="insight-label">Total Donations Distributed</div>
+              <span class="insight-icon"><svg viewBox="0 0 24 24"><path d="M16.48 10.41c-.39.39-1.04.39-1.43 0l-4.47-4.46-7.05 7.04-.66-.63c-1.17-1.17-1.17-3.07 0-4.24l4.24-4.24c1.17-1.17 3.07-1.17 4.24 0L16.48 9c.39.39.39 1.02 0 1.41zm.7-2.12c.78.78.78 2.05 0 2.83-1.27 1.27-2.61.22-2.83 0l-3.76-3.76-5.57 5.57a.996.996 0 0 0 0 1.41c.39.39 1.02.39 1.42 0l4.62-4.62.71.71-4.62 4.62a.996.996 0 0 0 0 1.41c.39.39 1.02.39 1.42 0l4.62-4.62.71.71-4.62 4.62a.996.996 0 1 0 1.41 1.41l4.62-4.62.71.71-4.62 4.62a.996.996 0 1 0 1.41 1.41l8.32-8.34c1.17-1.17 1.17-3.07 0-4.24l-4.24-4.24c-1.15-1.15-3.01-1.17-4.18-.06l4.47 4.47z"/></svg></span>
+            </div>
             <div class="insight-value" style="color:#1f6f5a;">₱<?= number_format($stats['distributed']['monetary'], 2) ?></div>
             <div class="insight-sub">
               <span><?= number_format($stats['distributed']['in_kind']) ?> distributed item(s)</span>
@@ -304,7 +340,10 @@
 
           <!-- 5. Pending Distributions -->
           <div class="insight-card pending">
-            <div class="insight-label">Pending Distributions</div>
+            <div class="insight-head">
+              <div class="insight-label">Pending Distributions</div>
+              <span class="insight-icon"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></span>
+            </div>
             <div class="insight-value" style="color:#8b2e2e;">₱<?= number_format($stats['pending']['monetary'], 2) ?></div>
             <div class="insight-sub">
               <span><?= number_format($stats['pending']['in_kind']) ?> pending item(s)</span>
@@ -323,6 +362,7 @@
             <div>
               <div class="quick-nav-title">Donation Records</div>
               <div class="quick-nav-desc">Record monetary & in-kind donations and issue acknowledgments</div>
+              <div class="quick-nav-go">Open ›</div>
             </div>
           </a>
 
@@ -333,6 +373,7 @@
             <div>
               <div class="quick-nav-title">Available Donations</div>
               <div class="quick-nav-desc">Inspect unallocated funds & remaining physical goods</div>
+              <div class="quick-nav-go">Open ›</div>
             </div>
           </a>
 
@@ -343,6 +384,7 @@
             <div>
               <div class="quick-nav-title">Donation Allocation</div>
               <div class="quick-nav-desc">Allocate available balances to Damayan & Da'wah departments</div>
+              <div class="quick-nav-go">Open ›</div>
             </div>
           </a>
 
@@ -353,12 +395,13 @@
             <div>
               <div class="quick-nav-title">Distribution Records</div>
               <div class="quick-nav-desc">Log actual handouts, beneficiaries, and supporting receipts</div>
+              <div class="quick-nav-go">Open ›</div>
             </div>
           </a>
         </div>
 
         <!-- 2 Column Layout: Recent Donations & Recent Distributions -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap:24px; margin-bottom:28px;">
+        <div class="ch-split">
           
           <!-- Recent Donations Card -->
           <div class="section-card">
@@ -507,24 +550,25 @@
           </div>
           <div class="section-card-body" style="padding:16px 24px;">
             <?php if (empty($activityLogs)): ?>
-              <div style="text-align:center; padding:24px; color:var(--text-muted);">No recorded activities yet.</div>
+              <div class="ch-empty">No recorded activities yet.</div>
             <?php else: ?>
-              <div style="display:flex; flex-direction:column; gap:12px;">
+              <div class="ch-activity">
                 <?php foreach ($activityLogs as $log): ?>
-                  <div style="display:flex; align-items:flex-start; justify-content:space-between; padding-bottom:12px; border-bottom:1px solid #f0f2f1; gap:16px;">
-                    <div>
-                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
-                        <span style="font-family:monospace; font-weight:700; font-size:0.75rem; background:#edf3f0; color:var(--primary); padding:2px 6px; border-radius:4px;">
-                          <?= htmlspecialchars($log['reference_no']) ?>
-                        </span>
-                        <strong style="font-size:0.85rem; color:var(--text-main);"><?= htmlspecialchars($log['details']) ?></strong>
+                  <div class="ch-activity-item">
+                    <span class="ch-activity-dot">
+                      <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    </span>
+                    <div class="ch-activity-main">
+                      <div class="ch-activity-title">
+                        <span class="ch-activity-ref"><?= htmlspecialchars($log['reference_no']) ?></span>
+                        <span class="ch-activity-details"><?= htmlspecialchars($log['details']) ?></span>
                       </div>
-                      <div style="font-size:0.75rem; color:var(--text-muted);">
-                        Performed by: <strong><?= htmlspecialchars($log['performed_by']) ?></strong>
+                      <div class="ch-activity-meta">
+                        Performed by <strong><?= htmlspecialchars($log['performed_by']) ?></strong>
                       </div>
                     </div>
-                    <div style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;">
-                      <?= date('M d, Y h:i A', strtotime($log['created_at'])) ?>
+                    <div class="ch-activity-time">
+                      <?= date('M d, Y · h:i A', strtotime($log['created_at'])) ?>
                     </div>
                   </div>
                 <?php endforeach; ?>

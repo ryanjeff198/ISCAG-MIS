@@ -90,6 +90,7 @@ $routes = [
     '/user/services/counseling/resources' => ['UserController', 'counselingResources'],
     '/user/services/counseling/submit' => ['UserController', 'submitCounseling'],
     '/user/services/charity' => ['UserController', 'charity'],
+    '/user/services/charity/donate' => ['UserController', 'submitDonation'],
     // '/user/apartment/apply' => ['UserController', 'apartmentApply'],
 
     // Admin Modules (New)

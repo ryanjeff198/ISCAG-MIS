@@ -2,13 +2,18 @@
 if (!defined('BASE_PATH')) define('BASE_PATH', dirname(__DIR__, 4));
 require_once BASE_PATH . '/app/helpers/Auth.php';
 Auth::protect();
-require_once BASE_PATH . '/app/models/CharityDonation.php';
+require_once BASE_PATH . '/app/models/CharityProgram.php';
 
-$donationModel = new CharityDonation();
-$myDonations = $donationModel->getByTenantId($_SESSION['user_id']);
+$charityProgramModel = new CharityProgram();
+$currentTenantId = (int)($_SESSION['user_id'] ?? 0);
+$myDonations = $charityProgramModel->getDonationsByTenant($currentTenantId);
+
 $totalDonated = array_reduce($myDonations, function($acc, $curr) {
-    return $acc + (strtolower($curr['status']) === 'verified' ? $curr['amount'] : 0);
+    return $acc + ($curr['status'] !== 'Cancelled' ? (float)$curr['amount'] : 0);
 }, 0);
+
+$liveStats = $charityProgramModel->getDashboardStats();
+$programsSummary = $charityProgramModel->getProgramsSummary();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,254 +27,685 @@ $totalDonated = array_reduce($myDonations, function($acc, $curr) {
   <style>
     :root {
       --primary-green: #0f5c3a;
+      --primary-dark: #0a462b;
       --primary-light: #176b45;
+      --primary-soft: #eaf4ef;
       --accent-gold: #c79a2b;
-      --accent-soft: #f4e8c1;
+      --accent-soft: #fcf6e8;
       --text-dark: #1f2e2a;
       --text-muted: #6f7f78;
-      --bg-soft: #f8faf9;
-      --border-light: #e8ece9;
+      --bg-soft: #f4f6f5;
+      --border-light: #e2e8e5;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 8px;
     }
 
-    body { font-family: 'Source Sans 3', sans-serif; background-color: var(--bg-soft); color: var(--text-dark); }
-
-    /* ── Typography & Section Headers ── */
-    h1, h2, h3, h4, .serif { font-family: 'Lora', serif; }
-    
-    .section-header { text-align: center; margin-bottom: 48px; }
-    .section-header h2 { font-size: 2.2rem; color: var(--primary-green); margin-bottom: 12px; }
-    .section-header p { font-size: 1.1rem; color: var(--text-muted); max-width: 600px; margin: 0 auto; line-height: 1.6; }
-
-    /* ── Premium Hero Section ── */
-    .charity-hero {
-      height: 520px; border-radius: 32px; overflow: hidden; position: relative;
-      margin-bottom: 56px; box-shadow: 0 30px 60px rgba(15, 92, 58, 0.15);
-      background: #111;
-    }
-    
-    .hero-carousel-bg { position: absolute; inset: 0; z-index: 1; }
-    .hero-carousel-bg::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(to right, rgba(15, 92, 58, 0.95) 0%, rgba(15, 92, 58, 0.4) 50%, rgba(0,0,0,0.2) 100%);
-      z-index: 2;
+    body {
+      font-family: 'Source Sans 3', sans-serif;
+      background-color: var(--bg-soft);
+      color: var(--text-dark);
+      margin: 0;
+      padding: 0;
     }
 
-    .carousel-track { display: flex; width: 300%; height: 100%; transition: transform 1.4s cubic-bezier(0.65, 0, 0.35, 1); }
-    .carousel-slide { width: 33.333%; height: 100%; flex-shrink: 0; }
-    .carousel-slide img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.1); }
-
-    .hero-content-overlay {
-      position: relative; z-index: 3; color: white; padding: 80px 60px;
-      height: 100%; display: flex; flex-direction: column; justify-content: center;
+    h1, h2, h3, h4, .serif {
+      font-family: 'Lora', serif;
     }
 
-    .hero-tag {
-      display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;
-      background: rgba(199, 154, 43, 0.2); border: 1px solid rgba(199, 154, 43, 0.4);
-      border-radius: 100px; font-size: 0.8rem; font-weight: 800; color: var(--accent-gold);
-      text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px; width: fit-content;
+    /* ── Main Content Container ── */
+    .charity-container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
     }
 
-    .hero-content-overlay h2 { font-size: 3.8rem; line-height: 1.05; font-weight: 800; margin-bottom: 20px; letter-spacing: -0.02em; }
-    .hero-content-overlay p { font-size: 1.35rem; max-width: 580px; line-height: 1.6; opacity: 0.95; font-style: italic; }
-
-    .hero-actions { display: flex; gap: 20px; margin-top: 40px; }
-    .btn-hero { 
-      padding: 16px 36px; border-radius: 14px; font-weight: 800; font-size: 1rem; 
-      cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-decoration: none;
-    }
-    .btn-hero.primary { background: var(--accent-gold); color: white; border: none; box-shadow: 0 10px 25px rgba(199, 154, 43, 0.3); }
-    .btn-hero.primary:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(199, 154, 43, 0.45); filter: brightness(1.1); }
-    .btn-hero.secondary { background: transparent; color: white; border: 2px solid rgba(255,255,255,0.4); }
-    .btn-hero.secondary:hover { background: rgba(255,255,255,0.1); border-color: white; transform: translateY(-3px); }
-
-    .carousel-dots {
-      position: absolute; bottom: 40px; left: 60px; display: flex; gap: 12px; z-index: 4;
-    }
-    .dot {
-      width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.25);
-      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; border: 1px solid transparent;
-    }
-    .dot.active { width: 32px; border-radius: 6px; background: white; border-color: var(--accent-gold); }
-
-    /* ── Schedule & Announcements ── */
-    .schedule-section { margin-bottom: 80px; }
-    .schedule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
-    
-    .schedule-list { display: flex; flex-direction: column; gap: 20px; }
-    .schedule-item {
-      display: flex; gap: 20px; background: white; border-radius: 20px; padding: 24px;
-      border: 1px solid var(--border-light); transition: all 0.3s;
-    }
-    .schedule-item:hover { border-color: var(--primary-green); transform: translateX(8px); }
-    
-    .schedule-date {
-      width: 64px; height: 64px; background: var(--bg-soft); border-radius: 14px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      flex-shrink: 0; border: 1px solid var(--border-light);
-    }
-    .schedule-date .day { font-size: 1.4rem; font-weight: 800; color: var(--primary-green); line-height: 1; }
-    .schedule-date .month { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); }
-
-    .announcement-card {
-      background: white; border-radius: 24px; padding: 40px;
-      border: 1px solid var(--border-light); position: relative; overflow: hidden;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.03);
-    }
-    .announcement-card::before {
-      content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%;
-      background: var(--accent-gold);
-    }
-    .announcement-tag {
-      display: inline-block; padding: 6px 12px; border-radius: 8px;
-      background: var(--accent-soft); color: var(--accent-gold);
-      font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 16px;
-    }
-
-    /* ── Impact Metrics (Where Your Money Goes) ── */
-    .impact-ribbon {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px;
-      background: white; border-radius: 24px; padding: 48px;
-      margin-bottom: 64px; box-shadow: 0 20px 50px rgba(0,0,0,0.03);
+    /* ── Breadcrumb Bar ── */
+    .charity-breadcrumb {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      background: white;
+      padding: 6px 14px;
+      border-radius: 999px;
       border: 1px solid var(--border-light);
     }
-    .metric-item { text-align: center; }
-    .metric-value { font-size: 2.8rem; font-weight: 800; color: var(--primary-green); margin-bottom: 4px; display: block; }
-    .metric-label { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .charity-breadcrumb a {
+      color: var(--primary-green);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .charity-breadcrumb .sep {
+      opacity: 0.5;
+    }
+    .charity-breadcrumb .current {
+      color: var(--text-dark);
+      font-weight: 600;
+    }
 
-    /* ── Donation Blocks (Contextualized) ── */
-    .donation-section { margin-bottom: 80px; }
-    .donation-experience {
-      display: grid; grid-template-columns: 1fr 400px; gap: 48px;
+    /* ── Hero Section (Centered) ── */
+    .charity-hero-section {
+      text-align: center;
+      padding: 36px 24px 44px;
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      box-shadow: 0 4px 18px rgba(15, 92, 58, 0.04);
+      margin-bottom: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    .charity-hero-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary-green), var(--accent-gold), var(--primary-light));
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 14px;
+      background: var(--primary-soft);
+      color: var(--primary-green);
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+    }
+    .hero-badge svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+    .hero-title {
+      font-size: clamp(2rem, 1.6rem + 1.2vw, 2.6rem);
+      color: var(--primary-green);
+      font-weight: 700;
+      margin: 0 0 10px 0;
+      line-height: 1.2;
+    }
+    .hero-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 620px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── Two-Column Layout ── */
+    .charity-grid-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) 420px;
+      gap: 32px;
       align-items: start;
     }
-    
-    .donation-context h3 { font-size: 1.8rem; color: var(--primary-green); margin-bottom: 16px; }
-    .donation-context p { font-size: 1.05rem; line-height: 1.7; color: var(--text-muted); margin-bottom: 32px; }
 
-    .impact-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    /* ── Left Column: Donation Information ── */
+    .charity-info-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      min-width: 0;
+    }
+
+    .section-intro h3 {
+      font-size: 1.5rem;
+      color: var(--primary-green);
+      margin: 0 0 8px 0;
+      font-weight: 700;
+    }
+    .section-intro p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin: 0 0 20px 0;
+      line-height: 1.6;
+    }
+
+    /* ── Impact Cards (2-Column Clean Grid) ── */
+    .impact-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
     .impact-mini-card {
-      background: white; border-radius: 20px; padding: 24px;
-      border: 1.5px solid var(--border-light); transition: all 0.3s;
+      background: white;
+      border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      min-height: 140px;
+      box-sizing: border-box;
     }
-    .impact-mini-card:hover { border-color: var(--primary-green); transform: translateY(-4px); }
-    .impact-mini-card .amt { font-weight: 900; color: var(--primary-green); font-size: 1.4rem; margin-bottom: 8px; display: block; }
-    .impact-mini-card .desc { font-size: 0.85rem; line-height: 1.5; font-weight: 600; color: var(--text-muted); }
+    .impact-mini-card:hover {
+      border-color: var(--primary-green);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(15, 92, 58, 0.08);
+    }
+    .impact-mini-card.active {
+      border: 2px solid var(--primary-green);
+      background: #f4fbf7;
+      box-shadow: 0 8px 20px rgba(15, 92, 58, 0.1);
+    }
 
-    /* ── Donation Form Sidebar ── */
+    .impact-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .impact-mini-card .amt {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--primary-green);
+      line-height: 1.1;
+      font-family: 'Lora', serif;
+    }
+    .impact-tag {
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary-green);
+      white-space: nowrap;
+    }
+    .impact-mini-card.active .impact-tag {
+      background: var(--primary-green);
+      color: white;
+    }
+    .impact-mini-card .desc {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin: 0;
+      font-weight: 500;
+    }
+    .impact-card-check {
+      margin-top: 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--primary-green);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ── Where Your Money Goes Card ── */
+    .allocation-card {
+      background: white;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 26px 30px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+    }
+    .allocation-card h4 {
+      font-size: 1.25rem;
+      color: var(--primary-green);
+      margin: 0 0 8px 0;
+      font-weight: 700;
+    }
+    .allocation-card p {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      margin: 0 0 18px 0;
+      line-height: 1.5;
+    }
+    .allocation-bar-wrap {
+      height: 14px;
+      background: #edf1ef;
+      border-radius: 999px;
+      display: flex;
+      overflow: hidden;
+      margin-bottom: 12px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+    .allocation-bar-programs {
+      width: 95%;
+      background: linear-gradient(90deg, var(--primary-dark), var(--primary-green));
+      transition: width 0.6s ease;
+    }
+    .allocation-bar-ops {
+      width: 5%;
+      background: linear-gradient(90deg, var(--accent-gold), #e0b84a);
+      transition: width 0.6s ease;
+    }
+    .allocation-legend {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .allocation-legend .leg-programs {
+      color: var(--primary-green);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .allocation-legend .leg-ops {
+      color: var(--accent-gold);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .allocation-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border-light);
+      line-height: 1.45;
+    }
+
+    /* ── Transparency Notice Card ── */
+    .transparency-notice-card {
+      background: #fafbfb;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .transparency-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--primary-soft);
+      color: var(--primary-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .transparency-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+    .transparency-text h5 {
+      margin: 0 0 4px 0;
+      font-size: 0.92rem;
+      color: var(--text-dark);
+      font-weight: 700;
+    }
+    .transparency-text p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── Right Column: Support a Program Form ── */
     .donation-form-card {
-      background: white; border-radius: 24px; padding: 32px;
-      box-shadow: 0 30px 70px rgba(15, 92, 58, 0.08);
-      border: 1px solid var(--border-light); position: sticky; top: 100px;
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 30px 28px;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 10px 32px rgba(15, 92, 58, 0.07);
+      position: sticky;
+      top: 84px;
+      box-sizing: border-box;
     }
-    
-    .frequency-toggle {
-      display: flex; background: #f0f4f2; padding: 6px; border-radius: 14px;
-      margin-bottom: 32px;
+    .form-header h4 {
+      font-size: 1.35rem;
+      color: var(--primary-green);
+      margin: 0 0 6px 0;
+      font-weight: 700;
     }
-    .freq-btn {
-      flex: 1; padding: 12px; border-radius: 10px; border: none;
-      font-size: 0.9rem; font-weight: 700; color: var(--text-muted);
-      background: transparent; cursor: pointer; transition: all 0.2s;
+    .form-header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0 0 22px 0;
+      line-height: 1.45;
     }
-    .freq-btn.active { background: white; color: var(--primary-green); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
-    .amount-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .form-group-item {
+      margin-bottom: 18px;
+    }
+    .form-group-label {
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .form-control-input,
+    .form-control-select {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border-light);
+      font-family: inherit;
+      font-size: 0.88rem;
+      color: var(--text-dark);
+      background: white;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-control-input:focus,
+    .form-control-select:focus {
+      border-color: var(--primary-green);
+      box-shadow: 0 0 0 3px rgba(15, 92, 58, 0.1);
+    }
+
+    /* Preset Amount Buttons */
+    .preset-amount-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
     .amt-btn {
-      padding: 18px; border-radius: 12px; border: 2px solid var(--border-light);
-      background: white; font-size: 1.1rem; font-weight: 800; color: var(--text-dark);
-      cursor: pointer; transition: all 0.2s;
+      padding: 11px 8px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border-light);
+      background: white;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-align: center;
+      font-family: inherit;
     }
-    .amt-btn:hover { border-color: var(--primary-green); background: rgba(15, 92, 58, 0.02); }
-    .amt-btn.active { background: var(--primary-green); color: white; border-color: var(--primary-green); }
-
-    .custom-input-wrap { position: relative; margin-bottom: 32px; }
-    .custom-input-wrap span { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-weight: 800; color: var(--text-muted); }
-    .custom-input-wrap input {
-      width: 100%; padding: 20px 20px 20px 40px; border-radius: 14px;
-      border: 2px solid var(--border-light); outline: none;
-      font-size: 1.2rem; font-weight: 800; color: var(--primary-green); transition: all 0.3s;
+    .amt-btn:hover {
+      border-color: var(--primary-green);
+      background: var(--primary-soft);
+      color: var(--primary-green);
     }
-    .custom-input-wrap input:focus { border-color: var(--primary-green); box-shadow: 0 0 0 5px rgba(15, 92, 58, 0.08); }
+    .amt-btn.active {
+      background: var(--primary-green);
+      color: white;
+      border-color: var(--primary-green);
+      box-shadow: 0 2px 8px rgba(15, 92, 58, 0.2);
+    }
 
+    /* Custom Amount Input Wrapper */
+    .amount-input-wrapper {
+      position: relative;
+    }
+    .amount-input-wrapper .currency-symbol {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: var(--primary-green);
+      pointer-events: none;
+    }
+    .amount-input-wrapper input {
+      padding-left: 32px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--primary-green);
+    }
+
+    /* QR Code Box */
+    .qr-transfer-box {
+      background: #fafbfb;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .qr-badge-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--primary-green);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+    .qr-image {
+      width: 140px;
+      height: 140px;
+      border-radius: 10px;
+      display: block;
+      margin: 0 auto 10px;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .qr-caption {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    /* Submit Donation Button */
     .btn-submit-donation {
-      width: 100%; padding: 20px; border-radius: 16px; border: none;
-      background: linear-gradient(135deg, var(--primary-green), var(--primary-light));
-      color: white; font-size: 1.1rem; font-weight: 800; cursor: pointer;
-      box-shadow: 0 15px 35px rgba(15, 92, 58, 0.2); transition: all 0.3s;
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-green));
+      color: white;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(15, 92, 58, 0.22);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
     }
-    .btn-submit-donation:hover { transform: translateY(-3px); box-shadow: 0 20px 45px rgba(15, 92, 58, 0.3); filter: brightness(1.1); }
+    .btn-submit-donation:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(15, 92, 58, 0.3);
+      filter: brightness(1.05);
+    }
+    .btn-submit-donation:active {
+      transform: translateY(0);
+    }
+    .btn-submit-donation:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+    .btn-submit-donation svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
 
-    .trust-badges {
-      display: flex; justify-content: center; gap: 24px; margin-top: 32px; opacity: 0.6;
+    /* Trust Footnote */
+    .trust-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 14px;
+      text-align: center;
     }
-    .trust-badges svg { height: 20px; fill: var(--text-muted); }
+    .trust-footer svg {
+      width: 14px;
+      height: 14px;
+      fill: var(--primary-green);
+    }
 
-    /* ── Impact Stories (Grid) ── */
-    .stories-section { margin-bottom: 80px; }
-    .story-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
-    .story-card {
-      background: white; border-radius: 24px; overflow: hidden;
-      border: 1px solid var(--border-light); transition: all 0.3s;
+    /* ── Contribution History Section ── */
+    .history-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 32px 36px;
+      border: 1px solid var(--border-light);
+      margin-top: 44px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+      box-sizing: border-box;
     }
-    .story-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(0,0,0,0.06); }
-    .story-image { height: 240px; overflow: hidden; }
-    .story-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
-    .story-card:hover .story-image img { transform: scale(1.08); }
-    .story-content { padding: 28px; }
-    .story-content .date { font-size: 0.75rem; font-weight: 800; color: var(--accent-gold); text-transform: uppercase; margin-bottom: 12px; display: block; }
-    .story-content h4 { font-size: 1.3rem; color: var(--primary-green); margin-bottom: 12px; line-height: 1.3; }
-    .story-content p { font-size: 0.92rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
-    .btn-read-more { font-size: 0.85rem; font-weight: 800; color: var(--primary-green); text-decoration: none; display: flex; align-items: center; gap: 6px; }
-    .btn-read-more:hover { text-decoration: underline; }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .history-header h2 {
+      font-size: 1.55rem;
+      color: var(--primary-green);
+      margin: 0 0 6px 0;
+      font-weight: 700;
+    }
+    .history-header p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    .total-donated-badge {
+      background: var(--primary-green);
+      color: white;
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+      box-shadow: 0 4px 12px rgba(15, 92, 58, 0.18);
+    }
 
-    /* ── Non-Stop Projects Ticker ── */
-    .projects-carousel-container { position: relative; margin-bottom: 80px; overflow: hidden; }
-    .projects-viewport { overflow: hidden; border-radius: 24px; padding: 10px 0; }
-    
-    .projects-track { 
-      display: flex; gap: 32px; 
-      width: max-content;
-      animation: ticker-scroll 40s linear infinite;
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    .projects-track:hover { animation-play-state: paused; }
-    
-    .projects-track .story-card { 
-      flex: 0 0 350px; 
+    .charity-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.88rem;
     }
-    
-    @keyframes ticker-scroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(calc(-350px * 4 - 32px * 4)); }
+    .charity-table thead tr {
+      background: #f7faf8;
     }
-    
-    /* Hide nav buttons for non-stop ticker */
-    .carousel-nav { display: none; }
+    .charity-table th {
+      padding: 14px 16px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      border-bottom: 2px solid var(--border-light);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .charity-table td {
+      padding: 16px;
+      border-bottom: 1px solid #f0f4f2;
+      vertical-align: middle;
+    }
+    .charity-table tbody tr:hover {
+      background: #fafcfb;
+    }
+    .charity-table tbody tr:last-child td {
+      border-bottom: none;
+    }
 
-    /* ── Partner / Transparency Footer ── */
-    .transparency-section {
-      background: white; border-radius: 32px; padding: 64px; text-align: center;
-      margin-bottom: 40px; border: 1px solid var(--border-light);
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
     }
-    .partner-logos {
-      display: flex; justify-content: center; align-items: center; gap: 60px; margin-top: 40px;
-      flex-wrap: wrap; opacity: 0.4; filter: grayscale(1);
-    }
-    .partner-logos img { height: 32px; }
+    .status-available { background: #e8f5e9; color: #176b45; }
+    .status-partially { background: #fef3c7; color: #b45309; }
+    .status-fully     { background: #d1fae5; color: #065f46; }
+    .status-cancelled { background: #fee2e2; color: #dc2626; }
 
-    /* ── Responsive ── */
-    @media (max-width: 1100px) {
-      .donation-experience { grid-template-columns: 1fr; }
-      .donation-form-card { position: static; max-width: 500px; margin: 0 auto; }
-      .metric-ribbon { grid-template-columns: 1fr 1fr; }
+    .btn-ack-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--primary-green);
+      color: var(--primary-green);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.18s;
+      background: white;
     }
-    @media (max-width: 768px) {
-      .hero-content-overlay h2 { font-size: 2.8rem; }
-      .hero-content-overlay p { font-size: 1.1rem; }
-      .story-grid { grid-template-columns: 1fr; }
-      .impact-ribbon { grid-template-columns: 1fr 1fr; padding: 24px; gap: 16px; }
-      .metric-value { font-size: 1.8rem; }
-      .charity-hero { height: auto; min-height: 480px; }
+    .btn-ack-link:hover {
+      background: var(--primary-green);
+      color: white;
+    }
+    .btn-ack-link svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    /* ── Responsive Breakpoints ── */
+    @media (max-width: 1024px) {
+      .charity-grid-layout {
+        grid-template-columns: 1fr;
+        gap: 36px;
+      }
+      .donation-form-card {
+        position: static;
+        max-width: 600px;
+        margin: 0 auto;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .charity-hero-section {
+        padding: 28px 18px 32px;
+        margin-bottom: 24px;
+      }
+      .impact-cards-grid {
+        grid-template-columns: 1fr;
+      }
+      .preset-amount-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .history-card {
+        padding: 24px 18px;
+      }
+      .allocation-card {
+        padding: 20px;
+      }
+      .donation-form-card {
+        padding: 22px 18px;
+      }
     }
   </style>
 </head>
@@ -284,6 +720,8 @@ $totalDonated = array_reduce($myDonations, function($acc, $curr) {
 
   <!-- Main Content -->
   <div class="main-content">
+    
+    <!-- Top Bar -->
     <div class="top-bar">
       <div>
         <div class="top-bar-title">Damayan Charity</div>
@@ -294,325 +732,515 @@ $totalDonated = array_reduce($myDonations, function($acc, $curr) {
       </div>
     </div>
 
+    <!-- Page Body -->
     <div class="page-body">
-      
-      <!-- ═══ Hero Section ═══ -->
-      <section class="charity-hero" aria-label="Hero Section">
-        <div class="hero-carousel-bg">
-          <div class="carousel-track" id="carousel-track">
-            <div class="carousel-slide"><img src="<?= asset('assets/damayanHero.png') ?>" alt="Support for families in need" /></div>
-            <div class="carousel-slide"><img src="<?= asset('assets/damayanHero2.png') ?>" alt="Islamic educational support" /></div>
-            <div class="carousel-slide"><img src="<?= asset('assets/damayanHero3.png') ?>" alt="Community medical mission" /></div>
+      <div class="charity-container">
+
+        <!-- Breadcrumb Bar -->
+        <div class="charity-breadcrumb">
+          <a href="<?= url('/user/dashboard') ?>">Dashboard</a>
+          <span class="sep">›</span>
+          <span class="current">Damayan Charity</span>
+        </div>
+
+        <!-- ═══ A. Hero Section (Centered) ═══ -->
+        <section class="charity-hero-section">
+          <div class="hero-badge">
+            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span>ISCAG Damayan Charity Fund</span>
           </div>
-        </div>
+          <h1 class="hero-title">Your Gift, Their Future</h1>
+          <p class="hero-subtitle">Choose a program and an amount to make an immediate difference in our community.</p>
+        </section>
 
-        <div class="hero-content-overlay">
-          <div class="hero-tag">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            Impact is our Mission
-          </div>
-          <h2>Transforming <br>Compassion into Action</h2>
-          <p>"Good deeds should be done with good intention, <br>not for attention." — ISCAG Damayan Project</p>
-          
-          <div class="hero-actions">
-            <a href="#donate" class="btn-hero primary">Donate Now</a>
-          </div>
-        </div>
+        <!-- ═══ Two-Column Layout (Information Left | Form Right) ═══ -->
+        <div class="charity-grid-layout">
 
-        <div class="carousel-dots">
-          <div class="dot active" onclick="gotoSlide(0)"></div>
-          <div class="dot" onclick="gotoSlide(1)"></div>
-          <div class="dot" onclick="gotoSlide(2)"></div>
-        </div>
-      </section>
-
-      <!-- ═══ Our Completed Projects (Carousel) ═══ -->
-      <section class="projects-gallery projects-carousel-container">
-        <div class="section-header" style="margin-top: 40px;">
-          <h2>Our Impact in Action</h2>
-          <p>A glimpse into the successful programs and community projects we've completed recently.</p>
-        </div>
-
-        <div class="projects-viewport">
-          <div class="projects-track">
-            <!-- Original Set -->
-            <article class="story-card">
-              <div class="story-image"><img src="<?= asset('assets/damayanHero2.png') ?>" alt="Project"></div>
-              <div class="story-content">
-                <span class="date">April 2023</span>
-                <h4>Ramadan Food Distribution</h4>
-                <p>Providing food packs to indigent families across Metro Manila.</p>
-                <div style="font-size:0.8rem; font-weight:700; color:var(--primary-green);">Outcome: 2,000+ Fed</div>
-              </div>
-            </article>
-
-            <article class="story-card">
-              <div class="story-image"><img src="<?= asset('assets/damayanHero3.png') ?>" alt="Project"></div>
-              <div class="story-content">
-                <span class="date">June 2023</span>
-                <h4>Annual Medical Mission</h4>
-                <p>Comprehensive health check-up event serving the revert community.</p>
-                <div style="font-size:0.8rem; font-weight:700; color:var(--primary-green);">Outcome: 350+ Patients</div>
-              </div>
-            </article>
-
-            <article class="story-card">
-              <div class="story-image"><img src="<?= asset('assets/damayanHero.png') ?>" alt="Project"></div>
-              <div class="story-content">
-                <span class="date">August 2023</span>
-                <h4>Back-to-School Supply Kits</h4>
-                <p>Distributed educational sets to orphaned students.</p>
-                <div style="font-size:0.8rem; font-weight:700; color:var(--primary-green);">Outcome: 120 Scholarships</div>
-              </div>
-            </article>
+          <!-- ── Left Column: Donation Information ── -->
+          <div class="charity-info-column">
             
-            <article class="story-card">
-              <div class="story-image"><img src="<?= asset('assets/ISCAG2.png') ?>" alt="Project"></div>
-              <div class="story-content">
-                <span class="date">December 2023</span>
-                <h4>Winter Warmth Initiative</h4>
-                <p>Distribution of blankets and clothing to elderly community members.</p>
-                <div style="font-size:0.8rem; font-weight:700; color:var(--primary-green);">Outcome: 450+ Helped</div>
-              </div>
-            </article>
+            <div class="section-intro">
+              <h3>How Your Donation Helps</h3>
+              <p>Every peso you contribute goes directly to programs that provide spiritual, financial, and emotional support to those who need it most within the ISCAG community.</p>
 
-            <!-- Duplicate Set for Seamless Ticker -->
-            <article class="story-card">
-              <div class="story-image"><img src="<?= asset('assets/damayanHero2.png') ?>" alt="Project"></div>
-              <div class="story-content">
-                <span class="date">April 2023</span>
-                <h4>Ramadan Food Distribution</h4>
-                <p>Providing food packs to indigent families across Metro Manila.</p>
-                <div style="font-size:0.8rem; font-weight:700; color:var(--primary-green);">Outcome: 2,000+ Fed</div>
-              </div>
-            </article>
-
-            <article class="story-card">
-              <div class="story-image"><img src="<?= asset('assets/damayanHero3.png') ?>" alt="Project"></div>
-              <div class="story-content">
-                <span class="date">June 2023</span>
-                <h4>Annual Medical Mission</h4>
-                <p>Comprehensive health check-up event serving the revert community.</p>
-                <div style="font-size:0.8rem; font-weight:700; color:var(--primary-green);">Outcome: 350+ Patients</div>
-              </div>
-            </article>
-
-            <article class="story-card">
-              <div class="story-image"><img src="<?= asset('assets/damayanHero.png') ?>" alt="Project"></div>
-              <div class="story-content">
-                <span class="date">August 2023</span>
-                <h4>Back-to-School Supply Kits</h4>
-                <p>Distributed educational sets to orphaned students.</p>
-                <div style="font-size:0.8rem; font-weight:700; color:var(--primary-green);">Outcome: 120 Scholarships</div>
-              </div>
-            </article>
-            
-            <article class="story-card">
-              <div class="story-image"><img src="<?= asset('assets/ISCAG2.png') ?>" alt="Project"></div>
-              <div class="story-content">
-                <span class="date">December 2023</span>
-                <h4>Winter Warmth Initiative</h4>
-                <p>Distribution of blankets and clothing to elderly community members.</p>
-                <div style="font-size:0.8rem; font-weight:700; color:var(--primary-green);">Outcome: 450+ Helped</div>
-              </div>
-            </article>
-          </div>
-        </div>
-
-        </div>
-      </section>
-
-      <!-- ═══ Donation Experience ═══ -->
-      <section class="donation-section" id="donate">
-        <div class="section-header">
-          <h2>Your Gift, Their Future</h2>
-          <p>Choose a program and an amount to make an immediate difference in our community.</p>
-        </div>
-
-        <div class="donation-experience">
-          <div class="donation-context">
-            <h3>How Your Donation Helps</h3>
-            <p>Every peso you contribute goes directly to programs that provide spiritual, financial, and emotional support to those who need it most within the ISCAG community.</p>
-            
-            <div class="impact-cards-grid">
-              <article class="impact-mini-card">
-                <span class="amt">₱500</span>
-                <span class="desc">Provides a complete Food Pack for a family of four for one week.</span>
-              </article>
-              <article class="impact-mini-card">
-                <span class="amt">₱2,500</span>
-                <span class="desc">Supports a student's educational supplies for a full semester.</span>
-              </article>
-              <article class="impact-mini-card">
-                <span class="amt">₱10,000</span>
-                <span class="desc">Subsidizes Islamic burial services for an underprivileged family.</span>
-              </article>
-              <article class="impact-mini-card">
-                <span class="amt">₱Custom</span>
-                <span class="desc">Contributes to the general welfare and emergency relief fund.</span>
-              </article>
-            </div>
-
-            <div style="margin-top:40px; padding:32px; border-radius:24px; background:white; border:1px solid var(--border-light);">
-              <h4 style="margin-bottom:12px; color:var(--primary-green);">Where Your Money Goes</h4>
-              <p style="font-size:0.92rem; color:var(--text-muted); margin-bottom:20px;">We pride ourselves on our lean operations. 95% of every donation goes directly to field programs.</p>
-              <div style="height:12px; background:#f0f4f2; border-radius:100px; display:flex; overflow:hidden;">
-                <div style="width:95%; background:var(--primary-green);" title="Programs: 95%"></div>
-                <div style="width:5%; background:var(--accent-gold);" title="Admin: 5%"></div>
-              </div>
-              <div style="display:flex; justify-content:space-between; margin-top:12px; font-size:0.75rem; font-weight:700;">
-                <span style="color:var(--primary-green);">Program Services (95%)</span>
-                <span style="color:var(--accent-gold);">Operational Support (5%)</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Simplified Donation Sidebar (QR Only) -->
-          <div class="donation-form-card">
-            <div style="text-align:center;">
-                <h4 style="margin-bottom:16px; color:var(--primary-green);">Scan to Support</h4>
+              <!-- ── B. Donation Impact Cards (2-Column Grid) ── -->
+              <div class="impact-cards-grid">
                 
-                <div style="margin-bottom:24px; text-align:left;">
-                    <label style="font-size:0.85rem; font-weight:700; color:var(--text-muted); margin-bottom:8px; display:block;">Target Project</label>
-                    <select id="donation-program" style="width:100%; padding:14px; border-radius:10px; border:2px solid var(--border-light); font-family:inherit; font-weight:600; color:var(--primary-green); outline:none;">
-                        <option value="Sadaqah Jariyah">Sadaqah Jariyah (Ongoing Impact)</option>
-                        <option value="Burial Assistance">Burial Assistance (Islamic Aid)</option>
-                        <option value="General Welfare">General Welfare & Relief</option>
-                        <option value="Education Fund">Educational Support</option>
-                    </select>
-                </div>
+                <!-- Card 1: ₱500 -->
+                <article class="impact-mini-card active" 
+                         data-amount="500" 
+                         data-program="Ramadan & Food Security" 
+                         onclick="selectImpactCard(this, 500, 'Ramadan & Food Security')">
+                  <div class="impact-card-top">
+                    <span class="amt">₱500</span>
+                    <span class="impact-tag">Food Security</span>
+                  </div>
+                  <p class="desc">Provides a complete food pack for a family of four for one week.</p>
+                  <div class="impact-card-check">✓ Selected</div>
+                </article>
 
-                <div style="background:white; padding:20px; border-radius:24px; border:1px solid var(--border-light); margin-bottom:24px; box-shadow:0 10px 30px rgba(0,0,0,0.03);">
-                    <img src="<?= asset('assets/donation_qr.png') ?>" alt="Donation QR Code" style="width:220px; height:220px; border-radius:12px; display:block; margin:0 auto 16px;">
-                    <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5;">
-                        Scan with GCash or Maya to donate <strong>any amount</strong> to your selected project.
-                    </p>
-                </div>
+                <!-- Card 2: ₱2,500 -->
+                <article class="impact-mini-card" 
+                         data-amount="2500" 
+                         data-program="Educational Support" 
+                         onclick="selectImpactCard(this, 2500, 'Educational Support')">
+                  <div class="impact-card-top">
+                    <span class="amt">₱2,500</span>
+                    <span class="impact-tag">Student Aid</span>
+                  </div>
+                  <p class="desc">Supports a student's educational supplies for a full semester.</p>
+                  <div class="impact-card-check" style="display:none;">✓ Selected</div>
+                </article>
+
+                <!-- Card 3: ₱10,000 -->
+                <article class="impact-mini-card" 
+                         data-amount="10000" 
+                         data-program="Burial Assistance (Damayan Aid)" 
+                         onclick="selectImpactCard(this, 10000, 'Burial Assistance (Damayan Aid)')">
+                  <div class="impact-card-top">
+                    <span class="amt">₱10,000</span>
+                    <span class="impact-tag">Burial Aid</span>
+                  </div>
+                  <p class="desc">Subsidizes Islamic burial services for an underprivileged family.</p>
+                  <div class="impact-card-check" style="display:none;">✓ Selected</div>
+                </article>
+
+                <!-- Card 4: Custom Amount -->
+                <article class="impact-mini-card" 
+                         data-amount="custom" 
+                         data-program="General Welfare & Relief" 
+                         onclick="selectImpactCard(this, 'custom', 'General Welfare & Relief')">
+                  <div class="impact-card-top">
+                    <span class="amt" style="font-size:1.25rem;">Custom</span>
+                    <span class="impact-tag">General Relief</span>
+                  </div>
+                  <p class="desc">Allows the donor to enter a preferred amount for community welfare.</p>
+                  <div class="impact-card-check" style="display:none;">✓ Selected</div>
+                </article>
+
+              </div>
             </div>
 
-            <div class="trust-badges">
-                <svg viewBox="0 0 24 24"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
-                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>
-                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+            <!-- ── D. Where Your Money Goes Card ── -->
+            <div class="allocation-card">
+              <h4>Where Your Money Goes</h4>
+              <p>We pride ourselves on our lean operations. 95% of every donation goes directly to field programs.</p>
+              
+              <div class="allocation-bar-wrap" title="Program Services: 95% | Operational Support: 5%">
+                <div class="allocation-bar-programs"></div>
+                <div class="allocation-bar-ops"></div>
+              </div>
+
+              <div class="allocation-legend">
+                <span class="leg-programs">● Program Services (95%)</span>
+                <span class="leg-ops">● Operational Support (5%)</span>
+              </div>
+
+              <div class="allocation-note">
+                All monetary and in-kind resources are audited and allocated directly under the official oversight of the ISCAG Damayan Department.
+              </div>
             </div>
-            <p style="text-align:center; font-size:0.75rem; color:var(--text-muted); margin-top:12px;">Your donation is handled securely.</p>
-          </div>
-        </div>
-      </section>
 
-      <!-- ═══ Contribution History ═══ -->
-      <section class="transparency-section" style="text-align: left; padding: 40px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
-          <div>
-            <h2 style="font-size: 1.8rem; margin-bottom: 8px;">Contribution History</h2>
-            <p style="font-size: 0.95rem; color: var(--text-muted);">Thank you for your generous support of the ISCAG programs.</p>
+            <!-- Transparency / Trust Card -->
+            <div class="transparency-notice-card">
+              <div class="transparency-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+              </div>
+              <div class="transparency-text">
+                <h5>Official Acknowledgment Receipt</h5>
+                <p>Every donation receives a unique tracking reference. Once verified by the Damayan staff, an official printable Acknowledgment Receipt is generated in your record.</p>
+              </div>
+            </div>
+
           </div>
-          <div style="background: var(--primary-green); color: white; padding: 12px 24px; border-radius: 12px; font-weight: 800;">
-            Total Donated: ₱<?= number_format($totalDonated, 2) ?>
+
+          <!-- ── Right Column: Support a Program Form ── -->
+          <div class="charity-form-column">
+            <div class="donation-form-card">
+              
+              <div class="form-header">
+                <h4>Support a Program</h4>
+                <p>Your contribution will be officially recorded in the ISCAG Charity Registry.</p>
+              </div>
+
+              <form id="userDonationForm" onsubmit="submitOnlineDonation(event)">
+                
+                <!-- Target Charity Program -->
+                <div class="form-group-item">
+                  <label for="donation-program" class="form-group-label">Target Charity Program</label>
+                  <select id="donation-program" name="target_program" required class="form-control-select">
+                    <option value="Ramadan & Food Security">Food Security & Ramadan Ration</option>
+                    <option value="Educational Support">Orphan & Student Education Support</option>
+                    <option value="Burial Assistance (Damayan Aid)">Burial Assistance & Shroud Fund (Damayan)</option>
+                    <option value="General Welfare & Relief">General Welfare & Community Relief</option>
+                    <option value="Da'wah Outreach & New Muslim Welfare">Da'wah Outreach & Convert Relief</option>
+                  </select>
+                </div>
+
+                <!-- Preset Donation Amount Buttons -->
+                <div class="form-group-item">
+                  <label class="form-group-label">Select Amount</label>
+                  <div class="preset-amount-grid">
+                    <button type="button" class="amt-btn active" data-amt="500" onclick="selectPresetAmt(500, this)">₱500</button>
+                    <button type="button" class="amt-btn" data-amt="2500" onclick="selectPresetAmt(2500, this)">₱2,500</button>
+                    <button type="button" class="amt-btn" data-amt="10000" onclick="selectPresetAmt(10000, this)">₱10,000</button>
+                    <button type="button" class="amt-btn" data-amt="custom" onclick="selectPresetAmt('custom', this)">Custom</button>
+                  </div>
+
+                  <!-- Amount Input Box -->
+                  <div class="amount-input-wrapper">
+                    <span class="currency-symbol">₱</span>
+                    <input type="number" 
+                           id="donation-amount" 
+                           name="amount" 
+                           min="1" 
+                           step="0.01" 
+                           value="500" 
+                           required 
+                           placeholder="0.00" 
+                           class="form-control-input"
+                           oninput="onAmountManualInput(this.value)" />
+                  </div>
+                </div>
+
+                <!-- Payment Channel -->
+                <div class="form-group-item">
+                  <label for="payment-method" class="form-group-label">Payment Channel</label>
+                  <select id="payment-method" name="payment_method" class="form-control-select">
+                    <option value="GCash">GCash / Maya (E-Wallet)</option>
+                    <option value="Bank Transfer">Bank Transfer (BDO / BPI)</option>
+                    <option value="Cash">Cash (ISCAG Office)</option>
+                  </select>
+                </div>
+
+                <!-- Transaction / Reference # -->
+                <div class="form-group-item">
+                  <label for="payment-ref" class="form-group-label">Transaction / Reference # (Optional)</label>
+                  <input type="text" 
+                         id="payment-ref" 
+                         name="payment_reference" 
+                         placeholder="e.g. GCash Ref # 9018471" 
+                         class="form-control-input" />
+                </div>
+
+                <!-- QR Transfer Code Box -->
+                <div class="qr-transfer-box">
+                  <div class="qr-badge-title">Scan to Transfer via QR</div>
+                  <img src="<?= asset('assets/donation_qr.png') ?>" alt="Donation QR Code" class="qr-image" />
+                  <p class="qr-caption">
+                    Account: <strong>ISCAG Charity Fund</strong><br>
+                    Scan with GCash or Maya, then enter your reference number above.
+                  </p>
+                </div>
+
+                <!-- Confirm Donation Button -->
+                <button type="submit" id="btn-submit-donation" class="btn-submit-donation">
+                  <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  <span id="btn-submit-label">Confirm Donation Record</span>
+                </button>
+
+                <div class="trust-footer">
+                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                  <span>Secure & directly logged into Damayan Management</span>
+                </div>
+
+              </form>
+
+            </div>
           </div>
+
         </div>
 
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
-            <thead>
-              <tr style="border-bottom: 2px solid var(--border-light); text-align: left;">
-                <th style="padding: 16px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Date</th>
-                <th style="padding: 16px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Target Program</th>
-                <th style="padding: 16px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Amount</th>
-                <th style="padding: 16px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Status</th>
-                <th style="padding: 16px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 0.75rem;">Ref No.</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if(empty($myDonations)): ?>
-                <tr><td colspan="5" style="padding: 30px; text-align: center; color: var(--text-muted);">No contributions recorded yet.</td></tr>
-              <?php else: ?>
-                <?php foreach($myDonations as $don): ?>
-                <tr style="border-bottom: 1px solid var(--border-light);">
-                  <td style="padding: 20px 12px; font-weight: 600;"><?= date('M d, Y', strtotime($don['submitted_at'])) ?></td>
-                  <td style="padding: 20px 12px;">
-                    <?php 
-                      $pNames = [1 => 'Medical Assistance', 2 => 'Food Security', 3 => 'Educational Aid'];
-                      echo $pNames[$don['program_id']] ?? 'General Welfare';
-                    ?>
-                  </td>
-                  <td style="padding: 20px 12px; font-weight: 800; color: var(--primary-green);">₱<?= number_format($don['amount'], 2) ?></td>
-                  <td style="padding: 20px 12px;">
-                    <?php 
-                      $st = strtolower($don['status']);
-                      $bg = $st === 'verified' ? '#e8f5e9' : ($st === 'rejected' ? '#fee2e2' : '#fffbeb');
-                      $fg = $st === 'verified' ? '#2e7d32' : ($st === 'rejected' ? '#dc2626' : '#d97706');
-                    ?>
-                    <span style="background: <?= $bg ?>; color: <?= $fg ?>; padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;"><?= $don['status'] ?></span>
-                  </td>
-                  <td style="padding: 20px 12px; font-family: monospace; color: var(--text-muted);">#<?= substr(md5($don['id']), 0, 8) ?></td>
+        <!-- ═══ Contribution History (Full Width) ═══ -->
+        <section class="history-card">
+          <div class="history-header">
+            <div>
+              <h2>Your Contribution History</h2>
+              <p>Directly connected to the ISCAG Charity Programs & Allocation Registry.</p>
+            </div>
+            <div class="total-donated-badge">
+              Total Donated: ₱<?= number_format($totalDonated, 2) ?>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="charity-table">
+              <thead>
+                <tr>
+                  <th>Ref #</th>
+                  <th>Date</th>
+                  <th>Target Program</th>
+                  <th>Amount</th>
+                  <th>Payment</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Official Receipt</th>
                 </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody id="userDonationsTbody">
+                <?php if(empty($myDonations)): ?>
+                  <tr>
+                    <td colspan="7" style="padding: 36px; text-align: center; color: var(--text-muted);">
+                      No recorded contributions yet. Use the form above to make your first donation!
+                    </td>
+                  </tr>
+                <?php else: ?>
+                  <?php foreach($myDonations as $don): ?>
+                  <tr>
+                    <td style="font-family: monospace; font-weight:700; color:var(--primary-green);">
+                      <?= htmlspecialchars($don['donation_ref']) ?>
+                    </td>
+                    <td style="font-weight: 600; color:var(--text-dark);">
+                      <?= date('M d, Y', strtotime($don['date_received'])) ?>
+                    </td>
+                    <td style="font-weight: 600;">
+                      <?= htmlspecialchars(!empty($don['target_program']) ? $don['target_program'] : ($don['remarks'] ?: 'General Welfare & Relief')) ?>
+                    </td>
+                    <td style="font-weight: 800; color: var(--primary-green);">
+                      ₱<?= number_format((float)$don['amount'], 2) ?>
+                    </td>
+                    <td style="font-size:0.85rem; color:var(--text-muted);">
+                      <?= htmlspecialchars($don['payment_method'] ?: 'N/A') ?>
+                      <?php if(!empty($don['payment_reference'])): ?>
+                        <div style="font-size:0.75rem; font-family:monospace;"><?= htmlspecialchars($don['payment_reference']) ?></div>
+                      <?php endif; ?>
+                    </td>
+                    <td>
+                      <?php 
+                        $st = $don['status'];
+                        $stClass = 'status-available';
+                        if ($st === 'Partially Allocated') $stClass = 'status-partially';
+                        elseif ($st === 'Fully Allocated') $stClass = 'status-fully';
+                        elseif ($st === 'Cancelled') $stClass = 'status-cancelled';
+                      ?>
+                      <span class="status-pill <?= $stClass ?>"><?= htmlspecialchars($st) ?></span>
+                    </td>
+                    <td style="text-align:right;">
+                      <?php if(!empty($don['ack_issued'])): ?>
+                        <a href="<?= url('/admin/damayan/charity/donations/print-ack?id=' . $don['id']) ?>" 
+                           target="_blank" 
+                           class="btn-ack-link"
+                           title="Print Official Acknowledgment Receipt">
+                          <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                          Acknowledgment
+                        </a>
+                      <?php else: ?>
+                        <span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">Processing</span>
+                      <?php endif; ?>
+                    </td>
+                  </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-
-
-
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-  // ── Hero Carousel Logic ──
-  const track = document.getElementById('carousel-track');
-  const dots = document.querySelectorAll('.dot');
-  let currentSlide = 0;
+  // ── Impact Card Selection ──
+  function selectImpactCard(cardEl, amt, program) {
+    // 1. Highlight clicked card and update indicators
+    document.querySelectorAll('.impact-mini-card').forEach(c => {
+      c.classList.remove('active');
+      const check = c.querySelector('.impact-card-check');
+      if (check) check.style.display = 'none';
+    });
+    if (cardEl) {
+      cardEl.classList.add('active');
+      const check = cardEl.querySelector('.impact-card-check');
+      if (check) check.style.display = 'flex';
+    }
 
-  function gotoSlide(idx) {
-    currentSlide = idx;
-    track.style.transform = `translateX(-${currentSlide * 33.333}%)`;
-    dots.forEach((d, i) => d.classList.toggle('active', i === currentSlide));
+    // 2. Sync with preset buttons in form
+    document.querySelectorAll('.amt-btn').forEach(b => b.classList.remove('active'));
+    const targetPresetBtn = document.querySelector(`.amt-btn[data-amt="${amt}"]`);
+    if (targetPresetBtn) {
+      targetPresetBtn.classList.add('active');
+    }
+
+    // 3. Update Amount Input
+    const amtInput = document.getElementById('donation-amount');
+    if (amt === 'custom') {
+      amtInput.focus();
+      amtInput.select();
+    } else {
+      amtInput.value = amt;
+    }
+
+    // 4. Update Target Program dropdown if applicable
+    if (program) {
+      const progSelect = document.getElementById('donation-program');
+      for (let i = 0; i < progSelect.options.length; i++) {
+        if (progSelect.options[i].value === program) {
+          progSelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
   }
 
-  function nextSlide() {
-    currentSlide = (currentSlide + 1) % 3;
-    gotoSlide(currentSlide);
+  // ── Preset Amount Button Selection ──
+  function selectPresetAmt(amt, btnEl) {
+    // 1. Highlight button
+    document.querySelectorAll('.amt-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    // 2. Highlight matching impact card
+    document.querySelectorAll('.impact-mini-card').forEach(c => {
+      c.classList.remove('active');
+      const check = c.querySelector('.impact-card-check');
+      if (check) check.style.display = 'none';
+    });
+    const targetCard = document.querySelector(`.impact-mini-card[data-amount="${amt}"]`);
+    if (targetCard) {
+      targetCard.classList.add('active');
+      const check = targetCard.querySelector('.impact-card-check');
+      if (check) check.style.display = 'flex';
+
+      // Update program dropdown to match card's designated program
+      const prog = targetCard.getAttribute('data-program');
+      if (prog) {
+        const progSelect = document.getElementById('donation-program');
+        for (let i = 0; i < progSelect.options.length; i++) {
+          if (progSelect.options[i].value === prog) {
+            progSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    }
+
+    // 3. Update Amount Input
+    const amtInput = document.getElementById('donation-amount');
+    if (amt === 'custom') {
+      amtInput.focus();
+      amtInput.select();
+    } else {
+      amtInput.value = amt;
+    }
   }
 
-  let slideInterval = setInterval(nextSlide, 6000);
+  // ── Manual Amount Input Listener ──
+  function onAmountManualInput(val) {
+    const num = parseFloat(val);
+    document.querySelectorAll('.amt-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.impact-mini-card').forEach(c => {
+      c.classList.remove('active');
+      const check = c.querySelector('.impact-card-check');
+      if (check) check.style.display = 'none';
+    });
 
-  // ── Donation Logic (Simplified) ──
-  function confirmDonated() {
+    if (num === 500 || num === 2500 || num === 10000) {
+      const btn = document.querySelector(`.amt-btn[data-amt="${num}"]`);
+      if (btn) btn.classList.add('active');
+      const card = document.querySelector(`.impact-mini-card[data-amount="${num}"]`);
+      if (card) {
+        card.classList.add('active');
+        const check = card.querySelector('.impact-card-check');
+        if (check) check.style.display = 'flex';
+      }
+    } else {
+      const customBtn = document.querySelector(`.amt-btn[data-amt="custom"]`);
+      if (customBtn) customBtn.classList.add('active');
+      const customCard = document.querySelector(`.impact-mini-card[data-amount="custom"]`);
+      if (customCard) {
+        customCard.classList.add('active');
+        const check = customCard.querySelector('.impact-card-check');
+        if (check) check.style.display = 'flex';
+      }
+    }
+  }
+
+  // ── Online Donation Form Submission ──
+  async function submitOnlineDonation(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit-donation');
+    const label = document.getElementById('btn-submit-label');
+    const amt = parseFloat(document.getElementById('donation-amount').value || 0);
     const program = document.getElementById('donation-program').value;
-    showToast(`Jazakumullahu Khayran! Your donation to the ${program} has been reported for verification.`, 'var(--primary-green)');
-    setTimeout(() => {
-        window.location.href = '<?= url('/user/dashboard') ?>';
-    }, 2500);
+    const method = document.getElementById('payment-method').value;
+    const ref = document.getElementById('payment-ref').value;
+
+    if (amt <= 0 || isNaN(amt)) {
+      showToast('Please enter a valid donation amount greater than ₱0.00.', '#dc2626');
+      return;
+    }
+
+    // Prevent duplicate clicks
+    btn.disabled = true;
+    label.textContent = 'Recording Donation...';
+
+    try {
+      const res = await fetch('<?= url('/user/services/charity/donate') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amt,
+          target_program: program,
+          payment_method: method,
+          payment_reference: ref,
+          remarks: `Online donation for ${program} via ${method}`
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Jazakumullahu Khayran! Your donation (${data.donation_ref}) has been recorded.`, '#0f5c3a');
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        btn.disabled = false;
+        label.textContent = 'Confirm Donation Record';
+        showToast(data.error || 'Failed to submit donation. Please check your entries.', '#dc2626');
+      }
+    } catch (err) {
+      console.error(err);
+      btn.disabled = false;
+      label.textContent = 'Confirm Donation Record';
+      showToast('A network error occurred. Please try again.', '#dc2626');
+    }
   }
 
+  // ── Toast Notification Helper ──
   function showToast(msg, bg) {
     const toast = document.createElement('div');
     toast.textContent = msg;
     toast.style.cssText = `
-        position:fixed;top:24px;right:24px;background:${bg};color:white;
-        padding:16px 24px;border-radius:12px;z-index:99999;
-        font-weight:700;font-size:0.95rem;box-shadow:0 8px 30px rgba(0,0,0,0.2);
-        max-width:400px;animation:slideInRight 0.3s ease;
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      background: ${bg};
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      z-index: 99999;
+      font-weight: 700;
+      font-size: 0.95rem;
+      box-shadow: 0 10px 32px rgba(0,0,0,0.2);
+      max-width: 420px;
+      animation: slideInRight 0.3s ease;
+      font-family: 'Source Sans 3', sans-serif;
     `;
     document.body.appendChild(toast);
     setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 4500);
   }
 
-  // Define animations in JS if not in CSS
-  if (!document.getElementById('custom-animations')) {
+  // Keyframes injection for toast
+  if (!document.getElementById('toast-keyframes')) {
     const s = document.createElement('style');
-    s.id = 'custom-animations';
+    s.id = 'toast-keyframes';
     s.textContent = `
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slideInRight { 
+        from { transform: translateX(100%); opacity: 0; } 
+        to { transform: translateX(0); opacity: 1; } 
+      }
     `;
     document.head.appendChild(s);
   }
