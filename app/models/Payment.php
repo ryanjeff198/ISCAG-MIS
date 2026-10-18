@@ -93,6 +93,20 @@ class Payment
     }
 
     /**
+     * Get a single payment by its ID.
+     *
+     * @param int $paymentId
+     * @return array|null
+     */
+    public function getPaymentById(int $paymentId): ?array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM payments WHERE payment_id = :pid LIMIT 1");
+        $stmt->execute(['pid' => $paymentId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    /**
      * Mark a payment as PAID.
      *
      * @param int $paymentId

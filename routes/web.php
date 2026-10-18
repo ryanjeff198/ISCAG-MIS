@@ -91,6 +91,8 @@ $routes = [
     '/user/services/counseling/submit' => ['UserController', 'submitCounseling'],
     '/user/services/charity' => ['UserController', 'charity'],
     '/user/services/charity/donate' => ['UserController', 'submitDonation'],
+    '/user/services/charity/paymongo-checkout' => ['UserController', 'charityPayMongoCheckout'],
+    '/user/services/charity/paymongo-success'  => ['UserController', 'charityPayMongoSuccess'],
     // '/user/apartment/apply' => ['UserController', 'apartmentApply'],
 
     // Admin Modules (New)

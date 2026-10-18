@@ -1151,6 +1151,215 @@ class UserController extends Controller
         exit;
     }
 
+    /**
+     * Create PayMongo Checkout Session for Charity Donation (GCash / Maya / Card)
+     */
+    public function charityPayMongoCheckout(): void {
+        header('Content-Type: application/json');
+
+        if (!Auth::check()) {
+            echo json_encode(['success' => false, 'message' => 'Please log in to make a donation.']);
+            return;
+        }
+
+        $body = json_decode(file_get_contents('php://input'), true);
+        $amount = (float)($body['amount'] ?? 0);
+        $targetProgram = trim($body['target_program'] ?? 'General Welfare & Relief');
+        $userId = $_SESSION['user_id'];
+
+        if ($amount <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Please enter a valid donation amount.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/helpers/PayMongoHelper.php';
+        require_once BASE_PATH . '/app/models/User.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($userId);
+
+        $donorEmail = !empty($dbUser['email']) ? trim($dbUser['email']) : ($_SESSION['email'] ?? 'donor@iscag.local');
+        $donorName  = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: ($_SESSION['name'] ?? 'ISCAG Donor');
+
+        // Generate a unique donation reference number
+        $refNo = 'ISCAG-DON-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+
+        $lineItems = [
+            [
+                'name'        => $targetProgram . ' — Charity Donation',
+                'amount'      => $amount,
+                'quantity'    => 1,
+                'description' => 'ISCAG Damayan Charity Donation'
+            ]
+        ];
+
+        $description = "ISCAG Damayan Charity Donation [Ref: {$refNo}] — {$targetProgram}";
+
+        // Store pending payment info in session for verification on return
+        $_SESSION['paymongo_pending_charity'] = [
+            'tenant_id'        => $userId,
+            'amount'           => $amount,
+            'target_program'   => $targetProgram,
+            'donor_name'       => $donorName,
+            'donor_contact'    => $donorEmail,
+            'reference_number' => $refNo,
+            'timestamp'        => time()
+        ];
+
+        $successUrl = full_url('/user/services/charity/paymongo-success?session_id={CHECKOUT_SESSION_ID}');
+        $cancelUrl  = full_url('/user/services/charity');
+
+        $response = PayMongoHelper::createCheckoutSession(
+            $amount,
+            $description,
+            $lineItems,
+            $successUrl,
+            $cancelUrl,
+            [
+                'tenant_id'        => (string)$userId,
+                'target_program'   => $targetProgram,
+                'amount'           => (string)$amount,
+                'reference_number' => $refNo,
+                'type'             => 'charity_donation'
+            ],
+            $refNo,
+            [
+                'name'  => $donorName,
+                'email' => $donorEmail
+            ]
+        );
+
+        if ($response['success'] && !empty($response['data']['attributes']['checkout_url'])) {
+            echo json_encode([
+                'success'      => true,
+                'checkout_url' => $response['data']['attributes']['checkout_url']
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => $response['message'] ?? 'Could not create checkout session with PayMongo.'
+            ]);
+        }
+    }
+
+    /**
+     * Handle return from PayMongo checkout for Charity Donation
+     */
+    public function charityPayMongoSuccess(): void {
+        Auth::protect();
+        $sessionId = $_GET['session_id'] ?? '';
+        $userId = $_SESSION['user_id'];
+
+        require_once BASE_PATH . '/app/helpers/PayMongoHelper.php';
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        require_once BASE_PATH . '/app/models/User.php';
+
+        $pending = $_SESSION['paymongo_pending_charity'] ?? null;
+
+        $donorName    = $pending['donor_name'] ?? ($_SESSION['name'] ?? 'ISCAG Donor');
+        $donorContact = $pending['donor_contact'] ?? '';
+        $amount       = (float)($pending['amount'] ?? 0);
+        $targetProgram = $pending['target_program'] ?? 'General Welfare & Relief';
+        $refNo        = $pending['reference_number'] ?? ('ISCAG-DON-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)));
+
+        // Verify with PayMongo API if session_id is available
+        if (!empty($sessionId)) {
+            $sessionData = PayMongoHelper::getCheckoutSession($sessionId);
+
+            if ($sessionData['success']) {
+                $attrs = $sessionData['data']['attributes'] ?? [];
+                $meta  = $attrs['metadata'] ?? [];
+
+                // Recover reference from PayMongo metadata if session was lost
+                if (!empty($attrs['reference_number'])) {
+                    $refNo = $attrs['reference_number'];
+                } elseif (!empty($meta['reference_number'])) {
+                    $refNo = $meta['reference_number'];
+                }
+
+                // Recover donation details from metadata if session was lost
+                if (empty($pending) || (int)($pending['tenant_id'] ?? 0) !== (int)$userId) {
+                    if (!empty($meta['tenant_id']) && (int)$meta['tenant_id'] === (int)$userId) {
+                        $amount        = (float)($meta['amount'] ?? $amount);
+                        $targetProgram = $meta['target_program'] ?? $targetProgram;
+                    }
+                }
+
+                // Get payment ID from PayMongo response for the reference if needed
+                if (!empty($attrs['payments'][0]['id']) && empty($pending['reference_number'])) {
+                    $refNo = $attrs['payments'][0]['id'];
+                }
+            }
+        }
+
+        unset($_SESSION['paymongo_pending_charity']);
+
+        // Check if this payment/reference was already recorded to prevent duplicates on refresh
+        $db = getDbConnection();
+        $checkStmt = $db->prepare("SELECT donation_ref FROM charity_donations_records WHERE payment_reference = :ref LIMIT 1");
+        $checkStmt->execute(['ref' => $refNo]);
+        $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            header('Location: ' . url('/user/services/charity?paid=1&ref=' . urlencode($existing['donation_ref'])));
+            exit;
+        }
+
+        // Record the donation if we have valid data
+        $confirmedRef = $refNo;
+        if ($amount > 0) {
+            $userModel = new User();
+            $dbUser = $userModel->findById($userId);
+            $tenantName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: $donorName;
+
+            $charity = new CharityProgram();
+            $data = [
+                'tenant_id'        => (int)$userId,
+                'donor_name'       => $tenantName,
+                'donor_address'    => $donorContact,
+                'donation_category'=> 'digital',
+                'donation_type'    => 'monetary',
+                'amount'           => $amount,
+                'target_program'   => $targetProgram,
+                'date_received'    => date('Y-m-d'),
+                'payment_method'   => 'PayMongo (Online)',
+                'payment_reference'=> $refNo,
+                'received_by'      => 'PayMongo Gateway (Verified)',
+                'status'           => 'Available',
+                'remarks'          => 'Paid via PayMongo Secure Gateway (auto-verified)'
+            ];
+
+            $res = $charity->recordDonation($data, $tenantName, (int)$userId);
+            if (!empty($res['donation_ref'])) {
+                $confirmedRef = $res['donation_ref'];
+            }
+
+            require_once BASE_PATH . '/app/helpers/AuditLogger.php';
+            AuditLogger::log('CHARITY', 'PAYMONGO_DONATION', "PayMongo charity donation verified. Ref: {$refNo} ({$confirmedRef}), Amount: ₱" . number_format($amount, 2) . ", Program: {$targetProgram}");
+
+            require_once BASE_PATH . '/app/models/Notification.php';
+            (new Notification())->create(
+                $userId,
+                'Charity Donation Successful',
+                'Your donation of ₱' . number_format($amount, 2) . ' to ' . htmlspecialchars($targetProgram) . ' via PayMongo has been confirmed (Ref: ' . htmlspecialchars($confirmedRef) . '). JazakAllahu Khairan!',
+                'payment'
+            );
+
+            require_once BASE_PATH . '/app/models/AdminNotification.php';
+            (new AdminNotification())->create(
+                'Charity Donation Received (PayMongo)',
+                $tenantName . ' donated ₱' . number_format($amount, 2) . ' to ' . $targetProgram . ' via PayMongo (Ref: ' . $confirmedRef . ').',
+                'payment',
+                $tenantName,
+                $userId,
+                '/admin/damayan/charity/donations'
+            );
+        }
+
+        header('Location: ' . url('/user/services/charity?paid=1&ref=' . urlencode($confirmedRef)));
+        exit;
+    }
+
     /* ======================================================================
      *  FUNERAL CASE MANAGEMENT
      * ==================================================================== */

@@ -445,6 +445,9 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
       gap: 16px;
       margin-bottom: 24px;
     }
+    @media (max-width: 768px) {
+      .method-toggle-grid { grid-template-columns: 1fr; }
+    }
     .method-toggle-btn {
       padding: 16px 18px;
       border: 2px solid var(--border-light);
@@ -553,210 +556,6 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
     .location-address { font-size: 0.85rem; color: var(--text-dark); font-weight: 600; line-height: 1.4; }
     .location-hours { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
 
-    /* ── Digital Donation Details ── */
-    .digital-channels-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .channel-tab-btn {
-      padding: 12px;
-      border: 1px solid var(--border-light);
-      border-radius: 10px;
-      background: white;
-      cursor: pointer;
-      text-align: center;
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: var(--text-dark);
-      transition: all 0.2s;
-    }
-    .channel-tab-btn:hover { border-color: var(--primary-green); color: var(--primary-green); }
-    .channel-tab-btn.active {
-      background: var(--primary-soft);
-      border-color: var(--primary-green);
-      color: var(--primary-green);
-      box-shadow: 0 2px 6px rgba(15, 92, 58, 0.12);
-    }
-
-    .payment-instruction-card {
-      background: #f0f7f4;
-      border: 1px solid #cce2d7;
-      border-radius: 12px;
-      padding: 18px 20px;
-      margin-bottom: 20px;
-    }
-    .pi-title { font-size: 0.8rem; font-weight: 800; color: var(--primary-green); text-transform: uppercase; letter-spacing: 0.05em; }
-    .pi-badge {
-      font-size: 0.72rem;
-      font-weight: 700;
-      background: #e8f5ed;
-      color: var(--primary-green);
-      padding: 3px 10px;
-      border-radius: 6px;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      border: 1px solid #c2e2d0;
-    }
-    .pi-form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-top: 12px;
-    }
-    @media (max-width: 640px) {
-      .pi-form-grid { grid-template-columns: 1fr !important; }
-    }
-
-    /* Form Fields Styling */
-    .form-group-item { margin-bottom: 16px; }
-    .form-group-label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--text-dark);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 6px;
-    }
-    .form-control-input, .form-control-textarea {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid var(--border-light);
-      border-radius: 8px;
-      font-size: 0.88rem;
-      color: var(--text-dark);
-      background: white;
-      outline: none;
-      box-sizing: border-box;
-      transition: all 0.2s;
-      font-family: inherit;
-    }
-    .form-control-input:focus, .form-control-textarea:focus {
-      border-color: var(--primary-green);
-      box-shadow: 0 0 0 3px rgba(15, 92, 58, 0.1);
-    }
-    .form-row-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    /* Proof Upload Box */
-    .proof-upload-zone {
-      border: 2px dashed var(--border-light);
-      border-radius: 10px;
-      padding: 16px;
-      text-align: center;
-      background: #fafbfb;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .proof-upload-zone:hover {
-      border-color: var(--primary-green);
-      background: var(--primary-soft);
-    }
-    .proof-preview-container {
-      display: none;
-      margin-top: 10px;
-      align-items: center;
-      gap: 10px;
-      background: white;
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border-light);
-    }
-    .proof-thumb {
-      width: 48px;
-      height: 48px;
-      object-fit: cover;
-      border-radius: 6px;
-    }
-
-    /* ── Step 3: Donation Summary Card ── */
-    .donation-summary-card {
-      background: #fafbfb;
-      border: 2px solid #d4e3dc;
-      border-radius: var(--radius-lg);
-      padding: 24px 28px;
-      margin-bottom: 30px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.03);
-    }
-    .summary-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border-light);
-      padding-bottom: 14px;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .summary-title {
-      font-family: 'Lora', serif;
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--primary-dark);
-    }
-    .summary-badge {
-      background: var(--primary-soft);
-      color: var(--primary-green);
-      font-size: 0.74rem;
-      font-weight: 800;
-      padding: 4px 12px;
-      border-radius: 20px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 18px;
-      margin-bottom: 22px;
-    }
-    .summary-item {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-    .summary-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .summary-val {
-      font-size: 1.05rem;
-      font-weight: 800;
-      color: var(--primary-dark);
-    }
-    .summary-val.highlight-amount {
-      font-size: 1.35rem;
-      color: var(--primary-green);
-    }
-    .summary-sub {
-      font-size: 0.76rem;
-      color: var(--text-muted);
-    }
-
-    .summary-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-      border-top: 1px solid var(--border-light);
-      padding-top: 18px;
-    }
-    .summary-disclaimer {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      max-width: 520px;
-      line-height: 1.45;
-    }
     .btn-submit-charity {
       background: var(--primary-green);
       color: white;
@@ -932,9 +731,168 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
 
     @media (max-width: 768px) {
       .programs-card-grid { grid-template-columns: 1fr; }
-      .method-toggle-grid { grid-template-columns: 1fr; }
-      .digital-channels-grid { grid-template-columns: 1fr; }
-      .form-row-2 { grid-template-columns: 1fr; }
+      .method-toggle-grid { grid-template-columns: 1fr !important; }
+    }
+
+    /* ── PayMongo Online Method ── */
+    .paymongo-checkout-card {
+      background: linear-gradient(135deg, #f0fdf4 0%, #f8faf9 100%);
+      border: 2px solid #a7f3d0;
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 0;
+    }
+    .paymongo-checkout-card .pm-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .paymongo-checkout-card .pm-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0f5c3a, #176b45);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(15, 92, 58, 0.25);
+    }
+    .paymongo-checkout-card .pm-icon-box svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+    .paymongo-checkout-card .pm-title {
+      font-family: 'Lora', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .paymongo-checkout-card .pm-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .pm-methods-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .pm-method-badge {
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .pm-method-badge svg {
+      width: 13px;
+      height: 13px;
+      fill: currentColor;
+    }
+    .pm-method-badge.qr { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .pm-method-badge.gcash { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .pm-method-badge.maya { background: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+    .pm-method-badge.card { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+    .pm-method-badge.grab { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .pm-summary-box {
+      background: white;
+      border: 1px solid #d4e3dc;
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin-bottom: 18px;
+    }
+    .pm-summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+    }
+    .pm-summary-row .pm-label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .pm-summary-row .pm-value {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .pm-summary-row .pm-value.amount {
+      font-size: 1.3rem;
+      font-family: 'Lora', serif;
+      color: var(--primary-green);
+    }
+    .pm-summary-row.total {
+      border-top: 2px solid var(--primary-green);
+      margin-top: 8px;
+      padding-top: 12px;
+    }
+    .btn-paymongo-checkout {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #0f5c3a, #176b45);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 6px 20px rgba(15, 92, 58, 0.3);
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-paymongo-checkout:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(15, 92, 58, 0.4);
+    }
+    .btn-paymongo-checkout:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-paymongo-checkout svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+    .pm-secure-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      justify-content: center;
+    }
+    .pm-secure-note svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
+    .method-toggle-btn .pm-instant-badge {
+      position: absolute;
+      top: -8px;
+      right: -6px;
+      background: linear-gradient(135deg, #c79a2b, #dab446);
+      color: white;
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      box-shadow: 0 2px 6px rgba(199, 154, 43, 0.4);
     }
 
     /* ── Thank You Pop-up Modal ── */
@@ -1428,13 +1386,13 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
           </div>
         </section>
 
-        <!-- ═══ STEP 2 & 3: Donation Method & Summary Form ═══ -->
+        <!-- ═══ STEP 2: Donation Method Form ═══ -->
         <form id="donationForm" onsubmit="handleDonationSubmit(event)" enctype="multipart/form-data">
           <!-- Hidden Inputs for Submission -->
           <input type="hidden" name="target_program" id="form-target-program" value="Food Donation" />
           <input type="hidden" name="amount" id="form-amount" value="500" />
-          <input type="hidden" name="donation_method" id="form-method" value="direct" />
-          <input type="hidden" name="donation_category" id="form-category" value="cash" />
+          <input type="hidden" name="donation_method" id="form-method" value="paymongo" />
+          <input type="hidden" name="donation_category" id="form-category" value="digital" />
 
           <!-- ── Step 2 Card: Choose Donation Method ── -->
           <section class="method-section-card" id="donation-method-box">
@@ -1445,8 +1403,21 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
 
             <!-- 2-Option Method Selector Buttons -->
             <div class="method-toggle-grid">
+              <!-- PayMongo Online Option -->
+              <button type="button" class="method-toggle-btn active" id="btn-method-paymongo" onclick="setDonationMethod('paymongo')" style="position:relative;">
+                <span class="pm-instant-badge">Instant ⚡</span>
+                <div class="method-btn-icon">
+                  <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h2v2h-2v-2zm0 2h3v2h-3v-2zm-2 2h2v2h-2v-2z"/></svg>
+                </div>
+                <div class="method-btn-text">
+                  <div class="method-btn-title">PayMongo Online</div>
+                  <div class="method-btn-desc">Pay instantly via QR Ph, GCash, Maya, or Card</div>
+                </div>
+                <div class="method-check-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+              </button>
+
               <!-- Direct Option -->
-              <button type="button" class="method-toggle-btn active" id="btn-method-direct" onclick="setDonationMethod('direct')">
+              <button type="button" class="method-toggle-btn" id="btn-method-direct" onclick="setDonationMethod('direct')">
                 <div class="method-btn-icon">
                   <svg viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
                 </div>
@@ -1456,22 +1427,66 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
                 </div>
                 <div class="method-check-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
               </button>
+            </div>
 
-              <!-- Digital Option -->
-              <button type="button" class="method-toggle-btn" id="btn-method-digital" onclick="setDonationMethod('digital')">
-                <div class="method-btn-icon">
-                  <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+            <!-- PayMongo Online Donation Section -->
+            <div id="method-paymongo-fields">
+              <div class="paymongo-checkout-card">
+                <div class="pm-header">
+                  <div class="pm-icon-box">
+                    <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h2v2h-2v-2zm0 2h3v2h-3v-2zm-2 2h2v2h-2v-2z"/></svg>
+                  </div>
+                  <div>
+                    <div class="pm-title">PayMongo Secure Gateway</div>
+                    <div class="pm-subtitle">Instant payment with auto-verified donation status</div>
+                  </div>
                 </div>
-                <div class="method-btn-text">
-                  <div class="method-btn-title">Digital Donation</div>
-                  <div class="method-btn-desc">Electronic transfer via GCash, Maya, or Bank Transfer</div>
+
+                <div class="pm-methods-row">
+                  <span class="pm-method-badge qr">
+                    <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5z"/></svg>
+                    QR Ph (Scan to Pay)
+                  </span>
+                  <span class="pm-method-badge gcash">GCash</span>
+                  <span class="pm-method-badge maya">Maya</span>
+                  <span class="pm-method-badge card">Credit / Debit Card</span>
+                  <span class="pm-method-badge grab">GrabPay</span>
                 </div>
-                <div class="method-check-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
-              </button>
+
+                <div class="pm-summary-box">
+                  <div class="pm-summary-row">
+                    <span class="pm-label">Charity Program</span>
+                    <span class="pm-value" id="pm-sum-program">Food Donation</span>
+                  </div>
+                  <div class="pm-summary-row">
+                    <span class="pm-label">Donor</span>
+                    <span class="pm-value" id="pm-sum-donor"><?= htmlspecialchars($donorFullName) ?></span>
+                  </div>
+                  <div class="pm-summary-row total">
+                    <span class="pm-label">Donation Amount</span>
+                    <span class="pm-value amount" id="pm-sum-amount">₱500.00</span>
+                  </div>
+                </div>
+
+                <button type="button" id="btn-paymongo-pay" class="btn-paymongo-checkout" onclick="submitPayMongoDonation()">
+                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                  <span id="btn-paymongo-label">Donate ₱<span id="pm-btn-amount">500.00</span> via PayMongo</span>
+                </button>
+
+                <div class="pm-secure-note">
+                  <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                  You will be securely redirected to PayMongo to complete your donation. No form fields needed — payment is verified instantly.
+                </div>
+
+                <div style="margin-top:14px; font-size:0.78rem; color:#0369a1; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:10px 14px; display:flex; align-items:flex-start; gap:8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#0284c7" style="flex-shrink:0; margin-top:2px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                  <div><strong>Instant Verification:</strong> Donations via PayMongo are <strong>auto-verified</strong> and immediately marked as "Available" in the Damayan system. No manual confirmation needed.</div>
+                </div>
+              </div>
             </div>
 
             <!-- Direct Donation Walk-in Details & Interactive Map (No Form) -->
-            <div id="method-direct-fields">
+            <div id="method-direct-fields" style="display:none;">
               <div class="location-banner-card" style="margin-bottom:16px;">
                 <div class="location-icon">
                   <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
@@ -1530,165 +1545,9 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
               </div>
             </div>
 
-            <!-- Digital Donation Form Container -->
-            <div id="method-digital-fields" style="display:none;">
-              
-              <!-- Digital Channel Tabs -->
-              <div class="form-group-item">
-                <label class="form-group-label">Select Digital Payment Channel</label>
-                <div class="digital-channels-grid">
-                  <button type="button" class="channel-tab-btn active" id="btn-chan-gcash" onclick="chooseDigitalChannel('GCash')">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:4px;"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14zm-5 1a1 1 0 100-2 1 1 0 000 2z"/></svg>GCash
-                  </button>
-                  <button type="button" class="channel-tab-btn" id="btn-chan-maya" onclick="chooseDigitalChannel('Maya')">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:4px;"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>Maya
-                  </button>
-                  <button type="button" class="channel-tab-btn" id="btn-chan-bdo" onclick="chooseDigitalChannel('Bank Transfer')">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px; margin-right:4px;"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>Bank Transfer (BDO)
-                  </button>
-                </div>
-              </div>
-
-              <!-- Payment Instructions Card (Fillable Real Payment Account) -->
-              <div class="payment-instruction-card" id="digital-instruction-card">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-bottom:1px solid #d7ebe0; padding-bottom:10px;">
-                  <div class="pi-title" id="pi-channel-title">Official ISCAG BDO Bank Account Instructions</div>
-                  <span class="pi-badge" id="pi-editable-badge">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                    Fillable Real Account Details
-                  </span>
-                </div>
-
-                <!-- Fillable Real Payment Account Fields -->
-                <div class="pi-form-grid">
-                  <div>
-                    <label class="form-group-label" style="font-size:0.75rem; margin-bottom:4px;" id="pi-label-bank">Bank / Provider</label>
-                    <input type="text" name="target_bank_name" id="pi-bank-input" class="form-control-input" style="background:white; font-size:0.86rem; font-weight:600;" value="Banco de Oro (BDO)" placeholder="e.g. Banco de Oro (BDO)" oninput="handleAccountDetailChange()" />
-                  </div>
-                  <div>
-                    <label class="form-group-label" style="font-size:0.75rem; margin-bottom:4px;" id="pi-label-name">Official Account Name</label>
-                    <input type="text" name="target_account_name" id="pi-name-input" class="form-control-input" style="background:white; font-size:0.86rem; font-weight:600;" value="ISCAG Relief &amp; Damayan Fund" placeholder="e.g. ISCAG Relief &amp; Damayan Fund" oninput="handleAccountDetailChange()" />
-                  </div>
-                </div>
-
-                <div class="pi-form-grid" style="margin-top:10px; margin-bottom:12px;">
-                  <div>
-                    <label class="form-group-label" style="font-size:0.75rem; margin-bottom:4px;" id="pi-label-number">BDO Account Number <span style="color:#dc2626;">*</span></label>
-                    <input type="text" name="target_account_number" id="pi-number-input" class="form-control-input" style="background:white; font-family:monospace; font-weight:700; font-size:0.92rem; color:var(--primary-dark);" value="0012-3456-7890" placeholder="Enter Real BDO Account Number" oninput="handleAccountDetailChange()" />
-                  </div>
-                  <div>
-                    <label class="form-group-label" style="font-size:0.75rem; margin-bottom:4px;" id="pi-label-branch">Branch / Location</label>
-                    <input type="text" name="target_bank_branch" id="pi-branch-input" class="form-control-input" style="background:white; font-size:0.86rem;" value="Dasmariñas Aguinaldo Branch" placeholder="e.g. Dasmariñas Aguinaldo Branch" oninput="handleAccountDetailChange()" />
-                  </div>
-                </div>
-
-                <div style="font-size:0.76rem; color:var(--text-muted); line-height:1.45; background:rgba(255,255,255,0.7); border-radius:8px; padding:9px 12px; border:1px dashed #b9ded0; display:flex; align-items:flex-start; gap:8px;">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="#0f5c3a" style="flex-shrink:0; margin-top:2px;"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
-                  <div><strong>Real Account Notice:</strong> You can verify or edit the official receiving account number and details above. Complete your transfer in your BDO online banking or payment app, then enter your transaction reference number below.</div>
-                </div>
-              </div>
-
-              <input type="hidden" name="payment_method" id="form-payment-method" value="GCash" />
-
-              <div class="form-row-2">
-                <div class="form-group-item">
-                  <label class="form-group-label">Transaction Reference Number <span style="color:#dc2626;">*</span></label>
-                  <input type="text" name="payment_reference" id="digital-ref" class="form-control-input" placeholder="e.g. 100293847561 or TRX-88214" />
-                </div>
-                <div class="form-group-item">
-                  <label class="form-group-label">Donor Name <span style="color:#dc2626;">*</span></label>
-                  <input type="text" name="donor_name_digital" id="digital-donor-name" value="<?= htmlspecialchars($donorFullName) ?>" class="form-control-input" oninput="updateSummaryDonorName(this.value)" />
-                </div>
-              </div>
-
-              <!-- Proof of Payment Upload Dropzone -->
-              <div class="form-group-item">
-                <label class="form-group-label">Proof of Payment (Screenshot or Receipt)</label>
-                <div class="proof-upload-zone" onclick="document.getElementById('receipt-file').click()">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#0f5c3a" style="margin-bottom:4px;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-                  <div style="font-size:0.86rem; font-weight:700; color:var(--primary-dark);">Click to upload payment screenshot</div>
-                  <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">PNG, JPG, or PDF up to 10MB</div>
-                  <input type="file" name="receipt" id="receipt-file" accept=".png,.jpg,.jpeg,.webp,.pdf" style="display:none;" onchange="previewProofReceipt(this)" />
-                </div>
-                <div class="proof-preview-container" id="proof-preview-box">
-                  <img id="proof-thumb-img" src="" alt="Proof Preview" class="proof-thumb" />
-                  <div style="flex:1;">
-                    <div id="proof-filename" style="font-size:0.82rem; font-weight:700; color:var(--text-dark);">receipt.jpg</div>
-                    <div style="font-size:0.72rem; color:var(--text-muted);">Ready to upload with submission</div>
-                  </div>
-                  <button type="button" onclick="clearProofReceipt()" style="background:none; border:none; color:#dc2626; font-size:1.1rem; cursor:pointer;">&times;</button>
-                </div>
-              </div>
-
-              <div class="form-group-item">
-                <label class="form-group-label">Donor Contact / Email (Optional)</label>
-                <input type="text" name="donor_contact_digital" id="digital-donor-contact" value="<?= htmlspecialchars($donorContact) ?>" class="form-control-input" oninput="updateSummaryDonorContact(this.value)" />
-              </div>
-
-              <div class="form-group-item" style="margin-bottom:0;">
-                <label class="form-group-label">Additional Remarks (Optional)</label>
-                <textarea name="remarks_digital" id="digital-remarks" rows="2" class="form-control-textarea" placeholder="Any specific intentions or notes regarding this electronic donation..."></textarea>
-              </div>
-
-              <div style="margin-top:14px; font-size:0.8rem; color:#0369a1; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:10px 14px; display:flex; align-items:flex-start; gap:8px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#0284c7" style="flex-shrink:0; margin-top:2px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                <div><strong>Digital Donation Note:</strong> Your submission will be recorded as <strong>Pending Verification</strong> until authorized Damayan staff confirms the payment reference.</div>
-              </div>
-            </div>
-
           </section>
 
-          <!-- ═══ STEP 3: Live Donation Summary Card (Digital Only) ═══ -->
-          <section class="donation-summary-card" id="step3-donation-summary" style="display:none;">
-            <div class="summary-header">
-              <div>
-                <span class="step-pill" style="margin-bottom:4px; display:inline-block;">Step 3</span>
-                <div class="summary-title">Donation Summary</div>
-              </div>
-              <div class="summary-badge">Review &amp; Confirm</div>
-            </div>
 
-            <div class="summary-grid">
-              <!-- Program Summary -->
-              <div class="summary-item">
-                <span class="summary-label">Donation Program</span>
-                <strong class="summary-val" id="sum-program-title">Food Donation</strong>
-                <div class="summary-sub" id="sum-program-desc">Support food assistance for individuals and families in need.</div>
-              </div>
-
-              <!-- Amount Summary -->
-              <div class="summary-item">
-                <span class="summary-label">Contribution Amount</span>
-                <strong class="summary-val highlight-amount" id="sum-amount-val">₱500.00</strong>
-                <div class="summary-sub" id="sum-amount-type">Preset Contribution</div>
-              </div>
-
-              <!-- Method Summary -->
-              <div class="summary-item">
-                <span class="summary-label">Donation Method</span>
-                <strong class="summary-val" id="sum-method-val">Direct Donation, Face-to-Face</strong>
-                <div class="summary-sub" id="sum-method-sub">ISCAG Damayan Reception Cashier</div>
-              </div>
-
-              <!-- Donor Summary -->
-              <div class="summary-item">
-                <span class="summary-label">Donor Information</span>
-                <strong class="summary-val" id="sum-donor-name"><?= htmlspecialchars($donorFullName) ?></strong>
-                <div class="summary-sub" id="sum-donor-contact"><?= htmlspecialchars($donorContact ?: 'ISCAG Community Member') ?></div>
-              </div>
-            </div>
-
-            <div class="summary-footer">
-              <div class="summary-disclaimer" style="display:flex; align-items:flex-start; gap:8px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0; margin-top:2px;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                <div>Your donation will be safely logged with a unique traceable reference number. Confirmation is performed by authorized Damayan staff after verification.</div>
-              </div>
-              <button type="submit" id="btn-submit-donation" class="btn-submit-charity">
-                <span id="btn-submit-label">Confirm &amp; Submit Donation</span>
-                <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </button>
-            </div>
-          </section>
         </form>
 
         <!-- ═══ Supportive Info / Transparency Cards ═══ -->
@@ -2057,8 +1916,7 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
     let currentProgram = 'food';
     let currentAmount = 500;
     let isCustomAmount = false;
-    let currentMethod = 'direct'; // 'direct' or 'digital'
-    let currentDigitalChannel = 'GCash';
+    let currentMethod = 'paymongo'; // 'paymongo' or 'direct'
 
     // ── Hero Carousel Logic ──
     const heroTrack = document.getElementById('carousel-track');
@@ -2167,106 +2025,28 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
     function setDonationMethod(method) {
       currentMethod = method;
       const btnDirect = document.getElementById('btn-method-direct');
-      const btnDigital = document.getElementById('btn-method-digital');
+      const btnPaymongo = document.getElementById('btn-method-paymongo');
       const directBox = document.getElementById('method-direct-fields');
-      const digitalBox = document.getElementById('method-digital-fields');
-      const step3Summary = document.getElementById('step3-donation-summary');
+      const paymongoBox = document.getElementById('method-paymongo-fields');
+
+      // Reset all
+      if (btnDirect) btnDirect.classList.remove('active');
+      if (btnPaymongo) btnPaymongo.classList.remove('active');
+      if (directBox) directBox.style.display = 'none';
+      if (paymongoBox) paymongoBox.style.display = 'none';
 
       if (method === 'direct') {
-        btnDirect.classList.add('active');
-        btnDigital.classList.remove('active');
-        directBox.style.display = 'block';
-        digitalBox.style.display = 'none';
-        if (step3Summary) step3Summary.style.display = 'none';
+        if (btnDirect) btnDirect.classList.add('active');
+        if (directBox) directBox.style.display = 'block';
         document.getElementById('form-method').value = 'direct';
         document.getElementById('form-category').value = 'cash';
-      } else {
-        btnDigital.classList.add('active');
-        btnDirect.classList.remove('active');
-        digitalBox.style.display = 'block';
-        directBox.style.display = 'none';
-        if (step3Summary) step3Summary.style.display = 'block';
-        document.getElementById('form-method').value = 'digital';
+      } else if (method === 'paymongo') {
+        if (btnPaymongo) btnPaymongo.classList.add('active');
+        if (paymongoBox) paymongoBox.style.display = 'block';
+        document.getElementById('form-method').value = 'paymongo';
         document.getElementById('form-category').value = 'digital';
-        document.getElementById('btn-submit-label').textContent = 'Confirm & Submit Donation';
       }
 
-      updateLiveSummary();
-    }
-
-    // ── Digital Channel Selection (Strictly NO QR) ──
-    const CHANNEL_DETAILS = {
-      'GCash': {
-        title: 'Official ISCAG GCash Instructions',
-        bankName: 'GCash',
-        accountName: 'ISCAG Relief & Damayan Fund',
-        numberLabel: 'GCash Mobile Number:',
-        numberVal: '0917-123-4567',
-        numberPlaceholder: 'e.g. 0917-123-4567',
-        branchLabel: 'Account Type / Details',
-        branchVal: 'Official Merchant Account'
-      },
-      'Maya': {
-        title: 'Official ISCAG Maya Instructions',
-        bankName: 'Maya (PayMaya)',
-        accountName: 'ISCAG Relief & Damayan Fund',
-        numberLabel: 'Maya Account / Mobile Number:',
-        numberVal: '0918-987-6543',
-        numberPlaceholder: 'e.g. 0918-987-6543',
-        branchLabel: 'Account Type / Details',
-        branchVal: 'Official Business Account'
-      },
-      'Bank Transfer': {
-        title: 'Official ISCAG BDO Bank Account Instructions',
-        bankName: 'Banco de Oro (BDO)',
-        accountName: 'ISCAG Relief & Damayan Fund',
-        numberLabel: 'BDO Account Number:',
-        numberVal: '0012-3456-7890',
-        numberPlaceholder: 'Enter Real BDO Account Number',
-        branchLabel: 'Bank Branch / Location',
-        branchVal: 'Dasmariñas Aguinaldo Branch'
-      }
-    };
-
-    function chooseDigitalChannel(chan) {
-      currentDigitalChannel = chan;
-      document.querySelectorAll('.channel-tab-btn').forEach(btn => btn.classList.remove('active'));
-
-      if (chan === 'GCash') document.getElementById('btn-chan-gcash').classList.add('active');
-      else if (chan === 'Maya') document.getElementById('btn-chan-maya').classList.add('active');
-      else document.getElementById('btn-chan-bdo').classList.add('active');
-
-      document.getElementById('form-payment-method').value = chan;
-
-      const details = CHANNEL_DETAILS[chan];
-      if (details) {
-        document.getElementById('pi-channel-title').textContent = details.title;
-        document.getElementById('pi-label-number').innerHTML = details.numberLabel + ' <span style="color:#dc2626;">*</span>';
-        document.getElementById('pi-label-branch').textContent = details.branchLabel;
-
-        // Retrieve any real payment account saved in localStorage
-        const savedAccounts = JSON.parse(localStorage.getItem('iscag_real_payment_accounts') || '{}');
-        const savedChan = savedAccounts[chan] || {};
-
-        document.getElementById('pi-bank-input').value = savedChan.bankName || details.bankName;
-        document.getElementById('pi-name-input').value = savedChan.accountName || details.accountName;
-        document.getElementById('pi-number-input').value = savedChan.numberVal || details.numberVal;
-        document.getElementById('pi-number-input').placeholder = details.numberPlaceholder;
-        document.getElementById('pi-branch-input').value = savedChan.branchVal || details.branchVal;
-      }
-
-      updateLiveSummary();
-    }
-
-    function handleAccountDetailChange() {
-      const savedAccounts = JSON.parse(localStorage.getItem('iscag_real_payment_accounts') || '{}');
-      savedAccounts[currentDigitalChannel] = {
-        bankName: document.getElementById('pi-bank-input').value.trim(),
-        accountName: document.getElementById('pi-name-input').value.trim(),
-        numberVal: document.getElementById('pi-number-input').value.trim(),
-        branchVal: document.getElementById('pi-branch-input').value.trim()
-      };
-      localStorage.setItem('iscag_real_payment_accounts', JSON.stringify(savedAccounts));
       updateLiveSummary();
     }
 
@@ -2278,77 +2058,24 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
       document.getElementById('form-target-program').value = p.title;
       document.getElementById('form-amount').value = currentAmount;
 
-      document.getElementById('sum-program-title').textContent = p.title;
-      document.getElementById('sum-program-desc').textContent = p.desc;
-
       const amtDisplay = currentAmount > 0 
         ? '₱' + currentAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : 'Enter Amount';
-      document.getElementById('sum-amount-val').textContent = amtDisplay;
-      document.getElementById('sum-amount-type').textContent = isCustomAmount ? 'Custom Amount' : 'Suggested Contribution';
 
-      if (currentMethod === 'direct') {
-        document.getElementById('sum-method-val').textContent = 'Direct Donation, Face-to-Face';
-        document.getElementById('sum-method-sub').textContent = 'ISCAG Damayan Reception Cashier Desk';
-      } else {
-        const numVal = document.getElementById('pi-number-input') ? document.getElementById('pi-number-input').value.trim() : '';
-        const numSuffix = numVal ? ' • Acct: ' + numVal : '';
-        document.getElementById('sum-method-val').textContent = 'Digital Donation (' + currentDigitalChannel + ')';
-        document.getElementById('sum-method-sub').textContent = (currentDigitalChannel === 'Bank Transfer' ? 'BDO Bank Transfer' : 'Electronic Mobile Transfer') + numSuffix;
-      }
+      const dName = '<?= htmlspecialchars($donorFullName) ?>';
 
-      // Sync active donor name & contact in summary
-      const dName = currentMethod === 'direct' 
-        ? '<?= htmlspecialchars($donorFullName) ?>'
-        : (document.getElementById('digital-donor-name') ? (document.getElementById('digital-donor-name').value || '<?= htmlspecialchars($donorFullName) ?>') : '<?= htmlspecialchars($donorFullName) ?>');
-
-      const dContact = currentMethod === 'direct'
-        ? '<?= htmlspecialchars($donorContact) ?>'
-        : (document.getElementById('digital-donor-contact') ? (document.getElementById('digital-donor-contact').value || '<?= htmlspecialchars($donorContact) ?>') : '<?= htmlspecialchars($donorContact) ?>');
-
-      document.getElementById('sum-donor-name').textContent = dName;
-      document.getElementById('sum-donor-contact').textContent = dContact || 'ISCAG Community Member';
+      // Update PayMongo summary panel
+      const pmProg = document.getElementById('pm-sum-program');
+      const pmDonor = document.getElementById('pm-sum-donor');
+      const pmAmt = document.getElementById('pm-sum-amount');
+      const pmBtnAmt = document.getElementById('pm-btn-amount');
+      if (pmProg) pmProg.textContent = p.title;
+      if (pmDonor) pmDonor.textContent = dName;
+      if (pmAmt) pmAmt.textContent = amtDisplay;
+      if (pmBtnAmt) pmBtnAmt.textContent = currentAmount > 0 ? currentAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
     }
 
-    function updateSummaryDonorName(val) {
-      document.getElementById('sum-donor-name').textContent = val || '<?= htmlspecialchars($donorFullName) ?>';
-    }
-    function updateSummaryDonorContact(val) {
-      document.getElementById('sum-donor-contact').textContent = val || 'ISCAG Community Member';
-    }
-
-    // ── Proof of Payment Upload Preview ──
-    function previewProofReceipt(input) {
-      const file = input.files && input.files[0];
-      if (!file) return;
-
-      const previewBox = document.getElementById('proof-preview-box');
-      const thumbImg = document.getElementById('proof-thumb-img');
-      const filenameEl = document.getElementById('proof-filename');
-
-      filenameEl.textContent = file.name;
-
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          thumbImg.src = e.target.result;
-          thumbImg.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-      } else {
-        thumbImg.style.display = 'none';
-      }
-
-      previewBox.style.display = 'flex';
-    }
-
-    function clearProofReceipt() {
-      const input = document.getElementById('receipt-file');
-      input.value = '';
-      document.getElementById('proof-preview-box').style.display = 'none';
-    }
-
-    // ── Donation Submission Handler ──
+    // ── Direct Walk-in Donation Submission Handler ──
     async function handleDonationSubmit(e) {
       if (e && typeof e.preventDefault === 'function') {
         e.preventDefault();
@@ -2360,61 +2087,23 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
         return;
       }
 
-      const form = document.getElementById('donationForm');
-      const formData = new FormData();
-
       const p = PROGRAM_DATA[currentProgram];
-      formData.append('target_program', p.title);
+      const formData = new FormData();
+      formData.append('target_program', p ? p.title : 'General Welfare & Relief');
       formData.append('amount', currentAmount);
-      formData.append('donation_method', currentMethod);
-      formData.append('donation_category', currentMethod === 'direct' ? 'cash' : 'digital');
+      formData.append('donation_method', 'direct');
+      formData.append('donation_category', 'cash');
+      formData.append('donor_name', '<?= htmlspecialchars($donorFullName) ?>');
+      formData.append('donor_contact', '<?= htmlspecialchars($donorContact) ?>');
+      formData.append('intended_visit_date', '<?= date('Y-m-d') ?>');
+      formData.append('dropoff_location', '<?= htmlspecialchars(CharityProgram::OFFICIAL_ISCAG_ADDRESS) ?>');
+      formData.append('remarks', 'Direct in-person walk-in donation at ISCAG Complex Damayan Reception Desk');
 
-      if (currentMethod === 'direct') {
-        formData.append('donor_name', '<?= htmlspecialchars($donorFullName) ?>');
-        formData.append('donor_contact', '<?= htmlspecialchars($donorContact) ?>');
-        formData.append('intended_visit_date', '<?= date('Y-m-d') ?>');
-        formData.append('dropoff_location', '<?= htmlspecialchars(CharityProgram::OFFICIAL_ISCAG_ADDRESS) ?>');
-        formData.append('remarks', 'Direct in-person walk-in donation at ISCAG Complex Damayan Reception Desk');
-      } else {
-        const ref = document.getElementById('digital-ref').value.trim();
-        if (!ref) {
-          showToast('Please enter your transaction reference number.', '#dc2626');
-          document.getElementById('digital-ref').focus();
-          return;
-        }
-        const dName = document.getElementById('digital-donor-name').value.trim();
-        if (!dName) {
-          showToast('Please provide the donor name for verification.', '#dc2626');
-          document.getElementById('digital-donor-name').focus();
-          return;
-        }
-        formData.append('payment_method', document.getElementById('form-payment-method').value);
-        formData.append('payment_reference', ref);
-        formData.append('donor_name', dName);
-        formData.append('donor_contact', document.getElementById('digital-donor-contact').value.trim());
-        formData.append('remarks', document.getElementById('digital-remarks').value.trim());
-
-        // Append fillable real payment account details
-        formData.append('target_bank_name', document.getElementById('pi-bank-input') ? document.getElementById('pi-bank-input').value.trim() : '');
-        formData.append('target_account_name', document.getElementById('pi-name-input') ? document.getElementById('pi-name-input').value.trim() : '');
-        formData.append('target_account_number', document.getElementById('pi-number-input') ? document.getElementById('pi-number-input').value.trim() : '');
-        formData.append('target_bank_branch', document.getElementById('pi-branch-input') ? document.getElementById('pi-branch-input').value.trim() : '');
-
-        const receiptInput = document.getElementById('receipt-file');
-        if (receiptInput && receiptInput.files && receiptInput.files[0]) {
-          formData.append('receipt', receiptInput.files[0]);
-        }
-      }
-
-      const btn = currentMethod === 'direct'
-        ? document.getElementById('btn-submit-direct')
-        : document.getElementById('btn-submit-donation');
-      const label = currentMethod === 'direct'
-        ? document.getElementById('btn-submit-direct-label')
-        : document.getElementById('btn-submit-label');
+      const btn = document.getElementById('btn-submit-direct');
+      const label = document.getElementById('btn-submit-direct-label');
 
       if (btn) btn.disabled = true;
-      if (label) label.textContent = 'Submitting Donation...';
+      if (label) label.textContent = 'Submitting Intent...';
 
       try {
         const res = await fetch('<?= url('/user/services/charity/donate') ?>', {
@@ -2424,28 +2113,16 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
 
         const data = await res.json();
         if (data.success) {
-          if (currentMethod === 'direct') {
-            openDonationSlipModal(data.donation_ref);
-          } else {
-            openThankYouModal(data.donation_ref);
-          }
+          openDonationSlipModal(data.donation_ref);
         } else {
           if (btn) btn.disabled = false;
-          if (label) {
-            label.textContent = currentMethod === 'direct'
-              ? 'Confirm & Get Walk-in Donation Slip'
-              : 'Confirm & Submit Donation';
-          }
+          if (label) label.textContent = 'Confirm & Get Walk-in Donation Slip';
           showToast(data.error || 'Failed to submit donation. Please review your entries.', '#dc2626');
         }
       } catch (err) {
         console.error(err);
         if (btn) btn.disabled = false;
-        if (label) {
-          label.textContent = currentMethod === 'direct'
-            ? 'Confirm & Get Walk-in Donation Slip'
-            : 'Confirm & Submit Donation';
-        }
+        if (label) label.textContent = 'Confirm & Get Walk-in Donation Slip';
         showToast('A network error occurred. Please try again.', '#dc2626');
       }
     }
@@ -2476,10 +2153,12 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
       if (btnDirect) btnDirect.disabled = false;
       if (labelDirect) labelDirect.textContent = 'Confirm & Get Walk-in Donation Slip';
 
-      const btn = document.getElementById('btn-submit-donation');
-      const label = document.getElementById('btn-submit-label');
-      if (btn) btn.disabled = false;
-      if (label) label.textContent = 'Confirm & Submit Donation';
+      const btnPaymongo = document.getElementById('btn-paymongo-pay');
+      const labelPaymongo = document.getElementById('btn-paymongo-label');
+      if (btnPaymongo) btnPaymongo.disabled = false;
+      if (labelPaymongo) {
+        labelPaymongo.innerHTML = 'Donate ₱<span id="pm-btn-amount">' + (currentAmount > 0 ? currentAmount.toFixed(2) : '500.00') + '</span> via PayMongo';
+      }
     }
 
     function closeThankYouModal() {
@@ -2549,11 +2228,13 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
       const amtStr = '₱' + amtNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const methodStr = currentMethod === 'direct' 
         ? 'Direct Donation, Face-to-Face (ISCAG Complex Walk-in)' 
-        : ('Digital Donation — ' + currentDigitalChannel);
+        : 'PayMongo Secure Gateway (Instant Online)';
       const donorName = '<?= htmlspecialchars($donorFullName) ?>';
       const donorContact = '<?= htmlspecialchars($donorContact ?: "ISCAG Community Member") ?>';
       const dateStr = '<?= date("F d, Y") ?>';
-      const statusStr = currentMethod === 'direct' ? 'Pending Receipt (In-Person Handover)' : 'Pending Verification';
+      const statusStr = currentMethod === 'direct' 
+        ? 'Pending Receipt (In-Person Handover)' 
+        : 'Available (Verified Online)';
       const addressConst = '<?= htmlspecialchars(CharityProgram::OFFICIAL_ISCAG_ADDRESS) ?>';
 
       const printHtml = `
@@ -2738,8 +2419,69 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
       document.head.appendChild(s);
     }
 
+    // ── PayMongo Donation Submission ──
+    async function submitPayMongoDonation() {
+      if (currentAmount <= 0 || isNaN(currentAmount)) {
+        showToast('Please select or enter a valid donation amount greater than ₱0.00.', '#dc2626');
+        return;
+      }
+
+      const btn = document.getElementById('btn-paymongo-pay');
+      const label = document.getElementById('btn-paymongo-label');
+      const p = PROGRAM_DATA[currentProgram];
+
+      btn.disabled = true;
+      label.textContent = 'Connecting to PayMongo...';
+
+      try {
+        const res = await fetch('<?= url("/user/services/charity/paymongo-checkout") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: currentAmount,
+            target_program: p ? p.title : 'General Welfare & Relief'
+          })
+        });
+
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          throw new Error(text || ('HTTP ' + res.status));
+        }
+
+        if (data.success && data.checkout_url) {
+          label.textContent = 'Redirecting to PayMongo...';
+          window.location.href = data.checkout_url;
+        } else {
+          showToast(data.message || 'Could not initiate PayMongo checkout.', '#dc2626');
+          btn.disabled = false;
+          label.innerHTML = 'Donate ₱<span id="pm-btn-amount">' + currentAmount.toFixed(2) + '</span> via PayMongo';
+        }
+      } catch (err) {
+        console.error('PayMongo Charity Checkout Error:', err);
+        showToast(err.message || 'Error connecting to payment gateway.', '#dc2626');
+        btn.disabled = false;
+        label.innerHTML = 'Donate ₱<span id="pm-btn-amount">' + currentAmount.toFixed(2) + '</span> via PayMongo';
+      }
+    }
+
+    // Auto-show success toast and Thank You modal if redirected back from PayMongo
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('paid') === '1') {
+        const ref = params.get('ref') || '';
+        currentMethod = 'paymongo';
+        showToast('PayMongo donation confirmed! Ref: ' + ref, '#0f5c3a');
+        if (typeof openThankYouModal === 'function' && ref) {
+          openThankYouModal(ref);
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    });
+
     // Initialize state
-    chooseDigitalChannel(currentDigitalChannel);
     updateLiveSummary();
   </script>
 </body>
