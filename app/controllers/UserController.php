@@ -1019,64 +1019,132 @@ class UserController extends Controller
         $tenantName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: ($_SESSION['name'] ?? 'Tenant Donor');
 
         // Check if multipart form or JSON
-        $amount = 0;
-        $targetProgram = 'General Welfare & Relief';
-        $paymentMethod = 'GCash';
-        $paymentRef = '';
-        $remarks = '';
-        $receiptPath = null;
+        $input = !empty($_POST) ? $_POST : (json_decode(file_get_contents('php://input'), true) ?? []);
 
-        if (!empty($_POST)) {
-            $amount = (float)($_POST['amount'] ?? 0);
-            $targetProgram = trim($_POST['target_program'] ?? 'General Welfare & Relief');
-            $paymentMethod = trim($_POST['payment_method'] ?? 'GCash');
-            $paymentRef = trim($_POST['payment_reference'] ?? '');
-            $remarks = trim($_POST['remarks'] ?? '');
-
-            // Handle receipt upload if provided
-            if (isset($_FILES['receipt']) && $_FILES['receipt']['error'] === UPLOAD_ERR_OK) {
-                $ext = strtolower(pathinfo($_FILES['receipt']['name'], PATHINFO_EXTENSION));
-                $allowed = ['jpg', 'jpeg', 'png', 'pdf', 'webp'];
-                if (in_array($ext, $allowed)) {
-                    $uploadDir = BASE_PATH . '/public/uploads/charity/';
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0755, true);
-                    }
-                    $filename = 'receipt_' . uniqid() . '.' . $ext;
-                    if (move_uploaded_file($_FILES['receipt']['tmp_name'], $uploadDir . $filename)) {
-                        $receiptPath = 'uploads/charity/' . $filename;
-                    }
-                }
-            }
-        } else {
-            $input = json_decode(file_get_contents('php://input'), true) ?? [];
-            $amount = (float)($input['amount'] ?? 0);
-            $targetProgram = trim($input['target_program'] ?? 'General Welfare & Relief');
-            $paymentMethod = trim($input['payment_method'] ?? 'GCash');
-            $paymentRef = trim($input['payment_reference'] ?? '');
-            $remarks = trim($input['remarks'] ?? '');
+        $method = trim($input['donation_method'] ?? '');
+        $category = trim($input['donation_category'] ?? ($method === 'direct' ? 'cash' : 'digital'));
+        if ($method === 'direct') {
+            $category = 'cash';
+        }
+        if (!in_array($category, ['food', 'cash', 'digital'])) {
+            $category = 'digital';
         }
 
-        if ($amount <= 0) {
-            echo json_encode(['success' => false, 'error' => 'Please enter a valid donation amount greater than 0.']);
-            exit;
+        $customDonorName = trim($input['donor_name'] ?? '');
+        $finalDonorName = !empty($customDonorName) ? $customDonorName : $tenantName;
+
+        $customContact = trim($input['donor_contact'] ?? ($input['donor_address'] ?? ''));
+        $finalDonorContact = !empty($customContact) ? $customContact : ($dbUser['email'] ?? ($dbUser['contactnum'] ?? ''));
+
+        $receiptPath = null;
+        if (isset($_FILES['receipt']) && $_FILES['receipt']['error'] === UPLOAD_ERR_OK) {
+            $ext = strtolower(pathinfo($_FILES['receipt']['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'pdf', 'webp'];
+            if (in_array($ext, $allowed)) {
+                $uploadDir = BASE_PATH . '/public/uploads/charity/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $filename = 'receipt_' . uniqid() . '.' . $ext;
+                if (move_uploaded_file($_FILES['receipt']['tmp_name'], $uploadDir . $filename)) {
+                    $receiptPath = 'uploads/charity/' . $filename;
+                }
+            }
         }
 
         $charity = new CharityProgram();
         $data = [
             'tenant_id' => (int)$_SESSION['user_id'],
-            'donor_name' => $tenantName,
-            'donor_address' => $dbUser['email'] ?? '',
-            'donation_type' => 'monetary',
-            'amount' => $amount,
-            'target_program' => $targetProgram,
-            'date_received' => date('Y-m-d'),
-            'payment_method' => $paymentMethod,
-            'payment_reference' => $paymentRef,
-            'received_by' => 'Online Portal (Self-Service)',
-            'remarks' => $remarks ?: "Online donation for {$targetProgram}",
-            'receipt_path' => $receiptPath
+            'donor_name' => $finalDonorName,
+            'donor_address' => $finalDonorContact,
+            'donation_category' => $category,
+            'remarks' => trim($input['remarks'] ?? '')
         ];
+
+        if ($category === 'food') {
+            $itemDesc = trim($input['item_description'] ?? '');
+            $quantity = (int)($input['quantity'] ?? 0);
+            $unit = trim($input['unit'] ?? 'packs');
+            $preferredDate = trim($input['preferred_dropoff_date'] ?? '');
+            $dropoffLoc = trim($input['dropoff_location'] ?? CharityProgram::OFFICIAL_ISCAG_ADDRESS);
+
+            if (empty($itemDesc)) {
+                echo json_encode(['success' => false, 'error' => 'Please provide a description of the food items or supplies.']);
+                exit;
+            }
+            if ($quantity <= 0) {
+                echo json_encode(['success' => false, 'error' => 'Please enter a valid quantity greater than 0.']);
+                exit;
+            }
+            if (empty($preferredDate)) {
+                echo json_encode(['success' => false, 'error' => 'Please select your preferred drop-off date.']);
+                exit;
+            }
+
+            $data['donation_type'] = 'in-kind';
+            $data['item_description'] = $itemDesc;
+            $data['quantity'] = $quantity;
+            $data['unit'] = $unit;
+            $data['preferred_dropoff_date'] = $preferredDate;
+            $data['dropoff_location'] = $dropoffLoc;
+            $data['target_program'] = 'Food Security & Ramadan Ration';
+            $data['status'] = 'Pending Coordination';
+            $data['date_received'] = date('Y-m-d');
+            $data['payment_method'] = 'Direct In-Kind Drop-off';
+
+        } elseif ($category === 'cash') {
+            $amount = (float)($input['amount'] ?? 0);
+            $targetProgram = trim($input['target_program'] ?? 'General Welfare & Relief');
+            $subDate = trim($input['submission_date'] ?? date('Y-m-d'));
+
+            if ($amount <= 0) {
+                echo json_encode(['success' => false, 'error' => 'Please enter a valid cash donation amount greater than ₱0.00.']);
+                exit;
+            }
+
+            $data['donation_type'] = 'monetary';
+            $data['amount'] = $amount;
+            $data['target_program'] = $targetProgram;
+            $data['date_received'] = $subDate;
+            $data['payment_method'] = 'Cash (ISCAG Office)';
+            $data['status'] = 'Pending Receipt';
+
+        } else { // digital
+            $amount = (float)($input['amount'] ?? 0);
+            $targetProgram = trim($input['target_program'] ?? 'General Welfare & Relief');
+            $paymentMethod = trim($input['payment_method'] ?? 'GCash');
+            $paymentRef = trim($input['payment_reference'] ?? '');
+
+            if ($amount <= 0) {
+                echo json_encode(['success' => false, 'error' => 'Please enter a valid donation amount greater than ₱0.00.']);
+                exit;
+            }
+
+            $targetBank = trim($input['target_bank_name'] ?? '');
+            $targetAccNum = trim($input['target_account_number'] ?? '');
+            $targetAccName = trim($input['target_account_name'] ?? '');
+            $targetBranch = trim($input['target_bank_branch'] ?? '');
+
+            $acctNotes = [];
+            if (!empty($targetBank)) $acctNotes[] = "Bank: {$targetBank}";
+            if (!empty($targetAccNum)) $acctNotes[] = "Acct #: {$targetAccNum}";
+            if (!empty($targetAccName)) $acctNotes[] = "Acct Name: {$targetAccName}";
+            if (!empty($targetBranch)) $acctNotes[] = "Branch: {$targetBranch}";
+
+            if (!empty($acctNotes)) {
+                $noteStr = implode(', ', $acctNotes);
+                $data['remarks'] = !empty($data['remarks']) ? $data['remarks'] . " [Real Payment Account: {$noteStr}]" : "[Real Payment Account: {$noteStr}]";
+            }
+
+            $data['donation_type'] = 'monetary';
+            $data['amount'] = $amount;
+            $data['target_program'] = $targetProgram;
+            $data['date_received'] = date('Y-m-d');
+            $data['payment_method'] = $paymentMethod;
+            $data['payment_reference'] = $paymentRef;
+            $data['receipt_path'] = $receiptPath;
+            $data['status'] = 'Pending Verification';
+        }
 
         $res = $charity->recordDonation($data, $tenantName, (int)$_SESSION['user_id']);
         echo json_encode($res);

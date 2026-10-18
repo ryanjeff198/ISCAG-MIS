@@ -140,6 +140,7 @@ $routes = [
     '/admin/damayan/charity/donations/save'    => ['AdminController', 'saveCharityDonation'],
     '/admin/damayan/charity/donations/detail'  => ['AdminController', 'getCharityDonationDetail'],
     '/admin/damayan/charity/donations/ack'     => ['AdminController', 'toggleCharityAcknowledgment'],
+    '/admin/damayan/charity/donations/verify'  => ['AdminController', 'verifyCharityDonation'],
     '/admin/damayan/charity/donations/print-ack' => ['AdminController', 'printCharityAcknowledgment'],
     '/admin/damayan/charity/available'         => ['AdminController', 'damayanCharityAvailable'],
     '/admin/damayan/charity/allocations'       => ['AdminController', 'damayanCharityAllocations'],

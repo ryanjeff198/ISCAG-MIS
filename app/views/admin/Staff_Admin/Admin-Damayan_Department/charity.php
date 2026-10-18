@@ -280,6 +280,25 @@
           </div>
         </section>
 
+        <?php if (!empty($stats['pending_verifications']['total']) && $stats['pending_verifications']['total'] > 0): ?>
+          <div style="background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #d97706; border-radius:10px; padding:14px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:1.4rem;">⏳</span>
+              <div>
+                <strong style="color:#92400e; font-size:0.95rem;">Action Required: <?= $stats['pending_verifications']['total'] ?> Donation(s) Awaiting Review & Verification</strong>
+                <div style="font-size:0.8rem; color:#b45309; margin-top:2px;">
+                  📱 <?= $stats['pending_verifications']['digital'] ?> Digital Payment(s) &nbsp;|&nbsp;
+                  💵 <?= $stats['pending_verifications']['cash'] ?> Cash Record(s) &nbsp;|&nbsp;
+                  🍲 <?= $stats['pending_verifications']['food'] ?> Food Coordination Request(s)
+                </div>
+              </div>
+            </div>
+            <a href="<?= url('/admin/damayan/charity/donations?status=Pending+Verification') ?>" class="btn-topbar" style="background:#d97706; color:white; text-decoration:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.82rem; display:inline-flex; align-items:center; gap:6px;">
+              Review Submissions →
+            </a>
+          </div>
+        <?php endif; ?>
+
         <!-- 5 Summary Cards (Accurate DB totals) -->
         <div class="admin-insights">
           <!-- 1. Total Received -->

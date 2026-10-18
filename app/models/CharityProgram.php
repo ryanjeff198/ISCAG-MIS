@@ -2,6 +2,8 @@
 
 class CharityProgram
 {
+    public const OFFICIAL_ISCAG_ADDRESS = 'ISCAG Islamic Complex, #31 Jose Abad Santos St., Brgy. Salitran I, Dasmariñas City, Cavite 4114';
+
     protected PDO $db;
 
     public function __construct()
@@ -175,13 +177,37 @@ class CharityProgram
     public function recordDonation(array $data, string $performedBy, ?int $userId = null): array
     {
         $donorName = trim($data['donor_name'] ?? '');
-        $donationType = $data['donation_type'] ?? 'monetary';
+        $category = trim($data['donation_category'] ?? '');
+        $donationType = $data['donation_type'] ?? '';
+
+        // Auto-detect or normalize category & donation_type
+        if (empty($category)) {
+            if ($donationType === 'in-kind') {
+                $category = 'food';
+            } elseif (!empty($data['payment_method']) && stripos($data['payment_method'], 'cash') !== false) {
+                $category = 'cash';
+            } else {
+                $category = 'digital';
+            }
+        }
+
+        if ($category === 'food') {
+            $donationType = 'in-kind';
+        } else {
+            $donationType = 'monetary';
+        }
+
         $dateReceived = $data['date_received'] ?? date('Y-m-d');
-        $receivedBy = trim($data['received_by'] ?? $performedBy);
+        $receivedBy = trim($data['received_by'] ?? ($userId ? 'Online Portal (Pending Staff Verification)' : $performedBy));
         $donorAddress = trim($data['donor_address'] ?? '');
-        $paymentMethod = trim($data['payment_method'] ?? '');
+        $paymentMethod = trim($data['payment_method'] ?? ($category === 'cash' ? 'Cash (ISCAG Office)' : 'GCash'));
         $paymentRef = trim($data['payment_reference'] ?? '');
         $remarks = trim($data['remarks'] ?? '');
+        $targetProgram = trim($data['target_program'] ?? ($category === 'food' ? 'Food Security & Ramadan Ration' : 'General Welfare & Relief'));
+        $receiptPath = trim($data['receipt_path'] ?? '');
+        $preferredDate = !empty($data['preferred_dropoff_date']) ? $data['preferred_dropoff_date'] : null;
+        $dropoffLocation = trim($data['dropoff_location'] ?? self::OFFICIAL_ISCAG_ADDRESS);
+        $unit = trim($data['unit'] ?? 'packs');
 
         if (empty($donorName)) {
             return ['success' => false, 'error' => 'Donor or sponsor name is required.'];
@@ -194,60 +220,86 @@ class CharityProgram
         if ($donationType === 'monetary') {
             $amount = (float)($data['amount'] ?? 0);
             if ($amount <= 0) {
-                return ['success' => false, 'error' => 'Please enter a valid donation amount greater than 0.'];
+                return ['success' => false, 'error' => 'Please enter a valid donation amount greater than ₱0.00.'];
             }
         } else {
-            $donationType = 'in-kind';
             $quantity = (int)($data['quantity'] ?? 0);
             $itemDesc = trim($data['item_description'] ?? '');
             if ($quantity <= 0) {
                 return ['success' => false, 'error' => 'Please enter a valid item quantity greater than 0.'];
             }
             if (empty($itemDesc)) {
-                return ['success' => false, 'error' => 'Item description is required for physical donations.'];
+                return ['success' => false, 'error' => 'Food item or supply description is required.'];
+            }
+        }
+
+        // Determine initial status based on category if not explicitly provided
+        $status = $data['status'] ?? null;
+        if (empty($status)) {
+            if ($category === 'food') {
+                $status = 'Pending Coordination';
+            } elseif ($category === 'cash') {
+                $status = 'Pending Receipt';
+            } else {
+                $status = 'Pending Verification';
             }
         }
 
         $tenantId = !empty($data['tenant_id']) ? (int)$data['tenant_id'] : null;
-        $targetProgram = trim($data['target_program'] ?? '');
-        $receiptPath = trim($data['receipt_path'] ?? '');
-
         $donationRef = $this->generateDonationRef();
 
         try {
             $stmt = $this->db->prepare("INSERT INTO charity_donations_records (
-                tenant_id, donation_ref, donor_name, donor_address, donation_type,
-                amount, item_description, target_program, quantity, allocated_amount, allocated_quantity,
-                date_received, payment_method, payment_reference, received_by, remarks, receipt_path,
-                ack_issued, status, created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, 0, ?, ?, ?, ?, ?, ?, 0, 'Available', ?)");
+                tenant_id, donation_ref, donor_name, donor_address, donation_type, donation_category,
+                amount, item_description, target_program, quantity, unit, allocated_amount, allocated_quantity,
+                date_received, preferred_dropoff_date, dropoff_location, payment_method, payment_reference,
+                received_by, remarks, receipt_path, ack_issued, status, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, 0, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)");
 
             $stmt->execute([
-                $tenantId, $donationRef, $donorName, $donorAddress, $donationType,
-                $amount, $itemDesc, $targetProgram, $quantity,
-                $dateReceived, $paymentMethod, $paymentRef, $receivedBy, $remarks, $receiptPath,
-                $userId
+                $tenantId, $donationRef, $donorName, $donorAddress, $donationType, $category,
+                $amount, $itemDesc, $targetProgram, $quantity, $unit,
+                $dateReceived, $preferredDate, $dropoffLocation, $paymentMethod, $paymentRef,
+                $receivedBy, $remarks, $receiptPath, $status, $userId
             ]);
 
             $id = (int)$this->db->lastInsertId();
 
             $logDesc = sprintf(
-                "Recorded %s donation of %s from %s",
+                "Recorded %s (%s) donation of %s from %s [Status: %s]",
+                $category,
                 $donationType,
-                $donationType === 'monetary' ? '₱' . number_format($amount, 2) : "{$quantity}x {$itemDesc}",
-                $donorName
+                $donationType === 'monetary' ? '₱' . number_format($amount, 2) : "{$quantity} {$unit} {$itemDesc}",
+                $donorName,
+                $status
             );
             $this->logActivity('DONATION_RECORDED', $donationRef, $logDesc, $performedBy, $userId);
 
-            return ['success' => true, 'id' => $id, 'donation_ref' => $donationRef];
+            // Forward alert to Charity Admin notifications
+            try {
+                $notifTitle = match($category) {
+                    'food' => "New Food Donation Request ({$donationRef})",
+                    'cash' => "New Cash Donation Record ({$donationRef})",
+                    default => "New Digital Donation ({$donationRef}) via {$paymentMethod}"
+                };
+                $notifMsg = match($category) {
+                    'food' => "{$donorName} requested coordination for {$quantity} {$unit} of {$itemDesc}. Preferred Drop-off: " . ($preferredDate ?: 'TBD') . ".",
+                    'cash' => "{$donorName} submitted a cash donation record of ₱" . number_format($amount, 2) . " for {$targetProgram}.",
+                    default => "{$donorName} submitted ₱" . number_format($amount, 2) . " via {$paymentMethod} (Ref: " . ($paymentRef ?: 'N/A') . "). Proof uploaded, awaiting verification."
+                };
+                $sourceUrl = "/admin/damayan/charity/donations?search=" . urlencode($donationRef);
+                $notifStmt = $this->db->prepare("INSERT INTO admin_notifications (title, message, type, actor_name, actor_id, source_url, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, NOW())");
+                $notifStmt->execute([$notifTitle, $notifMsg, 'charity', $donorName, $tenantId, $sourceUrl]);
+            } catch (Exception $ne) {
+                // Ignore admin notification failure
+            }
+
+            return ['success' => true, 'id' => $id, 'donation_ref' => $donationRef, 'status' => $status];
         } catch (PDOException $e) {
             return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
         }
     }
 
-    /**
-     * Update permitted donation fields
-     */
     public function updateDonation(int $id, array $data, string $performedBy, ?int $userId = null): array
     {
         $existing = $this->getDonationById($id);
@@ -392,6 +444,53 @@ class CharityProgram
     /**
      * Get all donations with filtering
      */
+
+    /**
+     * Verify or update status of submitted donation (Digital, Cash, or Food)
+     */
+    public function verifyDonation(int $id, string $newStatus, ?string $adminNotes, string $staffName, ?int $userId = null): array
+    {
+        $donation = $this->getDonationById($id);
+        if (!$donation) {
+            return ['success' => false, 'error' => 'Donation record not found.'];
+        }
+
+        $validStatuses = ['Available', 'Pending Verification', 'Pending Coordination', 'Pending Receipt', 'Rejected', 'Cancelled', 'Partially Allocated', 'Fully Allocated'];
+        if (!in_array($newStatus, $validStatuses)) {
+            return ['success' => false, 'error' => 'Invalid donation status specified.'];
+        }
+
+        try {
+            $stmt = $this->db->prepare("UPDATE charity_donations_records SET status = ?, admin_notes = ?, received_by = ? WHERE id = ?");
+            $stmt->execute([$newStatus, $adminNotes, $staffName, $id]);
+
+            $logDesc = "Updated donation {$donation['donation_ref']} status to {$newStatus}. Admin notes: {$adminNotes}";
+            $this->logActivity('DONATION_VERIFIED', $donation['donation_ref'], $logDesc, $staffName, $userId);
+
+            // Send notification to donor if linked to tenant
+            if (!empty($donation['tenant_id'])) {
+                try {
+                    $uStmt = $this->db->prepare("INSERT INTO notifications (tenant_id, title, message, type, is_read, created_at) VALUES (?, ?, ?, 'charity', 0, NOW())");
+                    $uTitle = "Charity Donation Status: {$newStatus} ({$donation['donation_ref']})";
+                    if ($newStatus === 'Available') {
+                        $uMsg = "Your {$donation['donation_category']} donation ({$donation['donation_ref']}) has been officially verified and confirmed by ISCAG Damayan staff. Jazakumullahu Khayran!";
+                    } elseif ($newStatus === 'Rejected') {
+                        $uMsg = "Your donation submission ({$donation['donation_ref']}) was reviewed. Staff note: " . ($adminNotes ?: 'Please review submission details.');
+                    } else {
+                        $uMsg = "Your donation ({$donation['donation_ref']}) status was updated to {$newStatus}." . ($adminNotes ? " Note: {$adminNotes}" : "");
+                    }
+                    $uStmt->execute([(int)$donation['tenant_id'], $uTitle, $uMsg]);
+                } catch (Exception $ue) {
+                    // Ignore user notification failure
+                }
+            }
+
+            return ['success' => true, 'status' => $newStatus, 'donation_ref' => $donation['donation_ref']];
+        } catch (PDOException $e) {
+            return ['success' => false, 'error' => 'Failed to update donation verification: ' . $e->getMessage()];
+        }
+    }
+
     public function getAllDonations(array $filters = []): array
     {
         $sql = "SELECT * FROM charity_donations_records WHERE 1=1";
@@ -409,6 +508,11 @@ class CharityProgram
         if (!empty($filters['donation_type']) && in_array($filters['donation_type'], ['monetary', 'in-kind'])) {
             $sql .= " AND donation_type = ?";
             $params[] = $filters['donation_type'];
+        }
+
+        if (!empty($filters['category']) && in_array($filters['category'], ['digital', 'cash', 'food'])) {
+            $sql .= " AND donation_category = ?";
+            $params[] = $filters['category'];
         }
 
         if (!empty($filters['status'])) {
@@ -988,7 +1092,7 @@ class CharityProgram
             SUM(CASE WHEN donation_type = 'monetary' THEN 1 ELSE 0 END) as monetary_count,
             SUM(CASE WHEN donation_type = 'in-kind' THEN 1 ELSE 0 END) as in_kind_count
             FROM charity_donations_records
-            WHERE status != 'Cancelled'");
+            WHERE status NOT IN ('Cancelled', 'Pending Verification', 'Pending Coordination', 'Pending Receipt', 'Rejected')");
         $rec = $stmtRec->fetch(PDO::FETCH_ASSOC) ?: [];
 
         // 2. Total Available Donations
@@ -1035,7 +1139,23 @@ class CharityProgram
             WHERE status IN ('Pending Distribution', 'Partially Distributed')");
         $pending = $stmtPending->fetch(PDO::FETCH_ASSOC) ?: [];
 
+        // 6. Pending Donation Verifications (Digital, Cash, Food)
+        $stmtPendingVerif = $this->db->query("SELECT
+            COUNT(*) as pending_total,
+            SUM(CASE WHEN donation_category = 'digital' THEN 1 ELSE 0 END) as digital_pending,
+            SUM(CASE WHEN donation_category = 'cash' THEN 1 ELSE 0 END) as cash_pending,
+            SUM(CASE WHEN donation_category = 'food' THEN 1 ELSE 0 END) as food_pending
+            FROM charity_donations_records
+            WHERE status IN ('Pending Verification', 'Pending Coordination', 'Pending Receipt')");
+        $pendingVerif = $stmtPendingVerif->fetch(PDO::FETCH_ASSOC) ?: [];
+
         return [
+            'pending_verifications' => [
+                'total' => (int)($pendingVerif['pending_total'] ?? 0),
+                'digital' => (int)($pendingVerif['digital_pending'] ?? 0),
+                'cash' => (int)($pendingVerif['cash_pending'] ?? 0),
+                'food' => (int)($pendingVerif['food_pending'] ?? 0)
+            ],
             'received' => [
                 'count' => (int)($rec['total_count'] ?? 0),
                 'monetary' => (float)($rec['monetary_total'] ?? 0),

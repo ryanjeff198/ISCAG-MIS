@@ -60,7 +60,7 @@ $active_page = $active_page ?? 'dashboard';
         <div class="nav-section-label">Services</div>
 
         <!-- DAMAYAN DROPDOWN -->
-        <?php $damayan_active = in_array($active_page, ['burial', 'burial_service', 'burial_dashboard', 'burial_tracking']); ?>
+        <?php $damayan_active = in_array($active_page, ['burial', 'burial_service', 'burial_dashboard', 'burial_tracking', 'charity']); ?>
         <div class="nav-dropdown-wrap <?= $damayan_active ? 'open' : '' ?>" id="damayan-wrap">
             <button class="nav-dropdown-trigger <?= $damayan_active ? 'open' : '' ?>" id="damayan-trigger" data-tooltip="Damayan">
                 <svg viewBox="0 0 24 24" fill="currentColor">
