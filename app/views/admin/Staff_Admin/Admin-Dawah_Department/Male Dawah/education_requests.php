@@ -1,6 +1,11 @@
 <?php
 require_once BASE_PATH . '/app/helpers/Auth.php';
 Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+
+$reqList = $records ?? [];
+$pending_reports  = array_values(array_filter($reqList, fn($r) => in_array(strtolower($r['status'] ?? 'pending'), ['pending', 'under_review'])));
+$approved_reports = array_values(array_filter($reqList, fn($r) => in_array(strtolower($r['status'] ?? ''), ['accepted', 'active', 'enrolled', 'completed', 'approved'])));
+$rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strtolower($r['status'] ?? ''), ['rejected', 'dropped', 'cancelled', 'disapproved'])));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -11,78 +16,106 @@ Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
-    :root {
-      --primary-male: #14532D;
-      --primary-male-dark: #0f3e21;
-      --primary-male-light: #f0fdf4;
-      --gold-accent: #D4AF37;
+    /* ── Apartment Admin Consistent Styling ── */
+    .admin-insights {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .insight-card {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .insight-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+      border-color: var(--accent);
+    }
+    .insight-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--border);
+    }
+    .insight-card.pending::after { background: var(--warning); }
+    .insight-card.total::after { background: var(--primary); }
+    .insight-card.approved::after { background: var(--success); }
+    .insight-card.rejected::after { background: var(--danger); }
+
+    .insight-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .insight-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      line-height: 1;
+    }
+    .insight-value.info { color: var(--primary); }
+    .insight-value.success { color: var(--success); }
+    .insight-value.danger { color: var(--danger); }
+    .insight-value.warning { color: var(--warning); }
+    
+    .insight-card svg {
+      position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+      width: 24px; height: 24px; opacity: 0.15;
     }
 
-    /* Status Badges */
+    /* ── Table Typography & Badges ── */
+    .td-id { font-weight: 800; color: var(--primary-dark); font-size: 0.85rem; }
+    
     .badge-status {
-      padding: 5px 12px; border-radius: 20px; font-size: 0.74rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.03em; display: inline-flex; align-items: center; justify-content: center;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 12px; font-size: 0.72rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.04em;
     }
-    .badge-status.badge-pending { 
-      background: rgba(199, 154, 43, 0.1); 
-      color: #c79a2b; 
-      border: 1px solid rgba(199, 154, 43, 0.2); 
+    .badge-status.pending, .badge-status.badge-pending { 
+      background: rgba(199, 154, 43, 0.1); color: #b08d2e; 
     }
-    .badge-status.badge-accepted { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .badge-status.badge-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .badge-status.approved, .badge-status.badge-approved { 
+      background: rgba(47, 138, 96, 0.1); color: #2f8a60; 
+    }
+    .badge-status.rejected, .badge-status.badge-rejected { 
+      background: rgba(139, 46, 46, 0.1); color: #8b2e2e; 
+    }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-    /* Action Buttons */
-    .action-buttons-wrap {
-      display: inline-flex; align-items: center; gap: 8px;
-    }
-    .btn-action-view {
-      background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;
-      padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;
-      cursor: pointer; transition: all 0.2s ease;
-      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-    }
-    .btn-action-view svg {
-      width: 15px; height: 15px; fill: currentColor;
-    }
-    .btn-action-view:hover {
-      background: #e2e8f0; color: #0f172a; border-color: #94a3b8; transform: translateY(-1px);
-    }
-    .btn-action-accept {
-      background: #14532D; color: #ffffff; border: 1px solid #0f3e21;
-      padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;
-      cursor: pointer; transition: all 0.2s ease;
+    /* ── Action Buttons ── */
+    .actions-cell { display: flex; align-items: center; gap: 6px; }
+    .btn-circle {
+      width: 32px; height: 32px; border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
+      border: none; background: transparent;
+      cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); padding: 0;
     }
-    .btn-action-accept:hover:not(:disabled) {
-      background: #0f3e21; box-shadow: 0 2px 8px rgba(20, 83, 45, 0.35); transform: translateY(-1px);
-    }
-    .btn-action-reject {
-      background: #dc2626; color: #ffffff; border: 1px solid #b91c1c;
-      padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700;
-      cursor: pointer; transition: all 0.2s ease;
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .btn-action-reject:hover:not(:disabled) {
-      background: #b91c1c; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35); transform: translateY(-1px);
-    }
-    .btn-action-accept:disabled, .btn-action-reject:disabled {
-      opacity: 0.6; cursor: not-allowed;
-    }
+    .btn-circle svg { width: 18px; height: 18px; fill: var(--text-muted); }
+    .btn-circle:hover { transform: translateY(-1px); background: rgba(0,0,0,0.05); }
+    
+    .btn-circle.eye svg { fill: #1E90FF; }
+    .btn-circle.eye:hover { background: rgba(30,144,255,0.1); }
+    
+    .btn-circle.check svg { fill: #2f8a60; }
+    .btn-circle.check:hover { background: rgba(47,138,96,0.1); }
+    
+    .btn-circle.reject svg { fill: #8b2e2e; }
+    .btn-circle.reject:hover { background: rgba(139,46,46,0.1); }
 
-    /* Final Status Display */
-    .action-final-status {
-      font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 6px;
-      display: inline-block; text-transform: uppercase; letter-spacing: 0.03em;
-    }
-    .action-final-status.accepted { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .action-final-status.rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-
-    /* Ref Monospace Tag */
-    .ref-tag {
-      font-family: monospace; font-size: 0.88rem; font-weight: 800; color: var(--primary-male);
-      background: var(--primary-male-light); padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0;
-      display: inline-block;
-    }
+    .btn-circle:disabled { opacity: 0.4; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -114,52 +147,52 @@ Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
           <span class="current">Education Requests</span>
         </div>
 
-        <?php
-          $reqList = $records ?? [];
-          $totalCount = count($reqList);
-          $pendingCount = 0;
-          $acceptedCount = 0;
-          $rejectedCount = 0;
-          foreach ($reqList as $rec) {
-            $st = strtolower($rec['status'] ?? 'pending');
-            if (in_array($st, ['pending', 'under_review'])) {
-              $pendingCount++;
-            } elseif (in_array($st, ['accepted', 'active', 'enrolled', 'completed', 'approved'])) {
-              $acceptedCount++;
-            } elseif (in_array($st, ['rejected', 'dropped', 'cancelled', 'disapproved'])) {
-              $rejectedCount++;
-            }
-          }
-        ?>
+        <!-- Admin Insights Ribbon -->
+        <div class="admin-insights">
+          <div class="insight-card pending" onclick="switchTab('pending', document.querySelector('.tab-btn:nth-child(1)'))">
+            <div class="insight-label">Pending Review</div>
+            <div class="insight-value warning" id="stat-pending"><?= count($pending_reports) ?></div>
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>
+          </div>
+          <div class="insight-card approved" onclick="switchTab('approved', document.querySelector('.tab-btn:nth-child(2)'))">
+            <div class="insight-label">Enrolled / Accepted</div>
+            <div class="insight-value success" id="stat-approved"><?= count($approved_reports) ?></div>
+            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
+          </div>
+          <div class="insight-card rejected" onclick="switchTab('rejected', document.querySelector('.tab-btn:nth-child(3)'))">
+            <div class="insight-label">Rejected</div>
+            <div class="insight-value danger" id="stat-rejected"><?= count($rejected_reports) ?></div>
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+          </div>
+          <div class="insight-card total" onclick="switchTab('pending', document.querySelector('.tab-btn:nth-child(1)'))">
+            <div class="insight-label">Total Applications</div>
+            <div class="insight-value info" id="stat-total"><?= count($reqList) ?></div>
+            <svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" /></svg>
+          </div>
+        </div>
 
-        <!-- Status Filter Tabs -->
+        <!-- Tab Nav -->
         <div class="tab-nav">
-          <button type="button" class="tab-btn active" onclick="switchStatusTab('all', this)">
-            All Requests <span class="tab-count" id="count-all"><?= $totalCount ?></span>
+          <button class="tab-btn active" onclick="switchTab('pending', this)">
+            Pending <span class="tab-count pending" id="count-pending"><?= count($pending_reports) ?></span>
           </button>
-          <button type="button" class="tab-btn" onclick="switchStatusTab('pending', this)">
-            Pending <span class="tab-count pending" id="count-pending"><?= $pendingCount ?></span>
+          <button class="tab-btn" onclick="switchTab('approved', this)">
+            Approved <span class="tab-count approved" id="count-approved"><?= count($approved_reports) ?></span>
           </button>
-          <button type="button" class="tab-btn" onclick="switchStatusTab('accepted', this)">
-            Accepted <span class="tab-count approved" id="count-accepted"><?= $acceptedCount ?></span>
-          </button>
-          <button type="button" class="tab-btn" onclick="switchStatusTab('rejected', this)">
-            Rejected <span class="tab-count rejected" id="count-rejected"><?= $rejectedCount ?></span>
+          <button class="tab-btn" onclick="switchTab('rejected', this)">
+            Rejected <span class="tab-count rejected" id="count-rejected"><?= count($rejected_reports) ?></span>
           </button>
         </div>
 
-        <!-- Education Requests Table Card -->
-        <div class="section-card">
-          <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <!-- ═══ PENDING TAB ═══ -->
+        <div class="section-card tab-panel" id="tab-pending">
+          <div class="section-card-header">
             <h6>
-              <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);margin-right:8px;"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
-              Submitted Student Enrollment Applications
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              Pending Review
             </h6>
-            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">
-              Total Requests: <?= $totalCount ?>
-            </div>
+            <span style="font-size:0.75rem;color:var(--text-muted);"><?= count($pending_reports) ?> record<?= count($pending_reports) !== 1 ? 's' : '' ?></span>
           </div>
-
           <div class="section-card-body" style="padding:0;">
             <div class="table-wrapper">
               <table class="mis-table">
@@ -173,97 +206,183 @@ Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <?php if (empty($reqList)): ?>
-                    <tr>
-                      <td colspan="6" style="text-align:center; padding:48px 20px; color:var(--text-muted);">
-                        <svg viewBox="0 0 24 24" style="width:36px;height:36px;fill:#cbd5e1;margin-bottom:8px;"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
-                        <div style="font-weight:700; font-size:0.95rem; color:#475569;">No education enrollment requests found.</div>
-                        <div style="font-size:0.8rem; margin-top:4px;">When users submit Islamic education forms, enrollments will appear here automatically.</div>
-                      </td>
-                    </tr>
+                <tbody id="tbody-pending">
+                  <?php if (empty($pending_reports)): ?>
+                    <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No pending education enrollment requests.</td></tr>
                   <?php else: ?>
-                    <tr id="tab-empty-row" style="display:none;">
-                      <td colspan="6" style="text-align:center; padding:48px 20px; color:var(--text-muted);">
-                        <svg viewBox="0 0 24 24" style="width:36px;height:36px;fill:#cbd5e1;margin-bottom:8px;"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
-                        <div id="tab-empty-text" style="font-weight:700; font-size:0.95rem; color:#475569;">No education requests found in this tab.</div>
-                      </td>
-                    </tr>
-                    <?php foreach ($reqList as $r): ?>
+                    <?php foreach ($pending_reports as $r): ?>
                       <?php 
                         $id = (int)$r['id'];
                         $reqId = '#ER-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
-                        
                         $studentName = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
-                        if (empty($studentName)) {
-                          $studentName = 'Student #' . $id;
-                        }
-
+                        if (empty($studentName)) $studentName = 'Student #' . $id;
                         $program = $r['program_name'] ?? 'Islamic Studies';
                         $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
-
-                        $rawStatus = strtolower($r['status'] ?? 'pending');
-                        $isPending = in_array($rawStatus, ['pending', 'under_review']);
-                        $isAccepted = in_array($rawStatus, ['accepted', 'active', 'enrolled', 'completed', 'approved']);
-                        $isRejected = in_array($rawStatus, ['rejected', 'dropped', 'cancelled', 'disapproved']);
-
-                        // Normalized display status & category
-                        $displayStatus = 'Pending';
-                        $statusClass = 'badge-pending';
-                        $statusCategory = 'pending';
-                        if ($isAccepted) {
-                            $displayStatus = (in_array($rawStatus, ['active', 'enrolled']) ? 'Active' : 'Accepted');
-                            $statusClass = 'badge-accepted';
-                            $statusCategory = 'accepted';
-                        } elseif ($isRejected) {
-                            $displayStatus = 'Rejected';
-                            $statusClass = 'badge-rejected';
-                            $statusCategory = 'rejected';
-                        }
                       ?>
-                      <tr id="row-<?= $id ?>" data-status="<?= $statusCategory ?>">
-                        <td>
-                          <span class="ref-tag"><?= $reqId ?></span>
-                        </td>
+                      <tr id="row-<?= $id ?>">
+                        <td class="td-id"><?= $reqId ?></td>
                         <td>
                           <div style="font-weight:700; color:#111827;"><?= htmlspecialchars($studentName) ?></div>
                           <?php if (!empty($r['age'])): ?>
                             <div style="font-size:0.78rem; font-weight:600; color:#6b7280; margin-top:2px;">
-                              <?= $r['age'] ?> years old
+                              Age: <?= $r['age'] ?> yrs
                             </div>
                           <?php endif; ?>
                         </td>
-                        <td style="color:#14532D; font-weight:600;">
-                          <?= htmlspecialchars($program) ?>
-                        </td>
-                        <td style="color:#4b5563;">
-                          <?= $dateSubmitted ?>
-                        </td>
-                        <td id="status-col-<?= $id ?>">
-                          <span class="badge-status <?= $statusClass ?>">
-                            <?= $displayStatus ?>
+                        <td style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($program) ?></td>
+                        <td style="color:#4b5563;"><?= $dateSubmitted ?></td>
+                        <td>
+                          <span class="badge-status pending">
+                            <span class="status-dot"></span> Pending
                           </span>
                         </td>
-                        <td id="actions-col-<?= $id ?>">
-                          <div class="action-buttons-wrap">
-                            <button type="button" class="btn-action-view" onclick="openViewModal(<?= $id ?>)" title="View Enrollment Details">
+                        <td>
+                          <div class="actions-cell">
+                            <button class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
                               <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                              View
                             </button>
-                            <?php if ($isPending): ?>
-                              <button type="button" class="btn-action-accept" onclick="processRequest(<?= $id ?>, 'accept')">
-                                Accept
-                              </button>
-                              <button type="button" class="btn-action-reject" onclick="processRequest(<?= $id ?>, 'reject')">
-                                Reject
-                              </button>
-                            <?php elseif ($isAccepted): ?>
-                              <span class="action-final-status accepted">Accepted</span>
-                            <?php elseif ($isRejected): ?>
-                              <span class="action-final-status rejected">Rejected</span>
-                            <?php else: ?>
-                              <span class="action-final-status accepted"><?= htmlspecialchars(ucfirst($rawStatus)) ?></span>
-                            <?php endif; ?>
+                            <button class="btn-circle check" onclick="processRequest(<?= $id ?>, 'accept')" title="Accept">
+                              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            </button>
+                            <button class="btn-circle reject" onclick="processRequest(<?= $id ?>, 'reject')" title="Reject">
+                              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ APPROVED TAB ═══ -->
+        <div class="section-card tab-panel" id="tab-approved" style="display:none;">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Approved Enrollment Requests
+            </h6>
+            <span style="font-size:0.75rem;color:var(--text-muted);"><?= count($approved_reports) ?> record<?= count($approved_reports) !== 1 ? 's' : '' ?></span>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Request ID</th>
+                    <th>Student Name</th>
+                    <th>Program</th>
+                    <th>Date Submitted</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-approved">
+                  <?php if (empty($approved_reports)): ?>
+                    <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No approved education enrollment requests.</td></tr>
+                  <?php else: ?>
+                    <?php foreach ($approved_reports as $r): ?>
+                      <?php 
+                        $id = (int)$r['id'];
+                        $reqId = '#ER-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+                        $studentName = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
+                        if (empty($studentName)) $studentName = 'Student #' . $id;
+                        $program = $r['program_name'] ?? 'Islamic Studies';
+                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                      ?>
+                      <tr id="row-<?= $id ?>">
+                        <td class="td-id"><?= $reqId ?></td>
+                        <td>
+                          <div style="font-weight:700; color:#111827;"><?= htmlspecialchars($studentName) ?></div>
+                          <?php if (!empty($r['age'])): ?>
+                            <div style="font-size:0.78rem; font-weight:600; color:#6b7280; margin-top:2px;">
+                              Age: <?= $r['age'] ?> yrs
+                            </div>
+                          <?php endif; ?>
+                        </td>
+                        <td style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($program) ?></td>
+                        <td style="color:#4b5563;"><?= $dateSubmitted ?></td>
+                        <td>
+                          <span class="badge-status approved">
+                            <span class="status-dot"></span> Accepted
+                          </span>
+                        </td>
+                        <td>
+                          <div class="actions-cell">
+                            <button class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
+                              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ REJECTED TAB ═══ -->
+        <div class="section-card tab-panel" id="tab-rejected" style="display:none;">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              Rejected Enrollment Requests
+            </h6>
+            <span style="font-size:0.75rem;color:var(--text-muted);"><?= count($rejected_reports) ?> record<?= count($rejected_reports) !== 1 ? 's' : '' ?></span>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Request ID</th>
+                    <th>Student Name</th>
+                    <th>Program</th>
+                    <th>Date Submitted</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-rejected">
+                  <?php if (empty($rejected_reports)): ?>
+                    <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No rejected education enrollment requests.</td></tr>
+                  <?php else: ?>
+                    <?php foreach ($rejected_reports as $r): ?>
+                      <?php 
+                        $id = (int)$r['id'];
+                        $reqId = '#ER-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+                        $studentName = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
+                        if (empty($studentName)) $studentName = 'Student #' . $id;
+                        $program = $r['program_name'] ?? 'Islamic Studies';
+                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                      ?>
+                      <tr id="row-<?= $id ?>">
+                        <td class="td-id"><?= $reqId ?></td>
+                        <td>
+                          <div style="font-weight:700; color:#111827;"><?= htmlspecialchars($studentName) ?></div>
+                          <?php if (!empty($r['age'])): ?>
+                            <div style="font-size:0.78rem; font-weight:600; color:#6b7280; margin-top:2px;">
+                              Age: <?= $r['age'] ?> yrs
+                            </div>
+                          <?php endif; ?>
+                        </td>
+                        <td style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($program) ?></td>
+                        <td style="color:#4b5563;"><?= $dateSubmitted ?></td>
+                        <td>
+                          <span class="badge-status rejected">
+                            <span class="status-dot"></span> Rejected
+                          </span>
+                        </td>
+                        <td>
+                          <div class="actions-cell">
+                            <button class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
+                              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -294,10 +413,10 @@ Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#64748b; letter-spacing:0.04em;">Request ID</span>
-            <div id="vm-id" style="font-family:monospace; font-size:1.05rem; font-weight:800; color:#14532D; margin-top:2px;">#ER-0000</div>
+            <div id="vm-id" class="td-id" style="font-size:1.1rem; margin-top:2px;">#ER-0000</div>
           </div>
           <div id="vm-status-wrap">
-            <span id="vm-status" class="badge-status badge-pending">Pending</span>
+            <span id="vm-status" class="badge-status pending"><span class="status-dot"></span> Pending</span>
           </div>
         </div>
 
@@ -345,6 +464,15 @@ Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
     const recordsMap = {};
     rawRecords.forEach(r => { if (r && r.id) recordsMap[r.id] = r; });
 
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      const target = document.getElementById('tab-' + tab);
+      if (target) target.style.display = 'block';
+    }
+
     function openViewModal(id) {
       const r = recordsMap[id];
       if (!r) return;
@@ -353,11 +481,11 @@ Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
       if (!modal) return;
 
       const reqId = '#ER-' + String(r.id).padStart(4, '0');
-      const studentName = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Student #' + r.id;
+      const studentName = `${r.first_name || ''} ${r.last_name || ''}`.trim() || ('Student #' + r.id);
       const program = r.program_name || 'Islamic Studies';
-      const dateSub = (r.created_at || '').substring(0, 10) || '—';
-      const ageGender = [r.age ? `${r.age} yrs` : '', r.gender ? (r.gender.charAt(0).toUpperCase() + r.gender.slice(1)) : ''].filter(Boolean).join(' • ') || '—';
-      const birthdate = r.birthdate ? new Date(r.birthdate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+      const ageGender = [r.age ? `${r.age} yrs old` : '', r.gender || ''].filter(Boolean).join(' • ') || 'Not specified';
+      const bdate = r.birthdate ? r.birthdate.substring(0, 10) : 'Not provided';
+      const dateSub = (r.created_at || '').substring(0, 10) || 'N/A';
       const status = r.status || 'Pending';
 
       document.getElementById('vm-id').textContent = reqId;
@@ -365,16 +493,22 @@ Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
       document.getElementById('vm-date').textContent = dateSub;
       document.getElementById('vm-program').textContent = program;
       document.getElementById('vm-age-gender').textContent = ageGender;
-      document.getElementById('vm-birthdate').textContent = birthdate;
+      document.getElementById('vm-birthdate').textContent = bdate;
 
       const stLower = status.toLowerCase();
-      let badgeClass = 'badge-pending';
-      if (stLower === 'accepted' || stLower === 'active' || stLower === 'enrolled' || stLower === 'completed') badgeClass = 'badge-accepted';
-      else if (stLower === 'rejected' || stLower === 'dropped' || stLower === 'cancelled') badgeClass = 'badge-rejected';
+      let badgeClass = 'pending';
+      let badgeText = 'Pending';
+      if (stLower === 'accepted' || stLower === 'active' || stLower === 'enrolled' || stLower === 'approved') {
+        badgeClass = 'approved';
+        badgeText = 'Accepted';
+      } else if (stLower === 'rejected' || stLower === 'dropped' || stLower === 'cancelled') {
+        badgeClass = 'rejected';
+        badgeText = 'Rejected';
+      }
 
       document.getElementById('vm-status-wrap').innerHTML = `
         <span class="badge-status ${badgeClass}">
-          ${status.charAt(0).toUpperCase() + status.slice(1)}
+          <span class="status-dot"></span> ${badgeText}
         </span>
       `;
 
@@ -391,22 +525,12 @@ Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
     });
 
     async function processRequest(id, action) {
-      const actionsCell = document.getElementById(`actions-col-${id}`);
-      const statusCell = document.getElementById(`status-col-${id}`);
-      if (!actionsCell || !statusCell) return;
-
-      const reqRef = '#ER-' + String(id).padStart(4, '0');
+      const r = recordsMap[id];
       const confirmMsg = action === 'accept'
-        ? `Are you sure you want to ACCEPT enrollment request ${reqRef}?`
-        : `Are you sure you want to REJECT enrollment request ${reqRef}?`;
+        ? `Are you sure you want to ACCEPT enrollment request #ER-${String(id).padStart(4, '0')}?`
+        : `Are you sure you want to REJECT enrollment request #ER-${String(id).padStart(4, '0')}?`;
 
-      if (!confirm(confirmMsg)) {
-        return;
-      }
-
-      // Disable buttons while processing
-      const buttons = actionsCell.querySelectorAll('button');
-      buttons.forEach(b => b.disabled = true);
+      if (!confirm(confirmMsg)) return;
 
       const endpoint = action === 'accept'
         ? '<?= url("/admin/dawah/education/accept") ?>'
@@ -426,121 +550,84 @@ Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
             recordsMap[id].status = (action === 'accept' ? 'Accepted' : 'Rejected');
           }
 
-          const targetRow = document.getElementById(`row-${id}`);
-          if (targetRow) {
-            targetRow.setAttribute('data-status', action === 'accept' ? 'accepted' : 'rejected');
-          }
+          // Move row from pending table to approved or rejected table
+          const row = document.getElementById('row-' + id);
+          if (row) {
+            row.remove();
 
-          if (action === 'accept') {
-            statusCell.innerHTML = `
-              <span class="badge-status badge-accepted">Accepted</span>
-            `;
-            actionsCell.innerHTML = `
-              <div class="action-buttons-wrap">
-                <button type="button" class="btn-action-view" onclick="openViewModal(${id})" title="View Enrollment Details">
-                  <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                  View
-                </button>
-                <span class="action-final-status accepted">Accepted</span>
-              </div>
-            `;
-            if (typeof showAlert === 'function') {
-              showAlert('Enrollment Accepted', `Enrollment request ${reqRef} has been accepted successfully.`, 'success');
-            } else {
-              alert(`Enrollment request ${reqRef} has been accepted successfully.`);
-            }
-          } else {
-            statusCell.innerHTML = `
-              <span class="badge-status badge-rejected">Rejected</span>
-            `;
-            actionsCell.innerHTML = `
-              <div class="action-buttons-wrap">
-                <button type="button" class="btn-action-view" onclick="openViewModal(${id})" title="View Enrollment Details">
-                  <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                  View
-                </button>
-                <span class="action-final-status rejected">Rejected</span>
-              </div>
-            `;
-            if (typeof showAlert === 'function') {
-              showAlert('Enrollment Rejected', `Enrollment request ${reqRef} has been marked as rejected.`, 'info');
-            } else {
-              alert(`Enrollment request ${reqRef} has been marked as rejected.`);
-            }
-          }
+            const targetTbodyId = action === 'accept' ? 'tbody-approved' : 'tbody-rejected';
+            const targetTbody = document.getElementById(targetTbodyId);
 
-          updateTabCounts();
-          if (currentTab !== 'all') {
-            const activeBtn = document.querySelector(`.tab-btn.active`);
-            switchStatusTab(currentTab, activeBtn);
+            const reqId = '#ER-' + String(id).padStart(4, '0');
+            const studentName = r ? (`${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Student #' + id) : 'Student';
+            const program = r && r.program_name ? r.program_name : 'Islamic Studies';
+            const dateSub = r && r.created_at ? r.created_at.substring(0, 10) : '—';
+            const statusBadge = action === 'accept'
+              ? `<span class="badge-status approved"><span class="status-dot"></span> Accepted</span>`
+              : `<span class="badge-status rejected"><span class="status-dot"></span> Rejected</span>`;
+
+            const newRow = `
+              <tr id="row-${id}">
+                <td class="td-id">${reqId}</td>
+                <td>
+                  <div style="font-weight:700; color:#111827;">${studentName}</div>
+                  ${r && r.age ? `<div style="font-size:0.78rem; font-weight:600; color:#6b7280; margin-top:2px;">Age: ${r.age} yrs</div>` : ''}
+                </td>
+                <td style="color:var(--primary); font-weight:700;">${program}</td>
+                <td style="color:#4b5563;">${dateSub}</td>
+                <td>${statusBadge}</td>
+                <td>
+                  <div class="actions-cell">
+                    <button class="btn-circle eye" onclick="openViewModal(${id})" title="View Details">
+                      <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+
+            if (targetTbody) {
+              // If only empty row exists, clear it
+              if (targetTbody.querySelector('td[colspan]')) {
+                targetTbody.innerHTML = '';
+              }
+              targetTbody.insertAdjacentHTML('afterbegin', newRow);
+            }
+
+            // Update badge counts
+            const statPending = document.getElementById('stat-pending');
+            const countPending = document.getElementById('count-pending');
+            if (statPending && countPending) {
+              const current = Math.max(0, parseInt(statPending.textContent || '0') - 1);
+              statPending.textContent = current;
+              countPending.textContent = current;
+            }
+
+            if (action === 'accept') {
+              const statAppr = document.getElementById('stat-approved');
+              const countAppr = document.getElementById('count-approved');
+              if (statAppr && countAppr) {
+                const current = parseInt(statAppr.textContent || '0') + 1;
+                statAppr.textContent = current;
+                countAppr.textContent = current;
+              }
+            } else {
+              const statRej = document.getElementById('stat-rejected');
+              const countRej = document.getElementById('count-rejected');
+              if (statRej && countRej) {
+                const current = parseInt(statRej.textContent || '0') + 1;
+                statRej.textContent = current;
+                countRej.textContent = current;
+              }
+            }
           }
         } else {
-          alert(res.message || 'Failed to process request. Please try again.');
-          buttons.forEach(b => b.disabled = false);
+          alert(res.message || 'Error processing enrollment.');
         }
       } catch (err) {
         console.error(err);
-        alert('A network error occurred while processing the request.');
-        buttons.forEach(b => b.disabled = false);
+        alert('Server communication error.');
       }
-    }
-
-    // ── STATUS TAB FILTERING ──
-    let currentTab = 'all';
-
-    function switchStatusTab(tabName, btn) {
-      currentTab = tabName;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-
-      const rows = document.querySelectorAll('tbody tr[data-status]');
-      let visibleCount = 0;
-
-      rows.forEach(row => {
-        const rowStatus = row.getAttribute('data-status');
-        if (tabName === 'all' || rowStatus === tabName) {
-          row.style.display = '';
-          visibleCount++;
-        } else {
-          row.style.display = 'none';
-        }
-      });
-
-      const emptyRow = document.getElementById('tab-empty-row');
-      if (emptyRow) {
-        if (visibleCount === 0 && rows.length > 0) {
-          emptyRow.style.display = '';
-          const label = tabName.charAt(0).toUpperCase() + tabName.slice(1);
-          document.getElementById('tab-empty-text').textContent = `No ${label.toLowerCase()} enrollment requests found.`;
-        } else {
-          emptyRow.style.display = 'none';
-        }
-      }
-    }
-
-    function updateTabCounts() {
-      const rows = document.querySelectorAll('tbody tr[data-status]');
-      let total = rows.length;
-      let pending = 0;
-      let accepted = 0;
-      let rejected = 0;
-
-      rows.forEach(r => {
-        const st = r.getAttribute('data-status');
-        if (st === 'pending') pending++;
-        else if (st === 'accepted') accepted++;
-        else if (st === 'rejected') rejected++;
-      });
-
-      const countAll = document.getElementById('count-all');
-      const countPending = document.getElementById('count-pending');
-      const countAccepted = document.getElementById('count-accepted');
-      const countRejected = document.getElementById('count-rejected');
-
-      if (countAll) countAll.textContent = total;
-      if (countPending) countPending.textContent = pending;
-      if (countAccepted) countAccepted.textContent = accepted;
-      if (countRejected) countRejected.textContent = rejected;
     }
   </script>
 </body>
