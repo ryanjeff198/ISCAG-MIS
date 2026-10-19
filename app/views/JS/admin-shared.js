@@ -386,25 +386,82 @@ function initSidebar() {
 }
 
 function initDropdowns() {
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+
+  const brandText = sidebar.querySelector('.brand-text span')?.textContent || '';
+  const isTenant = brandText.includes('User');
+  if (isTenant) return;
+
   document.querySelectorAll('.nav-dropdown-trigger').forEach(trigger => {
+    if (trigger.dataset.dropdownBound) return;
+    trigger.dataset.dropdownBound = 'true';
+
     const menuId = trigger.getAttribute('data-menu');
-    const menu = menuId ? document.getElementById(menuId) : trigger.nextElementSibling;
+    const menu = menuId ? document.getElementById(menuId) : (trigger.nextElementSibling && trigger.nextElementSibling.classList.contains('nav-dropdown') ? trigger.nextElementSibling : trigger.closest('.nav-dropdown-wrap')?.querySelector('.nav-dropdown'));
     if (!menu) return;
 
-    trigger.addEventListener('click', () => {
+    trigger.addEventListener('click', (e) => {
       const sidebar = document.getElementById('sidebar');
       if (sidebar && sidebar.classList.contains('collapsed')) {
         const href = trigger.getAttribute('data-href');
-        if (href) window.location.href = href;
-        return;
+        if (href) {
+          window.location.href = href;
+          return;
+        }
       }
+      e.preventDefault();
+      e.stopPropagation();
       const isOpen = menu.classList.contains('open');
       document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
       document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
-      if (!isOpen) { menu.classList.add('open'); trigger.classList.add('open'); }
+      document.querySelectorAll('.nav-dropdown-wrap').forEach(w => w.classList.remove('open'));
+      if (!isOpen) { 
+        menu.classList.add('open'); 
+        trigger.classList.add('open'); 
+        trigger.closest('.nav-dropdown-wrap')?.classList.add('open');
+      }
     });
   });
 }
+
+// Global click delegation ensures dropdown triggers work seamlessly across every module
+document.addEventListener('click', (e) => {
+  const trigger = e.target.closest('.nav-dropdown-trigger');
+  if (!trigger) return;
+
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) {
+    const brandText = sidebar.querySelector('.brand-text span')?.textContent || '';
+    if (brandText.includes('User')) return;
+  }
+
+  if (trigger.dataset.dropdownBound && trigger.dataset.dropdownBound !== 'delegated') return;
+
+  const menuId = trigger.getAttribute('data-menu');
+  const menu = menuId ? document.getElementById(menuId) : (trigger.nextElementSibling && trigger.nextElementSibling.classList.contains('nav-dropdown') ? trigger.nextElementSibling : trigger.closest('.nav-dropdown-wrap')?.querySelector('.nav-dropdown'));
+  if (!menu) return;
+
+  if (sidebar && sidebar.classList.contains('collapsed')) {
+    const href = trigger.getAttribute('data-href');
+    if (href) {
+      window.location.href = href;
+      return;
+    }
+  }
+
+  e.preventDefault();
+  e.stopPropagation();
+  const isOpen = menu.classList.contains('open');
+  document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
+  document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
+  document.querySelectorAll('.nav-dropdown-wrap').forEach(w => w.classList.remove('open'));
+  if (!isOpen) {
+    menu.classList.add('open');
+    trigger.classList.add('open');
+    trigger.closest('.nav-dropdown-wrap')?.classList.add('open');
+  }
+});
 
 function loadUserNav() {
   console.log('[DEBUG] loadUserNav triggered');

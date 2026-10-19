@@ -313,21 +313,30 @@ class UserController extends Controller
 
     public function maleCounseling(): void
     {
-        Auth::protectRole(['Guest', 'Tenant']);
+        Auth::protectRole(['Guest', 'Tenant', 'Admin', 'Staff_Male']);
         require_once BASE_PATH . '/app/models/CounselingRequest.php';
         require_once BASE_PATH . '/app/models/DawahAvailability.php';
+        require_once BASE_PATH . '/app/models/User.php';
         
         $model = new CounselingRequest();
         $availModel = new DawahAvailability();
+        $userModel = new User();
         
-        $history = $model->getByUser($_SESSION['user_id']);
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $history = $model->getByUser($userId);
+        $activeRequest = $model->getActiveRequestForUser($userId);
         $analytics = $model->getAnalytics('male');
         $blockedDates = $availModel->getBlockedDates('male');
+        $counselors = $model->getActiveCounselors('male');
+        $dbUser = $userModel->findById($userId);
         
         $this->view('user/Da\'wah/Male/user_form-male-counseling', [
             'history' => $history,
+            'activeRequest' => $activeRequest,
             'analytics' => $analytics,
-            'blockedDates' => $blockedDates
+            'blockedDates' => $blockedDates,
+            'counselors' => $counselors,
+            'dbUser' => $dbUser
         ]);
     }
 
@@ -476,6 +485,19 @@ class UserController extends Controller
             'status' => 'pending'
         ]);
 
+        if ($success) {
+            try {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notif = new Notification();
+                $notif->create(
+                    (int)$_SESSION['user_id'],
+                    'Marriage Reservation Submitted',
+                    "Your marriage ceremony reservation for $groom & $bride has been submitted successfully and is pending review by the Da'wah Department.",
+                    'info'
+                );
+            } catch (Exception $e) {}
+        }
+
         echo json_encode([
             'success' => $success,
             'message' => $success ? 'Marriage reservation request submitted successfully.' : 'Failed to submit reservation.'
@@ -560,6 +582,16 @@ class UserController extends Controller
         $success = $model->create($data);
 
         if ($success) {
+            try {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notif = new Notification();
+                $notif->create(
+                    (int)$userId,
+                    'Conversion Registration Submitted',
+                    "Your Islamic Conversion (Shahadah) registration for {$adoptedName} has been submitted successfully and is pending review.",
+                    'info'
+                );
+            } catch (Exception $e) {}
             AuditLogger::log('DAWAH', 'CONVERSION_SUBMIT', "User submitted conversion registration for adopted name: {$adoptedName}");
         }
 
@@ -666,39 +698,158 @@ class UserController extends Controller
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'Invalid method.']);
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
             return;
         }
 
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
 
-        $userId = $_SESSION['user_id'];
-        $gender = strtolower($input['gender'] ?? 'male');
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $gender = strtolower(trim($input['gender'] ?? 'male'));
+        $fullName = trim($input['full_name'] ?? '');
+        $age = !empty($input['age']) ? (int)$input['age'] : null;
+        $civilStatus = trim($input['civil_status'] ?? '');
+        $address = trim($input['address'] ?? '');
+        $contactNumber = trim($input['contact_number'] ?? '');
         $reason = trim($input['reason'] ?? '');
-        $date = $input['preferred_date'] ?? null;
-        $time = $input['preferred_time'] ?? null;
+        $description = trim($input['description'] ?? '');
+        $sessionType = trim($input['session_type'] ?? 'In-Person');
+        $date = !empty($input['preferred_date']) ? trim($input['preferred_date']) : null;
+        $time = !empty($input['preferred_time']) ? trim($input['preferred_time']) : null;
 
         if (empty($reason)) {
-            echo json_encode(['success' => false, 'message' => 'Reason for counseling is required.']);
+            echo json_encode(['success' => false, 'message' => 'Please select the primary concern for counseling.']);
             return;
         }
 
         require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
         $model = new CounselingRequest();
         
-        $success = $model->create([
+        $newId = $model->createAndGetId([
             'tenant_id' => $userId,
+            'full_name' => $fullName,
+            'age' => $age,
+            'civil_status' => $civilStatus,
+            'address' => $address,
+            'contact_number' => $contactNumber,
             'gender' => $gender ?: 'male',
             'reason' => $reason,
+            'description' => $description,
+            'session_type' => $sessionType,
             'preferred_date' => $date,
             'preferred_time' => $time,
             'status' => 'pending'
         ]);
 
+        if ($newId) {
+            $refNo = '#MC-' . str_pad((string)$newId, 4, '0', STR_PAD_LEFT);
+            
+            // Send user in-app notification
+            try {
+                $notif = new Notification();
+                $notif->create(
+                    $userId,
+                    'Your Counseling Request Has Been Submitted',
+                    "Thank you for reaching out to the Counseling and Guidance service. Your request ($refNo) is now pending review by our administrator. You will be notified once reviewed.",
+                    'info'
+                );
+            } catch (Exception $e) {
+                error_log("Counseling notification error: " . $e->getMessage());
+            }
+
+            echo json_encode([
+                'success' => true,
+                'id' => $newId,
+                'ref' => $refNo,
+                'redirect' => url('/user/services/counseling/status?id=' . $newId),
+                'message' => 'Counseling request submitted successfully.'
+            ]);
+            return;
+        }
+
         echo json_encode([
-            'success' => $success,
-            'message' => $success ? 'Counseling request submitted successfully.' : 'Failed to save request.'
+            'success' => false,
+            'message' => 'Failed to save your counseling request. Please try again.'
         ]);
+    }
+
+    public function counselingStatus(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant', 'Admin', 'Staff_Male', 'Staff_Female']);
+        $id = (int)($_GET['id'] ?? 0);
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $role = $_SESSION['role'] ?? '';
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/User.php';
+        $model = new CounselingRequest();
+        $userModel = new User();
+
+        if ($id > 0) {
+            $request = $model->getById($id);
+        } else {
+            $request = $model->getActiveRequestForUser($userId);
+        }
+
+        // RBAC: applicant only or authorized staff
+        if ($request && $request['tenant_id'] != $userId && !in_array($role, ['Admin', 'Staff_Male', 'Staff_Female'])) {
+            $this->redirect('/user/services/counseling/male');
+            return;
+        }
+
+        if (!$request) {
+            $this->redirect('/user/services/counseling/male');
+            return;
+        }
+
+        $dbUser = $userModel->findById($userId);
+
+        $this->view('user/Da\'wah/Male/counseling_status', [
+            'request' => $request,
+            'dbUser' => $dbUser,
+            'active_page' => 'counseling_male'
+        ]);
+    }
+
+    public function acceptCounselingReschedule(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $model = new CounselingRequest();
+        $req = $model->getById($id);
+
+        if (!$req || (int)$req['tenant_id'] !== $userId) {
+            echo json_encode(['success' => false, 'message' => 'Record not found or unauthorized.']);
+            return;
+        }
+
+        $success = $model->updateStatus($id, 'confirmed');
+
+        if ($success) {
+            $notif = new Notification();
+            $refNo = '#MC-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+            $notif->create(
+                $userId,
+                'Appointment Schedule Confirmed',
+                "Alhamdulillah. You have confirmed the appointment schedule for reference $refNo. You can now view your confirmed appointment details in your Counseling Portal.",
+                'success'
+            );
+        }
+
+        echo json_encode(['success' => $success]);
     }
     public function submitBurial(): void {
         Auth::protect();

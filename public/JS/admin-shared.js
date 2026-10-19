@@ -488,12 +488,16 @@ function initSidebar() {
   const sidebar = document.getElementById('sidebar');
   const toggle = document.getElementById('sidebar-toggle');
   if (!sidebar || !toggle) return;
+  if (toggle.dataset.bound) return;
+  toggle.dataset.bound = 'true';
 
-  toggle.addEventListener('click', () => {
+  toggle.addEventListener('click', (e) => {
+    e.preventDefault();
     sidebar.classList.toggle('collapsed');
     if (sidebar.classList.contains('collapsed')) {
       document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
       document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
+      document.querySelectorAll('.nav-dropdown-wrap').forEach(w => w.classList.remove('open'));
     }
   });
 }
@@ -503,31 +507,81 @@ function initDropdowns() {
   if (!sidebar) return;
 
   const brandText = sidebar.querySelector('.brand-text span')?.textContent || '';
-  const isAdmin = brandText.includes('Admin');
   const isTenant = brandText.includes('User');
 
   // If it's a User/Tenant sidebar, it already has its own logic in sidebar.php
   if (isTenant) return;
 
   document.querySelectorAll('.nav-dropdown-trigger').forEach(trigger => {
+    if (trigger.dataset.dropdownBound) return;
+    trigger.dataset.dropdownBound = 'true';
+
     const menuId = trigger.getAttribute('data-menu');
-    const menu = menuId ? document.getElementById(menuId) : trigger.nextElementSibling;
+    const menu = menuId ? document.getElementById(menuId) : (trigger.nextElementSibling && trigger.nextElementSibling.classList.contains('nav-dropdown') ? trigger.nextElementSibling : trigger.closest('.nav-dropdown-wrap')?.querySelector('.nav-dropdown'));
     if (!menu) return;
 
-    trigger.addEventListener('click', () => {
+    trigger.addEventListener('click', (e) => {
       const sidebar = document.getElementById('sidebar');
       if (sidebar && sidebar.classList.contains('collapsed')) {
         const href = trigger.getAttribute('data-href');
-        if (href) window.location.href = href;
-        return;
+        if (href) {
+          window.location.href = href;
+          return;
+        }
       }
+      e.preventDefault();
+      e.stopPropagation();
       const isOpen = menu.classList.contains('open');
       document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
       document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
-      if (!isOpen) { menu.classList.add('open'); trigger.classList.add('open'); }
+      document.querySelectorAll('.nav-dropdown-wrap').forEach(w => w.classList.remove('open'));
+      if (!isOpen) { 
+        menu.classList.add('open'); 
+        trigger.classList.add('open'); 
+        trigger.closest('.nav-dropdown-wrap')?.classList.add('open');
+      }
     });
   });
 }
+
+// Global click delegation ensures dropdown triggers work seamlessly across every module
+document.addEventListener('click', (e) => {
+  const trigger = e.target.closest('.nav-dropdown-trigger');
+  if (!trigger) return;
+
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) {
+    const brandText = sidebar.querySelector('.brand-text span')?.textContent || '';
+    if (brandText.includes('User')) return;
+  }
+
+  // If already bound by initDropdowns, that listener handles it
+  if (trigger.dataset.dropdownBound && trigger.dataset.dropdownBound !== 'delegated') return;
+
+  const menuId = trigger.getAttribute('data-menu');
+  const menu = menuId ? document.getElementById(menuId) : (trigger.nextElementSibling && trigger.nextElementSibling.classList.contains('nav-dropdown') ? trigger.nextElementSibling : trigger.closest('.nav-dropdown-wrap')?.querySelector('.nav-dropdown'));
+  if (!menu) return;
+
+  if (sidebar && sidebar.classList.contains('collapsed')) {
+    const href = trigger.getAttribute('data-href');
+    if (href) {
+      window.location.href = href;
+      return;
+    }
+  }
+
+  e.preventDefault();
+  e.stopPropagation();
+  const isOpen = menu.classList.contains('open');
+  document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
+  document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
+  document.querySelectorAll('.nav-dropdown-wrap').forEach(w => w.classList.remove('open'));
+  if (!isOpen) {
+    menu.classList.add('open');
+    trigger.classList.add('open');
+    trigger.closest('.nav-dropdown-wrap')?.classList.add('open');
+  }
+});
 
 function loadUserNav() {
   console.log('[DEBUG] loadUserNav triggered');
@@ -1115,12 +1169,16 @@ window.addEventListener('storage', (e) => {
 // Auto-init for cases where script is loaded after DOM
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
   initAdminData();
+  initSidebar();
+  initDropdowns();
   initLogoutModal();
   initTableSearch();
   initNotifBadge('admin');
 } else {
   document.addEventListener('DOMContentLoaded', () => {
     initAdminData();
+    initSidebar();
+    initDropdowns();
     initLogoutModal();
     initTableSearch();
     initNotifBadge('admin');

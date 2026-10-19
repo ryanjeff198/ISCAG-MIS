@@ -139,4 +139,23 @@ class IslamicEducation {
             'status' => $data['status'] ?? 'pending'
         ]);
     }
+
+    public function updateStatus(int $id, string $status): bool {
+        $stmt = $this->db->prepare("UPDATE islamic_education_enrollments SET status = :status WHERE id = :id");
+        return $stmt->execute(['status' => $status, 'id' => $id]);
+    }
+
+    public function getById(int $id): ?array {
+        $stmt = $this->db->prepare("
+            SELECT e.*, 
+                   TIMESTAMPDIFF(YEAR, COALESCE(e.birthdate, p.birthdate), CURDATE()) as age,
+                   t.email
+            FROM islamic_education_enrollments e
+            LEFT JOIN tenant_accounts t ON e.tenant_id = t.tenant_id
+            LEFT JOIN tenant_user_profiles p ON e.tenant_id = p.tenant_id
+            WHERE e.id = :id
+        ");
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
 }

@@ -40,7 +40,7 @@ class ConversionRequest
             witness1_address VARCHAR(255),
             witness2_name VARCHAR(255),
             witness2_address VARCHAR(255),
-            status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+            status VARCHAR(50) DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (tenant_id) REFERENCES tenant_accounts(tenant_id)
         )");
@@ -53,6 +53,17 @@ class ConversionRequest
         $sql = "INSERT INTO {$this->table} (" . implode(',', $fields) . ") VALUES (" . implode(',', $placeholders) . ")";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($data);
+    }
+
+    public function findPendingByUser(int $userId): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT * FROM {$this->table}
+            WHERE tenant_id = :id AND LOWER(status) IN ('pending', 'under_review')
+            LIMIT 1
+        ");
+        $stmt->execute(['id' => $userId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
     public function getByUser(int $userId): array
@@ -68,7 +79,12 @@ class ConversionRequest
 
     public function getById(int $id): ?array
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id = :id");
+        $stmt = $this->db->prepare("
+            SELECT c.*, t.first_name, t.last_name, t.email 
+            FROM {$this->table} c
+            LEFT JOIN tenant_accounts t ON c.tenant_id = t.tenant_id
+            WHERE c.id = :id
+        ");
         $stmt->execute(['id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
