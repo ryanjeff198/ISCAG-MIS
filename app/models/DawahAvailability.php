@@ -51,4 +51,11 @@ class DawahAvailability
         $stmt->execute([$dept]);
         return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     }
+
+    public function getBlockedList(string $dept): array
+    {
+        $stmt = $this->db->prepare("SELECT id, blocked_date, reason, department, created_at FROM {$this->table} WHERE department = ? ORDER BY blocked_date ASC");
+        $stmt->execute([$dept]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

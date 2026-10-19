@@ -716,7 +716,7 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                 Session Mode &amp; Venue
               </div>
-              <div class="sched-metric-val"><?= htmlspecialchars($sessionMode) ?> <?= $sessionMode === 'Online' ? 'Consultation' : 'Room 204' ?></div>
+              <div class="sched-metric-val">In-Person Room 204</div>
             </div>
 
             <div class="sched-metric-box">
@@ -746,7 +746,7 @@
             <!-- Add to Calendar -->
             <?php 
               $calDate = !empty($confirmedDate) ? date('Ymd', strtotime($confirmedDate)) : date('Ymd');
-              $calUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" . urlencode("ISCAG Counseling Session — " . $activeRef) . "&dates=" . $calDate . "T020000Z/" . $calDate . "T030000Z&details=" . urlencode("ISCAG Confidential Brother's Counseling Session regarding " . ($activeRequest['reason'] ?? 'Guidance') . ". Counselor: " . $assignedCounselorName) . "&location=" . urlencode($sessionMode === 'Online' ? ($meetingLink ?: 'Online Google Meet') : $venueLocation);
+              $calUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" . urlencode("ISCAG Counseling Session — " . $activeRef) . "&dates=" . $calDate . "T020000Z/" . $calDate . "T030000Z&details=" . urlencode("ISCAG Confidential Brother's Counseling Session regarding " . ($activeRequest['reason'] ?? 'Guidance') . ". Counselor: " . $assignedCounselorName) . "&location=" . urlencode($venueLocation);
             ?>
             <a href="<?= $calUrl ?>" target="_blank" class="btn-action-tool btn-tool-cal">
               <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm-7-7h5v5h-5z"/></svg>
@@ -789,31 +789,12 @@
                 </div>
                 <div class="detail-row">
                   <span class="detail-key">Session Type</span>
-                  <span class="detail-val"><?= htmlspecialchars($sessionMode) ?></span>
+                  <span class="detail-val">In-Person Consultation</span>
                 </div>
-                <?php if ($sessionMode === 'Online'): ?>
-                  <div class="detail-row">
-                    <span class="detail-key">Online Meeting Link</span>
-                    <span class="detail-val">
-                      <?php if (!empty($meetingLink)): ?>
-                        <a href="<?= htmlspecialchars($meetingLink) ?>" target="_blank" style="color:#2563eb; font-weight:800; text-decoration:underline;">
-                          <?= htmlspecialchars($meetingLink) ?>
-                        </a>
-                      <?php else: ?>
-                        <span style="color:#64748b;">Meeting link will be active 15 mins prior</span>
-                      <?php endif; ?>
-                    </span>
-                  </div>
-                  <div class="detail-row">
-                    <span class="detail-key">Meeting Instructions</span>
-                    <span class="detail-val" style="font-size:0.84rem; color:#475569;"><?= htmlspecialchars($meetingInstructions) ?></span>
-                  </div>
-                <?php else: ?>
-                  <div class="detail-row">
-                    <span class="detail-key">Room / Location</span>
-                    <span class="detail-val"><?= htmlspecialchars($venueLocation) ?></span>
-                  </div>
-                <?php endif; ?>
+                <div class="detail-row">
+                  <span class="detail-key">Room / Location</span>
+                  <span class="detail-val"><?= htmlspecialchars($venueLocation) ?></span>
+                </div>
                 <div class="detail-row">
                   <span class="detail-key">Appointment Status</span>
                   <span class="detail-val" style="color:#166534; font-weight:800;">Confirmed by Administrator</span>
@@ -823,17 +804,6 @@
                   <span class="detail-val" style="font-family:monospace; font-weight:800;"><?= htmlspecialchars($activeRef) ?></span>
                 </div>
               </div>
-
-              <?php if ($sessionMode === 'Online' && !empty($meetingLink)): ?>
-                <div class="online-meeting-box">
-                  <strong>Online Consultation Access:</strong>
-                  <p style="margin:4px 0 8px; font-size:0.82rem; color:#1e40af;">Click the button below to join your counselor online at the scheduled time.</p>
-                  <a href="<?= htmlspecialchars($meetingLink) ?>" target="_blank" class="online-meeting-btn">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-                    Join Online Meeting Now
-                  </a>
-                </div>
-              <?php endif; ?>
             </div>
 
             <!-- 🌟 D. COUNSELING REQUEST DETAILS SECTION (CONFIDENTIAL) -->
@@ -1271,11 +1241,10 @@
             <div>
               <label class="form-label">Preferred Session Type</label>
               <div style="display:flex;gap:16px;margin-top:8px;">
-                <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;">
-                  <input type="radio" name="session_type" value="In-Person" checked /> In-Person (Mosque Office)
-                </label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;">
-                  <input type="radio" name="session_type" value="Online" /> Online Consultation
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--text-main,#111827);font-weight:600;">
+                  <input type="hidden" name="session_type" value="In-Person" />
+                  <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:var(--primary);"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  In-Person (Mosque Office)
                 </label>
               </div>
             </div>
@@ -1566,13 +1535,11 @@
     const cEl = document.getElementById('pass-counselor-name');
     if(cEl) cEl.innerText = counselorName;
 
-    const sessionMode = data.final_session_type || data.session_type || 'In-Person';
+    const sessionMode = 'In-Person';
     const modeEl = document.getElementById('pass-session-mode');
-    if(modeEl) modeEl.innerText = sessionMode + ' Consultation';
+    if(modeEl) modeEl.innerText = 'In-Person Consultation';
 
-    const venue = sessionMode === 'Online' 
-      ? 'Online Session: ' + (data.meeting_link || 'Link provided in portal') 
-      : (data.appointment_location || 'ISCAG Center, 2nd Floor — Brothers\' Guidance Room (Room 204)');
+    const venue = data.appointment_location || 'ISCAG Center, 2nd Floor — Brothers\' Guidance Room (Room 204)';
     const venueEl = document.getElementById('pass-venue');
     if(venueEl) venueEl.innerText = venue;
     

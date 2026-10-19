@@ -95,27 +95,80 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
     }
     .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-    /* ── Action Buttons ── */
-    .actions-cell { display: flex; align-items: center; gap: 6px; }
+    /* ── Action Buttons & 3-Dots Dropdown ── */
+    .actions-cell { display: flex; align-items: center; justify-content: center; }
     .btn-circle {
-      width: 32px; height: 32px; border-radius: 50%;
+      width: 32px; height: 32px; border-radius: 8px;
       display: inline-flex; align-items: center; justify-content: center;
-      border: none; background: transparent;
+      border: 1px solid var(--border, #e2e8f0); background: #f8fafc;
       cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); padding: 0;
+      color: #475569;
     }
-    .btn-circle svg { width: 18px; height: 18px; fill: var(--text-muted); }
-    .btn-circle:hover { transform: translateY(-1px); background: rgba(0,0,0,0.05); }
-    
-    .btn-circle.eye svg { fill: #1E90FF; }
-    .btn-circle.eye:hover { background: rgba(30,144,255,0.1); }
-    
-    .btn-circle.check svg { fill: #2f8a60; }
-    .btn-circle.check:hover { background: rgba(47,138,96,0.1); }
-    
-    .btn-circle.reject svg { fill: #8b2e2e; }
-    .btn-circle.reject:hover { background: rgba(139,46,46,0.1); }
+    .btn-circle svg { width: 18px; height: 18px; fill: currentColor; }
+    .btn-circle:hover, .btn-circle.active { 
+      background: #e2e8f0; 
+      border-color: #cbd5e1;
+      color: var(--primary-dark, #0f172a);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .btn-circle.dots { border-radius: 8px; }
 
-    .btn-circle:disabled { opacity: 0.4; cursor: not-allowed; }
+    /* Floating 3-Dots Action Dropdown Menu */
+    .counseling-action-menu {
+      position: fixed;
+      display: none;
+      min-width: 175px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.14), 0 8px 10px -6px rgba(0,0,0,0.08);
+      padding: 6px;
+      z-index: 999999;
+      animation: menuFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes menuFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .action-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #334155;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .action-dropdown-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      fill: currentColor;
+    }
+    .action-dropdown-item:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .action-dropdown-item.schedule { color: #6d28d9; }
+    .action-dropdown-item.schedule:hover { background: #f5f3ff; color: #5b21b6; }
+    .action-dropdown-item.view { color: #1d4ed8; }
+    .action-dropdown-item.view:hover { background: #eff6ff; color: #1e40af; }
+    .action-dropdown-item.delete { color: #dc2626; }
+    .action-dropdown-item.delete:hover { background: #fef2f2; color: #b91c1c; }
+    .action-dropdown-divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 4px 0;
+    }
   </style>
 </head>
 <body>
@@ -242,14 +295,8 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         </td>
                         <td>
                           <div class="actions-cell">
-                            <button class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
-                              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                            </button>
-                            <button class="btn-circle check" onclick="processRequest(<?= $id ?>, 'accept')" title="Accept">
-                              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                            </button>
-                            <button class="btn-circle reject" onclick="processRequest(<?= $id ?>, 'reject')" title="Reject">
-                              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                            <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, <?= $id ?>)" title="Actions" aria-label="Actions">
+                              <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                             </button>
                           </div>
                         </td>
@@ -320,8 +367,8 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         </td>
                         <td>
                           <div class="actions-cell">
-                            <button class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
-                              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                            <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, <?= $id ?>)" title="Actions" aria-label="Actions">
+                              <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                             </button>
                           </div>
                         </td>
@@ -392,8 +439,8 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         </td>
                         <td>
                           <div class="actions-cell">
-                            <button class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
-                              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                            <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, <?= $id ?>)" title="Actions" aria-label="Actions">
+                              <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                             </button>
                           </div>
                         </td>
@@ -478,8 +525,122 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
 
       <div style="padding:14px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px; background:#f8fafc;">
         <button type="button" onclick="closeViewModal()" style="padding:8px 18px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-weight:600; cursor:pointer;">Close</button>
+        <button type="button" id="vm-btn-assign" onclick="openScheduleModalFromDetails()" class="btn-topbar primary" style="display:flex; align-items:center; gap:6px;">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+          Assign Counselor &amp; Schedule
+        </button>
       </div>
     </div>
+  </div>
+
+  <!-- ═══ Assign Counselor & Schedule Modal ═══ -->
+  <div id="schedule-assign-modal" style="position:fixed; inset:0; background:rgba(15,30,22,0.68); backdrop-filter:blur(6px); z-index:999999; display:none; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:white; border-radius:18px; width:100%; max-width:620px; box-shadow:0 30px 80px rgba(0,0,0,0.35); overflow:hidden; border:1px solid rgba(0,0,0,0.08);">
+      <div style="height:4px; background:linear-gradient(90deg, #14532D, #7c3aed);"></div>
+      <div style="padding:18px 24px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#fafafa;">
+        <h5 style="margin:0; font-family:'Lora',serif; color:#14532D; font-size:1.18rem; font-weight:800; display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#7c3aed;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+          Assign Counselor &amp; Schedule Appointment
+        </h5>
+        <button type="button" onclick="closeScheduleModal()" style="background:none; border:none; font-size:24px; line-height:1; color:#9ca3af; cursor:pointer;" title="Close">&times;</button>
+      </div>
+
+      <form id="form-assign-sched" onsubmit="submitScheduleAssign(event)" style="padding:22px 24px; max-height:calc(85vh - 120px); overflow-y:auto;">
+        <input type="hidden" id="as-request-id" name="id" value="" />
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#166534;">Applicant</span>
+            <div id="as-client-name" style="font-weight:800; font-size:1.02rem; color:#14532D; margin-top:2px;">—</div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#166534;">Request ID</span>
+            <div id="as-ref-no" style="font-weight:800; font-size:0.95rem; color:#14532D; margin-top:2px;">#MC-0000</div>
+          </div>
+        </div>
+
+        <div id="as-conflict-alert" style="display:none; background:#fef2f2; border:1px solid #f87171; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:0.84rem; color:#b91c1c;">
+          <strong>⚠️ Schedule Conflict Alert:</strong> <span id="as-conflict-msg"></span>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Assigned Counselor <span style="color:#ef4444;">*</span>
+          </label>
+          <select id="as-counselor-id" required style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600; background:#fff;" onchange="checkCounselorConflict()">
+            <option value="">-- Select Qualified Counselor --</option>
+            <?php foreach ($counselors ?? [] as $c): ?>
+              <option value="<?= $c['id'] ?>">
+                <?= htmlspecialchars($c['name'] ?? $c['full_name'] ?? '') ?> (<?= htmlspecialchars($c['designation'] ?? 'Counselor') ?>)
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Appointment Date <span style="color:#ef4444;">*</span>
+          </label>
+          <input type="date" id="as-date" required min="<?= date('Y-m-d') ?>" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" onchange="checkCounselorConflict()" />
+          <input type="hidden" id="as-session-type" value="In-Person" />
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+              Start Time <span style="color:#ef4444;">*</span>
+            </label>
+            <input type="time" id="as-start-time" required value="10:00" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" onchange="checkCounselorConflict()" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+              End Time
+            </label>
+            <input type="time" id="as-end-time" value="11:00" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" onchange="checkCounselorConflict()" />
+          </div>
+        </div>
+
+        <div id="as-wrap-location" style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Venue / Consultation Room
+          </label>
+          <input type="text" id="as-location" value="ISCAG Center, 2nd Floor Da'wah Counseling Office Room 204" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem;" />
+        </div>
+
+
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Counselor Notes / Guidance to Client
+          </label>
+          <textarea id="as-notes" rows="2" placeholder="Please bring any relevant questions or notes. May Allah grant you ease." style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.88rem; font-family:inherit;"></textarea>
+        </div>
+
+        <div style="padding:14px 0 0; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" onclick="closeScheduleModal()" style="padding:9px 18px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-weight:600; cursor:pointer;">Cancel</button>
+          <button type="submit" id="as-submit-btn" class="btn-topbar primary" style="padding:9px 22px; font-weight:700;">
+            Confirm Assignment &amp; Schedule
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3-Dots Action Dropdown Menu -->
+  <div id="counseling-req-action-menu" class="counseling-action-menu">
+    <button type="button" class="action-dropdown-item schedule" onclick="triggerReqAction('schedule')">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+      <span>Set Schedule</span>
+    </button>
+    <button type="button" class="action-dropdown-item view" onclick="triggerReqAction('view')">
+      <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+      <span>View</span>
+    </button>
+    <div class="action-dropdown-divider"></div>
+    <button type="button" class="action-dropdown-item delete" onclick="triggerReqAction('delete')">
+      <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      <span>Delete</span>
+    </button>
   </div>
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
@@ -503,7 +664,10 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
       if (target) target.style.display = 'block';
     }
 
+    let currentViewingId = null;
+
     function openViewModal(id) {
+      currentViewingId = id;
       const r = recordsMap[id];
       if (!r) return;
 
@@ -560,6 +724,164 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
       if (e.target === this) closeViewModal();
     });
 
+    function openScheduleModalFromDetails() {
+      if (currentViewingId) {
+        closeViewModal();
+        openScheduleModal(currentViewingId);
+      }
+    }
+
+    function openScheduleModal(id) {
+      const r = recordsMap[id];
+      if (!r) return;
+
+      document.getElementById('as-request-id').value = id;
+      const reqId = '#' + dawahPrefix + String(r.id).padStart(4, '0');
+      const clientName = r.full_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Anonymous Client';
+      document.getElementById('as-client-name').textContent = clientName;
+      document.getElementById('as-ref-no').textContent = reqId;
+
+      if (r.preferred_date) {
+        document.getElementById('as-date').value = r.preferred_date;
+      } else {
+        document.getElementById('as-date').value = new Date().toISOString().split('T')[0];
+      }
+
+      if (r.preferred_time) {
+        const m = r.preferred_time.match(/(\d{1,2}):(\d{2})/);
+        if (m) {
+          let hrs = parseInt(m[1]);
+          if (r.preferred_time.toLowerCase().includes('pm') && hrs < 12) hrs += 12;
+          if (r.preferred_time.toLowerCase().includes('am') && hrs === 12) hrs = 0;
+          document.getElementById('as-start-time').value = `${String(hrs).padStart(2, '0')}:${m[2]}`;
+        }
+      }
+
+      if (r.counselor_id) {
+        document.getElementById('as-counselor-id').value = r.counselor_id;
+      } else {
+        document.getElementById('as-counselor-id').value = '';
+      }
+
+      document.getElementById('as-conflict-alert').style.display = 'none';
+      document.getElementById('schedule-assign-modal').style.display = 'flex';
+      checkCounselorConflict();
+    }
+
+    function closeScheduleModal() {
+      const m = document.getElementById('schedule-assign-modal');
+      if (m) m.style.display = 'none';
+      const ca = document.getElementById('as-conflict-alert');
+      if (ca) ca.style.display = 'none';
+    }
+
+    document.getElementById('schedule-assign-modal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeScheduleModal();
+    });
+
+    function toggleAsLocationFields() {
+      // All sessions are in-person
+    }
+
+    async function checkCounselorConflict() {
+      const cid = document.getElementById('as-counselor-id')?.value;
+      const date = document.getElementById('as-date')?.value;
+      const startTime = document.getElementById('as-start-time')?.value;
+      const endTime = document.getElementById('as-end-time')?.value;
+      const reqId = document.getElementById('as-request-id')?.value;
+
+      const alertBox = document.getElementById('as-conflict-alert');
+      const msgSpan = document.getElementById('as-conflict-msg');
+      if (!alertBox || !msgSpan) return;
+
+      if (!cid || !date || !startTime) {
+        alertBox.style.display = 'none';
+        return;
+      }
+
+      try {
+        const res = await fetch('<?= url("/admin/dawah/counseling/check-conflict") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ counselor_id: cid, date: date, start_time: startTime, end_time: endTime, exclude_id: reqId })
+        });
+        const data = await res.json();
+        if (data.conflict) {
+          alertBox.style.display = 'block';
+          msgSpan.textContent = data.message || 'Conflict detected for this counselor at the selected time.';
+        } else {
+          alertBox.style.display = 'none';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function submitScheduleAssign(e) {
+      e.preventDefault();
+      const id = document.getElementById('as-request-id').value;
+      const cid = document.getElementById('as-counselor-id').value;
+      const aptDate = document.getElementById('as-date').value;
+      const startTime = document.getElementById('as-start-time').value;
+      const endTime = document.getElementById('as-end-time').value;
+      const sessionType = document.getElementById('as-session-type').value;
+      const location = document.getElementById('as-location').value;
+      const link = document.getElementById('as-link').value;
+      const notes = document.getElementById('as-notes').value;
+
+      if (!id || !cid || !aptDate || !startTime) {
+        alert('Please complete all required schedule fields.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('as-submit-btn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving Assignment...';
+      }
+
+      try {
+        const response = await fetch('<?= url("/admin/dawah/counseling/accept-schedule") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: id,
+            counselor_id: cid,
+            appointment_date: aptDate,
+            start_time: startTime,
+            end_time: endTime,
+            final_session_type: sessionType,
+            appointment_location: location,
+            meeting_link: link,
+            counselor_notes: notes
+          })
+        });
+
+        const res = await response.json();
+        if (res.success) {
+          if (typeof showAlert === 'function') {
+            showAlert('Counselor Assigned', res.message || 'Counseling appointment confirmed and counselor assigned successfully!', 'success');
+          } else {
+            alert(res.message || 'Counseling appointment confirmed and counselor assigned successfully!');
+          }
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Confirm Assignment & Schedule';
+          }
+          alert(res.message || 'Failed to assign counselor.');
+        }
+      } catch (err) {
+        console.error(err);
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Confirm Assignment & Schedule';
+        }
+        alert('An unexpected network error occurred.');
+      }
+    }
+
     async function processRequest(id, action) {
       const r = recordsMap[id];
       const confirmMsg = action === 'accept'
@@ -614,8 +936,8 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                 <td>${statusBadge}</td>
                 <td>
                   <div class="actions-cell">
-                    <button class="btn-circle eye" onclick="openViewModal(${id})" title="View Details">
-                      <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, ${id})" title="Actions" aria-label="Actions">
+                      <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                     </button>
                   </div>
                 </td>
@@ -665,6 +987,111 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
         alert('Server communication error.');
       }
     }
+
+    /* ── 3-Dots Action Menu Handlers for Requests Page ── */
+    let activeReqId = null;
+    let activeReqButton = null;
+
+    function toggleReqMenu(e, id) {
+      e.stopPropagation();
+      const menu = document.getElementById('counseling-req-action-menu');
+      const btn = e.currentTarget;
+
+      if (menu.style.display === 'block' && activeReqId === id) {
+        closeReqMenu();
+        return;
+      }
+
+      activeReqId = id;
+      if (activeReqButton) activeReqButton.classList.remove('active');
+      activeReqButton = btn;
+      activeReqButton.classList.add('active');
+
+      menu.style.display = 'block';
+
+      const rect = btn.getBoundingClientRect();
+      const menuWidth = 180;
+      const menuHeight = menu.offsetHeight || 140;
+
+      let top = rect.bottom + 6;
+      let left = rect.right - menuWidth;
+
+      if (top + menuHeight > window.innerHeight) {
+        top = Math.max(10, rect.top - menuHeight - 6);
+      }
+      if (left < 10) {
+        left = Math.max(10, rect.left);
+      }
+
+      menu.style.top = `${top}px`;
+      menu.style.left = `${left}px`;
+    }
+
+    function closeReqMenu() {
+      const menu = document.getElementById('counseling-req-action-menu');
+      if (menu) menu.style.display = 'none';
+      if (activeReqButton) {
+        activeReqButton.classList.remove('active');
+        activeReqButton = null;
+      }
+      activeReqId = null;
+    }
+
+    function triggerReqAction(action) {
+      if (!activeReqId) return;
+      const id = activeReqId;
+      closeReqMenu();
+
+      if (action === 'schedule') {
+        openScheduleModal(id);
+      } else if (action === 'view') {
+        openViewModal(id);
+      } else if (action === 'delete') {
+        deleteCounselingReqRecord(id);
+      }
+    }
+
+    async function deleteCounselingReqRecord(id) {
+      const r = recordsMap[id];
+      const refNo = '#' + dawahPrefix + String(id).padStart(4, '0');
+      const name = r ? (r.full_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Client') : 'Client';
+
+      if (!confirm(`Are you sure you want to delete counseling request ${refNo} for "${name}"?\n\nThis will permanently remove the record.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch('<?= url('/admin/dawah/counseling/delete') ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const res = await response.json();
+        if (res.success) {
+          showAlert('Deleted Successfully', `Counseling request ${refNo} has been deleted.`, 'success');
+          const row = document.getElementById(`row-${id}`);
+          if (row) row.remove();
+          setTimeout(() => location.reload(), 900);
+        } else {
+          showAlert('Deletion Failed', res.message || 'Could not delete request.', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showAlert('Network Error', 'Failed to connect to server.', 'error');
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('counseling-req-action-menu');
+      if (menu && menu.style.display === 'block') {
+        if (!menu.contains(e.target) && !e.target.closest('.btn-circle.dots')) {
+          closeReqMenu();
+        }
+      }
+    });
+
+    window.addEventListener('scroll', closeReqMenu, true);
+    window.addEventListener('resize', closeReqMenu);
   </script>
 </body>
 </html>

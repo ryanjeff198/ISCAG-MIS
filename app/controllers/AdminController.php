@@ -1603,6 +1603,7 @@ class AdminController extends Controller
         
         $counselingModel = new CounselingRequest();
         $records = $counselingModel->getByGender($dawah_type);
+        $counselors = $counselingModel->getActiveCounselors($dawah_type);
 
         $viewPath = ($dawah_type === 'female' && file_exists(BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/counseling_requests.php'))
             ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/counseling_requests'
@@ -1612,7 +1613,8 @@ class AdminController extends Controller
             'active_page' => 'counseling_requests',
             'dawah_type' => $dawah_type,
             'dbUser' => $dbUser,
-            'records' => $records
+            'records' => $records,
+            'counselors' => $counselors
         ]);
     }
 
@@ -1702,6 +1704,40 @@ class AdminController extends Controller
             'success' => $success,
             'status' => 'Rejected',
             'message' => $success ? 'Counseling request has been rejected.' : 'Failed to update request status.'
+        ]);
+        exit;
+    }
+
+    public function deleteCounselingRequest(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        $model = new CounselingRequest();
+        $req = $model->getById($id);
+        $success = $model->delete($id);
+
+        if ($success) {
+            $refNo = '#MC-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+            $this->logAudit('DAWAH', 'DELETE_COUNSELING_REQUEST', "Deleted counseling consultation request $refNo (ID: $id)");
+        }
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? 'Counseling request has been deleted successfully.' : 'Failed to delete counseling request.'
         ]);
         exit;
     }
@@ -1984,6 +2020,8 @@ class AdminController extends Controller
         require_once BASE_PATH . '/app/models/User.php';
         require_once BASE_PATH . '/app/models/CounselingRequest.php';
         require_once BASE_PATH . '/app/models/MarriageRequest.php';
+        require_once BASE_PATH . '/app/models/DawahSchedule.php';
+        require_once BASE_PATH . '/app/models/DawahAvailability.php';
         
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
@@ -1993,72 +2031,132 @@ class AdminController extends Controller
         
         $counselingModel = new CounselingRequest();
         $marriageModel = new MarriageRequest();
+        $manualModel = new DawahSchedule();
+        $availModel = new DawahAvailability();
 
         // 1. Fetch Counseling
         $counselingRaw = $counselingModel->getByGender($dawah_type);
-        $counselingScheds = array_map(function($r) {
-            return [
+        $counselingScheds = [];
+        $counselingPending = [];
+
+        foreach ($counselingRaw as $r) {
+            $st = strtolower($r['status'] ?? 'pending');
+            $isConfirmed = in_array($st, ['approved', 'confirmed', 'accepted']);
+            $isPending = in_array($st, ['pending', 'under_review']);
+            $clientName = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?: ($r['full_name'] ?? 'Client');
+            
+            $item = [
+                'id' => $r['id'],
                 'type' => 'Counseling',
-                'name' => $r['first_name'] . ' ' . $r['last_name'],
-                'age'  => $r['age'] ?? null,
-                'date' => $r['preferred_date'],
-                'time' => $r['preferred_time'],
-                'desc' => 'Religious Guidance — ' . ($r['reason'] ?? 'General'),
-                'status' => $r['status']
+                'category' => 'counseling',
+                'name' => $clientName,
+                'contact' => $r['contact_number'] ?? $r['email'] ?? '',
+                'age' => $r['age'] ?? null,
+                'date' => $isConfirmed ? ($r['appointment_date'] ?: $r['preferred_date']) : $r['preferred_date'],
+                'time' => $isConfirmed ? ($r['start_time'] ?: $r['preferred_time']) : $r['preferred_time'],
+                'preferred_date' => $r['preferred_date'],
+                'preferred_time' => $r['preferred_time'],
+                'desc' => $r['reason'] ?? 'Religious Guidance',
+                'counselor' => $r['counselor_full_name'] ?? $r['counselor_name'] ?? 'Assigned Counselor',
+                'location' => $r['appointment_location'] ?? 'ISCAG Center, Room 204',
+                'status' => $st
             ];
-        }, $counselingRaw);
+
+            if ($isConfirmed) {
+                $counselingScheds[] = $item;
+            } elseif ($isPending) {
+                $counselingPending[] = $item;
+            }
+        }
 
         // 2. Fetch Marriage
         $marriageRaw = $marriageModel->getAll();
-        $marriageScheds = array_map(function($r) {
-            return [
+        $marriageScheds = [];
+        $marriagePending = [];
+
+        foreach ($marriageRaw as $r) {
+            $st = strtolower($r['status'] ?? 'pending');
+            $isApproved = in_array($st, ['approved', 'accepted', 'confirmed']);
+            $isPending = in_array($st, ['pending', 'under_review']);
+            $names = trim(($r['groom_name'] ?? '') . ' & ' . ($r['bride_name'] ?? '')) ?: 'Wedding Couple';
+
+            $item = [
+                'id' => $r['id'],
                 'type' => 'Marriage Ceremony',
-                'name' => $r['groom_name'] . ' & ' . $r['bride_name'],
-                'age'  => $r['age'] ?? null,
-                'date' => $r['marriage_date'],
-                'time' => $r['marriage_time'],
-                'desc' => 'Venue: ' . $r['marriage_venue'],
-                'status' => $r['status']
+                'category' => 'marriage',
+                'name' => $names,
+                'contact' => $r['groom_contact'] ?? '',
+                'age' => null,
+                'date' => $r['marriage_date'] ?: ($r['preferred_date'] ?? ''),
+                'time' => $r['marriage_time'] ?: ($r['preferred_time'] ?? '10:00 AM'),
+                'preferred_date' => $r['preferred_date'] ?? $r['marriage_date'] ?? '',
+                'preferred_time' => $r['preferred_time'] ?? $r['marriage_time'] ?? '',
+                'desc' => 'Marriage Solemnization — Venue: ' . ($r['marriage_venue'] ?? 'ISCAG Center'),
+                'counselor' => $r['officiant_name'] ?? 'Islamic Officiant',
+                'location' => $r['marriage_venue'] ?? 'ISCAG Center',
+                'status' => $st
             ];
-        }, $marriageRaw);
+
+            if ($isApproved) {
+                $marriageScheds[] = $item;
+            } elseif ($isPending) {
+                $marriagePending[] = $item;
+            }
+        }
 
         // 3. Fetch Manual Assignments (Classes/Seminars)
-        require_once BASE_PATH . '/app/models/DawahSchedule.php';
-        $manualModel = new DawahSchedule();
         $manualRaw = $manualModel->getByDepartment($dawah_type);
         $manualScheds = array_map(function($r) {
             return [
-                'type' => $r['event_type'],
+                'id' => $r['id'],
+                'type' => $r['event_type'] ?? 'Class',
+                'category' => 'event',
                 'name' => $r['title'],
+                'contact' => '',
+                'age' => null,
                 'date' => $r['event_date'],
                 'time' => $r['event_time'],
-                'desc' => $r['description'],
-                'status' => 'approved' // Manual assignments are pre-approved
+                'preferred_date' => $r['event_date'],
+                'preferred_time' => $r['event_time'],
+                'desc' => $r['description'] ?: 'Department Educational Activity',
+                'counselor' => 'Da\'wah Department Staff',
+                'location' => 'ISCAG Center',
+                'status' => 'approved'
             ];
         }, $manualRaw);
 
-        // 4. Consolidate & Sort by Date/Time
-        $schedules = array_merge($counselingScheds, $marriageScheds, $manualScheds);
-        usort($schedules, function($a, $b) {
-            $dateA = strtotime($a['date'] . ' ' . $a['time']);
-            $dateB = strtotime($b['date'] . ' ' . $b['time']);
-            return $dateA <=> $dateB;
+        // Available / Confirmed schedules (sorted by date/time)
+        $availableSchedules = array_merge($counselingScheds, $marriageScheds, $manualScheds);
+        usort($availableSchedules, function($a, $b) {
+            return strtotime(($a['date'] ?? '') . ' ' . ($a['time'] ?? '')) <=> strtotime(($b['date'] ?? '') . ' ' . ($b['time'] ?? ''));
         });
+
+        // Pending schedules (sorted by requested date)
+        $pendingSchedules = array_merge($counselingPending, $marriagePending);
+        usort($pendingSchedules, function($a, $b) {
+            return strtotime(($a['date'] ?? '') . ' ' . ($a['time'] ?? '')) <=> strtotime(($b['date'] ?? '') . ' ' . ($b['time'] ?? ''));
+        });
+
+        // Blocked / Not Available schedules
+        $blockedDates = $availModel->getBlockedDates($dawah_type);
+        $blockedList = $availModel->getBlockedList($dawah_type);
+
+        // Combined for calendar indicator
+        $schedules = $availableSchedules;
 
         $viewPath = ($dawah_type === 'female') 
             ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/schedule'
             : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/schedule';
-
-        require_once BASE_PATH . '/app/models/DawahAvailability.php';
-        $availModel = new DawahAvailability();
-        $blockedDates = $availModel->getBlockedDates($dawah_type);
 
         $this->view($viewPath, [
             'active_page' => 'schedule',
             'dawah_type' => $dawah_type,
             'dbUser' => $dbUser,
             'schedules' => $schedules,
-            'blockedDates' => $blockedDates
+            'availableSchedules' => $availableSchedules,
+            'pendingSchedules' => $pendingSchedules,
+            'blockedDates' => $blockedDates,
+            'blockedList' => $blockedList
         ]);
     }
 
@@ -2095,7 +2193,7 @@ class AdminController extends Controller
                 $input = json_decode(file_get_contents('php://input'), true);
                 
                 $role = $_SESSION['role'] ?? '';
-                $dept = ($role === 'Staff_Female') ? 'female' : 'male';
+                $dept = !empty($input['department']) ? strtolower($input['department']) : (($role === 'Staff_Female') ? 'female' : 'male');
                 
                 $data = [
                     'title' => $input['title'] ?? '',
@@ -2131,7 +2229,7 @@ class AdminController extends Controller
                 $reason = $input['reason'] ?? 'Administrator Blockout';
                 
                 $role = $_SESSION['role'] ?? '';
-                $dept = ($role === 'Staff_Female') ? 'female' : 'male';
+                $dept = !empty($input['department']) ? strtolower($input['department']) : (($role === 'Staff_Female') ? 'female' : 'male');
 
                 require_once BASE_PATH . '/app/models/DawahAvailability.php';
                 $model = new DawahAvailability();

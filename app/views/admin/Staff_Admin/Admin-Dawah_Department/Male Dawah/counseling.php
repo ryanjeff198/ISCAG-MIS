@@ -104,30 +104,98 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
     }
     .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-    /* ── Action Buttons ── */
-    .actions-cell { display: flex; align-items: center; gap: 6px; }
+    /* ── Action Buttons & 3-Dots Dropdown ── */
+    .actions-cell { display: flex; align-items: center; justify-content: center; }
     .btn-circle {
-      width: 32px; height: 32px; border-radius: 50%;
+      width: 32px; height: 32px; border-radius: 8px;
       display: inline-flex; align-items: center; justify-content: center;
-      border: none; background: transparent;
+      border: 1px solid var(--border, #e2e8f0); background: #f8fafc;
       cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); padding: 0;
+      color: #475569;
     }
-    .btn-circle svg { width: 18px; height: 18px; fill: var(--text-muted); }
-    .btn-circle:hover { transform: translateY(-1px); background: rgba(0,0,0,0.05); }
+    .btn-circle svg { width: 18px; height: 18px; fill: currentColor; }
+    .btn-circle:hover, .btn-circle.active { 
+      background: #e2e8f0; 
+      border-color: #cbd5e1;
+      color: var(--primary-dark, #0f172a);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
     
-    .btn-circle.eye svg { fill: #1E90FF; }
-    .btn-circle.eye:hover { background: rgba(30,144,255,0.1); }
-    
-    .btn-circle.check svg { fill: #2f8a60; }
-    .btn-circle.check:hover { background: rgba(47,138,96,0.1); }
-    
-    .btn-circle.reject svg { fill: #8b2e2e; }
-    .btn-circle.reject:hover { background: rgba(139,46,46,0.1); }
+    .btn-circle.dots {
+      border-radius: 8px;
+    }
 
-    .btn-circle.print svg { fill: #6366f1; }
-    .btn-circle.print:hover { background: rgba(99,102,241,0.1); }
-
-    .btn-circle:disabled { opacity: 0.4; cursor: not-allowed; }
+    /* Floating 3-Dots Action Dropdown Menu */
+    .counseling-action-menu {
+      position: fixed;
+      display: none;
+      min-width: 175px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.14), 0 8px 10px -6px rgba(0,0,0,0.08);
+      padding: 6px;
+      z-index: 999999;
+      animation: menuFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes menuFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .action-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #334155;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .action-dropdown-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      fill: currentColor;
+    }
+    .action-dropdown-item:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .action-dropdown-item.schedule {
+      color: #6d28d9;
+    }
+    .action-dropdown-item.schedule:hover {
+      background: #f5f3ff;
+      color: #5b21b6;
+    }
+    .action-dropdown-item.view {
+      color: #1d4ed8;
+    }
+    .action-dropdown-item.view:hover {
+      background: #eff6ff;
+      color: #1e40af;
+    }
+    .action-dropdown-item.delete {
+      color: #dc2626;
+    }
+    .action-dropdown-item.delete:hover {
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+    .action-dropdown-divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 4px 0;
+    }
 
     /* Modal Backdrop and Card */
     .counseling-modal-backdrop {
@@ -263,11 +331,6 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
             <select id="category-filter" class="form-control" style="font-size:0.82rem; padding:6px 14px; border-radius:8px; border:1px solid var(--border); background:white; font-weight:600;" onchange="applyFilters()">
               <!-- Categories rendered by JS -->
             </select>
-            <select id="mode-filter" class="form-control" style="font-size:0.82rem; padding:6px 14px; border-radius:8px; border:1px solid var(--border); background:white; font-weight:600;" onchange="applyFilters()">
-              <option value="all">All Session Modes</option>
-              <option value="In-Person">In-Person</option>
-              <option value="Online">Online Consultation</option>
-            </select>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
             <div style="position:relative; min-width:260px;">
@@ -353,15 +416,9 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
           </div>
         </div>
 
-        <div class="info-grid-2">
-          <div class="info-box">
-            <div class="info-box-lbl">Requested Preferred Schedule</div>
-            <div id="modal-c-pref-sched" class="info-box-val">—</div>
-          </div>
-          <div class="info-box">
-            <div class="info-box-lbl">Requested Session Mode</div>
-            <div id="modal-c-pref-type" class="info-box-val">—</div>
-          </div>
+        <div class="info-box" style="margin-bottom:14px;">
+          <div class="info-box-lbl">Requested Preferred Schedule</div>
+          <div id="modal-c-pref-sched" class="info-box-val">—</div>
         </div>
 
         <div class="info-grid-2">
@@ -422,24 +479,16 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
               <option value="">Select Qualified Counselor</option>
               <?php foreach ($counselors ?? [] as $c): ?>
                 <option value="<?= $c['id'] ?>">
-                  <?= htmlspecialchars($c['full_name']) ?> (<?= htmlspecialchars($c['designation'] ?? 'Counselor') ?>)
+                  <?= htmlspecialchars($c['name'] ?? $c['full_name'] ?? '') ?> (<?= htmlspecialchars($c['designation'] ?? 'Counselor') ?>)
                 </option>
               <?php endforeach; ?>
             </select>
           </div>
 
-          <div class="info-grid-2">
-            <div class="c-field">
-              <label>Appointment Date <span style="color:red;">*</span></label>
-              <input type="date" id="sched-date" min="<?= date('Y-m-d') ?>" onchange="runLiveConflictCheck()" />
-            </div>
-            <div class="c-field">
-              <label>Final Session Mode</label>
-              <select id="sched-type" onchange="toggleLocationFields()">
-                <option value="In-Person">In-Person (Mosque Office)</option>
-                <option value="Online">Online Video Consultation</option>
-              </select>
-            </div>
+          <input type="hidden" id="sched-type" value="In-Person" />
+          <div class="c-field">
+            <label>Appointment Date <span style="color:red;">*</span></label>
+            <input type="date" id="sched-date" min="<?= date('Y-m-d') ?>" onchange="runLiveConflictCheck()" />
           </div>
 
           <div class="info-grid-2">
@@ -456,16 +505,6 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
           <div class="c-field" id="wrap-location">
             <label>Venue / Consultation Room</label>
             <input type="text" id="sched-location" value="ISCAG Center, 2nd Floor Da'wah Counseling Office Room 204" />
-          </div>
-
-          <div class="c-field" id="wrap-link" style="display:none;">
-            <label>Online Meeting URL (Google Meet / Zoom)</label>
-            <input type="url" id="sched-link" placeholder="https://meet.google.com/xxx-xxxx-xxx" />
-          </div>
-
-          <div class="c-field" id="wrap-instructions" style="display:none;">
-            <label>Online Meeting Access Instructions</label>
-            <textarea id="sched-instructions" rows="2" placeholder="Please join via Google Meet 5 minutes before scheduled session in a quiet, private area."></textarea>
           </div>
 
           <div class="c-field">
@@ -530,6 +569,24 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- 3-Dots Action Dropdown Menu -->
+  <div id="counseling-action-menu" class="counseling-action-menu">
+    <button type="button" class="action-dropdown-item schedule" onclick="triggerMenuAction('schedule')">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+      <span>Set Schedule</span>
+    </button>
+    <button type="button" class="action-dropdown-item view" onclick="triggerMenuAction('view')">
+      <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+      <span>View</span>
+    </button>
+    <div id="action-menu-extra"></div>
+    <div class="action-dropdown-divider"></div>
+    <button type="button" class="action-dropdown-item delete" onclick="triggerMenuAction('delete')">
+      <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      <span>Delete</span>
+    </button>
   </div>
 
   <!-- 🖨️ 5. Printable Official Pass Modal Area -->
@@ -615,8 +672,8 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       const container = document.getElementById('insights-container');
       const total = records.length;
       const pending = records.filter(r => ['pending', 'under_review'].includes((r.status || '').toLowerCase())).length;
-      const confirmed = records.filter(r => ['confirmed', 'approved'].includes((r.status || '').toLowerCase())).length;
-      const rejected = records.filter(r => (r.status || '').toLowerCase() === 'rejected').length;
+      const confirmed = records.filter(r => ['confirmed', 'approved', 'accepted'].includes((r.status || '').toLowerCase())).length;
+      const rejected = records.filter(r => ['rejected', 'disapproved', 'cancelled'].includes((r.status || '').toLowerCase())).length;
 
       container.innerHTML = `
         <div class="insight-card pending" onclick="setStatusFilter('pending', document.querySelector('.tab-btn:nth-child(2)'))">
@@ -667,7 +724,6 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       activeStatusFilter = 'all';
       activeCategoryFilter = 'All Concerns';
       document.getElementById('category-filter').value = 'All Concerns';
-      document.getElementById('mode-filter').value = 'all';
       document.getElementById('search-input').value = '';
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelector('.tab-btn:nth-child(1)')?.classList.add('active');
@@ -681,18 +737,15 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       if (st === 'under_review') {
         badgeCls = 'under_review';
         label = 'Under Review';
-      } else if (['confirmed', 'approved'].includes(st)) {
+      } else if (['confirmed', 'approved', 'accepted'].includes(st)) {
         badgeCls = 'approved';
         label = 'Confirmed';
       } else if (st === 'completed') {
         badgeCls = 'completed';
         label = 'Completed';
-      } else if (st === 'rejected') {
+      } else if (['rejected', 'disapproved', 'cancelled'].includes(st)) {
         badgeCls = 'rejected';
         label = 'Disapproved';
-      } else if (st === 'cancelled') {
-        badgeCls = 'cancelled';
-        label = 'Cancelled';
       }
       return `<span class="badge-status ${badgeCls}"><span class="status-dot"></span>${label}</span>`;
     }
@@ -700,7 +753,6 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
     function applyFilters() {
       const tbody = document.getElementById('counseling-tbody');
       const cat = document.getElementById('category-filter').value;
-      const mode = document.getElementById('mode-filter').value;
       const search = (document.getElementById('search-input').value || '').toLowerCase().trim();
 
       activeCategoryFilter = cat;
@@ -710,18 +762,15 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
         if (activeStatusFilter === 'pending') {
           if (!['pending', 'under_review'].includes(st)) return false;
         } else if (activeStatusFilter === 'confirmed') {
-          if (!['confirmed', 'approved'].includes(st)) return false;
+          if (!['confirmed', 'approved', 'accepted'].includes(st)) return false;
+        } else if (activeStatusFilter === 'rejected') {
+          if (!['rejected', 'disapproved', 'cancelled'].includes(st)) return false;
         } else if (activeStatusFilter !== 'all') {
           if (st !== activeStatusFilter) return false;
         }
 
         if (cat !== 'All Concerns' && r.reason !== cat) {
           return false;
-        }
-
-        if (mode !== 'all') {
-          const rMode = r.final_session_type || r.session_type || 'In-Person';
-          if (rMode !== mode) return false;
         }
 
         if (search) {
@@ -808,22 +857,9 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
             <td>${getStatusBadge(st)}</td>
             <td>
               <div class="actions-cell">
-                <button type="button" class="btn-circle eye" onclick='viewCounselingDetails(${JSON.stringify(r)})' title="Review Case Details">
-                  <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                <button type="button" class="btn-circle dots" onclick="toggleRowMenu(event, ${r.id})" title="Actions" aria-label="Actions" id="action-btn-${r.id}">
+                  <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                 </button>
-                ${isPending ? `
-                  <button type="button" class="btn-circle check" onclick='openScheduleFromRow(${JSON.stringify(r)})' title="Accept & Set Appointment">
-                    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                  </button>
-                  <button type="button" class="btn-circle reject" onclick='openRejectFromRow(${JSON.stringify(r)})' title="Reject Request">
-                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                  </button>
-                ` : ''}
-                ${(isConfirmed || isCompleted) ? `
-                  <button type="button" class="btn-circle print" onclick='openPrintPassModal(${JSON.stringify(r)})' title="Print Appointment Slip">
-                    <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
-                  </button>
-                ` : ''}
               </div>
             </td>
           </tr>
@@ -883,8 +919,8 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
         const aTime = (r.start_time ? r.start_time : '') + (r.end_time ? ` – ${r.end_time}` : '');
         document.getElementById('modal-c-confirmed-datetime').innerText = `${aDate} at ${aTime || 'Scheduled Time'}`;
         
-        const mode = r.final_session_type || r.session_type || 'In-Person';
-        const loc = (mode === 'Online') ? `Online: ${r.meeting_link || 'Link provided upon confirmation'}` : (r.appointment_location || 'ISCAG Office');
+        const mode = 'In-Person';
+        const loc = r.appointment_location || 'ISCAG Center, 2nd Floor Da\'wah Counseling Office Room 204';
         document.getElementById('modal-c-confirmed-location').innerText = loc;
 
         if (r.counselor_notes) {
@@ -924,7 +960,8 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
             Begin Review
           </button>
           <button type="button" class="btn-topbar primary" onclick="showActionPanel('panel-accept-schedule')">
-            Accept &amp; Set Appointment
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            Assign Counselor &amp; Schedule
           </button>
           <button type="button" class="btn-topbar" style="color:var(--danger); border-color:var(--danger);" onclick="showActionPanel('panel-reject')">
             Reject Request
@@ -933,7 +970,8 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       } else if (st === 'under_review') {
         actGroup.innerHTML = `
           <button type="button" class="btn-topbar primary" onclick="showActionPanel('panel-accept-schedule')">
-            Accept &amp; Set Appointment
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            Assign Counselor &amp; Schedule
           </button>
           <button type="button" class="btn-topbar" style="color:var(--danger); border-color:var(--danger);" onclick="showActionPanel('panel-reject')">
             Reject Request
@@ -945,7 +983,8 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
             ✓ Mark as Completed
           </button>
           <button type="button" class="btn-topbar" onclick="showActionPanel('panel-accept-schedule')">
-            Reschedule / Update
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            Reassign Counselor / Schedule
           </button>
           <button type="button" class="btn-topbar" style="color:var(--danger); border-color:var(--danger);" onclick="showActionPanel('panel-reject')">
             Cancel Session
@@ -958,7 +997,8 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       } else if (st === 'rejected') {
         actGroup.innerHTML = `
           <button type="button" class="btn-topbar primary" onclick="showActionPanel('panel-accept-schedule')">
-            Reconsider &amp; Schedule
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            Assign Counselor &amp; Schedule
           </button>
         `;
       }
@@ -985,11 +1025,7 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
     }
 
     function toggleLocationFields() {
-      const type = document.getElementById('sched-type').value;
-      const isOnline = (type === 'Online');
-      document.getElementById('wrap-location').style.display = isOnline ? 'none' : 'block';
-      document.getElementById('wrap-link').style.display = isOnline ? 'block' : 'none';
-      document.getElementById('wrap-instructions').style.display = isOnline ? 'block' : 'none';
+      // All sessions are strictly in-person
     }
 
     // Live conflict checking before submission
@@ -1178,9 +1214,7 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       document.getElementById('slip-counselor').innerText = r.counselor_full_name || r.counselor_name || 'Assigned Counselor';
       document.getElementById('slip-counselor-role').innerText = r.counselor_designation || r.counselor_role || 'Islamic Counselor';
 
-      const locText = (mode === 'Online') 
-        ? `Online Consultation • Link: ${r.meeting_link || 'Link provided upon confirmation'}\nInstructions: ${r.meeting_instructions || 'Ensure working audio 5 mins prior.'}`
-        : (r.appointment_location || 'ISCAG Center, 2nd Floor Da\'wah Counseling Office Room 204');
+      const locText = r.appointment_location || 'ISCAG Center, 2nd Floor Da\'wah Counseling Office Room 204';
       document.getElementById('slip-location').innerText = locText;
 
       const slipArea = document.getElementById('printable-slip-area');
@@ -1188,6 +1222,135 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       window.print();
       slipArea.style.display = 'none';
     }
+
+    /* ── 3-Dots Action Menu Handlers ── */
+    let activeMenuRecord = null;
+    let activeMenuButton = null;
+
+    function toggleRowMenu(e, id) {
+      e.stopPropagation();
+      const menu = document.getElementById('counseling-action-menu');
+      const btn = e.currentTarget;
+
+      if (menu.style.display === 'block' && activeMenuRecord && activeMenuRecord.id === id) {
+        closeRowMenu();
+        return;
+      }
+
+      const rec = records.find(r => Number(r.id) === Number(id));
+      if (!rec) return;
+
+      activeMenuRecord = rec;
+      if (activeMenuButton) activeMenuButton.classList.remove('active');
+      activeMenuButton = btn;
+      activeMenuButton.classList.add('active');
+
+      // Extra options based on status (e.g. print slip if confirmed/completed)
+      const extraContainer = document.getElementById('action-menu-extra');
+      const st = (rec.status || 'pending').toLowerCase();
+      if (['confirmed', 'approved', 'completed'].includes(st)) {
+        extraContainer.innerHTML = `
+          <button type="button" class="action-dropdown-item" onclick="triggerMenuAction('print')">
+            <svg viewBox="0 0 24 24" style="color:#4f46e5;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+            <span>Print Slip</span>
+          </button>
+        `;
+      } else {
+        extraContainer.innerHTML = '';
+      }
+
+      menu.style.display = 'block';
+
+      // Position calculating with boundary checks
+      const rect = btn.getBoundingClientRect();
+      const menuWidth = 180;
+      const menuHeight = menu.offsetHeight || 155;
+
+      let top = rect.bottom + 6;
+      let left = rect.right - menuWidth;
+
+      if (top + menuHeight > window.innerHeight) {
+        top = Math.max(10, rect.top - menuHeight - 6);
+      }
+      if (left < 10) {
+        left = Math.max(10, rect.left);
+      }
+
+      menu.style.top = `${top}px`;
+      menu.style.left = `${left}px`;
+    }
+
+    function closeRowMenu() {
+      const menu = document.getElementById('counseling-action-menu');
+      if (menu) menu.style.display = 'none';
+      if (activeMenuButton) {
+        activeMenuButton.classList.remove('active');
+        activeMenuButton = null;
+      }
+      activeMenuRecord = null;
+    }
+
+    function triggerMenuAction(action) {
+      if (!activeMenuRecord) return;
+      const rec = activeMenuRecord;
+      closeRowMenu();
+
+      if (action === 'schedule') {
+        openScheduleFromRow(rec);
+      } else if (action === 'view') {
+        viewCounselingDetails(rec);
+      } else if (action === 'delete') {
+        deleteCounselingRecord(rec);
+      } else if (action === 'print') {
+        openPrintPassModal(rec);
+      }
+    }
+
+    async function deleteCounselingRecord(rec) {
+      if (!rec) return;
+      const refNo = `#${prefix}${String(rec.id).padStart(4, '0')}`;
+      const name = rec.full_name || rec.client_name || `${rec.first_name || ''} ${rec.last_name || ''}`.trim() || 'Client';
+
+      if (!confirm(`Are you sure you want to delete counseling request ${refNo} for "${name}"?\n\nThis will permanently remove the request and any associated appointment details.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch('<?= url('/admin/dawah/counseling/delete') ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: rec.id })
+        });
+        const res = await response.json();
+        if (res.success) {
+          showAlert('Deleted Successfully', `Counseling request ${refNo} has been deleted.`, 'success');
+          const idx = records.findIndex(r => Number(r.id) === Number(rec.id));
+          if (idx !== -1) {
+            records.splice(idx, 1);
+          }
+          renderInsights();
+          applyFilters();
+        } else {
+          showAlert('Deletion Failed', res.message || 'Could not delete counseling request.', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showAlert('Network Error', 'Failed to connect to server.', 'error');
+      }
+    }
+
+    // Close menu when clicking outside or scrolling
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('counseling-action-menu');
+      if (menu && menu.style.display === 'block') {
+        if (!menu.contains(e.target) && !e.target.closest('.btn-circle.dots')) {
+          closeRowMenu();
+        }
+      }
+    });
+
+    window.addEventListener('scroll', closeRowMenu, true);
+    window.addEventListener('resize', closeRowMenu);
 
     function escapeHtml(str) {
       if (!str) return '';

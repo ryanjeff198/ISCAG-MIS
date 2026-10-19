@@ -475,14 +475,6 @@ class UserController extends Controller
             return;
         }
 
-        // Prevent duplicate request entries from a single submission
-        $existing = $model->findPendingByUser((int)$_SESSION['user_id']);
-        if ($existing) {
-            $ref = '#MR-' . str_pad((string)$existing['id'], 4, '0', STR_PAD_LEFT);
-            echo json_encode(['success' => false, 'message' => "You already have a pending marriage reservation request ($ref). Please wait for it to be processed."]);
-            return;
-        }
-
         $success = $model->create([
             'tenant_id' => $_SESSION['user_id'],
             'groom_name' => $groom,
@@ -492,6 +484,19 @@ class UserController extends Controller
             'marriage_venue' => $venue,
             'status' => 'pending'
         ]);
+
+        if ($success) {
+            try {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notif = new Notification();
+                $notif->create(
+                    (int)$_SESSION['user_id'],
+                    'Marriage Reservation Submitted',
+                    "Your marriage ceremony reservation for $groom & $bride has been submitted successfully and is pending review by the Da'wah Department.",
+                    'info'
+                );
+            } catch (Exception $e) {}
+        }
 
         echo json_encode([
             'success' => $success,
@@ -547,14 +552,6 @@ class UserController extends Controller
         require_once BASE_PATH . '/app/models/ConversionRequest.php';
         $model = new ConversionRequest();
 
-        // Prevent duplicate request entries from a single submission
-        $existing = $model->findPendingByUser((int)$userId);
-        if ($existing) {
-            $ref = '#CR-' . str_pad((string)$existing['id'], 4, '0', STR_PAD_LEFT);
-            echo json_encode(['success' => false, 'message' => "You already have a pending conversion registration ($ref). Please wait for it to be processed."]);
-            return;
-        }
-
         $data = [
             'tenant_id' => $userId,
             'fname' => $fname,
@@ -585,6 +582,16 @@ class UserController extends Controller
         $success = $model->create($data);
 
         if ($success) {
+            try {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notif = new Notification();
+                $notif->create(
+                    (int)$userId,
+                    'Conversion Registration Submitted',
+                    "Your Islamic Conversion (Shahadah) registration for {$adoptedName} has been submitted successfully and is pending review.",
+                    'info'
+                );
+            } catch (Exception $e) {}
             AuditLogger::log('DAWAH', 'CONVERSION_SUBMIT', "User submitted conversion registration for adopted name: {$adoptedName}");
         }
 

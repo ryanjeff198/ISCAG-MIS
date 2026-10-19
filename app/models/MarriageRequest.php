@@ -69,7 +69,7 @@ class MarriageRequest
         $stmt = $this->db->prepare("
             SELECT r.*, t.first_name, t.last_name, t.email 
             FROM {$this->table} r
-            JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
+            LEFT JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
             WHERE r.id = :id
         ");
         $stmt->execute(['id' => $id]);
@@ -91,7 +91,7 @@ class MarriageRequest
             SELECT r.*, t.first_name, t.last_name, t.email,
                    TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) as age
             FROM {$this->table} r
-            JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
+            LEFT JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
             LEFT JOIN tenant_user_profiles p ON t.tenant_id = p.tenant_id
             ORDER BY r.created_at DESC
         ");

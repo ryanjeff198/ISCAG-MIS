@@ -159,7 +159,7 @@ class CounselingRequest
                    c.office_location AS counselor_office,
                    c.profile_photo AS counselor_photo
             FROM {$this->table} r
-            JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
+            LEFT JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
             LEFT JOIN tenant_user_profiles p ON t.tenant_id = p.tenant_id
             LEFT JOIN counselors c ON r.counselor_id = c.id
             WHERE r.id = :id
@@ -187,7 +187,7 @@ class CounselingRequest
                    c.office_location AS counselor_office,
                    c.profile_photo AS counselor_photo
             FROM {$this->table} r
-            JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
+            LEFT JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
             LEFT JOIN tenant_user_profiles p ON t.tenant_id = p.tenant_id
             LEFT JOIN counselors c ON r.counselor_id = c.id
             WHERE r.tenant_id = :id
@@ -251,7 +251,7 @@ class CounselingRequest
                    c.phone AS counselor_phone,
                    c.office_location AS counselor_office
             FROM {$this->table} r
-            JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
+            LEFT JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
             LEFT JOIN tenant_user_profiles p ON t.tenant_id = p.tenant_id
             LEFT JOIN counselors c ON r.counselor_id = c.id
             WHERE r.gender = :gender
@@ -424,5 +424,11 @@ class CounselingRequest
     {
         $stmt = $this->db->prepare("UPDATE {$this->table} SET status = :status WHERE id = :id");
         return $stmt->execute(['status' => strtolower(trim($status)), 'id' => $id]);
+    }
+
+    public function delete(int $id): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
     }
 }
