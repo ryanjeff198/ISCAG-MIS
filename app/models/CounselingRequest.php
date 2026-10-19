@@ -56,6 +56,11 @@ class CounselingRequest
         try {
             $cols = $this->db->query("SHOW COLUMNS FROM {$this->table}")->fetchAll(PDO::FETCH_COLUMN);
             $alterations = [
+                'full_name' => "VARCHAR(255) NULL",
+                'age' => "INT NULL",
+                'civil_status' => "VARCHAR(50) NULL",
+                'address' => "VARCHAR(255) NULL",
+                'contact_number' => "VARCHAR(50) NULL",
                 'description' => "TEXT NULL",
                 'session_type' => "VARCHAR(50) DEFAULT 'In-Person'",
                 'counselor_id' => "INT NULL",
@@ -140,9 +145,13 @@ class CounselingRequest
     {
         $stmt = $this->db->prepare("
             SELECT r.*, 
-                   t.first_name, t.last_name, t.email, t.contactnum AS contact_number,
-                   p.civil_status, p.address AS current_address,
-                   TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) as age,
+                   COALESCE(NULLIF(r.full_name, ''), CONCAT(COALESCE(t.first_name, ''), ' ', COALESCE(t.last_name, ''))) AS full_name,
+                   COALESCE(NULLIF(r.full_name, ''), CONCAT(COALESCE(t.first_name, ''), ' ', COALESCE(t.last_name, ''))) AS client_name,
+                   t.first_name, t.last_name, t.email, 
+                   COALESCE(NULLIF(r.contact_number, ''), t.contactnum) AS contact_number,
+                   COALESCE(NULLIF(r.civil_status, ''), p.civil_status) AS civil_status,
+                   COALESCE(NULLIF(r.address, ''), p.address) AS current_address,
+                   COALESCE(r.age, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE())) as age,
                    COALESCE(c.name, r.counselor_name) AS counselor_full_name,
                    COALESCE(c.designation, r.counselor_role) AS counselor_designation,
                    COALESCE(c.email, r.counselor_contact) AS counselor_contact_info,
@@ -164,6 +173,13 @@ class CounselingRequest
     {
         $stmt = $this->db->prepare("
             SELECT r.*,
+                   COALESCE(NULLIF(r.full_name, ''), CONCAT(COALESCE(t.first_name, ''), ' ', COALESCE(t.last_name, ''))) AS full_name,
+                   COALESCE(NULLIF(r.full_name, ''), CONCAT(COALESCE(t.first_name, ''), ' ', COALESCE(t.last_name, ''))) AS client_name,
+                   t.first_name, t.last_name, t.email,
+                   COALESCE(NULLIF(r.contact_number, ''), t.contactnum) AS contact_number,
+                   COALESCE(NULLIF(r.civil_status, ''), p.civil_status) AS civil_status,
+                   COALESCE(NULLIF(r.address, ''), p.address) AS current_address,
+                   COALESCE(r.age, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE())) as age,
                    COALESCE(c.name, r.counselor_name) AS counselor_full_name,
                    COALESCE(c.designation, r.counselor_role) AS counselor_designation,
                    COALESCE(c.email, r.counselor_contact) AS counselor_contact_info,
@@ -171,6 +187,8 @@ class CounselingRequest
                    c.office_location AS counselor_office,
                    c.profile_photo AS counselor_photo
             FROM {$this->table} r
+            JOIN tenant_accounts t ON r.tenant_id = t.tenant_id
+            LEFT JOIN tenant_user_profiles p ON t.tenant_id = p.tenant_id
             LEFT JOIN counselors c ON r.counselor_id = c.id
             WHERE r.tenant_id = :id
             ORDER BY r.created_at DESC
@@ -220,9 +238,13 @@ class CounselingRequest
     {
         $stmt = $this->db->prepare("
             SELECT r.*, 
-                   t.first_name, t.last_name, t.email, t.contactnum AS contact_number,
-                   p.civil_status, p.address AS current_address,
-                   TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) as age,
+                   COALESCE(NULLIF(r.full_name, ''), CONCAT(COALESCE(t.first_name, ''), ' ', COALESCE(t.last_name, ''))) AS full_name,
+                   COALESCE(NULLIF(r.full_name, ''), CONCAT(COALESCE(t.first_name, ''), ' ', COALESCE(t.last_name, ''))) AS client_name,
+                   t.first_name, t.last_name, t.email, 
+                   COALESCE(NULLIF(r.contact_number, ''), t.contactnum) AS contact_number,
+                   COALESCE(NULLIF(r.civil_status, ''), p.civil_status) AS civil_status,
+                   COALESCE(NULLIF(r.address, ''), p.address) AS current_address,
+                   COALESCE(r.age, TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE())) as age,
                    COALESCE(c.name, r.counselor_name) AS counselor_full_name,
                    COALESCE(c.designation, r.counselor_role) AS counselor_designation,
                    COALESCE(c.email, r.counselor_contact) AS counselor_contact_info,

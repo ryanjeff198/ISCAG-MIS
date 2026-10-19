@@ -475,6 +475,14 @@ class UserController extends Controller
             return;
         }
 
+        // Prevent duplicate request entries from a single submission
+        $existing = $model->findPendingByUser((int)$_SESSION['user_id']);
+        if ($existing) {
+            $ref = '#MR-' . str_pad((string)$existing['id'], 4, '0', STR_PAD_LEFT);
+            echo json_encode(['success' => false, 'message' => "You already have a pending marriage reservation request ($ref). Please wait for it to be processed."]);
+            return;
+        }
+
         $success = $model->create([
             'tenant_id' => $_SESSION['user_id'],
             'groom_name' => $groom,
@@ -538,6 +546,14 @@ class UserController extends Controller
 
         require_once BASE_PATH . '/app/models/ConversionRequest.php';
         $model = new ConversionRequest();
+
+        // Prevent duplicate request entries from a single submission
+        $existing = $model->findPendingByUser((int)$userId);
+        if ($existing) {
+            $ref = '#CR-' . str_pad((string)$existing['id'], 4, '0', STR_PAD_LEFT);
+            echo json_encode(['success' => false, 'message' => "You already have a pending conversion registration ($ref). Please wait for it to be processed."]);
+            return;
+        }
 
         $data = [
             'tenant_id' => $userId,
@@ -683,6 +699,11 @@ class UserController extends Controller
 
         $userId = (int)($_SESSION['user_id'] ?? 0);
         $gender = strtolower(trim($input['gender'] ?? 'male'));
+        $fullName = trim($input['full_name'] ?? '');
+        $age = !empty($input['age']) ? (int)$input['age'] : null;
+        $civilStatus = trim($input['civil_status'] ?? '');
+        $address = trim($input['address'] ?? '');
+        $contactNumber = trim($input['contact_number'] ?? '');
         $reason = trim($input['reason'] ?? '');
         $description = trim($input['description'] ?? '');
         $sessionType = trim($input['session_type'] ?? 'In-Person');
@@ -700,6 +721,11 @@ class UserController extends Controller
         
         $newId = $model->createAndGetId([
             'tenant_id' => $userId,
+            'full_name' => $fullName,
+            'age' => $age,
+            'civil_status' => $civilStatus,
+            'address' => $address,
+            'contact_number' => $contactNumber,
             'gender' => $gender ?: 'male',
             'reason' => $reason,
             'description' => $description,

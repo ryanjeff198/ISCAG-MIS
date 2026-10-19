@@ -1452,6 +1452,114 @@ class AdminController extends Controller
         ]);
     }
 
+    public function educationRequests(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        
+        $eduModel = new IslamicEducation();
+        $records = $eduModel->getAllByGender($dawah_type);
+
+        $viewPath = ($dawah_type === 'female') 
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/education_requests'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/education_requests';
+
+        $this->view($viewPath, [
+            'active_page' => 'education_requests',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'records' => $records
+        ]);
+    }
+
+    public function approveEducationEnrollment(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+            $id = (int)($input['id'] ?? 0);
+            
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+                exit;
+            }
+
+            require_once BASE_PATH . '/app/models/IslamicEducation.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $model = new IslamicEducation();
+            $success = $model->updateStatus($id, 'Accepted');
+
+            if ($success) {
+                $req = $model->getById($id);
+                if ($req && !empty($req['tenant_id'])) {
+                    $refNo = '#ER-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+                    $notif = new Notification();
+                    $notif->create(
+                        (int)$req['tenant_id'],
+                        'Islamic Education Enrollment Accepted',
+                        "Your enrollment application ($refNo) for {$req['program_name']} has been accepted. Welcome to the class!",
+                        'success'
+                    );
+                    $this->logAudit('DAWAH', 'ACCEPT_EDUCATION_ENROLLMENT', "Accepted enrollment request $refNo (ID: $id) for Tenant ID: {$req['tenant_id']}");
+                }
+            }
+
+            echo json_encode([
+                'success' => $success,
+                'status' => 'Accepted',
+                'message' => $success ? 'Enrollment request has been accepted.' : 'Failed to update request status.'
+            ]);
+            exit;
+        }
+    }
+
+    public function rejectEducationEnrollment(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+            $id = (int)($input['id'] ?? 0);
+            
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+                exit;
+            }
+
+            require_once BASE_PATH . '/app/models/IslamicEducation.php';
+            require_once BASE_PATH . '/app/models/Notification.php';
+            $model = new IslamicEducation();
+            $success = $model->updateStatus($id, 'Rejected');
+
+            if ($success) {
+                $req = $model->getById($id);
+                if ($req && !empty($req['tenant_id'])) {
+                    $refNo = '#ER-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+                    $notif = new Notification();
+                    $notif->create(
+                        (int)$req['tenant_id'],
+                        'Islamic Education Enrollment Update',
+                        "Your enrollment application ($refNo) for {$req['program_name']} could not be accommodated at this time.",
+                        'warning'
+                    );
+                    $this->logAudit('DAWAH', 'REJECT_EDUCATION_ENROLLMENT', "Rejected enrollment request $refNo (ID: $id) for Tenant ID: {$req['tenant_id']}");
+                }
+            }
+
+            echo json_encode([
+                'success' => $success,
+                'status' => 'Rejected',
+                'message' => $success ? 'Enrollment request has been rejected.' : 'Failed to update request status.'
+            ]);
+            exit;
+        }
+    }
+
     public function dawahCounseling(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
         require_once BASE_PATH . '/app/models/User.php';
@@ -1482,6 +1590,122 @@ class AdminController extends Controller
         ]);
     }
 
+    public function counselingRequests(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        
+        $counselingModel = new CounselingRequest();
+        $records = $counselingModel->getByGender($dawah_type);
+
+        $viewPath = ($dawah_type === 'female' && file_exists(BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/counseling_requests.php'))
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/counseling_requests'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/counseling_requests';
+
+        $this->view($viewPath, [
+            'active_page' => 'counseling_requests',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'records' => $records
+        ]);
+    }
+
+    public function acceptCounselingRequest(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $model = new CounselingRequest();
+        $success = $model->updateStatus($id, 'Accepted');
+
+        if ($success) {
+            $req = $model->getById($id);
+            if ($req && !empty($req['tenant_id'])) {
+                $refNo = '#MC-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+                $notif = new Notification();
+                $notif->create(
+                    (int)$req['tenant_id'],
+                    'Counseling Request Accepted',
+                    "As-salamu alaykum. Your counseling request ($refNo) has been accepted by the Da'wah Department. Our administration is preparing your session details.",
+                    'success'
+                );
+                $this->logAudit('DAWAH', 'ACCEPT_COUNSELING_REQUEST', "Accepted counseling request ID: $id");
+            }
+        }
+
+        echo json_encode([
+            'success' => $success,
+            'status' => 'Accepted',
+            'message' => $success ? 'Counseling request has been accepted.' : 'Failed to update request status.'
+        ]);
+        exit;
+    }
+
+    public function rejectCounselingRequest(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/CounselingRequest.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $model = new CounselingRequest();
+        $success = $model->updateStatus($id, 'Rejected');
+
+        if ($success) {
+            $req = $model->getById($id);
+            if ($req && !empty($req['tenant_id'])) {
+                $refNo = '#MC-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+                $notif = new Notification();
+                $notif->create(
+                    (int)$req['tenant_id'],
+                    'Counseling Request Update',
+                    "Your counseling consultation request ($refNo) could not be accommodated at this time.",
+                    'warning'
+                );
+                $this->logAudit('DAWAH', 'REJECT_COUNSELING_REQUEST', "Rejected counseling request ID: $id");
+            }
+        }
+
+        echo json_encode([
+            'success' => $success,
+            'status' => 'Rejected',
+            'message' => $success ? 'Counseling request has been rejected.' : 'Failed to update request status.'
+        ]);
+        exit;
+    }
+
     public function dawahMarriage(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
         require_once BASE_PATH . '/app/models/User.php';
@@ -1509,72 +1733,113 @@ class AdminController extends Controller
         ]);
     }
 
+    public function marriageRequests(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/MarriageRequest.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        
+        $marriageModel = new MarriageRequest();
+        $records = $marriageModel->getAll(); 
+
+        $viewPath = ($dawah_type === 'female') 
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/marriage_requests'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/marriage_requests';
+
+        $this->view($viewPath, [
+            'active_page' => 'marriage_requests',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'applications' => $records,
+            'records' => $records
+        ]);
+    }
+
     public function approveMarriage(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
             $id = (int)($input['id'] ?? 0);
             
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+                exit;
+            }
+
             require_once BASE_PATH . '/app/models/MarriageRequest.php';
             require_once BASE_PATH . '/app/models/Notification.php';
             $model = new MarriageRequest();
-            $success = $model->updateStatus($id, 'approved');
+            $success = $model->updateStatus($id, 'Accepted');
 
-            if ($success && $id) {
-                $db = getDbConnection();
-                $stmt = $db->prepare("SELECT tenant_id, groom_name, bride_name, marriage_date, marriage_time, marriage_venue FROM marriage_requests WHERE id = ?");
-                $stmt->execute([$id]);
-                $req = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($success) {
+                $req = $model->getById($id);
                 if ($req && !empty($req['tenant_id'])) {
+                    $refNo = '#MR-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
                     $notif = new Notification();
                     $dateStr = !empty($req['marriage_date']) ? date('M d, Y', strtotime($req['marriage_date'])) : 'Confirmed Date';
                     $timeStr = !empty($req['marriage_time']) ? ' at ' . $req['marriage_time'] : '';
                     $notif->create(
                         (int)$req['tenant_id'],
-                        'Marriage Solemnization Approved',
-                        "As-salamu alaykum. Your marriage ceremony reservation for {$req['groom_name']} & {$req['bride_name']} has been approved for {$dateStr}{$timeStr} at {$req['marriage_venue']}. Please access your Ceremony Pass in your dashboard.",
+                        'Marriage Reservation Accepted',
+                        "As-salamu alaykum. Your marriage ceremony reservation ($refNo) for {$req['groom_name']} & {$req['bride_name']} has been accepted for {$dateStr}{$timeStr} at {$req['marriage_venue']}.",
                         'success'
                     );
-                    $this->logAudit('DAWAH', 'APPROVE_MARRIAGE', "Approved marriage reservation ID: $id for Tenant ID: {$req['tenant_id']}");
+                    $this->logAudit('DAWAH', 'ACCEPT_MARRIAGE', "Accepted marriage reservation $refNo (ID: $id) for Tenant ID: {$req['tenant_id']}");
                 }
             }
 
-            header('Content-Type: application/json');
-            echo json_encode(['success' => $success]);
+            echo json_encode([
+                'success' => $success,
+                'status' => 'Accepted',
+                'message' => $success ? 'Marriage reservation request has been accepted.' : 'Failed to update request status.'
+            ]);
             exit;
         }
     }
 
     public function rejectMarriage(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
             $id = (int)($input['id'] ?? 0);
             
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+                exit;
+            }
+
             require_once BASE_PATH . '/app/models/MarriageRequest.php';
             require_once BASE_PATH . '/app/models/Notification.php';
             $model = new MarriageRequest();
-            $success = $model->updateStatus($id, 'rejected');
+            $success = $model->updateStatus($id, 'Rejected');
 
-            if ($success && $id) {
-                $db = getDbConnection();
-                $stmt = $db->prepare("SELECT tenant_id, groom_name, bride_name FROM marriage_requests WHERE id = ?");
-                $stmt->execute([$id]);
-                $req = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($success) {
+                $req = $model->getById($id);
                 if ($req && !empty($req['tenant_id'])) {
+                    $refNo = '#MR-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
                     $notif = new Notification();
                     $notif->create(
                         (int)$req['tenant_id'],
                         'Marriage Reservation Update',
-                        "Your marriage solemnization reservation for {$req['groom_name']} & {$req['bride_name']} could not be accommodated at the requested time. Please contact the Da'wah office.",
+                        "Your marriage solemnization reservation ($refNo) for {$req['groom_name']} & {$req['bride_name']} could not be accommodated at this time.",
                         'warning'
                     );
-                    $this->logAudit('DAWAH', 'REJECT_MARRIAGE', "Rejected marriage request ID: $id for Tenant ID: {$req['tenant_id']}");
+                    $this->logAudit('DAWAH', 'REJECT_MARRIAGE', "Rejected marriage request $refNo (ID: $id) for Tenant ID: {$req['tenant_id']}");
                 }
             }
 
-            header('Content-Type: application/json');
-            echo json_encode(['success' => $success]);
+            echo json_encode([
+                'success' => $success,
+                'status' => 'Rejected',
+                'message' => $success ? 'Marriage reservation request has been rejected.' : 'Failed to update request status.'
+            ]);
             exit;
         }
     }
@@ -1604,65 +1869,112 @@ class AdminController extends Controller
         ]);
     }
 
+    public function conversionRequests(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
+        
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $role = $_SESSION['role'] ?? '';
+        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        
+        $conversionModel = new ConversionRequest();
+        $records = $conversionModel->getAll();
+
+        $viewPath = ($dawah_type === 'female')
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/conversion_requests'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/conversion_requests';
+
+        $this->view($viewPath, [
+            'active_page' => 'conversion_requests',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'applications' => $records,
+            'records' => $records
+        ]);
+    }
+
     public function approveConversion(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
             $id = (int)($input['id'] ?? 0);
             
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+                exit;
+            }
+
             require_once BASE_PATH . '/app/models/ConversionRequest.php';
             require_once BASE_PATH . '/app/models/Notification.php';
             $model = new ConversionRequest();
-            $success = $model->updateStatus($id, 'approved');
+            $success = $model->updateStatus($id, 'Accepted');
 
-            if ($success && $id) {
+            if ($success) {
                 $req = $model->getById($id);
                 if ($req && !empty($req['tenant_id'])) {
+                    $refNo = '#CR-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
                     $notif = new Notification();
                     $adopted = $req['adopted_name'] ?: ($req['fname'] . ' ' . $req['lname']);
                     $notif->create(
                         (int)$req['tenant_id'],
-                        'Conversion Certificate Approved',
-                        "Alhamdulillah! Your Conversion to Islam (Shahadah) Certificate for {$adopted} has been officially approved. You can now view and print your Certificate from your account.",
+                        'Conversion Request Accepted',
+                        "Alhamdulillah! Your Conversion to Islam (Shahadah) request ($refNo) for {$adopted} has been accepted. You can view your Certificate from your account.",
                         'success'
                     );
-                    $this->logAudit('DAWAH', 'APPROVE_CONVERSION', "Approved conversion certificate ID: $id for Tenant ID: {$req['tenant_id']}");
+                    $this->logAudit('DAWAH', 'ACCEPT_CONVERSION', "Accepted conversion request $refNo (ID: $id) for Tenant ID: {$req['tenant_id']}");
                 }
             }
 
-            header('Content-Type: application/json');
-            echo json_encode(['success' => $success]);
+            echo json_encode([
+                'success' => $success,
+                'status' => 'Accepted',
+                'message' => $success ? 'Conversion request has been accepted.' : 'Failed to update request status.'
+            ]);
             exit;
         }
     }
 
     public function rejectConversion(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
             $id = (int)($input['id'] ?? 0);
             
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+                exit;
+            }
+
             require_once BASE_PATH . '/app/models/ConversionRequest.php';
             require_once BASE_PATH . '/app/models/Notification.php';
             $model = new ConversionRequest();
-            $success = $model->updateStatus($id, 'rejected');
+            $success = $model->updateStatus($id, 'Rejected');
 
-            if ($success && $id) {
+            if ($success) {
                 $req = $model->getById($id);
                 if ($req && !empty($req['tenant_id'])) {
+                    $refNo = '#CR-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
                     $notif = new Notification();
                     $notif->create(
                         (int)$req['tenant_id'],
-                        'Conversion Certificate Status Update',
-                        "Your Conversion certificate application requires additional verification. Please visit the ISCAG Da'wah Department office with your supporting documents.",
+                        'Conversion Request Status Update',
+                        "Your Conversion application ($refNo) could not be accommodated or requires additional verification.",
                         'warning'
                     );
-                    $this->logAudit('DAWAH', 'REJECT_CONVERSION', "Rejected conversion certificate ID: $id for Tenant ID: {$req['tenant_id']}");
+                    $this->logAudit('DAWAH', 'REJECT_CONVERSION', "Rejected conversion request $refNo (ID: $id) for Tenant ID: {$req['tenant_id']}");
                 }
             }
 
-            header('Content-Type: application/json');
-            echo json_encode(['success' => $success]);
+            echo json_encode([
+                'success' => $success,
+                'status' => 'Rejected',
+                'message' => $success ? 'Conversion request has been rejected.' : 'Failed to update request status.'
+            ]);
             exit;
         }
     }

@@ -41,7 +41,7 @@ $sidebar_initials = strtoupper(substr($name_parts[0], 0, 1) . (count($name_parts
     </a>
     <?php $review_active = in_array($active_page ?? '', ['confirmation', 'parking_approval', 'maintenance']); ?>
     <div class="nav-dropdown-wrap <?= $review_active ? 'open' : '' ?>" id="review-wrap">
-      <button class="nav-dropdown-trigger <?= $review_active ? 'open' : '' ?>" id="review-trigger" data-tooltip="Applications">
+      <button class="nav-dropdown-trigger <?= $review_active ? 'open' : '' ?>" id="review-trigger" data-menu="review-menu" data-href="<?= url('/admin/apartment/confirmation') ?>" data-tooltip="Applications">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" /></svg>
         <span class="nav-item-label">Review Applications</span>
         <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>

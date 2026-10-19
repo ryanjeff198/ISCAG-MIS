@@ -321,6 +321,18 @@ body {
 .nav-dropdown a svg { width: 14px; height: 14px; opacity: 0.6; }
 .nav-dropdown a:hover { color: white; background: rgba(255,255,255,0.05); }
 
+.nav-dropdown a.active-submenu {
+  color: white !important;
+  background: rgba(201, 168, 76, 0.18) !important;
+  border-left: 3px solid var(--accent, #c79a2b) !important;
+  font-weight: 700 !important;
+}
+
+.nav-dropdown a.active-submenu svg {
+  opacity: 1 !important;
+  fill: var(--accent-light, #f5e6a3) !important;
+}
+
 
 /* ── Footer ── */
 

@@ -1754,6 +1754,11 @@
       const sessionType = document.querySelector('input[name="session_type"]:checked')?.value || 'In-Person';
       const payload = {
         gender: 'male',
+        full_name: document.getElementById('input-fullname')?.value || '',
+        age: document.getElementById('input-age')?.value || '',
+        civil_status: document.getElementById('input-civil')?.value || '',
+        address: document.getElementById('input-address')?.value || '',
+        contact_number: document.getElementById('input-contact')?.value || '',
         reason: reason,
         session_type: sessionType,
         preferred_date: prefDate,
