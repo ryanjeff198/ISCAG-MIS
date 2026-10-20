@@ -424,11 +424,32 @@ $step3Done = in_array($status, ['confirmed', 'approved', 'completed']);
     function copyRef(code) {
       if (navigator.clipboard) {
         navigator.clipboard.writeText(code).then(() => {
-          alert('Reference number copied: ' + code);
+          showCopyToast('Reference number copied: ' + code);
+        }).catch(() => {
+          showCopyToast('Reference number: ' + code);
         });
       } else {
-        alert('Reference number: ' + code);
+        showCopyToast('Reference number: ' + code);
       }
+    }
+
+    function showCopyToast(msg) {
+      const existing = document.getElementById('copy-toast-el');
+      if (existing) existing.remove();
+      const toast = document.createElement('div');
+      toast.id = 'copy-toast-el';
+      toast.textContent = msg;
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#14532D;color:#ffffff;padding:12px 20px;border-radius:12px;font-weight:700;font-size:0.88rem;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:99999;transition:all 0.3s ease;transform:translateY(10px);opacity:0;';
+      document.body.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.style.transform = 'translateY(0)';
+        toast.style.opacity = '1';
+      });
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
     }
   </script>
 </body>

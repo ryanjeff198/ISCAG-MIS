@@ -148,6 +148,239 @@
     }
     .btn-confirm:disabled { background: #d1d5db; cursor: not-allowed; }
 
+    /* ── Counseling Alert UI Modal & Toast ── */
+    #counseling-alert-modal {
+      z-index: 100000;
+      backdrop-filter: blur(6px);
+      background: rgba(15, 30, 22, 0.65);
+      position: fixed; inset: 0;
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+      animation: alertBackdropFade 0.25s ease-out forwards;
+    }
+    #counseling-alert-modal.active {
+      display: flex;
+    }
+    @keyframes alertBackdropFade {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes alertCardPop {
+      0% { opacity: 0; transform: scale(0.9) translateY(16px); }
+      70% { transform: scale(1.02) translateY(-2px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .counseling-alert-card {
+      background: #ffffff;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 30px 60px -12px rgba(15, 30, 22, 0.35), 0 0 0 1px rgba(0,0,0,0.05);
+      overflow: hidden;
+      animation: alertCardPop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      display: flex;
+      flex-direction: column;
+    }
+    .alert-top-stripe {
+      height: 6px;
+      width: 100%;
+      background: linear-gradient(90deg, #14532D, #D4AF37);
+      transition: background 0.3s;
+    }
+    .alert-top-stripe.success { background: linear-gradient(90deg, #10b981, #059669); }
+    .alert-top-stripe.warning { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .alert-top-stripe.error { background: linear-gradient(90deg, #ef4444, #dc2626); }
+    .alert-top-stripe.info { background: linear-gradient(90deg, #14532D, #D4AF37); }
+
+    .counseling-alert-body {
+      padding: 32px 28px 16px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .alert-icon-ring {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      position: relative;
+      transition: all 0.3s;
+    }
+    .alert-icon-ring.success { background: #ecfdf5; color: #10b981; box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.12); }
+    .alert-icon-ring.warning { background: #fffbeb; color: #f59e0b; box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.15); }
+    .alert-icon-ring.error { background: #fef2f2; color: #ef4444; box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.12); }
+    .alert-icon-ring.info { background: #f0fdf4; color: #14532D; box-shadow: 0 0 0 8px rgba(20, 83, 45, 0.1); }
+
+    .alert-icon-ring svg {
+      width: 34px;
+      height: 34px;
+      fill: currentColor;
+    }
+
+    .counseling-alert-title {
+      font-family: 'Lora', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #111827;
+      margin: 0 0 8px;
+      line-height: 1.3;
+    }
+    .counseling-alert-desc {
+      font-size: 0.92rem;
+      color: #4b5563;
+      line-height: 1.6;
+      margin: 0;
+      max-width: 370px;
+    }
+
+    /* Details Box in Alert (for reference number & schedule summary) */
+    .counseling-alert-details {
+      margin-top: 18px;
+      width: 100%;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 0.85rem;
+      box-sizing: border-box;
+    }
+    .alert-detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .alert-detail-row:last-child {
+      margin-bottom: 0;
+    }
+    .alert-detail-label {
+      color: #64748b;
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .alert-detail-val {
+      font-weight: 700;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .alert-ref-pill {
+      background: #dcfce7;
+      color: #15803d;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-weight: 800;
+      font-size: 0.88rem;
+      border: 1px solid #bbf7d0;
+    }
+
+    /* Progress bar for auto-redirect */
+    .alert-countdown-wrap {
+      width: 100%;
+      margin-top: 16px;
+      background: #f1f5f9;
+      border-radius: 10px;
+      height: 5px;
+      overflow: hidden;
+    }
+    .alert-countdown-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #14532D, #10b981);
+      transition: width 1s linear;
+    }
+
+    .counseling-alert-actions {
+      padding: 16px 24px 24px;
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .btn-alert-btn {
+      flex: 1;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      border: none;
+      font-family: inherit;
+    }
+    .btn-alert-btn.primary {
+      background: linear-gradient(135deg, #14532D, #0f3e21);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(20, 83, 45, 0.25);
+    }
+    .btn-alert-btn.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(20, 83, 45, 0.32);
+    }
+    .btn-alert-btn.primary.warning-btn {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);
+    }
+    .btn-alert-btn.primary.error-btn {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
+    }
+    .btn-alert-btn.secondary {
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      flex: 0 0 auto;
+      padding: 12px 16px;
+    }
+    .btn-alert-btn.secondary:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+
+    /* Floating Toast Notification */
+    .counseling-toast-box {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 100001;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .counseling-toast {
+      pointer-events: auto;
+      background: #ffffff;
+      color: #1e293b;
+      padding: 12px 18px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      max-width: 380px;
+    }
+    @keyframes toastSlideIn {
+      from { opacity: 0; transform: translateX(40px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
     /* ── Analytics Styles ── */
     .user-analytics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
     .stat-card { 
@@ -1520,6 +1753,37 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- 🔔 COUNSELING ALERT / NOTIFICATION MODAL                   -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="counseling-alert-modal" onclick="if(event.target===this) closeCounselingAlertModal()">
+  <div class="counseling-alert-card" role="dialog" aria-modal="true" aria-labelledby="counseling-alert-title">
+    <div class="alert-top-stripe" id="counseling-alert-stripe"></div>
+    <div class="counseling-alert-body">
+      <div class="alert-icon-ring" id="counseling-alert-icon">
+        <svg id="counseling-alert-svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <h3 class="counseling-alert-title" id="counseling-alert-title">Notice</h3>
+      <p class="counseling-alert-desc" id="counseling-alert-desc"></p>
+      
+      <!-- Structured summary box for confirmations / details -->
+      <div class="counseling-alert-details" id="counseling-alert-details" style="display:none;"></div>
+      
+      <!-- Animated countdown progress bar for auto-redirection -->
+      <div class="alert-countdown-wrap" id="counseling-alert-countdown-wrap" style="display:none;">
+        <div class="alert-countdown-bar" id="counseling-alert-countdown-bar"></div>
+      </div>
+    </div>
+    <div class="counseling-alert-actions">
+      <button type="button" class="btn-alert-btn secondary" id="counseling-alert-cancel-btn" style="display:none;" onclick="closeCounselingAlertModal(false)">Cancel</button>
+      <button type="button" class="btn-alert-btn primary" id="counseling-alert-confirm-btn" onclick="closeCounselingAlertModal(true)">Acknowledge</button>
+    </div>
+  </div>
+</div>
+
+<!-- Floating Toast Container -->
+<div class="counseling-toast-box" id="counseling-toast-box"></div>
+
 <script>
   // ── Appointment Pass Modal Logic ──
   function openAppointmentPassModal(data) {
@@ -1573,14 +1837,175 @@
     }
   }
 
+  // ── Escape HTML Helper ──
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, function(m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+    });
+  }
+
+  // ── Custom Alert Modal Controller ──
+  let counselingAlertCallback = null;
+  let counselingAlertCancelCallback = null;
+  let alertCountdownTimer = null;
+
+  function showCounselingAlert(options) {
+    const {
+      title = 'Notice',
+      message = '',
+      type = 'info', // 'success', 'warning', 'error', 'info'
+      detailsHtml = null,
+      confirmText = 'Acknowledge',
+      cancelText = null,
+      onConfirm = null,
+      onCancel = null,
+      autoRedirectUrl = null,
+      autoRedirectSeconds = null
+    } = options;
+
+    const modal = document.getElementById('counseling-alert-modal');
+    if (!modal) return;
+
+    if (alertCountdownTimer) {
+      clearInterval(alertCountdownTimer);
+      alertCountdownTimer = null;
+    }
+
+    const stripe = document.getElementById('counseling-alert-stripe');
+    const icon = document.getElementById('counseling-alert-icon');
+    const svg = document.getElementById('counseling-alert-svg');
+    const titleEl = document.getElementById('counseling-alert-title');
+    const descEl = document.getElementById('counseling-alert-desc');
+    const detailsBox = document.getElementById('counseling-alert-details');
+    const countdownWrap = document.getElementById('counseling-alert-countdown-wrap');
+    const countdownBar = document.getElementById('counseling-alert-countdown-bar');
+    const confirmBtn = document.getElementById('counseling-alert-confirm-btn');
+    const cancelBtn = document.getElementById('counseling-alert-cancel-btn');
+
+    // Reset style classes
+    stripe.className = 'alert-top-stripe ' + type;
+    icon.className = 'alert-icon-ring ' + type;
+    confirmBtn.className = 'btn-alert-btn primary' + (type === 'warning' ? ' warning-btn' : (type === 'error' ? ' error-btn' : ''));
+
+    // SVG icons by type
+    const icons = {
+      success: '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>',
+      warning: '<path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>',
+      error: '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>',
+      info: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>'
+    };
+    svg.innerHTML = icons[type] || icons.info;
+
+    titleEl.innerText = title;
+    descEl.innerText = message;
+
+    if (detailsHtml) {
+      detailsBox.innerHTML = detailsHtml;
+      detailsBox.style.display = 'block';
+    } else {
+      detailsBox.innerHTML = '';
+      detailsBox.style.display = 'none';
+    }
+
+    confirmBtn.innerText = confirmText;
+    counselingAlertCallback = onConfirm;
+    counselingAlertCancelCallback = onCancel;
+
+    if (cancelText) {
+      cancelBtn.innerText = cancelText;
+      cancelBtn.style.display = 'inline-flex';
+    } else {
+      cancelBtn.style.display = 'none';
+    }
+
+    if (autoRedirectUrl && autoRedirectSeconds) {
+      countdownWrap.style.display = 'block';
+      countdownBar.style.width = '100%';
+      let remaining = autoRedirectSeconds;
+      const initialSeconds = autoRedirectSeconds;
+      confirmBtn.innerText = `${confirmText} (${remaining}s)`;
+
+      alertCountdownTimer = setInterval(() => {
+        remaining -= 1;
+        const pct = Math.max(0, (remaining / initialSeconds) * 100);
+        countdownBar.style.width = pct + '%';
+        confirmBtn.innerText = `${confirmText} (${remaining}s)`;
+        if (remaining <= 0) {
+          clearInterval(alertCountdownTimer);
+          alertCountdownTimer = null;
+          closeCounselingAlertModal(true);
+          window.location.href = autoRedirectUrl;
+        }
+      }, 1000);
+    } else {
+      countdownWrap.style.display = 'none';
+    }
+
+    modal.classList.add('active');
+  }
+
+  function closeCounselingAlertModal(triggeredByConfirm = false) {
+    if (alertCountdownTimer) {
+      clearInterval(alertCountdownTimer);
+      alertCountdownTimer = null;
+    }
+    const modal = document.getElementById('counseling-alert-modal');
+    if (modal) modal.classList.remove('active');
+
+    if (triggeredByConfirm && typeof counselingAlertCallback === 'function') {
+      const cb = counselingAlertCallback;
+      counselingAlertCallback = null;
+      cb();
+    } else if (!triggeredByConfirm && typeof counselingAlertCancelCallback === 'function') {
+      const cb = counselingAlertCancelCallback;
+      counselingAlertCancelCallback = null;
+      cb();
+    }
+  }
+
+  // Floating toast notification helper
+  function showCounselingToast(msg, type = 'info') {
+    const box = document.getElementById('counseling-toast-box');
+    if (!box) return;
+    const toast = document.createElement('div');
+    toast.className = 'counseling-toast';
+    const color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#14532D');
+    toast.innerHTML = `
+      <div style="width:20px;height:20px;color:${color};flex-shrink:0;">
+        <svg viewBox="0 0 24 24" style="fill:currentColor;width:100%;height:100%;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <div>${escapeHtml(msg)}</div>
+    `;
+    box.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(40px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 3200);
+  }
+
   function sendInquiryNote() {
-    const txt = document.getElementById('inquiry-text').value.trim();
+    const txt = document.getElementById('inquiry-text')?.value.trim();
     if (!txt) {
-      alert('Please type your inquiry message first.');
+      showCounselingAlert({
+        title: 'Message Required',
+        message: 'Please type your inquiry or note first before sending.',
+        type: 'warning',
+        confirmText: 'Type Message',
+        onConfirm: () => document.getElementById('inquiry-text')?.focus()
+      });
       return;
     }
-    alert('As-salamu alaykum. Your note has been forwarded to the counselor. You will receive a response shortly.');
-    document.getElementById('inquiry-text').value = '';
+    showCounselingAlert({
+      title: 'Inquiry Forwarded',
+      message: 'As-salamu alaykum. Your note has been forwarded to the counselor. You will receive a response shortly.',
+      type: 'success',
+      confirmText: 'Done'
+    });
+    const inquiryInput = document.getElementById('inquiry-text');
+    if (inquiryInput) inquiryInput.value = '';
   }
 
   // ── Scheduling Logic ──
@@ -1634,7 +2059,7 @@
       calGrid.innerHTML += `
         <div class="calendar-day ${isBlocked ? 'booked' : ''} ${isPast ? 'disabled' : ''} ${isToday ? 'today' : ''} ${selectedDate === dateStr ? 'selected' : ''}" 
              title="${isBlocked ? 'Unavailable: ' + blockReason : ''}"
-             onclick="${isBlocked ? `showBlockReason('${blockReason}')` : ((!isPast) ? `selectDate('${dateStr}')` : '')}">
+             onclick="${isBlocked ? `showBlockReason('${escapeHtml(blockReason)}')` : ((!isPast) ? `selectDate('${dateStr}')` : '')}">
           ${day}
         </div>
       `;
@@ -1642,7 +2067,12 @@
   }
 
   window.showBlockReason = (reason) => {
-    alert(`This date is unavailable: ${reason}`);
+    showCounselingAlert({
+      title: 'Date Unavailable',
+      message: reason ? `This date cannot be selected: ${reason}` : 'This date is currently not open for bookings.',
+      type: 'info',
+      confirmText: 'Understood'
+    });
   };
 
   window.selectDate = (date) => {
@@ -1692,23 +2122,59 @@
     const submitBtn = document.getElementById('submit-form');
 
     if (!reason) {
-      alert('Please select the reason for counseling.');
-      document.getElementById('reason-select')?.focus();
+      showCounselingAlert({
+        title: 'Counseling Concern Required',
+        message: 'Please choose the primary reason or topic for your counseling consultation before proceeding.',
+        type: 'warning',
+        confirmText: 'Select Concern',
+        onConfirm: () => {
+          const el = document.getElementById('reason-select');
+          if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }
+      });
       return;
     }
+
     if (!desc || desc.trim() === '') {
-      alert('Please provide a brief description of your concern.');
-      document.getElementById('input-description')?.focus();
+      showCounselingAlert({
+        title: 'Description Required',
+        message: 'Please provide a brief description of your concern so our counselor can properly prepare for your consultation.',
+        type: 'warning',
+        confirmText: 'Provide Description',
+        onConfirm: () => {
+          const el = document.getElementById('input-description');
+          if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }
+      });
       return;
     }
+
     if (!prefDate || !prefTime) {
-      alert('Please select your preferred schedule (date and time slot).');
-      document.getElementById('open-calendar')?.click();
+      showCounselingAlert({
+        title: 'Schedule Selection Required',
+        message: 'Please choose your preferred consultation date and available time slot using the calendar.',
+        type: 'warning',
+        confirmText: 'Select Date & Time',
+        onConfirm: () => {
+          document.getElementById('open-calendar')?.click();
+        }
+      });
       return;
     }
+
     if (!privacyCheck || !privacyCheck.checked) {
-      alert('Please agree to the Confidentiality Policy before submitting.');
-      privacyCheck?.focus();
+      showCounselingAlert({
+        title: 'Confidentiality Policy Agreement',
+        message: 'Please review and agree to the Confidentiality Policy of the Da\'wah Department before submitting your request.',
+        type: 'warning',
+        confirmText: 'Agree & Check Box',
+        onConfirm: () => {
+          if (privacyCheck) {
+            privacyCheck.checked = true;
+            privacyCheck.focus();
+          }
+        }
+      });
       return;
     }
 
@@ -1741,14 +2207,53 @@
 
       const res = await response.json();
       if (res.success) {
-        if (res.redirect) {
-          window.location.href = res.redirect;
-        } else {
-          window.location.href = '<?= url('/user/services/counseling/status') ?>?id=' + (res.id || '');
-        }
+        const refFormatted = res.ref || ('#MC-' + String(res.id || '').padStart(4, '0'));
+        const targetUrl = res.redirect || ('<?= url('/user/services/counseling/status') ?>?id=' + (res.id || ''));
+        const dateFormatted = new Date(prefDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        const detailsHtml = `
+          <div class="alert-detail-row">
+            <span class="alert-detail-label">Reference Number:</span>
+            <span class="alert-detail-val"><span class="alert-ref-pill">${escapeHtml(refFormatted)}</span></span>
+          </div>
+          <div class="alert-detail-row">
+            <span class="alert-detail-label">Preferred Schedule:</span>
+            <span class="alert-detail-val">${escapeHtml(dateFormatted)} at ${escapeHtml(prefTime)}</span>
+          </div>
+          <div class="alert-detail-row">
+            <span class="alert-detail-label">Concern Topic:</span>
+            <span class="alert-detail-val" style="color:var(--primary);">${escapeHtml(reason)}</span>
+          </div>
+          <div class="alert-detail-row">
+            <span class="alert-detail-label">Consultation Mode:</span>
+            <span class="alert-detail-val">In-Person (ISCAG Center)</span>
+          </div>
+        `;
+
+        showCounselingAlert({
+          title: 'Request Submitted Successfully!',
+          message: 'As-salamu alaykum. Your counseling appointment request has been recorded. Our authorized counselor will review your request shortly.',
+          type: 'success',
+          detailsHtml: detailsHtml,
+          confirmText: 'View Request Status',
+          cancelText: 'Stay on Portal',
+          autoRedirectUrl: targetUrl,
+          autoRedirectSeconds: 5,
+          onConfirm: () => {
+            window.location.href = targetUrl;
+          },
+          onCancel: () => {
+            window.location.reload();
+          }
+        });
         return;
       } else {
-        alert(res.message || 'Failed to submit request. Please verify your information.');
+        showCounselingAlert({
+          title: 'Submission Failed',
+          message: res.message || 'Failed to submit request. Please verify your information and try again.',
+          type: 'error',
+          confirmText: 'Review Details'
+        });
         if(submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerText = 'Submit Request';
@@ -1756,7 +2261,12 @@
       }
     } catch (err) {
       console.error(err);
-      alert('An unexpected network error occurred while submitting your request.');
+      showCounselingAlert({
+        title: 'Connection Error',
+        message: 'An unexpected network error occurred while submitting your counseling request. Please check your connection and try again.',
+        type: 'error',
+        confirmText: 'Try Again'
+      });
       if(submitBtn) {
         submitBtn.disabled = false;
         submitBtn.innerText = 'Submit Request';
