@@ -63,6 +63,7 @@
                     <th>Ref #</th>
                     <th>Student Name</th>
                     <th>Program</th>
+                    <th>Payment Method</th>
                     <th>Enrollment Date</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -70,7 +71,7 @@
                 </thead>
                 <tbody>
                   <?php if (empty($records)): ?>
-                    <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No student records found.</td></tr>
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No student records found.</td></tr>
                   <?php else: ?>
                     <?php foreach ($records as $r): 
                       $statusClasses = [
@@ -80,11 +81,22 @@
                         'dropped'   => 'danger'
                       ];
                       $sc = $statusClasses[$r['status']] ?? 'pending';
+
+                      $pm = trim($r['payment_method'] ?? 'Cash');
+                      $pc = trim($r['payment_channel'] ?? '');
+                      $isOnline = (stripos($pm, 'online') !== false || stripos($pm, 'gcash') !== false || stripos($pm, 'maya') !== false);
+                      $pmDisplay = $isOnline ? 'Online Payment' : 'Cash';
                     ?>
                       <tr>
                         <td class="td-id">#<?= $r['id'] ?></td>
                         <td style="font-weight:600;"><?= trim($r['first_name'] . ' ' . $r['last_name']) ?></td>
                         <td><?= $r['program_name'] ?></td>
+                        <td>
+                          <span style="font-weight:700; color:<?= $isOnline ? '#0d9488' : '#15803d' ?>;"><?= htmlspecialchars($pmDisplay) ?></span>
+                          <?php if ($isOnline && !empty($pc)): ?>
+                            <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;"><?= htmlspecialchars($pc) ?></div>
+                          <?php endif; ?>
+                        </td>
                         <td><?= date('M d, Y', strtotime($r['created_at'])) ?></td>
                         <td><span class="badge-status <?= $sc ?>"><?= ucfirst($r['status']) ?></span></td>
                         <td>

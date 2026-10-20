@@ -201,6 +201,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                     <th>Request ID</th>
                     <th>Student Name</th>
                     <th>Program</th>
+                    <th>Payment Method</th>
                     <th>Date Submitted</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -208,7 +209,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                 </thead>
                 <tbody id="tbody-pending">
                   <?php if (empty($pending_reports)): ?>
-                    <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No pending education enrollment requests.</td></tr>
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No pending education enrollment requests.</td></tr>
                   <?php else: ?>
                     <?php foreach ($pending_reports as $r): ?>
                       <?php 
@@ -218,6 +219,10 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         if (empty($studentName)) $studentName = 'Student #' . $id;
                         $program = $r['program_name'] ?? 'Islamic Studies';
                         $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $pm = trim($r['payment_method'] ?? 'Cash');
+                        $pc = trim($r['payment_channel'] ?? '');
+                        $isOnline = (stripos($pm, 'online') !== false || stripos($pm, 'gcash') !== false || stripos($pm, 'maya') !== false);
+                        $pmDisplay = $isOnline ? 'Online Payment' : 'Cash';
                       ?>
                       <tr id="row-<?= $id ?>">
                         <td class="td-id"><?= $reqId ?></td>
@@ -230,6 +235,12 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                           <?php endif; ?>
                         </td>
                         <td style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($program) ?></td>
+                        <td>
+                          <span style="font-weight:700; color:<?= $isOnline ? '#0d9488' : '#15803d' ?>;"><?= htmlspecialchars($pmDisplay) ?></span>
+                          <?php if ($isOnline && !empty($pc)): ?>
+                            <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;"><?= htmlspecialchars($pc) ?></div>
+                          <?php endif; ?>
+                        </td>
                         <td style="color:#4b5563;"><?= $dateSubmitted ?></td>
                         <td>
                           <span class="badge-status pending">
@@ -275,6 +286,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                     <th>Request ID</th>
                     <th>Student Name</th>
                     <th>Program</th>
+                    <th>Payment Method</th>
                     <th>Date Submitted</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -282,7 +294,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                 </thead>
                 <tbody id="tbody-approved">
                   <?php if (empty($approved_reports)): ?>
-                    <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No approved education enrollment requests.</td></tr>
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No approved education enrollment requests.</td></tr>
                   <?php else: ?>
                     <?php foreach ($approved_reports as $r): ?>
                       <?php 
@@ -292,6 +304,10 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         if (empty($studentName)) $studentName = 'Student #' . $id;
                         $program = $r['program_name'] ?? 'Islamic Studies';
                         $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $pm = trim($r['payment_method'] ?? 'Cash');
+                        $pc = trim($r['payment_channel'] ?? '');
+                        $isOnline = (stripos($pm, 'online') !== false || stripos($pm, 'gcash') !== false || stripos($pm, 'maya') !== false);
+                        $pmDisplay = $isOnline ? 'Online Payment' : 'Cash';
                       ?>
                       <tr id="row-<?= $id ?>">
                         <td class="td-id"><?= $reqId ?></td>
@@ -304,6 +320,12 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                           <?php endif; ?>
                         </td>
                         <td style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($program) ?></td>
+                        <td>
+                          <span style="font-weight:700; color:<?= $isOnline ? '#0d9488' : '#15803d' ?>;"><?= htmlspecialchars($pmDisplay) ?></span>
+                          <?php if ($isOnline && !empty($pc)): ?>
+                            <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;"><?= htmlspecialchars($pc) ?></div>
+                          <?php endif; ?>
+                        </td>
                         <td style="color:#4b5563;"><?= $dateSubmitted ?></td>
                         <td>
                           <span class="badge-status approved">
@@ -343,6 +365,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                     <th>Request ID</th>
                     <th>Student Name</th>
                     <th>Program</th>
+                    <th>Payment Method</th>
                     <th>Date Submitted</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -350,7 +373,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                 </thead>
                 <tbody id="tbody-rejected">
                   <?php if (empty($rejected_reports)): ?>
-                    <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No rejected education enrollment requests.</td></tr>
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No rejected education enrollment requests.</td></tr>
                   <?php else: ?>
                     <?php foreach ($rejected_reports as $r): ?>
                       <?php 
@@ -360,6 +383,10 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         if (empty($studentName)) $studentName = 'Student #' . $id;
                         $program = $r['program_name'] ?? 'Islamic Studies';
                         $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $pm = trim($r['payment_method'] ?? 'Cash');
+                        $pc = trim($r['payment_channel'] ?? '');
+                        $isOnline = (stripos($pm, 'online') !== false || stripos($pm, 'gcash') !== false || stripos($pm, 'maya') !== false);
+                        $pmDisplay = $isOnline ? 'Online Payment' : 'Cash';
                       ?>
                       <tr id="row-<?= $id ?>">
                         <td class="td-id"><?= $reqId ?></td>
@@ -372,6 +399,12 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                           <?php endif; ?>
                         </td>
                         <td style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($program) ?></td>
+                        <td>
+                          <span style="font-weight:700; color:<?= $isOnline ? '#0d9488' : '#15803d' ?>;"><?= htmlspecialchars($pmDisplay) ?></span>
+                          <?php if ($isOnline && !empty($pc)): ?>
+                            <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;"><?= htmlspecialchars($pc) ?></div>
+                          <?php endif; ?>
+                        </td>
                         <td style="color:#4b5563;"><?= $dateSubmitted ?></td>
                         <td>
                           <span class="badge-status rejected">
@@ -446,6 +479,11 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
             <div id="vm-birthdate" style="font-weight:600; font-size:0.9rem; color:#374151;">—</div>
           </div>
         </div>
+
+        <div style="border:1px solid #e2e8f0; border-radius:8px; padding:12px; background:#f8fafc; margin-bottom:16px;">
+          <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#64748b; margin-bottom:3px;">Payment Method</div>
+          <div id="vm-payment" style="font-weight:700; font-size:0.92rem; color:#111827;">—</div>
+        </div>
       </div>
 
       <div style="padding:14px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px; background:#f8fafc;">
@@ -511,6 +549,15 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
           <span class="status-dot"></span> ${badgeText}
         </span>
       `;
+
+      const payMethod = r.payment_method || 'Cash';
+      const payChan = r.payment_channel ? ` (${r.payment_channel})` : '';
+      const payRef = r.payment_reference ? ` • Ref: ${r.payment_reference}` : '';
+      const feeAmt = r.fee_amount ? ` (₱${parseFloat(r.fee_amount).toFixed(2)})` : '';
+      const vmPaymentEl = document.getElementById('vm-payment');
+      if (vmPaymentEl) {
+        vmPaymentEl.textContent = `${payMethod}${payChan}${feeAmt}${payRef}`;
+      }
 
       modal.style.display = 'flex';
     }

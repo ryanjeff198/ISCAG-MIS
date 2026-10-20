@@ -74,6 +74,7 @@
                     <th>Student Name</th>
                     <th>Age</th>
                     <th>Program</th>
+                    <th>Payment Method</th>
                     <th>Enrollment Date</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -81,13 +82,18 @@
                 </thead>
                 <tbody>
                   <?php if (empty($records)): ?>
-                    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No student records found.</td></tr>
+                    <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No student records found.</td></tr>
                   <?php else: ?>
                     <?php foreach ($records as $r): 
                       $sc = 'badge-pending';
                       if($r['status'] === 'active') $sc = 'badge-active';
                       if($r['status'] === 'completed') $sc = 'badge-complete';
                       if($r['status'] === 'dropped') $sc = 'badge-rejected';
+
+                      $rRawMethod = trim($r['payment_method'] ?? 'Cash');
+                      $rChannel = trim($r['payment_channel'] ?? '');
+                      $rIsOnline = (stripos($rRawMethod, 'online') !== false || stripos($rRawMethod, 'gcash') !== false || stripos($rRawMethod, 'maya') !== false);
+                      $rDisplayMethod = $rIsOnline ? 'Online Payment' : 'Cash';
                     ?>
                       <tr class="enrollment-row" data-program="<?= htmlspecialchars($r['program_name']) ?>" data-status="<?= htmlspecialchars($r['status']) ?>">
                         <td class="td-id">#<?= $r['id'] ?></td>
@@ -100,6 +106,12 @@
                           <?php endif; ?>
                         </td>
                         <td class="td-program"><?= $r['program_name'] ?></td>
+                        <td>
+                          <span style="font-weight:700; color:<?= $rIsOnline ? '#0f5c3a' : '#166534' ?>;"><?= htmlspecialchars($rDisplayMethod) ?></span>
+                          <?php if ($rIsOnline && !empty($rChannel)): ?>
+                            <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;"><?= htmlspecialchars($rChannel) ?></div>
+                          <?php endif; ?>
+                        </td>
                         <td><?= date('M d, Y', strtotime($r['created_at'])) ?></td>
                         <td><span class="badge-status <?= $sc ?>"><?= ucfirst($r['status']) ?></span></td>
                         <td>

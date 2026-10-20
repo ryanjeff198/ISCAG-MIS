@@ -909,6 +909,33 @@ if (!$activeRequest && !empty($history)) {
       background: #f0fdf4;
       border-radius: 4px 4px 0 0;
     }
+    .doc-course-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+      border: 1.5px solid #166534;
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 0.82rem;
+    }
+    .doc-course-table td {
+      padding: 7px 10px;
+      border: 1px solid #bbf7d0;
+      vertical-align: middle;
+      transition: background 0.2s ease;
+    }
+    .doc-course-chk {
+      font-weight: 900;
+      color: #15803d;
+      font-size: 0.95rem;
+      margin-right: 6px;
+      font-family: monospace;
+    }
+    .doc-course-name {
+      font-weight: 700;
+      color: #0f5c3a;
+      font-size: 0.82rem;
+    }
     .doc-signatures-row {
       display: flex;
       justify-content: space-between;
@@ -1146,6 +1173,33 @@ if (!$activeRequest && !empty($history)) {
         color: #0f5c3a !important;
         page-break-after: avoid !important;
         break-after: avoid !important;
+      }
+
+      /* Courses Table in Print */
+      .doc-course-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        border: 1.2px solid #166534 !important;
+        margin-bottom: 4px !important;
+        font-size: 0.72rem !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .doc-course-table td {
+        padding: 2px 6px !important;
+        border: 1px solid #166534 !important;
+        vertical-align: middle !important;
+      }
+      .doc-course-chk {
+        font-weight: 900 !important;
+        color: #15803d !important;
+        font-size: 0.78rem !important;
+        margin-right: 4px !important;
+      }
+      .doc-course-name {
+        font-weight: 700 !important;
+        color: #0f5c3a !important;
+        font-size: 0.72rem !important;
       }
 
       /* Signatures */
@@ -1713,7 +1767,7 @@ if (!$activeRequest && !empty($history)) {
                   <th>Student Name</th>
                   <th>Program / Level</th>
                   <th>Batch</th>
-                  <th>Payment</th>
+                  <th>Payment Method</th>
                   <th>Date Filed</th>
                   <th>Status</th>
                   <th>Action</th>
@@ -1736,10 +1790,14 @@ if (!$activeRequest && !empty($history)) {
                       <td>
                         <?php
                           $hRawMethod = trim($h['payment_method'] ?? 'Cash');
+                          $hChannel = trim($h['payment_channel'] ?? '');
                           $hIsOnline = (stripos($hRawMethod, 'online') !== false || stripos($hRawMethod, 'gcash') !== false || stripos($hRawMethod, 'maya') !== false);
                           $hDisplayMethod = $hIsOnline ? 'Online Payment' : 'Cash';
                         ?>
-                        <?= htmlspecialchars($hDisplayMethod) ?>
+                        <span style="font-weight:700; color:<?= $hIsOnline ? '#0f5c3a' : '#166534' ?>;"><?= htmlspecialchars($hDisplayMethod) ?></span>
+                        <?php if ($hIsOnline && !empty($hChannel)): ?>
+                          <div style="font-size:0.75rem; color:#64748b; font-weight:600;"><?= htmlspecialchars($hChannel) ?></div>
+                        <?php endif; ?>
                       </td>
                       <td><?= date('M d, Y', strtotime($h['created_at'])) ?></td>
                       <td>
@@ -1796,6 +1854,17 @@ if (!$activeRequest && !empty($history)) {
 <!-- ══════════════════════════════════════════════════════════ -->
 <div id="slip-modal" class="slip-modal" onclick="if(event.target===this) closeSlipModal()">
   <div class="slip-paper-card">
+    <!-- Screen View Course Track Banner (Hidden in Print) -->
+    <div class="no-print" style="background:#f0fdf4; border-bottom:1.5px solid #bbf7d0; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:0.75rem; font-weight:800; color:#166534; text-transform:uppercase; letter-spacing:0.04em;">Enrolled Course Track:</span>
+        <span id="doc-modal-course-badge" style="background:#166534; color:#ffffff; font-size:0.82rem; font-weight:700; padding:3px 12px; border-radius:6px;">Level 1 — Basic Arabic &amp; Tajweed</span>
+      </div>
+      <div style="font-size:0.8rem; color:#15803d; font-weight:700;">
+        Female Da'wah Section • Batch 08
+      </div>
+    </div>
+
     <div class="slip-paper-inner" id="printable-doc-area">
       <!-- Fee Box (Top left slip from photo) -->
       <div class="doc-fee-box">
@@ -1808,7 +1877,7 @@ if (!$activeRequest && !empty($history)) {
         </div>
         <table style="width:100%; border-collapse:collapse; margin-bottom:8px; font-size:0.85rem;">
           <tr>
-            <td style="width:18%; font-weight:800; color:#166534;">NAME:</td>
+            <td style="width:22%; font-weight:800; color:#166534; white-space:nowrap;">NAME:</td>
             <td style="border-bottom:1.5px solid #166534; font-weight:700; color:#0f5c3a;" id="doc-fee-name">—</td>
           </tr>
           <tr>
@@ -1816,8 +1885,8 @@ if (!$activeRequest && !empty($history)) {
             <td style="border-bottom:1.5px solid #166534; font-weight:700; padding-top:4px; color:#0f5c3a;" id="doc-fee-date">—</td>
           </tr>
           <tr>
-            <td style="font-weight:800; padding-top:4px; color:#166534;">LEVEL:</td>
-            <td style="border-bottom:1.5px solid #166534; font-weight:700; padding-top:4px; color:#0f5c3a;" id="doc-fee-level">Level 1</td>
+            <td style="font-weight:800; padding-top:4px; color:#166534; white-space:nowrap;">LEVEL / COURSE:</td>
+            <td style="border-bottom:1.5px solid #166534; font-weight:700; padding-top:4px; color:#0f5c3a;" id="doc-fee-level">Level 1 — Basic Arabic &amp; Tajweed</td>
           </tr>
           <tr>
             <td style="font-weight:800; padding-top:4px; color:#166534;">FEE:</td>
@@ -1889,6 +1958,31 @@ if (!$activeRequest && !empty($history)) {
           <td class="doc-underline" style="width:40%;" id="doc-contact">—</td>
           <td class="doc-label">FACEBOOK ACCOUNT:</td>
           <td class="doc-underline" style="width:40%;" id="doc-facebook">—</td>
+        </tr>
+      </table>
+
+      <!-- Course / Level Enrolled Section -->
+      <div class="doc-section-divider">ENROLLED COURSE / PROGRAM TRACK:</div>
+      <table class="doc-course-table">
+        <tr>
+          <td id="doc-course-cell-1" style="width:50%;">
+            <span id="doc-course-chk-1" class="doc-course-chk">[✓]</span>
+            <span class="doc-course-name">Level 1 — Basic Arabic &amp; Tajweed</span>
+          </td>
+          <td id="doc-course-cell-2" style="width:50%;">
+            <span id="doc-course-chk-2" class="doc-course-chk">[ ]</span>
+            <span class="doc-course-name">Level 2 — Intermediate Islamic Studies &amp; Fiqh</span>
+          </td>
+        </tr>
+        <tr>
+          <td id="doc-course-cell-3" style="width:50%;">
+            <span id="doc-course-chk-3" class="doc-course-chk">[ ]</span>
+            <span class="doc-course-name">Level 3 — Tahfidhul Qur'an &amp; Advanced Hadith</span>
+          </td>
+          <td id="doc-course-cell-4" style="width:50%;">
+            <span id="doc-course-chk-4" class="doc-course-chk">[ ]</span>
+            <span class="doc-course-name">Special Class — Revert Support &amp; Essentials</span>
+          </td>
         </tr>
       </table>
 
@@ -2307,7 +2401,47 @@ if (!$activeRequest && !empty($history)) {
     document.getElementById('doc-fee-batch').innerText = data.batch_no || 'BATCH 08';
     document.getElementById('doc-fee-name').innerText = fullName;
     document.getElementById('doc-fee-date').innerText = dateFormatted;
-    document.getElementById('doc-fee-level').innerText = data.level || 'Level 1 — Basic Arabic & Tajweed';
+    
+    // Course resolution & dynamic course checklist
+    const courseRaw = String(data.level || data.program_name || 'Level 1 — Basic Arabic & Tajweed').trim();
+    const cl = courseRaw.toLowerCase();
+
+    let selCourse = 1;
+    if (cl.includes('special') || cl.includes('revert')) {
+      selCourse = 4;
+    } else if (cl.includes('level 3') || cl.includes('tahfidh') || cl.includes('advanced')) {
+      selCourse = 3;
+    } else if (cl.includes('level 2') || cl.includes('intermediate') || cl.includes('fiqh')) {
+      selCourse = 2;
+    } else {
+      selCourse = 1;
+    }
+
+    if (document.getElementById('doc-fee-level')) {
+      document.getElementById('doc-fee-level').innerText = courseRaw;
+    }
+    if (document.getElementById('doc-modal-course-badge')) {
+      document.getElementById('doc-modal-course-badge').innerText = courseRaw;
+    }
+
+    const chk1 = document.getElementById('doc-course-chk-1');
+    const chk2 = document.getElementById('doc-course-chk-2');
+    const chk3 = document.getElementById('doc-course-chk-3');
+    const chk4 = document.getElementById('doc-course-chk-4');
+    if (chk1) chk1.innerText = selCourse === 1 ? '[✓]' : '[ ]';
+    if (chk2) chk2.innerText = selCourse === 2 ? '[✓]' : '[ ]';
+    if (chk3) chk3.innerText = selCourse === 3 ? '[✓]' : '[ ]';
+    if (chk4) chk4.innerText = selCourse === 4 ? '[✓]' : '[ ]';
+
+    const cell1 = document.getElementById('doc-course-cell-1');
+    const cell2 = document.getElementById('doc-course-cell-2');
+    const cell3 = document.getElementById('doc-course-cell-3');
+    const cell4 = document.getElementById('doc-course-cell-4');
+    if (cell1) cell1.style.background = selCourse === 1 ? '#e8f5e9' : '#ffffff';
+    if (cell2) cell2.style.background = selCourse === 2 ? '#e8f5e9' : '#ffffff';
+    if (cell3) cell3.style.background = selCourse === 3 ? '#e8f5e9' : '#ffffff';
+    if (cell4) cell4.style.background = selCourse === 4 ? '#e8f5e9' : '#ffffff';
+
     if (document.getElementById('doc-fee-price')) {
       document.getElementById('doc-fee-price').innerText = '₱ ' + (parseFloat(data.fee_amount || 120).toFixed(2));
     }
