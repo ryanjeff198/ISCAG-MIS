@@ -370,20 +370,135 @@ class UserController extends Controller
     {
         Auth::protectRole(['Guest', 'Tenant']);
         require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
         $userModel = new User();
-        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $eduModel = new IslamicEducation();
         
-        // Application status is now handled within the view via $hasPending/$hasApproved
-        // No redirect needed to allow viewing status on this page.
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $dbUser = $userModel->findById($userId) ?: [];
+        $extraInfo = $userModel->getAdditionalInfo($userId) ?: [];
+        $dbUser = array_merge($dbUser, $extraInfo);
 
-        $history = [];
-        $analytics = ['total' => 0, 'pending' => 0, 'approved' => 0];
+        $history = $eduModel->getByUser($userId);
+        $activeRequest = $eduModel->getActiveForUser($userId);
+
+        $hasPending = false;
+        $hasApproved = false;
+        if ($activeRequest) {
+            $st = strtolower($activeRequest['status'] ?? '');
+            if ($st === 'pending') $hasPending = true;
+            if ($st === 'active' || $st === 'completed') $hasApproved = true;
+        }
+
+        $analytics = [
+            'total' => count($history),
+            'pending' => count(array_filter($history, fn($h) => ($h['status'] ?? '') === 'pending')),
+            'approved' => count(array_filter($history, fn($h) => in_array($h['status'] ?? '', ['active', 'completed'])))
+        ];
 
         $this->view('user/Da\'wah/Female/user_form-female-education', [
             'dbUser' => $dbUser,
             'history' => $history,
+            'activeRequest' => $activeRequest,
+            'hasPending' => $hasPending,
+            'hasApproved' => $hasApproved,
             'analytics' => $analytics
         ]);
+    }
+
+    public function submitFemaleEducationRegistration(): void
+    {
+        Auth::protectRole(['Guest', 'Tenant']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+
+        $fname = trim($input['first_name'] ?? '');
+        $lname = trim($input['last_name'] ?? '');
+        $contact = trim($input['contact_number'] ?? '');
+        $dob = !empty($input['birthdate']) ? trim($input['birthdate']) : null;
+
+        if (empty($fname) || empty($lname)) {
+            echo json_encode(['success' => false, 'message' => 'First name and Last name are required.']);
+            return;
+        }
+
+        if (empty($contact)) {
+            echo json_encode(['success' => false, 'message' => 'Contact number is required.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $eduModel = new IslamicEducation();
+
+        $payload = [
+            'tenant_id' => $userId,
+            'first_name' => $fname,
+            'last_name' => $lname,
+            'middle_initial' => trim($input['middle_initial'] ?? ''),
+            'muslim_name' => trim($input['muslim_name'] ?? ''),
+            'muslim_type' => trim($input['muslim_type'] ?? 'Revert'),
+            'birthdate' => $dob,
+            'date_of_shahadah' => !empty($input['date_of_shahadah']) ? trim($input['date_of_shahadah']) : null,
+            'address' => trim($input['address'] ?? ''),
+            'contact_number' => $contact,
+            'facebook_account' => trim($input['facebook_account'] ?? ''),
+            'studied_islamic_before' => trim($input['studied_islamic_before'] ?? 'No'),
+            'previous_school' => trim($input['previous_school'] ?? ''),
+            'emergency_name' => trim($input['emergency_name'] ?? ''),
+            'emergency_relationship' => trim($input['emergency_relationship'] ?? ''),
+            'emergency_address' => trim($input['emergency_address'] ?? ''),
+            'emergency_contact' => trim($input['emergency_contact'] ?? ''),
+            'is_minor' => !empty($input['is_minor']) ? 1 : 0,
+            'parent_name' => trim($input['parent_name'] ?? ''),
+            'parent_address' => trim($input['parent_address'] ?? ''),
+            'parent_contact' => trim($input['parent_contact'] ?? ''),
+            'student_signature' => trim($input['student_signature'] ?? ''),
+            'guardian_signature' => trim($input['guardian_signature'] ?? ''),
+            'batch_no' => trim($input['batch_no'] ?? 'Batch 08'),
+            'level' => trim($input['level'] ?? 'Basic Islamic Studies'),
+            'payment_method' => (stripos(trim($input['payment_method'] ?? 'Cash'), 'online') !== false || stripos(trim($input['payment_method'] ?? ''), 'gcash') !== false) ? 'Online Payment' : 'Cash',
+            'fee_amount' => 120.00,
+            'payment_channel' => trim($input['payment_channel'] ?? ''),
+            'payment_reference' => trim($input['payment_reference'] ?? ''),
+            'approved_by' => 'Sister Khadijah Dimaano',
+            'prepared_by' => 'IDFS Staff',
+            'program_name' => trim($input['program_name'] ?? 'Islamic Education - Batch 08'),
+            'gender' => 'female',
+            'status' => 'pending'
+        ];
+
+        $newId = $eduModel->createRegistration($payload);
+
+        if ($newId) {
+            $refCode = '#EDU-' . str_pad((string)$newId, 4, '0', STR_PAD_LEFT);
+            try {
+                $notif = new Notification();
+                $notif->create(
+                    $userId,
+                    'Female Education Registration Submitted',
+                    "Your registration for Da'wah Female Section ($refCode) has been submitted successfully and is pending review.",
+                    'info'
+                );
+            } catch (Exception $e) {}
+
+            echo json_encode([
+                'success' => true,
+                'id' => $newId,
+                'ref' => $refCode,
+                'message' => 'Registration submitted successfully!'
+            ]);
+            return;
+        }
+
+        echo json_encode(['success' => false, 'message' => 'Failed to save registration. Please try again.']);
     }
 
     public function femaleSchool(): void

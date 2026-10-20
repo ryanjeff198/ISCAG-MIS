@@ -1084,12 +1084,12 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       const notes = document.getElementById('sched-notes').value;
 
       if (!cid) {
-        alert('Please assign an authorized counselor.');
+        showAlert('Counselor Assignment Required', 'Please assign an authorized counselor before finalizing the appointment.', 'warning');
         document.getElementById('sched-counselor-id').focus();
         return;
       }
       if (!date || !start) {
-        alert('Please select both the appointment date and starting time slot.');
+        showAlert('Incomplete Schedule', 'Please select both the appointment date and starting time slot.', 'warning');
         return;
       }
 
@@ -1145,7 +1145,7 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       const reason = document.getElementById('reject-reason').value;
 
       if (!reason || reason.trim() === '') {
-        alert('A rejection reason is strictly required.');
+        showAlert('Rejection Reason Required', 'A rejection reason is strictly required so the applicant is informed.', 'warning');
         document.getElementById('reject-reason').focus();
         return;
       }
@@ -1311,32 +1311,35 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       const refNo = `#${prefix}${String(rec.id).padStart(4, '0')}`;
       const name = rec.full_name || rec.client_name || `${rec.first_name || ''} ${rec.last_name || ''}`.trim() || 'Client';
 
-      if (!confirm(`Are you sure you want to delete counseling request ${refNo} for "${name}"?\n\nThis will permanently remove the request and any associated appointment details.`)) {
-        return;
-      }
-
-      try {
-        const response = await fetch('<?= url('/admin/dawah/counseling/delete') ?>', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: rec.id })
-        });
-        const res = await response.json();
-        if (res.success) {
-          showAlert('Deleted Successfully', `Counseling request ${refNo} has been deleted.`, 'success');
-          const idx = records.findIndex(r => Number(r.id) === Number(rec.id));
-          if (idx !== -1) {
-            records.splice(idx, 1);
+      showConfirm(
+        'Delete Counseling Request',
+        `Are you sure you want to delete counseling request ${refNo} for "${name}"?\n\nThis will permanently remove the request and any associated appointment details.`,
+        async () => {
+          try {
+            const response = await fetch('<?= url('/admin/dawah/counseling/delete') ?>', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: rec.id })
+            });
+            const res = await response.json();
+            if (res.success) {
+              showAlert('Deleted Successfully', `Counseling request ${refNo} has been deleted.`, 'success');
+              const idx = records.findIndex(r => Number(r.id) === Number(rec.id));
+              if (idx !== -1) {
+                records.splice(idx, 1);
+              }
+              renderInsights();
+              applyFilters();
+            } else {
+              showAlert('Deletion Failed', res.message || 'Could not delete counseling request.', 'error');
+            }
+          } catch (err) {
+            console.error(err);
+            showAlert('Network Error', 'Failed to connect to server.', 'error');
           }
-          renderInsights();
-          applyFilters();
-        } else {
-          showAlert('Deletion Failed', res.message || 'Could not delete counseling request.', 'error');
-        }
-      } catch (err) {
-        console.error(err);
-        showAlert('Network Error', 'Failed to connect to server.', 'error');
-      }
+        },
+        'danger'
+      );
     }
 
     // Close menu when clicking outside or scrolling
