@@ -25,10 +25,94 @@ class IslamicEducation {
         
         $this->db->exec($sql);
 
-        // Migration: Add birthdate column if it doesn't exist
-        try {
-            $this->db->exec("ALTER TABLE islamic_education_enrollments ADD COLUMN birthdate DATE NULL AFTER last_name");
-        } catch (Exception $e) { /* ignore if column exists */ }
+        // Migrations for Female Da'wah Registration fields from the official physical form
+        $migrations = [
+            "ADD COLUMN birthdate DATE NULL AFTER last_name",
+            "ADD COLUMN middle_initial VARCHAR(10) NULL AFTER first_name",
+            "ADD COLUMN muslim_name VARCHAR(150) NULL AFTER last_name",
+            "ADD COLUMN muslim_type VARCHAR(50) DEFAULT 'Revert' AFTER muslim_name",
+            "ADD COLUMN date_of_shahadah DATE NULL AFTER birthdate",
+            "ADD COLUMN address TEXT NULL AFTER date_of_shahadah",
+            "ADD COLUMN contact_number VARCHAR(50) NULL AFTER address",
+            "ADD COLUMN facebook_account VARCHAR(150) NULL AFTER contact_number",
+            "ADD COLUMN studied_islamic_before VARCHAR(10) DEFAULT 'No' AFTER facebook_account",
+            "ADD COLUMN previous_school VARCHAR(255) NULL AFTER studied_islamic_before",
+            "ADD COLUMN emergency_name VARCHAR(150) NULL AFTER previous_school",
+            "ADD COLUMN emergency_relationship VARCHAR(100) NULL AFTER emergency_name",
+            "ADD COLUMN emergency_address TEXT NULL AFTER emergency_relationship",
+            "ADD COLUMN emergency_contact VARCHAR(50) NULL AFTER emergency_address",
+            "ADD COLUMN is_minor TINYINT(1) DEFAULT 0 AFTER emergency_contact",
+            "ADD COLUMN parent_name VARCHAR(150) NULL AFTER is_minor",
+            "ADD COLUMN parent_address TEXT NULL AFTER parent_name",
+            "ADD COLUMN parent_contact VARCHAR(50) NULL AFTER parent_address",
+            "ADD COLUMN student_signature VARCHAR(150) NULL AFTER parent_contact",
+            "ADD COLUMN guardian_signature VARCHAR(150) NULL AFTER student_signature",
+            "ADD COLUMN batch_no VARCHAR(50) DEFAULT 'Batch 08' AFTER guardian_signature",
+            "ADD COLUMN level VARCHAR(100) DEFAULT 'Basic' AFTER batch_no",
+            "ADD COLUMN payment_method VARCHAR(50) DEFAULT 'Cash' AFTER level",
+            "ADD COLUMN fee_amount DECIMAL(10,2) DEFAULT 120.00 AFTER payment_method",
+            "ADD COLUMN payment_channel VARCHAR(100) NULL AFTER fee_amount",
+            "ADD COLUMN payment_reference VARCHAR(100) NULL AFTER payment_channel",
+            "ADD COLUMN approved_by VARCHAR(150) DEFAULT 'Sister Khadijah Dimaano' AFTER payment_reference",
+            "ADD COLUMN prepared_by VARCHAR(150) DEFAULT 'IDFS Staff' AFTER approved_by"
+        ];
+
+        foreach ($migrations as $m) {
+            try {
+                $this->db->exec("ALTER TABLE islamic_education_enrollments " . $m);
+            } catch (Exception $e) { /* Column already exists */ }
+        }
+    }
+
+    public function getByUser($userId) {
+        $stmt = $this->db->prepare("
+            SELECT * FROM islamic_education_enrollments 
+            WHERE tenant_id = :tenant_id 
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute(['tenant_id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getActiveForUser($userId) {
+        $stmt = $this->db->prepare("
+            SELECT * FROM islamic_education_enrollments 
+            WHERE tenant_id = :tenant_id AND status IN ('pending', 'active')
+            ORDER BY created_at DESC LIMIT 1
+        ");
+        $stmt->execute(['tenant_id' => $userId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public function createRegistration($data) {
+        $fields = [
+            'tenant_id', 'first_name', 'last_name', 'middle_initial', 'muslim_name',
+            'muslim_type', 'birthdate', 'date_of_shahadah', 'address', 'contact_number',
+            'facebook_account', 'studied_islamic_before', 'previous_school',
+            'emergency_name', 'emergency_relationship', 'emergency_address', 'emergency_contact',
+            'is_minor', 'parent_name', 'parent_address', 'parent_contact',
+            'student_signature', 'guardian_signature', 'batch_no', 'level',
+            'payment_method', 'fee_amount', 'payment_channel', 'payment_reference',
+            'approved_by', 'prepared_by', 'program_name', 'gender', 'status'
+        ];
+        
+        $insertCols = [];
+        $insertVals = [];
+        $params = [];
+
+        foreach ($fields as $f) {
+            if (array_key_exists($f, $data)) {
+                $insertCols[] = $f;
+                $insertVals[] = ":$f";
+                $params[$f] = $data[$f];
+            }
+        }
+
+        $sql = "INSERT INTO islamic_education_enrollments (" . implode(', ', $insertCols) . ") 
+                VALUES (" . implode(', ', $insertVals) . ")";
+        $stmt = $this->db->prepare($sql);
+        $res = $stmt->execute($params);
+        return $res ? (int)$this->db->lastInsertId() : 0;
     }
 
     public function getAllByGender($gender) {
