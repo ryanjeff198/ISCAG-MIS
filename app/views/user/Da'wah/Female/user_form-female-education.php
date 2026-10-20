@@ -1230,6 +1230,26 @@ if (!$activeRequest && !empty($history)) {
         color: #166534 !important;
       }
     }
+
+    /* ── Toast Notification (Matching tenant_payment.php) ── */
+    .toast-msg {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1f2e2a;
+      color: white;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      z-index: 999999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .toast-msg.show {
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -1303,6 +1323,12 @@ if (!$activeRequest && !empty($history)) {
                     <span style="width: 7px; height: 7px; border-radius: 50%; background: #ffffff;"></span>
                     <?= $hasPending ? 'Pending Verification' : 'Officially Enrolled' ?>
                   </span>
+                  <?php if ($hasPending && ($activeRequest['payment_status'] ?? '') !== 'Paid'): ?>
+                    <button type="button" onclick="payPendingRegistrationWithPayMongo(<?= (int)$activeRequest['id'] ?>)" class="btn-status-slip" style="background:#dcfce7 !important; color:#166534 !important; border:1px solid #86efac !important; font-weight:800 !important;">
+                      <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5z"/></svg>
+                      Pay ₱120 via PayMongo
+                    </button>
+                  <?php endif; ?>
                   <button type="button" onclick="openSlipModal(<?= htmlspecialchars(json_encode($activeRequest)) ?>)" class="btn-status-slip">
                     <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                     View Official Slip
@@ -1402,30 +1428,30 @@ if (!$activeRequest && !empty($history)) {
                 <span class="assessment-field-label">Payment Mode <span style="color:#dc2626;">*</span></span>
                 <div class="radio-pill-group" style="margin-top:4px;">
                   <div class="radio-pill-item">
-                    <input type="radio" name="payment_method" id="pay-cash" value="Cash" checked onchange="handlePaymentModeChange('Cash')">
-                    <label for="pay-cash" class="radio-pill-label" style="padding:8px 16px;">
-                      <span class="radio-pill-dot"></span> Cash
+                    <input type="radio" name="payment_method" id="pay-online" value="Online Payment" checked onchange="handlePaymentModeChange('Online Payment')">
+                    <label for="pay-online" class="radio-pill-label" style="padding:8px 16px;">
+                      <span class="radio-pill-dot"></span> Online Payment
                     </label>
                   </div>
                   <div class="radio-pill-item">
-                    <input type="radio" name="payment_method" id="pay-online" value="Online Payment" onchange="handlePaymentModeChange('Online Payment')">
-                    <label for="pay-online" class="radio-pill-label" style="padding:8px 16px;">
-                      <span class="radio-pill-dot"></span> Online Payment
+                    <input type="radio" name="payment_method" id="pay-cash" value="Cash" onchange="handlePaymentModeChange('Cash')">
+                    <label for="pay-cash" class="radio-pill-label" style="padding:8px 16px;">
+                      <span class="radio-pill-dot"></span> Cash
                     </label>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- ── Online Payment E-Wallet / Gateway Selection Panel (Toggled when Online Payment is selected) ── -->
-            <div id="online-gateway-panel" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid #e2e8f0; animation: fadeInDown 0.25s ease;">
+            <!-- ── Online Payment PayMongo Gateway Selection Panel (Toggled when Online Payment is selected) ── -->
+            <div id="online-gateway-panel" style="display:block; margin-top:16px; padding-top:16px; border-top:1px solid #e2e8f0; animation: fadeInDown 0.25s ease;">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
                 <div>
                   <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:0.75rem; font-weight:700; color:#0f172a; text-transform:uppercase; letter-spacing:0.04em;">Select E-Wallet or Payment Gateway</span>
+                    <span style="font-size:0.75rem; font-weight:700; color:#0f172a; text-transform:uppercase; letter-spacing:0.04em;">Official Payment Gateway</span>
                     <span style="font-size:0.7rem; font-weight:700; background:#f0fdf4; color:#176b45; border:1px solid #bbf7d0; padding:2px 8px; border-radius:4px;">Fee: ₱120.00</span>
                   </div>
-                  <div style="font-size:0.82rem; color:#64748b; margin-top:2px;">Select your preferred electronic channel to complete the registration fee.</div>
+                  <div style="font-size:0.82rem; color:#64748b; margin-top:2px;">Fast, secure, and instant registration fee settlement via PayMongo.</div>
                 </div>
                 <div style="background:#ffffff; border:1px solid #e2e8f0; padding:6px 14px; border-radius:8px; text-align:right;">
                   <span style="font-size:0.68rem; font-weight:700; color:#64748b; display:block; text-transform:uppercase;">Registration Fee Due</span>
@@ -1433,69 +1459,44 @@ if (!$activeRequest && !empty($history)) {
                 </div>
               </div>
 
-              <!-- E-Wallet / Gateway Selection Cards -->
-              <div class="gateway-options-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(135px, 1fr)); gap:10px; margin-bottom:14px;">
-                <!-- GCash -->
-                <label class="gateway-option-card" for="gw-gcash">
-                  <input type="radio" name="payment_channel" id="gw-gcash" value="GCash" checked onchange="onChannelChange('GCash')">
-                  <div class="gateway-card-inner">
-                    <span class="gw-badge-pill">e-Wallet</span>
-                    <div class="gw-title">GCash</div>
-                    <div class="gw-desc">Instant Mobile Wallet</div>
+              <!-- PayMongo Gateway Selection Card (Matching tenant_payment.php) -->
+              <div class="payment-options" style="display:grid; grid-template-columns: 1fr; margin-bottom: 12px;">
+                <div class="payment-option selected" id="opt-paymongo" style="cursor: default; padding: 16px 20px; text-align: left; background: #fbfdfc; border: 1.5px solid #176b45; border-radius: 12px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(23, 107, 69, 0.1); display: flex; align-items: center; justify-content: center; color: #176b45;">
+                        <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: currentColor;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h2v2h-2v-2zm0 2h3v2h-3v-2zm-2 2h2v2h-2v-2z"/></svg>
+                      </div>
+                      <div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">PayMongo Secure Gateway</div>
+                        <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">QR Ph, E-Wallets (GCash, Maya) &amp; Card Payments</div>
+                      </div>
+                    </div>
+                    <span style="font-size: 0.7rem; font-weight: 700; color: #166534; background: #dcfce7; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 12px;">Instant</span>
                   </div>
-                </label>
-
-                <!-- Maya -->
-                <label class="gateway-option-card" for="gw-maya">
-                  <input type="radio" name="payment_channel" id="gw-maya" value="Maya" onchange="onChannelChange('Maya')">
-                  <div class="gateway-card-inner">
-                    <span class="gw-badge-pill">e-Wallet</span>
-                    <div class="gw-title">Maya</div>
-                    <div class="gw-desc">Maya Wallet / QR</div>
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; width: 100%;">
+                    <span style="font-size: 0.72rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+                      <svg viewBox="0 0 24 24" style="width: 12px; height: 12px; fill: currentColor;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h2v2h-2v-2zm0 2h3v2h-3v-2zm-2 2h2v2h-2v-2z"/></svg>
+                      QR Ph (Scan to Pay)
+                    </span>
+                    <span style="font-size: 0.72rem; font-weight: 700; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 6px;">GCash</span>
+                    <span style="font-size: 0.72rem; font-weight: 700; background: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; padding: 4px 10px; border-radius: 6px;">Maya</span>
+                    <span style="font-size: 0.72rem; font-weight: 700; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 6px;">Credit / Debit Card</span>
                   </div>
-                </label>
-
-                <!-- QR Ph -->
-                <label class="gateway-option-card" for="gw-qrph">
-                  <input type="radio" name="payment_channel" id="gw-qrph" value="QR Ph" onchange="onChannelChange('QR Ph')">
-                  <div class="gateway-card-inner">
-                    <span class="gw-badge-pill">Universal QR</span>
-                    <div class="gw-title">QR Ph</div>
-                    <div class="gw-desc">Scan via Any Bank/App</div>
-                  </div>
-                </label>
-
-                <!-- PayMongo Gateway -->
-                <label class="gateway-option-card" for="gw-paymongo">
-                  <input type="radio" name="payment_channel" id="gw-paymongo" value="PayMongo Gateway" onchange="onChannelChange('PayMongo Gateway')">
-                  <div class="gateway-card-inner">
-                    <span class="gw-badge-pill">Gateway</span>
-                    <div class="gw-title">PayMongo</div>
-                    <div class="gw-desc">Credit / Debit Card</div>
-                  </div>
-                </label>
-
-                <!-- Bank Transfer -->
-                <label class="gateway-option-card" for="gw-bank">
-                  <input type="radio" name="payment_channel" id="gw-bank" value="Bank Transfer" onchange="onChannelChange('Bank Transfer')">
-                  <div class="gateway-card-inner">
-                    <span class="gw-badge-pill">Online Banking</span>
-                    <div class="gw-title">Bank Transfer</div>
-                    <div class="gw-desc">BDO / BPI / UnionBank</div>
-                  </div>
-                </label>
-              </div>
-
-              <!-- Channel Guidance & Reference Input -->
-              <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-                <div style="display:flex; align-items:center; gap:10px; font-size:0.84rem; color:#334155;">
-                  <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#176b45;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                  <span id="gateway-hint-text">Fee: <strong>₱120.00</strong>. Please settle via <strong>GCash</strong> and enter your reference number or mobile number below.</span>
-                </div>
-                <div style="flex:1; min-width:220px; max-width:320px;">
-                  <input type="text" name="payment_reference" id="reg-payment-ref" class="form-input-control" placeholder="Ref # or Sender No. (Optional)" style="padding:9px 12px; font-size:0.84rem; background:#ffffff; border:1.5px solid #cbd5e1;">
                 </div>
               </div>
+
+              <!-- PayMongo Redirect Note (Matching tenant_payment.php) -->
+              <div id="paymongoNote" style="background: rgba(23, 107, 69, 0.06); border: 1px solid rgba(23, 107, 69, 0.2); border-radius: 8px; padding: 12px 14px; font-size: 0.82rem; color: #166534; display: flex; align-items: center; gap: 8px;">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-6h-2v6zm0-8h2V7h-2v2z"/></svg>
+                <span>You will be redirected to <strong>PayMongo</strong> to scan the <strong>QR Ph code</strong> or pay via GCash, Maya, or Card (Sandbox Mode).</span>
+              </div>
+            </div>
+
+            <!-- ── Cash Instruction Panel (Toggled when Cash is selected) ── -->
+            <div id="cash-instruction-panel" style="display:none; margin-top:16px; padding:14px 18px; background:#fffdf5; border:1px solid #fde68a; border-radius:10px; font-size:0.84rem; color:#92400e; align-items:center; gap:10px;">
+              <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:#d97706;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              <span><strong>Cash Settlement:</strong> You can submit this form now and settle your <strong>₱120.00</strong> registration fee directly in cash to Sister Khadijah Dimaano or IDFS Staff at the ISCAG Da'wah Office.</span>
             </div>
           </div>
 
@@ -1740,8 +1741,8 @@ if (!$activeRequest && !empty($history)) {
               Cancel
             </button>
             <button type="submit" id="btn-submit-form" class="btn-submit-reg">
-              <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              Submit Registration Form
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h2v2h-2v-2zm0 2h3v2h-3v-2zm-2 2h2v2h-2v-2z"/></svg>
+              Pay ₱120.00 via PayMongo &amp; Submit
             </button>
           </div>
         </form>
@@ -1895,8 +1896,8 @@ if (!$activeRequest && !empty($history)) {
         </table>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.8rem; font-weight:800; color:#166534; flex-wrap:wrap; gap:8px;">
           <div style="display:flex; gap:16px;">
-            <label><span id="doc-pay-cash-box" style="font-weight:900; color:#15803d;">[ ]</span> CASH</label>
             <label><span id="doc-pay-online-box" style="font-weight:900; color:#15803d;">[ ]</span> ONLINE PAYMENT <span id="doc-pay-channel-badge" style="font-size:0.75rem; color:#166534; font-weight:700;"></span></label>
+            <label><span id="doc-pay-cash-box" style="font-weight:900; color:#15803d;">[ ]</span> CASH</label>
           </div>
           <div>
             APPROVED BY: <span style="font-weight:900; color:#0f5c3a;">SISTER KHADIJAH DIMAANO</span>
@@ -2079,33 +2080,68 @@ if (!$activeRequest && !empty($history)) {
 </div>
 
 <script>
+  // ── Toast Notification (Matching tenant_payment.php) ──
+  function showToast(msg, isErr = false) {
+    let t = document.getElementById('toastMsg');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'toastMsg';
+      t.className = 'toast-msg';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.background = isErr ? '#991b1b' : '#166534';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
   // ── Toggle Payment Mode (Online Payment vs Cash) ──
   function handlePaymentModeChange(mode) {
-    const panel = document.getElementById('online-gateway-panel');
-    if (!panel) return;
+    const onlinePanel = document.getElementById('online-gateway-panel');
+    const cashPanel = document.getElementById('cash-instruction-panel');
+    const submitBtn = document.getElementById('btn-submit-form');
+
     if (mode === 'Online Payment') {
-      panel.style.display = 'block';
-      const selectedChannel = document.querySelector('input[name="payment_channel"]:checked');
-      if (selectedChannel) {
-        onChannelChange(selectedChannel.value);
+      if (onlinePanel) onlinePanel.style.display = 'block';
+      if (cashPanel) cashPanel.style.display = 'none';
+      if (submitBtn) {
+        submitBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4 0h2v2h-2v-2zm0 2h3v2h-3v-2zm-2 2h2v2h-2v-2z"/></svg>
+          Pay ₱120.00 via PayMongo &amp; Submit
+        `;
       }
     } else {
-      panel.style.display = 'none';
+      if (onlinePanel) onlinePanel.style.display = 'none';
+      if (cashPanel) cashPanel.style.display = 'flex';
+      if (submitBtn) {
+        submitBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          Submit Registration Form (Cash)
+        `;
+      }
     }
   }
 
-  // ── Gateway / E-Wallet Selection Hint Handler ──
-  function onChannelChange(channel) {
-    const hint = document.getElementById('gateway-hint-text');
-    if (!hint) return;
-    const hints = {
-      'GCash': 'Fee: <strong>₱120.00</strong>. Please settle via <strong>GCash</strong> and enter your reference number or mobile number below.',
-      'Maya': 'Fee: <strong>₱120.00</strong>. Please send via <strong>Maya</strong> and enter your transaction reference below.',
-      'QR Ph': 'Fee: <strong>₱120.00</strong>. Scan the official ISCAG <strong>QR Ph</strong> code with any banking or e-wallet app.',
-      'PayMongo Gateway': 'Fee: <strong>₱120.00</strong>. Pay securely online via <strong>PayMongo</strong> (Credit/Debit Card or e-Wallets).',
-      'Bank Transfer': 'Fee: <strong>₱120.00</strong>. Direct deposit to <strong>ISCAG Bank Account</strong>; please enter your transaction reference.'
-    };
-    hint.innerHTML = hints[channel] || `Fee: <strong>₱120.00</strong>. Please settle via <strong>${channel}</strong>.`;
+  // ── Quick Pay for Existing Pending Registration via PayMongo ──
+  async function payPendingRegistrationWithPayMongo(regId) {
+    try {
+      showToast('Connecting to PayMongo...');
+      const response = await fetch('<?= url('/user/services/education/female/paymongo-checkout') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ existing_registration_id: regId })
+      });
+      const data = await response.json();
+      if (data.success && data.checkout_url) {
+        showToast('Redirecting to PayMongo...');
+        window.location.href = data.checkout_url;
+      } else {
+        showToast(data.message || 'Could not initiate PayMongo checkout.', true);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error connecting to payment gateway.', true);
+    }
   }
 
   // ── Toggle Shahadah Date ──
@@ -2316,6 +2352,60 @@ if (!$activeRequest && !empty($history)) {
     const payload = {};
     formData.forEach((val, key) => payload[key] = val);
 
+    // ── Online Payment Branch via PayMongo ──
+    if (payload.payment_method === 'Online Payment') {
+      try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;animation:spin 1s linear infinite;fill:currentColor;"><path d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8z"/></svg>
+          Connecting to PayMongo...
+        `;
+
+        const response = await fetch('<?= url('/user/services/education/female/paymongo-checkout') ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const text = await response.text();
+        let res;
+        try {
+          res = JSON.parse(text);
+        } catch (e) {
+          throw new Error(text || ('HTTP ' + response.status));
+        }
+
+        if (res.success && res.checkout_url) {
+          submitBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" style="width:18px;height:18px;animation:spin 1s linear infinite;fill:currentColor;"><path d="M12 4V2A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8z"/></svg>
+            Redirecting to PayMongo...
+          `;
+          window.location.href = res.checkout_url;
+          return;
+        } else {
+          showEduAlert({
+            title: 'Payment Gateway Error',
+            message: res.message || 'Could not initiate PayMongo checkout. Please try again.',
+            type: 'error'
+          });
+          submitBtn.disabled = false;
+          handlePaymentModeChange('Online Payment');
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+        showEduAlert({
+          title: 'Connection Error',
+          message: err.message || 'Error connecting to PayMongo gateway.',
+          type: 'error'
+        });
+        submitBtn.disabled = false;
+        handlePaymentModeChange('Online Payment');
+        return;
+      }
+    }
+
+    // ── Cash Payment Branch (Direct Office Settlement) ──
     try {
       submitBtn.disabled = true;
       submitBtn.innerHTML = `
@@ -2332,10 +2422,7 @@ if (!$activeRequest && !empty($history)) {
       const res = await response.json();
       if (res.success) {
         const refCode = res.ref || '#EDU-0001';
-        const isOnline = payload.payment_method === 'Online Payment';
-        const channelLabel = isOnline
-          ? `Online Payment (${payload.payment_channel || 'e-Wallet'}${payload.payment_reference ? ' • Ref: ' + escapeHtml(payload.payment_reference) : ''})`
-          : 'Cash (Direct to ISCAG Office)';
+        const channelLabel = 'Cash (Direct to ISCAG Office)';
 
         const detailsHtml = `
           <div style="margin-bottom:6px;"><strong>Reference No:</strong> <span style="font-family:monospace; color:#15803d; font-weight:800;">${refCode}</span></div>
@@ -2361,10 +2448,7 @@ if (!$activeRequest && !empty($history)) {
 
         // Reset submit button
         submitBtn.disabled = false;
-        submitBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-          Submit Registration Form
-        `;
+        handlePaymentModeChange(payload.payment_method || 'Online Payment');
       } else {
         showEduAlert({
           title: 'Submission Failed',
@@ -2372,7 +2456,7 @@ if (!$activeRequest && !empty($history)) {
           type: 'error'
         });
         submitBtn.disabled = false;
-        submitBtn.innerText = 'Submit Registration Form';
+        handlePaymentModeChange(payload.payment_method || 'Online Payment');
       }
     } catch (err) {
       console.error(err);
@@ -2382,7 +2466,7 @@ if (!$activeRequest && !empty($history)) {
         type: 'error'
       });
       submitBtn.disabled = false;
-      submitBtn.innerText = 'Submit Registration Form';
+      handlePaymentModeChange(payload.payment_method || 'Online Payment');
     }
   }
 
@@ -2394,8 +2478,9 @@ if (!$activeRequest && !empty($history)) {
     const dateFormatted = data.created_at ? new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const isRevert = (data.muslim_type || 'Revert').toLowerCase() === 'revert';
     const studiedYes = (data.studied_islamic_before || 'no').toLowerCase() === 'yes';
-    const isCash = (data.payment_method || 'Cash').toLowerCase() === 'cash';
-    const channelText = (!isCash && data.payment_channel) ? ` (${data.payment_channel})` : '';
+    const isOnline = (data.payment_method || '').toLowerCase().includes('online') || (data.payment_channel || '').toLowerCase().includes('paymongo');
+    const isCash = !isOnline;
+    const channelText = (isOnline && data.payment_channel) ? ` (${data.payment_channel})` : '';
 
     // Fee Slip
     document.getElementById('doc-fee-batch').innerText = data.batch_no || 'BATCH 08';
@@ -2445,8 +2530,8 @@ if (!$activeRequest && !empty($history)) {
     if (document.getElementById('doc-fee-price')) {
       document.getElementById('doc-fee-price').innerText = '₱ ' + (parseFloat(data.fee_amount || 120).toFixed(2));
     }
+    document.getElementById('doc-pay-online-box').innerText = isOnline ? '[✓]' : '[ ]';
     document.getElementById('doc-pay-cash-box').innerText = isCash ? '[✓]' : '[ ]';
-    document.getElementById('doc-pay-online-box').innerText = !isCash ? '[✓]' : '[ ]';
     if (document.getElementById('doc-pay-channel-badge')) {
       document.getElementById('doc-pay-channel-badge').innerText = channelText;
     }
@@ -2495,13 +2580,43 @@ if (!$activeRequest && !empty($history)) {
     });
   }
 
-  // Pre-fill / initial checks
+  // Pre-fill / initial checks & PayMongo return handler
   document.addEventListener('DOMContentLoaded', () => {
     const dobInput = document.getElementById('reg-dob');
     if (dobInput && dobInput.value) {
       checkMinorStatus(dobInput.value);
     }
+
+    // Auto show toast & slip alert if returned from successful PayMongo checkout
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('paid') === '1') {
+      const ref = params.get('ref') || '';
+      showToast('PayMongo payment confirmed! Ref: ' + ref);
+
+      showEduAlert({
+        title: 'Alhamdulillah! Payment & Registration Confirmed',
+        message: 'Your registration fee of ₱120.00 has been verified and settled via PayMongo. Your registration is now submitted for official review by Sister Khadijah Dimaano.',
+        type: 'success',
+        detailsHtml: `
+          <div style="margin-bottom:6px;"><strong>Reference No:</strong> <span style="font-family:monospace; color:#15803d; font-weight:800;">${ref}</span></div>
+          <div style="margin-bottom:6px;"><strong>Registration Fee:</strong> <span style="font-weight:700; color:#0f172a;">₱120.00 (PAID via PayMongo)</span></div>
+          <div style="margin-bottom:6px;"><strong>Channel:</strong> <span style="color:#15803d; font-weight:700;">PayMongo Gateway (QR Ph / GCash / Maya / Card)</span></div>
+          <div><strong>Status:</strong> <span style="color:#ca8a04; font-weight:700;">Under Review / Pending Verification</span></div>
+        `,
+        confirmText: 'View Registration Slip',
+        cancelText: 'Stay on Page',
+        onConfirm: () => {
+          <?php if (!empty($activeRequest)): ?>
+          openSlipModal(<?= json_encode($activeRequest) ?>);
+          <?php endif; ?>
+        }
+      });
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   });
 </script>
+<!-- Toast -->
+<div class="toast-msg" id="toastMsg"></div>
 </body>
 </html>
