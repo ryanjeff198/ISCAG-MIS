@@ -54,7 +54,8 @@ class IslamicEducation {
             "ADD COLUMN payment_channel VARCHAR(100) NULL AFTER fee_amount",
             "ADD COLUMN payment_reference VARCHAR(100) NULL AFTER payment_channel",
             "ADD COLUMN approved_by VARCHAR(150) DEFAULT 'Sister Khadijah Dimaano' AFTER payment_reference",
-            "ADD COLUMN prepared_by VARCHAR(150) DEFAULT 'IDFS Staff' AFTER approved_by"
+            "ADD COLUMN prepared_by VARCHAR(150) DEFAULT 'IDFS Staff' AFTER approved_by",
+            "ADD COLUMN payment_status VARCHAR(50) DEFAULT 'Pending' AFTER payment_reference"
         ];
 
         foreach ($migrations as $m) {
@@ -92,7 +93,7 @@ class IslamicEducation {
             'emergency_name', 'emergency_relationship', 'emergency_address', 'emergency_contact',
             'is_minor', 'parent_name', 'parent_address', 'parent_contact',
             'student_signature', 'guardian_signature', 'batch_no', 'level',
-            'payment_method', 'fee_amount', 'payment_channel', 'payment_reference',
+            'payment_method', 'fee_amount', 'payment_channel', 'payment_reference', 'payment_status',
             'approved_by', 'prepared_by', 'program_name', 'gender', 'status'
         ];
         
@@ -241,5 +242,21 @@ class IslamicEducation {
         ");
         $stmt->execute(['id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public function updatePaymentInfo(int $id, array $data): bool {
+        $allowed = ['payment_method', 'fee_amount', 'payment_channel', 'payment_reference', 'payment_status', 'status'];
+        $sets = [];
+        $params = ['id' => $id];
+        foreach ($allowed as $f) {
+            if (array_key_exists($f, $data)) {
+                $sets[] = "$f = :$f";
+                $params[$f] = $data[$f];
+            }
+        }
+        if (empty($sets)) return false;
+        $sql = "UPDATE islamic_education_enrollments SET " . implode(', ', $sets) . " WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
     }
 }

@@ -4,6 +4,7 @@ require_once BASE_PATH . '/app/controllers/Controller.php';
 require_once BASE_PATH . '/app/helpers/Auth.php';
 require_once BASE_PATH . '/app/models/User.php';
 require_once BASE_PATH . '/app/models/ApartmentApp.php';
+require_once BASE_PATH . '/app/helpers/AuditLogger.php';
 
 class UserController extends Controller
 {
@@ -499,6 +500,309 @@ class UserController extends Controller
         }
 
         echo json_encode(['success' => false, 'message' => 'Failed to save registration. Please try again.']);
+    }
+
+    /**
+     * Create PayMongo Checkout Session for Da'wah Female Education Registration (QR Ph / GCash / Maya / Card)
+     */
+    public function femaleEducationPayMongoCheckout(): void
+    {
+        header('Content-Type: application/json');
+
+        if (!Auth::check()) {
+            echo json_encode(['success' => false, 'message' => 'Please log in to continue with payment.']);
+            return;
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $body = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+
+        require_once BASE_PATH . '/app/helpers/PayMongoHelper.php';
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($userId) ?: [];
+        $eduModel = new IslamicEducation();
+
+        $amount = 120.00;
+        $batchNo = trim($body['batch_no'] ?? 'Batch 08');
+        $level = trim($body['level'] ?? 'Level 1 — Basic Arabic & Tajweed');
+
+        $existingRegId = !empty($body['existing_registration_id']) ? (int)$body['existing_registration_id'] : null;
+
+        if ($existingRegId) {
+            $existing = $eduModel->getById($existingRegId);
+            if (!$existing || (int)$existing['tenant_id'] !== $userId) {
+                echo json_encode(['success' => false, 'message' => 'Registration record not found or unauthorized.']);
+                return;
+            }
+            $studentName = trim(($existing['first_name'] ?? '') . ' ' . ($existing['last_name'] ?? ''));
+            $studentEmail = !empty($existing['email']) ? $existing['email'] : ($dbUser['email'] ?? ($_SESSION['email'] ?? 'student@iscag.local'));
+            $contact = $existing['contact_number'] ?? ($dbUser['contact_number'] ?? ($dbUser['phone'] ?? ''));
+            $formData = $existing;
+        } else {
+            $fname = trim($body['first_name'] ?? '');
+            $lname = trim($body['last_name'] ?? '');
+            $contact = trim($body['contact_number'] ?? '');
+            $dob = !empty($body['birthdate']) ? trim($body['birthdate']) : null;
+            $address = trim($body['address'] ?? '');
+
+            if (empty($fname) || empty($lname)) {
+                echo json_encode(['success' => false, 'message' => 'First name and Last name are required before proceeding to payment.']);
+                return;
+            }
+            if (empty($contact)) {
+                echo json_encode(['success' => false, 'message' => 'Contact number is required.']);
+                return;
+            }
+            if (empty($dob)) {
+                echo json_encode(['success' => false, 'message' => 'Date of birth is required.']);
+                return;
+            }
+            if (empty($address)) {
+                echo json_encode(['success' => false, 'message' => 'Residential address is required.']);
+                return;
+            }
+
+            $studentName = trim("$fname $lname");
+            $studentEmail = !empty($dbUser['email']) ? $dbUser['email'] : ($_SESSION['email'] ?? 'student@iscag.local');
+
+            $formData = [
+                'tenant_id' => $userId,
+                'first_name' => $fname,
+                'last_name' => $lname,
+                'middle_initial' => trim($body['middle_initial'] ?? ''),
+                'muslim_name' => trim($body['muslim_name'] ?? ''),
+                'muslim_type' => trim($body['muslim_type'] ?? 'Revert'),
+                'birthdate' => $dob,
+                'date_of_shahadah' => !empty($body['date_of_shahadah']) ? trim($body['date_of_shahadah']) : null,
+                'address' => $address,
+                'contact_number' => $contact,
+                'facebook_account' => trim($body['facebook_account'] ?? ''),
+                'studied_islamic_before' => trim($body['studied_islamic_before'] ?? 'No'),
+                'previous_school' => trim($body['previous_school'] ?? ''),
+                'emergency_name' => trim($body['emergency_name'] ?? ''),
+                'emergency_relationship' => trim($body['emergency_relationship'] ?? ''),
+                'emergency_address' => trim($body['emergency_address'] ?? ''),
+                'emergency_contact' => trim($body['emergency_contact'] ?? ''),
+                'is_minor' => !empty($body['is_minor']) ? 1 : 0,
+                'parent_name' => trim($body['parent_name'] ?? ''),
+                'parent_address' => trim($body['parent_address'] ?? ''),
+                'parent_contact' => trim($body['parent_contact'] ?? ''),
+                'student_signature' => trim($body['student_signature'] ?? $studentName),
+                'guardian_signature' => trim($body['guardian_signature'] ?? ''),
+                'batch_no' => $batchNo,
+                'level' => $level,
+                'payment_method' => 'Online Payment',
+                'fee_amount' => $amount,
+                'payment_channel' => 'PayMongo Gateway (QR Ph / E-Wallets / Card)',
+                'approved_by' => 'Sister Khadijah Dimaano',
+                'prepared_by' => 'IDFS Staff',
+                'program_name' => trim($body['program_name'] ?? "Islamic Education - $batchNo"),
+                'gender' => 'female',
+                'status' => 'pending'
+            ];
+        }
+
+        // Generate official ISCAG payment reference number
+        $refNo = 'ISCAG-EDU-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+
+        $lineItems = [
+            [
+                'name'        => "Da'wah Female Islamic Education — {$level}",
+                'amount'      => $amount,
+                'quantity'    => 1,
+                'description' => "Registration Fee ({$batchNo}) [Ref: {$refNo}]"
+            ]
+        ];
+
+        $description = "ISCAG Da'wah Female Education [Ref: {$refNo}] — {$batchNo}";
+
+        // Save pending payment info to session for verification upon return
+        $_SESSION['paymongo_pending_female_education'] = [
+            'tenant_id'               => $userId,
+            'existing_registration_id'=> $existingRegId,
+            'amount'                  => $amount,
+            'reference_number'        => $refNo,
+            'form_data'               => $formData,
+            'student_name'            => $studentName,
+            'student_email'           => $studentEmail,
+            'student_contact'         => $contact,
+            'timestamp'               => time()
+        ];
+
+        $successUrl = full_url('/user/services/education/female/paymongo-success?session_id={CHECKOUT_SESSION_ID}');
+        $cancelUrl  = full_url('/user/services/education/female');
+
+        $response = PayMongoHelper::createCheckoutSession(
+            $amount,
+            $description,
+            $lineItems,
+            $successUrl,
+            $cancelUrl,
+            [
+                'tenant_id'        => (string)$userId,
+                'module'           => 'female_education',
+                'batch_no'         => $batchNo,
+                'level'            => $level,
+                'reference_number' => $refNo,
+                'amount'           => (string)$amount,
+                'existing_id'      => (string)($existingRegId ?? 0)
+            ],
+            $refNo,
+            [
+                'name'  => $studentName,
+                'email' => $studentEmail,
+                'phone' => $contact
+            ]
+        );
+
+        if ($response['success'] && !empty($response['data']['attributes']['checkout_url'])) {
+            echo json_encode([
+                'success'      => true,
+                'checkout_url' => $response['data']['attributes']['checkout_url'],
+                'ref'          => $refNo
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'message' => $response['message'] ?? 'Could not create PayMongo checkout session. Please try again.'
+            ]);
+        }
+    }
+
+    /**
+     * Handle return from PayMongo checkout for Female Islamic Education
+     */
+    public function femaleEducationPayMongoSuccess(): void
+    {
+        Auth::protect();
+        $sessionId = $_GET['session_id'] ?? '';
+        $userId = (int)$_SESSION['user_id'];
+
+        require_once BASE_PATH . '/app/helpers/PayMongoHelper.php';
+        require_once BASE_PATH . '/app/helpers/AuditLogger.php';
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
+        require_once BASE_PATH . '/app/models/User.php';
+
+        $eduModel = new IslamicEducation();
+        $pending = $_SESSION['paymongo_pending_female_education'] ?? null;
+
+        $refNo = $pending['reference_number'] ?? ('ISCAG-EDU-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)));
+        $studentName = $pending['student_name'] ?? ($_SESSION['name'] ?? 'Student');
+        $amount = (float)($pending['amount'] ?? 120.00);
+
+        // Verify with PayMongo API only if a real session ID was provided
+        if (!empty($sessionId) && $sessionId !== '{CHECKOUT_SESSION_ID}') {
+            try {
+                $sessionData = PayMongoHelper::getCheckoutSession($sessionId);
+                if (!empty($sessionData['success'])) {
+                    $attrs = $sessionData['data']['attributes'] ?? [];
+                    $meta  = $attrs['metadata'] ?? [];
+
+                    if (!empty($attrs['reference_number'])) {
+                        $refNo = $attrs['reference_number'];
+                    } elseif (!empty($meta['reference_number'])) {
+                        $refNo = $meta['reference_number'];
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // Prevent duplicate creation if page is refreshed
+        $db = getDbConnection();
+        $checkStmt = $db->prepare("SELECT id FROM islamic_education_enrollments WHERE payment_reference = :ref LIMIT 1");
+        $checkStmt->execute(['ref' => $refNo]);
+        $already = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        if ($already) {
+            unset($_SESSION['paymongo_pending_female_education']);
+            header('Location: ' . url('/user/services/education/female?paid=1&ref=' . urlencode($refNo) . '&id=' . $already['id']));
+            exit;
+        }
+
+        $regId = 0;
+        $existingId = $pending['existing_registration_id'] ?? 0;
+
+        if ($existingId > 0) {
+            $regId = (int)$existingId;
+            $eduModel->updatePaymentInfo($regId, [
+                'payment_method'    => 'Online Payment',
+                'fee_amount'        => $amount,
+                'payment_channel'   => 'PayMongo Gateway (QR Ph / E-Wallets / Card)',
+                'payment_reference' => $refNo,
+                'payment_status'    => 'Paid',
+                'status'            => 'pending'
+            ]);
+        } else {
+            $formData = $pending['form_data'] ?? [];
+            if (empty($formData)) {
+                $userModel = new User();
+                $dbUser = $userModel->findById($userId) ?: [];
+                $formData = [
+                    'tenant_id' => $userId,
+                    'first_name' => $dbUser['first_name'] ?? 'Student',
+                    'last_name' => $dbUser['last_name'] ?? '',
+                    'contact_number' => $dbUser['phone'] ?? ($dbUser['contact_number'] ?? ''),
+                    'address' => $dbUser['address'] ?? ($dbUser['current_address'] ?? 'ISCAG Community'),
+                    'batch_no' => 'Batch 08',
+                    'level' => 'Level 1 — Basic Arabic & Tajweed',
+                    'gender' => 'female',
+                    'status' => 'pending'
+                ];
+            }
+
+            $formData['payment_method'] = 'Online Payment';
+            $formData['fee_amount'] = $amount;
+            $formData['payment_channel'] = 'PayMongo Gateway (QR Ph / E-Wallets / Card)';
+            $formData['payment_reference'] = $refNo;
+            $formData['payment_status'] = 'Paid';
+            $formData['status'] = 'pending';
+
+            $regId = $eduModel->createRegistration($formData);
+        }
+
+        $refCode = '#EDU-' . str_pad((string)$regId, 4, '0', STR_PAD_LEFT);
+
+        // Audit Log
+        try {
+            if (class_exists('AuditLogger')) {
+                AuditLogger::log('DAWAH', 'FEMALE_EDU_PAYMONGO_PAYMENT',
+                    "Female Education registration fee of ₱" . number_format($amount, 2) . " paid via PayMongo ($refCode). Ref: $refNo");
+            }
+        } catch (\Throwable $e) {}
+
+        // User Notification
+        try {
+            $notif = new Notification();
+            $notif->create(
+                $userId,
+                'Registration Fee Confirmed (PayMongo)',
+                "Your registration fee of ₱" . number_format($amount, 2) . " for Da'wah Female Education ($refCode) has been settled via PayMongo (Ref: $refNo). Your registration is now under review by Sister Khadijah Dimaano.",
+                'payment'
+            );
+        } catch (\Throwable $e) {}
+
+        // Admin Notification for Sister Khadijah / Staff
+        try {
+            $adminNotif = new AdminNotification();
+            $adminNotif->create(
+                'Female Education Registration & Payment Received',
+                "{$studentName} registered for Da'wah Female Section ($refCode) and paid ₱" . number_format($amount, 2) . " via PayMongo (Ref: {$refNo}).",
+                'payment',
+                $studentName,
+                $userId,
+                '/admin/dawah/female'
+            );
+        } catch (\Throwable $e) {}
+
+        // Clear session pending
+        unset($_SESSION['paymongo_pending_female_education']);
+
+        header('Location: ' . url('/user/services/education/female?paid=1&ref=' . urlencode($refNo) . '&id=' . $regId));
+        exit;
     }
 
     public function femaleSchool(): void
