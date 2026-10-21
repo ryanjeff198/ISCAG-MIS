@@ -181,21 +181,21 @@
                 
                 <label id="btn-result-matched" class="verify-choice-btn" style="border:2px solid #d1d5db; border-radius:8px; padding:10px 8px; text-align:center; cursor:pointer; background:#fff; transition:all 0.15s ease;" onclick="selectVerificationResult('Matched')">
                   <input type="radio" name="verify_result_choice" value="Matched" id="radio-matched" style="display:none;" />
-                  <div style="font-size:1.1rem; color:#059669; line-height:1; margin-bottom:4px;">✓</div>
+                  <div style="color:#059669; line-height:1; margin-bottom:4px; display:flex; justify-content:center;"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></div>
                   <strong style="display:block; font-size:0.82rem; color:#065f46;">Matched</strong>
                   <span style="font-size:0.68rem; color:#6b7280; display:block; margin-top:2px;">Details match certificate</span>
                 </label>
 
                 <label id="btn-result-mismatch" class="verify-choice-btn" style="border:2px solid #d1d5db; border-radius:8px; padding:10px 8px; text-align:center; cursor:pointer; background:#fff; transition:all 0.15s ease;" onclick="selectVerificationResult('Mismatch')">
                   <input type="radio" name="verify_result_choice" value="Mismatch" id="radio-mismatch" style="display:none;" />
-                  <div style="font-size:1.1rem; color:#d97706; line-height:1; margin-bottom:4px;">✕</div>
+                  <div style="color:#d97706; line-height:1; margin-bottom:4px; display:flex; justify-content:center;"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
                   <strong style="display:block; font-size:0.82rem; color:#b45309;">Mismatch</strong>
                   <span style="font-size:0.68rem; color:#6b7280; display:block; margin-top:2px;">Details do not match</span>
                 </label>
 
                 <label id="btn-result-unable" class="verify-choice-btn" style="border:2px solid #d1d5db; border-radius:8px; padding:10px 8px; text-align:center; cursor:pointer; background:#fff; transition:all 0.15s ease;" onclick="selectVerificationResult('Unable to Verify')">
                   <input type="radio" name="verify_result_choice" value="Unable to Verify" id="radio-unable" style="display:none;" />
-                  <div style="font-size:1.1rem; color:#6b7280; line-height:1; margin-bottom:4px;">?</div>
+                  <div style="color:#6b7280; line-height:1; margin-bottom:4px; display:flex; justify-content:center;"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg></div>
                   <strong style="display:block; font-size:0.82rem; color:#4b5563;">Unable to Verify</strong>
                   <span style="font-size:0.68rem; color:#6b7280; display:block; margin-top:2px;">Unreadable / Missing</span>
                 </label>
@@ -233,6 +233,10 @@
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
         <span id="modal-final-status-badge" style="display:none; font-size:0.8rem; font-weight:700; padding:6px 14px; border-radius:6px;"></span>
+        <button type="button" id="modal-btn-send-dawah" class="btn-topbar" style="padding:6px 14px; font-size:0.82rem; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-weight:700; display:inline-flex; align-items:center; gap:6px;" onclick="onModalSendDawahClick()">
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          Send to Da'wah
+        </button>
         <button type="button" id="modal-btn-reject" class="btn-topbar" style="padding:6px 14px; font-size:0.82rem; background:#fff; color:#dc2626; border:1px solid #fca5a5; font-weight:700;" onclick="onModalRejectClick()">
           Reject Request
         </button>
@@ -330,8 +334,9 @@
       <p style="font-size:0.86rem; color:#374151; margin:0 0 12px 0;">
         Are you sure you want to accept <strong id="accept-modal-target-label">this request</strong>?
       </p>
-      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.8rem; color:#166534; margin-bottom:14px;">
-        ✓ Certificate details verified as <strong>Matched</strong>. Once accepted, the request status will change to <strong>Accepted</strong> and the requester will be notified.
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.8rem; color:#166534; margin-bottom:14px; display:flex; align-items:flex-start; gap:8px;">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;flex-shrink:0;margin-top:2px;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+        <span>Certificate details verified as <strong>Matched</strong>. Once accepted, the request status will change to <strong>Accepted</strong> and the requester will be notified.</span>
       </div>
       <div>
         <label for="accept-optional-notes" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:4px;">
@@ -401,6 +406,41 @@
     const modal = document.getElementById('damayanCaseModal');
     if(modal) modal.style.display = 'none';
     activeCase = null;
+  }
+
+  function onModalSendDawahClick() {
+    if (!activeCase) {
+      if (typeof showAlert === 'function') showAlert('Information', 'No active case selected.', 'info');
+      else alert('No active case selected.');
+      return;
+    }
+    const cert = {
+      registry_number: activeCase.death_cert_registry_no || activeCase.encoded_reg_no || activeCase.ref_id || ('BR-' + activeCase.id),
+      deceased_name: activeCase.deceased_name || activeCase.deceased || '',
+      sex: activeCase.deceased_sex || 'Male',
+      date_of_death: activeCase.date_of_death || activeCase.date_died || '',
+      time_of_death: activeCase.time_of_death || '',
+      date_of_birth: activeCase.date_of_birth || '',
+      age: activeCase.age || '',
+      place_of_death: activeCase.place_of_death || '',
+      residence: activeCase.residence || activeCase.address || '',
+      civil_status: activeCase.civil_status || '',
+      religion: activeCase.religion || 'Islam',
+      citizenship: activeCase.citizenship || 'Filipino',
+      occupation: activeCase.occupation || '',
+      informant_name: activeCase.applicant_name || activeCase.informant_name || activeCase.name || '',
+      informant_contact: activeCase.contact_number || activeCase.phone || '',
+      informant_relationship: activeCase.relationship || '',
+      death_cert_date: activeCase.death_cert_date || new Date().toISOString().split('T')[0],
+      purpose: 'Da\'wah Male Janazah & Burial Coordination',
+      transmission_notes: 'Transmitted from Damayan Burial Case #' + (activeCase.ref_id || activeCase.id)
+    };
+    if (typeof openSendToDawahModal === 'function') {
+      openSendToDawahModal(cert);
+    } else {
+      if (typeof showAlert === 'function') showAlert('Error', 'Transmittal modal is not loaded.', 'error');
+      else alert('Transmittal modal is not loaded.');
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -533,10 +573,10 @@
         badgeFinal.style.background = '#d1fae5';
         badgeFinal.style.color = '#065f46';
         badgeFinal.style.border = '1px solid #a7f3d0';
-        badgeFinal.textContent = '✓ Request Accepted';
+        badgeFinal.innerHTML = '<svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;margin-right:4px;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Request Accepted';
       }
       if (footAdvice) {
-        footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ This request has already been accepted and approved for processing.</span>';
+        footAdvice.innerHTML = '<span style="color:#059669; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> This request has already been accepted and approved for processing.</span>';
       }
     } else if (displayStatus === 'Rejected') {
       if (btnAccept) btnAccept.style.display = 'none';
@@ -546,10 +586,10 @@
         badgeFinal.style.background = '#fee2e2';
         badgeFinal.style.color = '#991b1b';
         badgeFinal.style.border = '1px solid #fecaca';
-        badgeFinal.textContent = '✕ Request Rejected';
+        badgeFinal.innerHTML = '<svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;margin-right:4px;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Request Rejected';
       }
       if (footAdvice) {
-        footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700;">✕ This request has been rejected.</span>';
+        footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> This request has been rejected.</span>';
       }
     } else {
       if (btnAccept) btnAccept.style.display = 'inline-flex';
@@ -565,7 +605,7 @@
     if(!badge) return;
 
     if (res === 'Matched') {
-      badge.textContent = '✓ Verified: Matched';
+      badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;margin-right:3px;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Verified: Matched';
       badge.style.background = '#d1fae5';
       badge.style.color = '#065f46';
       if(summaryBadge) {
@@ -573,7 +613,7 @@
         summaryBadge.className = 'badge-status badge-active';
       }
     } else if (res === 'Mismatch') {
-      badge.textContent = '✕ Mismatch Found';
+      badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;margin-right:3px;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Mismatch Found';
       badge.style.background = '#fee2e2';
       badge.style.color = '#991b1b';
       if(summaryBadge) {
@@ -581,7 +621,7 @@
         summaryBadge.className = 'badge-status badge-danger';
       }
     } else if (res === 'Unable to Verify') {
-      badge.textContent = '? Unable to Verify';
+      badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;margin-right:3px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg> Unable to Verify';
       badge.style.background = '#fef3c7';
       badge.style.color = '#92400e';
       if(summaryBadge) {
@@ -606,21 +646,21 @@
     const rawSt = activeCase ? (activeCase.status || '').toLowerCase().trim() : '';
     const dcSt = activeCase ? (activeCase.death_cert_status || '').toLowerCase().trim() : '';
     if (rawSt === 'accepted' || rawSt.startsWith('accept') || dcSt === 'awaiting authorized certificate preparation') {
-      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ This request has already been accepted and approved for processing.</span>';
+      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> This request has already been accepted and approved for processing.</span>';
       return;
     }
     if (rawSt === 'rejected' || dcSt === 'rejected') {
-      footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700;">✕ This request has been rejected.</span>';
+      footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> This request has been rejected.</span>';
       return;
     }
 
     const res = selectedVerificationResult || (activeCase ? activeCase.verification_result : null);
     if (res === 'Matched') {
-      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ Information verified and matches records. Request can now be accepted.</span>';
+      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Information verified and matches records. Request can now be accepted.</span>';
     } else if (res === 'Mismatch') {
-      footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700;">✕ Discrepancies found. Resolve issues or proceed with rejection.</span>';
+      footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Discrepancies found. Resolve issues or proceed with rejection.</span>';
     } else if (res === 'Unable to Verify') {
-      footAdvice.innerHTML = '<span style="color:#d97706; font-weight:700;">⚠ Certificate unreadable or unavailable. Request cannot be accepted.</span>';
+      footAdvice.innerHTML = '<span style="color:#d97706; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Certificate unreadable or unavailable. Request cannot be accepted.</span>';
     } else {
       footAdvice.innerHTML = '<span style="color:#6b7280;">Verification required: Check registration number and deceased name before accepting.</span>';
     }

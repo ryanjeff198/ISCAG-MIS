@@ -708,5 +708,6 @@
       document.getElementById('dist-view-modal').style.display = 'none';
     }
   </script>
+  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
 </body>
 </html>

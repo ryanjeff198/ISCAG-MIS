@@ -1866,11 +1866,22 @@ class AdminController extends Controller
             'pending'             => ($counselingAnalytics['pending'] ?? 0) + ($eduAnalytics['pending'] ?? 0) + $marriagePending + $convPending,
         ];
 
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $burialModel = new BurialRequest();
+        $dawahDeathCerts = $burialModel->getDawahDeathCertificates('', 'all', 10, 0);
+        $dawahDeathCertsCount = $burialModel->countDawahDeathCertificates('', 'all');
+        $dawahDeathCertsNew = $burialModel->countDawahDeathCertificates('', 'Received');
+        $analytics['death_cert_total'] = $dawahDeathCertsCount;
+        $analytics['death_cert_new'] = $dawahDeathCertsNew;
+
         $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/dawah_male_dashboard', [
-            'active_page' => 'dashboard',
-            'dbUser' => $dbUser,
-            'requests' => $requests,
-            'analytics' => $analytics
+            'active_page'          => 'dashboard',
+            'dbUser'               => $dbUser,
+            'requests'             => $requests,
+            'analytics'            => $analytics,
+            'dawahDeathCerts'      => $dawahDeathCerts,
+            'dawahDeathCertsCount' => $dawahDeathCertsCount,
+            'dawahDeathCertsNew'   => $dawahDeathCertsNew
         ]);
     }
 
@@ -4141,7 +4152,7 @@ class AdminController extends Controller
         $stats = $charity->getDashboardStats();
 
         $this->view('admin/Staff_Admin/Admin-Damayan_Department/charity_reports', [
-            'active_page' => 'charity',
+            'active_page' => 'charity_reports',
             'dbUser' => $dbUser,
             'filters' => $filters,
             'donations' => $donations,
@@ -4786,16 +4797,93 @@ class AdminController extends Controller
         $burialModel = new BurialRequest();
         $charityModel = new CharityDonation();
         
-        $burialStats = $burialModel->getAnalytics();
-        $charityStats = $charityModel->getAnalytics();
-        $allBurials = $burialModel->getAll();
+        $selectedYear = isset($_GET['year']) && is_numeric($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+        
+        $burialStats = $burialModel->getAnalytics($selectedYear);
+        $charityStats = $charityModel->getAnalytics($selectedYear);
+        
+        // Dynamic year list (from current year down to at least 2024)
+        $currentYear = (int)date('Y');
+        $availableYears = array_unique([$currentYear, $currentYear - 1, $currentYear - 2, 2026, 2025, 2024]);
+        rsort($availableYears);
+
+        // Fetch recent combined Damayan operations for the connected activity table
+        $recentRecords = [];
+        try {
+            $db = getDbConnection();
+            
+            $r1 = $db->query("SELECT id, ref_id as reference_no, deceased_name as subject, status as record_status, submitted_at as activity_date FROM burial_requests ORDER BY submitted_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($r1 as $row) {
+                $recentRecords[] = [
+                    'source' => 'burial_request',
+                    'id' => $row['id'],
+                    'reference_no' => $row['reference_no'],
+                    'subject' => $row['subject'],
+                    'record_status' => $row['record_status'],
+                    'activity_date' => $row['activity_date'],
+                    'target_url' => '/admin/damayan/burial-requests'
+                ];
+            }
+
+            $r2 = $db->query("SELECT id, registration_number as reference_no, deceased_name as subject, created_at as activity_date FROM encoded_death_certificates ORDER BY created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($r2 as $row) {
+                $recentRecords[] = [
+                    'source' => 'death_cert',
+                    'id' => $row['id'],
+                    'reference_no' => $row['reference_no'],
+                    'subject' => $row['subject'],
+                    'record_status' => 'Registered',
+                    'activity_date' => $row['activity_date'],
+                    'target_url' => '/admin/damayan/encoded-certificates'
+                ];
+            }
+
+            $r3 = $db->query("SELECT id, registration_number as reference_no, deceased_name as subject, status as record_status, sent_at as activity_date FROM dawah_death_certificates ORDER BY sent_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($r3 as $row) {
+                $recentRecords[] = [
+                    'source' => 'dawah_transmittal',
+                    'id' => $row['id'],
+                    'reference_no' => $row['reference_no'],
+                    'subject' => $row['subject'],
+                    'record_status' => $row['record_status'],
+                    'activity_date' => $row['activity_date'],
+                    'target_url' => '/admin/dawah/male/death-certificates'
+                ];
+            }
+
+            $r4 = $db->query("SELECT id, donation_ref as reference_no, donor_name, amount, status as record_status, date_received as activity_date FROM charity_donations_records ORDER BY date_received DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($r4 as $row) {
+                $donor = !empty($row['donor_name']) ? $row['donor_name'] : 'Anonymous';
+                $recentRecords[] = [
+                    'source' => 'charity_donation',
+                    'id' => $row['id'],
+                    'reference_no' => $row['reference_no'],
+                    'subject' => $donor . ' (₱' . number_format((float)$row['amount']) . ')',
+                    'record_status' => !empty($row['record_status']) ? $row['record_status'] : 'Received',
+                    'activity_date' => $row['activity_date'],
+                    'target_url' => '/admin/damayan/charity/donations'
+                ];
+            }
+
+            usort($recentRecords, function($a, $b) {
+                $ta = !empty($a['activity_date']) ? strtotime($a['activity_date']) : 0;
+                $tb = !empty($b['activity_date']) ? strtotime($b['activity_date']) : 0;
+                return $tb <=> $ta;
+            });
+
+            $recentRecords = array_slice($recentRecords, 0, 10);
+        } catch (\Throwable $e) {
+            error_log("damayanAnalytics recentRecords error: " . $e->getMessage());
+        }
 
         $this->view('admin/Staff_Admin/Admin-Damayan_Department/analytics', [
             'active_page' => 'analytics',
             'dbUser' => $dbUser,
+            'selectedYear' => $selectedYear,
+            'availableYears' => $availableYears,
             'burial' => $burialStats,
             'charity' => $charityStats,
-            'requests' => $allBurials
+            'recentRecords' => $recentRecords
         ]);
     }
 
@@ -5314,6 +5402,259 @@ class AdminController extends Controller
         echo json_encode(['success' => true, 'record' => $record]);
         exit;
     }
+
+    /**
+     * Send Death Certificate and file to Male Da'wah
+     */
+    public function sendDeathCertToDawah(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid request method.']);
+            exit;
+        }
+
+        $input = $_POST;
+        if (empty($input)) {
+            $rawJson = json_decode(file_get_contents('php://input'), true);
+            if (is_array($rawJson)) {
+                $input = $rawJson;
+            }
+        }
+
+        $regNo = trim($input['registration_number'] ?? '');
+        $deceasedName = trim($input['deceased_name'] ?? '');
+
+        if (empty($regNo) || empty($deceasedName)) {
+            echo json_encode(['success' => false, 'error' => 'Registration number and deceased full name are required.']);
+            exit;
+        }
+
+        // Handle file upload if provided
+        $filePath = null;
+        $fileName = null;
+        if (!empty($_FILES['cert_file']) && $_FILES['cert_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = BASE_PATH . '/public/uploads/death_certificates';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $origName = basename($_FILES['cert_file']['name']);
+            $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+            $safeExts = ['pdf', 'jpg', 'jpeg', 'png', 'docx', 'doc'];
+            if (!in_array($ext, $safeExts)) {
+                echo json_encode(['success' => false, 'error' => 'Invalid file format. Supported formats: PDF, JPG, PNG, DOCX.']);
+                exit;
+            }
+            $cleanReg = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $regNo);
+            $newFileName = 'DC_File_' . $cleanReg . '_' . time() . '.' . $ext;
+            $destPath = $uploadDir . '/' . $newFileName;
+            if (move_uploaded_file($_FILES['cert_file']['tmp_name'], $destPath)) {
+                $filePath = 'uploads/death_certificates/' . $newFileName;
+                $fileName = $origName;
+            }
+        }
+
+        if (empty($fileName)) {
+            $cleanReg = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $regNo);
+            $fileName = "Death_Certificate_Transmittal_{$cleanReg}.html";
+        }
+
+        $staffId = (int)($_SESSION['user_id'] ?? 0);
+        $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+
+        $input['file_path'] = $filePath;
+        $input['file_name'] = $fileName;
+
+        $res = $model->sendDeathCertificateToDawah($input, $staffId, $staffName);
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * View Received Death Certificates for Male Da'wah
+     */
+    public function dawahMaleDeathCertificates(): void {
+        Auth::protectRole(['Admin', 'Staff_Male']);
+        $search = trim($_GET['search'] ?? '');
+        $status = trim($_GET['status'] ?? 'all');
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $burialModel = new BurialRequest();
+
+        $records = $burialModel->getDawahDeathCertificates($search, $status);
+        $totalCount = $burialModel->countDawahDeathCertificates($search);
+        $newCount = $burialModel->countDawahDeathCertificates('', 'Received');
+        $reviewedCount = $burialModel->countDawahDeathCertificates('', 'Reviewed');
+        $completedCount = $burialModel->countDawahDeathCertificates('', 'Completed');
+
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/received_death_certificates', [
+            'active_page'    => 'death_certificates',
+            'dawah_type'     => 'male',
+            'dbUser'         => $dbUser,
+            'records'        => $records,
+            'totalCount'     => $totalCount,
+            'newCount'       => $newCount,
+            'reviewedCount'  => $reviewedCount,
+            'completedCount' => $completedCount,
+            'search'         => $search,
+            'status'         => $status
+        ]);
+    }
+
+    /**
+     * Get detail of a received death certificate for Male Da'wah
+     */
+    public function getDawahDeathCertificateDetail(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Invalid ID.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $burialModel = new BurialRequest();
+        $record = $burialModel->getDawahDeathCertificateById($id);
+
+        if (!$record) {
+            echo json_encode(['success' => false, 'error' => 'Record not found.']);
+            exit;
+        }
+
+        echo json_encode(['success' => true, 'record' => $record]);
+        exit;
+    }
+
+    /**
+     * Acknowledge / Update status of received death certificate
+     */
+    public function acknowledgeDawahDeathCertificate(): void {
+        Auth::protectRole(['Admin', 'Staff_Male']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid request method.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $status = trim($input['status'] ?? 'Reviewed');
+        $notes = !empty($input['notes']) ? trim($input['notes']) : null;
+
+        if ($id <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Invalid ID.']);
+            exit;
+        }
+
+        $staffId = (int)($_SESSION['user_id'] ?? 0);
+        $staffName = trim($_SESSION['name'] ?? 'Male Da\'wah Staff');
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $burialModel = new BurialRequest();
+        $res = $burialModel->acknowledgeDawahDeathCertificate($id, $status, $staffId, $staffName, $notes);
+
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * Official Letter-sized Death Certificate File View (Printable / Readable file)
+     */
+    public function viewDawahDeathCertificateFile(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Damayan']);
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            echo "Invalid certificate ID.";
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $burialModel = new BurialRequest();
+        $record = $burialModel->getDawahDeathCertificateById($id);
+
+        if (!$record) {
+            echo "Certificate transmittal record not found.";
+            exit;
+        }
+
+        // If an uploaded PDF or image file exists, provide view or fallback
+        if (!empty($_GET['raw']) && !empty($record['file_path'])) {
+            $absPath = BASE_PATH . '/public/' . $record['file_path'];
+            if (file_exists($absPath)) {
+                $mime = mime_content_type($absPath) ?: 'application/octet-stream';
+                header('Content-Type: ' . $mime);
+                header('Content-Disposition: inline; filename="' . basename($record['file_name']) . '"');
+                readfile($absPath);
+                exit;
+            }
+        }
+
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/death_certificate_file', [
+            'record' => $record,
+            'dbUser' => $dbUser
+        ]);
+    }
+
+    /**
+     * Download the certificate file
+     */
+    public function downloadDawahDeathCertificateFile(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Damayan']);
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            header('Location: ' . url('/admin/dawah/male/death-certificates'));
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $burialModel = new BurialRequest();
+        $record = $burialModel->getDawahDeathCertificateById($id);
+
+        if (!$record) {
+            header('Location: ' . url('/admin/dawah/male/death-certificates'));
+            exit;
+        }
+
+        if (!empty($record['file_path'])) {
+            $absPath = BASE_PATH . '/public/' . $record['file_path'];
+            if (file_exists($absPath)) {
+                $mime = mime_content_type($absPath) ?: 'application/octet-stream';
+                header('Content-Type: ' . $mime);
+                header('Content-Disposition: attachment; filename="' . basename($record['file_name']) . '"');
+                header('Content-Length: ' . filesize($absPath));
+                readfile($absPath);
+                exit;
+            }
+        }
+
+        // Otherwise stream the official HTML file view as attachment
+        $cleanReg = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $record['registration_number']);
+        header('Content-Type: text/html; charset=utf-8');
+        header('Content-Disposition: attachment; filename="Death_Certificate_' . $cleanReg . '.html"');
+        
+        $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/death_certificate_file', [
+            'record' => $record,
+            'dbUser' => null,
+            'download_mode' => true
+        ]);
+        exit;
+    }
+
 
     public function renewalRecords(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);

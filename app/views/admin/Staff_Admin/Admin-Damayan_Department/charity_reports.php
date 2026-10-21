@@ -82,7 +82,7 @@
   <div class="app-wrapper">
     <!-- Damayan Sidebar -->
     <?php 
-      $active_page = 'charity';
+      $active_page = 'charity_reports';
       include BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Damayan_Department/sidebar.php'; 
     ?>
 
@@ -283,5 +283,6 @@
       </div>
     </div>
   </div>
+  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
 </body>
 </html>

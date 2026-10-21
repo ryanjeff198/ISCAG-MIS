@@ -237,6 +237,13 @@ $routes = [
     '/admin/damayan/encoded-certificates/check-reg'  => ['AdminController', 'checkDuplicateRegistrationNo'],
     '/admin/damayan/encoded-certificates/detail'     => ['AdminController', 'getEncodedCertificateDetail'],
     '/admin/damayan/encoded-certificates/lookup'     => ['AdminController', 'lookupEncodedCertificate'],
+    '/admin/damayan/send-to-dawah'                   => ['AdminController', 'sendDeathCertToDawah'],
+    // Da'wah Received Death Certificates (Male Da'wah)
+    '/admin/dawah/male/death-certificates'           => ['AdminController', 'dawahMaleDeathCertificates'],
+    '/admin/dawah/death-certificates/detail'         => ['AdminController', 'getDawahDeathCertificateDetail'],
+    '/admin/dawah/death-certificates/acknowledge'    => ['AdminController', 'acknowledgeDawahDeathCertificate'],
+    '/admin/dawah/death-certificates/file'           => ['AdminController', 'viewDawahDeathCertificateFile'],
+    '/admin/dawah/death-certificates/download'       => ['AdminController', 'downloadDawahDeathCertificateFile'],
     '/user/damayan/lookup-cert'                      => ['AdminController', 'lookupEncodedCertificate'],
     // Funeral Case Management (User)
     '/user/services/funeral/report'       => ['UserController', 'funeralReport'],

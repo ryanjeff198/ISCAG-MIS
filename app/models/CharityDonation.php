@@ -116,33 +116,120 @@ class CharityDonation
     /**
      * Get analytics
      */
-    public function getAnalytics(): array {
+    public function getAnalytics(?int $year = null): array {
         try {
-            $totalAmount = $this->db->query("SELECT SUM(amount) FROM charity_donations WHERE status = 'verified'")->fetchColumn() ?: 0;
-            $totalCount = $this->db->query("SELECT COUNT(*) FROM charity_donations")->fetchColumn() ?: 0;
-            $uniqueDonors = $this->db->query("SELECT COUNT(DISTINCT tenant_id) FROM charity_donations")->fetchColumn() ?: 0;
-            
-            // Monthly breakdown for the current year
-            $monthlyData = [];
-            $year = date('Y');
-            for ($m = 1; $m <= 12; $m++) {
-                $stmt = $this->db->prepare("SELECT COUNT(*) FROM charity_donations WHERE YEAR(submitted_at) = :y AND MONTH(submitted_at) = :m");
-                $stmt->execute(['y' => $year, 'm' => $m]);
-                $monthlyData[] = (int)$stmt->fetchColumn();
+            $year = $year ?: (int)date('Y');
+
+            // Monetary & in-kind totals from charity_donations_records
+            $monetaryTotal = (float)$this->db->query("
+                SELECT COALESCE(SUM(amount), 0) 
+                FROM charity_donations_records 
+                WHERE (status IS NULL OR status NOT IN ('Rejected','Cancelled'))
+                  AND donation_type = 'monetary'
+            ")->fetchColumn();
+
+            $totalCount = (int)$this->db->query("
+                SELECT COUNT(*) 
+                FROM charity_donations_records
+                WHERE (status IS NULL OR status NOT IN ('Rejected','Cancelled'))
+            ")->fetchColumn();
+
+            $uniqueDonors = (int)$this->db->query("
+                SELECT COUNT(DISTINCT COALESCE(NULLIF(TRIM(donor_name), ''), CONCAT('Tenant #', tenant_id)))
+                FROM charity_donations_records
+                WHERE (status IS NULL OR status NOT IN ('Rejected','Cancelled'))
+            ")->fetchColumn();
+
+            $inKindTotal = (int)$this->db->query("
+                SELECT COALESCE(SUM(quantity), 0) 
+                FROM charity_donations_records 
+                WHERE (status IS NULL OR status NOT IN ('Rejected','Cancelled'))
+                  AND donation_type = 'in-kind'
+            ")->fetchColumn();
+
+            // Allocations & Distributions
+            $allocatedAmount = (float)$this->db->query("
+                SELECT COALESCE(SUM(allocated_amount), 0) 
+                FROM charity_allocations 
+                WHERE status != 'Cancelled'
+            ")->fetchColumn();
+
+            $distributedAmount = (float)$this->db->query("
+                SELECT COALESCE(SUM(distributed_amount), 0) 
+                FROM charity_distributions 
+                WHERE status = 'Distributed'
+            ")->fetchColumn();
+
+            $availableAmount = max(0, $monetaryTotal - $allocatedAmount);
+
+            // Monthly monetary amounts for the selected year
+            $monthlyData = array_fill(0, 12, 0.0);
+            $stmt = $this->db->prepare("
+                SELECT MONTH(COALESCE(date_received, created_at)) as m, 
+                       COALESCE(SUM(amount), 0) as total 
+                FROM charity_donations_records 
+                WHERE YEAR(COALESCE(date_received, created_at)) = :y 
+                  AND (status IS NULL OR status NOT IN ('Rejected','Cancelled'))
+                  AND donation_type = 'monetary'
+                GROUP BY MONTH(COALESCE(date_received, created_at))
+            ");
+            $stmt->execute(['y' => $year]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $idx = (int)$row['m'] - 1;
+                if ($idx >= 0 && $idx < 12) {
+                    $monthlyData[$idx] = (float)$row['total'];
+                }
             }
 
+            // Programs breakdown
+            $programs = $this->db->query("
+                SELECT COALESCE(NULLIF(TRIM(target_program), ''), 'General Welfare & Relief') as prog,
+                       COUNT(*) as count,
+                       COALESCE(SUM(amount), 0) as amount
+                FROM charity_donations_records
+                WHERE (status IS NULL OR status NOT IN ('Rejected','Cancelled'))
+                GROUP BY prog
+                ORDER BY amount DESC, count DESC
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            // Payment methods breakdown
+            $paymentMethods = $this->db->query("
+                SELECT COALESCE(NULLIF(TRIM(payment_method), ''), 'Cash / Direct') as method,
+                       COUNT(*) as count,
+                       COALESCE(SUM(amount), 0) as amount
+                FROM charity_donations_records
+                WHERE (status IS NULL OR status NOT IN ('Rejected','Cancelled'))
+                GROUP BY method
+                ORDER BY amount DESC, count DESC
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
             return [
-                'total_amount' => $totalAmount,
-                'total_count' => $totalCount,
-                'unique_donors' => $uniqueDonors,
-                'monthly_data' => $monthlyData
+                'total_amount'       => $monetaryTotal,
+                'total_count'        => $totalCount,
+                'unique_donors'      => $uniqueDonors,
+                'in_kind_total'      => $inKindTotal,
+                'allocated_amount'   => $allocatedAmount,
+                'distributed_amount' => $distributedAmount,
+                'available_amount'   => $availableAmount,
+                'monthly_labels'     => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                'monthly_data'       => $monthlyData,
+                'programs'           => $programs,
+                'payment_methods'    => $paymentMethods
             ];
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
+            error_log("CharityDonation::getAnalytics error: " . $e->getMessage());
             return [
-                'total_amount' => 5200,
-                'total_count' => 12,
-                'unique_donors' => 8,
-                'graph_data' => [1, 2, 0, 3, 1, 4, 2]
+                'total_amount'       => 0,
+                'total_count'        => 0,
+                'unique_donors'      => 0,
+                'in_kind_total'      => 0,
+                'allocated_amount'   => 0,
+                'distributed_amount' => 0,
+                'available_amount'   => 0,
+                'monthly_labels'     => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                'monthly_data'       => array_fill(0, 12, 0),
+                'programs'           => [],
+                'payment_methods'    => []
             ];
         }
     }

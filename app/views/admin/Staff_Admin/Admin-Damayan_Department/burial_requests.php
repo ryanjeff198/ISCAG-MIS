@@ -218,8 +218,8 @@
                             <div style="font-size:0.68rem; font-weight:700; color:#065f46; background:#d1fae5; padding:1px 6px; border-radius:4px; display:inline-block; margin-top:3px;">New Death Reg</div>
                           <?php endif; ?>
                           <?php if (!empty($r['is_encoded_linked'])): ?>
-                            <div style="font-size:0.68rem; font-weight:700; color:#065f46; background:#bbf7d0; padding:1px 6px; border-radius:4px; display:inline-block; margin-top:3px;" title="Linked to Registered Death Certificate #<?= htmlspecialchars($r['encoded_reg_no'] ?? '') ?>">
-                              ✓ Registered Cert Linked
+                            <div style="font-size:0.68rem; font-weight:700; color:#065f46; background:#bbf7d0; padding:1px 6px; border-radius:4px; display:inline-flex; align-items:center; gap:3px; margin-top:3px;" title="Linked to Registered Death Certificate #<?= htmlspecialchars($r['encoded_reg_no'] ?? '') ?>">
+                              <svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Registered Cert Linked
                             </div>
                           <?php endif; ?>
                         </td>
@@ -261,14 +261,28 @@
                               if ($st === 'accepted'): 
                             ?>
                               <span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; font-size:0.75rem; font-weight:700; background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; border-radius:6px;">
-                                ✓ Accepted
+                                <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Accepted
                               </span>
                               <button type="button" class="btn-topbar" style="padding:4px 10px; font-size:0.75rem; border:1px solid #d1d5db; background:#fff; color:#374151; font-weight:700;" onclick="openCaseModal('<?= htmlspecialchars($r['id']) ?>')">
                                 View
                               </button>
+                              <button type="button" class="btn-topbar" style="padding:4px 9px; font-size:0.75rem; border:1px solid #10b981; background:#ecfdf5; color:#065f46; font-weight:700; display:inline-flex; align-items:center; gap:4px;" title="Send Death Certificate to Male Da'wah" onclick="openSendToDawahModal(<?= htmlspecialchars(json_encode([
+                                'registry_number' => $r['death_cert_registry_no'] ?? ($r['encoded_reg_no'] ?? ('BR-' . $r['id'])),
+                                'deceased_name' => $r['deceased'] ?? '',
+                                'sex' => $r['deceased_sex'] ?? 'Male',
+                                'date_of_death' => $r['date_died'] ?? ($r['date_of_death'] ?? ''),
+                                'death_cert_date' => $r['death_cert_date'] ?? date('Y-m-d'),
+                                'informant_name' => $r['name'] ?? '',
+                                'informant_contact' => $r['contact_number'] ?? '',
+                                'informant_relationship' => $r['relationship'] ?? '',
+                                'purpose' => 'Male Da\'wah Janazah Coordination',
+                                'transmission_notes' => 'Transmitted from Burial Case #' . ($r['ref_id'] ?? $r['id'])
+                              ]), ENT_QUOTES, 'UTF-8') ?>)">
+                                <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> To Da'wah
+                              </button>
                             <?php elseif ($st === 'rejected'): ?>
                               <span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; font-size:0.75rem; font-weight:700; background:#fee2e2; color:#991b1b; border:1px solid #fecaca; border-radius:6px;">
-                                ✕ Rejected
+                                <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Rejected
                               </span>
                               <button type="button" class="btn-topbar" style="padding:4px 10px; font-size:0.75rem; border:1px solid #d1d5db; background:#fff; color:#374151; font-weight:700;" onclick="openCaseModal('<?= htmlspecialchars($r['id']) ?>')">
                                 View
@@ -282,6 +296,20 @@
                               </button>
                               <button type="button" class="btn-topbar" style="padding:4px 10px; font-size:0.75rem; border:1px solid #d1d5db; background:#fff; color:#374151; font-weight:700;" onclick="openCaseModal('<?= htmlspecialchars($r['id']) ?>')">
                                 View
+                              </button>
+                              <button type="button" class="btn-topbar" style="padding:4px 9px; font-size:0.75rem; border:1px solid #10b981; background:#ecfdf5; color:#065f46; font-weight:700; display:inline-flex; align-items:center; gap:4px;" title="Send Death Certificate to Male Da'wah" onclick="openSendToDawahModal(<?= htmlspecialchars(json_encode([
+                                'registry_number' => $r['death_cert_registry_no'] ?? ($r['encoded_reg_no'] ?? ('BR-' . $r['id'])),
+                                'deceased_name' => $r['deceased'] ?? '',
+                                'sex' => $r['deceased_sex'] ?? 'Male',
+                                'date_of_death' => $r['date_died'] ?? ($r['date_of_death'] ?? ''),
+                                'death_cert_date' => $r['death_cert_date'] ?? date('Y-m-d'),
+                                'informant_name' => $r['name'] ?? '',
+                                'informant_contact' => $r['contact_number'] ?? '',
+                                'informant_relationship' => $r['relationship'] ?? '',
+                                'purpose' => 'Male Da\'wah Janazah Coordination',
+                                'transmission_notes' => 'Transmitted from Burial Case #' . ($r['ref_id'] ?? $r['id'])
+                              ]), ENT_QUOTES, 'UTF-8') ?>)">
+                                <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> To Da'wah
                               </button>
                             <?php endif; ?>
                           </div>

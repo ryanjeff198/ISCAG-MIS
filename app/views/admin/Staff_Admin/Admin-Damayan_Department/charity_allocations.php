@@ -784,5 +784,6 @@
       document.getElementById('alloc-view-modal').style.display = 'none';
     }
   </script>
+  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
 </body>
 </html>

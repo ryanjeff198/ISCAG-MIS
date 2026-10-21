@@ -208,9 +208,35 @@
                           </div>
                         </td>
                         <td style="text-align:center;">
-                          <button type="button" class="btn-topbar primary" style="padding:5px 14px; font-size:0.78rem;" onclick="openEncodedRecordDetails(<?= (int)$r['id'] ?>)">
-                            View Details
-                          </button>
+                          <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                            <button type="button" class="btn-topbar primary" style="padding:5px 12px; font-size:0.78rem;" onclick="openEncodedRecordDetails(<?= (int)$r['id'] ?>)">
+                              View Details
+                            </button>
+                            <button type="button" class="btn-topbar" style="padding:5px 10px; font-size:0.75rem; background:#14532d; color:#fff; display:inline-flex; align-items:center; gap:4px;" onclick="openSendToDawahModal(<?= htmlspecialchars(json_encode([
+                              'source_type' => 'encoded_certificate',
+                              'source_id' => $r['id'],
+                              'registration_number' => $r['registration_number'],
+                              'deceased_name' => $r['deceased_name'],
+                              'first_name' => $r['first_name'] ?? '',
+                              'middle_name' => $r['middle_name'] ?? '',
+                              'last_name' => $r['last_name'] ?? '',
+                              'sex' => $r['sex'] ?? 'Male',
+                              'date_of_death' => $r['date_of_death'] ?? '',
+                              'time_of_death' => $r['time_of_death'] ?? '',
+                              'date_of_birth' => $r['date_of_birth'] ?? '',
+                              'age' => $r['age_display'] ?? ($r['age_years'] ? $r['age_years'] . ' yrs' : ''),
+                              'place_of_death' => $r['place_of_death'] ?? '',
+                              'residence' => $r['residence'] ?? '',
+                              'civil_status' => $r['civil_status'] ?? '',
+                              'religion' => $r['religion'] ?? 'Islam',
+                              'citizenship' => $r['citizenship'] ?? 'Filipino',
+                              'occupation' => $r['occupation'] ?? '',
+                              'informant_name' => $r['representative_name'] ?? '',
+                              'death_cert_date' => !empty($r['encoded_at']) ? date('Y-m-d', strtotime($r['encoded_at'])) : date('Y-m-d')
+                            ]), ENT_QUOTES, 'UTF-8') ?>)">
+                              <svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Send to Da'wah
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     <?php endforeach; ?>

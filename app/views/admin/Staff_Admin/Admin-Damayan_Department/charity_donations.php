@@ -345,10 +345,12 @@
           <div class="insight-card pending-verif">
             <div class="insight-label">Awaiting Staff Review</div>
             <div class="insight-value" style="color:#d97706;"><?= (int)($stats['pending_verifications']['total'] ?? 0) ?></div>
-            <div style="font-size:0.75rem; color:var(--text-muted);">
-              📱 <?= (int)($stats['pending_verifications']['digital'] ?? 0) ?> Dig &nbsp;|&nbsp;
-              💵 <?= (int)($stats['pending_verifications']['cash'] ?? 0) ?> Cash &nbsp;|&nbsp;
-              🍲 <?= (int)($stats['pending_verifications']['food'] ?? 0) ?> Food
+            <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span style="display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg> <?= (int)($stats['pending_verifications']['digital'] ?? 0) ?> Dig</span>
+              <span>|</span>
+              <span style="display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg> <?= (int)($stats['pending_verifications']['cash'] ?? 0) ?> Cash</span>
+              <span>|</span>
+              <span style="display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg> <?= (int)($stats['pending_verifications']['food'] ?? 0) ?> Food</span>
             </div>
           </div>
           <div class="insight-card ack">
@@ -365,9 +367,9 @@
             
             <select name="category" class="filter-select" onchange="this.form.submit()">
               <option value="">All Categories (Digital / Cash / Food)</option>
-              <option value="digital" <?= ($filters['category'] ?? '') === 'digital' ? 'selected' : '' ?>>📱 Digital Donations</option>
-              <option value="cash" <?= ($filters['category'] ?? '') === 'cash' ? 'selected' : '' ?>>💵 Cash Donations</option>
-              <option value="food" <?= ($filters['category'] ?? '') === 'food' ? 'selected' : '' ?>>🍲 Food Donations</option>
+              <option value="digital" <?= ($filters['category'] ?? '') === 'digital' ? 'selected' : '' ?>>Digital Donations</option>
+              <option value="cash" <?= ($filters['category'] ?? '') === 'cash' ? 'selected' : '' ?>>Cash Donations</option>
+              <option value="food" <?= ($filters['category'] ?? '') === 'food' ? 'selected' : '' ?>>Food Donations</option>
             </select>
 
             <select name="type" class="filter-select" onchange="this.form.submit()">
@@ -378,13 +380,13 @@
 
             <select name="status" class="filter-select" onchange="this.form.submit()">
               <option value="">All Statuses</option>
-              <option value="Pending Verification" <?= ($filters['status'] ?? '') === 'Pending Verification' ? 'selected' : '' ?>>⏳ Pending Verification (Digital)</option>
-              <option value="Pending Coordination" <?= ($filters['status'] ?? '') === 'Pending Coordination' ? 'selected' : '' ?>>🤝 Pending Coordination (Food)</option>
-              <option value="Pending Receipt" <?= ($filters['status'] ?? '') === 'Pending Receipt' ? 'selected' : '' ?>>🏢 Pending Receipt (Cash)</option>
-              <option value="Available" <?= ($filters['status'] ?? '') === 'Available' ? 'selected' : '' ?>>✓ Available (Confirmed)</option>
+              <option value="Pending Verification" <?= ($filters['status'] ?? '') === 'Pending Verification' ? 'selected' : '' ?>>Pending Verification (Digital)</option>
+              <option value="Pending Coordination" <?= ($filters['status'] ?? '') === 'Pending Coordination' ? 'selected' : '' ?>>Pending Coordination (Food)</option>
+              <option value="Pending Receipt" <?= ($filters['status'] ?? '') === 'Pending Receipt' ? 'selected' : '' ?>>Pending Receipt (Cash)</option>
+              <option value="Available" <?= ($filters['status'] ?? '') === 'Available' ? 'selected' : '' ?>>Available (Confirmed)</option>
               <option value="Partially Allocated" <?= ($filters['status'] ?? '') === 'Partially Allocated' ? 'selected' : '' ?>>Partially Allocated</option>
               <option value="Fully Allocated" <?= ($filters['status'] ?? '') === 'Fully Allocated' ? 'selected' : '' ?>>Fully Allocated</option>
-              <option value="Rejected" <?= ($filters['status'] ?? '') === 'Rejected' ? 'selected' : '' ?>>✕ Rejected / Action Needed</option>
+              <option value="Rejected" <?= ($filters['status'] ?? '') === 'Rejected' ? 'selected' : '' ?>>Rejected / Action Needed</option>
               <option value="Cancelled" <?= ($filters['status'] ?? '') === 'Cancelled' ? 'selected' : '' ?>>Cancelled</option>
             </select>
           </div>
@@ -440,13 +442,16 @@
                       <?php 
                         $cat = $d['donation_category'] ?? ($d['donation_type'] === 'in-kind' ? 'food' : 'digital');
                         $catClass = 'cat-digital';
-                        $catLabel = '📱 Digital';
+                        $catIcon = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>';
+                        $catLabel = 'Digital';
                         if ($cat === 'cash') {
                           $catClass = 'cat-cash';
-                          $catLabel = '💵 Cash';
+                          $catIcon = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>';
+                          $catLabel = 'Cash';
                         } elseif ($cat === 'food') {
                           $catClass = 'cat-food';
-                          $catLabel = '🍲 Food';
+                          $catIcon = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>';
+                          $catLabel = 'Food';
                         }
 
                         $isPending = in_array($d['status'], ['Pending Verification', 'Pending Coordination', 'Pending Receipt']);
@@ -457,7 +462,7 @@
                         </td>
                         <td>
                           <span class="badge-cat <?= $catClass ?>">
-                            <?= $catLabel ?>
+                            <?= $catIcon ?> <?= $catLabel ?>
                           </span>
                         </td>
                         <td>
@@ -475,8 +480,8 @@
                               Quantity: <?= (int)$d['quantity'] ?> <?= htmlspecialchars($d['unit'] ?? 'packs') ?>
                             </div>
                           <?php else: ?>
-                            <div style="font-size:0.8rem; font-weight:700; color:var(--primary);">
-                              🎯 <?= htmlspecialchars($d['target_program'] ?: 'General Welfare & Relief') ?>
+                            <div style="font-size:0.8rem; font-weight:700; color:var(--primary); display:inline-flex; align-items:center; gap:3px;">
+                              <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg> <?= htmlspecialchars($d['target_program'] ?: 'General Welfare & Relief') ?>
                             </div>
                           <?php endif; ?>
                         </td>
@@ -500,8 +505,8 @@
                         </td>
                         <td style="font-size:0.82rem; color:var(--text-muted);">
                           <?php if ($cat === 'food' && !empty($d['preferred_dropoff_date'])): ?>
-                            <div style="font-weight:600; color:#b45309;">
-                              📅 Pref: <?= date('M d, Y', strtotime($d['preferred_dropoff_date'])) ?>
+                            <div style="font-weight:600; color:#b45309; display:inline-flex; align-items:center; gap:2px;">
+                              <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg> Pref: <?= date('M d, Y', strtotime($d['preferred_dropoff_date'])) ?>
                             </div>
                             <div style="font-size:0.7rem; color:var(--text-muted);">Rec: <?= date('M d, Y', strtotime($d['date_received'])) ?></div>
                           <?php else: ?>
@@ -522,8 +527,8 @@
                           <?php endif; ?>
 
                           <?php if (!empty($d['receipt_path'])): ?>
-                            <a href="<?= asset($d['receipt_path']) ?>" target="_blank" class="btn-action-sm" style="font-size:0.7rem; padding:1px 6px; margin-top:2px; color:#0369a1; border-color:#bae6fd; background:#f0f9ff;" title="Open Proof Receipt in New Tab">
-                              📷 Proof
+                            <a href="<?= asset($d['receipt_path']) ?>" target="_blank" class="btn-action-sm" style="font-size:0.7rem; padding:1px 6px; margin-top:2px; color:#0369a1; border-color:#bae6fd; background:#f0f9ff; display:inline-flex; align-items:center; gap:3px;" title="Open Proof Receipt in New Tab">
+                              <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg> Proof
                             </a>
                           <?php endif; ?>
                         </td>
@@ -928,7 +933,7 @@
           let defaultStatusOptions = '';
 
           if (cat === 'food') {
-            catBadge = '<span class="badge-cat cat-food">🍲 Food Donation</span>';
+            catBadge = '<span class="badge-cat cat-food"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg> Food Donation</span>';
             specificDetails = `
               <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:14px; margin-bottom:16px;">
                 <div style="font-size:0.75rem; font-weight:700; color:#b45309; text-transform:uppercase; margin-bottom:4px;">Food Item & Coordination Details</div>
@@ -948,13 +953,13 @@
               </div>
             `;
             defaultStatusOptions = `
-              <option value="Available" ${d.status === 'Available' ? 'selected' : ''}>✓ Confirm Drop-off (Mark Available in Inventory)</option>
-              <option value="Pending Coordination" ${d.status === 'Pending Coordination' ? 'selected' : ''}>🤝 Pending Coordination (Staff Contacting Donor)</option>
-              <option value="Rejected" ${d.status === 'Rejected' ? 'selected' : ''}>✕ Decline / Unable to Accept</option>
+              <option value="Available" ${d.status === 'Available' ? 'selected' : ''}>Confirm Drop-off (Mark Available in Inventory)</option>
+              <option value="Pending Coordination" ${d.status === 'Pending Coordination' ? 'selected' : ''}>Pending Coordination (Staff Contacting Donor)</option>
+              <option value="Rejected" ${d.status === 'Rejected' ? 'selected' : ''}>Decline / Unable to Accept</option>
               <option value="Cancelled" ${d.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
             `;
           } else if (cat === 'cash') {
-            catBadge = '<span class="badge-cat cat-cash">💵 Cash Donation</span>';
+            catBadge = '<span class="badge-cat cat-cash"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg> Cash Donation</span>';
             specificDetails = `
               <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:14px; margin-bottom:16px;">
                 <div style="font-size:0.75rem; font-weight:700; color:#047857; text-transform:uppercase; margin-bottom:4px;">Physical Cash Details</div>
@@ -970,13 +975,13 @@
               </div>
             `;
             defaultStatusOptions = `
-              <option value="Available" ${d.status === 'Available' ? 'selected' : ''}>✓ Cash Received & Confirmed (Add to Available Funds)</option>
-              <option value="Pending Receipt" ${d.status === 'Pending Receipt' ? 'selected' : ''}>🏢 Pending Receipt (Awaiting Physical Cash at Office)</option>
-              <option value="Rejected" ${d.status === 'Rejected' ? 'selected' : ''}>✕ Did Not Remit / Cancel Record</option>
+              <option value="Available" ${d.status === 'Available' ? 'selected' : ''}>Cash Received & Confirmed (Add to Available Funds)</option>
+              <option value="Pending Receipt" ${d.status === 'Pending Receipt' ? 'selected' : ''}>Pending Receipt (Awaiting Physical Cash at Office)</option>
+              <option value="Rejected" ${d.status === 'Rejected' ? 'selected' : ''}>Did Not Remit / Cancel Record</option>
               <option value="Cancelled" ${d.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
             `;
           } else {
-            catBadge = '<span class="badge-cat cat-digital">📱 Digital Donation</span>';
+            catBadge = '<span class="badge-cat cat-digital"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg> Digital Donation</span>';
             let proofHtml = '';
             if (d.receipt_path) {
               const proofUrl = '<?= asset('') ?>' + d.receipt_path.replace(/^\/+/, '');
@@ -1020,9 +1025,9 @@
               </div>
             `;
             defaultStatusOptions = `
-              <option value="Available" ${d.status === 'Available' ? 'selected' : ''}>✓ Payment Verified & Confirmed (Add to Available Funds)</option>
-              <option value="Pending Verification" ${d.status === 'Pending Verification' ? 'selected' : ''}>⏳ Pending Verification (Under Review / Needs Proof)</option>
-              <option value="Rejected" ${d.status === 'Rejected' ? 'selected' : ''}>✕ Reject Transaction (Invalid Ref / Non-receipt)</option>
+              <option value="Available" ${d.status === 'Available' ? 'selected' : ''}>Payment Verified & Confirmed (Add to Available Funds)</option>
+              <option value="Pending Verification" ${d.status === 'Pending Verification' ? 'selected' : ''}>Pending Verification (Under Review / Needs Proof)</option>
+              <option value="Rejected" ${d.status === 'Rejected' ? 'selected' : ''}>Reject Transaction (Invalid Ref / Non-receipt)</option>
               <option value="Cancelled" ${d.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
             `;
           }
@@ -1285,5 +1290,6 @@
       });
     }
   </script>
+  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
 </body>
 </html>
