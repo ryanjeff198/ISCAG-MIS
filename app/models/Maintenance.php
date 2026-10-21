@@ -6,6 +6,28 @@ class Maintenance {
 
     public function __construct() {
         $this->db = getDbConnection();
+        $this->createTableIfNotExists();
+    }
+
+    private function createTableIfNotExists() {
+        $sql = "CREATE TABLE IF NOT EXISTS `tenant_maintenance` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `tenant_id` int(11) NOT NULL,
+            `category` varchar(50) NOT NULL,
+            `description` text NOT NULL,
+            `attachment` varchar(255) DEFAULT NULL,
+            `status` enum('Pending','In Progress','Completed','Rejected') DEFAULT 'Pending',
+            `admin_remarks` text DEFAULT NULL,
+            `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+            `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+            PRIMARY KEY (`id`),
+            KEY `tenant_id` (`tenant_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
+        try {
+            $this->db->exec($sql);
+        } catch (Throwable $e) {
+            // Silently fail if table already exists or driver error
+        }
     }
 
     public function create($tenantId, $data) {

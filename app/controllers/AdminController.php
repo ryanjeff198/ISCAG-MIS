@@ -64,14 +64,21 @@ class AdminController extends Controller
         $genderData = $db->query("SELECT COALESCE(sex,'Unknown') as gender, COUNT(*) as count FROM tenant_addinfo GROUP BY sex")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         // ── Maintenance Data ──
-        $pendingMaintenance = (int) $db->query("SELECT COUNT(*) FROM tenant_maintenance WHERE status = 'Pending'")->fetchColumn();
-        $recentMaintenance = $db->query("
-            SELECT m.*, u.first_name, u.last_name 
-            FROM tenant_maintenance m
-            JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
-            ORDER BY m.created_at DESC 
-            LIMIT 5
-        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $pendingMaintenance = 0;
+        $recentMaintenance = [];
+        try {
+            $pendingMaintenance = (int) $db->query("SELECT COUNT(*) FROM tenant_maintenance WHERE status = 'Pending'")->fetchColumn();
+            $recentMaintenance = $db->query("
+                SELECT m.*, u.first_name, u.last_name 
+                FROM tenant_maintenance m
+                JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+                ORDER BY m.created_at DESC 
+                LIMIT 5
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            $pendingMaintenance = 0;
+            $recentMaintenance = [];
+        }
 
         // ── Recent Activity ──
         $stmtLogs = $db->query("
