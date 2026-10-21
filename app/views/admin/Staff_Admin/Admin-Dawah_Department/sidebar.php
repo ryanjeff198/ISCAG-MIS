@@ -145,7 +145,7 @@ $initials = strtoupper($first_initial . $last_initial);
     <?php endif; ?>
 
     <!-- ISLAMIC EDUCATION DROPDOWN -->
-    <?php $education_active = in_array($active_page ?? '', ['education', 'education_records', 'education_requests', 'education_request'], true); ?>
+    <?php $education_active = in_array($active_page ?? '', ['education', 'education_records', 'enrolled_courses', 'education_requests', 'education_request'], true); ?>
     <div class="nav-dropdown-wrap <?= $education_active ? 'open' : '' ?>" id="education-wrap">
       <button type="button" class="nav-dropdown-trigger <?= $education_active ? 'open' : '' ?>" id="education-trigger" data-menu="education-menu" data-href="<?= url('/admin/dawah/education') ?>" data-tooltip="Islamic Education">
         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -162,6 +162,12 @@ $initials = strtoupper($first_initial . $last_initial);
             <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
           </svg>
           Education Records
+        </a>
+        <a href="<?= url('/admin/dawah/education/courses') ?>" class="<?= ($active_page ?? '') === 'enrolled_courses' ? 'active-submenu' : '' ?>">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/>
+          </svg>
+          Enrolled Courses
         </a>
         <a href="<?= url('/admin/dawah/education/requests') ?>" class="<?= in_array($active_page ?? '', ['education_requests', 'education_request']) ? 'active-submenu' : '' ?>">
           <svg viewBox="0 0 24 24" fill="currentColor">

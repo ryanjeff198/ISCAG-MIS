@@ -115,6 +115,32 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
     .btn-circle.reject svg { fill: #8b2e2e; }
     .btn-circle.reject:hover { background: rgba(139,46,46,0.1); }
 
+    .btn-circle.paid svg { fill: #16a34a; }
+    .btn-circle.paid:hover { background: rgba(22,163,74,0.12); }
+
+    .badge-pay-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-top: 3px;
+    }
+    .badge-pay-status.paid {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+    .badge-pay-status.pending {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
     .btn-circle:disabled { opacity: 0.4; cursor: not-allowed; }
   </style>
 </head>
@@ -240,6 +266,10 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                           <?php if ($isOnline && !empty($pc)): ?>
                             <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;"><?= htmlspecialchars($pc) ?></div>
                           <?php endif; ?>
+                          <?php $isPaid = strtolower(trim($r['payment_status'] ?? 'pending')) === 'paid'; ?>
+                          <div id="pay-tag-<?= $id ?>" class="badge-pay-status <?= $isPaid ? 'paid' : 'pending' ?>">
+                            <?= $isPaid ? '✓ Paid' : 'Pending Fee' ?>
+                          </div>
                         </td>
                         <td style="color:#4b5563;"><?= $dateSubmitted ?></td>
                         <td>
@@ -252,10 +282,15 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                             <button class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
                               <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                             </button>
+                            <?php if (!$isPaid): ?>
+                              <button id="btn-pay-<?= $id ?>" class="btn-circle paid" onclick="markEnrollmentPaid(<?= $id ?>)" title="Mark as Paid (₱120.00)">
+                                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                              </button>
+                            <?php endif; ?>
                             <button class="btn-circle check" onclick="processRequest(<?= $id ?>, 'accept')" title="Accept">
                               <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                             </button>
-                            <button class="btn-circle reject" onclick="processRequest(<?= $id ?>, 'reject')" title="Reject">
+                            <button class="btn-circle reject" onclick="openEduRejectModal(<?= $id ?>)" title="Reject Request">
                               <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                             </button>
                           </div>
@@ -325,6 +360,10 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                           <?php if ($isOnline && !empty($pc)): ?>
                             <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;"><?= htmlspecialchars($pc) ?></div>
                           <?php endif; ?>
+                          <?php $isPaid = strtolower(trim($r['payment_status'] ?? 'pending')) === 'paid'; ?>
+                          <div id="pay-tag-<?= $id ?>" class="badge-pay-status <?= $isPaid ? 'paid' : 'pending' ?>">
+                            <?= $isPaid ? '✓ Paid' : 'Pending Fee' ?>
+                          </div>
                         </td>
                         <td style="color:#4b5563;"><?= $dateSubmitted ?></td>
                         <td>
@@ -337,6 +376,11 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                             <button class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
                               <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                             </button>
+                            <?php if (!$isPaid): ?>
+                              <button id="btn-pay-<?= $id ?>" class="btn-circle paid" onclick="markEnrollmentPaid(<?= $id ?>)" title="Mark as Paid (₱120.00)">
+                                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                              </button>
+                            <?php endif; ?>
                           </div>
                         </td>
                       </tr>
@@ -410,6 +454,11 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                           <span class="badge-status rejected">
                             <span class="status-dot"></span> Rejected
                           </span>
+                          <?php if (!empty($r['rejection_reason'])): ?>
+                            <div style="font-size:0.73rem; color:#dc2626; font-weight:600; margin-top:3px; max-width:200px; line-height:1.2;">
+                              <?= htmlspecialchars($r['rejection_reason']) ?>
+                            </div>
+                          <?php endif; ?>
                         </td>
                         <td>
                           <div class="actions-cell">
@@ -481,13 +530,82 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
         </div>
 
         <div style="border:1px solid #e2e8f0; border-radius:8px; padding:12px; background:#f8fafc; margin-bottom:16px;">
-          <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#64748b; margin-bottom:3px;">Payment Method</div>
+          <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#64748b; margin-bottom:3px;">Payment Method &amp; Fee Status</div>
           <div id="vm-payment" style="font-weight:700; font-size:0.92rem; color:#111827;">—</div>
+        </div>
+
+        <div id="vm-rejection-wrap" style="display:none; border:1px solid #fecaca; background:#fef2f2; border-radius:8px; padding:12px; margin-bottom:16px;">
+          <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#dc2626; margin-bottom:3px; display:flex; align-items:center; gap:5px;">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#dc2626;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z"/></svg>
+            Rejection Reason
+          </div>
+          <div id="vm-rejection-reason" style="font-weight:600; font-size:0.88rem; color:#991b1b; line-height:1.4;">—</div>
         </div>
       </div>
 
-      <div style="padding:14px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px; background:#f8fafc;">
+      <div style="padding:14px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#f8fafc; flex-wrap:wrap; gap:8px;">
+        <div id="vm-actions-left" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"></div>
         <button type="button" onclick="closeViewModal()" style="padding:8px 18px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-weight:600; cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- 🚫 REJECTION REASON MODAL WITH DROPDOWN & DYNAMIC INPUT   -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div id="edu-reject-modal" style="position:fixed; inset:0; background:rgba(15,30,22,0.6); backdrop-filter:blur(4px); z-index:999999; display:none; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:white; border-radius:14px; width:100%; max-width:480px; box-shadow:0 20px 60px rgba(0,0,0,0.25); overflow:hidden;">
+      <div style="height:4px; background:linear-gradient(90deg, #dc2626, #ef4444);"></div>
+      
+      <div style="padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
+        <h5 style="margin:0; font-family:'Lora',serif; color:#991b1b; font-size:1.1rem; font-weight:800; display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#dc2626;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z"/></svg>
+          Reject Enrollment Request
+        </h5>
+        <button type="button" onclick="closeEduRejectModal()" style="background:none; border:none; font-size:24px; line-height:1; color:#9ca3af; cursor:pointer;" title="Close">&times;</button>
+      </div>
+
+      <div style="padding:20px 22px;">
+        <div id="edu-reject-target-info" style="background:#fef2f2; border:1px solid #fee2e2; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:0.84rem; color:#991b1b; font-weight:600;">
+          <!-- Populated by JS -->
+        </div>
+
+        <p style="font-size:0.83rem; color:#4b5563; margin:0 0 14px 0; line-height:1.45;">
+          Please select the official reason for rejecting this application. The applicant will be notified with this reason.
+        </p>
+
+        <!-- Rejection Reason Dropdown -->
+        <div style="margin-bottom:14px;">
+          <label for="edu-reject-reason-select" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">
+            Rejection Reason <span style="color:#dc2626;">*</span>
+          </label>
+          <select id="edu-reject-reason-select" onchange="toggleEduRejectOthers(this.value)" style="width:100%; box-sizing:border-box; border:1.5px solid #d1d5db; border-radius:8px; padding:9px 12px; font-size:0.86rem; background:#fff; font-family:inherit; color:#1f2937; outline:none; transition:border-color 0.15s;">
+            <option value="">-- Select Rejection Reason --</option>
+            <option value="Class / batch quota reached">Class / batch quota reached</option>
+            <option value="Ineligible for this academic level or program">Ineligible for this academic level or program</option>
+            <option value="Duplicate enrollment registration">Duplicate enrollment registration</option>
+            <option value="Incomplete applicant information or missing documents">Incomplete applicant information or missing documents</option>
+            <option value="Registration fee settlement failed or unverified">Registration fee settlement failed or unverified</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+
+        <!-- Conditional Input Field for 'Others' -->
+        <div id="edu-reject-others-wrap" style="display:none; margin-bottom:14px;">
+          <label for="edu-reject-others-input" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">
+            Specify Custom Reason <span style="color:#dc2626;">*</span>
+          </label>
+          <textarea id="edu-reject-others-input" rows="3" placeholder="Enter specific reason for rejection..." style="width:100%; box-sizing:border-box; border:1.5px solid #d1d5db; border-radius:8px; padding:9px 12px; font-size:0.86rem; font-family:inherit; color:#1f2937; resize:vertical; outline:none; transition:border-color 0.15s;"></textarea>
+        </div>
+      </div>
+
+      <div style="padding:14px 22px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px; background:#f9fafb;">
+        <button type="button" onclick="closeEduRejectModal()" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-weight:600; font-size:0.84rem; cursor:pointer;">
+          Cancel
+        </button>
+        <button type="button" id="btn-confirm-edu-reject" onclick="submitEduRejection()" style="padding:8px 18px; border-radius:8px; border:none; background:#dc2626; color:white; font-weight:700; font-size:0.84rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+          Confirm Rejection
+        </button>
       </div>
     </div>
   </div>
@@ -511,9 +629,22 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
       if (target) target.style.display = 'block';
     }
 
+    let currentModalId = null;
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     function openViewModal(id) {
       const r = recordsMap[id];
       if (!r) return;
+      currentModalId = id;
 
       const modal = document.getElementById('view-request-modal');
       if (!modal) return;
@@ -553,10 +684,63 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
       const payMethod = r.payment_method || 'Cash';
       const payChan = r.payment_channel ? ` (${r.payment_channel})` : '';
       const payRef = r.payment_reference ? ` • Ref: ${r.payment_reference}` : '';
-      const feeAmt = r.fee_amount ? ` (₱${parseFloat(r.fee_amount).toFixed(2)})` : '';
+      const feeAmt = r.fee_amount ? ` (₱${parseFloat(r.fee_amount).toFixed(2)})` : ' (₱120.00)';
+      const isPaid = (r.payment_status || '').toLowerCase() === 'paid';
+      const statusColor = isPaid ? '#166534' : '#b45309';
+      const statusText = isPaid ? '✓ PAID (VERIFIED)' : 'PENDING PAYMENT';
+
       const vmPaymentEl = document.getElementById('vm-payment');
       if (vmPaymentEl) {
-        vmPaymentEl.textContent = `${payMethod}${payChan}${feeAmt}${payRef}`;
+        vmPaymentEl.innerHTML = `
+          <div>${escapeHtml(payMethod)}${escapeHtml(payChan)}${feeAmt}${escapeHtml(payRef)}</div>
+          <div style="font-size:0.75rem; font-weight:800; color:${statusColor}; margin-top:4px;">
+            Status: ${statusText}
+          </div>
+        `;
+      }
+
+      // Rejection Reason in View Modal
+      const rejWrap = document.getElementById('vm-rejection-wrap');
+      const rejText = document.getElementById('vm-rejection-reason');
+      if (rejWrap && rejText) {
+        if ((stLower === 'rejected' || stLower === 'dropped') && r.rejection_reason) {
+          rejText.textContent = r.rejection_reason;
+          rejWrap.style.display = 'block';
+        } else {
+          rejWrap.style.display = 'none';
+        }
+      }
+
+      const actionsLeft = document.getElementById('vm-actions-left');
+      if (actionsLeft) {
+        let actsHtml = '';
+        if (!isPaid) {
+          actsHtml += `
+            <button type="button" onclick="markEnrollmentPaid(${r.id})" style="padding:8px 14px; border-radius:8px; border:none; background:#d97706; color:white; font-weight:700; font-size:0.82rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+              <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor;"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+              Mark as Paid (₱120.00)
+            </button>
+          `;
+        } else {
+          actsHtml += `
+            <span style="font-size:0.78rem; font-weight:800; color:#166534; background:#dcfce7; padding:6px 12px; border-radius:8px; display:inline-flex; align-items:center; gap:5px; border:1px solid #bbf7d0;">
+              ✓ Fee Officially Paid
+            </span>
+          `;
+        }
+
+        if (stLower === 'pending' || stLower === 'under_review') {
+          actsHtml += `
+            <button type="button" onclick="processRequest(${r.id}, 'accept')" style="padding:8px 14px; border-radius:8px; border:none; background:#166534; color:white; font-weight:700; font-size:0.82rem; cursor:pointer;">
+              Accept Enrollment
+            </button>
+            <button type="button" onclick="openEduRejectModal(${r.id})" style="padding:8px 14px; border-radius:8px; border:1px solid #dc2626; background:#fff; color:#dc2626; font-weight:700; font-size:0.82rem; cursor:pointer;">
+              Reject Request
+            </button>
+          `;
+        }
+
+        actionsLeft.innerHTML = actsHtml;
       }
 
       modal.style.display = 'flex';
@@ -565,23 +749,260 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
     function closeViewModal() {
       const modal = document.getElementById('view-request-modal');
       if (modal) modal.style.display = 'none';
+      currentModalId = null;
     }
 
     document.getElementById('view-request-modal')?.addEventListener('click', function(e) {
       if (e.target === this) closeViewModal();
     });
 
-    async function processRequest(id, action) {
+    // ══════════════════════════════════════════════════════════
+    // 🚫 REJECTION REASON MODAL LOGIC (DROPDOWN + OTHERS)
+    // ══════════════════════════════════════════════════════════
+    let eduRejectTargetId = null;
+
+    function openEduRejectModal(id) {
       const r = recordsMap[id];
-      const confirmMsg = action === 'accept'
-        ? `Are you sure you want to ACCEPT enrollment request #ER-${String(id).padStart(4, '0')}?`
-        : `Are you sure you want to REJECT enrollment request #ER-${String(id).padStart(4, '0')}?`;
+      eduRejectTargetId = id;
+      const reqId = '#ER-' + String(id).padStart(4, '0');
+      const studentName = r ? (`${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Student #' + id) : 'Student #' + id;
 
-      if (!confirm(confirmMsg)) return;
+      const infoEl = document.getElementById('edu-reject-target-info');
+      if (infoEl) {
+        infoEl.innerHTML = `<strong>Request:</strong> ${reqId} &nbsp;•&nbsp; <strong>Student:</strong> ${escapeHtml(studentName)}`;
+      }
 
-      const endpoint = action === 'accept'
-        ? '<?= url("/admin/dawah/education/accept") ?>'
-        : '<?= url("/admin/dawah/education/reject") ?>';
+      const sel = document.getElementById('edu-reject-reason-select');
+      if (sel) sel.value = '';
+
+      const othersWrap = document.getElementById('edu-reject-others-wrap');
+      if (othersWrap) othersWrap.style.display = 'none';
+
+      const othersInput = document.getElementById('edu-reject-others-input');
+      if (othersInput) othersInput.value = '';
+
+      const modal = document.getElementById('edu-reject-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeEduRejectModal() {
+      const modal = document.getElementById('edu-reject-modal');
+      if (modal) modal.style.display = 'none';
+      eduRejectTargetId = null;
+    }
+
+    document.getElementById('edu-reject-modal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeEduRejectModal();
+    });
+
+    function toggleEduRejectOthers(val) {
+      const othersWrap = document.getElementById('edu-reject-others-wrap');
+      const othersInput = document.getElementById('edu-reject-others-input');
+      if (val === 'Others') {
+        if (othersWrap) othersWrap.style.display = 'block';
+        setTimeout(() => othersInput?.focus(), 60);
+      } else {
+        if (othersWrap) othersWrap.style.display = 'none';
+        if (othersInput) othersInput.value = '';
+      }
+    }
+
+    async function submitEduRejection() {
+      if (!eduRejectTargetId) return;
+      const id = eduRejectTargetId;
+      const sel = document.getElementById('edu-reject-reason-select');
+      const reasonVal = sel ? sel.value.trim() : '';
+
+      if (!reasonVal) {
+        alert('Please select a rejection reason from the dropdown.');
+        sel?.focus();
+        return;
+      }
+
+      let finalReason = reasonVal;
+      if (reasonVal === 'Others') {
+        const customReason = document.getElementById('edu-reject-others-input')?.value.trim();
+        if (!customReason) {
+          alert('Please specify the custom reason in the input field.');
+          document.getElementById('edu-reject-others-input')?.focus();
+          return;
+        }
+        finalReason = customReason;
+      }
+
+      const btn = document.getElementById('btn-confirm-edu-reject');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Rejecting...';
+      }
+
+      try {
+        const response = await fetch('<?= url("/admin/dawah/education/reject") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id, reason: finalReason })
+        });
+
+        const res = await response.json();
+        if (res.success) {
+          if (recordsMap[id]) {
+            recordsMap[id].status = 'Rejected';
+            recordsMap[id].rejection_reason = finalReason;
+          }
+
+          // Remove row from pending table
+          const row = document.getElementById('row-' + id);
+          if (row) row.remove();
+
+          // Prepend to rejected table
+          const r = recordsMap[id];
+          const targetTbody = document.getElementById('tbody-rejected');
+          const reqId = '#ER-' + String(id).padStart(4, '0');
+          const studentName = r ? (`${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Student #' + id) : 'Student #' + id;
+          const program = r && r.program_name ? r.program_name : 'Islamic Studies';
+          const dateSub = r && r.created_at ? r.created_at.substring(0, 10) : '—';
+          const pm = r && r.payment_method ? r.payment_method : 'Cash';
+          const isOnline = (pm.toLowerCase().includes('online') || pm.toLowerCase().includes('gcash') || pm.toLowerCase().includes('maya'));
+          const pmDisplay = isOnline ? 'Online Payment' : 'Cash';
+
+          const newRow = `
+            <tr id="row-${id}">
+              <td class="td-id">${reqId}</td>
+              <td>
+                <div style="font-weight:700; color:#111827;">${escapeHtml(studentName)}</div>
+                ${r && r.age ? `<div style="font-size:0.78rem; font-weight:600; color:#6b7280; margin-top:2px;">Age: ${r.age} yrs</div>` : ''}
+              </td>
+              <td style="color:var(--primary); font-weight:700;">${escapeHtml(program)}</td>
+              <td>
+                <span style="font-weight:700; color:${isOnline ? '#0d9488' : '#15803d'};">${pmDisplay}</span>
+                ${isOnline && r && r.payment_channel ? `<div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">${escapeHtml(r.payment_channel)}</div>` : ''}
+              </td>
+              <td style="color:#4b5563;">${dateSub}</td>
+              <td>
+                <span class="badge-status rejected"><span class="status-dot"></span> Rejected</span>
+                <div style="font-size:0.73rem; color:#dc2626; font-weight:600; margin-top:3px; max-width:200px; line-height:1.2;">
+                  ${escapeHtml(finalReason)}
+                </div>
+              </td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn-circle eye" onclick="openViewModal(${id})" title="View Details">
+                    <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+
+          if (targetTbody) {
+            if (targetTbody.querySelector('td[colspan]')) {
+              targetTbody.innerHTML = '';
+            }
+            targetTbody.insertAdjacentHTML('afterbegin', newRow);
+          }
+
+          // Update badge counts
+          const statPending = document.getElementById('stat-pending');
+          const countPending = document.getElementById('count-pending');
+          if (statPending && countPending) {
+            const current = Math.max(0, parseInt(statPending.textContent || '0') - 1);
+            statPending.textContent = current;
+            countPending.textContent = current;
+          }
+
+          const statRej = document.getElementById('stat-rejected');
+          const countRej = document.getElementById('count-rejected');
+          if (statRej && countRej) {
+            const current = parseInt(statRej.textContent || '0') + 1;
+            statRej.textContent = current;
+            countRej.textContent = current;
+          }
+
+          closeEduRejectModal();
+          if (currentModalId === id) {
+            closeViewModal();
+          }
+
+          alert('Enrollment request has been rejected. The applicant has been notified with the reason.');
+        } else {
+          alert(res.message || 'Error rejecting enrollment.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server communication error.');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Confirm Rejection';
+        }
+      }
+    }
+
+    async function markEnrollmentPaid(id) {
+      const r = recordsMap[id];
+      const reqId = '#ER-' + String(id).padStart(4, '0');
+      const studentName = r ? (`${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Student #' + id) : 'Student';
+
+      if (!confirm(`Mark enrollment fee (₱120.00) as PAID for ${studentName} (${reqId})?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch('<?= url("/admin/dawah/education/mark-paid") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+        });
+
+        const res = await response.json();
+
+        if (res.success) {
+          if (recordsMap[id]) {
+            recordsMap[id].payment_status = 'Paid';
+            if (res.payment_reference) {
+              recordsMap[id].payment_reference = res.payment_reference;
+            }
+          }
+
+          // Update payment status badge in table
+          const payTag = document.getElementById('pay-tag-' + id);
+          if (payTag) {
+            payTag.className = 'badge-pay-status paid';
+            payTag.textContent = '✓ Paid';
+          }
+
+          // Remove the mark-paid button from row actions
+          const btnPay = document.getElementById('btn-pay-' + id);
+          if (btnPay) {
+            btnPay.remove();
+          }
+
+          // If view modal is open for this record, update it
+          if (currentModalId === id) {
+            openViewModal(id);
+          }
+
+          alert(res.message || 'Payment has been successfully verified and marked as Paid.');
+        } else {
+          alert(res.message || 'Error updating payment status.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Server communication error.');
+      }
+    }
+
+    async function processRequest(id, action) {
+      if (action === 'reject') {
+        openEduRejectModal(id);
+        return;
+      }
+
+      const r = recordsMap[id];
+      const reqId = '#ER-' + String(id).padStart(4, '0');
+      if (!confirm(`Are you sure you want to ACCEPT enrollment request ${reqId}?`)) return;
+
+      const endpoint = '<?= url("/admin/dawah/education/accept") ?>';
 
       try {
         const response = await fetch(endpoint, {
@@ -594,33 +1015,38 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
 
         if (res.success) {
           if (recordsMap[id]) {
-            recordsMap[id].status = (action === 'accept' ? 'Accepted' : 'Rejected');
+            recordsMap[id].status = 'Accepted';
           }
 
-          // Move row from pending table to approved or rejected table
+          // Move row from pending table to approved table
           const row = document.getElementById('row-' + id);
           if (row) {
             row.remove();
 
-            const targetTbodyId = action === 'accept' ? 'tbody-approved' : 'tbody-rejected';
-            const targetTbody = document.getElementById(targetTbodyId);
-
-            const reqId = '#ER-' + String(id).padStart(4, '0');
-            const studentName = r ? (`${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Student #' + id) : 'Student';
+            const targetTbody = document.getElementById('tbody-approved');
+            const studentName = r ? (`${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Student #' + id) : 'Student #' + id;
             const program = r && r.program_name ? r.program_name : 'Islamic Studies';
             const dateSub = r && r.created_at ? r.created_at.substring(0, 10) : '—';
-            const statusBadge = action === 'accept'
-              ? `<span class="badge-status approved"><span class="status-dot"></span> Accepted</span>`
-              : `<span class="badge-status rejected"><span class="status-dot"></span> Rejected</span>`;
+            const pm = r && r.payment_method ? r.payment_method : 'Cash';
+            const isOnline = (pm.toLowerCase().includes('online') || pm.toLowerCase().includes('gcash') || pm.toLowerCase().includes('maya'));
+            const pmDisplay = isOnline ? 'Online Payment' : 'Cash';
+            const isPaid = (r && r.payment_status && r.payment_status.toLowerCase() === 'paid');
+
+            const statusBadge = `<span class="badge-status approved"><span class="status-dot"></span> Accepted</span>`;
 
             const newRow = `
               <tr id="row-${id}">
                 <td class="td-id">${reqId}</td>
                 <td>
-                  <div style="font-weight:700; color:#111827;">${studentName}</div>
+                  <div style="font-weight:700; color:#111827;">${escapeHtml(studentName)}</div>
                   ${r && r.age ? `<div style="font-size:0.78rem; font-weight:600; color:#6b7280; margin-top:2px;">Age: ${r.age} yrs</div>` : ''}
                 </td>
-                <td style="color:var(--primary); font-weight:700;">${program}</td>
+                <td style="color:var(--primary); font-weight:700;">${escapeHtml(program)}</td>
+                <td>
+                  <span style="font-weight:700; color:${isOnline ? '#0d9488' : '#15803d'};">${pmDisplay}</span>
+                  ${isOnline && r && r.payment_channel ? `<div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">${escapeHtml(r.payment_channel)}</div>` : ''}
+                  <div id="pay-tag-${id}" class="badge-pay-status ${isPaid ? 'paid' : 'pending'}">${isPaid ? '✓ Paid' : 'Pending Fee'}</div>
+                </td>
                 <td style="color:#4b5563;">${dateSub}</td>
                 <td>${statusBadge}</td>
                 <td>
@@ -628,13 +1054,17 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                     <button class="btn-circle eye" onclick="openViewModal(${id})" title="View Details">
                       <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                     </button>
+                    ${!isPaid ? `
+                      <button id="btn-pay-${id}" class="btn-circle paid" onclick="markEnrollmentPaid(${id})" title="Mark as Paid (₱120.00)">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                      </button>
+                    ` : ''}
                   </div>
                 </td>
               </tr>
             `;
 
             if (targetTbody) {
-              // If only empty row exists, clear it
               if (targetTbody.querySelector('td[colspan]')) {
                 targetTbody.innerHTML = '';
               }
@@ -650,22 +1080,16 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
               countPending.textContent = current;
             }
 
-            if (action === 'accept') {
-              const statAppr = document.getElementById('stat-approved');
-              const countAppr = document.getElementById('count-approved');
-              if (statAppr && countAppr) {
-                const current = parseInt(statAppr.textContent || '0') + 1;
-                statAppr.textContent = current;
-                countAppr.textContent = current;
-              }
-            } else {
-              const statRej = document.getElementById('stat-rejected');
-              const countRej = document.getElementById('count-rejected');
-              if (statRej && countRej) {
-                const current = parseInt(statRej.textContent || '0') + 1;
-                statRej.textContent = current;
-                countRej.textContent = current;
-              }
+            const statAppr = document.getElementById('stat-approved');
+            const countAppr = document.getElementById('count-approved');
+            if (statAppr && countAppr) {
+              const current = parseInt(statAppr.textContent || '0') + 1;
+              statAppr.textContent = current;
+              countAppr.textContent = current;
+            }
+
+            if (currentModalId === id) {
+              openViewModal(id);
             }
           }
         } else {

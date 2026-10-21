@@ -92,7 +92,7 @@ Auth::protectRole(['Admin', 'Staff_Male']);
             <div class="insight-value" style="color:var(--success);"><?= $education['total'] ?? 0 ?></div>
             <div class="kpi-trend info">
                <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
-               <?= $eActiveRate ?>% Retention Rate
+               <?= $education['avg_progress'] ?? $eActiveRate ?>% Learning Progress
             </div>
           </div>
         </div>

@@ -387,14 +387,14 @@ class UserController extends Controller
         $hasApproved = false;
         if ($activeRequest) {
             $st = strtolower($activeRequest['status'] ?? '');
-            if ($st === 'pending') $hasPending = true;
-            if ($st === 'active' || $st === 'completed') $hasApproved = true;
+            if (in_array($st, ['pending', 'under_review'])) $hasPending = true;
+            if (in_array($st, ['active', 'accepted', 'approved', 'enrolled', 'completed'])) $hasApproved = true;
         }
 
         $analytics = [
             'total' => count($history),
-            'pending' => count(array_filter($history, fn($h) => ($h['status'] ?? '') === 'pending')),
-            'approved' => count(array_filter($history, fn($h) => in_array($h['status'] ?? '', ['active', 'completed'])))
+            'pending' => count(array_filter($history, fn($h) => in_array(strtolower($h['status'] ?? ''), ['pending', 'under_review']))),
+            'approved' => count(array_filter($history, fn($h) => in_array(strtolower($h['status'] ?? ''), ['active', 'accepted', 'approved', 'enrolled', 'completed'])))
         ];
 
         $this->view('user/Da\'wah/Female/user_form-female-education', [
@@ -439,6 +439,9 @@ class UserController extends Controller
         require_once BASE_PATH . '/app/models/Notification.php';
         $eduModel = new IslamicEducation();
 
+        $chosenLevel = trim($input['level'] ?? 'Level 1 — Basic Arabic & Tajweed');
+        $chosenProg = !empty($input['program_name']) ? trim($input['program_name']) : $chosenLevel;
+
         $payload = [
             'tenant_id' => $userId,
             'first_name' => $fname,
@@ -464,14 +467,14 @@ class UserController extends Controller
             'student_signature' => trim($input['student_signature'] ?? ''),
             'guardian_signature' => trim($input['guardian_signature'] ?? ''),
             'batch_no' => trim($input['batch_no'] ?? 'Batch 08'),
-            'level' => trim($input['level'] ?? 'Basic Islamic Studies'),
+            'level' => $chosenLevel,
             'payment_method' => (stripos(trim($input['payment_method'] ?? 'Cash'), 'online') !== false || stripos(trim($input['payment_method'] ?? ''), 'gcash') !== false) ? 'Online Payment' : 'Cash',
             'fee_amount' => 120.00,
             'payment_channel' => trim($input['payment_channel'] ?? ''),
             'payment_reference' => trim($input['payment_reference'] ?? ''),
             'approved_by' => 'Sister Khadijah Dimaano',
             'prepared_by' => 'IDFS Staff',
-            'program_name' => trim($input['program_name'] ?? 'Islamic Education - Batch 08'),
+            'program_name' => $chosenProg,
             'gender' => 'female',
             'status' => 'pending'
         ];

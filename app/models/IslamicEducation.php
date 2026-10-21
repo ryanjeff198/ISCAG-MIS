@@ -55,7 +55,13 @@ class IslamicEducation {
             "ADD COLUMN payment_reference VARCHAR(100) NULL AFTER payment_channel",
             "ADD COLUMN approved_by VARCHAR(150) DEFAULT 'Sister Khadijah Dimaano' AFTER payment_reference",
             "ADD COLUMN prepared_by VARCHAR(150) DEFAULT 'IDFS Staff' AFTER approved_by",
-            "ADD COLUMN payment_status VARCHAR(50) DEFAULT 'Pending' AFTER payment_reference"
+            "ADD COLUMN payment_status VARCHAR(50) DEFAULT 'Pending' AFTER payment_reference",
+            "ADD COLUMN rejection_reason TEXT NULL AFTER status",
+            "ADD COLUMN total_sessions INT DEFAULT 12 AFTER rejection_reason",
+            "ADD COLUMN sessions_attended INT DEFAULT 0 AFTER total_sessions",
+            "ADD COLUMN sessions_completed INT DEFAULT 0 AFTER sessions_attended",
+            "ADD COLUMN progress_percent INT DEFAULT 0 AFTER sessions_completed",
+            "ADD COLUMN learning_status VARCHAR(50) DEFAULT 'Not Started' AFTER progress_percent"
         ];
 
         foreach ($migrations as $m) {
@@ -63,6 +69,24 @@ class IslamicEducation {
                 $this->db->exec("ALTER TABLE islamic_education_enrollments " . $m);
             } catch (Exception $e) { /* Column already exists */ }
         }
+
+        // Dedicated table for tracking learning sessions and attendance
+        $sessionsTableSql = "CREATE TABLE IF NOT EXISTS islamic_education_sessions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            enrollment_id INT NOT NULL,
+            session_number INT NOT NULL,
+            session_title VARCHAR(255) NOT NULL,
+            is_attended TINYINT(1) DEFAULT 0,
+            is_completed TINYINT(1) DEFAULT 0,
+            attended_at DATETIME NULL,
+            completed_at DATETIME NULL,
+            notes TEXT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uk_enrollment_session (enrollment_id, session_number),
+            FOREIGN KEY (enrollment_id) REFERENCES islamic_education_enrollments(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+        $this->db->exec($sessionsTableSql);
     }
 
     public function getByUser($userId) {
@@ -78,7 +102,7 @@ class IslamicEducation {
     public function getActiveForUser($userId) {
         $stmt = $this->db->prepare("
             SELECT * FROM islamic_education_enrollments 
-            WHERE tenant_id = :tenant_id AND status IN ('pending', 'active')
+            WHERE tenant_id = :tenant_id AND LOWER(status) IN ('pending', 'under_review', 'active', 'accepted', 'approved', 'enrolled')
             ORDER BY created_at DESC LIMIT 1
         ");
         $stmt->execute(['tenant_id' => $userId]);
@@ -129,18 +153,37 @@ class IslamicEducation {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getCoursesSummary($gender) {
+        $stmt = $this->db->prepare("
+            SELECT 
+                COALESCE(NULLIF(TRIM(e.level), ''), TRIM(e.program_name)) AS course_title,
+                COALESCE(NULLIF(TRIM(e.batch_no), ''), 'Batch 08') AS batch_no,
+                COUNT(*) AS total_students,
+                SUM(CASE WHEN LOWER(e.status) IN ('active', 'accepted', 'approved', 'enrolled') THEN 1 ELSE 0 END) AS active_count,
+                SUM(CASE WHEN LOWER(e.status) IN ('pending', 'under_review') THEN 1 ELSE 0 END) AS pending_count,
+                SUM(CASE WHEN LOWER(e.status) IN ('completed') THEN 1 ELSE 0 END) AS completed_count
+            FROM islamic_education_enrollments e
+            WHERE e.gender = :gender
+            GROUP BY course_title, batch_no
+            ORDER BY active_count DESC, total_students DESC
+        ");
+        $stmt->execute(['gender' => $gender]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getAnalytics($gender) {
         $stmt = $this->db->prepare("
             SELECT 
                 COUNT(*) as total,
-                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
-                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active
+                SUM(CASE WHEN LOWER(status) IN ('pending', 'under_review') THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN LOWER(status) IN ('completed') THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN LOWER(status) IN ('active', 'accepted', 'approved', 'enrolled') THEN 1 ELSE 0 END) as active,
+                COALESCE(ROUND(AVG(CASE WHEN LOWER(status) IN ('active', 'accepted', 'approved', 'enrolled', 'completed') THEN progress_percent ELSE NULL END)), 0) as avg_progress
             FROM islamic_education_enrollments 
             WHERE gender = :gender
         ");
         $stmt->execute(['gender' => $gender]);
-        $stats = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'pending' => 0, 'completed' => 0, 'active' => 0];
+        $stats = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'pending' => 0, 'completed' => 0, 'active' => 0, 'avg_progress' => 0];
 
         // Age Group Breakdown (Using COALESCE for fallback)
         $stmt = $this->db->prepare("
@@ -225,7 +268,11 @@ class IslamicEducation {
         ]);
     }
 
-    public function updateStatus(int $id, string $status): bool {
+    public function updateStatus(int $id, string $status, ?string $reason = null): bool {
+        if ($reason !== null) {
+            $stmt = $this->db->prepare("UPDATE islamic_education_enrollments SET status = :status, rejection_reason = :reason WHERE id = :id");
+            return $stmt->execute(['status' => $status, 'reason' => $reason, 'id' => $id]);
+        }
         $stmt = $this->db->prepare("UPDATE islamic_education_enrollments SET status = :status WHERE id = :id");
         return $stmt->execute(['status' => $status, 'id' => $id]);
     }
@@ -259,4 +306,217 @@ class IslamicEducation {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);
     }
+
+    /**
+     * Standard Islamic Education Curriculum (12 Sessions)
+     */
+    public static array $defaultCurriculum = [
+        1 => 'Orientation & Arabic Alphabet (Huruf Hijaiyyah)',
+        2 => 'Articulation Points & Phonetics (Makharijul Huruf)',
+        3 => 'Harakat & Basic Vowels (Fathah, Kasrah, Dammah, Sukoon)',
+        4 => 'Rules of Madd (Elongation & Basic Tajweed)',
+        5 => 'Rules of Noon Sakinah & Tanween',
+        6 => 'Rules of Meem Sakinah & Qalqalah',
+        7 => 'Practical Qur\'an Recitation & Reading Fluency',
+        8 => 'Foundations of Taharah (Purification & Wudu Demonstration)',
+        9 => 'Conditions, Pillars & Obligatory Acts of Daily Salah',
+        10 => 'Practical Prayer Workshop & Common Mistakes in Salah',
+        11 => 'Essential Islamic Beliefs & Daily Du\'as (Hisnul Muslim)',
+        12 => 'Comprehensive Practical Assessment & Program Review'
+    ];
+
+    /**
+     * Ensure standard 12 learning sessions exist for this enrollment.
+     */
+    public function ensureSessionsSeeded(int $enrollmentId): void {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM islamic_education_sessions WHERE enrollment_id = :id");
+        $stmt->execute(['id' => $enrollmentId]);
+        $count = (int)$stmt->fetchColumn();
+
+        if ($count === 0) {
+            $insert = $this->db->prepare("
+                INSERT INTO islamic_education_sessions 
+                    (enrollment_id, session_number, session_title, is_attended, is_completed)
+                VALUES 
+                    (:enrollment_id, :session_number, :session_title, 0, 0)
+            ");
+            foreach (self::$defaultCurriculum as $num => $title) {
+                $insert->execute([
+                    'enrollment_id' => $enrollmentId,
+                    'session_number' => $num,
+                    'session_title' => $title
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Automatically recalculate student progress based on attendance and completed learning sessions.
+     * Rule: Do not use grades, scores, or attendance alone to determine program completion.
+     */
+    public function recalculateStudentProgress(int $enrollmentId): array {
+        $this->ensureSessionsSeeded($enrollmentId);
+
+        $stmt = $this->db->prepare("
+            SELECT 
+                COUNT(*) as total_count,
+                SUM(CASE WHEN is_attended = 1 THEN 1 ELSE 0 END) as attended_count,
+                SUM(CASE WHEN is_completed = 1 THEN 1 ELSE 0 END) as completed_count
+            FROM islamic_education_sessions 
+            WHERE enrollment_id = :id
+        ");
+        $stmt->execute(['id' => $enrollmentId]);
+        $counts = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $totalSessions = (int)($counts['total_count'] ?? 12);
+        if ($totalSessions <= 0) $totalSessions = 12;
+        $attended = (int)($counts['attended_count'] ?? 0);
+        $completed = (int)($counts['completed_count'] ?? 0);
+
+        // Progress percentage formula: weighted equally by attendance and verified completed sessions
+        $progressPercent = (int)round((($attended + $completed) / ($totalSessions * 2)) * 100);
+        if ($progressPercent > 100) $progressPercent = 100;
+        if ($progressPercent < 0) $progressPercent = 0;
+
+        // Status Determination:
+        // Attendance alone cannot trigger Completed.
+        // Session completion alone cannot trigger Completed.
+        // Full completion requires all required sessions to be both attended and completed.
+        if ($attended === 0 && $completed === 0) {
+            $learningStatus = 'Not Started';
+        } elseif ($attended >= $totalSessions && $completed >= $totalSessions) {
+            $learningStatus = 'Completed';
+        } else {
+            $learningStatus = 'In Progress';
+        }
+
+        // Auto-update enrollment table
+        $updateSql = "
+            UPDATE islamic_education_enrollments 
+            SET total_sessions = :total,
+                sessions_attended = :attended,
+                sessions_completed = :completed,
+                progress_percent = :progress,
+                learning_status = :learning_status"
+                . ($learningStatus === 'Completed' ? ", status = 'completed'" : "") . "
+            WHERE id = :id
+        ";
+        $updateStmt = $this->db->prepare($updateSql);
+        $updateStmt->execute([
+            'total' => $totalSessions,
+            'attended' => $attended,
+            'completed' => $completed,
+            'progress' => $progressPercent,
+            'learning_status' => $learningStatus,
+            'id' => $enrollmentId
+        ]);
+
+        return [
+            'total_sessions' => $totalSessions,
+            'sessions_attended' => $attended,
+            'sessions_completed' => $completed,
+            'progress_percent' => $progressPercent,
+            'learning_status' => $learningStatus
+        ];
+    }
+
+    /**
+     * Get detailed student progress, summary and session breakdown
+     */
+    public function getStudentProgress(int $enrollmentId): ?array {
+        $student = $this->getById($enrollmentId);
+        if (!$student) return null;
+
+        $this->ensureSessionsSeeded($enrollmentId);
+        $summary = $this->recalculateStudentProgress($enrollmentId);
+
+        $stmt = $this->db->prepare("
+            SELECT * FROM islamic_education_sessions 
+            WHERE enrollment_id = :id 
+            ORDER BY session_number ASC
+        ");
+        $stmt->execute(['id' => $enrollmentId]);
+        $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Re-fetch refreshed student row
+        $student = $this->getById($enrollmentId);
+
+        return [
+            'enrollment' => $student,
+            'summary' => $summary,
+            'sessions' => $sessions
+        ];
+    }
+
+    /**
+     * Update an individual session's attendance and completion state,
+     * then automatically recalculate program progress.
+     */
+    public function updateSessionProgress(int $enrollmentId, int $sessionNumber, bool $isAttended, bool $isCompleted, ?string $notes = null): array {
+        $this->ensureSessionsSeeded($enrollmentId);
+
+        // Fetch current session state to preserve or update timestamps
+        $stmt = $this->db->prepare("
+            SELECT * FROM islamic_education_sessions 
+            WHERE enrollment_id = :id AND session_number = :num
+        ");
+        $stmt->execute(['id' => $enrollmentId, 'num' => $sessionNumber]);
+        $current = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $attendedAt = $isAttended ? ($current['attended_at'] ?? date('Y-m-d H:i:s')) : null;
+        $completedAt = $isCompleted ? ($current['completed_at'] ?? date('Y-m-d H:i:s')) : null;
+
+        $update = $this->db->prepare("
+            UPDATE islamic_education_sessions 
+            SET is_attended = :is_attended,
+                is_completed = :is_completed,
+                attended_at = :attended_at,
+                completed_at = :completed_at,
+                notes = COALESCE(:notes, notes)
+            WHERE enrollment_id = :enrollment_id AND session_number = :session_number
+        ");
+        $update->execute([
+            'is_attended' => $isAttended ? 1 : 0,
+            'is_completed' => $isCompleted ? 1 : 0,
+            'attended_at' => $attendedAt,
+            'completed_at' => $completedAt,
+            'notes' => $notes !== null ? trim($notes) : null,
+            'enrollment_id' => $enrollmentId,
+            'session_number' => $sessionNumber
+        ]);
+
+        $summary = $this->recalculateStudentProgress($enrollmentId);
+        return [
+            'success' => true,
+            'summary' => $summary,
+            'session' => [
+                'session_number' => $sessionNumber,
+                'is_attended' => $isAttended ? 1 : 0,
+                'is_completed' => $isCompleted ? 1 : 0,
+                'attended_at' => $attendedAt,
+                'completed_at' => $completedAt,
+                'notes' => $notes
+            ]
+        ];
+    }
+
+    /**
+     * Bulk update attendance and completion across multiple sessions.
+     */
+    public function bulkUpdateProgress(int $enrollmentId, array $sessionUpdates): array {
+        $this->ensureSessionsSeeded($enrollmentId);
+
+        foreach ($sessionUpdates as $up) {
+            $num = (int)($up['session_number'] ?? 0);
+            if ($num >= 1 && $num <= 12) {
+                $isAtt = !empty($up['is_attended']);
+                $isComp = !empty($up['is_completed']);
+                $notes = isset($up['notes']) ? (string)$up['notes'] : null;
+                $this->updateSessionProgress($enrollmentId, $num, $isAtt, $isComp, $notes);
+            }
+        }
+
+        return $this->getStudentProgress($enrollmentId);
+    }
 }
+

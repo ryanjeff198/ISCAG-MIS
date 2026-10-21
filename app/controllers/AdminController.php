@@ -1399,6 +1399,7 @@ class AdminController extends Controller
         $eduModel = new IslamicEducation();
         $rawStudents = $eduModel->getAllByGender('female');
         $eduAnalytics = $eduModel->getAnalytics('female');
+        $coursesSummary = $eduModel->getCoursesSummary('female');
 
         require_once BASE_PATH . '/app/models/CounselingRequest.php';
         $counselingModel = new CounselingRequest();
@@ -1406,6 +1407,22 @@ class AdminController extends Controller
         $counselingRequests = $counselingModel->getByGender('female');
 
         $students = $rawStudents;
+        foreach ($students as &$st) {
+            if (empty($st['total_sessions']) || !isset($st['progress_percent'])) {
+                $p = $eduModel->recalculateStudentProgress((int)$st['id']);
+                $st['total_sessions'] = $p['total_sessions'];
+                $st['sessions_attended'] = $p['sessions_attended'];
+                $st['sessions_completed'] = $p['sessions_completed'];
+                $st['progress_percent'] = $p['progress_percent'];
+                $st['learning_status'] = $p['learning_status'];
+            }
+        }
+        unset($st);
+
+        $activeWithProgress = array_filter($students, fn($s) => in_array(strtolower($s['status'] ?? ''), ['active', 'accepted', 'approved', 'enrolled', 'completed']));
+        $avgProgress = !empty($activeWithProgress)
+            ? round(array_sum(array_column($activeWithProgress, 'progress_percent')) / count($activeWithProgress))
+            : ($eduAnalytics['avg_progress'] ?? 0);
 
         $analytics = [
             'total_students' => $eduAnalytics['total'] ?? 0,
@@ -1414,12 +1431,14 @@ class AdminController extends Controller
             'pending' => ($eduAnalytics['pending'] ?? 0) + ($counselingAnalytics['pending'] ?? 0),
             'counseling_total' => $counselingAnalytics['total'] ?? 0,
             'counseling_approved' => $counselingAnalytics['approved'] ?? 0,
+            'avg_progress' => $avgProgress,
         ];
 
         $this->view('admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/dawah_female_dashboard', [
             'active_page' => 'dashboard',
             'dbUser' => $dbUser,
             'students' => $students,
+            'coursesSummary' => $coursesSummary,
             'counseling' => $counselingRequests,
             'analytics' => $analytics
         ]);
@@ -1433,12 +1452,26 @@ class AdminController extends Controller
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
 
-        // Determine department type based on role
+        // Determine department type based on role or explicit query parameter
         $role = $_SESSION['role'] ?? '';
-        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        $typeParam = strtolower(trim($_GET['type'] ?? ''));
+        $dawah_type = ($typeParam === 'female' || $role === 'Staff_Female') ? 'female' : 'male';
         
         $eduModel = new IslamicEducation();
         $records = $eduModel->getAllByGender($dawah_type);
+        foreach ($records as &$rec) {
+            if (empty($rec['total_sessions']) || !isset($rec['progress_percent'])) {
+                $p = $eduModel->recalculateStudentProgress((int)$rec['id']);
+                $rec['total_sessions'] = $p['total_sessions'];
+                $rec['sessions_attended'] = $p['sessions_attended'];
+                $rec['sessions_completed'] = $p['sessions_completed'];
+                $rec['progress_percent'] = $p['progress_percent'];
+                $rec['learning_status'] = $p['learning_status'];
+            }
+        }
+        unset($rec);
+        $coursesSummary = $eduModel->getCoursesSummary($dawah_type);
+        $analytics = $eduModel->getAnalytics($dawah_type);
 
         $viewPath = ($dawah_type === 'female') 
             ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/female_education'
@@ -1448,7 +1481,52 @@ class AdminController extends Controller
             'active_page' => 'education',
             'dawah_type' => $dawah_type,
             'dbUser' => $dbUser,
-            'records' => $records
+            'records' => $records,
+            'coursesSummary' => $coursesSummary,
+            'analytics' => $analytics
+        ]);
+    }
+
+    public function dawahEducationCourses(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($_SESSION['user_id']);
+
+        $role = $_SESSION['role'] ?? '';
+        $typeParam = strtolower(trim($_GET['type'] ?? ''));
+        $dawah_type = ($typeParam === 'female' || $role === 'Staff_Female') ? 'female' : 'male';
+        
+        $eduModel = new IslamicEducation();
+        $records = $eduModel->getAllByGender($dawah_type);
+        foreach ($records as &$rec) {
+            if (empty($rec['total_sessions']) || !isset($rec['progress_percent'])) {
+                $p = $eduModel->recalculateStudentProgress((int)$rec['id']);
+                $rec['total_sessions'] = $p['total_sessions'];
+                $rec['sessions_attended'] = $p['sessions_attended'];
+                $rec['sessions_completed'] = $p['sessions_completed'];
+                $rec['progress_percent'] = $p['progress_percent'];
+                $rec['learning_status'] = $p['learning_status'];
+            }
+        }
+        unset($rec);
+        $coursesSummary = $eduModel->getCoursesSummary($dawah_type);
+        $analytics = $eduModel->getAnalytics($dawah_type);
+
+        $viewPath = ($dawah_type === 'female') 
+            ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/enrolled_courses'
+            : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/enrolled_courses';
+
+        $this->view($viewPath, [
+            'active_page' => 'enrolled_courses',
+            'view_mode' => 'courses_table',
+            'dawah_type' => $dawah_type,
+            'dbUser' => $dbUser,
+            'records' => $records,
+            'coursesSummary' => $coursesSummary,
+            'analytics' => $analytics
         ]);
     }
 
@@ -1461,7 +1539,8 @@ class AdminController extends Controller
         $dbUser = $userModel->findById($_SESSION['user_id']);
 
         $role = $_SESSION['role'] ?? '';
-        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        $typeParam = strtolower(trim($_GET['type'] ?? ''));
+        $dawah_type = ($typeParam === 'female' || $role === 'Staff_Female') ? 'female' : 'male';
         
         $eduModel = new IslamicEducation();
         $records = $eduModel->getAllByGender($dawah_type);
@@ -1525,6 +1604,7 @@ class AdminController extends Controller
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
             $id = (int)($input['id'] ?? 0);
+            $reason = trim($input['reason'] ?? '');
             
             if (!$id) {
                 echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
@@ -1534,30 +1614,188 @@ class AdminController extends Controller
             require_once BASE_PATH . '/app/models/IslamicEducation.php';
             require_once BASE_PATH . '/app/models/Notification.php';
             $model = new IslamicEducation();
-            $success = $model->updateStatus($id, 'Rejected');
+            $success = $model->updateStatus($id, 'Rejected', $reason ?: null);
 
             if ($success) {
                 $req = $model->getById($id);
                 if ($req && !empty($req['tenant_id'])) {
                     $refNo = '#ER-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
                     $notif = new Notification();
+                    $notifMsg = "Your enrollment application ($refNo) for {$req['program_name']} could not be accommodated at this time.";
+                    if (!empty($reason)) {
+                        $notifMsg .= " Reason: {$reason}";
+                    }
                     $notif->create(
                         (int)$req['tenant_id'],
                         'Islamic Education Enrollment Update',
-                        "Your enrollment application ($refNo) for {$req['program_name']} could not be accommodated at this time.",
+                        $notifMsg,
                         'warning'
                     );
-                    $this->logAudit('DAWAH', 'REJECT_EDUCATION_ENROLLMENT', "Rejected enrollment request $refNo (ID: $id) for Tenant ID: {$req['tenant_id']}");
+                    $auditDetails = "Rejected enrollment request $refNo (ID: $id) for Tenant ID: {$req['tenant_id']}";
+                    if (!empty($reason)) {
+                        $auditDetails .= " — Reason: {$reason}";
+                    }
+                    $this->logAudit('DAWAH', 'REJECT_EDUCATION_ENROLLMENT', $auditDetails);
                 }
             }
 
             echo json_encode([
                 'success' => $success,
                 'status' => 'Rejected',
+                'reason' => $reason,
                 'message' => $success ? 'Enrollment request has been rejected.' : 'Failed to update request status.'
             ]);
             exit;
         }
+    }
+
+    public function markEducationPaid(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Invalid enrollment request ID.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+
+        $eduModel = new IslamicEducation();
+        $record = $eduModel->getById($id);
+
+        if (!$record) {
+            echo json_encode(['success' => false, 'message' => 'Enrollment record not found.']);
+            exit;
+        }
+
+        $refNo = !empty($record['payment_reference']) 
+            ? $record['payment_reference'] 
+            : ('ISCAG-RCPT-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)));
+
+        $success = $eduModel->updatePaymentInfo($id, [
+            'payment_status' => 'Paid',
+            'payment_reference' => $refNo
+        ]);
+
+        if ($success) {
+            if (!empty($record['tenant_id'])) {
+                try {
+                    $notif = new Notification();
+                    $progTitle = $record['level'] ?: ($record['program_name'] ?: 'Islamic Education');
+                    $notif->create(
+                        (int)$record['tenant_id'],
+                        'Registration Fee Payment Confirmed',
+                        "Your registration fee (₱120.00) for {$progTitle} has been officially verified and marked as Paid by the Da'wah Department.",
+                        'success'
+                    );
+                } catch (Exception $e) {}
+            }
+
+            $this->logAudit('DAWAH', 'MARK_EDUCATION_PAID', "Marked enrollment #EDU-$id as Paid (Ref: $refNo)");
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Registration fee has been successfully marked as Paid.',
+                'payment_status' => 'Paid',
+                'payment_reference' => $refNo
+            ]);
+            exit;
+        }
+
+        echo json_encode(['success' => false, 'message' => 'Failed to update payment status.']);
+        exit;
+    }
+
+    public function getEducationProgress(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        $id = (int)($_GET['id'] ?? ($_POST['id'] ?? 0));
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Invalid student enrollment ID.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        $eduModel = new IslamicEducation();
+        $progress = $eduModel->getStudentProgress($id);
+
+        if (!$progress) {
+            echo json_encode(['success' => false, 'message' => 'Enrollment record not found.']);
+            exit;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'data' => $progress
+        ]);
+        exit;
+    }
+
+    public function updateEducationProgress(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['enrollment_id'] ?? ($input['id'] ?? 0));
+        $sessionNum = (int)($input['session_number'] ?? 0);
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Invalid enrollment ID.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        $eduModel = new IslamicEducation();
+
+        // Support bulk update if sessions array is passed
+        if (isset($input['sessions']) && is_array($input['sessions'])) {
+            $updatedData = $eduModel->bulkUpdateProgress($id, $input['sessions']);
+            $this->logAudit('DAWAH', 'UPDATE_EDUCATION_PROGRESS', "Bulk updated session progress for Student ID #$id");
+            echo json_encode([
+                'success' => true,
+                'message' => 'Student progress updated successfully.',
+                'data' => $updatedData
+            ]);
+            exit;
+        }
+
+        if ($sessionNum < 1 || $sessionNum > 12) {
+            echo json_encode(['success' => false, 'message' => 'Invalid session number (must be 1-12).']);
+            exit;
+        }
+
+        $isAttended = !empty($input['is_attended']);
+        $isCompleted = !empty($input['is_completed']);
+        $notes = isset($input['notes']) ? (string)$input['notes'] : null;
+
+        $res = $eduModel->updateSessionProgress($id, $sessionNum, $isAttended, $isCompleted, $notes);
+        $fullProgress = $eduModel->getStudentProgress($id);
+
+        $this->logAudit('DAWAH', 'UPDATE_EDUCATION_PROGRESS', "Updated Session #$sessionNum (Attended: " . ($isAttended ? 'Yes' : 'No') . ", Completed: " . ($isCompleted ? 'Yes' : 'No') . ") for Student ID #$id");
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Progress updated successfully.',
+            'summary' => $fullProgress['summary'],
+            'session' => $res['session'],
+            'data' => $fullProgress
+        ]);
+        exit;
     }
 
     public function dawahCounseling(): void {
@@ -2164,7 +2402,9 @@ class AdminController extends Controller
         Auth::protectRole(['Admin', 'Staff_Male']);
         require_once BASE_PATH . '/app/models/User.php';
         $userModel = new User();
-        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $dbUser = $userModel->findById($_SESSION['user_id']) ?: [];
+        $addInfo = $userModel->getAdditionalInfo($_SESSION['user_id']) ?: [];
+        $dbUser = array_merge($dbUser, $addInfo);
 
         $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/profile', [
             'active_page' => 'profile',
@@ -2176,12 +2416,104 @@ class AdminController extends Controller
         Auth::protectRole(['Admin', 'Staff_Female']);
         require_once BASE_PATH . '/app/models/User.php';
         $userModel = new User();
-        $dbUser = $userModel->findById($_SESSION['user_id']);
+        $dbUser = $userModel->findById($_SESSION['user_id']) ?: [];
+        $addInfo = $userModel->getAdditionalInfo($_SESSION['user_id']) ?: [];
+        $dbUser = array_merge($dbUser, $addInfo);
 
         $this->view('admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/profile', [
             'active_page' => 'profile',
             'dbUser' => $dbUser
         ]);
+    }
+
+    public function updateStaffProfile(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            exit;
+        }
+
+        $userId = $_SESSION['user_id'] ?? null;
+        if (!$userId) {
+            echo json_encode(['success' => false, 'message' => 'Not authenticated.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/User.php';
+        $userModel = new User();
+
+        $name = trim($_POST['name'] ?? '');
+        $parts = explode(' ', $name, 2);
+        $firstName = $parts[0] ?? '';
+        $lastName = $parts[1] ?? '';
+        $email = trim($_POST['email'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $arabicName = trim($_POST['arabic'] ?? '');
+        $occupation = trim($_POST['occupation'] ?? '');
+        $address = trim($_POST['address'] ?? '');
+
+        $db = getDbConnection();
+        if (!empty($firstName)) {
+            $stmt = $db->prepare("UPDATE tenant_accounts SET first_name = :fn, last_name = :ln WHERE tenant_id = :id");
+            $stmt->execute(['fn' => $firstName, 'ln' => $lastName, 'id' => $userId]);
+            $_SESSION['name'] = trim("$firstName $lastName");
+        }
+        if (!empty($email)) {
+            $_SESSION['email'] = $email;
+        }
+
+        $data = [
+            'email' => $email,
+            'phone' => $phone,
+            'arabicName' => $arabicName,
+            'occupation' => $occupation,
+            'address' => $address,
+            'dob' => null,
+            'civil' => null,
+            'revertYear' => null
+        ];
+
+        // Handle profile photo upload
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['photo'];
+            $allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            $mime = mime_content_type($file['tmp_name']);
+            if (in_array($mime, $allowedMime)) {
+                $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
+                $fileName = "staff_{$userId}_" . time() . "." . $ext;
+                $relPath = "uploads/profiles/" . $fileName;
+                $uploadDir = BASE_PATH . "/public/uploads/profiles";
+                if (!is_dir($uploadDir)) {
+                    @mkdir($uploadDir, 0777, true);
+                }
+                $fullPath = BASE_PATH . "/public/" . $relPath;
+                if (move_uploaded_file($file['tmp_name'], $fullPath)) {
+                    $data['profile_picture_path'] = $relPath;
+                    $data['profile_picture_mime'] = $mime;
+                }
+            }
+        }
+
+        $success = $userModel->updateProfile($userId, $data);
+
+        $this->logAudit('PROFILE', 'UPDATE_STAFF_PROFILE', "Staff ID $userId updated their profile details.");
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? 'Staff profile updated successfully!' : 'Failed to update profile.',
+            'profile' => [
+                'name' => trim("$firstName $lastName"),
+                'email' => $email,
+                'phone' => $phone,
+                'arabic' => $arabicName,
+                'occupation' => $occupation,
+                'address' => $address,
+                'avatar' => isset($data['profile_picture_path']) ? asset($data['profile_picture_path']) : null
+            ]
+        ]);
+        exit;
     }
 
     public function assignDawahSchedule(): void {

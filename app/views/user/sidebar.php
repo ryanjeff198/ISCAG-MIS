@@ -131,6 +131,11 @@ $active_page = $active_page ?? 'dashboard';
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
                     School Schedule
                 </a>
+
+                <a href="<?= url('/user/services/education/female#my-registrations-card') ?>" class="<?= in_array($active_page, ['enrolled_courses', 'female_enrolled_courses']) ? 'active-submenu' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+                    Enrolled Courses
+                </a>
                 
                 <?php if (!$isEnrolled): ?>
                 <a href="<?= url('/user/services/education/female') ?>" class="<?= $active_page === 'female_education' ? 'active-submenu' : '' ?>">

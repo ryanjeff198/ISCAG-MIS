@@ -15,12 +15,13 @@ $activeRequest = $activeRequest ?? null;
 
 if (!$activeRequest && !empty($history)) {
     foreach ($history as $req) {
-        if (($req['status'] ?? '') === 'active' || ($req['status'] ?? '') === 'completed') {
+        $st = strtolower($req['status'] ?? '');
+        if (in_array($st, ['active', 'accepted', 'approved', 'enrolled', 'completed'])) {
             $hasApproved = true;
             $activeRequest = $req;
             break;
         }
-        if (($req['status'] ?? '') === 'pending' && !$activeRequest) {
+        if (in_array($st, ['pending', 'under_review']) && !$activeRequest) {
             $hasPending = true;
             $activeRequest = $req;
         }
@@ -1315,7 +1316,7 @@ if (!$activeRequest && !empty($history)) {
                     </div>
                     <div>
                         <h4 style="font-family: 'Lora', serif; font-size: 1.15rem; font-weight: 700; color: #ffffff; margin: 0 0 3px;">Female Da'wah Education Application Status</h4>
-                        <p style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.85); margin: 0;">Ref: <strong>#EDU-<?= str_pad((string)($activeRequest['id'] ?? '1'), 4, '0', STR_PAD_LEFT) ?></strong> • Batch: <strong><?= htmlspecialchars($activeRequest['batch_no'] ?? 'Batch 08') ?></strong> • Submitted on <?= isset($activeRequest['created_at']) ? date('M d, Y', strtotime($activeRequest['created_at'])) : 'Recently' ?></p>
+                        <p style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.85); margin: 0;">Student No.: <strong>#EDU-<?= str_pad((string)($activeRequest['id'] ?? '1'), 4, '0', STR_PAD_LEFT) ?></strong> • Batch: <strong><?= htmlspecialchars($activeRequest['batch_no'] ?? 'Batch 08') ?></strong> • Submitted on <?= isset($activeRequest['created_at']) ? date('M d, Y', strtotime($activeRequest['created_at'])) : 'Recently' ?></p>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -1323,7 +1324,15 @@ if (!$activeRequest && !empty($history)) {
                     <span style="width: 7px; height: 7px; border-radius: 50%; background: #ffffff;"></span>
                     <?= $hasPending ? 'Pending Verification' : 'Officially Enrolled' ?>
                   </span>
-                  <?php if ($hasPending && ($activeRequest['payment_status'] ?? '') !== 'Paid'): ?>
+                  <?php 
+                    $isRegPaid = (strtolower(trim($activeRequest['payment_status'] ?? '')) === 'paid');
+                  ?>
+                  <?php if ($isRegPaid): ?>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; background: #dcfce7; color: #166534; border: 1px solid #86efac;">
+                      <svg viewBox="0 0 24 24" style="width: 13px; height: 13px; fill: currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                      Fee Paid (₱120.00 Verified)
+                    </span>
+                  <?php elseif ($hasPending): ?>
                     <button type="button" onclick="payPendingRegistrationWithPayMongo(<?= (int)$activeRequest['id'] ?>)" class="btn-status-slip" style="background:#dcfce7 !important; color:#166534 !important; border:1px solid #86efac !important; font-weight:800 !important;">
                       <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5z"/></svg>
                       Pay ₱120 via PayMongo
@@ -1352,13 +1361,16 @@ if (!$activeRequest && !empty($history)) {
                 <div style="font-weight: 700; color: #111827; margin-top: 2px;"><?= htmlspecialchars($activeRequest['muslim_type'] ?? 'Revert') ?></div>
             </div>
             <div style="background: white; padding: 12px; border-radius: 12px; border: 1px solid var(--border-subtle); text-align: center;">
-                <div style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Payment Mode</div>
+                <div style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Payment Status</div>
                 <?php
                   $rawMethod = trim($activeRequest['payment_method'] ?? 'Cash');
                   $isOnline = (stripos($rawMethod, 'online') !== false || stripos($rawMethod, 'gcash') !== false || stripos($rawMethod, 'maya') !== false);
                   $displayMethod = $isOnline ? 'Online Payment' : 'Cash';
+                  $isFeePaid = (strtolower(trim($activeRequest['payment_status'] ?? '')) === 'paid');
                 ?>
-                <div style="font-weight: 700; color: #166534; margin-top: 2px;"><?= htmlspecialchars($displayMethod) ?></div>
+                <div style="font-weight: 700; color: <?= $isFeePaid ? '#166534' : '#b45309' ?>; margin-top: 2px;">
+                  <?= htmlspecialchars($displayMethod) ?> • <?= $isFeePaid ? 'Paid (Verified)' : 'Pending Fee' ?>
+                </div>
             </div>
         </div>
       </div>
@@ -1751,7 +1763,7 @@ if (!$activeRequest && !empty($history)) {
       <!-- ══════════════════════════════════════════════════════════ -->
       <!-- 📜 APPLICATION HISTORY TABLE                              -->
       <!-- ══════════════════════════════════════════════════════════ -->
-      <div class="section-card" style="margin-top:24px;">
+      <div class="section-card" id="my-registrations-card" style="margin-top:24px;">
         <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center;">
           <h6>
             <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary-female);margin-right:8px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
@@ -1764,7 +1776,7 @@ if (!$activeRequest && !empty($history)) {
             <table class="mis-table">
               <thead>
                 <tr>
-                  <th>Ref #</th>
+                  <th>Student No.</th>
                   <th>Student Name</th>
                   <th>Program / Level</th>
                   <th>Batch</th>
@@ -1794,11 +1806,24 @@ if (!$activeRequest && !empty($history)) {
                           $hChannel = trim($h['payment_channel'] ?? '');
                           $hIsOnline = (stripos($hRawMethod, 'online') !== false || stripos($hRawMethod, 'gcash') !== false || stripos($hRawMethod, 'maya') !== false);
                           $hDisplayMethod = $hIsOnline ? 'Online Payment' : 'Cash';
+                          $hPayStatus = trim($h['payment_status'] ?? 'Pending');
+                          $hIsPaid = (strtolower($hPayStatus) === 'paid');
                         ?>
                         <span style="font-weight:700; color:<?= $hIsOnline ? '#0f5c3a' : '#166534' ?>;"><?= htmlspecialchars($hDisplayMethod) ?></span>
                         <?php if ($hIsOnline && !empty($hChannel)): ?>
                           <div style="font-size:0.75rem; color:#64748b; font-weight:600;"><?= htmlspecialchars($hChannel) ?></div>
                         <?php endif; ?>
+                        <div style="margin-top:3px;">
+                          <?php if ($hIsPaid): ?>
+                            <span style="font-size:0.7rem; font-weight:800; color:#15803d; background:#dcfce7; padding:2px 7px; border-radius:4px; display:inline-flex; align-items:center; gap:3px; border:1px solid #bbf7d0;">
+                              ✓ Paid (Verified)
+                            </span>
+                          <?php else: ?>
+                            <span style="font-size:0.7rem; font-weight:700; color:#b45309; background:#fef3c7; padding:2px 7px; border-radius:4px; display:inline-flex; align-items:center; gap:3px; border:1px solid #fde68a;">
+                              Pending Fee
+                            </span>
+                          <?php endif; ?>
+                        </div>
                       </td>
                       <td><?= date('M d, Y', strtotime($h['created_at'])) ?></td>
                       <td>
@@ -1808,10 +1833,15 @@ if (!$activeRequest && !empty($history)) {
                           <span class="badge-status badge-pending" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-weight:800;">Under Review</span>
                         <?php else: ?>
                           <span class="badge-status badge-rejected" style="font-weight:800;"><?= ucfirst($st) ?></span>
+                          <?php if (!empty($h['rejection_reason'])): ?>
+                            <div style="font-size:0.72rem; color:#dc2626; font-weight:600; margin-top:3px; max-width:180px; line-height:1.2;">
+                              Reason: <?= htmlspecialchars($h['rejection_reason']) ?>
+                            </div>
+                          <?php endif; ?>
                         <?php endif; ?>
                       </td>
                       <td>
-                        <button type="button" class="btn-view-doc" onclick='openSlipModal(<?= json_encode($h) ?>)' title="View Registration Form">
+                        <button type="button" class="btn-view-doc" onclick="openSlipModalById(<?= (int)$h['id'] ?>)" title="View Registration Form">
                           <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                           View
                         </button>
@@ -1893,6 +1923,10 @@ if (!$activeRequest && !empty($history)) {
             <td style="font-weight:800; padding-top:4px; color:#166534;">FEE:</td>
             <td style="border-bottom:1.5px solid #166534; font-weight:800; padding-top:4px; color:#15803d; font-size:0.95rem;" id="doc-fee-price">₱ 120.00</td>
           </tr>
+          <tr>
+            <td style="font-weight:800; padding-top:4px; color:#166534; white-space:nowrap;">PAYMENT STATUS:</td>
+            <td style="border-bottom:1.5px solid #166534; font-weight:800; padding-top:4px;" id="doc-fee-status">PENDING SETTLEMENT</td>
+          </tr>
         </table>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.8rem; font-weight:800; color:#166534; flex-wrap:wrap; gap:8px;">
           <div style="display:flex; gap:16px;">
@@ -1906,12 +1940,15 @@ if (!$activeRequest && !empty($history)) {
       </div>
 
       <!-- Main Document Header -->
-      <div class="doc-official-header">
+      <div class="doc-official-header" style="position:relative;">
         <div class="doc-logo-circle">
           <img src="<?= asset("assets/da'wah logo.jpg") ?>" alt="Da'wah Female Section Logo" class="doc-main-logo" />
         </div>
         <div class="doc-header-org">ISCAG PHILIPPINES — DA'WAH FEMALE SECTION</div>
         <div class="doc-header-title">REGISTRATION FORM</div>
+        <div style="margin-top:4px;">
+          <span id="doc-student-no" style="font-family:'Courier New', monospace; font-size:0.82rem; font-weight:800; color:#166534; border:1.5px solid #166534; padding:2px 10px; border-radius:4px; display:inline-block; background:#f0fdf4;">STUDENT NO.: #EDU-0001</span>
+        </div>
       </div>
 
       <!-- Main Fields Table -->
@@ -2471,6 +2508,12 @@ if (!$activeRequest && !empty($history)) {
   }
 
   // ── Open Official Printable Registration Document ──
+  const allHistoryRegistrations = <?= json_encode(array_values($history ?? [])) ?>;
+  function openSlipModalById(id) {
+    const item = allHistoryRegistrations.find(x => Number(x.id) === Number(id));
+    if (item) openSlipModal(item);
+  }
+
   function openSlipModal(data) {
     if (!data) return;
     const refPad = String(data.id || '1').padStart(4, '0');
@@ -2486,6 +2529,9 @@ if (!$activeRequest && !empty($history)) {
     document.getElementById('doc-fee-batch').innerText = data.batch_no || 'BATCH 08';
     document.getElementById('doc-fee-name').innerText = fullName;
     document.getElementById('doc-fee-date').innerText = dateFormatted;
+    if (document.getElementById('doc-student-no')) {
+      document.getElementById('doc-student-no').innerText = 'STUDENT NO.: #EDU-' + refPad;
+    }
     
     // Course resolution & dynamic course checklist
     const courseRaw = String(data.level || data.program_name || 'Level 1 — Basic Arabic & Tajweed').trim();
@@ -2529,6 +2575,15 @@ if (!$activeRequest && !empty($history)) {
 
     if (document.getElementById('doc-fee-price')) {
       document.getElementById('doc-fee-price').innerText = '₱ ' + (parseFloat(data.fee_amount || 120).toFixed(2));
+    }
+    const payStatus = String(data.payment_status || 'Pending').toLowerCase();
+    const docFeeStatus = document.getElementById('doc-fee-status');
+    if (docFeeStatus) {
+      if (payStatus === 'paid') {
+        docFeeStatus.innerHTML = '<span style="color:#15803d; font-weight:900;">PAID (OFFICIAL RECEIPT VERIFIED)</span>' + (data.payment_reference ? ` • <span style="font-size:0.75rem; color:#166534;">Ref: ${escapeHtml(data.payment_reference)}</span>` : '');
+      } else {
+        docFeeStatus.innerHTML = '<span style="color:#b45309; font-weight:800;">PENDING PAYMENT / SETTLEMENT</span>';
+      }
     }
     document.getElementById('doc-pay-online-box').innerText = isOnline ? '[✓]' : '[ ]';
     document.getElementById('doc-pay-cash-box').innerText = isCash ? '[✓]' : '[ ]';
