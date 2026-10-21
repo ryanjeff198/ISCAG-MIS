@@ -28,11 +28,129 @@ class AdminController extends Controller
         // Load Real-time Data
         $db = getDbConnection();
 
-        // ── KPI Data ──
+        // ── 1. Department Breakdown & Multi-Department Metrics ──
+        $deptMetrics = [
+            'apartments' => ['name' => 'Apartments Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'occupancy' => 0, 'units' => 0],
+            'dawah'      => ['name' => 'Da\'wah Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'counseling' => 0, 'marriage' => 0, 'conversion' => 0],
+            'education'  => ['name' => 'Islamic Education', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'students' => 0, 'avg_progress' => 0, 'sessions' => 0],
+            'damayan'    => ['name' => 'Damayan Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'burial' => 0, 'funeral' => 0, 'donations_amount' => 0],
+        ];
+
+        // Apartments
+        try {
+            $apps = $db->query("SELECT status, COUNT(*) as c FROM apartmentsapp GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            foreach ($apps as $st => $c) {
+                $deptMetrics['apartments']['total'] += (int)$c;
+                if (stripos($st, 'pend') !== false) $deptMetrics['apartments']['pending'] += (int)$c;
+                elseif (stripos($st, 'approv') !== false || stripos($st, 'assign') !== false) $deptMetrics['apartments']['approved'] += (int)$c;
+            }
+        } catch (Throwable $e) {}
+
+        try {
+            $deptMetrics['apartments']['units'] = (int)$db->query("SELECT COUNT(*) FROM apartment_units")->fetchColumn();
+            $deptMetrics['apartments']['occupancy'] = (int)$db->query("SELECT COUNT(*) FROM apartment_units WHERE status = 'Occupied'")->fetchColumn();
+        } catch (Throwable $e) {}
+
+        // Maintenance Data
+        $pendingMaintenance = 0;
+        $recentMaintenance = [];
+        try {
+            $pendingMaintenance = (int) $db->query("SELECT COUNT(*) FROM tenant_maintenance WHERE status = 'Pending'")->fetchColumn();
+            $recentMaintenance = $db->query("
+                SELECT m.*, u.first_name, u.last_name 
+                FROM tenant_maintenance m
+                JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+                ORDER BY m.created_at DESC 
+                LIMIT 5
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            
+            $deptMetrics['apartments']['total'] += (int)$db->query("SELECT COUNT(*) FROM tenant_maintenance")->fetchColumn();
+            $deptMetrics['apartments']['pending'] += $pendingMaintenance;
+        } catch (Throwable $e) {
+            $pendingMaintenance = 0;
+            $recentMaintenance = [];
+        }
+
+        // Da'wah
+        try {
+            $couns = $db->query("SELECT status, COUNT(*) as c FROM counseling_requests GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            foreach ($couns as $st => $c) {
+                $deptMetrics['dawah']['total'] += (int)$c;
+                $deptMetrics['dawah']['counseling'] += (int)$c;
+                if (stripos($st, 'pend') !== false) $deptMetrics['dawah']['pending'] += (int)$c;
+                elseif (stripos($st, 'complet') !== false) $deptMetrics['dawah']['completed'] += (int)$c;
+                else $deptMetrics['dawah']['approved'] += (int)$c;
+            }
+            $marr = $db->query("SELECT status, COUNT(*) as c FROM marriage_requests GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            foreach ($marr as $st => $c) {
+                $deptMetrics['dawah']['total'] += (int)$c;
+                $deptMetrics['dawah']['marriage'] += (int)$c;
+                if (stripos($st, 'pend') !== false) $deptMetrics['dawah']['pending'] += (int)$c;
+                elseif (stripos($st, 'complet') !== false) $deptMetrics['dawah']['completed'] += (int)$c;
+                else $deptMetrics['dawah']['approved'] += (int)$c;
+            }
+            $conv = $db->query("SELECT status, COUNT(*) as c FROM conversion_requests GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            foreach ($conv as $st => $c) {
+                $deptMetrics['dawah']['total'] += (int)$c;
+                $deptMetrics['dawah']['conversion'] += (int)$c;
+                if (stripos($st, 'pend') !== false) $deptMetrics['dawah']['pending'] += (int)$c;
+                elseif (stripos($st, 'complet') !== false) $deptMetrics['dawah']['completed'] += (int)$c;
+                else $deptMetrics['dawah']['approved'] += (int)$c;
+            }
+        } catch (Throwable $e) {}
+
+        // Islamic Education
+        try {
+            $edu = $db->query("SELECT status, COUNT(*) as c, AVG(COALESCE(progress_percent,0)) as avg_p FROM islamic_education_enrollments GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $totalP = 0; $totalStudents = 0;
+            foreach ($edu as $row) {
+                $c = (int)$row['c'];
+                $deptMetrics['education']['total'] += $c;
+                $deptMetrics['education']['students'] += $c;
+                $totalP += ($row['avg_p'] * $c);
+                $totalStudents += $c;
+                if (stripos($row['status'], 'pend') !== false) $deptMetrics['education']['pending'] += $c;
+                elseif (stripos($row['status'], 'complet') !== false) $deptMetrics['education']['completed'] += $c;
+                else $deptMetrics['education']['approved'] += $c;
+            }
+            if ($totalStudents > 0) $deptMetrics['education']['avg_progress'] = round($totalP / $totalStudents, 1);
+            $deptMetrics['education']['sessions'] = (int)$db->query("SELECT COUNT(*) FROM islamic_education_sessions WHERE is_attended = 1 OR is_completed = 1")->fetchColumn();
+        } catch (Throwable $e) {}
+
+        // Damayan
+        try {
+            $bur = $db->query("SELECT status, COUNT(*) as c FROM burial_requests GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            foreach ($bur as $st => $c) {
+                $deptMetrics['damayan']['total'] += (int)$c;
+                $deptMetrics['damayan']['burial'] += (int)$c;
+                if (stripos($st, 'pend') !== false) $deptMetrics['damayan']['pending'] += (int)$c;
+                elseif (stripos($st, 'complet') !== false) $deptMetrics['damayan']['completed'] += (int)$c;
+                else $deptMetrics['damayan']['approved'] += (int)$c;
+            }
+            $fc = $db->query("SELECT status, COUNT(*) as c FROM funeral_cases GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            foreach ($fc as $st => $c) {
+                $deptMetrics['damayan']['total'] += (int)$c;
+                $deptMetrics['damayan']['funeral'] += (int)$c;
+                if (stripos($st, 'pend') !== false || stripos($st, 'submit') !== false) $deptMetrics['damayan']['pending'] += (int)$c;
+                elseif (stripos($st, 'complet') !== false || stripos($st, 'releas') !== false) $deptMetrics['damayan']['completed'] += (int)$c;
+                else $deptMetrics['damayan']['approved'] += (int)$c;
+            }
+            $deptMetrics['damayan']['donations_amount'] = (float)$db->query("SELECT COALESCE(SUM(amount), 0) FROM charity_donations_records WHERE status != 'rejected'")->fetchColumn();
+        } catch (Throwable $e) {}
+
+        // ── 2. Grand Totals Across All 4 Departments ──
+        $grandTotalRequests = $deptMetrics['apartments']['total'] + $deptMetrics['dawah']['total'] + $deptMetrics['education']['total'] + $deptMetrics['damayan']['total'];
+        $grandPendingRequests = $deptMetrics['apartments']['pending'] + $deptMetrics['dawah']['pending'] + $deptMetrics['education']['pending'] + $deptMetrics['damayan']['pending'];
+        $grandApprovedRequests = $deptMetrics['apartments']['approved'] + $deptMetrics['dawah']['approved'] + $deptMetrics['education']['approved'] + $deptMetrics['damayan']['approved'];
+        $grandCompletedRequests = $deptMetrics['apartments']['completed'] + $deptMetrics['dawah']['completed'] + $deptMetrics['education']['completed'] + $deptMetrics['damayan']['completed'];
+
+        // Users & Notifications
         $totalUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
-        $pendingApprovals = (int) $db->query("SELECT COUNT(*) FROM apartmentsapp WHERE status = 'Pending'")->fetchColumn();
+        $activeUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts WHERE is_verified = 1")->fetchColumn();
+        $staffUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts WHERE role != 'Tenant'")->fetchColumn();
         $auditFlags = (int) $db->query("SELECT COUNT(*) FROM admin_notifications WHERE is_read = 0")->fetchColumn();
-        $totalApplications = (int) $db->query("SELECT COUNT(*) FROM apartmentsapp")->fetchColumn();
+        $totalApplications = $deptMetrics['apartments']['total'];
+        $pendingApprovals = $deptMetrics['apartments']['pending'];
         $totalParking = (int) $db->query("SELECT COUNT(*) FROM tenant_parking")->fetchColumn();
 
         // ── Billing KPI Data (Real-Time Synchronized) ──
@@ -42,6 +160,159 @@ class AdminController extends Controller
         $overdueBilling = $billingKPIs['overdueCount'];
         $paidThisMonth = $billingKPIs['paidThisMonthCount'];
         $revenueGrowth = $billingKPIs['growth'];
+
+        // ── 3. Unified Multi-Department Recent Requests ──
+        $unifiedRequests = [];
+        try {
+            $aptRows = $db->query("
+                SELECT a.application_id as ref_id, 'Apartments' as department, 'Apartment Application' as request_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
+                       u.email, a.date as submitted_at, a.status,
+                       '/admin/mis_admin/apartment_confirmation' as action_url
+                FROM apartmentsapp a
+                LEFT JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
+                ORDER BY a.application_id DESC LIMIT 4
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $unifiedRequests = array_merge($unifiedRequests, $aptRows);
+        } catch (Throwable $e) {}
+
+        try {
+            $counsRows = $db->query("
+                SELECT c.id as ref_id, 'Da\'wah' as department, 'Counseling Consultation' as request_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
+                       u.email, c.created_at as submitted_at, c.status,
+                       '/admin/dawah/counseling' as action_url
+                FROM counseling_requests c
+                LEFT JOIN tenant_accounts u ON c.tenant_id = u.tenant_id
+                ORDER BY c.id DESC LIMIT 3
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $unifiedRequests = array_merge($unifiedRequests, $counsRows);
+        } catch (Throwable $e) {}
+
+        try {
+            $marrRows = $db->query("
+                SELECT m.id as ref_id, 'Da\'wah' as department, 'Marriage Reservation' as request_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
+                       u.email, m.created_at as submitted_at, m.status,
+                       '/admin/dawah/marriage' as action_url
+                FROM marriage_requests m
+                LEFT JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+                ORDER BY m.id DESC LIMIT 2
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $unifiedRequests = array_merge($unifiedRequests, $marrRows);
+        } catch (Throwable $e) {}
+
+        try {
+            $convRows = $db->query("
+                SELECT cv.id as ref_id, 'Da\'wah' as department, 'Shahadah Conversion' as request_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
+                       u.email, cv.created_at as submitted_at, cv.status,
+                       '/admin/dawah/conversion' as action_url
+                FROM conversion_requests cv
+                LEFT JOIN tenant_accounts u ON cv.tenant_id = u.tenant_id
+                ORDER BY cv.id DESC LIMIT 2
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $unifiedRequests = array_merge($unifiedRequests, $convRows);
+        } catch (Throwable $e) {}
+
+        try {
+            $eduRows = $db->query("
+                SELECT e.id as ref_id, 'Islamic Education' as department, CONCAT('Enrollment: ', COALESCE(e.level,'Course')) as request_type,
+                       CONCAT(COALESCE(e.first_name,''), ' ', COALESCE(e.last_name,'')) as applicant,
+                       e.contact_number as email, e.created_at as submitted_at, e.status,
+                       '/admin/dawah/education' as action_url
+                FROM islamic_education_enrollments e
+                ORDER BY e.id DESC LIMIT 4
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $unifiedRequests = array_merge($unifiedRequests, $eduRows);
+        } catch (Throwable $e) {}
+
+        try {
+            $burRows = $db->query("
+                SELECT b.id as ref_id, 'Damayan' as department, 'Burial Service' as request_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
+                       u.email, b.submitted_at, b.status,
+                       '/admin/damayan/burial' as action_url
+                FROM burial_requests b
+                LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
+                ORDER BY b.id DESC LIMIT 3
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $unifiedRequests = array_merge($unifiedRequests, $burRows);
+        } catch (Throwable $e) {}
+
+        try {
+            $fcRows = $db->query("
+                SELECT f.id as ref_id, 'Damayan' as department, 'Funeral Case' as request_type,
+                       f.informant_name as applicant,
+                       f.informant_email as email, f.reported_at as submitted_at, f.status,
+                       '/admin/damayan/funeral-cases' as action_url
+                FROM funeral_cases f
+                ORDER BY f.id DESC LIMIT 3
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $unifiedRequests = array_merge($unifiedRequests, $fcRows);
+        } catch (Throwable $e) {}
+
+        usort($unifiedRequests, function($a, $b) {
+            return strtotime($b['submitted_at'] ?? '1970-01-01') - strtotime($a['submitted_at'] ?? '1970-01-01');
+        });
+        $recentRequests = array_slice($unifiedRequests, 0, 8);
+
+        // ── 4. Urgent / Pending Actions List ──
+        $pendingActions = [];
+        if ($deptMetrics['apartments']['pending'] > 0) {
+            $pendingActions[] = [
+                'type' => 'Apartments',
+                'title' => 'Pending Apartment Applications',
+                'count' => $deptMetrics['apartments']['pending'],
+                'url' => url('/admin/mis_admin/apartment_confirmation'),
+                'level' => 'warning'
+            ];
+        }
+        if ($pendingMaintenance > 0) {
+            $pendingActions[] = [
+                'type' => 'Apartments',
+                'title' => 'Pending Maintenance Requests',
+                'count' => $pendingMaintenance,
+                'url' => url('/admin/mis_admin/maintenance'),
+                'level' => 'warning'
+            ];
+        }
+        if ($deptMetrics['damayan']['pending'] > 0) {
+            $pendingActions[] = [
+                'type' => 'Damayan',
+                'title' => 'Pending Burial / Funeral Intakes',
+                'count' => $deptMetrics['damayan']['pending'],
+                'url' => url('/admin/damayan/burial'),
+                'level' => 'danger'
+            ];
+        }
+        if ($deptMetrics['education']['pending'] > 0) {
+            $pendingActions[] = [
+                'type' => 'Islamic Education',
+                'title' => 'Pending Student Enrollments',
+                'count' => $deptMetrics['education']['pending'],
+                'url' => url('/admin/dawah/education'),
+                'level' => 'info'
+            ];
+        }
+        if ($deptMetrics['dawah']['pending'] > 0) {
+            $pendingActions[] = [
+                'type' => 'Da\'wah',
+                'title' => 'Pending Counseling / Marriage Requests',
+                'count' => $deptMetrics['dawah']['pending'],
+                'url' => url('/admin/dawah/counseling'),
+                'level' => 'info'
+            ];
+        }
+        if ($overdueBilling > 0) {
+            $pendingActions[] = [
+                'type' => 'Finance',
+                'title' => 'Overdue Invoices Requiring Follow-up',
+                'count' => $overdueBilling,
+                'url' => url('/admin/mis_admin/billing'),
+                'level' => 'danger'
+            ];
+        }
 
         // ── Chart: System Activity (last 7 days) ──
         $stmtActivity = $db->query("
@@ -63,34 +334,40 @@ class AdminController extends Controller
         // ── Gender Distribution ──
         $genderData = $db->query("SELECT COALESCE(sex,'Unknown') as gender, COUNT(*) as count FROM tenant_addinfo GROUP BY sex")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // ── Maintenance Data ──
-        $pendingMaintenance = 0;
-        $recentMaintenance = [];
+        // ── Recent Activity / Audit Trail Snippet ──
+        $recentLogs = [];
         try {
-            $pendingMaintenance = (int) $db->query("SELECT COUNT(*) FROM tenant_maintenance WHERE status = 'Pending'")->fetchColumn();
-            $recentMaintenance = $db->query("
-                SELECT m.*, u.first_name, u.last_name 
-                FROM tenant_maintenance m
-                JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
-                ORDER BY m.created_at DESC 
-                LIMIT 5
-            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } catch (Throwable $e) {
-            $pendingMaintenance = 0;
-            $recentMaintenance = [];
-        }
+            $stmtLogs = $db->query("
+                SELECT al.audit_id as id, al.admin_name as actor_name, al.module, al.action as title,
+                       al.details, al.timestamp as created_at, 'audit' as type
+                FROM audit_logs al
+                ORDER BY al.timestamp DESC 
+                LIMIT 8
+            ");
+            $recentLogs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {}
 
-        // ── Recent Activity ──
-        $stmtLogs = $db->query("
-            SELECT * FROM admin_notifications 
-            ORDER BY created_at DESC 
-            LIMIT 8
-        ");
-        $recentLogs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        if (empty($recentLogs)) {
+            $stmtLogs = $db->query("
+                SELECT * FROM admin_notifications 
+                ORDER BY created_at DESC 
+                LIMIT 8
+            ");
+            $recentLogs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
 
         $this->view('admin/mis_admin/admin_dashboard', [
             'active_page' => 'admin_dashboard',
+            'grandTotalRequests' => $grandTotalRequests,
+            'grandPendingRequests' => $grandPendingRequests,
+            'grandApprovedRequests' => $grandApprovedRequests,
+            'grandCompletedRequests' => $grandCompletedRequests,
+            'deptMetrics' => $deptMetrics,
+            'recentRequests' => $recentRequests,
+            'pendingActions' => $pendingActions,
             'totalUsers' => $totalUsers,
+            'activeUsers' => $activeUsers,
+            'staffUsers' => $staffUsers,
             'pendingApprovals' => $pendingApprovals,
             'auditFlags' => $auditFlags,
             'totalApplications' => $totalApplications,
@@ -1206,22 +1483,170 @@ class AdminController extends Controller
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         $db = getDbConnection();
 
-        // 1. Apartment Department Stats
+        // ── 1. Department Summary Metrics ──
+        // Apartment Department Stats
         $aptStats = $db->query("SELECT status, COUNT(*) as count FROM apartmentsapp GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $totalApts = 0;
         foreach($aptStats as $s) $totalApts += $s['count'];
 
-        // 2. Billing / Finance Stats
+        // Billing / Finance Stats
         $billingStats = $db->query("SELECT status, COUNT(*) as count, COALESCE(SUM(amount),0) as total FROM billing GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $totalRevenue = 0;
         foreach($billingStats as $s) if($s['status'] === 'Paid') $totalRevenue = (float)$s['total'];
 
-        // 3. User / Tenant Stats
+        // User / Tenant Stats
         $userStats = $db->query("SELECT role, COUNT(*) as count FROM tenant_accounts GROUP BY role")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         $totalUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
 
-        // 4. Detailed Logs for the new design
-        $burialLogs = $db->query("SELECT * FROM billing ORDER BY billing_id DESC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // Islamic Education Stats
+        $eduEnrollments = $db->query("
+            SELECT e.*, 
+                   COALESCE(e.progress_percent, 0) as progress,
+                   COALESCE(e.sessions_attended, 0) as attended,
+                   COALESCE(e.total_sessions, 0) as total_s
+            FROM islamic_education_enrollments e
+            ORDER BY e.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        $totalEduStudents = count($eduEnrollments);
+        $avgEduProgress = 0;
+        if ($totalEduStudents > 0) {
+            $sumProgress = array_sum(array_column($eduEnrollments, 'progress'));
+            $avgEduProgress = round($sumProgress / $totalEduStudents, 1);
+        }
+        $totalEduSessions = (int)$db->query("SELECT COUNT(*) FROM islamic_education_sessions WHERE is_attended = 1 OR is_completed = 1")->fetchColumn();
+
+        // Damayan & Funeral Stats
+        $burialRequests = $db->query("
+            SELECT b.*, CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as tenant_name, u.email as tenant_email
+            FROM burial_requests b
+            LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
+            ORDER BY b.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $funeralCases = $db->query("
+            SELECT f.* 
+            FROM funeral_cases f 
+            ORDER BY f.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $charityDonations = (float)$db->query("SELECT COALESCE(SUM(amount), 0) FROM charity_donations_records WHERE status != 'rejected'")->fetchColumn();
+
+        // Da'wah Stats
+        $counselingCount = (int)$db->query("SELECT COUNT(*) FROM counseling_requests")->fetchColumn();
+        $marriageCount = (int)$db->query("SELECT COUNT(*) FROM marriage_requests")->fetchColumn();
+        $conversionCount = (int)$db->query("SELECT COUNT(*) FROM conversion_requests")->fetchColumn();
+
+        // ── 2. Unified Master Report Items ──
+        $masterReportItems = [];
+
+        // Apartments
+        try {
+            $aptRows = $db->query("
+                SELECT a.application_id as id, 'Apartments' as department, 'Apartment Application' as service_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as subject_name,
+                       u.email as contact, a.date as report_date, a.status,
+                       CONCAT(COALESCE(au.building,''), '-', COALESCE(au.room_number,'Unit')) as detail_info
+                FROM apartmentsapp a
+                LEFT JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
+                LEFT JOIN apartment_units au ON a.unit_id = au.unit_id
+                ORDER BY a.application_id DESC LIMIT 50
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $masterReportItems = array_merge($masterReportItems, $aptRows);
+        } catch (Throwable $e) {}
+
+        // Islamic Education
+        try {
+            $eduRows = $db->query("
+                SELECT e.id, 'Islamic Education' as department, CONCAT('Enrollment: ', COALESCE(e.level,'Course')) as service_type,
+                       CONCAT(COALESCE(e.first_name,''), ' ', COALESCE(e.last_name,'')) as subject_name,
+                       e.contact_number as contact, DATE(e.created_at) as report_date, e.status,
+                       CONCAT(COALESCE(e.progress_percent,0), '% Progress (', COALESCE(e.sessions_attended,0), '/', COALESCE(e.total_sessions,0), ' sessions)') as detail_info
+                FROM islamic_education_enrollments e
+                ORDER BY e.id DESC LIMIT 50
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $masterReportItems = array_merge($masterReportItems, $eduRows);
+        } catch (Throwable $e) {}
+
+        // Da'wah
+        try {
+            $counsRows = $db->query("
+                SELECT c.id, 'Da\'wah' as department, CONCAT('Counseling (', COALESCE(c.reason, c.session_type, 'General'), ')') as service_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as subject_name,
+                       u.email as contact, DATE(c.created_at) as report_date, c.status,
+                       COALESCE(c.scheduled_at, 'Appointment') as detail_info
+                FROM counseling_requests c
+                LEFT JOIN tenant_accounts u ON c.tenant_id = u.tenant_id
+                ORDER BY c.id DESC LIMIT 20
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $masterReportItems = array_merge($masterReportItems, $counsRows);
+
+            $marrRows = $db->query("
+                SELECT m.id, 'Da\'wah' as department, 'Marriage Solemnization' as service_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as subject_name,
+                       u.email as contact, DATE(m.created_at) as report_date, m.status,
+                       CONCAT('Date: ', COALESCE(m.marriage_date,'TBD')) as detail_info
+                FROM marriage_requests m
+                LEFT JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+                ORDER BY m.id DESC LIMIT 20
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $masterReportItems = array_merge($masterReportItems, $marrRows);
+
+            $convRows = $db->query("
+                SELECT cv.id, 'Da\'wah' as department, 'Shahadah Conversion' as service_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as subject_name,
+                       u.email as contact, DATE(cv.created_at) as report_date, cv.status,
+                       'Certificate Process' as detail_info
+                FROM conversion_requests cv
+                LEFT JOIN tenant_accounts u ON cv.tenant_id = u.tenant_id
+                ORDER BY cv.id DESC LIMIT 20
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $masterReportItems = array_merge($masterReportItems, $convRows);
+        } catch (Throwable $e) {}
+
+        // Damayan
+        try {
+            $burRows = $db->query("
+                SELECT b.id, 'Damayan' as department, 'Burial Service' as service_type,
+                       COALESCE(b.deceased_name, CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as subject_name,
+                       b.informant_contact as contact, DATE(b.submitted_at) as report_date, b.status,
+                       CONCAT('Plot: ', COALESCE(b.assigned_plot_number,'Pending'), ' (', COALESCE(b.cemetery_preference,'Local'), ')') as detail_info
+                FROM burial_requests b
+                LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
+                ORDER BY b.id DESC LIMIT 20
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $masterReportItems = array_merge($masterReportItems, $burRows);
+
+            $fcRows = $db->query("
+                SELECT f.id, 'Damayan' as department, 'Funeral Case Management' as service_type,
+                       CONCAT(COALESCE(f.deceased_first_name,''), ' ', COALESCE(f.deceased_last_name,'')) as subject_name,
+                       f.informant_contact as contact, DATE(f.reported_at) as report_date, f.status,
+                       CONCAT('Cert: ', COALESCE(f.certificate_status,'Pending')) as detail_info
+                FROM funeral_cases f
+                ORDER BY f.id DESC LIMIT 20
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $masterReportItems = array_merge($masterReportItems, $fcRows);
+        } catch (Throwable $e) {}
+
+        // Billing
+        try {
+            $billRows = $db->query("
+                SELECT b.billing_id as id, 'Finance' as department, 'Billing Invoice' as service_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as subject_name,
+                       u.email as contact, DATE(b.created_at) as report_date, b.status,
+                       CONCAT('₱', FORMAT(b.amount, 2)) as detail_info
+                FROM billing b
+                LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
+                ORDER BY b.billing_id DESC LIMIT 30
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $masterReportItems = array_merge($masterReportItems, $billRows);
+        } catch (Throwable $e) {}
+
+        usort($masterReportItems, function($a, $b) {
+            return strtotime($b['report_date'] ?? '1970-01-01') - strtotime($a['report_date'] ?? '1970-01-01');
+        });
+
+        // 3. Apartment Lease Logs
         $aptLeaseLogs = $db->query("
             SELECT a.*, u.first_name, u.last_name, au.room_number, au.building 
             FROM apartmentsapp a
@@ -1230,8 +1655,8 @@ class AdminController extends Controller
             ORDER BY a.application_id DESC LIMIT 10
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // 5. Activity Logs (latest 50)
-        $logs = $db->query("SELECT * FROM notifications ORDER BY created_at DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // 4. System Notifications / Audit Logs
+        $logs = $db->query("SELECT * FROM admin_notifications ORDER BY created_at DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $this->view('admin/mis_admin/admin_reports', [
             'active_page' => 'reports',
@@ -1241,15 +1666,75 @@ class AdminController extends Controller
             'totalRevenue' => $totalRevenue,
             'userStats' => $userStats,
             'totalUsers' => $totalUsers,
+            'eduEnrollments' => $eduEnrollments,
+            'totalEduStudents' => $totalEduStudents,
+            'avgEduProgress' => $avgEduProgress,
+            'totalEduSessions' => $totalEduSessions,
+            'burialRequests' => $burialRequests,
+            'funeralCases' => $funeralCases,
+            'charityDonations' => $charityDonations,
+            'counselingCount' => $counselingCount,
+            'marriageCount' => $marriageCount,
+            'conversionCount' => $conversionCount,
+            'masterReportItems' => $masterReportItems,
             'recentLogs' => $logs,
-            'burialLogs' => $burialLogs,
+            'burialLogs' => $burialRequests,
             'aptLeaseLogs' => $aptLeaseLogs
         ]);
     }
 
     public function dawahRecords(): void {
-        Auth::protectRole(['Admin', 'Staff_Male']);
-        $this->view('admin/mis_admin/dawah_records', ['active_page' => 'dawah_records']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        $db = getDbConnection();
+
+        $counseling = $db->query("
+            SELECT c.id, 'counseling' as type, CONCAT('Counseling (', COALESCE(c.reason, c.session_type, 'General'), ')') as service_type,
+                   CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as name,
+                   u.email, c.created_at as date, c.status
+            FROM counseling_requests c
+            LEFT JOIN tenant_accounts u ON c.tenant_id = u.tenant_id
+            ORDER BY c.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $marriages = $db->query("
+            SELECT m.id, 'marriage_service' as type, 'Marriage Solemnization' as service_type,
+                   CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as name,
+                   u.email, m.created_at as date, m.status
+            FROM marriage_requests m
+            LEFT JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+            ORDER BY m.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $conversions = $db->query("
+            SELECT cv.id, 'conversion' as type, 'Shahadah Conversion' as service_type,
+                   CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as name,
+                   u.email, cv.created_at as date, cv.status
+            FROM conversion_requests cv
+            LEFT JOIN tenant_accounts u ON cv.tenant_id = u.tenant_id
+            ORDER BY cv.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $education = $db->query("
+            SELECT e.id, 'islamic_education' as type, CONCAT('Enrollment: ', COALESCE(e.level,'Course')) as service_type,
+                   CONCAT(COALESCE(e.first_name,''), ' ', COALESCE(e.last_name,'')) as name,
+                   e.contact_number as email, e.created_at as date, e.status
+            FROM islamic_education_enrollments e
+            ORDER BY e.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $dawahRequests = array_merge($counseling, $marriages, $conversions, $education);
+        usort($dawahRequests, function($a, $b) {
+            return strtotime($b['date'] ?? '1970-01-01') - strtotime($a['date'] ?? '1970-01-01');
+        });
+
+        $this->view('admin/mis_admin/dawah_records', [
+            'active_page' => 'dawah_records',
+            'dawahRequests' => $dawahRequests,
+            'counselingCount' => count($counseling),
+            'educationCount' => count($education),
+            'marriageCount' => count($marriages),
+            'conversionCount' => count($conversions)
+        ]);
     }
 
     public function dawahAdminDashboard(): void {
@@ -2949,7 +3434,40 @@ class AdminController extends Controller
 
     public function damayanRecords(): void {
         Auth::protectRole(['Admin', 'Staff_Damayan']);
-        $this->view('admin/mis_admin/damayan_records', ['active_page' => 'damayan_records']);
+        $db = getDbConnection();
+
+        $burials = $db->query("
+            SELECT b.id, 'Burial Service' as service_type,
+                   COALESCE(b.deceased_name, CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as name,
+                   b.informant_contact as contact, b.submitted_at as date, b.status,
+                   COALESCE(b.cemetery_preference, 'Local') as cemetery_pref,
+                   COALESCE(b.assigned_plot_number, 'Pending') as plot_number
+            FROM burial_requests b
+            LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
+            ORDER BY b.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $funeralCases = $db->query("
+            SELECT f.id, 'Funeral Case' as service_type,
+                   CONCAT(COALESCE(f.deceased_first_name,''), ' ', COALESCE(f.deceased_last_name,'')) as name,
+                   f.informant_contact as contact, f.reported_at as date, f.status,
+                   COALESCE(f.cemetery, 'Local') as cemetery_pref,
+                   COALESCE(f.grave_reference, 'Pending') as plot_number
+            FROM funeral_cases f
+            ORDER BY f.id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $damayanRequests = array_merge($burials, $funeralCases);
+        usort($damayanRequests, function($a, $b) {
+            return strtotime($b['date'] ?? '1970-01-01') - strtotime($a['date'] ?? '1970-01-01');
+        });
+
+        $this->view('admin/mis_admin/damayan_records', [
+            'active_page' => 'damayan_records',
+            'damayanRequests' => $damayanRequests,
+            'burialsCount' => count($burials),
+            'funeralCasesCount' => count($funeralCases)
+        ]);
     }
 
     public function damayanProfile(): void {
@@ -4955,14 +5473,109 @@ class AdminController extends Controller
         }
     }
 
+    public function updateUserRole(): void {
+        Auth::protectRole(['Admin']);
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
+
+        $body = json_decode(file_get_contents('php://input'), true);
+        $id = $body['id'] ?? null;
+        $newRole = trim($body['role'] ?? '');
+
+        if (!$id || !$newRole) {
+            echo json_encode(['success' => false, 'message' => 'User ID and Role are required.']);
+            return;
+        }
+
+        // Prevent self-demotion
+        if ((string)$id === (string)($_SESSION['user_id'] ?? '')) {
+            echo json_encode(['success' => false, 'message' => 'Security restriction: You cannot modify your own administrator role.']);
+            return;
+        }
+
+        $validRoles = [
+            'Admin' => 'MIS Administrator',
+            'Staff_Tenant' => 'Apartments Department Staff',
+            'Staff_Damayan' => 'Damayan Department Staff',
+            'Staff_Male' => 'Da\'wah Male Division Staff',
+            'Staff_Female' => 'Islamic Education & Da\'wah Staff',
+            'Tenant' => 'Regular User / Resident'
+        ];
+
+        if (!array_key_exists($newRole, $validRoles)) {
+            echo json_encode(['success' => false, 'message' => 'Invalid role selected.']);
+            return;
+        }
+
+        $db = getDbConnection();
+        $stmt = $db->prepare("SELECT tenant_id, first_name, last_name, email, role FROM tenant_accounts WHERE tenant_id = :id");
+        $stmt->execute(['id' => $id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) {
+            echo json_encode(['success' => false, 'message' => 'User account not found.']);
+            return;
+        }
+
+        $oldRole = $user['role'] ?? 'User';
+        if ($oldRole === $newRole) {
+            echo json_encode(['success' => true, 'message' => 'User already holds this role.', 'newRole' => $newRole]);
+            return;
+        }
+
+        $upd = $db->prepare("UPDATE tenant_accounts SET role = :r WHERE tenant_id = :id");
+        if ($upd->execute(['r' => $newRole, 'id' => $id])) {
+            $adminName = $_SESSION['name'] ?? 'Admin';
+            $userName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?: $user['email'];
+            $this->logAudit('USER_MANAGEMENT', 'ROLE_CHANGE', "Admin ($adminName) changed role for $userName (ID: $id) from '$oldRole' to '$newRole'");
+            echo json_encode([
+                'success' => true,
+                'message' => "Role updated to {$validRoles[$newRole]} successfully.",
+                'newRole' => $newRole,
+                'roleTitle' => $validRoles[$newRole]
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to update user role in database.']);
+        }
+    }
+
+    public function getUserAuditTrail(): void {
+        Auth::protectRole(['Admin']);
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
+
+        $userId = $_GET['id'] ?? null;
+        if (!$userId) {
+            echo json_encode(['success' => false, 'message' => 'User ID required.']);
+            return;
+        }
+
+        $db = getDbConnection();
+        $stmt = $db->prepare("
+            SELECT al.*, COALESCE(ta.role, 'System') as display_role
+            FROM audit_logs al
+            LEFT JOIN tenant_accounts ta ON al.admin_id = ta.tenant_id
+            WHERE al.details LIKE :idPattern OR al.admin_id = :userId
+            ORDER BY al.timestamp DESC
+            LIMIT 50
+        ");
+        $stmt->execute([
+            'idPattern' => "%ID: $userId%",
+            'userId' => $userId
+        ]);
+        $trails = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        echo json_encode(['success' => true, 'trails' => $trails]);
+    }
 
     public function auditLogs(): void {
         Auth::protectRole(['Admin']);
         $db = getDbConnection();
-        // Join with tenant_accounts to get the current role, fallback to stored role for system/deleted users
         $query = "
             SELECT al.*, 
-                   COALESCE(ta.role, al.admin_role, 'System') as display_role
+                   COALESCE(ta.role, 'System') as display_role
             FROM audit_logs al
             LEFT JOIN tenant_accounts ta ON al.admin_id = ta.tenant_id
             ORDER BY al.timestamp DESC 
