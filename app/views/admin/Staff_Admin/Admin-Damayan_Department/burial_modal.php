@@ -242,6 +242,24 @@
                 </div>
               </div>
 
+              <!-- DEPARTMENT PHYSICAL CERTIFICATE CUSTODY BANNER -->
+              <div id="custody-status-banner" style="border-radius:10px; padding:12px 14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border:1.5px solid #cbd5e1; background:#f8fafc;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div id="custody-badge-icon" style="width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:#f1f5f9; color:#64748b;">
+                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+                  </div>
+                  <div>
+                    <div style="font-size:0.84rem; font-weight:800;" id="custody-status-title">Certificate Custody Status</div>
+                    <div style="font-size:0.75rem;" id="custody-status-desc">Loading certificate department custody status...</div>
+                  </div>
+                </div>
+                <div>
+                  <button type="button" id="btn-toggle-custody" class="btn-topbar" style="font-size:0.78rem; padding:6px 14px; font-weight:700; transition:all 0.2s;" onclick="toggleCertificateCustody()">
+                    Mark Received in Department
+                  </button>
+                </div>
+              </div>
+
               <!-- Pipeline Progression Pills -->
               <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:16px;">
                 <div style="font-size:0.72rem; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
@@ -345,6 +363,12 @@
                   <span id="sched-mode-badge" style="display:none; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:4px; background:#fef3c7; color:#92400e;">Rescheduling</span>
                 </div>
 
+                <!-- CUSTODY REQUIREMENT NOTICE (WHEN NOT IN DEPARTMENT) -->
+                <div id="custody-lock-notice" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; margin-bottom:12px; color:#991b1b; font-size:0.8rem; align-items:center; gap:8px;">
+                  <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#dc2626;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                  <span><strong>Release Scheduling Locked:</strong> The physical death certificate must be in Damayan Department custody before scheduling its release. Click <em>"Mark as Received in Department"</em> above once received.</span>
+                </div>
+
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
                   <div>
                     <label for="sched-date-input" style="display:block; font-size:0.76rem; font-weight:700; color:#374151; margin-bottom:4px;">
@@ -389,7 +413,7 @@
               </div>
 
               <!-- VIEW C: CERTIFICATE OFFICIALLY RELEASED & COMPLETED -->
-              <div id="released-completed-view" style="display:none; background:#ecfdf5; border:1.5px solid #6ee7b7; border-radius:10px; padding:14px 16px; margin-bottom:14px;">
+              <div id="released-completed-view" style="display:none; background:#ecfdf5; border:1.5px solid #6ee7b7; border-radius:10px; padding:14px 16px;">
                 <div style="display:flex; align-items:center; gap:10px;">
                   <div style="width:32px; height:32px; border-radius:8px; background:#d1fae5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                     <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
@@ -403,17 +427,39 @@
                 </div>
               </div>
 
-              <!-- SCHEDULE HISTORY AUDIT LOGS -->
-              <div id="schedule-history-container" style="display:none; margin-top:14px; padding-top:12px; border-top:1px dashed #cbd5e1;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-                  <div style="font-size:0.75rem; font-weight:800; color:#334155; text-transform:uppercase; letter-spacing:0.04em;">
-                    Appointment History &amp; Revisions
-                  </div>
-                  <span id="sched-history-count" style="font-size:0.72rem; color:#6b7280; font-weight:600;">0 records</span>
-                </div>
-                <div id="sched-history-list" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto;"></div>
-              </div>
+            </div>
 
+            <!-- SECTION E: APPOINTMENT HISTORY & AUDIT LOGS (BOTTOM TABLE) -->
+            <div class="panel-section" id="schedule-history-container" style="display:none; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div style="width:28px; height:28px; border-radius:6px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center;">
+                    <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                  </div>
+                  <div style="font-size:0.8rem; font-weight:800; color:#1e293b; text-transform:uppercase; letter-spacing:0.04em;">
+                    Claiming Appointment History
+                  </div>
+                </div>
+                <span id="sched-history-count" style="font-size:0.72rem; color:#475569; font-weight:700; background:#f1f5f9; border:1px solid #e2e8f0; padding:2px 8px; border-radius:100px;">0 records</span>
+              </div>
+              
+              <div style="overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.76rem; text-align:left;">
+                  <thead>
+                    <tr style="background:#f8fafc; border-bottom:1.5px solid #e2e8f0; color:#475569; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">
+                      <th style="padding:9px 12px; font-weight:700;">Action</th>
+                      <th style="padding:9px 12px; font-weight:700;">Scheduled Appointment</th>
+                      <th style="padding:9px 12px; font-weight:700;">Location</th>
+                      <th style="padding:9px 12px; font-weight:700;">Reason / Notes</th>
+                      <th style="padding:9px 12px; font-weight:700;">Action By</th>
+                      <th style="padding:9px 12px; font-weight:700;">Date Recorded</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sched-history-table-body">
+                    <!-- Populated dynamically by renderScheduleHistory() -->
+                  </tbody>
+                </table>
+              </div>
             </div>
 
           </div>
@@ -1406,6 +1452,72 @@
       }
     }
 
+    // Update Department Custody UI
+    const inDept = parseInt(c.certificate_in_department, 10) === 1 || c.certificate_in_department === true || c.certificate_in_department === '1';
+    const custodyBanner = document.getElementById('custody-status-banner');
+    const custodyIcon = document.getElementById('custody-badge-icon');
+    const custodyTitle = document.getElementById('custody-status-title');
+    const custodyDesc = document.getElementById('custody-status-desc');
+    const btnToggleCustody = document.getElementById('btn-toggle-custody');
+    const custodyLockNotice = document.getElementById('custody-lock-notice');
+    const schedDateInput = document.getElementById('sched-date-input');
+    const schedTimeInput = document.getElementById('sched-time-input');
+    const btnConfirmSchedule = document.getElementById('btn-confirm-schedule');
+
+    if (custodyBanner) {
+      if (inDept) {
+        custodyBanner.style.background = '#ecfdf5';
+        custodyBanner.style.borderColor = '#a7f3d0';
+        if (custodyIcon) {
+          custodyIcon.style.background = '#d1fae5';
+          custodyIcon.style.color = '#059669';
+          custodyIcon.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>';
+        }
+        if (custodyTitle) custodyTitle.innerHTML = '<span style="color:#065f46;">✓ In Damayan Department Custody</span>';
+        const recvDate = c.certificate_received_dept_at ? new Date(c.certificate_received_dept_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : 'Recorded';
+        const recvBy = c.certificate_received_dept_by || 'Damayan Staff';
+        if (custodyDesc) custodyDesc.innerHTML = `<span style="color:#047857;">Physical certificate is confirmed within department custody (Received ${recvDate} by ${escapeHtml(recvBy)}).</span>`;
+        if (btnToggleCustody) {
+          btnToggleCustody.textContent = 'Revert Custody';
+          btnToggleCustody.style.background = '#fff';
+          btnToggleCustody.style.color = '#4b5563';
+          btnToggleCustody.style.borderColor = '#d1d5db';
+        }
+        if (custodyLockNotice) custodyLockNotice.style.display = 'none';
+        if (schedDateInput) schedDateInput.disabled = false;
+        if (schedTimeInput) schedTimeInput.disabled = false;
+        if (btnConfirmSchedule) {
+          btnConfirmSchedule.disabled = false;
+          btnConfirmSchedule.style.opacity = '1';
+          btnConfirmSchedule.style.cursor = 'pointer';
+        }
+      } else {
+        custodyBanner.style.background = '#fffbeb';
+        custodyBanner.style.borderColor = '#fde68a';
+        if (custodyIcon) {
+          custodyIcon.style.background = '#fef3c7';
+          custodyIcon.style.color = '#d97706';
+          custodyIcon.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
+        }
+        if (custodyTitle) custodyTitle.innerHTML = '<span style="color:#92400e;">⚠ Certificate Not In Department Custody</span>';
+        if (custodyDesc) custodyDesc.innerHTML = '<span style="color:#b45309;">Physical certificate has not yet been received in Damayan Department custody. Release scheduling is locked.</span>';
+        if (btnToggleCustody) {
+          btnToggleCustody.textContent = '✓ Mark as Received in Department';
+          btnToggleCustody.style.background = '#059669';
+          btnToggleCustody.style.color = '#fff';
+          btnToggleCustody.style.borderColor = '#059669';
+        }
+        if (custodyLockNotice) custodyLockNotice.style.display = 'flex';
+        if (schedDateInput) schedDateInput.disabled = true;
+        if (schedTimeInput) schedTimeInput.disabled = true;
+        if (btnConfirmSchedule) {
+          btnConfirmSchedule.disabled = true;
+          btnConfirmSchedule.style.opacity = '0.6';
+          btnConfirmSchedule.style.cursor = 'not-allowed';
+        }
+      }
+    }
+
     // Render schedule audit history
     renderScheduleHistory(history);
   }
@@ -1448,20 +1560,22 @@
 
   function renderScheduleHistory(history) {
     const container = document.getElementById('schedule-history-container');
-    const list = document.getElementById('sched-history-list');
+    const tbody = document.getElementById('sched-history-table-body');
     const countBadge = document.getElementById('sched-history-count');
-    if (!container || !list) return;
+    if (!container || !tbody) return;
 
     if (!history || history.length === 0) {
       container.style.display = 'none';
-      list.innerHTML = '';
+      tbody.innerHTML = '';
       return;
     }
 
     container.style.display = 'block';
-    countBadge.textContent = history.length + ' update' + (history.length > 1 ? 's' : '');
+    if (countBadge) {
+      countBadge.textContent = history.length + ' update' + (history.length > 1 ? 's' : '');
+    }
 
-    list.innerHTML = history.map(h => {
+    tbody.innerHTML = history.map(h => {
       let badgeBg = '#f1f5f9';
       let badgeCol = '#475569';
       if (h.action_type === 'SCHEDULED') { badgeBg = '#ecfdf5'; badgeCol = '#065f46'; }
@@ -1469,21 +1583,59 @@
       else if (h.action_type === 'CANCELLED') { badgeBg = '#fef2f2'; badgeCol = '#991b1b'; }
       else if (h.action_type === 'RELEASED') { badgeBg = '#ecfdf5'; badgeCol = '#047857'; }
 
-      const createdDate = new Date(h.created_at).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' });
+      const createdDate = h.created_at ? new Date(h.created_at).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) : '—';
+      let schedDisplay = '—';
+      if (h.scheduled_date) {
+        let formattedDate = h.scheduled_date;
+        try {
+          const parts = h.scheduled_date.split('-');
+          if (parts.length === 3) {
+            const d = new Date(parts[0], parts[1]-1, parts[2]);
+            formattedDate = d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+          }
+        } catch(e){}
+        let formattedTime = '';
+        if (h.scheduled_time) {
+          try {
+            const tParts = h.scheduled_time.split(':');
+            const hh = parseInt(tParts[0], 10);
+            const mm = tParts[1] || '00';
+            const ampm = hh >= 12 ? 'PM' : 'AM';
+            const h12 = hh % 12 || 12;
+            formattedTime = h12 + ':' + mm + ' ' + ampm;
+          } catch(e){
+            formattedTime = h.scheduled_time;
+          }
+        }
+        schedDisplay = `<strong>${escapeHtml(formattedDate)}</strong> ${formattedTime ? `at ${escapeHtml(formattedTime)}` : ''}`;
+      }
+      const locDisplay = escapeHtml(h.release_location || 'Damayan Department');
+      const reasonDisplay = h.reason ? `<span style="color:#334155;">${escapeHtml(h.reason)}</span>` : '<span style="color:#94a3b8; font-style:italic;">None</span>';
+      const actionByDisplay = escapeHtml(h.action_by_name || 'Damayan Staff');
+
       return `
-        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; font-size:0.75rem;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:3px;">
-            <span style="font-weight:700; padding:2px 6px; border-radius:4px; font-size:0.68rem; background:${badgeBg}; color:${badgeCol};">
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:9px 12px; vertical-align:middle;">
+            <span style="font-weight:700; padding:2px 7px; border-radius:4px; font-size:0.68rem; background:${badgeBg}; color:${badgeCol}; display:inline-block;">
               ${escapeHtml(h.action_type)}
             </span>
-            <span style="color:#94a3b8; font-size:0.7rem;">${createdDate}</span>
-          </div>
-          <div style="color:#334155; margin-top:2px;">
-            ${h.scheduled_date ? `<strong>Scheduled:</strong> ${escapeHtml(h.scheduled_date)} ${h.scheduled_time ? escapeHtml(h.scheduled_time) : ''} &bull; ` : ''}
-            <span>By: <strong>${escapeHtml(h.action_by_name || 'Damayan Staff')}</strong></span>
-          </div>
-          ${h.reason ? `<div style="color:#64748b; font-style:italic; margin-top:2px;">Reason / Note: ${escapeHtml(h.reason)}</div>` : ''}
-        </div>
+          </td>
+          <td style="padding:9px 12px; vertical-align:middle; color:#1e293b;">
+            ${schedDisplay}
+          </td>
+          <td style="padding:9px 12px; vertical-align:middle; color:#475569;">
+            ${locDisplay}
+          </td>
+          <td style="padding:9px 12px; vertical-align:middle; max-width:200px;">
+            ${reasonDisplay}
+          </td>
+          <td style="padding:9px 12px; vertical-align:middle; color:#334155; font-weight:600;">
+            ${actionByDisplay}
+          </td>
+          <td style="padding:9px 12px; vertical-align:middle; color:#64748b; font-size:0.7rem; white-space:nowrap;">
+            ${createdDate}
+          </td>
+        </tr>
       `;
     }).join('');
   }
@@ -1516,6 +1668,17 @@
 
   async function submitReleaseSchedule() {
     if (!activeCase) return;
+
+    // Custody Gate: Certificate must be in Damayan Department custody before scheduling release
+    const inDept = parseInt(activeCase.certificate_in_department, 10) === 1 || activeCase.certificate_in_department === true || activeCase.certificate_in_department === '1';
+    if (!inDept) {
+      if (typeof showAlert === 'function') {
+        showAlert('Certificate Must Be in Department', 'The physical death certificate must be in Damayan Department custody before scheduling its release to the applicant.', 'warning');
+      } else {
+        alert('The physical death certificate must be in Damayan Department custody before scheduling its release.');
+      }
+      return;
+    }
 
     const dateInput = document.getElementById('sched-date-input');
     const timeInput = document.getElementById('sched-time-input');
@@ -1668,6 +1831,66 @@
       console.error(err);
       if (typeof showAlert === 'function') showAlert('Error', 'Network error while updating stage.', 'error');
       else alert('Network error.');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // DEPARTMENT CERTIFICATE CUSTODY TOGGLE
+  // ─────────────────────────────────────────────────────────────
+  async function toggleCertificateCustody() {
+    if (!activeCase) return;
+    const currentlyInDept = parseInt(activeCase.certificate_in_department, 10) === 1 || activeCase.certificate_in_department === true || activeCase.certificate_in_department === '1';
+    const newStatus = !currentlyInDept;
+
+    const caseName = activeCase.deceased_name || ('Case #' + (activeCase.ref_id || activeCase.id));
+    const promptMsg = newStatus 
+      ? `Confirm that the physical death certificate for "${caseName}" has been received and is now in Damayan Department custody?`
+      : `Revert custody status to indicate the certificate is not yet in Damayan Department custody? (Note: This will lock release scheduling until received)`;
+
+    if (!confirm(promptMsg)) return;
+
+    const btn = document.getElementById('btn-toggle-custody');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+    }
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/set-custody') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: activeCase.id,
+          in_department: newStatus ? 1 : 0
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        activeCase.certificate_in_department = newStatus ? 1 : 0;
+        if (newStatus) {
+          activeCase.certificate_received_dept_at = new Date().toISOString();
+          activeCase.certificate_received_dept_by = '<?= htmlspecialchars($_SESSION['name'] ?? 'Damayan Admin') ?>';
+        } else {
+          activeCase.certificate_received_dept_at = null;
+        }
+
+        populateSchedulingSection({ burial: activeCase, schedule_history: activeCase.schedule_history || [] });
+
+        if (typeof showAlert === 'function') {
+          showAlert('Custody Updated', data.message || 'Department custody status updated successfully.', 'success');
+        } else {
+          alert(data.message || 'Department custody status updated.');
+        }
+      } else {
+        if (typeof showAlert === 'function') showAlert('Custody Update Failed', data.error || 'Could not update custody status.', 'error');
+        else alert(data.error || 'Failed to update custody status.');
+      }
+    } catch (e) {
+      console.error(e);
+      if (typeof showAlert === 'function') showAlert('Network Error', 'Network error while updating department custody status.', 'error');
+      else alert('Network error while updating department custody status.');
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 

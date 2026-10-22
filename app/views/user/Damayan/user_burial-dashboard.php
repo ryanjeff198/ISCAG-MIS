@@ -389,7 +389,7 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
       <div class="summary-info">
         <h4><?= $isCopyRequest ? 'Copy Request Ref ID' : 'Case Reference ID' ?></h4>
         <div class="val"><?= htmlspecialchars($activeBurial['ref_id']) ?></div>
-        <p><?= $isCopyRequest ? 'Keep this reference to track your Certificate Copy Request' : 'Keep this reference for hospital & office coordination' ?></p>
+        <p><?= $isCopyRequest ? 'Keep this reference to track your Certificate Copy Request' : 'Keep this reference to track your Certificate Processing & Claiming' ?></p>
       </div>
     </div>
     <div class="summary-card">
@@ -516,7 +516,7 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
               </div>
             <?php endif; ?>
             <div style="display:flex; justify-content:space-between;">
-              <span style="color:var(--text-muted);">Hospital / Office Personnel:</span>
+              <span style="color:var(--text-muted);">Responsible Personnel:</span>
               <span><?= htmlspecialchars($activeBurial['death_cert_responsible_personnel'] ?: 'Damayan Coordinator Assigned') ?></span>
             </div>
           </div>
@@ -583,8 +583,8 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
   <div class="card progress-card">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
       <div>
-        <h3 style="margin:0 0 4px;">Death Certificate Civil Registration Pipeline</h3>
-        <div style="font-size:0.82rem; color:var(--text-muted);">Tracking verification, hospital coordination, and local civil registry stages</div>
+        <h3 style="margin:0 0 4px;">Death Certificate Processing Pipeline</h3>
+        <div style="font-size:0.82rem; color:var(--text-muted);">Tracking certificate verification, preparation, and claiming release</div>
       </div>
       <span class="badge-tag <?= in_array(strtolower($currentDcStatus), ['registered', 'certified copy requested or received']) ? 'success' : 'info' ?>" style="font-size:0.8rem; padding:5px 12px;">
         Stage: <?= htmlspecialchars($currentDcStatus) ?>
@@ -633,37 +633,71 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
       <?php endforeach; ?>
     </div>
 
-    <!-- Appointment History & Revisions (if rescheduled or cancelled) -->
+    <!-- Appointment History Table at the Bottom of Active Case Card -->
     <?php if (!empty($scheduleHistory)): ?>
-    <div style="margin-top:20px; padding-top:14px; border-top:1px dashed #e2e8f0;">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-        <span style="font-size:0.75rem; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:0.04em;">
-          Claiming Appointment History (<?= count($scheduleHistory) ?>)
+    <div style="margin-top:22px; padding-top:16px; border-top:1px dashed #cbd5e1;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:26px; height:26px; border-radius:6px; background:#ecfdf5; color:var(--primary); display:flex; align-items:center; justify-content:center;">
+            <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+          </div>
+          <span style="font-size:0.78rem; font-weight:800; color:#334155; text-transform:uppercase; letter-spacing:0.04em;">
+            Claiming Appointment History
+          </span>
+        </div>
+        <span style="font-size:0.72rem; font-weight:700; color:#64748b; background:#f1f5f9; border:1px solid #e2e8f0; padding:2px 8px; border-radius:100px;">
+          <?= count($scheduleHistory) ?> <?= count($scheduleHistory) === 1 ? 'Record' : 'Records' ?>
         </span>
       </div>
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        <?php foreach($scheduleHistory as $sh): 
-          $shDate = !empty($sh['created_at']) ? date('M d, Y \a\t g:i A', strtotime($sh['created_at'])) : '';
-          $badgeBg = ($sh['action_type'] === 'SCHEDULED' ? '#ecfdf5' : ($sh['action_type'] === 'RESCHEDULED' ? '#fffbeb' : ($sh['action_type'] === 'CANCELLED' ? '#fef2f2' : '#f0fdf4')));
-          $badgeCol = ($sh['action_type'] === 'SCHEDULED' ? '#065f46' : ($sh['action_type'] === 'RESCHEDULED' ? '#92400e' : ($sh['action_type'] === 'CANCELLED' ? '#991b1b' : '#047857')));
-        ?>
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 12px; font-size:0.78rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-weight:800; padding:2px 8px; border-radius:4px; font-size:0.68rem; background:<?= $badgeBg ?>; color:<?= $badgeCol ?>;">
-              <?= htmlspecialchars($sh['action_type']) ?>
-            </span>
-            <span style="color:#1e293b;">
-              <?php if (!empty($sh['scheduled_date'])): ?>
-                Appointment: <strong><?= date('M d, Y', strtotime($sh['scheduled_date'])) ?> <?= !empty($sh['scheduled_time']) ? date('g:i A', strtotime($sh['scheduled_time'])) : '' ?></strong>
-              <?php endif; ?>
-              <?php if (!empty($sh['reason'])): ?>
-                &bull; <em><?= htmlspecialchars($sh['reason']) ?></em>
-              <?php endif; ?>
-            </span>
-          </div>
-          <span style="color:#64748b; font-size:0.72rem;"><?= $shDate ?></span>
-        </div>
-        <?php endforeach; ?>
+      <div style="overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.78rem; text-align:left;">
+          <thead>
+            <tr style="background:#f8fafc; border-bottom:1.5px solid #e2e8f0; color:#475569; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">
+              <th style="padding:9px 12px; font-weight:700;">Action</th>
+              <th style="padding:9px 12px; font-weight:700;">Scheduled Appointment</th>
+              <th style="padding:9px 12px; font-weight:700;">Location</th>
+              <th style="padding:9px 12px; font-weight:700;">Reason / Instructions</th>
+              <th style="padding:9px 12px; font-weight:700;">Processed By</th>
+              <th style="padding:9px 12px; font-weight:700;">Date Recorded</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach($scheduleHistory as $sh): 
+              $badgeBg = ($sh['action_type'] === 'SCHEDULED' ? '#ecfdf5' : ($sh['action_type'] === 'RESCHEDULED' ? '#fffbeb' : ($sh['action_type'] === 'CANCELLED' ? '#fef2f2' : '#f0fdf4')));
+              $badgeCol = ($sh['action_type'] === 'SCHEDULED' ? '#065f46' : ($sh['action_type'] === 'RESCHEDULED' ? '#92400e' : ($sh['action_type'] === 'CANCELLED' ? '#991b1b' : '#047857')));
+            ?>
+            <tr style="border-bottom:1px solid #f1f5f9;">
+              <td style="padding:9px 12px; vertical-align:middle;">
+                <span style="font-weight:700; padding:2px 7px; border-radius:4px; font-size:0.68rem; background:<?= $badgeBg ?>; color:<?= $badgeCol ?>; display:inline-block;">
+                  <?= htmlspecialchars($sh['action_type']) ?>
+                </span>
+              </td>
+              <td style="padding:9px 12px; vertical-align:middle; color:#1e293b;">
+                <?php if (!empty($sh['scheduled_date'])): ?>
+                  <strong><?= date('M d, Y', strtotime($sh['scheduled_date'])) ?></strong>
+                  <?php if (!empty($sh['scheduled_time'])): ?>
+                    at <?= date('g:i A', strtotime($sh['scheduled_time'])) ?>
+                  <?php endif; ?>
+                <?php else: ?>
+                  <span style="color:#94a3b8;">—</span>
+                <?php endif; ?>
+              </td>
+              <td style="padding:9px 12px; vertical-align:middle; color:#475569;">
+                <?= htmlspecialchars(($sh['release_location'] ?? $sh['location'] ?? '') ?: 'Damayan Department') ?>
+              </td>
+              <td style="padding:9px 12px; vertical-align:middle; color:#334155; max-width:200px;">
+                <?= !empty($sh['reason']) ? htmlspecialchars($sh['reason']) : (!empty($sh['change_reason']) ? htmlspecialchars($sh['change_reason']) : '<span style="color:#94a3b8; font-style:italic;">None</span>') ?>
+              </td>
+              <td style="padding:9px 12px; vertical-align:middle; color:#334155; font-weight:600;">
+                <?= htmlspecialchars(($sh['action_by_name'] ?? $sh['admin_name'] ?? '') ?: 'Damayan Staff') ?>
+              </td>
+              <td style="padding:9px 12px; vertical-align:middle; color:#64748b; font-size:0.72rem; white-space:nowrap;">
+                <?= !empty($sh['created_at']) ? date('M d, Y g:i A', strtotime($sh['created_at'])) : '—' ?>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
       </div>
     </div>
     <?php endif; ?>
@@ -806,14 +840,14 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
       <div class="guide-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
       <div class="guide-text">
         <h5>1. Request Verification</h5>
-        <p>Our Damayan team reviews details, hospital certificates, and valid representative credentials.</p>
+        <p>Our Damayan team reviews details against registered death certificate records.</p>
       </div>
     </div>
     <div class="guide-item">
       <div class="guide-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
       <div class="guide-text">
-        <h5>2. Death Certificate Processing</h5>
-        <p>Staff coordinates with hospital liaisons and transmits to the Local Civil Registrar for official registration.</p>
+        <h5>2. Certificate Processing</h5>
+        <p>Staff verifies and prepares the physical death certificate in department custody.</p>
       </div>
     </div>
     <div class="guide-item">

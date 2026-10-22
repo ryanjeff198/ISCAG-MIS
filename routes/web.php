@@ -190,6 +190,7 @@ $routes = [
     '/admin/damayan/burial/reschedule-release' => ['AdminController', 'rescheduleBurialRelease'],
     '/admin/damayan/burial/cancel-release'     => ['AdminController', 'cancelBurialRelease'],
     '/admin/damayan/burial/mark-released'      => ['AdminController', 'markBurialReleased'],
+    '/admin/damayan/burial/set-custody'        => ['AdminController', 'setCertificateCustody'],
     '/admin/damayan/burial/update-stage'       => ['AdminController', 'updateBurialStage'],
     '/admin/damayan/cemetery-plot/update' => ['AdminController', 'updateCemeteryPlot'],
     '/admin/damayan/cemetery-plots/available' => ['AdminController', 'getAvailableCemeteryPlots'],

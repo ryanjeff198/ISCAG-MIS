@@ -449,7 +449,7 @@ class BurialRequest
                     $encStmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
                                                    WHERE LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))
                                                       OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm
-                                                   ORDER BY (LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))) DESC
+                                                   ORDER BY id DESC
                                                    LIMIT 1");
                     $encStmt->execute(['cno' => $existingCertNo, 'norm' => $normCertNo]);
                     $foundEnc = $encStmt->fetch(PDO::FETCH_ASSOC);
@@ -510,7 +510,7 @@ class BurialRequest
                     $encStmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
                                                    WHERE LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))
                                                       OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm
-                                                   ORDER BY (LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))) DESC
+                                                   ORDER BY id DESC
                                                    LIMIT 1");
                     $encStmt->execute(['cno' => $existingCertNo, 'norm' => $normCertNo]);
                     $foundEnc = $encStmt->fetch(PDO::FETCH_ASSOC);
@@ -584,6 +584,17 @@ class BurialRequest
             ]);
 
             $burialId = (int)$this->db->lastInsertId();
+
+            // If linked to an existing department record or verified in department archive, initialize custody
+            if ($encodedCertId || $existingRecordVerified || !empty($data['certificate_in_department'])) {
+                try {
+                    $this->db->prepare("UPDATE burial_requests SET 
+                        certificate_in_department = 1,
+                        certificate_received_dept_at = COALESCE(certificate_received_dept_at, NOW()),
+                        certificate_received_dept_by = 'Damayan Department Archive'
+                        WHERE id = :id")->execute(['id' => $burialId]);
+                } catch (\Throwable $e) {}
+            }
 
             if ($encodedCertId) {
                 try {
@@ -1321,9 +1332,20 @@ class BurialRequest
             $prevDate = $burial['scheduled_release_date'];
             $prevTime = $burial['scheduled_release_time'];
 
+            // Gate: Physical death certificate must be in Damayan Department custody
+            if (empty($burial['certificate_in_department']) && empty($data['confirm_in_department'])) {
+                return [
+                    'success' => false, 
+                    'error' => 'The physical death certificate must be in Damayan Department custody before scheduling its release.'
+                ];
+            }
+
             // Update burial_requests record persistently
             $stmt = $this->db->prepare("UPDATE burial_requests SET
                 death_cert_status = 'Ready for Release',
+                certificate_in_department = 1,
+                certificate_received_dept_at = COALESCE(certificate_received_dept_at, NOW()),
+                certificate_received_dept_by = COALESCE(certificate_received_dept_by, :s_dept_by),
                 scheduled_release_date = :s_date,
                 scheduled_release_time = :s_time,
                 release_location = :s_loc,
@@ -1339,14 +1361,15 @@ class BurialRequest
                 WHERE id = :id");
 
             $ok = $stmt->execute([
-                's_date'   => $date,
-                's_time'   => $time,
-                's_loc'    => $location,
-                's_inst'   => $instructions ?: null,
-                's_aid'    => $adminId,
-                's_aname'  => $adminName,
-                's_reason' => $reason ?: null,
-                'id'       => $burialId
+                's_dept_by' => $adminName,
+                's_date'    => $date,
+                's_time'    => $time,
+                's_loc'     => $location,
+                's_inst'    => $instructions ?: null,
+                's_aid'     => $adminId,
+                's_aname'   => $adminName,
+                's_reason'  => $reason ?: null,
+                'id'        => $burialId
             ]);
 
             if (!$ok) {
@@ -1566,6 +1589,59 @@ class BurialRequest
     }
 
     /**
+     * Set / Update death certificate custody status within Damayan Department
+     */
+    public function setCertificateInDepartment(int $burialId, bool $inDept = true, ?string $staff = null, ?string $notes = null): array {
+        try {
+            $burial = $this->findById($burialId);
+            if (!$burial) {
+                return ['success' => false, 'error' => 'Certificate request not found.'];
+            }
+
+            $staff = $staff ?: ($_SESSION['name'] ?? 'Damayan Admin');
+
+            if ($inDept) {
+                $stmt = $this->db->prepare("UPDATE burial_requests SET
+                    certificate_in_department = 1,
+                    certificate_received_dept_at = COALESCE(certificate_received_dept_at, NOW()),
+                    certificate_received_dept_by = :staff,
+                    certificate_custody_notes = :notes,
+                    updated_at = NOW()
+                    WHERE id = :id");
+                $stmt->execute([
+                    'staff' => $staff,
+                    'notes' => $notes ?: 'Received into Damayan Department custody',
+                    'id'    => $burialId
+                ]);
+
+                $desc = "Death certificate marked as received and in Damayan Department custody by {$staff}.";
+                $this->logActivity($burialId, $burial['ref_id'], 'Custody', 'Certificate Received in Department', $desc, $staff);
+                if (class_exists('AuditLogger')) {
+                    AuditLogger::log('DAMAYAN', 'CERTIFICATE_IN_DEPARTMENT', "Case #{$burial['ref_id']} — {$desc}");
+                }
+                return ['success' => true, 'message' => 'Death certificate confirmed in Damayan Department custody.'];
+            } else {
+                $stmt = $this->db->prepare("UPDATE burial_requests SET
+                    certificate_in_department = 0,
+                    certificate_custody_notes = :notes,
+                    updated_at = NOW()
+                    WHERE id = :id");
+                $stmt->execute([
+                    'notes' => $notes ?: 'Marked as not yet received in department custody',
+                    'id'    => $burialId
+                ]);
+
+                $desc = "Certificate custody status reverted by {$staff}.";
+                $this->logActivity($burialId, $burial['ref_id'], 'Custody', 'Certificate Custody Reverted', $desc, $staff);
+                return ['success' => true, 'message' => 'Certificate custody status reverted.'];
+            }
+        } catch (\Throwable $e) {
+            error_log("setCertificateInDepartment error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
      * Mark Certificate as Officially Released to Requester
      * Transitions request to Completed status.
      */
@@ -1689,7 +1765,7 @@ class BurialRequest
                 previous_date, previous_time,
                 new_date, new_time,
                 new_date as scheduled_date, new_time as scheduled_time,
-                location, instructions,
+                location, location as release_location, instructions, instructions as release_instructions,
                 change_reason, change_reason as reason,
                 admin_id, admin_name,
                 COALESCE(admin_name, 'Damayan Admin') as action_by_name,
@@ -2747,7 +2823,7 @@ class BurialRequest
             $stmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
                 WHERE LOWER(TRIM(registration_number)) = LOWER(TRIM(:reg))
                    OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm
-                ORDER BY (LOWER(TRIM(registration_number)) = LOWER(TRIM(:reg))) DESC
+                ORDER BY id DESC
                 LIMIT 1");
             $stmt->execute(['reg' => $regNo, 'norm' => $norm]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -3611,19 +3687,88 @@ class BurialRequest
 
     /**
      * Get Death Certificates Received by Male Da'wah
+    /**
+     * Helper to build flexible search clauses for Dawah death certificates
+     */
+    private function buildDawahSearchClause(string $search, array &$params, int &$pIdx): ?string {
+        $search = trim($search);
+        if ($search === '') return null;
+
+        $raw = $search;
+        $stripped = ltrim($raw, "#№ \t\n\r\0\x0B");
+        $stripped = preg_replace('/^(no\.?|ref\s*id:?)\s*/i', '', $stripped);
+        $words = array_values(array_filter(preg_split('/\s+/', $raw)));
+
+        $clauses = [];
+        $bind = function($val) use (&$params, &$pIdx) {
+            $key = 'p_' . (++$pIdx);
+            $params[$key] = $val;
+            return ':' . $key;
+        };
+
+        if (is_numeric($stripped)) {
+            $clauses[] = "id = " . $bind((int)$stripped);
+        }
+
+        $term = "%" . $raw . "%";
+        $termClean = "%" . $stripped . "%";
+
+        $clauses[] = "registration_number LIKE " . $bind($term);
+        $clauses[] = "registration_number LIKE " . $bind($termClean);
+        $clauses[] = "REPLACE(REPLACE(registration_number, '-', ''), ' ', '') LIKE " . $bind($termClean);
+        $clauses[] = "deceased_name LIKE " . $bind($term);
+        $clauses[] = "first_name LIKE " . $bind($term);
+        $clauses[] = "last_name LIKE " . $bind($term);
+        $clauses[] = "CONCAT(IFNULL(first_name,''), ' ', IFNULL(last_name,'')) LIKE " . $bind($term);
+        $clauses[] = "informant_name LIKE " . $bind($term);
+        $clauses[] = "sent_by_name LIKE " . $bind($term);
+        $clauses[] = "purpose LIKE " . $bind($term);
+        $clauses[] = "transmission_notes LIKE " . $bind($term);
+
+        if (count($words) > 1) {
+            $wordGroup = [];
+            foreach ($words as $w) {
+                $wTerm = "%" . $w . "%";
+                $wClean = "%" . ltrim($w, "#") . "%";
+
+                $k_dec = $bind($wTerm);
+                $k_fn  = $bind($wTerm);
+                $k_mn  = $bind($wTerm);
+                $k_ln  = $bind($wTerm);
+                $k_reg = $bind($wClean);
+                $k_inf = $bind($wTerm);
+                $k_snd = $bind($wTerm);
+                $k_pur = $bind($wTerm);
+
+                $wordGroup[] = "(deceased_name LIKE {$k_dec} 
+                    OR first_name LIKE {$k_fn} 
+                    OR middle_name LIKE {$k_mn} 
+                    OR last_name LIKE {$k_ln} 
+                    OR registration_number LIKE {$k_reg} 
+                    OR informant_name LIKE {$k_inf} 
+                    OR sent_by_name LIKE {$k_snd} 
+                    OR purpose LIKE {$k_pur})";
+            }
+            $clauses[] = "(" . implode(' AND ', $wordGroup) . ")";
+        }
+
+        return "(" . implode(' OR ', $clauses) . ")";
+    }
+
+    /**
+     * Get Received Death Certificates for Male Da'wah
      */
     public function getDawahDeathCertificates(string $search = '', string $status = '', int $limit = 100, int $offset = 0): array {
         try {
             $conditions = [];
             $params = [];
+            $pIdx = 0;
 
             if (!empty($search)) {
-                $term = "%" . trim($search) . "%";
-                $conditions[] = "(registration_number LIKE :q1 OR deceased_name LIKE :q2 OR informant_name LIKE :q3 OR sent_by_name LIKE :q4)";
-                $params['q1'] = $term;
-                $params['q2'] = $term;
-                $params['q3'] = $term;
-                $params['q4'] = $term;
+                $sClause = $this->buildDawahSearchClause($search, $params, $pIdx);
+                if ($sClause) {
+                    $conditions[] = $sClause;
+                }
             }
 
             if (!empty($status) && $status !== 'all') {
@@ -3659,14 +3804,13 @@ class BurialRequest
         try {
             $conditions = [];
             $params = [];
+            $pIdx = 0;
 
             if (!empty($search)) {
-                $term = "%" . trim($search) . "%";
-                $conditions[] = "(registration_number LIKE :q1 OR deceased_name LIKE :q2 OR informant_name LIKE :q3 OR sent_by_name LIKE :q4)";
-                $params['q1'] = $term;
-                $params['q2'] = $term;
-                $params['q3'] = $term;
-                $params['q4'] = $term;
+                $sClause = $this->buildDawahSearchClause($search, $params, $pIdx);
+                if ($sClause) {
+                    $conditions[] = $sClause;
+                }
             }
 
             if (!empty($status) && $status !== 'all') {
@@ -3680,6 +3824,7 @@ class BurialRequest
 
             return (int)$stmt->fetchColumn();
         } catch (\Throwable $e) {
+            error_log("BurialRequest::countDawahDeathCertificates error: " . $e->getMessage());
             return 0;
         }
     }

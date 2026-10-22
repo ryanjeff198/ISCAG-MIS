@@ -44,6 +44,7 @@ echo "\n--- Test 3: Valid Future Release Scheduling ---\n";
 $futureDate = '2026-10-30';
 $futureTime = '10:00';
 $instructions = 'Please bring 2 valid government IDs and official receipt.';
+$model->setCertificateInDepartment($id, true, 'Damayan Chief Admin', 'Physical certificate in department custody');
 $res = $model->scheduleCertificateRelease($id, [
     'release_date' => $futureDate,
     'release_time' => $futureTime,

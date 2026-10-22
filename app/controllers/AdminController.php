@@ -4506,14 +4506,35 @@ class AdminController extends Controller
                     'id' => $record['id'],
                     'registration_number' => $record['registration_number'],
                     'deceased_name' => $record['deceased_name'],
-                    'representative_name' => $record['representative_name'],
-                    'encoded_by_name' => $record['encoded_by_name'],
-                    'encoded_at' => $record['encoded_at']
+                    'representative_name' => $record['representative_name'] ?? '',
+                    'source' => 'Damayan Encoded Archive',
+                    'encoded_by_name' => $record['encoded_by_name'] ?? 'Damayan Staff',
+                    'encoded_at' => $record['encoded_at'] ?? null
                 ]
             ]);
-        } else {
-            echo json_encode(['success' => true, 'found' => false]);
+            return;
         }
+
+        // Also check official registered records in burial_requests and death_records
+        $dup = $model->isDuplicateDeathCertRegNo($reg);
+        if ($dup) {
+            echo json_encode([
+                'success' => true,
+                'found' => true,
+                'record' => [
+                    'id' => null,
+                    'registration_number' => $dup['registration_number'],
+                    'deceased_name' => $dup['deceased_name'],
+                    'representative_name' => $dup['representative_name'] ?? '',
+                    'source' => $dup['source'] ?? 'Registered Department Records',
+                    'encoded_by_name' => $dup['encoded_by'] ?? 'ISCAG Damayan System',
+                    'encoded_at' => $dup['date'] ?? null
+                ]
+            ]);
+            return;
+        }
+
+        echo json_encode(['success' => true, 'found' => false]);
         return;
     }
 
@@ -4798,6 +4819,37 @@ class AdminController extends Controller
         $adminName = trim($_SESSION['name'] ?? 'Damayan Admin');
 
         $result = $model->markCertificateAsReleased($id, $input, $adminId, $adminName);
+        echo json_encode($result);
+        return;
+    }
+
+    /**
+     * Set death certificate department custody status
+     */
+    public function setCertificateCustody(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid request method.']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? ($input['burial_id'] ?? 0));
+        $inDept = !empty($input['in_department']) && ($input['in_department'] === true || $input['in_department'] === '1' || $input['in_department'] === 1);
+        $notes = trim($input['notes'] ?? '');
+        $staffName = $_SESSION['name'] ?? 'Damayan Admin';
+
+        if ($id <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Invalid certificate request ID.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+        $result = $model->setCertificateInDepartment($id, $inDept, $staffName, $notes);
+
         echo json_encode($result);
         return;
     }
@@ -5629,9 +5681,15 @@ class AdminController extends Controller
 
         $records = $burialModel->getDawahDeathCertificates($search, $status);
         $totalCount = $burialModel->countDawahDeathCertificates($search);
-        $newCount = $burialModel->countDawahDeathCertificates('', 'Received');
-        $reviewedCount = $burialModel->countDawahDeathCertificates('', 'Reviewed');
-        $completedCount = $burialModel->countDawahDeathCertificates('', 'Completed');
+        $newCount = $burialModel->countDawahDeathCertificates($search, 'Received');
+        $reviewedCount = $burialModel->countDawahDeathCertificates($search, 'Reviewed');
+        $completedCount = $burialModel->countDawahDeathCertificates($search, 'Completed');
+
+        // All-time totals for the metric insight cards
+        $allTotal = $burialModel->countDawahDeathCertificates();
+        $allNew = $burialModel->countDawahDeathCertificates('', 'Received');
+        $allReviewed = $burialModel->countDawahDeathCertificates('', 'Reviewed');
+        $allCompleted = $burialModel->countDawahDeathCertificates('', 'Completed');
 
         require_once BASE_PATH . '/app/models/User.php';
         $userModel = new User();
@@ -5646,6 +5704,10 @@ class AdminController extends Controller
             'newCount'       => $newCount,
             'reviewedCount'  => $reviewedCount,
             'completedCount' => $completedCount,
+            'allTotal'       => $allTotal,
+            'allNew'         => $allNew,
+            'allReviewed'    => $allReviewed,
+            'allCompleted'   => $allCompleted,
             'search'         => $search,
             'status'         => $status
         ]);

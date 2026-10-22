@@ -52,11 +52,153 @@
       color: var(--primary-male); margin-bottom: 8px; letter-spacing: 0.04em;
       border-bottom: 1px solid #e5e7eb; padding-bottom: 4px;
     }
-    .cd-row {
-      display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 5px;
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
-    .cd-label { color: var(--text-muted); font-weight: 600; width: 45%; }
-    .cd-val { font-weight: 700; color: #111827; width: 55%; text-align: right; word-break: break-word; }
+    .filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+    }
+    .filter-pill {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 7px 15px;
+      border-radius: 20px;
+      text-decoration: none;
+      color: var(--text-muted);
+      background: white;
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-pill:hover, .filter-pill.active {
+      background: var(--light-male);
+      color: var(--primary-male);
+      border-color: var(--primary-male);
+      box-shadow: 0 2px 6px rgba(20, 83, 45, 0.1);
+    }
+    .search-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      max-width: 520px;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      padding: 7px 14px;
+      gap: 10px;
+      flex: 1;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .search-box:focus-within {
+      border-color: var(--primary-male);
+      box-shadow: 0 0 0 3px rgba(20, 83, 45, 0.12);
+    }
+    .search-box svg {
+      width: 17px;
+      height: 17px;
+      min-width: 17px;
+      fill: var(--text-muted);
+      flex-shrink: 0;
+      transition: fill 0.2s;
+    }
+    .search-box:focus-within svg {
+      fill: var(--primary-male);
+    }
+    .search-box input {
+      border: none;
+      outline: none;
+      font-size: 0.85rem;
+      width: 100%;
+      font-family: inherit;
+      background: transparent;
+      color: var(--text-main);
+    }
+    .search-box input::placeholder {
+      color: #9ca3af;
+      font-size: 0.82rem;
+    }
+    .btn-clear-inline {
+      background: #e5e7eb;
+      border: none;
+      color: #4b5563;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 800;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-clear-inline:hover {
+      background: #cbd5e1;
+      color: #111827;
+    }
+    .btn-search-submit {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary-male);
+      color: white;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.18s, box-shadow 0.18s;
+      font-family: inherit;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(20, 83, 45, 0.2);
+    }
+    .btn-search-submit:hover {
+      background: #0f3d21;
+      box-shadow: 0 4px 10px rgba(20, 83, 45, 0.3);
+    }
+    .btn-search-clear {
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: white;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: all 0.18s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn-search-clear:hover {
+      border-color: #dc2626;
+      color: #dc2626;
+      background: #fef2f2;
+    }
   </style>
 </head>
 <body>
@@ -96,39 +238,40 @@
         <div class="admin-insights">
           <div class="insight-card">
             <div class="insight-label">Total Certificates Received</div>
-            <div class="insight-value" style="color:var(--primary-male);"><?= (int)($totalCount ?? 0) ?></div>
+            <div class="insight-value" style="color:var(--primary-male);"><?= (int)($allTotal ?? $totalCount ?? 0) ?></div>
             <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Transmitted from Damayan</div>
           </div>
           <div class="insight-card">
             <div class="insight-label">Awaiting Review / Action</div>
-            <div class="insight-value" style="color:#d97706;"><?= (int)($newCount ?? 0) ?></div>
+            <div class="insight-value" style="color:#d97706;"><?= (int)($allNew ?? $newCount ?? 0) ?></div>
             <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">New certificate files</div>
           </div>
           <div class="insight-card">
             <div class="insight-label">Reviewed &amp; Processed</div>
-            <div class="insight-value" style="color:#16a34a;"><?= (int)(($reviewedCount ?? 0) + ($completedCount ?? 0)) ?></div>
+            <div class="insight-value" style="color:#16a34a;"><?= (int)(($allReviewed ?? $reviewedCount ?? 0) + ($allCompleted ?? $completedCount ?? 0)) ?></div>
             <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Salatul Janazah &amp; records done</div>
           </div>
         </div>
 
         <!-- Filter & Search Toolbar -->
-        <div class="filter-bar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-          <div style="display:flex; align-items:center; gap:8px;">
+        <div class="filter-bar">
+          <div class="filter-pills">
             <a href="<?= url('/admin/dawah/male/death-certificates?status=all' . (!empty($search) ? '&search=' . urlencode($search) : '')) ?>" class="filter-pill <?= ($status ?? 'all') === 'all' ? 'active' : '' ?>">All (<?= (int)$totalCount ?>)</a>
             <a href="<?= url('/admin/dawah/male/death-certificates?status=Received' . (!empty($search) ? '&search=' . urlencode($search) : '')) ?>" class="filter-pill <?= ($status ?? '') === 'Received' ? 'active' : '' ?>">New Received (<?= (int)$newCount ?>)</a>
             <a href="<?= url('/admin/dawah/male/death-certificates?status=Reviewed' . (!empty($search) ? '&search=' . urlencode($search) : '')) ?>" class="filter-pill <?= ($status ?? '') === 'Reviewed' ? 'active' : '' ?>">Reviewed (<?= (int)$reviewedCount ?>)</a>
             <a href="<?= url('/admin/dawah/male/death-certificates?status=Completed' . (!empty($search) ? '&search=' . urlencode($search) : '')) ?>" class="filter-pill <?= ($status ?? '') === 'Completed' ? 'active' : '' ?>">Completed (<?= (int)$completedCount ?>)</a>
           </div>
 
-          <form method="GET" action="<?= url('/admin/dawah/male/death-certificates') ?>" style="display:flex; gap:8px; flex:1; max-width:480px;">
+          <form method="GET" action="<?= url('/admin/dawah/male/death-certificates') ?>" class="search-form" id="death-cert-search-form">
             <input type="hidden" name="status" value="<?= htmlspecialchars($status ?? 'all') ?>">
-            <div class="search-box" style="flex:1;">
-              <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-              <input type="text" name="search" placeholder="Search by Reg #, Deceased Name, Informant..." value="<?= htmlspecialchars($search ?? '') ?>" />
+            <div class="search-box">
+              <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/></svg>
+              <input type="text" id="cert-search-input" name="search" placeholder="Search by Reg #, Deceased Name, Informant..." value="<?= htmlspecialchars($search ?? '') ?>" oninput="liveFilterTable()" autocomplete="off" />
+              <button type="button" id="btn-clear-inline" class="btn-clear-inline" onclick="clearSearchInput()" title="Clear search" style="<?= empty($search) ? 'display:none;' : '' ?>">✕</button>
             </div>
-            <button type="submit" class="btn-topbar primary" style="padding:6px 16px;">Search</button>
+            <button type="submit" class="btn-search-submit">Search</button>
             <?php if (!empty($search)): ?>
-              <a href="<?= url('/admin/dawah/male/death-certificates') ?>" class="btn-topbar" style="padding:6px 14px; text-decoration:none;">Clear</a>
+              <a href="<?= url('/admin/dawah/male/death-certificates' . (($status ?? 'all') !== 'all' ? '?status=' . urlencode($status) : '')) ?>" class="btn-search-clear">Clear</a>
             <?php endif; ?>
           </form>
         </div>
@@ -138,7 +281,7 @@
           <div class="section-card-header" style="display:flex; align-items:center; justify-content:space-between;">
             <h6 style="color: var(--primary-male); margin:0; display:flex; align-items:center; gap:8px;">
               <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary-male);"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-              Death Certificate Transmittals (<?= count($records ?? []) ?> records shown)
+              Death Certificate Transmittals (<span id="records-shown-count"><?= count($records ?? []) ?></span> records shown)
             </h6>
           </div>
           <div class="section-card-body" style="padding:0;">
@@ -166,8 +309,25 @@
                       </td>
                     </tr>
                   <?php else: ?>
+                    <tr id="no-live-matches-row" style="display:none;">
+                      <td colspan="7" style="text-align:center; padding:45px 20px; color:var(--text-muted);">
+                        <div style="font-size:1.05rem; font-weight:700; color:var(--text-main); margin-bottom:4px;">No Matching Records Found</div>
+                        <div style="font-size:0.85rem;">Try adjusting your search query or click Clear.</div>
+                      </td>
+                    </tr>
                     <?php foreach ($records as $r): ?>
-                      <tr>
+                      <tr class="cert-row" data-search="<?= htmlspecialchars(strtolower(
+                        ($r['registration_number'] ?? '') . ' ' .
+                        ($r['id'] ?? '') . ' ' .
+                        ($r['deceased_name'] ?? '') . ' ' .
+                        ($r['first_name'] ?? '') . ' ' .
+                        ($r['middle_name'] ?? '') . ' ' .
+                        ($r['last_name'] ?? '') . ' ' .
+                        ($r['informant_name'] ?? '') . ' ' .
+                        ($r['sent_by_name'] ?? '') . ' ' .
+                        ($r['purpose'] ?? '') . ' ' .
+                        ($r['status'] ?? '')
+                      )) ?>">
                         <td class="td-id">
                           <span style="font-weight:800; color:var(--primary-male);">#<?= htmlspecialchars($r['registration_number']) ?></span>
                           <div style="font-size:0.68rem; color:var(--text-muted); margin-top:2px;">Ref ID: #<?= (int)$r['id'] ?></div>
@@ -368,6 +528,63 @@
     document.getElementById('dawahCertModal')?.addEventListener('click', function(e) {
       if (e.target === this) closeDawahCertModal();
     });
+
+    function liveFilterTable() {
+      const input = document.getElementById('cert-search-input');
+      if (!input) return;
+      const q = input.value.toLowerCase().trim();
+      const clearBtn = document.getElementById('btn-clear-inline');
+      if (clearBtn) {
+        clearBtn.style.display = q.length > 0 ? 'inline-flex' : 'none';
+      }
+
+      const rows = document.querySelectorAll('.cert-row');
+      const terms = q.split(/\s+/).filter(t => t.length > 0);
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        const data = row.getAttribute('data-search') || '';
+        const matches = terms.length === 0 || terms.every(t => {
+          const cleanT = t.replace(/^(#|no\.?|ref\s*id:?)/i, '');
+          return data.includes(t) || (cleanT && data.includes(cleanT));
+        });
+
+        if (matches) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      const noMatchesRow = document.getElementById('no-live-matches-row');
+      if (noMatchesRow) {
+        noMatchesRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+      }
+
+      const counter = document.getElementById('records-shown-count');
+      if (counter) {
+        counter.textContent = visibleCount;
+      }
+    }
+
+    function clearSearchInput() {
+      const input = document.getElementById('cert-search-input');
+      if (input) {
+        input.value = '';
+        liveFilterTable();
+        input.focus();
+      }
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('search')) {
+        const status = urlParams.get('status');
+        let target = '<?= url('/admin/dawah/male/death-certificates') ?>';
+        if (status && status !== 'all') {
+          target += '?status=' + encodeURIComponent(status);
+        }
+        window.location.href = target;
+      }
+    }
   </script>
 </body>
 </html>

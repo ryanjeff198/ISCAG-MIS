@@ -424,18 +424,16 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             line-height: 1.6;
         }
 
-        /* ── Dual Tracking Cards ── */
+        /* ── Certificate Tracking Card ── */
         .dual-tracking-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
-            margin-bottom: 32px;
+            display: block;
+            margin-bottom: 24px;
         }
         .track-box {
             background: #fafbfc;
             border: 1.5px solid var(--border);
             border-radius: 16px;
-            padding: 24px;
+            padding: 24px 28px;
             transition: border-color 0.2s;
         }
         .track-box.active-box {
@@ -786,6 +784,45 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             .info-grid, .dual-tracking-grid, .form-grid, .form-grid.cols-2, .type-selector-grid { grid-template-columns: 1fr; }
             .details-container { padding: 16px 16px 40px; }
         }
+
+        /* ── Print Media Styles ── */
+        @media print {
+            .top-bar, .sidebar, .breadcrumb-nav, .app-header-actions, .app-footer, 
+            .guidelines-notice, #burial-form-container, .toast-notify, button, .btn-outline,
+            .btn-request-form {
+                display: none !important;
+            }
+            body, .app-wrapper, .main-content, .details-container {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+            .app-card {
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+                margin: 0 !important;
+                border-radius: 8px !important;
+            }
+            .app-header {
+                padding: 20px 24px !important;
+                background: white !important;
+                border-bottom: 2px solid #059669 !important;
+            }
+            .app-body {
+                padding: 20px 24px !important;
+            }
+            .track-box {
+                border: 1px solid #cbd5e1 !important;
+                background: white !important;
+                padding: 18px !important;
+            }
+            .appointment-history-container {
+                border: 1px solid #cbd5e1 !important;
+                box-shadow: none !important;
+                margin-top: 14px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1116,38 +1153,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             <?php endif; ?>
                         </div>
 
-                        <!-- Track B: Verification & Record Safeguards -->
-                        <div class="track-box active-box">
-                            <div class="track-box-header">
-                                <div class="track-box-title">
-                                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-                                    Record Verification Safeguards
-                                </div>
-                                <span class="status-badge approved" style="padding:4px 10px; font-size:0.75rem;">
-                                    Security Policy
-                                </span>
-                            </div>
-
-                            <div style="display:flex; flex-direction:column; gap:12px; font-size:0.84rem; line-height:1.5; color:#374151;">
-                                <div>
-                                    <strong style="color:var(--primary-dark); display:block;">1. Existing Record Verification</strong>
-                                    Staff verifies the original death registration record exists in the system before an additional copy is released.
-                                </div>
-                                <div>
-                                    <strong style="color:var(--primary-dark); display:block;">2. Non-Duplicate Record Integrity</strong>
-                                    Requests for copies are connected to the original deceased record without creating duplicate entries.
-                                </div>
-                                <div>
-                                    <strong style="color:var(--primary-dark); display:block;">3. Mandatory Receipt Confirmation</strong>
-                                    In accordance with civil guidelines, copies are not closed until user confirmation is logged in the audit trail.
-                                </div>
-                                <div>
-                                    <strong style="color:var(--primary-dark); display:block;">4. Authorized Office Coordination</strong>
-                                    Official death certificates are certified and recorded exclusively by authorized civil registrars.
-                                </div>
-                            </div>
-                        </div>
-
                         <?php else: ?>
                         <!-- Track A: Death Certificate Processing Tracking -->
                         <div class="track-box <?= $deathCertReq ? 'active-box' : '' ?>">
@@ -1261,35 +1266,11 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                 </div>
                             <?php endif; ?>
 
-                            <!-- Appointment History / Previous Status Updates -->
-                            <?php if (!empty($scheduleHistory)): ?>
-                                <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--border);">
-                                    <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">
-                                        Appointment History:
-                                    </div>
-                                    <div style="display:flex; flex-direction:column; gap:5px;">
-                                        <?php foreach($scheduleHistory as $sh): ?>
-                                            <div style="font-size:0.74rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
-                                                <span>
-                                                    <strong><?= htmlspecialchars($sh['action_type']) ?></strong>
-                                                    <?php if (!empty($sh['scheduled_date'])): ?>
-                                                        &bull; <?= date('M d, Y', strtotime($sh['scheduled_date'])) ?> <?= !empty($sh['scheduled_time']) ? date('g:i A', strtotime($sh['scheduled_time'])) : '' ?>
-                                                    <?php endif; ?>
-                                                    <?php if (!empty($sh['reason'])): ?>
-                                                        (<em><?= htmlspecialchars($sh['reason']) ?></em>)
-                                                    <?php endif; ?>
-                                                </span>
-                                                <span style="color:#94a3b8; font-size:0.68rem;"><?= date('M d, Y', strtotime($sh['created_at'])) ?></span>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
 
                             <!-- Print / Claiming Slip Actions Gated by Authorization (Req 5) -->
                             <div style="margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
                                 <?php if ($isAuthorizedForRelease): ?>
-                                    <button type="button" class="btn-outline" style="width:100%; justify-content:center; background:#ecfdf5; border-color:#a7f3d0; color:#065f46; font-weight:700;" onclick="window.print()">
+                                    <button type="button" class="btn-outline" style="width:100%; justify-content:center; background:#ecfdf5; border-color:#a7f3d0; color:#065f46; font-weight:700;" onclick="printClaimingSlip()">
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                                         Print Claiming Slip / Certificate Details
                                     </button>
@@ -1301,41 +1282,76 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                 <?php endif; ?>
                             </div>
                         </div>
-
-                        <!-- Track B: Civil Registry Coordination Safeguards -->
-                        <div class="track-box active-box">
-                            <div class="track-box-header">
-                                <div class="track-box-title">
-                                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                                    Civil Registration Coordination
-                                </div>
-                                <span class="status-badge approved" style="padding:4px 10px; font-size:0.75rem;">
-                                    LCRO Process
-                                </span>
-                            </div>
-
-                            <div style="display:flex; flex-direction:column; gap:12px; font-size:0.84rem; line-height:1.5; color:#374151;">
-                                <div>
-                                    <strong style="color:var(--primary-dark); display:block;">1. Initial Verification</strong>
-                                    Damayan staff reviews deceased personal details and supporting documents before civil filing.
-                                </div>
-                                <div>
-                                    <strong style="color:var(--primary-dark); display:block;">2. Hospital &amp; Medical Certification</strong>
-                                    Coordination with authorized certifying physicians or health officers for death certification.
-                                </div>
-                                <div>
-                                    <strong style="color:var(--primary-dark); display:block;">3. Civil Registration (LCRO)</strong>
-                                    Transmittal to the Local Civil Registrar for official registration and entry in the civil register.
-                                </div>
-                                <div>
-                                    <strong style="color:var(--primary-dark); display:block;">4. Tracking &amp; Claiming Release</strong>
-                                    Monitor progress until certificate is prepared and an official claiming date/time is scheduled.
-                                </div>
-                            </div>
-                        </div>
                         <?php endif; ?>
 
                     </div>
+
+                    <!-- Appointment History Table at the Bottom of Tracking -->
+                    <?php if (!empty($scheduleHistory)): ?>
+                    <div class="appointment-history-container" style="margin-top:22px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px 20px; box-shadow:var(--shadow-sm);">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div style="width:28px; height:28px; border-radius:6px; background:#ecfdf5; color:var(--primary); display:flex; align-items:center; justify-content:center;">
+                                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                                </div>
+                                <h4 style="margin:0; font-size:0.92rem; font-weight:800; color:var(--text-dark);">Claiming Appointment History</h4>
+                            </div>
+                            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); background:var(--bg); border:1px solid var(--border); padding:3px 10px; border-radius:100px;">
+                                <?= count($scheduleHistory) ?> <?= count($scheduleHistory) === 1 ? 'Record' : 'Records' ?>
+                            </span>
+                        </div>
+                        <div style="overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px;">
+                            <table style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:left;">
+                                <thead>
+                                    <tr style="background:#f8fafc; border-bottom:1.5px solid #e2e8f0; color:#475569; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                        <th style="padding:10px 12px; font-weight:700;">Action</th>
+                                        <th style="padding:10px 12px; font-weight:700;">Scheduled Appointment</th>
+                                        <th style="padding:10px 12px; font-weight:700;">Location</th>
+                                        <th style="padding:10px 12px; font-weight:700;">Reason / Instructions</th>
+                                        <th style="padding:10px 12px; font-weight:700;">Processed By</th>
+                                        <th style="padding:10px 12px; font-weight:700;">Date Recorded</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach($scheduleHistory as $sh): 
+                                        $badgeBg = ($sh['action_type'] === 'SCHEDULED' ? '#ecfdf5' : ($sh['action_type'] === 'RESCHEDULED' ? '#fffbeb' : ($sh['action_type'] === 'CANCELLED' ? '#fef2f2' : '#f0fdf4')));
+                                        $badgeCol = ($sh['action_type'] === 'SCHEDULED' ? '#065f46' : ($sh['action_type'] === 'RESCHEDULED' ? '#92400e' : ($sh['action_type'] === 'CANCELLED' ? '#991b1b' : '#047857')));
+                                    ?>
+                                    <tr style="border-bottom:1px solid #f1f5f9;">
+                                        <td style="padding:10px 12px; vertical-align:middle;">
+                                            <span style="font-weight:700; padding:3px 8px; border-radius:4px; font-size:0.7rem; background:<?= $badgeBg ?>; color:<?= $badgeCol ?>; display:inline-block;">
+                                                <?= htmlspecialchars($sh['action_type']) ?>
+                                            </span>
+                                        </td>
+                                        <td style="padding:10px 12px; vertical-align:middle; color:var(--text-dark);">
+                                            <?php if (!empty($sh['scheduled_date'])): ?>
+                                                <strong><?= date('M d, Y', strtotime($sh['scheduled_date'])) ?></strong>
+                                                <?php if (!empty($sh['scheduled_time'])): ?>
+                                                    at <?= date('g:i A', strtotime($sh['scheduled_time'])) ?>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <span style="color:var(--text-muted);">—</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td style="padding:10px 12px; vertical-align:middle; color:var(--text-muted);">
+                                            <?= htmlspecialchars(($sh['release_location'] ?? $sh['location'] ?? '') ?: 'Damayan Department') ?>
+                                        </td>
+                                        <td style="padding:10px 12px; vertical-align:middle; color:var(--text-dark); max-width:220px;">
+                                            <?= !empty($sh['reason']) ? htmlspecialchars($sh['reason']) : (!empty($sh['change_reason']) ? htmlspecialchars($sh['change_reason']) : '<span style="color:var(--text-muted); font-style:italic;">None</span>') ?>
+                                        </td>
+                                        <td style="padding:10px 12px; vertical-align:middle; color:var(--text-dark); font-weight:600;">
+                                            <?= htmlspecialchars(($sh['action_by_name'] ?? $sh['admin_name'] ?? '') ?: 'Damayan Staff') ?>
+                                        </td>
+                                        <td style="padding:10px 12px; vertical-align:middle; color:var(--text-muted); font-size:0.75rem; white-space:nowrap;">
+                                            <?= !empty($sh['created_at']) ? date('M d, Y g:i A', strtotime($sh['created_at'])) : '—' ?>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- Notice / Coordination Guidelines -->
                     <div class="guidelines-notice">
@@ -1383,8 +1399,8 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     <!-- Form Header -->
                     <div class="form-card-header">
                         <div class="form-card-title-area">
-                            <h2>Death Certificate Request Form</h2>
-                            <p>Register a death record for official death certificate issuance, or request an additional copy of an existing registered death certificate.</p>
+                            <h2>Death Certificate Processing Form</h2>
+                            <p>Exclusively for processing and scheduling release of death certificates recorded within the ISCAG Damayan Department archive.</p>
                         </div>
                         <button type="button" class="btn-close-form" onclick="toggleRequestForm(false)">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -1394,30 +1410,41 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 
                     <!-- Form Body -->
                     <form id="burial-request-form" class="form-card-body" onsubmit="submitBurialRequest(event)">
+
+                        <!-- Department Archive Requirement Notice -->
+                        <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 16px 20px; margin-bottom: 22px;">
+                            <div style="font-weight: 800; font-size: 0.92rem; color: var(--primary-dark); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                                ISCAG Damayan Department Certificate Processing Requirement
+                            </div>
+                            <p style="margin: 0; font-size: 0.82rem; color: #374151; line-height: 1.5;">
+                                In accordance with Damayan Department guidelines, processing is available <strong>only for death certificates that exist within the department records</strong>. Please identify the certificate using the registry number or select a recorded deceased person from the department archive below.
+                            </p>
+                        </div>
                         
                         <!-- Functionality Selector: 1. Register Death OR 2. Request Another Death Certificate -->
                         <div class="form-section-title">
                             <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-                            1. Select Damayan Service Type
+                            1. Select Processing Purpose
                         </div>
 
                         <div class="type-selector-grid" style="grid-template-columns: repeat(2, 1fr);">
                             <div class="type-option-card selected" id="opt-type-register" onclick="selectCertFunction('register')">
                                 <div class="type-option-title">
                                     <input type="radio" name="cert_function_radio" value="register" checked style="accent-color:var(--primary);" />
-                                    Register Death Certificate
+                                    Initial Certificate Processing &amp; Issuance
                                 </div>
                                 <div class="type-option-desc">
-                                    For reporting a newly deceased person for civil death registration and official certificate issuance.
+                                    For processing and scheduled release of an official death certificate on file with the Damayan Department.
                                 </div>
                             </div>
                             <div class="type-option-card" id="opt-type-copy" onclick="selectCertFunction('copy')">
                                 <div class="type-option-title">
                                     <input type="radio" name="cert_function_radio" value="copy" style="accent-color:var(--primary);" />
-                                    Request Another Death Certificate
+                                    Additional Certificate Copy Request
                                 </div>
                                 <div class="type-option-desc">
-                                    Exclusively for users who already have an existing death certificate and want to request another copy.
+                                    Exclusively for users requesting additional certified copies of an existing registered death certificate.
                                 </div>
                             </div>
                         </div>
@@ -1500,17 +1527,28 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 
                         <!-- ═══════════════════════════════════════════════════════════ -->
                         <!-- B. REGISTRATION DECEASED FIELDS CONTAINER                   -->
-                        <!-- Displayed ONLY when 'Register Death & Burial' is on         -->
+                        <!-- Displayed ONLY when 'Initial Certificate Processing' is on  -->
                         <!-- ═══════════════════════════════════════════════════════════ -->
                         <div id="registration-deceased-fields" style="display: block;">
+                            
+                            <!-- Certificate Registry Number Verification (Department Custody & Record Verification) -->
+                            <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:12px; padding:16px 20px; margin-bottom:20px;">
+                                <label class="form-label" style="color:var(--primary-dark); font-weight:700; margin-bottom:6px; display:block;">
+                                    Department Certificate Registry Number <span class="req">*</span>:
+                                </label>
+                                <input type="text" id="reg-cert-no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkRegCertNumber(this.value)" oninput="debouncedCheckRegCert(this.value)" />
+                                <input type="hidden" id="linked-reg-cert-id" value="" />
+                                <span id="reg-cert-feedback" style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; display:block;">Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.</span>
+                            </div>
+
                             <!-- Existing Deceased Auto-Fill Selector (Avoid duplicate data entry - Req 4) -->
                             <?php if (!empty($existingDeceased)): ?>
                             <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px 20px; margin-bottom:24px;">
                                 <label class="form-label" style="color:var(--primary-dark); margin-bottom:6px; display:block;">
-                                    Select Registered Deceased Person (Link to Existing Record):
+                                    Or Select Registered Deceased Person (Recorded in Department):
                                 </label>
                                 <select id="select-existing-deceased" class="form-select" onchange="autoFillExistingDeceased(this)">
-                                    <option value="">-- Or enter deceased person details below --</option>
+                                    <option value="">-- Or enter certificate registry number above --</option>
                                     <?php foreach($existingDeceased as $ed): ?>
                                         <option value="<?= $ed['id'] ?>"
                                             data-fname="<?= htmlspecialchars($ed['first_name'] ?? '') ?>"
@@ -1574,7 +1612,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             <div class="form-grid cols-2">
                                 <div class="form-group">
                                     <label class="form-label">Place of Death <span class="req">*</span></label>
-                                    <input type="text" id="deceased-pod" class="form-control" placeholder="Hospital name, residence, or complete address" required />
+                                    <input type="text" id="deceased-pod" class="form-control" placeholder="Residence address, facility, or complete location" required />
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Usual Residence Address <span class="req">*</span></label>
@@ -1776,6 +1814,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }
 
         document.getElementById('selected-deceased-id').value = opt.value;
+        isCertVerifiedInDept = true;
         document.getElementById('deceased-first-name').value = opt.getAttribute('data-fname') || '';
         document.getElementById('deceased-middle-name').value = opt.getAttribute('data-mname') || '';
         document.getElementById('deceased-last-name').value = opt.getAttribute('data-lname') || '';
@@ -1870,7 +1909,9 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }
     }
 
+    let isCertVerifiedInDept = false;
     let certLookupTimeout = null;
+
     function debouncedCheckCert(val) {
         clearTimeout(certLookupTimeout);
         certLookupTimeout = setTimeout(() => {
@@ -1878,9 +1919,78 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }, 300);
     }
 
+    let regCertLookupTimeout = null;
+    function debouncedCheckRegCert(val) {
+        clearTimeout(regCertLookupTimeout);
+        regCertLookupTimeout = setTimeout(() => {
+            checkRegCertNumber(val);
+        }, 300);
+    }
+
+    async function checkRegCertNumber(val) {
+        val = (val || '').trim();
+        const fb = document.getElementById('reg-cert-feedback');
+        const hiddenRegId = document.getElementById('linked-reg-cert-id');
+        if (!val) {
+            if (fb) fb.innerHTML = 'Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.';
+            if (hiddenRegId) hiddenRegId.value = '';
+            isCertVerifiedInDept = false;
+            return;
+        }
+        try {
+            const res = await fetch('<?= url('/user/damayan/lookup-cert') ?>?reg=' + encodeURIComponent(val));
+            const data = await res.json();
+            if (data && data.found && data.record) {
+                isCertVerifiedInDept = true;
+                if (hiddenRegId) hiddenRegId.value = data.record.id || '';
+                if (fb) {
+                    fb.innerHTML = `
+                        <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:10px 14px; margin-top:6px;">
+                            <div style="color:#059669; font-weight:800; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
+                                <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                ✓ Verified in Damayan Department Archive
+                            </div>
+                            <div style="font-size:0.8rem; color:#064e3b; margin-top:4px; line-height:1.4;">
+                                <strong>Deceased:</strong> ${escapeHtml(data.record.deceased_name)}<br>
+                                <strong>Registry Number:</strong> <code>${escapeHtml(data.record.registration_number)}</code><br>
+                                <strong>Archive Source:</strong> ${escapeHtml(data.record.source || 'Encoded Archive')}
+                            </div>
+                        </div>
+                    `;
+                }
+                // Prepopulate deceased names if empty
+                const decName = data.record.deceased_name || '';
+                const parts = decName.split(' ');
+                const fNameInput = document.getElementById('deceased-first-name');
+                const lNameInput = document.getElementById('deceased-last-name');
+                const mNameInput = document.getElementById('deceased-middle-name');
+                if (fNameInput && !fNameInput.value.trim() && parts.length > 0) {
+                    fNameInput.value = parts[0];
+                }
+                if (lNameInput && !lNameInput.value.trim() && parts.length > 1) {
+                    lNameInput.value = parts[parts.length - 1];
+                }
+                if (mNameInput && !mNameInput.value.trim() && parts.length > 2) {
+                    mNameInput.value = parts.slice(1, -1).join(' ');
+                }
+            } else {
+                isCertVerifiedInDept = false;
+                if (hiddenRegId) hiddenRegId.value = '';
+                if (fb) {
+                    fb.innerHTML = `
+                        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 14px; margin-top:6px; color:#92400e; font-size:0.8rem; line-height:1.4;">
+                            <strong>⚠ Record Not Found in Department Archive:</strong> Only death certificates registered within the Damayan Department can be processed. Please check the registry number or select a recorded deceased record below.
+                        </div>
+                    `;
+                }
+            }
+        } catch(e) {}
+    }
+
     function autoFillExistingCopyDeceased(selectEl) {
         const opt = selectEl.options[selectEl.selectedIndex];
         if (!opt || !opt.value) return;
+        isCertVerifiedInDept = true;
         const fullname = opt.getAttribute('data-fullname') || '';
         const dod = opt.getAttribute('data-dod') || '';
         const ref = opt.getAttribute('data-ref') || '';
@@ -1905,19 +2015,21 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         if (!val) {
             if (fb) fb.innerHTML = 'Allows staff to locate and link the existing record immediately.';
             if (hiddenEncId) hiddenEncId.value = '';
+            isCertVerifiedInDept = false;
             return;
         }
         try {
             const res = await fetch('<?= url('/user/damayan/lookup-cert') ?>?reg=' + encodeURIComponent(val));
             const data = await res.json();
             if (data && data.found && data.record) {
+                isCertVerifiedInDept = true;
                 if (hiddenEncId) hiddenEncId.value = data.record.id;
                 if (fb) {
                     fb.innerHTML = `
                         <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:10px 14px; margin-top:6px;">
                             <div style="color:#059669; font-weight:800; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
                                 <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                                ✓ Recognized in Damayan Archive
+                                ✓ Verified in Damayan Department Archive
                             </div>
                             <div style="font-size:0.8rem; color:#064e3b; margin-top:4px; line-height:1.4;">
                                 <strong>Deceased:</strong> ${escapeHtml(data.record.deceased_name)}<br>
@@ -1932,9 +2044,14 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     decInput.value = data.record.deceased_name;
                 }
             } else {
+                isCertVerifiedInDept = false;
                 if (hiddenEncId) hiddenEncId.value = '';
                 if (fb) {
-                    fb.innerHTML = '<span style="color:var(--text-muted); display:block; margin-top:4px;">Will be verified and linked by staff upon review.</span>';
+                    fb.innerHTML = `
+                        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 14px; margin-top:6px; color:#92400e; font-size:0.8rem; line-height:1.4;">
+                            <strong>⚠ Record Not Found in Department Archive:</strong> Only death certificates registered within the Damayan Department can be processed. Please check the registry number or select a recorded deceased record.
+                        </div>
+                    `;
                 }
             }
         } catch(e) {}
@@ -1950,10 +2067,29 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             return;
         }
 
+        const certAction = document.getElementById('selected-cert-action').value;
+        const selectedDecId = document.getElementById('selected-deceased-id')?.value;
+        const copySelectDecId = document.getElementById('copy-select-deceased')?.value;
+        const linkedEncId = document.getElementById('linked-encoded-cert-id')?.value;
+        const linkedRegId = document.getElementById('linked-reg-cert-id')?.value;
+        const regCertNo = document.getElementById('reg-cert-no')?.value.trim() || '';
+        const existingCertNo = document.getElementById('existing-cert-no')?.value.trim() || '';
+
+        // Verification Gate: Certificate must be confirmed in department archive
+        const isVerified = isCertVerifiedInDept || selectedDecId || copySelectDecId || linkedEncId || linkedRegId || (certAction === 'register' ? regCertNo : existingCertNo);
+
+        if (!isVerified) {
+            alert('Processing is only available for death certificates recorded within the ISCAG Damayan Department. Please enter a valid registration number or select a recorded deceased person from the department archive.');
+            if (certAction === 'register') {
+                document.getElementById('reg-cert-no')?.focus();
+            } else {
+                document.getElementById('existing-cert-no')?.focus();
+            }
+            return;
+        }
+
         const btnSubmit = document.getElementById('btn-submit-burial');
         const originalText = btnSubmit.innerHTML;
-
-        const certAction = document.getElementById('selected-cert-action').value;
 
         // Package as FormData to support file upload
         const formData = new FormData();
@@ -1978,8 +2114,8 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             formData.append('cemetery_plot_requested', '0');
             formData.append('deceased_name', decName);
             formData.append('copy_reason', reason);
-            formData.append('existing_cert_no', document.getElementById('existing-cert-no')?.value.trim() || '');
-            formData.append('encoded_cert_id', document.getElementById('linked-encoded-cert-id')?.value || '');
+            formData.append('existing_cert_no', existingCertNo);
+            formData.append('encoded_cert_id', linkedEncId);
             formData.append('num_copies', document.getElementById('num-copies')?.value || '1');
             formData.append('dod', document.getElementById('copy-deceased-dod')?.value || '');
 
@@ -1991,6 +2127,8 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             formData.append('request_type', 'death_certificate');
             formData.append('death_cert_requested', '1');
             formData.append('cemetery_plot_requested', '0');
+            formData.append('existing_cert_no', regCertNo);
+            formData.append('encoded_cert_id', linkedRegId);
             formData.append('firstName', document.getElementById('deceased-first-name')?.value.trim() || '');
             formData.append('middleName', document.getElementById('deceased-middle-name')?.value.trim() || '');
             formData.append('lastName', document.getElementById('deceased-last-name')?.value.trim() || '');
@@ -2099,6 +2237,205 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             alert(err.message || 'Error submitting response.');
             btn.disabled = false;
             btn.innerHTML = originalText;
+        }
+    }
+
+    function printClaimingSlip() {
+        const slipData = {
+            refId: <?= json_encode($appId) ?>,
+            status: <?= json_encode($dcStatus) ?>,
+            deceasedName: <?= json_encode($deceasedName) ?>,
+            dateOfDeath: <?= json_encode($dateOfDeath) ?>,
+            placeOfDeath: <?= json_encode($placeOfDeath) ?>,
+            requesterName: <?= json_encode($requesterName) ?>,
+            relationship: <?= json_encode($relationship) ?>,
+            contact: <?= json_encode($activeBurial['informant_contact'] ?? ($userPhone ?: 'On File')) ?>,
+            scheduledDate: <?= json_encode(!empty($activeBurial['scheduled_release_date']) ? date('F d, Y', strtotime($activeBurial['scheduled_release_date'])) : 'To Be Scheduled') ?>,
+            scheduledTime: <?= json_encode(!empty($activeBurial['scheduled_release_time']) ? date('g:i A', strtotime($activeBurial['scheduled_release_time'])) : 'Regular Office Hours (8:00 AM - 5:00 PM)') ?>,
+            releaseLocation: <?= json_encode(($activeBurial['release_location'] ?? '') ?: 'Damayan Department, ISCAG Office') ?>,
+            scheduledBy: <?= json_encode(($activeBurial['release_scheduled_by_name'] ?? '') ?: 'Damayan Admin') ?>,
+            instructions: <?= json_encode(($activeBurial['release_instructions'] ?? '') ?: 'Please bring this official claiming slip, a valid government-issued ID of the authorized recipient, and any official receipts upon claiming at the Damayan Department counter.') ?>,
+            registryNo: <?= json_encode(($activeBurial['death_cert_registry_no'] ?? '') ?: 'Under Department Processing') ?>,
+            registeredDate: <?= json_encode(!empty($activeBurial['death_cert_registered_date']) ? date('F d, Y', strtotime($activeBurial['death_cert_registered_date'])) : 'Pending Registration') ?>,
+            certifiedRef: <?= json_encode(($activeBurial['death_cert_certified_copy_ref'] ?? '') ?: 'N/A') ?>,
+            printDate: <?= json_encode(date('F d, Y \a\t g:i A')) ?>
+        };
+
+        const logoUrl = window.location.origin + '/assets/favicon_io/favicon.ico';
+        const printHtml = `
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>ISCAG Claiming Slip - ${slipData.refId}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+            <style>
+              * { box-sizing: border-box; }
+              body { font-family: 'Inter', -apple-system, sans-serif; color: #1e293b; margin: 0; padding: 24px; background: #fff; font-size: 13px; }
+              .slip-wrapper { max-width: 720px; margin: 0 auto; border: 2px solid #059669; border-radius: 12px; padding: 28px 30px; position: relative; }
+              .slip-top-border { height: 5px; background: linear-gradient(90deg, #059669 0%, #d97706 100%); margin: -28px -30px 22px -30px; border-radius: 10px 10px 0 0; }
+              .header-row { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; }
+              .brand-col { display: flex; align-items: center; gap: 12px; }
+              .brand-col img { width: 48px; height: 48px; object-fit: contain; }
+              .org-title { font-family: 'Lora', serif; font-size: 1.15rem; font-weight: 800; color: #065f46; line-height: 1.2; }
+              .dept-subtitle { font-size: 0.8rem; font-weight: 600; color: #64748b; margin-top: 2px; }
+              .ref-badge { text-align: right; }
+              .ref-num { font-size: 1.25rem; font-weight: 800; color: #065f46; font-family: monospace; letter-spacing: 0.04em; }
+              .ref-label { font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #64748b; }
+              .slip-title-banner { background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 8px; padding: 10px 16px; text-align: center; margin-bottom: 20px; }
+              .slip-title { font-size: 1.05rem; font-weight: 800; color: #064e3b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+              .slip-subtitle { font-size: 0.75rem; color: #047857; margin-top: 3px; font-weight: 500; }
+              .section-heading { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #065f46; margin: 16px 0 8px; display: flex; align-items: center; gap: 6px; }
+              .section-heading::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+              .data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 0.82rem; }
+              .data-table td { padding: 7px 10px; border: 1px solid #e2e8f0; }
+              .data-table td.label-cell { width: 34%; background: #f8fafc; font-weight: 700; color: #475569; }
+              .data-table td.val-cell { color: #0f172a; }
+              .sched-box { background: #ecfdf5; border: 1.5px solid #6ee7b7; border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; }
+              .sched-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+              .sched-item { display: flex; flex-direction: column; }
+              .sched-item-lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #047857; }
+              .sched-item-val { font-size: 0.95rem; font-weight: 800; color: #064e3b; margin-top: 2px; }
+              .inst-note { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #a7f3d0; font-size: 0.78rem; color: #065f46; line-height: 1.45; }
+              .sig-row { display: flex; justify-content: space-between; margin-top: 28px; padding-top: 16px; }
+              .sig-box { width: 45%; text-align: center; }
+              .sig-line { border-top: 1.5px solid #334155; margin-top: 42px; padding-top: 6px; font-size: 0.8rem; font-weight: 700; color: #1e293b; }
+              .sig-caption { font-size: 0.72rem; color: #64748b; margin-top: 2px; }
+              .footer-note { margin-top: 22px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 0.72rem; color: #64748b; text-align: center; line-height: 1.4; }
+              @media print {
+                body { padding: 0; }
+                .slip-wrapper { border: 1.5px solid #059669; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="slip-wrapper">
+              <div class="slip-top-border"></div>
+              
+              <div class="header-row">
+                <div class="brand-col">
+                  <img src="${logoUrl}" alt="ISCAG Logo" onerror="this.style.display='none'" />
+                  <div>
+                    <div class="org-title">Islamic Studies, Call and Guidance of the Philippines</div>
+                    <div class="dept-subtitle">Social Welfare &amp; Damayan Department • Civil Registry Services</div>
+                  </div>
+                </div>
+                <div class="ref-badge">
+                  <div class="ref-label">Claiming Reference</div>
+                  <div class="ref-num">#${slipData.refId}</div>
+                </div>
+              </div>
+
+              <div class="slip-title-banner">
+                <h2 class="slip-title">Official Death Certificate Claiming Slip</h2>
+                <div class="slip-subtitle">Present this slip along with one (1) valid government ID at the Damayan counter</div>
+              </div>
+
+              <div class="sched-box">
+                <div class="sched-grid">
+                  <div class="sched-item">
+                    <span class="sched-item-lbl">Scheduled Claiming Date:</span>
+                    <span class="sched-item-val">${slipData.scheduledDate}</span>
+                  </div>
+                  <div class="sched-item">
+                    <span class="sched-item-lbl">Scheduled Claiming Time:</span>
+                    <span class="sched-item-val">${slipData.scheduledTime}</span>
+                  </div>
+                  <div class="sched-item">
+                    <span class="sched-item-lbl">Claiming Counter / Location:</span>
+                    <span class="sched-item-val">${slipData.releaseLocation}</span>
+                  </div>
+                  <div class="sched-item">
+                    <span class="sched-item-lbl">Authorized Coordinator:</span>
+                    <span class="sched-item-val">${slipData.scheduledBy}</span>
+                  </div>
+                </div>
+                ${slipData.instructions ? `
+                  <div class="inst-note">
+                    <strong>Claiming Instructions:</strong> ${slipData.instructions}
+                  </div>
+                ` : ''}
+              </div>
+
+              <div class="section-heading">Deceased &amp; Certificate Record</div>
+              <table class="data-table">
+                <tr>
+                  <td class="label-cell">Deceased Full Name</td>
+                  <td class="val-cell"><strong>${slipData.deceasedName}</strong></td>
+                </tr>
+                <tr>
+                  <td class="label-cell">Date of Death</td>
+                  <td class="val-cell">${slipData.dateOfDeath}</td>
+                </tr>
+                <tr>
+                  <td class="label-cell">Place of Death</td>
+                  <td class="val-cell">${slipData.placeOfDeath}</td>
+                </tr>
+                <tr>
+                  <td class="label-cell">LCRO Registry Number</td>
+                  <td class="val-cell"><strong>${slipData.registryNo}</strong></td>
+                </tr>
+                <tr>
+                  <td class="label-cell">Registration Date</td>
+                  <td class="val-cell">${slipData.registeredDate}</td>
+                </tr>
+                <tr>
+                  <td class="label-cell">Current Processing Status</td>
+                  <td class="val-cell"><strong>${slipData.status}</strong></td>
+                </tr>
+              </table>
+
+              <div class="section-heading">Authorized Claimant Details</div>
+              <table class="data-table">
+                <tr>
+                  <td class="label-cell">Authorized Claimant / Representative</td>
+                  <td class="val-cell"><strong>${slipData.requesterName}</strong></td>
+                </tr>
+                <tr>
+                  <td class="label-cell">Relationship to Deceased</td>
+                  <td class="val-cell">${slipData.relationship}</td>
+                </tr>
+                <tr>
+                  <td class="label-cell">Contact Number</td>
+                  <td class="val-cell">${slipData.contact}</td>
+                </tr>
+              </table>
+
+              <div class="sig-row">
+                <div class="sig-box">
+                  <div class="sig-line">${slipData.requesterName}</div>
+                  <div class="sig-caption">Signature of Claimant over Printed Name<br>(Sign upon physical receipt)</div>
+                </div>
+                <div class="sig-box">
+                  <div class="sig-line">${slipData.scheduledBy}</div>
+                  <div class="sig-caption">Damayan Releasing Officer / Coordinator<br>Islamic Studies, Call and Guidance</div>
+                </div>
+              </div>
+
+              <div class="footer-note">
+                Printed on ${slipData.printDate} • Generated via ISCAG Management Information System (MIS)<br>
+                For inquiries, please visit or contact the Damayan Department directly.
+              </div>
+            </div>
+
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                }, 350);
+              };
+            <\/script>
+          </body>
+          </html>
+        `;
+
+        const printWin = window.open('', '_blank', 'width=800,height=900');
+        if (printWin) {
+            printWin.document.open();
+            printWin.document.write(printHtml);
+            printWin.document.close();
+        } else {
+            window.print();
         }
     }
 

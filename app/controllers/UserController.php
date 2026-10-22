@@ -1351,6 +1351,66 @@ class UserController extends Controller
             $fullName = trim($input['deceased_name'] ?? '');
         }
 
+        // Gate: Processing is only available for death certificates recorded within the Damayan Department
+        $existingCertNo = trim($input['existing_cert_no'] ?? ($input['registry_number'] ?? ''));
+        $encodedCertId = !empty($input['encoded_cert_id']) ? (int)$input['encoded_cert_id'] : null;
+        $deceasedId = !empty($input['deceased_id']) ? (int)$input['deceased_id'] : null;
+
+        $certFoundInDept = false;
+        $linkedEncodedRecord = null;
+
+        if ($encodedCertId) {
+            $enc = $model->getEncodedDeathCertificateById($encodedCertId);
+            if ($enc) {
+                $certFoundInDept = true;
+                $linkedEncodedRecord = $enc;
+            }
+        }
+
+        if (!$certFoundInDept && !empty($existingCertNo)) {
+            $enc = $model->findEncodedByRegistrationNo($existingCertNo);
+            if ($enc) {
+                $certFoundInDept = true;
+                $linkedEncodedRecord = $enc;
+                $encodedCertId = (int)$enc['id'];
+            } else {
+                $dup = $model->isDuplicateDeathCertRegNo($existingCertNo);
+                if ($dup) {
+                    $certFoundInDept = true;
+                }
+            }
+        }
+
+        if (!$certFoundInDept && $deceasedId) {
+            try {
+                $db = getDbConnection();
+                $checkDec = $db->prepare("SELECT id, full_name FROM deceased_records WHERE id = :did LIMIT 1");
+                $checkDec->execute(['did' => $deceasedId]);
+                if ($checkDec->fetch()) {
+                    $certFoundInDept = true;
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        if (!$certFoundInDept && !empty($fullName)) {
+            $potentialMatches = $model->checkPotentialDuplicates(['deceased_name' => $fullName, 'date_of_death' => $dod]);
+            if (!empty($potentialMatches)) {
+                $certFoundInDept = true;
+            }
+        }
+
+        if (!$certFoundInDept) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Processing is only available for death certificates recorded within the ISCAG Damayan Department. Please enter a valid registration number or select a recorded deceased record from the department archive.'
+            ]);
+            return;
+        }
+
+        if ($linkedEncodedRecord && empty($fullName)) {
+            $fullName = $linkedEncodedRecord['deceased_name'];
+        }
+
         // Duplicate check (for new registrations only)
         if ($certActionType === 'register' && $model->checkDuplicate((int)$_SESSION['user_id'], $fullName, $dod)) {
             echo json_encode([
