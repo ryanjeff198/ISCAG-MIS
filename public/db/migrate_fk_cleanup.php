@@ -55,20 +55,24 @@ try {
     ");
     $results[] = "✓ FK added: apartment_units.application_id → apartmentsapp (ON DELETE SET NULL)";
 
-    // Step 6: Create auto-vacancy trigger
-    $db->exec("DROP TRIGGER IF EXISTS trg_auto_vacate_room");
-    $db->exec("
-        CREATE TRIGGER trg_auto_vacate_room
-        BEFORE UPDATE ON apartment_units
-        FOR EACH ROW
-        BEGIN
-            IF NEW.tenant_id IS NULL AND OLD.tenant_id IS NOT NULL THEN
-                SET NEW.status = 'Available';
-                SET NEW.application_id = NULL;
-            END IF;
-        END
-    ");
-    $results[] = "✓ Trigger created: trg_auto_vacate_room";
+    // Step 6: Create auto-vacancy trigger (optional, skipped gracefully if host forbids triggers like InfinityFree)
+    try {
+        $db->exec("DROP TRIGGER IF EXISTS trg_auto_vacate_room");
+        $db->exec("
+            CREATE TRIGGER trg_auto_vacate_room
+            BEFORE UPDATE ON apartment_units
+            FOR EACH ROW
+            BEGIN
+                IF NEW.tenant_id IS NULL AND OLD.tenant_id IS NOT NULL THEN
+                    SET NEW.status = 'Available';
+                    SET NEW.application_id = NULL;
+                END IF;
+            END
+        ");
+        $results[] = "✓ Trigger created: trg_auto_vacate_room";
+    } catch (PDOException $te) {
+        $results[] = "ℹ Trigger skipped (shared host without TRIGGER privileges, handled via PHP instead)";
+    }
 
     echo "\n=== Migration Complete ===\n\n";
     foreach ($results as $r) echo "  $r\n";

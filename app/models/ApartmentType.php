@@ -285,6 +285,17 @@ class ApartmentType
         }
         if (empty($safe)) return false;
 
+        // Auto-vacate room when tenant_id is cleared (replaces MySQL trigger for shared hosts like InfinityFree)
+        if (array_key_exists('tenant_id', $safe) && (is_null($safe['tenant_id']) || $safe['tenant_id'] === '' || $safe['tenant_id'] === 0)) {
+            $safe['tenant_id'] = null;
+            if (!isset($data['status']) || $data['status'] === 'Occupied') {
+                $safe['status'] = 'Available';
+            }
+            if (!isset($data['application_id'])) {
+                $safe['application_id'] = null;
+            }
+        }
+
         $set = implode(',', array_map(fn($k) => "$k = :$k", array_keys($safe)));
         $safe['id'] = $id;
         $stmt = $this->db->prepare("UPDATE apartment_units SET $set WHERE unit_id = :id");

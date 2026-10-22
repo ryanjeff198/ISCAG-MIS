@@ -8,6 +8,7 @@
 -- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET FOREIGN_KEY_CHECKS = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -314,18 +315,6 @@ INSERT INTO `apartment_units` (`unit_id`, `type_id`, `room_number`, `building`, 
 (135, 6, 'B5-31', 'Building 5', 'Available', NULL, NULL, 'Building 5, Floor 4 — Bachelor', '2026-04-23 13:34:56', '2026-04-23 16:59:17'),
 (136, 3, 'B5-32', 'Building 5', 'Available', NULL, NULL, 'Building 5, Floor 4 — Two-Bedroom Unit', '2026-04-23 13:34:56', '2026-04-23 16:59:17');
 
---
--- Triggers `apartment_units`
---
-DELIMITER $$
-CREATE TRIGGER `trg_auto_vacate_room` BEFORE UPDATE ON `apartment_units` FOR EACH ROW BEGIN
-            IF NEW.tenant_id IS NULL AND OLD.tenant_id IS NOT NULL THEN
-                SET NEW.status = 'Available';
-                SET NEW.application_id = NULL;
-            END IF;
-        END
-$$
-DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -2205,7 +2194,6 @@ ALTER TABLE `tenant_addinfo_images`
 -- Constraints for table `tenant_parking`
 --
 ALTER TABLE `tenant_parking`
-  ADD CONSTRAINT `fk_parking_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_tenant_parking_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
@@ -2214,6 +2202,7 @@ ALTER TABLE `tenant_parking`
 ALTER TABLE `tenant_user_profiles`
   ADD CONSTRAINT `fk_tup_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenant_accounts` (`tenant_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
+SET FOREIGN_KEY_CHECKS = 1;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
