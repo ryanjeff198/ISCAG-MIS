@@ -7,12 +7,30 @@
  * This file returns a PDO instance when called via getDbConnection().
  */
 
-// Database credentials — update these with your actual values
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'iscag');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_CHARSET', 'utf8mb4');
+// Auto-detect Local (XAMPP) vs Production (InfinityFree / Live Server)
+$isLocal = in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', '127.0.0.1', '::1'])
+    || (isset($_SERVER['DOCUMENT_ROOT']) && strpos($_SERVER['DOCUMENT_ROOT'], 'xampp') !== false)
+    || (strpos(__DIR__, 'xampp') !== false)
+    || (DIRECTORY_SEPARATOR === '\\');
+
+if ($isLocal) {
+    // ── Local Development (XAMPP) ──────────────────────────────────
+    define('DB_HOST', 'localhost');
+    define('DB_PORT', '3306');
+    define('DB_NAME', 'iscag');
+    define('DB_USER', 'root');
+    define('DB_PASS', '');
+    define('DB_CHARSET', 'utf8mb4');
+} else {
+    // ── InfinityFree / Live Hosting Credentials ───────────────────
+    // Check your InfinityFree Client Area -> "MySQL Details" for DB_HOST & DB_NAME:
+    define('DB_HOST', 'sqlXXX.infinityfree.com'); // <-- Replace with your MySQL Hostname from InfinityFree
+    define('DB_PORT', '3306');
+    define('DB_NAME', 'if0_43246197_iscag');     // Replace if your created database has a different name
+    define('DB_USER', 'if0_43246197');
+    define('DB_PASS', 'B0AYg0NXV5OJQUh');
+    define('DB_CHARSET', 'utf8mb4');
+}
 
 /**
  * Get a PDO database connection.
@@ -24,7 +42,7 @@ function getDbConnection(): PDO
     static $pdo = null;
 
     if ($pdo === null) {
-        $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+        $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
 
         $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
