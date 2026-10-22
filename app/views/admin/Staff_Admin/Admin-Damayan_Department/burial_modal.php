@@ -181,21 +181,21 @@
                 
                 <label id="btn-result-matched" class="verify-choice-btn" style="border:2px solid #d1d5db; border-radius:8px; padding:10px 8px; text-align:center; cursor:pointer; background:#fff; transition:all 0.15s ease;" onclick="selectVerificationResult('Matched')">
                   <input type="radio" name="verify_result_choice" value="Matched" id="radio-matched" style="display:none;" />
-                  <div style="font-size:1.1rem; color:#059669; line-height:1; margin-bottom:4px;">✓</div>
+                  <div style="color:#059669; line-height:1; margin-bottom:4px; display:flex; justify-content:center;"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg></div>
                   <strong style="display:block; font-size:0.82rem; color:#065f46;">Matched</strong>
                   <span style="font-size:0.68rem; color:#6b7280; display:block; margin-top:2px;">Details match certificate</span>
                 </label>
 
                 <label id="btn-result-mismatch" class="verify-choice-btn" style="border:2px solid #d1d5db; border-radius:8px; padding:10px 8px; text-align:center; cursor:pointer; background:#fff; transition:all 0.15s ease;" onclick="selectVerificationResult('Mismatch')">
                   <input type="radio" name="verify_result_choice" value="Mismatch" id="radio-mismatch" style="display:none;" />
-                  <div style="font-size:1.1rem; color:#d97706; line-height:1; margin-bottom:4px;">✕</div>
+                  <div style="color:#d97706; line-height:1; margin-bottom:4px; display:flex; justify-content:center;"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
                   <strong style="display:block; font-size:0.82rem; color:#b45309;">Mismatch</strong>
                   <span style="font-size:0.68rem; color:#6b7280; display:block; margin-top:2px;">Details do not match</span>
                 </label>
 
                 <label id="btn-result-unable" class="verify-choice-btn" style="border:2px solid #d1d5db; border-radius:8px; padding:10px 8px; text-align:center; cursor:pointer; background:#fff; transition:all 0.15s ease;" onclick="selectVerificationResult('Unable to Verify')">
                   <input type="radio" name="verify_result_choice" value="Unable to Verify" id="radio-unable" style="display:none;" />
-                  <div style="font-size:1.1rem; color:#6b7280; line-height:1; margin-bottom:4px;">?</div>
+                  <div style="color:#6b7280; line-height:1; margin-bottom:4px; display:flex; justify-content:center;"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg></div>
                   <strong style="display:block; font-size:0.82rem; color:#4b5563;">Unable to Verify</strong>
                   <span style="font-size:0.68rem; color:#6b7280; display:block; margin-top:2px;">Unreadable / Missing</span>
                 </label>
@@ -220,6 +220,248 @@
 
             </div>
 
+            <!-- SECTION D: WORKFLOW STAGE & RELEASE SCHEDULING (DAMAYAN ADMIN) -->
+            <div class="panel-section" id="section-release-scheduling" style="background:#fff; border:2px solid #6ee7b7; border-radius:12px; padding:18px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div style="width:30px; height:30px; border-radius:8px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center;">
+                    <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                  </div>
+                  <div>
+                    <div style="font-size:0.84rem; font-weight:800; color:#064e3b; text-transform:uppercase; letter-spacing:0.04em;">
+                      D. Processing Stage &amp; Release Scheduling
+                    </div>
+                    <div style="font-size:0.75rem; color:#6b7280; margin-top:1px;">
+                      Advance stage and select the exact date and time when user can claim death certificate
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:0.75rem; color:#6b7280; font-weight:600;">Current Stage:</span>
+                  <span id="v-current-stage-badge" class="badge-status badge-active" style="font-size:0.75rem; padding:3px 10px;">Submitted</span>
+                </div>
+              </div>
+
+              <!-- DEPARTMENT PHYSICAL CERTIFICATE CUSTODY BANNER -->
+              <div id="custody-status-banner" style="border-radius:10px; padding:12px 14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border:1.5px solid #cbd5e1; background:#f8fafc;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div id="custody-badge-icon" style="width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:#f1f5f9; color:#64748b;">
+                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+                  </div>
+                  <div>
+                    <div style="font-size:0.84rem; font-weight:800;" id="custody-status-title">Certificate Custody Status</div>
+                    <div style="font-size:0.75rem;" id="custody-status-desc">Loading certificate department custody status...</div>
+                  </div>
+                </div>
+                <div>
+                  <button type="button" id="btn-toggle-custody" class="btn-topbar" style="font-size:0.78rem; padding:6px 14px; font-weight:700; transition:all 0.2s;" onclick="toggleCertificateCustody()">
+                    Mark Received in Department
+                  </button>
+                </div>
+              </div>
+
+              <!-- Pipeline Progression Pills -->
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px; margin-bottom:16px;">
+                <div style="font-size:0.72rem; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
+                  Workflow Pipeline:
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(6, 1fr); gap:6px; text-align:center;" id="admin-pipeline-steps">
+                  <div class="pipe-step" id="pstep-1" style="padding:6px 4px; border-radius:6px; font-size:0.7rem; font-weight:700; background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;">1. Submitted</div>
+                  <div class="pipe-step" id="pstep-2" style="padding:6px 4px; border-radius:6px; font-size:0.7rem; font-weight:700; background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;">2. Under Review</div>
+                  <div class="pipe-step" id="pstep-3" style="padding:6px 4px; border-radius:6px; font-size:0.7rem; font-weight:700; background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;">3. Approved</div>
+                  <div class="pipe-step" id="pstep-4" style="padding:6px 4px; border-radius:6px; font-size:0.7rem; font-weight:700; background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;">4. Certificate Prepared</div>
+                  <div class="pipe-step" id="pstep-5" style="padding:6px 4px; border-radius:6px; font-size:0.7rem; font-weight:700; background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;">5. Ready for Release</div>
+                  <div class="pipe-step" id="pstep-6" style="padding:6px 4px; border-radius:6px; font-size:0.7rem; font-weight:700; background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0;">6. Completed</div>
+                </div>
+
+                <div style="margin-top:12px; padding-top:10px; border-top:1px dashed #cbd5e1; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                  <div style="font-size:0.78rem; color:#475569;">
+                    Update request processing stage:
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <select id="stage-select-dropdown" style="padding:6px 10px; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:6px; background:#fff; font-family:inherit;">
+                      <option value="Submitted">1. Submitted</option>
+                      <option value="Under Review">2. Under Review</option>
+                      <option value="Approved">3. Approved</option>
+                      <option value="Certificate Prepared">4. Certificate Prepared</option>
+                      <option value="Ready for Release">5. Ready for Release</option>
+                      <option value="Completed">6. Completed</option>
+                    </select>
+                    <button type="button" class="btn-topbar" style="padding:6px 14px; font-size:0.78rem; background:#059669; color:#fff; border-color:#059669; font-weight:700;" onclick="submitStageUpdate()">
+                      Update Stage
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- VIEW A: CONFIRMED CLAIMING APPOINTMENT (When schedule is active) -->
+              <div id="confirmed-schedule-view" style="display:none; background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:10px; padding:16px; margin-bottom:14px;">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                  <div style="display:flex; align-items:flex-start; gap:10px;">
+                    <div style="width:34px; height:34px; border-radius:8px; background:#d1fae5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                      <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                    </div>
+                    <div>
+                      <strong style="color:#065f46; font-size:0.94rem; display:block;">Confirmed Release Appointment</strong>
+                      <div style="font-size:0.78rem; color:#047857; margin-top:2px;">
+                        The applicant can visit the Damayan Department on the confirmed schedule below.
+                      </div>
+                    </div>
+                  </div>
+                  <span class="badge-status badge-active" style="font-size:0.72rem; padding:3px 10px; background:#059669; color:#fff;">
+                    Ready for Release
+                  </span>
+                </div>
+
+                <!-- Schedule Details Grid -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; font-size:0.84rem; background:#fff; border:1px solid #bbf7d0; border-radius:8px; padding:12px 14px;">
+                  <div>
+                    <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; font-weight:700; display:block;">Scheduled Date:</span>
+                    <strong id="display-sched-date" style="color:#0f172a; font-size:0.95rem;">—</strong>
+                  </div>
+                  <div>
+                    <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; font-weight:700; display:block;">Scheduled Time:</span>
+                    <strong id="display-sched-time" style="color:#0f172a; font-size:0.95rem;">—</strong>
+                  </div>
+                  <div>
+                    <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; font-weight:700; display:block;">Claiming Location:</span>
+                    <strong id="display-sched-loc" style="color:#065f46; font-size:0.9rem;">Damayan Department</strong>
+                  </div>
+                  <div>
+                    <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; font-weight:700; display:block;">Scheduled By:</span>
+                    <span id="display-sched-by" style="color:#374151; font-weight:600;">—</span>
+                  </div>
+                  <div style="grid-column: span 2;" id="display-sched-instructions-row">
+                    <span style="color:#6b7280; font-size:0.72rem; text-transform:uppercase; font-weight:700; display:block;">Release Instructions:</span>
+                    <div id="display-sched-instructions" style="color:#374151; margin-top:3px; font-size:0.84rem; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0;">None provided</div>
+                  </div>
+                </div>
+
+                <!-- Schedule Controls -->
+                <div style="margin-top:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <button type="button" class="btn-topbar" style="padding:6px 12px; font-size:0.78rem; background:#fff; color:#b45309; border:1px solid #fcd34d; font-weight:700;" onclick="toggleRescheduleForm()">
+                      Reschedule Appointment
+                    </button>
+                    <button type="button" class="btn-topbar" style="padding:6px 12px; font-size:0.78rem; background:#fff; color:#dc2626; border:1px solid #fca5a5; font-weight:700;" onclick="openCancelScheduleModal()">
+                      Cancel Schedule
+                    </button>
+                  </div>
+                  <button type="button" class="btn-topbar primary" style="padding:6px 16px; font-size:0.8rem; background:#059669; border-color:#059669; color:#fff; font-weight:700; display:inline-flex; align-items:center; gap:5px;" onclick="openMarkReleasedModal()">
+                    <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Record Certificate Released
+                  </button>
+                </div>
+              </div>
+
+              <!-- VIEW B: SCHEDULE / RESCHEDULE ENTRY FORM -->
+              <div id="schedule-entry-form" style="background:#fff; border:1.5px solid #cbd5e1; border-radius:10px; padding:16px; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                  <div>
+                    <strong id="sched-form-title" style="color:#0f5c3a; font-size:0.9rem; display:block;">Schedule Certificate Release</strong>
+                    <span style="font-size:0.72rem; color:#6b7280;">Specify exact claiming date and time. Must be in the future.</span>
+                  </div>
+                  <span id="sched-mode-badge" style="display:none; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:4px; background:#fef3c7; color:#92400e;">Rescheduling</span>
+                </div>
+
+                <!-- CUSTODY REQUIREMENT NOTICE (WHEN NOT IN DEPARTMENT) -->
+                <div id="custody-lock-notice" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; margin-bottom:12px; color:#991b1b; font-size:0.8rem; align-items:center; gap:8px;">
+                  <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#dc2626;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                  <span><strong>Release Scheduling Locked:</strong> The physical death certificate must be in Damayan Department custody before scheduling its release. Click <em>"Mark as Received in Department"</em> above once received.</span>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                  <div>
+                    <label for="sched-date-input" style="display:block; font-size:0.76rem; font-weight:700; color:#374151; margin-bottom:4px;">
+                      Release Date <span style="color:#dc2626;">*</span>
+                    </label>
+                    <input type="date" id="sched-date-input" style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:7px 10px; font-size:0.84rem; font-family:inherit; background:#fff;" min="<?= date('Y-m-d') ?>" />
+                  </div>
+                  <div>
+                    <label for="sched-time-input" style="display:block; font-size:0.76rem; font-weight:700; color:#374151; margin-bottom:4px;">
+                      Release Time <span style="color:#dc2626;">*</span>
+                    </label>
+                    <input type="time" id="sched-time-input" style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:7px 10px; font-size:0.84rem; font-family:inherit; background:#fff;" />
+                  </div>
+                  <div style="grid-column: span 2;">
+                    <label for="sched-location-input" style="display:block; font-size:0.76rem; font-weight:700; color:#374151; margin-bottom:4px;">
+                      Release Location
+                    </label>
+                    <input type="text" id="sched-location-input" value="Damayan Department" readonly style="width:100%; box-sizing:border-box; border:1px solid #e5e7eb; border-radius:8px; padding:7px 10px; font-size:0.84rem; font-family:inherit; background:#f9fafb; color:#374151; font-weight:600;" />
+                  </div>
+                  <div style="grid-column: span 2;">
+                    <label for="sched-instructions-input" style="display:block; font-size:0.76rem; font-weight:700; color:#374151; margin-bottom:4px;">
+                      Release Instructions <span style="color:#6b7280; font-weight:normal;">(Optional instructions for the user)</span>
+                    </label>
+                    <textarea id="sched-instructions-input" rows="2" placeholder="e.g. Please bring a valid government ID and official receipt upon claiming at the Damayan counter..." style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:7px 10px; font-size:0.82rem; font-family:inherit; resize:vertical;"></textarea>
+                  </div>
+                  <div style="grid-column: span 2; display:none;" id="sched-reason-container">
+                    <label for="sched-reason-input" style="display:block; font-size:0.76rem; font-weight:700; color:#b45309; margin-bottom:4px;">
+                      Reason for Rescheduling <span style="color:#dc2626;">*</span>
+                    </label>
+                    <input type="text" id="sched-reason-input" placeholder="Explain reason for revised claiming appointment..." style="width:100%; box-sizing:border-box; border:1px solid #fcd34d; border-radius:8px; padding:7px 10px; font-size:0.82rem; font-family:inherit; background:#fffbeb;" />
+                  </div>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                  <button type="button" id="btn-cancel-sched-edit" style="display:none; padding:6px 14px; font-size:0.8rem; border:1px solid #d1d5db; border-radius:6px; background:#fff; color:#374151; cursor:pointer;" onclick="cancelRescheduleEdit()">
+                    Cancel
+                  </button>
+                  <button type="button" id="btn-confirm-schedule" class="btn-topbar primary" style="padding:6px 18px; font-size:0.82rem; background:#059669; border-color:#059669; color:#fff; font-weight:700;" onclick="submitReleaseSchedule()">
+                    Confirm Schedule
+                  </button>
+                </div>
+              </div>
+
+              <!-- VIEW C: CERTIFICATE OFFICIALLY RELEASED & COMPLETED -->
+              <div id="released-completed-view" style="display:none; background:#ecfdf5; border:1.5px solid #6ee7b7; border-radius:10px; padding:14px 16px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div style="width:32px; height:32px; border-radius:8px; background:#d1fae5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                  </div>
+                  <div>
+                    <strong style="color:#065f46; font-size:0.92rem; display:block;">Certificate Released &amp; Completed</strong>
+                    <div style="font-size:0.78rem; color:#047857; margin-top:2px;" id="display-released-meta">
+                      The death certificate has been physically released to the recipient.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- SECTION E: APPOINTMENT HISTORY & AUDIT LOGS (BOTTOM TABLE) -->
+            <div class="panel-section" id="schedule-history-container" style="display:none; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div style="width:28px; height:28px; border-radius:6px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center;">
+                    <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                  </div>
+                  <div style="font-size:0.8rem; font-weight:800; color:#1e293b; text-transform:uppercase; letter-spacing:0.04em;">
+                    Claiming Appointment History
+                  </div>
+                </div>
+                <span id="sched-history-count" style="font-size:0.72rem; color:#475569; font-weight:700; background:#f1f5f9; border:1px solid #e2e8f0; padding:2px 8px; border-radius:100px;">0 records</span>
+              </div>
+              
+              <div style="overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.76rem; text-align:left;">
+                  <thead>
+                    <tr style="background:#f8fafc; border-bottom:1.5px solid #e2e8f0; color:#475569; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">
+                      <th style="padding:9px 12px; font-weight:700;">Action</th>
+                      <th style="padding:9px 12px; font-weight:700;">Scheduled Appointment</th>
+                      <th style="padding:9px 12px; font-weight:700;">Location</th>
+                      <th style="padding:9px 12px; font-weight:700;">Reason / Notes</th>
+                      <th style="padding:9px 12px; font-weight:700;">Action By</th>
+                      <th style="padding:9px 12px; font-weight:700;">Date Recorded</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sched-history-table-body">
+                    <!-- Populated dynamically by renderScheduleHistory() -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
 
       </div>
@@ -231,8 +473,15 @@
       <div id="modal-footer-status-text" style="font-size:0.8rem; color:#4b5563;">
         <!-- Dynamic verification advice -->
       </div>
-      <div style="display:flex; align-items:center; gap:10px;">
+      <div style="display:flex; align-items:center; gap:8px;">
         <span id="modal-final-status-badge" style="display:none; font-size:0.8rem; font-weight:700; padding:6px 14px; border-radius:6px;"></span>
+        <button type="button" id="modal-btn-schedule-quick" class="btn-topbar primary" style="padding:6px 14px; font-size:0.82rem; background:#047857; border-color:#047857; color:#fff; font-weight:700; display:inline-flex; align-items:center; gap:5px;" onclick="scrollToSchedulingSection()">
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg> Schedule Release
+        </button>
+        <button type="button" id="modal-btn-send-dawah" class="btn-topbar" style="padding:6px 14px; font-size:0.82rem; background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-weight:700; display:inline-flex; align-items:center; gap:6px;" onclick="onModalSendDawahClick()">
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          Send to Da'wah
+        </button>
         <button type="button" id="modal-btn-reject" class="btn-topbar" style="padding:6px 14px; font-size:0.82rem; background:#fff; color:#dc2626; border:1px solid #fca5a5; font-weight:700;" onclick="onModalRejectClick()">
           Reject Request
         </button>
@@ -330,8 +579,9 @@
       <p style="font-size:0.86rem; color:#374151; margin:0 0 12px 0;">
         Are you sure you want to accept <strong id="accept-modal-target-label">this request</strong>?
       </p>
-      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.8rem; color:#166534; margin-bottom:14px;">
-        ✓ Certificate details verified as <strong>Matched</strong>. Once accepted, the request status will change to <strong>Accepted</strong> and the requester will be notified.
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.8rem; color:#166534; margin-bottom:14px; display:flex; align-items:flex-start; gap:8px;">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;flex-shrink:0;margin-top:2px;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+        <span>Certificate details verified as <strong>Matched</strong>. Once accepted, the request status will change to <strong>Accepted</strong> and the requester will be notified.</span>
       </div>
       <div>
         <label for="accept-optional-notes" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:4px;">
@@ -350,6 +600,88 @@
       </button>
     </div>
 
+  </div>
+</div>
+
+
+<!-- 4. CANCEL RELEASE SCHEDULE MODAL -->
+<div id="damayanCancelSchedModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.65); backdrop-filter:blur(4px); z-index:100000; align-items:center; justify-content:center; padding:16px;">
+  <div class="mis-modal-content" style="background:#fff; border-radius:14px; width:95%; max-width:500px; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideUp 0.2s ease;">
+    <div class="mis-modal-header" style="padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; background:#fef2f2;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:32px; height:32px; border-radius:8px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center;">
+          <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </div>
+        <div>
+          <h5 style="margin:0; font-size:1.05rem; font-weight:800; color:#991b1b;">Cancel Claiming Schedule</h5>
+          <div id="cancel-sched-case-label" style="font-size:0.75rem; color:#7f1d1d; margin-top:2px;">Case #BR-0000</div>
+        </div>
+      </div>
+      <button type="button" onclick="closeCancelScheduleModal()" style="background:transparent; border:none; font-size:1.4rem; line-height:1; cursor:pointer; color:#9ca3af;">&times;</button>
+    </div>
+    <div class="mis-modal-body" style="padding:18px 20px;">
+      <p style="font-size:0.84rem; color:#4b5563; margin:0 0 12px 0;">
+        Cancelling the claiming schedule will remove the confirmed claiming appointment, return the request stage to <strong>Certificate Prepared</strong>, and notify the applicant.
+      </p>
+      <div style="margin-bottom:12px;">
+        <label for="cancel-sched-reason" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:4px;">
+          Cancellation Reason <span style="color:#dc2626;">*</span>
+        </label>
+        <textarea id="cancel-sched-reason" rows="3" placeholder="Provide a reason for cancelling this appointment..." style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:8px 10px; font-size:0.82rem; font-family:inherit; resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="mis-modal-footer" style="padding:14px 20px; border-top:1px solid #e5e7eb; display:flex; align-items:center; justify-content:flex-end; gap:10px; background:#fafbfc;">
+      <button type="button" class="btn-topbar" style="padding:6px 14px; font-size:0.82rem; border:1px solid #d1d5db; background:#fff; color:#374151;" onclick="closeCancelScheduleModal()">
+        Back
+      </button>
+      <button type="button" id="btn-confirm-cancel-sched" class="btn-topbar" style="padding:6px 16px; font-size:0.82rem; background:#dc2626; color:#fff; border:1px solid #dc2626; font-weight:700;" onclick="submitCancelSchedule()">
+        Confirm Cancellation
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 5. MARK CERTIFICATE RELEASED / COMPLETED MODAL -->
+<div id="damayanMarkReleasedModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.65); backdrop-filter:blur(4px); z-index:100000; align-items:center; justify-content:center; padding:16px;">
+  <div class="mis-modal-content" style="background:#fff; border-radius:14px; width:95%; max-width:500px; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden; animation:modalSlideUp 0.2s ease;">
+    <div class="mis-modal-header" style="padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; background:#ecfdf5;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:32px; height:32px; border-radius:8px; background:#d1fae5; color:#059669; display:flex; align-items:center; justify-content:center;">
+          <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+        </div>
+        <div>
+          <h5 style="margin:0; font-size:1.05rem; font-weight:800; color:#064e3b;">Record Certificate Released</h5>
+          <div id="released-case-label" style="font-size:0.75rem; color:#065f46; margin-top:2px;">Case #BR-0000</div>
+        </div>
+      </div>
+      <button type="button" onclick="closeMarkReleasedModal()" style="background:transparent; border:none; font-size:1.4rem; line-height:1; cursor:pointer; color:#9ca3af;">&times;</button>
+    </div>
+    <div class="mis-modal-body" style="padding:18px 20px;">
+      <p style="font-size:0.84rem; color:#374151; margin:0 0 12px 0;">
+        Confirm that the official death certificate has been physically claimed by and released to the requesting party. This will mark the case as <strong>Completed</strong>.
+      </p>
+      <div style="margin-bottom:12px;">
+        <label for="release-recipient-input" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:4px;">
+          Recipient Full Name <span style="color:#dc2626;">*</span>
+        </label>
+        <input type="text" id="release-recipient-input" placeholder="Name of person who received the certificate..." style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:7px 10px; font-size:0.84rem; font-family:inherit; background:#fff;" />
+      </div>
+      <div>
+        <label for="release-notes-input" style="display:block; font-size:0.78rem; font-weight:700; color:#374151; margin-bottom:4px;">
+          Release Remarks / ID Reference (Optional)
+        </label>
+        <textarea id="release-notes-input" rows="2" placeholder="e.g. Verified with PhilID Card #1234, original receipt presented..." style="width:100%; box-sizing:border-box; border:1px solid #d1d5db; border-radius:8px; padding:7px 10px; font-size:0.82rem; font-family:inherit; resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="mis-modal-footer" style="padding:14px 20px; border-top:1px solid #e5e7eb; display:flex; align-items:center; justify-content:flex-end; gap:10px; background:#fafbfc;">
+      <button type="button" class="btn-topbar" style="padding:6px 14px; font-size:0.82rem; border:1px solid #d1d5db; background:#fff; color:#374151;" onclick="closeMarkReleasedModal()">
+        Cancel
+      </button>
+      <button type="button" id="btn-confirm-release-done" class="btn-topbar primary" style="padding:6px 18px; font-size:0.82rem; background:#059669; border-color:#059669; color:#fff; font-weight:700;" onclick="submitMarkReleased()">
+        Confirm Physical Release
+      </button>
+    </div>
   </div>
 </div>
 
@@ -401,6 +733,41 @@
     const modal = document.getElementById('damayanCaseModal');
     if(modal) modal.style.display = 'none';
     activeCase = null;
+  }
+
+  function onModalSendDawahClick() {
+    if (!activeCase) {
+      if (typeof showAlert === 'function') showAlert('Information', 'No active case selected.', 'info');
+      else alert('No active case selected.');
+      return;
+    }
+    const cert = {
+      registry_number: activeCase.death_cert_registry_no || activeCase.encoded_reg_no || activeCase.ref_id || ('BR-' + activeCase.id),
+      deceased_name: activeCase.deceased_name || activeCase.deceased || '',
+      sex: activeCase.deceased_sex || 'Male',
+      date_of_death: activeCase.date_of_death || activeCase.date_died || '',
+      time_of_death: activeCase.time_of_death || '',
+      date_of_birth: activeCase.date_of_birth || '',
+      age: activeCase.age || '',
+      place_of_death: activeCase.place_of_death || '',
+      residence: activeCase.residence || activeCase.address || '',
+      civil_status: activeCase.civil_status || '',
+      religion: activeCase.religion || 'Islam',
+      citizenship: activeCase.citizenship || 'Filipino',
+      occupation: activeCase.occupation || '',
+      informant_name: activeCase.applicant_name || activeCase.informant_name || activeCase.name || '',
+      informant_contact: activeCase.contact_number || activeCase.phone || '',
+      informant_relationship: activeCase.relationship || '',
+      death_cert_date: activeCase.death_cert_date || new Date().toISOString().split('T')[0],
+      purpose: 'Da\'wah Male Janazah & Burial Coordination',
+      transmission_notes: 'Transmitted from Damayan Burial Case #' + (activeCase.ref_id || activeCase.id)
+    };
+    if (typeof openSendToDawahModal === 'function') {
+      openSendToDawahModal(cert);
+    } else {
+      if (typeof showAlert === 'function') showAlert('Error', 'Transmittal modal is not loaded.', 'error');
+      else alert('Transmittal modal is not loaded.');
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -533,10 +900,10 @@
         badgeFinal.style.background = '#d1fae5';
         badgeFinal.style.color = '#065f46';
         badgeFinal.style.border = '1px solid #a7f3d0';
-        badgeFinal.textContent = '✓ Request Accepted';
+        badgeFinal.innerHTML = '<svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;margin-right:4px;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Request Accepted';
       }
       if (footAdvice) {
-        footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ This request has already been accepted and approved for processing.</span>';
+        footAdvice.innerHTML = '<span style="color:#059669; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> This request has already been accepted and approved for processing.</span>';
       }
     } else if (displayStatus === 'Rejected') {
       if (btnAccept) btnAccept.style.display = 'none';
@@ -546,10 +913,10 @@
         badgeFinal.style.background = '#fee2e2';
         badgeFinal.style.color = '#991b1b';
         badgeFinal.style.border = '1px solid #fecaca';
-        badgeFinal.textContent = '✕ Request Rejected';
+        badgeFinal.innerHTML = '<svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;margin-right:4px;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Request Rejected';
       }
       if (footAdvice) {
-        footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700;">✕ This request has been rejected.</span>';
+        footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> This request has been rejected.</span>';
       }
     } else {
       if (btnAccept) btnAccept.style.display = 'inline-flex';
@@ -557,6 +924,9 @@
       if (badgeFinal) badgeFinal.style.display = 'none';
       updateFooterAdvice();
     }
+
+    // SECTION D: Workflow Stage & Release Scheduling
+    populateSchedulingSection(data);
   }
 
   function updateHeaderVerificationBadge(res) {
@@ -565,7 +935,7 @@
     if(!badge) return;
 
     if (res === 'Matched') {
-      badge.textContent = '✓ Verified: Matched';
+      badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;margin-right:3px;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Verified: Matched';
       badge.style.background = '#d1fae5';
       badge.style.color = '#065f46';
       if(summaryBadge) {
@@ -573,7 +943,7 @@
         summaryBadge.className = 'badge-status badge-active';
       }
     } else if (res === 'Mismatch') {
-      badge.textContent = '✕ Mismatch Found';
+      badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;margin-right:3px;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Mismatch Found';
       badge.style.background = '#fee2e2';
       badge.style.color = '#991b1b';
       if(summaryBadge) {
@@ -581,7 +951,7 @@
         summaryBadge.className = 'badge-status badge-danger';
       }
     } else if (res === 'Unable to Verify') {
-      badge.textContent = '? Unable to Verify';
+      badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;margin-right:3px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg> Unable to Verify';
       badge.style.background = '#fef3c7';
       badge.style.color = '#92400e';
       if(summaryBadge) {
@@ -606,21 +976,21 @@
     const rawSt = activeCase ? (activeCase.status || '').toLowerCase().trim() : '';
     const dcSt = activeCase ? (activeCase.death_cert_status || '').toLowerCase().trim() : '';
     if (rawSt === 'accepted' || rawSt.startsWith('accept') || dcSt === 'awaiting authorized certificate preparation') {
-      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ This request has already been accepted and approved for processing.</span>';
+      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> This request has already been accepted and approved for processing.</span>';
       return;
     }
     if (rawSt === 'rejected' || dcSt === 'rejected') {
-      footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700;">✕ This request has been rejected.</span>';
+      footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> This request has been rejected.</span>';
       return;
     }
 
     const res = selectedVerificationResult || (activeCase ? activeCase.verification_result : null);
     if (res === 'Matched') {
-      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700;">✓ Information verified and matches records. Request can now be accepted.</span>';
+      footAdvice.innerHTML = '<span style="color:#059669; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Information verified and matches records. Request can now be accepted.</span>';
     } else if (res === 'Mismatch') {
-      footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700;">✕ Discrepancies found. Resolve issues or proceed with rejection.</span>';
+      footAdvice.innerHTML = '<span style="color:#dc2626; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg> Discrepancies found. Resolve issues or proceed with rejection.</span>';
     } else if (res === 'Unable to Verify') {
-      footAdvice.innerHTML = '<span style="color:#d97706; font-weight:700;">⚠ Certificate unreadable or unavailable. Request cannot be accepted.</span>';
+      footAdvice.innerHTML = '<span style="color:#d97706; font-weight:700; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Certificate unreadable or unavailable. Request cannot be accepted.</span>';
     } else {
       footAdvice.innerHTML = '<span style="color:#6b7280;">Verification required: Check registration number and deceased name before accepting.</span>';
     }
@@ -965,6 +1335,715 @@
     return String(str).replace(/[&<>"']/g, function(m) {
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
     });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // 8. SECTION D: RELEASE SCHEDULING & STAGE ADVANCEMENT LOGIC
+  // ─────────────────────────────────────────────────────────────
+  let isReschedulingMode = false;
+
+  function scrollToSchedulingSection() {
+    const el = document.getElementById('section-release-scheduling');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.transition = 'box-shadow 0.3s ease';
+      el.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.4)';
+      setTimeout(() => { el.style.boxShadow = ''; }, 1500);
+    }
+  }
+
+  function populateSchedulingSection(data) {
+    const c = data.burial || {};
+    const history = data.schedule_history || c.schedule_history || [];
+
+    isReschedulingMode = false;
+    const stage = c.death_cert_status || (c.status === 'Accepted' ? 'Approved' : (c.status === 'Completed' ? 'Completed' : 'Submitted'));
+
+    // Update current stage badge
+    const stageBadge = document.getElementById('v-current-stage-badge');
+    if (stageBadge) {
+      stageBadge.textContent = stage;
+      stageBadge.className = 'badge-status ' + (stage === 'Completed' || stage === 'Ready for Release' ? 'badge-active' : 'badge-pending');
+    }
+
+    // Update Stage Dropdown
+    const stageDropdown = document.getElementById('stage-select-dropdown');
+    if (stageDropdown) {
+      stageDropdown.value = stage;
+    }
+
+    // Update Pipeline visual pills
+    updatePipelineUI(stage);
+
+    // Section Views
+    const schedView = document.getElementById('confirmed-schedule-view');
+    const formView = document.getElementById('schedule-entry-form');
+    const releasedView = document.getElementById('released-completed-view');
+    const cancelEditBtn = document.getElementById('btn-cancel-sched-edit');
+    const reasonContainer = document.getElementById('sched-reason-container');
+    const formTitle = document.getElementById('sched-form-title');
+    const modeBadge = document.getElementById('sched-mode-badge');
+    const quickSchedBtn = document.getElementById('modal-btn-schedule-quick');
+
+    if (cancelEditBtn) cancelEditBtn.style.display = 'none';
+    if (reasonContainer) reasonContainer.style.display = 'none';
+    if (modeBadge) modeBadge.style.display = 'none';
+    if (formTitle) formTitle.textContent = 'Schedule Certificate Release';
+
+    if (c.certificate_released_at) {
+      // Completed & Physically Released
+      if (schedView) schedView.style.display = 'none';
+      if (formView) formView.style.display = 'none';
+      if (quickSchedBtn) quickSchedBtn.style.display = 'none';
+      if (releasedView) {
+        releasedView.style.display = 'block';
+        const releasedDate = new Date(c.certificate_released_at).toLocaleString('en-US', { year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+        document.getElementById('display-released-meta').innerHTML = `
+          Certificate officially released to <strong>${escapeHtml(c.certificate_recipient_name || 'Claimant')}</strong> on <strong>${releasedDate}</strong> by ${escapeHtml(c.certificate_released_by || 'Damayan Staff')}.
+          ${c.release_notes ? `<div style="margin-top:5px; font-size:0.75rem; color:#475569; background:#fff; padding:6px 10px; border-radius:6px; border:1px solid #bbf7d0;">ID / Reference: <em>${escapeHtml(c.release_notes)}</em></div>` : ''}
+        `;
+      }
+    } else if (c.scheduled_release_date) {
+      // Confirmed Claiming Schedule exists
+      if (releasedView) releasedView.style.display = 'none';
+      if (formView) formView.style.display = 'none';
+      if (quickSchedBtn) quickSchedBtn.style.display = 'none';
+      if (schedView) {
+        schedView.style.display = 'block';
+
+        let formattedDate = c.scheduled_release_date;
+        try {
+          const parts = c.scheduled_release_date.split('-');
+          if (parts.length === 3) {
+            const d = new Date(parts[0], parts[1]-1, parts[2]);
+            formattedDate = d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+          }
+        } catch(e){}
+
+        let formattedTime = c.scheduled_release_time || '—';
+        if (c.scheduled_release_time) {
+          try {
+            const tParts = c.scheduled_release_time.split(':');
+            const h = parseInt(tParts[0], 10);
+            const m = tParts[1] || '00';
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            formattedTime = h12 + ':' + m + ' ' + ampm;
+          } catch(e){}
+        }
+
+        document.getElementById('display-sched-date').textContent = formattedDate;
+        document.getElementById('display-sched-time').textContent = formattedTime;
+        document.getElementById('display-sched-loc').textContent = c.release_location || 'Damayan Department';
+        document.getElementById('display-sched-by').textContent = c.release_scheduled_by_name || 'Damayan Admin';
+        document.getElementById('display-sched-instructions').textContent = c.release_instructions || 'Please bring a valid ID when claiming your certificate.';
+      }
+    } else {
+      // No schedule set yet
+      if (releasedView) releasedView.style.display = 'none';
+      if (schedView) schedView.style.display = 'none';
+      if (quickSchedBtn) quickSchedBtn.style.display = 'inline-flex';
+      if (formView) {
+        formView.style.display = 'block';
+        document.getElementById('sched-date-input').value = '';
+        document.getElementById('sched-time-input').value = '10:00';
+        document.getElementById('sched-instructions-input').value = '';
+        document.getElementById('sched-reason-input').value = '';
+      }
+    }
+
+    // Update Department Custody UI
+    const inDept = parseInt(c.certificate_in_department, 10) === 1 || c.certificate_in_department === true || c.certificate_in_department === '1';
+    const custodyBanner = document.getElementById('custody-status-banner');
+    const custodyIcon = document.getElementById('custody-badge-icon');
+    const custodyTitle = document.getElementById('custody-status-title');
+    const custodyDesc = document.getElementById('custody-status-desc');
+    const btnToggleCustody = document.getElementById('btn-toggle-custody');
+    const custodyLockNotice = document.getElementById('custody-lock-notice');
+    const schedDateInput = document.getElementById('sched-date-input');
+    const schedTimeInput = document.getElementById('sched-time-input');
+    const btnConfirmSchedule = document.getElementById('btn-confirm-schedule');
+
+    if (custodyBanner) {
+      if (inDept) {
+        custodyBanner.style.background = '#ecfdf5';
+        custodyBanner.style.borderColor = '#a7f3d0';
+        if (custodyIcon) {
+          custodyIcon.style.background = '#d1fae5';
+          custodyIcon.style.color = '#059669';
+          custodyIcon.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>';
+        }
+        if (custodyTitle) custodyTitle.innerHTML = '<span style="color:#065f46;">✓ In Damayan Department Custody</span>';
+        const recvDate = c.certificate_received_dept_at ? new Date(c.certificate_received_dept_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : 'Recorded';
+        const recvBy = c.certificate_received_dept_by || 'Damayan Staff';
+        if (custodyDesc) custodyDesc.innerHTML = `<span style="color:#047857;">Physical certificate is confirmed within department custody (Received ${recvDate} by ${escapeHtml(recvBy)}).</span>`;
+        if (btnToggleCustody) {
+          btnToggleCustody.textContent = 'Revert Custody';
+          btnToggleCustody.style.background = '#fff';
+          btnToggleCustody.style.color = '#4b5563';
+          btnToggleCustody.style.borderColor = '#d1d5db';
+        }
+        if (custodyLockNotice) custodyLockNotice.style.display = 'none';
+        if (schedDateInput) schedDateInput.disabled = false;
+        if (schedTimeInput) schedTimeInput.disabled = false;
+        if (btnConfirmSchedule) {
+          btnConfirmSchedule.disabled = false;
+          btnConfirmSchedule.style.opacity = '1';
+          btnConfirmSchedule.style.cursor = 'pointer';
+        }
+      } else {
+        custodyBanner.style.background = '#fffbeb';
+        custodyBanner.style.borderColor = '#fde68a';
+        if (custodyIcon) {
+          custodyIcon.style.background = '#fef3c7';
+          custodyIcon.style.color = '#d97706';
+          custodyIcon.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
+        }
+        if (custodyTitle) custodyTitle.innerHTML = '<span style="color:#92400e;">⚠ Certificate Not In Department Custody</span>';
+        if (custodyDesc) custodyDesc.innerHTML = '<span style="color:#b45309;">Physical certificate has not yet been received in Damayan Department custody. Release scheduling is locked.</span>';
+        if (btnToggleCustody) {
+          btnToggleCustody.textContent = '✓ Mark as Received in Department';
+          btnToggleCustody.style.background = '#059669';
+          btnToggleCustody.style.color = '#fff';
+          btnToggleCustody.style.borderColor = '#059669';
+        }
+        if (custodyLockNotice) custodyLockNotice.style.display = 'flex';
+        if (schedDateInput) schedDateInput.disabled = true;
+        if (schedTimeInput) schedTimeInput.disabled = true;
+        if (btnConfirmSchedule) {
+          btnConfirmSchedule.disabled = true;
+          btnConfirmSchedule.style.opacity = '0.6';
+          btnConfirmSchedule.style.cursor = 'not-allowed';
+        }
+      }
+    }
+
+    // Render schedule audit history
+    renderScheduleHistory(history);
+  }
+
+  function updatePipelineUI(currentStage) {
+    const stageRankMap = {
+      'Submitted': 1,
+      'Request Received': 1,
+      'Under Review': 2,
+      'Pending': 2,
+      'Approved': 3,
+      'Accepted': 3,
+      'Certificate Prepared': 4,
+      'Certificate Prepared and Certified': 4,
+      'Ready for Release': 5,
+      'Completed': 6,
+      'Registered': 6,
+      'Released': 6
+    };
+    const currentRank = stageRankMap[currentStage] || 1;
+
+    for (let i = 1; i <= 6; i++) {
+      const stepEl = document.getElementById('pstep-' + i);
+      if (!stepEl) continue;
+      if (i < currentRank) {
+        stepEl.style.background = '#d1fae5';
+        stepEl.style.color = '#065f46';
+        stepEl.style.borderColor = '#10b981';
+      } else if (i === currentRank) {
+        stepEl.style.background = '#059669';
+        stepEl.style.color = '#ffffff';
+        stepEl.style.borderColor = '#047857';
+      } else {
+        stepEl.style.background = '#f1f5f9';
+        stepEl.style.color = '#64748b';
+        stepEl.style.borderColor = '#e2e8f0';
+      }
+    }
+  }
+
+  function renderScheduleHistory(history) {
+    const container = document.getElementById('schedule-history-container');
+    const tbody = document.getElementById('sched-history-table-body');
+    const countBadge = document.getElementById('sched-history-count');
+    if (!container || !tbody) return;
+
+    if (!history || history.length === 0) {
+      container.style.display = 'none';
+      tbody.innerHTML = '';
+      return;
+    }
+
+    container.style.display = 'block';
+    if (countBadge) {
+      countBadge.textContent = history.length + ' update' + (history.length > 1 ? 's' : '');
+    }
+
+    tbody.innerHTML = history.map(h => {
+      let badgeBg = '#f1f5f9';
+      let badgeCol = '#475569';
+      if (h.action_type === 'SCHEDULED') { badgeBg = '#ecfdf5'; badgeCol = '#065f46'; }
+      else if (h.action_type === 'RESCHEDULED') { badgeBg = '#fffbeb'; badgeCol = '#92400e'; }
+      else if (h.action_type === 'CANCELLED') { badgeBg = '#fef2f2'; badgeCol = '#991b1b'; }
+      else if (h.action_type === 'RELEASED') { badgeBg = '#ecfdf5'; badgeCol = '#047857'; }
+
+      const createdDate = h.created_at ? new Date(h.created_at).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) : '—';
+      let schedDisplay = '—';
+      if (h.scheduled_date) {
+        let formattedDate = h.scheduled_date;
+        try {
+          const parts = h.scheduled_date.split('-');
+          if (parts.length === 3) {
+            const d = new Date(parts[0], parts[1]-1, parts[2]);
+            formattedDate = d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+          }
+        } catch(e){}
+        let formattedTime = '';
+        if (h.scheduled_time) {
+          try {
+            const tParts = h.scheduled_time.split(':');
+            const hh = parseInt(tParts[0], 10);
+            const mm = tParts[1] || '00';
+            const ampm = hh >= 12 ? 'PM' : 'AM';
+            const h12 = hh % 12 || 12;
+            formattedTime = h12 + ':' + mm + ' ' + ampm;
+          } catch(e){
+            formattedTime = h.scheduled_time;
+          }
+        }
+        schedDisplay = `<strong>${escapeHtml(formattedDate)}</strong> ${formattedTime ? `at ${escapeHtml(formattedTime)}` : ''}`;
+      }
+      const locDisplay = escapeHtml(h.release_location || 'Damayan Department');
+      const reasonDisplay = h.reason ? `<span style="color:#334155;">${escapeHtml(h.reason)}</span>` : '<span style="color:#94a3b8; font-style:italic;">None</span>';
+      const actionByDisplay = escapeHtml(h.action_by_name || 'Damayan Staff');
+
+      return `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="padding:9px 12px; vertical-align:middle;">
+            <span style="font-weight:700; padding:2px 7px; border-radius:4px; font-size:0.68rem; background:${badgeBg}; color:${badgeCol}; display:inline-block;">
+              ${escapeHtml(h.action_type)}
+            </span>
+          </td>
+          <td style="padding:9px 12px; vertical-align:middle; color:#1e293b;">
+            ${schedDisplay}
+          </td>
+          <td style="padding:9px 12px; vertical-align:middle; color:#475569;">
+            ${locDisplay}
+          </td>
+          <td style="padding:9px 12px; vertical-align:middle; max-width:200px;">
+            ${reasonDisplay}
+          </td>
+          <td style="padding:9px 12px; vertical-align:middle; color:#334155; font-weight:600;">
+            ${actionByDisplay}
+          </td>
+          <td style="padding:9px 12px; vertical-align:middle; color:#64748b; font-size:0.7rem; white-space:nowrap;">
+            ${createdDate}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function toggleRescheduleForm() {
+    if (!activeCase) return;
+    isReschedulingMode = true;
+
+    document.getElementById('confirmed-schedule-view').style.display = 'none';
+    const formView = document.getElementById('schedule-entry-form');
+    formView.style.display = 'block';
+
+    document.getElementById('sched-form-title').textContent = 'Reschedule Claiming Appointment';
+    document.getElementById('sched-mode-badge').style.display = 'inline-block';
+    document.getElementById('btn-cancel-sched-edit').style.display = 'inline-block';
+    document.getElementById('sched-reason-container').style.display = 'block';
+
+    document.getElementById('sched-date-input').value = activeCase.scheduled_release_date || '';
+    document.getElementById('sched-time-input').value = activeCase.scheduled_release_time || '10:00';
+    document.getElementById('sched-instructions-input').value = activeCase.release_instructions || '';
+    document.getElementById('sched-reason-input').value = '';
+    document.getElementById('sched-reason-input').focus();
+  }
+
+  function cancelRescheduleEdit() {
+    isReschedulingMode = false;
+    document.getElementById('schedule-entry-form').style.display = 'none';
+    document.getElementById('confirmed-schedule-view').style.display = 'block';
+  }
+
+  async function submitReleaseSchedule() {
+    if (!activeCase) return;
+
+    // Custody Gate: Certificate must be in Damayan Department custody before scheduling release
+    const inDept = parseInt(activeCase.certificate_in_department, 10) === 1 || activeCase.certificate_in_department === true || activeCase.certificate_in_department === '1';
+    if (!inDept) {
+      if (typeof showAlert === 'function') {
+        showAlert('Certificate Must Be in Department', 'The physical death certificate must be in Damayan Department custody before scheduling its release to the applicant.', 'warning');
+      } else {
+        alert('The physical death certificate must be in Damayan Department custody before scheduling its release.');
+      }
+      return;
+    }
+
+    const dateInput = document.getElementById('sched-date-input');
+    const timeInput = document.getElementById('sched-time-input');
+    const instInput = document.getElementById('sched-instructions-input');
+    const reasonInput = document.getElementById('sched-reason-input');
+
+    const releaseDate = dateInput.value.trim();
+    const releaseTime = timeInput.value.trim();
+    const instructions = instInput.value.trim();
+    const reason = reasonInput.value.trim();
+
+    if (!releaseDate) {
+      if (typeof showAlert === 'function') showAlert('Release Date Required', 'Please select a scheduled claiming date.', 'warning');
+      else alert('Please select a scheduled release date.');
+      dateInput.focus();
+      return;
+    }
+
+    if (!releaseTime) {
+      if (typeof showAlert === 'function') showAlert('Release Time Required', 'Please select a scheduled claiming time.', 'warning');
+      else alert('Please select a scheduled release time.');
+      timeInput.focus();
+      return;
+    }
+
+    // Client-side future validation
+    const schedDateTime = new Date(releaseDate + 'T' + releaseTime);
+    const now = new Date();
+    if (isNaN(schedDateTime.getTime()) || schedDateTime <= now) {
+      if (typeof showAlert === 'function') showAlert('Invalid Appointment Time', 'The scheduled claiming date and time must be in the future.', 'warning');
+      else alert('The scheduled claiming date and time must be in the future.');
+      dateInput.focus();
+      return;
+    }
+
+    if (isReschedulingMode && !reason) {
+      if (typeof showAlert === 'function') showAlert('Reschedule Reason Required', 'Please provide a brief reason for changing the claiming appointment.', 'warning');
+      else alert('Please provide a reason for rescheduling.');
+      reasonInput.focus();
+      return;
+    }
+
+    // Admin confirmation
+    const readableDate = schedDateTime.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    const readableTime = schedDateTime.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+    const confirmPrompt = isReschedulingMode
+      ? `Confirm rescheduling the claiming appointment to ${readableDate} at ${readableTime}? The applicant will be notified of the revised schedule.`
+      : `Confirm scheduling the certificate claiming appointment on ${readableDate} at ${readableTime}? The applicant will be notified to visit Damayan Department.`;
+
+    if (!confirm(confirmPrompt)) {
+      return;
+    }
+
+    const btn = document.getElementById('btn-confirm-schedule');
+    btn.disabled = true;
+    btn.textContent = 'Saving Schedule...';
+
+    const endpoint = isReschedulingMode
+      ? '<?= url('/admin/damayan/burial/reschedule-release') ?>'
+      : '<?= url('/admin/damayan/burial/schedule-release') ?>';
+
+    const payload = {
+      id: activeCase.id,
+      release_date: releaseDate,
+      release_time: releaseTime,
+      instructions: instructions
+    };
+    if (isReschedulingMode) {
+      payload.reason = reason;
+    }
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Update activeCase record
+        activeCase.death_cert_status = 'Ready for Release';
+        activeCase.scheduled_release_date = data.scheduled_release_date || releaseDate;
+        activeCase.scheduled_release_time = data.scheduled_release_time || releaseTime;
+        activeCase.release_instructions = data.release_instructions || instructions;
+        activeCase.release_location = data.release_location || 'Damayan Department';
+        activeCase.release_scheduled_by_name = data.release_scheduled_by_name || 'Damayan Admin';
+
+        // Refresh UI
+        populateSchedulingSection({
+          burial: activeCase,
+          schedule_history: data.schedule_history || []
+        });
+
+        let emailMsg = data.email_sent ? ' An email notification was also sent to the applicant.' : '';
+        if (typeof showAlert === 'function') {
+          showAlert('Schedule Confirmed', 'The death certificate release schedule was confirmed and saved.' + emailMsg, 'success');
+        } else {
+          alert('Release schedule confirmed and saved.' + emailMsg);
+        }
+      } else {
+        if (typeof showAlert === 'function') showAlert('Scheduling Failed', data.error || 'Failed to save schedule.', 'error');
+        else alert(data.error || 'Failed to save schedule.');
+      }
+    } catch (err) {
+      console.error(err);
+      if (typeof showAlert === 'function') showAlert('Error', 'Network error occurred while confirming schedule.', 'error');
+      else alert('Network error occurred.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Confirm Schedule';
+    }
+  }
+
+  async function submitStageUpdate() {
+    if (!activeCase) return;
+
+    const select = document.getElementById('stage-select-dropdown');
+    const newStage = select.value.trim();
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/update-stage') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: activeCase.id,
+          stage: newStage
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        activeCase.death_cert_status = data.new_stage || newStage;
+        if (data.new_status) activeCase.status = data.new_status;
+
+        const stageBadge = document.getElementById('v-current-stage-badge');
+        if (stageBadge) {
+          stageBadge.textContent = activeCase.death_cert_status;
+          stageBadge.className = 'badge-status ' + (activeCase.death_cert_status === 'Completed' ? 'badge-active' : 'badge-pending');
+        }
+        updatePipelineUI(activeCase.death_cert_status);
+
+        if (typeof showAlert === 'function') showAlert('Stage Updated', 'Processing stage updated to: ' + activeCase.death_cert_status, 'success');
+        else alert('Stage updated.');
+      } else {
+        if (typeof showAlert === 'function') showAlert('Update Failed', data.error || 'Failed to update processing stage.', 'error');
+        else alert(data.error || 'Failed to update stage.');
+      }
+    } catch (err) {
+      console.error(err);
+      if (typeof showAlert === 'function') showAlert('Error', 'Network error while updating stage.', 'error');
+      else alert('Network error.');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // DEPARTMENT CERTIFICATE CUSTODY TOGGLE
+  // ─────────────────────────────────────────────────────────────
+  async function toggleCertificateCustody() {
+    if (!activeCase) return;
+    const currentlyInDept = parseInt(activeCase.certificate_in_department, 10) === 1 || activeCase.certificate_in_department === true || activeCase.certificate_in_department === '1';
+    const newStatus = !currentlyInDept;
+
+    const caseName = activeCase.deceased_name || ('Case #' + (activeCase.ref_id || activeCase.id));
+    const promptMsg = newStatus 
+      ? `Confirm that the physical death certificate for "${caseName}" has been received and is now in Damayan Department custody?`
+      : `Revert custody status to indicate the certificate is not yet in Damayan Department custody? (Note: This will lock release scheduling until received)`;
+
+    if (!confirm(promptMsg)) return;
+
+    const btn = document.getElementById('btn-toggle-custody');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+    }
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/set-custody') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: activeCase.id,
+          in_department: newStatus ? 1 : 0
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        activeCase.certificate_in_department = newStatus ? 1 : 0;
+        if (newStatus) {
+          activeCase.certificate_received_dept_at = new Date().toISOString();
+          activeCase.certificate_received_dept_by = '<?= htmlspecialchars($_SESSION['name'] ?? 'Damayan Admin') ?>';
+        } else {
+          activeCase.certificate_received_dept_at = null;
+        }
+
+        populateSchedulingSection({ burial: activeCase, schedule_history: activeCase.schedule_history || [] });
+
+        if (typeof showAlert === 'function') {
+          showAlert('Custody Updated', data.message || 'Department custody status updated successfully.', 'success');
+        } else {
+          alert(data.message || 'Department custody status updated.');
+        }
+      } else {
+        if (typeof showAlert === 'function') showAlert('Custody Update Failed', data.error || 'Could not update custody status.', 'error');
+        else alert(data.error || 'Failed to update custody status.');
+      }
+    } catch (e) {
+      console.error(e);
+      if (typeof showAlert === 'function') showAlert('Network Error', 'Network error while updating department custody status.', 'error');
+      else alert('Network error while updating department custody status.');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function openCancelScheduleModal() {
+    if (!activeCase) return;
+    document.getElementById('cancel-sched-case-label').textContent = 'Case #' + (activeCase.ref_id || activeCase.id);
+    document.getElementById('cancel-sched-reason').value = '';
+    document.getElementById('damayanCancelSchedModal').style.display = 'flex';
+    document.getElementById('cancel-sched-reason').focus();
+  }
+
+  function closeCancelScheduleModal() {
+    document.getElementById('damayanCancelSchedModal').style.display = 'none';
+  }
+
+  async function submitCancelSchedule() {
+    if (!activeCase) return;
+
+    const reason = document.getElementById('cancel-sched-reason').value.trim();
+    if (!reason) {
+      if (typeof showAlert === 'function') showAlert('Reason Required', 'Please provide a reason for cancelling this claiming schedule.', 'warning');
+      else alert('Please enter a cancellation reason.');
+      document.getElementById('cancel-sched-reason').focus();
+      return;
+    }
+
+    const btn = document.getElementById('btn-confirm-cancel-sched');
+    btn.disabled = true;
+    btn.textContent = 'Cancelling...';
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/cancel-release') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: activeCase.id,
+          reason: reason
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        closeCancelScheduleModal();
+        activeCase.death_cert_status = 'Certificate Prepared';
+        activeCase.scheduled_release_date = null;
+        activeCase.scheduled_release_time = null;
+
+        populateSchedulingSection({
+          burial: activeCase,
+          schedule_history: data.schedule_history || []
+        });
+
+        let emailMsg = data.email_sent ? ' An email notification was also sent to the applicant.' : '';
+        if (typeof showAlert === 'function') {
+          showAlert('Schedule Cancelled', 'The claiming appointment was cancelled and applicant notified.' + emailMsg, 'info');
+        } else {
+          alert('Claiming appointment cancelled.' + emailMsg);
+        }
+      } else {
+        if (typeof showAlert === 'function') showAlert('Cancellation Failed', data.error || 'Failed to cancel schedule.', 'error');
+        else alert(data.error || 'Failed to cancel schedule.');
+      }
+    } catch (err) {
+      console.error(err);
+      if (typeof showAlert === 'function') showAlert('Error', 'Network error occurred.', 'error');
+      else alert('Network error occurred.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Confirm Cancellation';
+    }
+  }
+
+  function openMarkReleasedModal() {
+    if (!activeCase) return;
+    document.getElementById('released-case-label').textContent = 'Case #' + (activeCase.ref_id || activeCase.id);
+    const applicantName = (activeCase.first_name || '') + ' ' + (activeCase.last_name || '');
+    document.getElementById('release-recipient-input').value = applicantName.trim() || (activeCase.informant_name || '');
+    document.getElementById('release-notes-input').value = '';
+    document.getElementById('damayanMarkReleasedModal').style.display = 'flex';
+  }
+
+  function closeMarkReleasedModal() {
+    document.getElementById('damayanMarkReleasedModal').style.display = 'none';
+  }
+
+  async function submitMarkReleased() {
+    if (!activeCase) return;
+
+    const recipient = document.getElementById('release-recipient-input').value.trim();
+    const notes = document.getElementById('release-notes-input').value.trim();
+
+    if (!recipient) {
+      if (typeof showAlert === 'function') showAlert('Recipient Required', 'Please enter the name of the recipient who claimed the certificate.', 'warning');
+      else alert('Please enter recipient full name.');
+      document.getElementById('release-recipient-input').focus();
+      return;
+    }
+
+    const btn = document.getElementById('btn-confirm-release-done');
+    btn.disabled = true;
+    btn.textContent = 'Recording Release...';
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/burial/mark-released') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: activeCase.id,
+          recipient_name: recipient,
+          release_notes: notes
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        closeMarkReleasedModal();
+        activeCase.status = 'Completed';
+        activeCase.death_cert_status = 'Completed';
+        activeCase.certificate_released_at = data.certificate_released_at || new Date().toISOString();
+        activeCase.certificate_released_by = data.certificate_released_by || 'Damayan Staff';
+        activeCase.certificate_recipient_name = recipient;
+        activeCase.release_notes = notes;
+
+        populateSchedulingSection({
+          burial: activeCase,
+          schedule_history: data.schedule_history || []
+        });
+
+        // Also update modal top status badge
+        const statusBadge = document.getElementById('modal-status-badge');
+        if (statusBadge) {
+          statusBadge.textContent = 'Completed';
+          statusBadge.className = 'badge-status badge-active';
+        }
+
+        let emailMsg = data.email_sent ? ' An email confirmation was sent to the applicant.' : '';
+        if (typeof showAlert === 'function') {
+          showAlert('Certificate Released', 'Certificate recorded as physically claimed. Request marked as Completed.' + emailMsg, 'success');
+        } else {
+          alert('Certificate released and request marked as Completed.' + emailMsg);
+        }
+      } else {
+        if (typeof showAlert === 'function') showAlert('Recording Failed', data.error || 'Failed to record release.', 'error');
+        else alert(data.error || 'Failed to record release.');
+      }
+    } catch (err) {
+      console.error(err);
+      if (typeof showAlert === 'function') showAlert('Error', 'Network error occurred.', 'error');
+      else alert('Network error occurred.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Confirm Physical Release';
+    }
   }
 
   // Keyboard Escape listener

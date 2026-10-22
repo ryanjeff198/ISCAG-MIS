@@ -88,7 +88,8 @@
         </div>
 
         <!-- KPI Cards -->
-        <div class="dash-kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
+        <!-- KPI Cards -->
+        <div class="dash-kpi-grid" style="grid-template-columns: repeat(6, 1fr);">
           <div class="dash-kpi" onclick="window.location.href='<?= url('/admin/dawah/counseling') ?>'">
             <div class="kpi-header">
               <span class="kpi-label">Counseling</span>
@@ -138,6 +139,19 @@
             </div>
           </div>
 
+          <div class="dash-kpi" onclick="window.location.href='<?= url('/admin/dawah/male/death-certificates') ?>'" style="cursor:pointer;">
+            <div class="kpi-header">
+              <span class="kpi-label">Death Certs</span>
+              <div class="kpi-icon" style="background:rgba(20,83,45,0.1);">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#14532d;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" style="color:#14532d;"><?= $analytics['death_cert_total'] ?? 0 ?></div>
+            <div class="kpi-sub" style="color:<?= ($analytics['death_cert_new'] ?? 0) > 0 ? '#b91c1c' : 'var(--text-muted)' ?>; font-weight:700;">
+              <?= $analytics['death_cert_new'] ?? 0 ?> new received
+            </div>
+          </div>
+
           <div class="dash-kpi">
             <div class="kpi-header">
               <span class="kpi-label">Pending</span>
@@ -151,7 +165,7 @@
         </div>
 
         <!-- Quick Access Links -->
-        <div class="quick-links" style="grid-template-columns: repeat(5, 1fr);">
+        <div class="quick-links" style="grid-template-columns: repeat(6, 1fr);">
           <a href="<?= url('/admin/dawah/counseling') ?>" class="quick-link">
             <div class="ql-icon" style="background:rgba(23,107,69,0.08);">
               <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:var(--primary);"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
@@ -197,6 +211,15 @@
               <div class="ql-desc">Students</div>
             </div>
           </a>
+          <a href="<?= url('/admin/dawah/male/death-certificates') ?>" class="quick-link" style="border-color:#bbf7d0;">
+            <div class="ql-icon" style="background:#e8f5ed; color:#14532d;">
+              <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:currentColor;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            </div>
+            <div>
+              <div class="ql-title" style="color:#14532d;">Death Certs</div>
+              <div class="ql-desc">From Damayan</div>
+            </div>
+          </a>
         </div>
 
         <!-- Service Request Table with Pill Tabs -->
@@ -234,9 +257,129 @@
           </div>
         </div>
 
+        <!-- Section: Death Certificates Received from Damayan Table -->
+        <div class="section-card" style="margin-top:28px;">
+          <div class="section-card-header" style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:36px; height:36px; border-radius:10px; background:#e8f5ed; color:#14532d; display:flex; align-items:center; justify-content:center;">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+              </div>
+              <div>
+                <h6 style="color:#14532d; margin:0; font-size:1.02rem; font-weight:800;">
+                  Death Certificates Received from Damayan Department
+                </h6>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+                  Official transmittal files &amp; deceased vital records forwarded for Salatul Janazah and Islamic burial coordination
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <a href="<?= url('/admin/dawah/male/death-certificates') ?>" class="btn-topbar primary" style="font-size:0.78rem; padding:6px 14px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                <span>View Full Registry (<?= (int)($dawahDeathCertsCount ?? 0) ?>)</span>
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+              </a>
+            </div>
+          </div>
+          <div class="section-card-body" style="padding:0;">
+            <div class="table-wrapper">
+              <table class="mis-table">
+                <thead>
+                  <tr>
+                    <th>Registration #</th>
+                    <th>Deceased Information</th>
+                    <th>Date &amp; Time of Death</th>
+                    <th>Cert Date / Received</th>
+                    <th>Informant / Representative</th>
+                    <th>Status</th>
+                    <th style="text-align:center; min-width:220px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if (empty($dawahDeathCerts)): ?>
+                    <tr>
+                      <td colspan="7" style="text-align:center; padding:40px 20px; color:var(--text-muted);">
+                        <div style="font-weight:700; color:var(--text-main); font-size:0.95rem; margin-bottom:4px;">No Death Certificates Received Yet</div>
+                        <div style="font-size:0.8rem;">Transmittals sent from the Damayan Department will automatically appear here.</div>
+                      </td>
+                    </tr>
+                  <?php else: ?>
+                    <?php foreach ($dawahDeathCerts as $dc): ?>
+                      <tr>
+                        <td class="td-id">
+                          <span style="font-weight:800; color:#14532d;">#<?= htmlspecialchars($dc['registration_number']) ?></span>
+                          <div style="font-size:0.68rem; color:var(--text-muted); margin-top:2px;">Ref #<?= (int)$dc['id'] ?></div>
+                        </td>
+                        <td>
+                          <div style="font-weight:700; color:var(--text-main); font-size:0.9rem;"><?= htmlspecialchars($dc['deceased_name']) ?></div>
+                          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+                            <span style="font-weight:700;"><?= htmlspecialchars($dc['sex'] ?? 'Male') ?></span>
+                            <?= !empty($dc['age']) ? ' &bull; ' . htmlspecialchars($dc['age']) . ' yrs old' : '' ?>
+                            <?= !empty($dc['civil_status']) ? ' &bull; ' . htmlspecialchars($dc['civil_status']) : '' ?>
+                          </div>
+                        </td>
+                        <td>
+                          <div style="font-weight:700; color:#b91c1c; font-size:0.85rem;">
+                            <?= date('M d, Y', strtotime($dc['date_of_death'])) ?>
+                          </div>
+                          <div style="font-size:0.72rem; color:var(--text-muted);">
+                            <?= !empty($dc['time_of_death']) ? date('g:i A', strtotime($dc['time_of_death'])) : 'Time unrecorded' ?>
+                          </div>
+                        </td>
+                        <td>
+                          <div style="font-size:0.83rem; font-weight:700; color:var(--text-main);">
+                            <?= !empty($dc['death_cert_date']) ? date('M d, Y', strtotime($dc['death_cert_date'])) : '—' ?>
+                          </div>
+                          <div style="font-size:0.72rem; color:var(--text-muted);">
+                            Received: <?= date('M d, Y', strtotime($dc['sent_at'])) ?>
+                          </div>
+                        </td>
+                        <td>
+                          <div style="font-weight:600; color:var(--text-main); font-size:0.83rem;">
+                            <?= htmlspecialchars($dc['informant_name'] ?? 'Family Representative') ?>
+                          </div>
+                          <div style="font-size:0.72rem; color:var(--text-muted);">
+                            <?= !empty($dc['informant_relationship']) ? htmlspecialchars($dc['informant_relationship']) : 'Representative' ?>
+                          </div>
+                        </td>
+                        <td>
+                          <?php 
+                            $st = $dc['status'] ?? 'Received';
+                            $badgeClass = ($st === 'Completed') ? 'badge-completed' : (($st === 'Reviewed') ? 'badge-reviewed' : 'badge-received');
+                          ?>
+                          <span class="badge-status <?= $badgeClass ?>" style="font-size:0.72rem; padding:3px 8px;">
+                            <?= htmlspecialchars($st) ?>
+                          </span>
+                        </td>
+                        <td style="text-align:center;">
+                          <div style="display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;">
+                            <?php if ($st === 'Received'): ?>
+                              <button type="button" class="btn-action btn-view" style="background:#ecfdf5; color:#065f46; border-color:#a7f3d0; font-weight:700; padding:5px 9px;" onclick="quickAcknowledge(<?= (int)$dc['id'] ?>, 'Reviewed')" title="Mark as Received & Reviewed">
+                                <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Receive
+                              </button>
+                            <?php endif; ?>
+                            <button type="button" class="btn-action btn-view" style="padding:5px 9px;" onclick="openDawahCertModal(<?= (int)$dc['id'] ?>)" title="View Certificate Details">
+                              <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg> View
+                            </button>
+                            <a href="<?= url('/admin/dawah/death-certificates/file?id=' . $dc['id']) ?>" target="_blank" class="btn-action btn-view" style="background:#14532d; color:#fff; border-color:#14532d; font-weight:700; padding:5px 9px; text-decoration:none;" title="Print Official Philippine Death Certificate (Form 103)">
+                              <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print Cert
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
+
+  <?php include __DIR__ . '/dawah_cert_detail_modal.php'; ?>
+
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     syncSessionUser('<?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>', '<?= $dbUser['email'] ?? '' ?>', '<?= $_SESSION['role'] ?? '' ?>');
@@ -291,6 +434,128 @@
     }
     
     renderTable();
+
+    // Death Certificates Modal & Quick Actions for Male Da'wah
+    async function openDawahCertModal(id) {
+      try {
+        const res = await fetch('<?= url('/admin/dawah/death-certificates/detail') ?>?id=' + encodeURIComponent(id));
+        const data = await res.json();
+        if (!data.success || !data.record) {
+          alert(data.error || 'Failed to load certificate record.');
+          return;
+        }
+
+        const r = data.record;
+        document.getElementById('ack-id').value = r.id;
+        document.getElementById('m-reg-no').textContent = '#' + r.registration_number;
+        document.getElementById('m-deceased-name').textContent = r.deceased_name;
+        
+        let sub = `${r.sex || 'Male'}`;
+        if (r.age) sub += ` • ${r.age} yrs old`;
+        if (r.civil_status) sub += ` • ${r.civil_status}`;
+        document.getElementById('m-vital-sub').textContent = sub;
+
+        const badge = document.getElementById('m-status-badge');
+        badge.textContent = r.status;
+        badge.className = 'badge-status ' + (r.status === 'Completed' ? 'badge-completed' : (r.status === 'Reviewed' ? 'badge-reviewed' : 'badge-received'));
+
+        document.getElementById('m-reg').textContent = '#' + r.registration_number;
+        document.getElementById('m-cert-date').textContent = r.death_cert_date || '—';
+        document.getElementById('m-sent-at').textContent = r.sent_at || '—';
+        document.getElementById('m-civil').textContent = r.civil_status || '—';
+        document.getElementById('m-religion').textContent = r.religion || 'Islam';
+        document.getElementById('m-citizenship').textContent = r.citizenship || 'Filipino';
+
+        document.getElementById('m-dod').textContent = r.date_of_death;
+        document.getElementById('m-tod').textContent = r.time_of_death || '—';
+        document.getElementById('m-dob').textContent = r.date_of_birth || '—';
+        document.getElementById('m-age').textContent = r.age || '—';
+        document.getElementById('m-occupation').textContent = r.occupation || '—';
+
+        document.getElementById('m-pod').textContent = r.place_of_death || 'City of Dasmariñas, Cavite';
+        document.getElementById('m-residence').textContent = r.residence || 'City of Dasmariñas, Cavite';
+        
+        let inf = r.informant_name || 'Family Representative';
+        if (r.informant_relationship) inf += ` (${r.informant_relationship})`;
+        if (r.informant_contact) inf += ` • ${r.informant_contact}`;
+        document.getElementById('m-informant').textContent = inf;
+
+        document.getElementById('m-sent-by').textContent = r.sent_by_name || 'Damayan Staff';
+        document.getElementById('m-purpose').textContent = r.purpose || 'Janazah & Religious Records';
+        document.getElementById('m-notes').textContent = r.transmission_notes || 'None provided.';
+
+        document.getElementById('ack-status').value = r.status || 'Received';
+        document.getElementById('ack-notes').value = '';
+
+        document.getElementById('btn-open-file-doc').href = '<?= url('/admin/dawah/death-certificates/file?id=') ?>' + r.id;
+
+        document.getElementById('dawahCertModal').style.display = 'flex';
+      } catch (err) {
+        console.error(err);
+        alert('Failed to load certificate record.');
+      }
+    }
+
+    function closeDawahCertModal() {
+      document.getElementById('dawahCertModal').style.display = 'none';
+    }
+
+    async function quickAcknowledge(id, status) {
+      if (!confirm('Acknowledge and mark this Death Certificate as received & reviewed?')) return;
+      try {
+        const res = await fetch('<?= url('/admin/dawah/death-certificates/acknowledge') ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, status, notes: 'Quick acknowledged by Male Da\'wah Admin.' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          location.reload();
+        } else {
+          alert(data.error || 'Failed to acknowledge.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to acknowledge certificate.');
+      }
+    }
+
+    async function submitDawahStatus() {
+      const id = document.getElementById('ack-id').value;
+      const status = document.getElementById('ack-status').value;
+      const notes = document.getElementById('ack-notes').value.trim();
+      const btn = document.getElementById('ack-btn');
+
+      if (!id) return;
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      try {
+        const res = await fetch('<?= url('/admin/dawah/death-certificates/acknowledge') ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, status, notes })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Status updated successfully.');
+          location.reload();
+        } else {
+          alert(data.error || 'Failed to update status.');
+          btn.disabled = false;
+          btn.textContent = 'Save Da\'wah Status Update';
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Error saving status update.');
+        btn.disabled = false;
+        btn.textContent = 'Save Da\'wah Status Update';
+      }
+    }
+
+    document.getElementById('dawahCertModal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeDawahCertModal();
+    });
   </script>
 </body>
 </html>

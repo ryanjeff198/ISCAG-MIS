@@ -144,14 +144,24 @@
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     standardizePage('admin');
-    const DAWAH_TYPES = ['counseling_female', 'counseling_male', 'islamic_education', 'marriage_service'];
-    let allReqs = getRequests().filter(r => DAWAH_TYPES.includes(r.type));
+    const dbDawahReqs = <?= json_encode($dawahRequests ?? [], JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const DAWAH_TYPES = ['counseling', 'islamic_education', 'marriage_service', 'conversion'];
+    let allReqs = (dbDawahReqs && dbDawahReqs.length > 0) ? dbDawahReqs : getRequests().filter(r => DAWAH_TYPES.some(t => (r.type||'').includes(t)));
 
     // Stats
-    document.getElementById('s-counsel').textContent = allReqs.filter(r => r.type.includes('counseling')).length;
-    document.getElementById('s-edu').textContent = allReqs.filter(r => r.type === 'islamic_education').length;
-    document.getElementById('s-mar').textContent = allReqs.filter(r => r.type === 'marriage_service').length;
-    document.getElementById('s-pending').textContent = allReqs.filter(r => r.status === 'pending').length;
+    document.getElementById('s-counsel').textContent = allReqs.filter(r => (r.type || '').includes('counseling')).length;
+    document.getElementById('s-edu').textContent = allReqs.filter(r => (r.type || '').includes('education')).length;
+    document.getElementById('s-mar').textContent = allReqs.filter(r => (r.type || '').includes('marriage')).length;
+    document.getElementById('s-pending').textContent = allReqs.filter(r => (r.status || '').toLowerCase().includes('pend')).length;
+
+    function getDawahActionUrl(type) {
+      const t = (type || '').toLowerCase();
+      if (t.includes('counsel')) return '<?= url("/admin/dawah/counseling") ?>';
+      if (t.includes('edu')) return '<?= url("/admin/dawah/education") ?>';
+      if (t.includes('mar')) return '<?= url("/admin/dawah/marriage") ?>';
+      if (t.includes('conv')) return '<?= url("/admin/dawah/conversion") ?>';
+      return '<?= url("/admin/dawah") ?>';
+    }
 
     function renderTable(data) {
       document.getElementById('req-count').textContent = data.length + ' records';
@@ -161,27 +171,13 @@
         return;
       }
       tbody.innerHTML = data.map(r => `<tr data-id="${r.id}">
-      <td class="td-id">${r.id}</td>
+      <td class="td-id">#${r.id}</td>
       <td style="font-weight:600;">${r.name || 'Unknown'}</td>
-      <td>${typeLabel(r.type)}</td>
+      <td><span style="font-weight:600;color:var(--text-main);">${r.service_type || typeLabel(r.type)}</span></td>
       <td>${formatDate(r.date)}</td>
       <td><span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
       <td>
-        <div class="action-menu">
-          <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
-            <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
-          <div class="action-menu-dropdown">
-            <button class="action-menu-item" onclick="approveReq('${r.id}')">
-              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              Approve Request
-            </button>
-            <button class="action-menu-item danger" onclick="rejectReq('${r.id}')">
-              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-              Reject Request
-            </button>
-          </div>
-        </div>
+        <a href="${getDawahActionUrl(r.type)}" class="card-badge" style="text-decoration:none;">Review</a>
       </td>
     </tr>`).join('');
     }

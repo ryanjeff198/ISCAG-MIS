@@ -170,6 +170,48 @@ class BurialRequest
                 INDEX (ref_id)
             )");
 
+            $this->db->exec("CREATE TABLE IF NOT EXISTS dawah_death_certificates (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                source_type VARCHAR(50) DEFAULT 'encoded_certificate',
+                source_id INT NULL,
+                registration_number VARCHAR(100) NOT NULL,
+                deceased_name VARCHAR(255) NOT NULL,
+                first_name VARCHAR(100) NULL,
+                middle_name VARCHAR(100) NULL,
+                last_name VARCHAR(100) NULL,
+                sex ENUM('Male','Female') DEFAULT 'Male',
+                date_of_death DATE NOT NULL,
+                time_of_death TIME NULL,
+                date_of_birth DATE NULL,
+                age VARCHAR(100) NULL,
+                place_of_death TEXT NULL,
+                residence TEXT NULL,
+                civil_status VARCHAR(50) NULL,
+                religion VARCHAR(100) DEFAULT 'Islam',
+                citizenship VARCHAR(100) DEFAULT 'Filipino',
+                occupation VARCHAR(150) NULL,
+                informant_name VARCHAR(200) NULL,
+                informant_contact VARCHAR(50) NULL,
+                informant_relationship VARCHAR(100) NULL,
+                death_cert_date DATE NULL,
+                file_path VARCHAR(255) NULL,
+                file_name VARCHAR(255) NULL,
+                purpose VARCHAR(255) DEFAULT 'Salatul Janazah & Religious Records',
+                transmission_notes TEXT NULL,
+                sent_by_id INT NULL,
+                sent_by_name VARCHAR(150) DEFAULT 'Damayan Staff',
+                sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                status ENUM('Received', 'Reviewed', 'Completed') DEFAULT 'Received',
+                acknowledged_by_id INT NULL,
+                acknowledged_by_name VARCHAR(150) NULL,
+                acknowledged_at DATETIME NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX (registration_number),
+                INDEX (date_of_death),
+                INDEX (status)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
             try {
                 $this->db->exec("ALTER TABLE burial_requests ADD COLUMN deceased_id INT NULL AFTER tenant_id");
             } catch (\Throwable $e) {}
@@ -254,7 +296,22 @@ class BurialRequest
                 "rejected_at DATETIME NULL",
                 "is_archived TINYINT(1) DEFAULT 0",
                 "archived_at DATETIME NULL",
-                "archived_by VARCHAR(200) NULL"
+                "archived_by VARCHAR(200) NULL",
+                "scheduled_release_date DATE NULL",
+                "scheduled_release_time TIME NULL",
+                "release_location VARCHAR(255) DEFAULT 'Damayan Department'",
+                "release_instructions TEXT NULL",
+                "release_scheduled_by_id INT NULL",
+                "release_scheduled_by_name VARCHAR(200) NULL",
+                "release_scheduled_at DATETIME NULL",
+                "certificate_released_at DATETIME NULL",
+                "certificate_released_by VARCHAR(200) NULL",
+                "certificate_recipient_name VARCHAR(200) NULL",
+                "release_notes TEXT NULL",
+                "release_cancelled_at DATETIME NULL",
+                "release_cancelled_by VARCHAR(200) NULL",
+                "release_cancellation_reason TEXT NULL",
+                "reschedule_reason TEXT NULL"
             ];
             foreach ($colsToAdd as $colDef) {
                 try {
@@ -262,7 +319,30 @@ class BurialRequest
                 } catch (\Throwable $e) {}
             }
             try {
+                $this->db->exec("ALTER TABLE burial_requests MODIFY COLUMN death_cert_status VARCHAR(100) DEFAULT 'Request Received'");
+            } catch (\Throwable $e) {}
+            try {
                 $this->db->exec("ALTER TABLE burial_requests MODIFY COLUMN status VARCHAR(50) DEFAULT 'Pending'");
+            } catch (\Throwable $e) {}
+            try {
+                $this->db->exec("CREATE TABLE IF NOT EXISTS burial_schedule_history (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    burial_request_id INT NOT NULL,
+                    ref_id VARCHAR(50) NULL,
+                    action_type VARCHAR(50) NOT NULL,
+                    previous_date DATE NULL,
+                    previous_time TIME NULL,
+                    new_date DATE NULL,
+                    new_time TIME NULL,
+                    location VARCHAR(255) DEFAULT 'Damayan Department',
+                    instructions TEXT NULL,
+                    change_reason TEXT NULL,
+                    admin_id INT NULL,
+                    admin_name VARCHAR(200) NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_bsh_b_id (burial_request_id),
+                    INDEX idx_bsh_ref (ref_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
             } catch (\Throwable $e) {}
             try {
                 $this->db->exec("UPDATE burial_requests 
@@ -369,7 +449,7 @@ class BurialRequest
                     $encStmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
                                                    WHERE LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))
                                                       OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm
-                                                   ORDER BY (LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))) DESC
+                                                   ORDER BY id DESC
                                                    LIMIT 1");
                     $encStmt->execute(['cno' => $existingCertNo, 'norm' => $normCertNo]);
                     $foundEnc = $encStmt->fetch(PDO::FETCH_ASSOC);
@@ -430,7 +510,7 @@ class BurialRequest
                     $encStmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
                                                    WHERE LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))
                                                       OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm
-                                                   ORDER BY (LOWER(TRIM(registration_number)) = LOWER(TRIM(:cno))) DESC
+                                                   ORDER BY id DESC
                                                    LIMIT 1");
                     $encStmt->execute(['cno' => $existingCertNo, 'norm' => $normCertNo]);
                     $foundEnc = $encStmt->fetch(PDO::FETCH_ASSOC);
@@ -504,6 +584,17 @@ class BurialRequest
             ]);
 
             $burialId = (int)$this->db->lastInsertId();
+
+            // If linked to an existing department record or verified in department archive, initialize custody
+            if ($encodedCertId || $existingRecordVerified || !empty($data['certificate_in_department'])) {
+                try {
+                    $this->db->prepare("UPDATE burial_requests SET 
+                        certificate_in_department = 1,
+                        certificate_received_dept_at = COALESCE(certificate_received_dept_at, NOW()),
+                        certificate_received_dept_by = 'Damayan Department Archive'
+                        WHERE id = :id")->execute(['id' => $burialId]);
+                } catch (\Throwable $e) {}
+            }
 
             if ($encodedCertId) {
                 try {
@@ -853,9 +944,11 @@ class BurialRequest
     /**
      * Get operational analytics for Damayan Staff Admin dashboard
      */
-    public function getAnalytics(): array {
+    public function getAnalytics(?int $year = null): array {
         try {
+            $year = $year ?: (int)date('Y');
             $totalCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests")->fetchColumn();
+            $encodedTotal = (int)$this->db->query("SELECT COUNT(*) FROM encoded_death_certificates")->fetchColumn();
             
             // Pending Review (unprocessed)
             $pendingCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE status NOT IN ('Accepted', 'Rejected', 'Completed') AND status NOT LIKE 'Accept%' AND COALESCE(death_cert_status, '') NOT IN ('Rejected', 'Awaiting Authorized Certificate Preparation', 'Registered', 'Certified Copy Requested or Received')")->fetchColumn();
@@ -866,7 +959,7 @@ class BurialRequest
             // Rejected Requests
             $rejectedCases = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE status = 'Rejected' OR COALESCE(death_cert_status, '') = 'Rejected'")->fetchColumn();
 
-            // Completed Cases (retained for backward compatibility)
+            // Completed Cases
             $completedCases = $acceptedCases;
 
             // Death Certificate stages
@@ -874,6 +967,12 @@ class BurialRequest
             $dcInfoReq = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE death_cert_requested = 1 AND death_cert_status = 'Additional Information Required'")->fetchColumn();
             $dcInProgress = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE death_cert_requested = 1 AND death_cert_status IN ('Awaiting Authorized Certificate Preparation', 'Certificate Prepared and Certified', 'Submitted for Civil Registration')")->fetchColumn();
             $dcRegistered = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE death_cert_requested = 1 AND death_cert_status IN ('Registered', 'Certified Copy Requested or Received')")->fetchColumn();
+            $dcRegisteredTotal = $dcRegistered + $encodedTotal;
+
+            // Transmittals to Male Da'wah
+            $dawahSent = (int)$this->db->query("SELECT COUNT(*) FROM dawah_death_certificates")->fetchColumn();
+            $dawahReviewed = (int)$this->db->query("SELECT COUNT(*) FROM dawah_death_certificates WHERE status = 'Reviewed'")->fetchColumn();
+            $dawahCompleted = (int)$this->db->query("SELECT COUNT(*) FROM dawah_death_certificates WHERE status = 'Completed'")->fetchColumn();
 
             // Cemetery Plot metrics
             $plotPending = (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE cemetery_plot_requested = 1 AND cemetery_plot_status IN ('Pending Review', 'Under Review')")->fetchColumn();
@@ -883,33 +982,125 @@ class BurialRequest
             // Cemetery Plot Inventory counts
             $availPlots = (int)$this->db->query("SELECT COUNT(*) FROM cemetery_plots WHERE status = 'Available'")->fetchColumn();
             $occupiedPlots = (int)$this->db->query("SELECT COUNT(*) FROM cemetery_plots WHERE status = 'Occupied'")->fetchColumn();
+            $reservedPlots = (int)$this->db->query("SELECT COUNT(*) FROM cemetery_plots WHERE status = 'Reserved'")->fetchColumn();
             $totalPlots = (int)$this->db->query("SELECT COUNT(*) FROM cemetery_plots")->fetchColumn();
+            $occupancyRate = $totalPlots > 0 ? round(($occupiedPlots / $totalPlots) * 100, 1) : 0;
+
+            // Day / Week / Month death recordings
+            $byDay = (int)$this->db->query("SELECT COUNT(*) FROM (
+                SELECT id FROM encoded_death_certificates WHERE DATE(created_at) = CURDATE() OR DATE(date_of_death) = CURDATE()
+                UNION ALL
+                SELECT id FROM burial_requests WHERE DATE(submitted_at) = CURDATE() OR DATE(date_of_death) = CURDATE()
+            ) as t_day")->fetchColumn();
+
+            $byWeek = (int)$this->db->query("SELECT COUNT(*) FROM (
+                SELECT id FROM encoded_death_certificates WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) OR date_of_death >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                UNION ALL
+                SELECT id FROM burial_requests WHERE submitted_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) OR date_of_death >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            ) as t_week")->fetchColumn();
+
+            $byMonth = (int)$this->db->query("SELECT COUNT(*) FROM (
+                SELECT id FROM encoded_death_certificates WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())
+                UNION ALL
+                SELECT id FROM burial_requests WHERE MONTH(submitted_at) = MONTH(CURDATE()) AND YEAR(submitted_at) = YEAR(CURDATE())
+            ) as t_month")->fetchColumn();
+
+            // Monthly deaths chart for the specified year
+            $monthlyDeaths = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $mStmt = $this->db->prepare("
+                    SELECT COUNT(*) FROM (
+                        SELECT id FROM encoded_death_certificates WHERE YEAR(date_of_death) = :y1 AND MONTH(date_of_death) = :m1
+                        UNION ALL
+                        SELECT id FROM burial_requests WHERE date_of_death IS NOT NULL AND YEAR(date_of_death) = :y2 AND MONTH(date_of_death) = :m2
+                    ) as combined
+                ");
+                $mStmt->execute(['y1' => $year, 'm1' => $m, 'y2' => $year, 'm2' => $m]);
+                $monthlyDeaths[] = (int)$mStmt->fetchColumn();
+            }
+
+            // Demographics: Gender Breakdown
+            $maleCnt = (int)$this->db->query("SELECT COUNT(*) FROM encoded_death_certificates WHERE sex = 'Male'")->fetchColumn()
+                     + (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE deceased_sex = 'Male'")->fetchColumn();
+            $femaleCnt = (int)$this->db->query("SELECT COUNT(*) FROM encoded_death_certificates WHERE sex = 'Female'")->fetchColumn()
+                       + (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE deceased_sex = 'Female'")->fetchColumn();
+            $totalGender = max(1, $maleCnt + $femaleCnt);
+            $malePct = round(($maleCnt / $totalGender) * 100);
+            $femalePct = round(($femaleCnt / $totalGender) * 100);
+
+            // Demographics: Age Group Breakdown
+            $ageInfant = (int)$this->db->query("SELECT COUNT(*) FROM encoded_death_certificates WHERE age_years < 1 OR age_unit IN ('months','days','hours')")->fetchColumn();
+            $ageYouth = (int)$this->db->query("SELECT COUNT(*) FROM encoded_death_certificates WHERE age_years BETWEEN 1 AND 17")->fetchColumn();
+            $ageAdult = (int)$this->db->query("SELECT COUNT(*) FROM encoded_death_certificates WHERE age_years BETWEEN 18 AND 59")->fetchColumn();
+            $ageSenior = (int)$this->db->query("SELECT COUNT(*) FROM encoded_death_certificates WHERE age_years >= 60")->fetchColumn();
+
+            // Place of Death Breakdown
+            $placeHospital = (int)$this->db->query("SELECT COUNT(*) FROM encoded_death_certificates WHERE place_of_death_hospital IS NOT NULL AND TRIM(place_of_death_hospital) != ''")->fetchColumn()
+                           + (int)$this->db->query("SELECT COUNT(*) FROM burial_requests WHERE place_of_death LIKE '%Hospital%' OR place_of_death LIKE '%Medical%' OR place_of_death LIKE '%Clinic%'")->fetchColumn();
+            $placeResidence = max(0, ($totalCases + $encodedTotal) - $placeHospital);
 
             return [
-                'total' => $totalCases,
+                'total' => $totalCases + $encodedTotal,
+                'burial_requests_total' => $totalCases,
+                'encoded_total' => $encodedTotal,
                 'pending' => $pendingCases,
+                'approved' => $acceptedCases,
                 'accepted' => $acceptedCases,
                 'rejected' => $rejectedCases,
                 'completed' => $completedCases,
+                'by_day' => $byDay,
+                'by_week' => $byWeek,
+                'by_month' => $byMonth,
+                'monthly_labels' => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                'monthly_data' => $monthlyDeaths,
                 'death_cert_pending' => $dcPending,
                 'death_cert_info_req' => $dcInfoReq,
                 'death_cert_progress' => $acceptedCases,
                 'death_cert_in_progress' => $acceptedCases,
-                'death_cert_registered' => $dcRegistered,
+                'death_cert_registered' => $dcRegisteredTotal,
+                'dawah_transmitted_total' => $dawahSent,
+                'dawah_reviewed' => $dawahReviewed,
+                'dawah_completed' => $dawahCompleted,
                 'plot_pending' => $plotPending,
                 'plot_approved' => $plotApproved,
                 'plot_assigned' => $plotAssigned,
                 'available_plots' => $availPlots,
                 'occupied_plots' => $occupiedPlots,
-                'total_plots' => $totalPlots
+                'reserved_plots' => $reservedPlots,
+                'total_plots' => $totalPlots,
+                'occupancy_rate' => $occupancyRate,
+                'demographics' => [
+                    'male' => $maleCnt,
+                    'female' => $femaleCnt,
+                    'male_pct' => $malePct,
+                    'female_pct' => $femalePct,
+                    'age_infant' => $ageInfant,
+                    'age_youth' => $ageYouth,
+                    'age_adult' => $ageAdult,
+                    'age_senior' => $ageSenior,
+                    'place_hospital' => $placeHospital,
+                    'place_residence' => $placeResidence
+                ]
             ];
         } catch (\PDOException $e) {
+            error_log("BurialRequest::getAnalytics error: " . $e->getMessage());
             return [
-                'total' => 0, 'pending' => 0, 'accepted' => 0, 'rejected' => 0, 'completed' => 0,
+                'total' => 0, 'burial_requests_total' => 0, 'encoded_total' => 0,
+                'pending' => 0, 'approved' => 0, 'accepted' => 0, 'rejected' => 0, 'completed' => 0,
+                'by_day' => 0, 'by_week' => 0, 'by_month' => 0,
+                'monthly_labels' => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                'monthly_data' => array_fill(0, 12, 0),
                 'death_cert_pending' => 0, 'death_cert_info_req' => 0,
                 'death_cert_progress' => 0, 'death_cert_in_progress' => 0, 'death_cert_registered' => 0,
+                'dawah_transmitted_total' => 0, 'dawah_reviewed' => 0, 'dawah_completed' => 0,
                 'plot_pending' => 0, 'plot_approved' => 0, 'plot_assigned' => 0,
-                'available_plots' => 0, 'occupied_plots' => 0, 'total_plots' => 0
+                'available_plots' => 0, 'occupied_plots' => 0, 'reserved_plots' => 0,
+                'total_plots' => 0, 'occupancy_rate' => 0,
+                'demographics' => [
+                    'male' => 0, 'female' => 0, 'male_pct' => 50, 'female_pct' => 50,
+                    'age_infant' => 0, 'age_youth' => 0, 'age_adult' => 0, 'age_senior' => 0,
+                    'place_hospital' => 0, 'place_residence' => 0
+                ]
             ];
         }
     }
@@ -1017,14 +1208,22 @@ class BurialRequest
             }
 
             $validStatuses = [
+                'Submitted',
                 'Request Received',
                 'Under Review',
+                'Approved',
+                'Accepted',
                 'Additional Information Required',
                 'Awaiting Authorized Certificate Preparation',
+                'Certificate Prepared',
                 'Certificate Prepared and Certified',
+                'Ready for Release',
+                'Scheduled for Release',
                 'Submitted for Civil Registration',
                 'Registered',
                 'Certified Copy Requested or Received',
+                'Completed',
+                'Released',
                 'Rejected'
             ];
             if (!in_array($status, $validStatuses)) {
@@ -1049,7 +1248,7 @@ class BurialRequest
 
             $res = $stmt->execute([
                 'dc_status' => $status,
-                'overall_status' => $status,
+                'overall_status' => ($status === 'Rejected') ? 'Rejected' : (($status === 'Completed' || $status === 'Released') ? 'Completed' : 'Accepted'),
                 'prep_date' => !empty($data['death_cert_prep_date']) ? $data['death_cert_prep_date'] : null,
                 'cert_date' => !empty($data['death_cert_certified_date']) ? $data['death_cert_certified_date'] : null,
                 'lcro_date' => !empty($data['death_cert_submitted_lcro_date']) ? $data['death_cert_submitted_lcro_date'] : null,
@@ -1088,6 +1287,497 @@ class BurialRequest
         } catch (\PDOException $e) {
             error_log("updateDeathCertStatus error: " . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Schedule Death Certificate Release (Claiming Appointment)
+     * Validates date and time are in the future, records admin, updates stage to 'Ready for Release',
+     * logs audit trail, records schedule history, and notifies user via in-app & email.
+     */
+    public function scheduleCertificateRelease(int $burialId, array $data, ?int $adminId = null, ?string $adminName = null): array {
+        try {
+            $burial = $this->findById($burialId);
+            if (!$burial) {
+                return ['success' => false, 'error' => 'Certificate request not found.'];
+            }
+
+            if (($burial['death_cert_status'] ?? '') === 'Completed' || ($burial['status'] ?? '') === 'Completed') {
+                return ['success' => false, 'error' => 'This death certificate has already been released and completed.'];
+            }
+
+            $date = trim($data['release_date'] ?? '');
+            $time = trim($data['release_time'] ?? '');
+            $instructions = trim($data['release_instructions'] ?? ($data['instructions'] ?? ''));
+            $location = trim($data['release_location'] ?? '') ?: 'Damayan Department';
+            $reason = trim($data['reschedule_reason'] ?? ($data['reason'] ?? ''));
+
+            if (empty($date) || empty($time)) {
+                return ['success' => false, 'error' => 'Both scheduled claiming date and time are required.'];
+            }
+
+            // Validate date and time are strictly in the future
+            $targetTimestamp = strtotime("{$date} {$time}");
+            if (!$targetTimestamp) {
+                return ['success' => false, 'error' => 'Invalid date or time format provided.'];
+            }
+            if ($targetTimestamp <= time()) {
+                return ['success' => false, 'error' => 'Release date and time must be scheduled in the future.'];
+            }
+
+            $adminId = $adminId ?: ($_SESSION['user_id'] ?? null);
+            $adminName = $adminName ?: ($_SESSION['name'] ?? 'Damayan Admin');
+
+            $isReschedule = !empty($burial['scheduled_release_date']);
+            $prevDate = $burial['scheduled_release_date'];
+            $prevTime = $burial['scheduled_release_time'];
+
+            // Gate: Physical death certificate must be in Damayan Department custody
+            if (empty($burial['certificate_in_department']) && empty($data['confirm_in_department'])) {
+                return [
+                    'success' => false, 
+                    'error' => 'The physical death certificate must be in Damayan Department custody before scheduling its release.'
+                ];
+            }
+
+            // Update burial_requests record persistently
+            $stmt = $this->db->prepare("UPDATE burial_requests SET
+                death_cert_status = 'Ready for Release',
+                certificate_in_department = 1,
+                certificate_received_dept_at = COALESCE(certificate_received_dept_at, NOW()),
+                certificate_received_dept_by = COALESCE(certificate_received_dept_by, :s_dept_by),
+                scheduled_release_date = :s_date,
+                scheduled_release_time = :s_time,
+                release_location = :s_loc,
+                release_instructions = :s_inst,
+                release_scheduled_by_id = :s_aid,
+                release_scheduled_by_name = :s_aname,
+                release_scheduled_at = NOW(),
+                release_cancelled_at = NULL,
+                release_cancelled_by = NULL,
+                release_cancellation_reason = NULL,
+                reschedule_reason = :s_reason,
+                updated_at = NOW()
+                WHERE id = :id");
+
+            $ok = $stmt->execute([
+                's_dept_by' => $adminName,
+                's_date'    => $date,
+                's_time'    => $time,
+                's_loc'     => $location,
+                's_inst'    => $instructions ?: null,
+                's_aid'     => $adminId,
+                's_aname'   => $adminName,
+                's_reason'  => $reason ?: null,
+                'id'        => $burialId
+            ]);
+
+            if (!$ok) {
+                return ['success' => false, 'error' => 'Database update failed when scheduling release.'];
+            }
+
+            // Record into schedule history table
+            $actionType = $isReschedule ? 'RESCHEDULED' : 'SCHEDULED';
+            try {
+                $histStmt = $this->db->prepare("INSERT INTO burial_schedule_history
+                    (burial_request_id, ref_id, action_type, previous_date, previous_time, new_date, new_time, location, instructions, change_reason, admin_id, admin_name)
+                    VALUES (:bid, :ref, :action, :pdate, :ptime, :ndate, :ntime, :loc, :inst, :reason, :aid, :aname)");
+                $histStmt->execute([
+                    'bid'    => $burialId,
+                    'ref'    => $burial['ref_id'],
+                    'action' => $actionType,
+                    'pdate'  => $prevDate ?: null,
+                    'ptime'  => $prevTime ?: null,
+                    'ndate'  => $date,
+                    'ntime'  => $time,
+                    'loc'    => $location,
+                    'inst'   => $instructions ?: null,
+                    'reason' => $reason ?: ($isReschedule ? 'Schedule modified by administrator' : 'Initial schedule confirmed'),
+                    'aid'    => $adminId,
+                    'aname'  => $adminName
+                ]);
+            } catch (\Throwable $th) {
+                error_log("Failed to insert burial_schedule_history: " . $th->getMessage());
+            }
+
+            $formattedDate = date('F j, Y', strtotime($date));
+            $formattedTime = date('g:i A', strtotime($time));
+
+            // Log activity and audit trail
+            $desc = "Release claiming schedule confirmed for {$formattedDate} at {$formattedTime} at {$location} by {$adminName}";
+            if ($instructions) $desc .= " — Instructions: {$instructions}";
+            if ($reason) $desc .= " — Reason: {$reason}";
+
+            $this->logActivity($burialId, $burial['ref_id'], 'Schedule', "Release Scheduled: {$formattedDate} {$formattedTime}", $desc, $adminName);
+
+            if (class_exists('AuditLogger')) {
+                AuditLogger::log('DAMAYAN', $isReschedule ? 'CERTIFICATE_RESCHEDULED' : 'CERTIFICATE_SCHEDULED', "Case #{$burial['ref_id']} — {$desc}");
+            }
+
+            // In-app Notification to Requester
+            try {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notif = new Notification();
+                $notifTitle = $isReschedule 
+                    ? "Updated Release Schedule: Death Certificate #{$burial['ref_id']}" 
+                    : "Death Certificate Ready for Release: #{$burial['ref_id']}";
+                $notifMsg = "Your Death Certificate Is Ready for Release. Please go to the {$location} to claim your death certificate on {$formattedDate} at {$formattedTime}." . ($instructions ? " Instructions: {$instructions}" : "");
+                $notif->create((int)$burial['tenant_id'], $notifTitle, $notifMsg, 'damayan');
+            } catch (\Throwable $e) {
+                error_log("Notification Error: " . $e->getMessage());
+            }
+
+            // Email Notification to Requester (PHPMailer)
+            $emailSent = false;
+            try {
+                $recipientEmail = !empty($burial['informant_email']) ? trim($burial['informant_email']) : '';
+                if (empty($recipientEmail) && !empty($burial['tenant_id'])) {
+                    require_once BASE_PATH . '/app/models/User.php';
+                    $userModel = new User();
+                    $dbUser = $userModel->findById((int)$burial['tenant_id']);
+                    $recipientEmail = $dbUser['email'] ?? '';
+                }
+
+                if (!empty($recipientEmail) && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+                    require_once BASE_PATH . '/app/helpers/Mailer.php';
+                    $emailSent = Mailer::sendDeathCertificateReleaseSchedule([
+                        'to_email'       => $recipientEmail,
+                        'to_name'        => $burial['informant_name'] ?? ($burial['first_name'] ?? 'Authorized Requester'),
+                        'action'         => $actionType,
+                        'ref_id'         => $burial['ref_id'],
+                        'deceased_name'  => $burial['deceased_name'],
+                        'scheduled_date' => $formattedDate,
+                        'scheduled_time' => $formattedTime,
+                        'location'       => $location,
+                        'instructions'   => $instructions,
+                        'reason'         => $reason
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                error_log("Email sending error for release schedule: " . $e->getMessage());
+                $emailSent = false;
+            }
+
+            return [
+                'success'        => true,
+                'message'        => 'Release schedule confirmed successfully.',
+                'scheduled_date' => $date,
+                'formatted_date' => $formattedDate,
+                'scheduled_time' => $time,
+                'formatted_time' => $formattedTime,
+                'location'       => $location,
+                'instructions'   => $instructions,
+                'email_sent'     => $emailSent
+            ];
+        } catch (\PDOException $e) {
+            error_log("scheduleCertificateRelease error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'An unexpected database error occurred.'];
+        }
+    }
+
+    /**
+     * Reschedule Death Certificate Release
+     */
+    public function rescheduleCertificateRelease(int $burialId, array $data, ?int $adminId = null, ?string $adminName = null): array {
+        return $this->scheduleCertificateRelease($burialId, $data, $adminId, $adminName);
+    }
+
+    /**
+     * Cancel Scheduled Release Appointment
+     */
+    public function cancelCertificateRelease(int $burialId, array $data, ?int $adminId = null, ?string $adminName = null): array {
+        try {
+            $burial = $this->findById($burialId);
+            if (!$burial) {
+                return ['success' => false, 'error' => 'Certificate request not found.'];
+            }
+
+            $reason = trim($data['cancellation_reason'] ?? ($data['reason'] ?? 'Appointment cancelled by Damayan Administration'));
+            $adminId = $adminId ?: ($_SESSION['user_id'] ?? null);
+            $adminName = $adminName ?: ($_SESSION['name'] ?? 'Damayan Admin');
+
+            $prevDate = $burial['scheduled_release_date'];
+            $prevTime = $burial['scheduled_release_time'];
+
+            $stmt = $this->db->prepare("UPDATE burial_requests SET
+                death_cert_status = 'Certificate Prepared',
+                release_cancelled_at = NOW(),
+                release_cancelled_by = :c_by,
+                release_cancellation_reason = :c_reason,
+                scheduled_release_date = NULL,
+                scheduled_release_time = NULL,
+                updated_at = NOW()
+                WHERE id = :id");
+
+            $ok = $stmt->execute([
+                'c_by'     => $adminName,
+                'c_reason' => $reason,
+                'id'       => $burialId
+            ]);
+
+            if (!$ok) {
+                return ['success' => false, 'error' => 'Database update failed when cancelling schedule.'];
+            }
+
+            // Insert into history
+            try {
+                $histStmt = $this->db->prepare("INSERT INTO burial_schedule_history
+                    (burial_request_id, ref_id, action_type, previous_date, previous_time, new_date, new_time, location, instructions, change_reason, admin_id, admin_name)
+                    VALUES (:bid, :ref, 'CANCELLED', :pdate, :ptime, NULL, NULL, :loc, NULL, :reason, :aid, :aname)");
+                $histStmt->execute([
+                    'bid'    => $burialId,
+                    'ref'    => $burial['ref_id'],
+                    'pdate'  => $prevDate ?: null,
+                    'ptime'  => $prevTime ?: null,
+                    'loc'    => $burial['release_location'] ?: 'Damayan Department',
+                    'reason' => $reason,
+                    'aid'    => $adminId,
+                    'aname'  => $adminName
+                ]);
+            } catch (\Throwable $th) {}
+
+            $desc = "Release claiming schedule cancelled by {$adminName} — Reason: {$reason}";
+            $this->logActivity($burialId, $burial['ref_id'], 'Schedule', "Release Schedule Cancelled", $desc, $adminName);
+
+            if (class_exists('AuditLogger')) {
+                AuditLogger::log('DAMAYAN', 'CERTIFICATE_SCHEDULE_CANCELLED', "Case #{$burial['ref_id']} — {$desc}");
+            }
+
+            // In-app Notification to Requester
+            try {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notif = new Notification();
+                $notif->create((int)$burial['tenant_id'], "Claiming Schedule Cancelled: #{$burial['ref_id']}",
+                    "Your death certificate release schedule has been cancelled. Reason: {$reason}. The administration will update your schedule shortly.", 'damayan');
+            } catch (\Throwable $e) {}
+
+            // Email Notification
+            $emailSent = false;
+            try {
+                $recipientEmail = !empty($burial['informant_email']) ? trim($burial['informant_email']) : '';
+                if (empty($recipientEmail) && !empty($burial['tenant_id'])) {
+                    require_once BASE_PATH . '/app/models/User.php';
+                    $userModel = new User();
+                    $dbUser = $userModel->findById((int)$burial['tenant_id']);
+                    $recipientEmail = $dbUser['email'] ?? '';
+                }
+
+                if (!empty($recipientEmail) && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+                    require_once BASE_PATH . '/app/helpers/Mailer.php';
+                    $emailSent = Mailer::sendDeathCertificateReleaseSchedule([
+                        'to_email'       => $recipientEmail,
+                        'to_name'        => $burial['informant_name'] ?? ($burial['first_name'] ?? 'Authorized Requester'),
+                        'action'         => 'CANCELLED',
+                        'ref_id'         => $burial['ref_id'],
+                        'deceased_name'  => $burial['deceased_name'],
+                        'scheduled_date' => '',
+                        'scheduled_time' => '',
+                        'location'       => $burial['release_location'] ?: 'Damayan Department',
+                        'instructions'   => '',
+                        'reason'         => $reason
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                $emailSent = false;
+            }
+
+            return ['success' => true, 'message' => 'Scheduled release cancelled successfully.', 'email_sent' => $emailSent];
+        } catch (\PDOException $e) {
+            error_log("cancelCertificateRelease error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'An unexpected database error occurred.'];
+        }
+    }
+
+    /**
+     * Set / Update death certificate custody status within Damayan Department
+     */
+    public function setCertificateInDepartment(int $burialId, bool $inDept = true, ?string $staff = null, ?string $notes = null): array {
+        try {
+            $burial = $this->findById($burialId);
+            if (!$burial) {
+                return ['success' => false, 'error' => 'Certificate request not found.'];
+            }
+
+            $staff = $staff ?: ($_SESSION['name'] ?? 'Damayan Admin');
+
+            if ($inDept) {
+                $stmt = $this->db->prepare("UPDATE burial_requests SET
+                    certificate_in_department = 1,
+                    certificate_received_dept_at = COALESCE(certificate_received_dept_at, NOW()),
+                    certificate_received_dept_by = :staff,
+                    certificate_custody_notes = :notes,
+                    updated_at = NOW()
+                    WHERE id = :id");
+                $stmt->execute([
+                    'staff' => $staff,
+                    'notes' => $notes ?: 'Received into Damayan Department custody',
+                    'id'    => $burialId
+                ]);
+
+                $desc = "Death certificate marked as received and in Damayan Department custody by {$staff}.";
+                $this->logActivity($burialId, $burial['ref_id'], 'Custody', 'Certificate Received in Department', $desc, $staff);
+                if (class_exists('AuditLogger')) {
+                    AuditLogger::log('DAMAYAN', 'CERTIFICATE_IN_DEPARTMENT', "Case #{$burial['ref_id']} — {$desc}");
+                }
+                return ['success' => true, 'message' => 'Death certificate confirmed in Damayan Department custody.'];
+            } else {
+                $stmt = $this->db->prepare("UPDATE burial_requests SET
+                    certificate_in_department = 0,
+                    certificate_custody_notes = :notes,
+                    updated_at = NOW()
+                    WHERE id = :id");
+                $stmt->execute([
+                    'notes' => $notes ?: 'Marked as not yet received in department custody',
+                    'id'    => $burialId
+                ]);
+
+                $desc = "Certificate custody status reverted by {$staff}.";
+                $this->logActivity($burialId, $burial['ref_id'], 'Custody', 'Certificate Custody Reverted', $desc, $staff);
+                return ['success' => true, 'message' => 'Certificate custody status reverted.'];
+            }
+        } catch (\Throwable $e) {
+            error_log("setCertificateInDepartment error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Mark Certificate as Officially Released to Requester
+     * Transitions request to Completed status.
+     */
+    public function markCertificateAsReleased(int $burialId, array $data, ?int $adminId = null, ?string $adminName = null): array {
+        try {
+            $burial = $this->findById($burialId);
+            if (!$burial) {
+                return ['success' => false, 'error' => 'Certificate request not found.'];
+            }
+
+            $adminId = $adminId ?: ($_SESSION['user_id'] ?? null);
+            $adminName = $adminName ?: ($_SESSION['name'] ?? 'Damayan Admin');
+            $recipientName = trim($data['recipient_name'] ?? '') ?: ($burial['informant_name'] ?: 'Authorized Requester');
+            $notes = trim($data['release_notes'] ?? '');
+
+            $stmt = $this->db->prepare("UPDATE burial_requests SET
+                status = 'Completed',
+                death_cert_status = 'Completed',
+                certificate_released_at = NOW(),
+                certificate_released_by = :rel_by,
+                certificate_recipient_name = :recip,
+                release_notes = :notes,
+                updated_at = NOW()
+                WHERE id = :id");
+
+            $ok = $stmt->execute([
+                'rel_by' => $adminName,
+                'recip'  => $recipientName,
+                'notes'  => $notes ?: null,
+                'id'     => $burialId
+            ]);
+
+            if (!$ok) {
+                return ['success' => false, 'error' => 'Failed to mark certificate as released.'];
+            }
+
+            // Insert into history
+            try {
+                $histStmt = $this->db->prepare("INSERT INTO burial_schedule_history
+                    (burial_request_id, ref_id, action_type, previous_date, previous_time, new_date, new_time, location, instructions, change_reason, admin_id, admin_name)
+                    VALUES (:bid, :ref, 'RELEASED', :pdate, :ptime, NULL, NULL, :loc, :inst, :reason, :aid, :aname)");
+                $histStmt->execute([
+                    'bid'    => $burialId,
+                    'ref'    => $burial['ref_id'],
+                    'pdate'  => $burial['scheduled_release_date'] ?: null,
+                    'ptime'  => $burial['scheduled_release_time'] ?: null,
+                    'loc'    => $burial['release_location'] ?: 'Damayan Department',
+                    'inst'   => "Released to {$recipientName}",
+                    'reason' => $notes ?: 'Physical release confirmed',
+                    'aid'    => $adminId,
+                    'aname'  => $adminName
+                ]);
+            } catch (\Throwable $th) {}
+
+            $releasedAtStr = date('F j, Y g:i A');
+            $desc = "Certificate Released — Claimed by {$recipientName}, processed by {$adminName} on {$releasedAtStr}" . ($notes ? " (Notes: {$notes})" : "");
+            $this->logActivity($burialId, $burial['ref_id'], 'Release', "Certificate Released", $desc, $adminName);
+
+            if (class_exists('AuditLogger')) {
+                AuditLogger::log('DAMAYAN', 'CERTIFICATE_RELEASED', "Case #{$burial['ref_id']} — {$desc}");
+            }
+
+            // In-app Notification
+            try {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notif = new Notification();
+                $notif->create((int)$burial['tenant_id'], "Death Certificate Released: #{$burial['ref_id']}",
+                    "Your death certificate has been officially released and collected by {$recipientName} on {$releasedAtStr}.", 'damayan');
+            } catch (\Throwable $e) {}
+
+            // Email Notification
+            $emailSent = false;
+            try {
+                $recipientEmail = !empty($burial['informant_email']) ? trim($burial['informant_email']) : '';
+                if (empty($recipientEmail) && !empty($burial['tenant_id'])) {
+                    require_once BASE_PATH . '/app/models/User.php';
+                    $userModel = new User();
+                    $dbUser = $userModel->findById((int)$burial['tenant_id']);
+                    $recipientEmail = $dbUser['email'] ?? '';
+                }
+
+                if (!empty($recipientEmail) && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+                    require_once BASE_PATH . '/app/helpers/Mailer.php';
+                    $emailSent = Mailer::sendDeathCertificateReleaseSchedule([
+                        'to_email'       => $recipientEmail,
+                        'to_name'        => $recipientName,
+                        'action'         => 'RELEASED',
+                        'ref_id'         => $burial['ref_id'],
+                        'deceased_name'  => $burial['deceased_name'],
+                        'scheduled_date' => '',
+                        'scheduled_time' => '',
+                        'location'       => $burial['release_location'] ?: 'Damayan Department',
+                        'instructions'   => $notes,
+                        'recipient_name' => $recipientName,
+                        'reason'         => ''
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                $emailSent = false;
+            }
+
+            return [
+                'success'        => true,
+                'message'        => 'Certificate marked as officially released.',
+                'released_at'    => $releasedAtStr,
+                'recipient_name' => $recipientName,
+                'email_sent'     => $emailSent
+            ];
+        } catch (\PDOException $e) {
+            error_log("markCertificateAsReleased error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'An unexpected database error occurred.'];
+        }
+    }
+
+    /**
+     * Get Claiming Schedule History for a Burial Case
+     */
+    public function getScheduleHistory(int $burialId): array {
+        try {
+            $stmt = $this->db->prepare("SELECT id, burial_request_id, ref_id, action_type,
+                previous_date, previous_time,
+                new_date, new_time,
+                new_date as scheduled_date, new_time as scheduled_time,
+                location, location as release_location, instructions, instructions as release_instructions,
+                change_reason, change_reason as reason,
+                admin_id, admin_name,
+                COALESCE(admin_name, 'Damayan Admin') as action_by_name,
+                created_at
+                FROM burial_schedule_history
+                WHERE burial_request_id = :bid
+                ORDER BY created_at DESC");
+            $stmt->execute(['bid' => $burialId]);
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            error_log("getScheduleHistory error: " . $e->getMessage());
+            return [];
         }
     }
 
@@ -2133,7 +2823,7 @@ class BurialRequest
             $stmt = $this->db->prepare("SELECT * FROM encoded_death_certificates 
                 WHERE LOWER(TRIM(registration_number)) = LOWER(TRIM(:reg))
                    OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm
-                ORDER BY (LOWER(TRIM(registration_number)) = LOWER(TRIM(:reg))) DESC
+                ORDER BY id DESC
                 LIMIT 1");
             $stmt->execute(['reg' => $regNo, 'norm' => $norm]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -2892,7 +3582,324 @@ class BurialRequest
             return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
         }
     }
+
+    /**
+     * Send / Transmit Death Certificate to Male Da'wah
+     */
+    public function sendDeathCertificateToDawah(array $data, int $staffId, string $staffName): array {
+        try {
+            $regNo = trim($data['registration_number'] ?? '');
+            $deceasedName = trim($data['deceased_name'] ?? '');
+            $dateOfDeath = trim($data['date_of_death'] ?? '');
+
+            if (empty($regNo)) {
+                return ['success' => false, 'error' => 'Registration number is required.'];
+            }
+            if (empty($deceasedName)) {
+                return ['success' => false, 'error' => 'Deceased name is required.'];
+            }
+            if (empty($dateOfDeath)) {
+                $dateOfDeath = date('Y-m-d');
+            }
+
+            // Check if already transmitted
+            $chkStmt = $this->db->prepare("SELECT id FROM dawah_death_certificates 
+                                           WHERE registration_number = :reg LIMIT 1");
+            $chkStmt->execute(['reg' => $regNo]);
+            $existingId = $chkStmt->fetchColumn();
+
+            $sql = "INSERT INTO dawah_death_certificates (
+                source_type, source_id, registration_number, deceased_name,
+                first_name, middle_name, last_name, sex,
+                date_of_death, time_of_death, date_of_birth, age,
+                place_of_death, residence, civil_status, religion,
+                citizenship, occupation, informant_name, informant_contact,
+                informant_relationship, death_cert_date, file_path, file_name,
+                purpose, transmission_notes, sent_by_id, sent_by_name,
+                sent_at, status
+            ) VALUES (
+                :source_type, :source_id, :registration_number, :deceased_name,
+                :first_name, :middle_name, :last_name, :sex,
+                :date_of_death, :time_of_death, :date_of_birth, :age,
+                :place_of_death, :residence, :civil_status, :religion,
+                :citizenship, :occupation, :informant_name, :informant_contact,
+                :informant_relationship, :death_cert_date, :file_path, :file_name,
+                :purpose, :transmission_notes, :sent_by_id, :sent_by_name,
+                NOW(), 'Received'
+            )";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                'source_type'            => $data['source_type'] ?? 'encoded_certificate',
+                'source_id'              => !empty($data['source_id']) ? (int)$data['source_id'] : null,
+                'registration_number'    => $regNo,
+                'deceased_name'          => $deceasedName,
+                'first_name'             => $data['first_name'] ?? null,
+                'middle_name'            => $data['middle_name'] ?? null,
+                'last_name'              => $data['last_name'] ?? null,
+                'sex'                    => in_array($data['sex'] ?? '', ['Male', 'Female']) ? $data['sex'] : 'Male',
+                'date_of_death'          => $dateOfDeath,
+                'time_of_death'          => !empty($data['time_of_death']) ? $data['time_of_death'] : null,
+                'date_of_birth'          => !empty($data['date_of_birth']) ? $data['date_of_birth'] : null,
+                'age'                    => $data['age'] ?? null,
+                'place_of_death'         => $data['place_of_death'] ?? null,
+                'residence'              => $data['residence'] ?? null,
+                'civil_status'           => $data['civil_status'] ?? null,
+                'religion'               => $data['religion'] ?? 'Islam',
+                'citizenship'            => $data['citizenship'] ?? 'Filipino',
+                'occupation'             => $data['occupation'] ?? null,
+                'informant_name'         => $data['informant_name'] ?? ($data['representative_name'] ?? null),
+                'informant_contact'      => $data['informant_contact'] ?? null,
+                'informant_relationship' => $data['informant_relationship'] ?? null,
+                'death_cert_date'        => !empty($data['death_cert_date']) ? $data['death_cert_date'] : date('Y-m-d'),
+                'file_path'              => $data['file_path'] ?? null,
+                'file_name'              => $data['file_name'] ?? "Death_Certificate_Transmittal_{$regNo}.html",
+                'purpose'                => $data['purpose'] ?? 'Salatul Janazah & Religious Records',
+                'transmission_notes'     => $data['transmission_notes'] ?? null,
+                'sent_by_id'             => $staffId,
+                'sent_by_name'           => $staffName
+            ]);
+
+            $newId = (int)$this->db->lastInsertId();
+
+            // Create admin notification for Male Da'wah
+            try {
+                $notifSql = "INSERT INTO admin_notifications (role, type, title, message, link, created_at)
+                             VALUES ('Staff_Male', 'death_certificate_received', :title, :msg, :link, NOW())";
+                $nStmt = $this->db->prepare($notifSql);
+                $nStmt->execute([
+                    'title' => "New Death Certificate File: #{$regNo}",
+                    'msg'   => "Damayan Department transmitted Death Certificate for {$deceasedName} (DOD: " . date('M d, Y', strtotime($dateOfDeath)) . ") to Male Da'wah.",
+                    'link'  => "/admin/dawah/male/death-certificates"
+                ]);
+            } catch (\Throwable $e) {}
+
+            return [
+                'success' => true,
+                'id'      => $newId,
+                'message' => "Death certificate #{$regNo} for {$deceasedName} has been transmitted to Male Da'wah successfully."
+            ];
+        } catch (\Throwable $e) {
+            error_log("BurialRequest::sendDeathCertificateToDawah error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Get Death Certificates Received by Male Da'wah
+    /**
+     * Helper to build flexible search clauses for Dawah death certificates
+     */
+    private function buildDawahSearchClause(string $search, array &$params, int &$pIdx): ?string {
+        $search = trim($search);
+        if ($search === '') return null;
+
+        $raw = $search;
+        $stripped = ltrim($raw, "#№ \t\n\r\0\x0B");
+        $stripped = preg_replace('/^(no\.?|ref\s*id:?)\s*/i', '', $stripped);
+        $words = array_values(array_filter(preg_split('/\s+/', $raw)));
+
+        $clauses = [];
+        $bind = function($val) use (&$params, &$pIdx) {
+            $key = 'p_' . (++$pIdx);
+            $params[$key] = $val;
+            return ':' . $key;
+        };
+
+        if (is_numeric($stripped)) {
+            $clauses[] = "id = " . $bind((int)$stripped);
+        }
+
+        $term = "%" . $raw . "%";
+        $termClean = "%" . $stripped . "%";
+
+        $clauses[] = "registration_number LIKE " . $bind($term);
+        $clauses[] = "registration_number LIKE " . $bind($termClean);
+        $clauses[] = "REPLACE(REPLACE(registration_number, '-', ''), ' ', '') LIKE " . $bind($termClean);
+        $clauses[] = "deceased_name LIKE " . $bind($term);
+        $clauses[] = "first_name LIKE " . $bind($term);
+        $clauses[] = "last_name LIKE " . $bind($term);
+        $clauses[] = "CONCAT(IFNULL(first_name,''), ' ', IFNULL(last_name,'')) LIKE " . $bind($term);
+        $clauses[] = "informant_name LIKE " . $bind($term);
+        $clauses[] = "sent_by_name LIKE " . $bind($term);
+        $clauses[] = "purpose LIKE " . $bind($term);
+        $clauses[] = "transmission_notes LIKE " . $bind($term);
+
+        if (count($words) > 1) {
+            $wordGroup = [];
+            foreach ($words as $w) {
+                $wTerm = "%" . $w . "%";
+                $wClean = "%" . ltrim($w, "#") . "%";
+
+                $k_dec = $bind($wTerm);
+                $k_fn  = $bind($wTerm);
+                $k_mn  = $bind($wTerm);
+                $k_ln  = $bind($wTerm);
+                $k_reg = $bind($wClean);
+                $k_inf = $bind($wTerm);
+                $k_snd = $bind($wTerm);
+                $k_pur = $bind($wTerm);
+
+                $wordGroup[] = "(deceased_name LIKE {$k_dec} 
+                    OR first_name LIKE {$k_fn} 
+                    OR middle_name LIKE {$k_mn} 
+                    OR last_name LIKE {$k_ln} 
+                    OR registration_number LIKE {$k_reg} 
+                    OR informant_name LIKE {$k_inf} 
+                    OR sent_by_name LIKE {$k_snd} 
+                    OR purpose LIKE {$k_pur})";
+            }
+            $clauses[] = "(" . implode(' AND ', $wordGroup) . ")";
+        }
+
+        return "(" . implode(' OR ', $clauses) . ")";
+    }
+
+    /**
+     * Get Received Death Certificates for Male Da'wah
+     */
+    public function getDawahDeathCertificates(string $search = '', string $status = '', int $limit = 100, int $offset = 0): array {
+        try {
+            $conditions = [];
+            $params = [];
+            $pIdx = 0;
+
+            if (!empty($search)) {
+                $sClause = $this->buildDawahSearchClause($search, $params, $pIdx);
+                if ($sClause) {
+                    $conditions[] = $sClause;
+                }
+            }
+
+            if (!empty($status) && $status !== 'all') {
+                $conditions[] = "status = :st";
+                $params['st'] = $status;
+            }
+
+            $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+            $sql = "SELECT * FROM dawah_death_certificates 
+                    {$where} 
+                    ORDER BY sent_at DESC 
+                    LIMIT :limit OFFSET :offset";
+
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $k => $v) {
+                $stmt->bindValue(':' . $k, $v);
+            }
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            error_log("BurialRequest::getDawahDeathCertificates error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Count Received Death Certificates for Male Da'wah
+     */
+    public function countDawahDeathCertificates(string $search = '', string $status = ''): int {
+        try {
+            $conditions = [];
+            $params = [];
+            $pIdx = 0;
+
+            if (!empty($search)) {
+                $sClause = $this->buildDawahSearchClause($search, $params, $pIdx);
+                if ($sClause) {
+                    $conditions[] = $sClause;
+                }
+            }
+
+            if (!empty($status) && $status !== 'all') {
+                $conditions[] = "status = :st";
+                $params['st'] = $status;
+            }
+
+            $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM dawah_death_certificates {$where}");
+            $stmt->execute($params);
+
+            return (int)$stmt->fetchColumn();
+        } catch (\Throwable $e) {
+            error_log("BurialRequest::countDawahDeathCertificates error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Get Single Transmitted Certificate by ID
+     */
+    public function getDawahDeathCertificateById(int $id): ?array {
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM dawah_death_certificates WHERE id = :id LIMIT 1");
+            $stmt->execute(['id' => $id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) return null;
+
+            if (!empty($row['source_id']) && ($row['source_type'] ?? '') === 'encoded_certificate') {
+                try {
+                    $encStmt = $this->db->prepare("SELECT * FROM encoded_death_certificates WHERE id = :sid LIMIT 1");
+                    $encStmt->execute(['sid' => $row['source_id']]);
+                    $enc = $encStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($enc) {
+                        foreach ($enc as $k => $v) {
+                            if ((!isset($row[$k]) || $row[$k] === null || $row[$k] === '') && $v !== null && $v !== '') {
+                                $row[$k] = $v;
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {}
+            }
+
+            return $row;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Acknowledge / Update Status of Received Death Certificate
+     */
+    public function acknowledgeDawahDeathCertificate(int $id, string $status, int $staffId, string $staffName, ?string $notes = null): array {
+        try {
+            if (!in_array($status, ['Received', 'Reviewed', 'Completed'])) {
+                $status = 'Reviewed';
+            }
+
+            $sql = "UPDATE dawah_death_certificates 
+                    SET status = :status,
+                        acknowledged_by_id = :aid,
+                        acknowledged_by_name = :aname,
+                        acknowledged_at = NOW(),
+                        updated_at = NOW()";
+
+            $binds = [
+                'status' => $status,
+                'aid'    => $staffId,
+                'aname'  => $staffName,
+                'id'     => $id
+            ];
+
+            if ($notes !== null && trim($notes) !== '') {
+                $sql .= ", transmission_notes = CONCAT(COALESCE(transmission_notes, ''), :noteAppendix)";
+                $binds['noteAppendix'] = "\n[Da'wah Update - " . date('M d, Y') . " by {$staffName}]: " . trim($notes);
+            }
+
+            $sql .= " WHERE id = :id";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($binds);
+
+            return ['success' => true, 'message' => "Death certificate status updated to {$status}."];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
+        }
+    }
 }
+
 
 
 

@@ -594,9 +594,107 @@
 
     </div>
 
-    <div style="flex:0 0 auto; padding:14px 24px; border-top:1px solid var(--border); background:#fafbfc; display:flex; justify-content:flex-end;">
+    <div style="flex:0 0 auto; padding:14px 24px; border-top:1px solid var(--border); background:#fafbfc; display:flex; justify-content:space-between; align-items:center;">
+      <button type="button" class="btn-topbar" style="background:#14532d; color:#fff; display:inline-flex; align-items:center; gap:6px; font-weight:700;" onclick="sendCurrentEncodedToDawah()">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Send to Da'wah (Male)
+      </button>
       <button type="button" class="btn-topbar" onclick="closeViewEncodedModal()">Close</button>
     </div>
+  </div>
+</div>
+
+<!-- Transmit to Male Da'wah Modal -->
+<div id="sendToDawahModal" class="mis-modal" style="display:none; position:fixed; inset:0; background:rgba(15,30,22,0.65); backdrop-filter:blur(4px); z-index:9999999; align-items:center; justify-content:center; padding:16px;">
+  <div class="mis-modal-content" style="background:#fff; border-radius:18px; width:100%; max-width:640px; box-shadow:0 25px 60px rgba(0,0,0,0.3); overflow:hidden;">
+    <div style="padding:18px 24px; border-bottom:1px solid var(--border); background:#fafbfc; display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:#e8f5ed; color:#14532d; display:flex; align-items:center; justify-content:center;">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </div>
+        <div>
+          <h5 style="margin:0; font-size:1.1rem; font-weight:800; color:#14532d;">Transmit Death Certificate to Male Da'wah</h5>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Forward official certificate record &amp; file to Male Da'wah Department</div>
+        </div>
+      </div>
+      <button type="button" class="close-btn" onclick="closeSendToDawahModal()" style="background:transparent; border:none; font-size:1.6rem; cursor:pointer; color:var(--text-muted);">&times;</button>
+    </div>
+
+    <form id="send-to-dawah-form" onsubmit="event.preventDefault(); submitSendToDawah();" style="padding:22px 24px; margin:0;" enctype="multipart/form-data">
+      <input type="hidden" id="sd-source-type" name="source_type" value="encoded_certificate" />
+      <input type="hidden" id="sd-source-id" name="source_id" value="" />
+      <input type="hidden" id="sd-reg-no" name="registration_number" value="" />
+      <input type="hidden" id="sd-deceased-name" name="deceased_name" value="" />
+      <input type="hidden" id="sd-first-name" name="first_name" value="" />
+      <input type="hidden" id="sd-middle-name" name="middle_name" value="" />
+      <input type="hidden" id="sd-last-name" name="last_name" value="" />
+      <input type="hidden" id="sd-sex" name="sex" value="Male" />
+      <input type="hidden" id="sd-dod" name="date_of_death" value="" />
+      <input type="hidden" id="sd-tod" name="time_of_death" value="" />
+      <input type="hidden" id="sd-dob" name="date_of_birth" value="" />
+      <input type="hidden" id="sd-age" name="age" value="" />
+      <input type="hidden" id="sd-pod" name="place_of_death" value="" />
+      <input type="hidden" id="sd-residence" name="residence" value="" />
+      <input type="hidden" id="sd-civil" name="civil_status" value="" />
+      <input type="hidden" id="sd-religion" name="religion" value="Islam" />
+      <input type="hidden" id="sd-citizenship" name="citizenship" value="Filipino" />
+      <input type="hidden" id="sd-occupation" name="occupation" value="" />
+      <input type="hidden" id="sd-informant" name="informant_name" value="" />
+      <input type="hidden" id="sd-informant-contact" name="informant_contact" value="" />
+      <input type="hidden" id="sd-informant-rel" name="informant_relationship" value="" />
+      <input type="hidden" id="sd-cert-date" name="death_cert_date" value="" />
+
+      <!-- Certificate Preview Banner -->
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 14px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="font-size:0.75rem; color:#166534; font-weight:700;">Deceased: <strong id="sd-disp-name" style="color:#0f3d21; font-size:0.92rem;">—</strong></span>
+          <span style="font-size:0.75rem; color:#166534; font-weight:800;" id="sd-disp-reg">—</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#15803d;">
+          <span>Date of Death: <strong id="sd-disp-dod">—</strong></span>
+          <span>Cert Received / Registered: <strong id="sd-disp-cert-date">—</strong></span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block; font-size:0.76rem; font-weight:700; margin-bottom:4px; color:var(--text-main);">Target Department</label>
+        <div style="padding:9px 12px; background:#f9fafb; border:1px solid var(--border); border-radius:8px; font-weight:700; color:#14532d; font-size:0.85rem; display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+          Male Da'wah Department (Imams &amp; Religious Affairs)
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block; font-size:0.76rem; font-weight:700; margin-bottom:4px; color:var(--text-main);">Transmittal Purpose <span style="color:#ef4444;">*</span></label>
+        <select id="sd-purpose" name="purpose" class="enc-select" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); font-size:0.85rem;">
+          <option value="Salatul Janazah & Burial Rites">Salatul Janazah (Funeral Prayer) &amp; Islamic Burial Rites</option>
+          <option value="Religious Record Keeping & Condolences">Religious Record Keeping &amp; Condolence Services</option>
+          <option value="Islamic Death Certification Endorsement">Islamic Death Certification Endorsement</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block; font-size:0.76rem; font-weight:700; margin-bottom:4px; color:var(--text-main);">Special Notes / Instructions for Da'wah</label>
+        <textarea id="sd-notes" name="transmission_notes" rows="2" placeholder="e.g. Family requested Imam for Salatul Janazah at ISCAG Masjid on..." style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-family:inherit; font-size:0.82rem; resize:vertical;"></textarea>
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label style="display:block; font-size:0.76rem; font-weight:700; margin-bottom:4px; color:var(--text-main);">Certificate File Attachment</label>
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 12px; font-size:0.78rem; color:#1e40af; margin-bottom:8px;">
+          &#10003; <strong>Official File:</strong> The official ISCAG Death Certificate Transmittal File (Formatted in Letter bond paper size) is generated automatically.
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="file" id="sd-file-input" name="cert_file" accept=".pdf,.jpg,.jpeg,.png,.docx" style="font-size:0.8rem; flex:1;" />
+        </div>
+        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:3px;">Optional: Upload external signed scan / civil registry file (PDF, JPG, PNG).</div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn-topbar" onclick="closeSendToDawahModal()">Cancel</button>
+        <button type="submit" id="sd-submit-btn" class="btn-topbar" style="background:#14532d; color:#fff; font-weight:700;">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Transmit File to Male Da'wah
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -659,7 +757,7 @@
     const deathDate = new Date(dYear, dMonth - 1, dDay);
 
     if (deathDate < birthDate) {
-      summaryEl.innerHTML = '<span style="color:#dc2626;">⚠ Date of Death cannot be earlier than Date of Birth.</span>';
+      summaryEl.innerHTML = '<span style="color:#dc2626; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Date of Death cannot be earlier than Date of Birth.</span>';
       document.getElementById('enc-age-years').value = '';
       document.getElementById('enc-age-months').value = '';
       document.getElementById('enc-age-days').value = '';
@@ -921,6 +1019,7 @@
       }
 
       const r = data.record;
+      activeDetailRecord = r;
       document.getElementById('v-enc-reg').textContent = '#' + (r.registration_number || '—');
       
       const locParts = [r.city_municipality, r.province].filter(Boolean);
@@ -1005,6 +1104,103 @@
     }
   }
 
+  let activeDetailRecord = null;
+
+  function openSendToDawahModal(data) {
+    if (!data) return;
+    document.getElementById('sd-source-type').value = data.source_type || 'encoded_certificate';
+    document.getElementById('sd-source-id').value = data.source_id || data.id || '';
+    document.getElementById('sd-reg-no').value = data.registration_number || '';
+    document.getElementById('sd-deceased-name').value = data.deceased_name || '';
+    document.getElementById('sd-first-name').value = data.first_name || '';
+    document.getElementById('sd-middle-name').value = data.middle_name || '';
+    document.getElementById('sd-last-name').value = data.last_name || '';
+    document.getElementById('sd-sex').value = data.sex || 'Male';
+    document.getElementById('sd-dod').value = data.date_of_death || '';
+    document.getElementById('sd-tod').value = data.time_of_death || '';
+    document.getElementById('sd-dob').value = data.date_of_birth || '';
+    document.getElementById('sd-age').value = data.age || '';
+    document.getElementById('sd-pod').value = data.place_of_death || '';
+    document.getElementById('sd-residence').value = data.residence || '';
+    document.getElementById('sd-civil').value = data.civil_status || '';
+    document.getElementById('sd-religion').value = data.religion || 'Islam';
+    document.getElementById('sd-citizenship').value = data.citizenship || 'Filipino';
+    document.getElementById('sd-occupation').value = data.occupation || '';
+    document.getElementById('sd-informant').value = data.informant_name || data.representative_name || '';
+    document.getElementById('sd-informant-contact').value = data.informant_contact || '';
+    document.getElementById('sd-informant-rel').value = data.informant_relationship || '';
+    document.getElementById('sd-cert-date').value = data.death_cert_date || '';
+
+    document.getElementById('sd-disp-name').textContent = data.deceased_name || '—';
+    document.getElementById('sd-disp-reg').textContent = '#' + (data.registration_number || '—');
+    document.getElementById('sd-disp-dod').textContent = data.date_of_death || '—';
+    document.getElementById('sd-disp-cert-date').textContent = data.death_cert_date || '—';
+    document.getElementById('sd-notes').value = '';
+    document.getElementById('sd-file-input').value = '';
+
+    document.getElementById('sendToDawahModal').style.display = 'flex';
+  }
+
+  function closeSendToDawahModal() {
+    document.getElementById('sendToDawahModal').style.display = 'none';
+  }
+
+  function sendCurrentEncodedToDawah() {
+    if (!activeDetailRecord) return;
+    openSendToDawahModal({
+      source_type: 'encoded_certificate',
+      source_id: activeDetailRecord.id,
+      registration_number: activeDetailRecord.registration_number,
+      deceased_name: activeDetailRecord.deceased_name,
+      first_name: activeDetailRecord.first_name,
+      middle_name: activeDetailRecord.middle_name,
+      last_name: activeDetailRecord.last_name,
+      sex: activeDetailRecord.sex,
+      date_of_death: activeDetailRecord.date_of_death,
+      time_of_death: activeDetailRecord.time_of_death,
+      date_of_birth: activeDetailRecord.date_of_birth,
+      age: activeDetailRecord.age_display || (activeDetailRecord.age_years ? activeDetailRecord.age_years + ' yrs' : ''),
+      place_of_death: activeDetailRecord.place_of_death,
+      residence: activeDetailRecord.residence,
+      civil_status: activeDetailRecord.civil_status,
+      religion: activeDetailRecord.religion || 'Islam',
+      citizenship: activeDetailRecord.citizenship || 'Filipino',
+      occupation: activeDetailRecord.occupation,
+      informant_name: activeDetailRecord.representative_name,
+      death_cert_date: activeDetailRecord.encoded_at ? activeDetailRecord.encoded_at.split(' ')[0] : ''
+    });
+  }
+
+  async function submitSendToDawah() {
+    const form = document.getElementById('send-to-dawah-form');
+    const formData = new FormData(form);
+    const btn = document.getElementById('sd-submit-btn');
+
+    btn.disabled = true;
+    btn.innerHTML = 'Transmitting...';
+
+    try {
+      const res = await fetch('<?= url('/admin/damayan/send-to-dawah') ?>', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || 'Death certificate transmitted to Male Da\'wah successfully.');
+        closeSendToDawahModal();
+      } else {
+        alert(data.error || 'Failed to transmit death certificate.');
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Transmit File to Male Da\'wah';
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error transmitting death certificate to Male Da\'wah.');
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:15px;height:15px;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Transmit File to Male Da\'wah';
+    }
+  }
+
   // Escape key & backdrop dismissal
   document.addEventListener('keydown', (e) => {
     if(e.key === 'Escape') {
@@ -1012,6 +1208,8 @@
       if(m1 && m1.style.display === 'flex') closeEncodeModal();
       const m2 = document.getElementById('viewEncodedDetailModal');
       if(m2 && m2.style.display === 'flex') closeViewEncodedModal();
+      const m3 = document.getElementById('sendToDawahModal');
+      if(m3 && m3.style.display === 'flex') closeSendToDawahModal();
     }
   });
 
@@ -1020,5 +1218,8 @@
   });
   document.getElementById('viewEncodedDetailModal')?.addEventListener('click', function(e) {
     if(e.target === this) closeViewEncodedModal();
+  });
+  document.getElementById('sendToDawahModal')?.addEventListener('click', function(e) {
+    if(e.target === this) closeSendToDawahModal();
   });
 </script>

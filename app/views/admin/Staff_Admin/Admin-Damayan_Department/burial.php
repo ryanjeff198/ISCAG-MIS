@@ -239,7 +239,7 @@
                         <td style="font-size:0.82rem;" id="cert-date-cell-<?= htmlspecialchars($r['id']) ?>">
                           <?php if(!empty($r['cert_date'])): ?>
                             <div style="font-weight:600; color:var(--damayan-dark);"><?= date('M d, Y', strtotime($r['cert_date'])) ?></div>
-                            <span class="mini-badge done" style="font-size:0.65rem; margin-top:2px; display:inline-block;">✓ Received</span>
+                            <span class="mini-badge done" style="font-size:0.65rem; margin-top:2px; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Received</span>
                           <?php else: ?>
                             <span style="color:var(--text-muted); font-style:italic;" id="cert-date-text-<?= htmlspecialchars($r['id']) ?>">Pending</span>
                           <?php endif; ?>
@@ -262,6 +262,19 @@
                               <button type="button" class="action-menu-item success" id="menu-mark-received-<?= htmlspecialchars($r['id']) ?>" onclick="markAsReceived('<?= htmlspecialchars($r['id']) ?>', '<?= htmlspecialchars(addslashes($r['deceased'])) ?>')">
                                 <svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
                                 Mark as Received
+                              </button>
+                              <button type="button" class="action-menu-item" style="color:#14532d; font-weight:700;" onclick="openSendToDawahModal(<?= htmlspecialchars(json_encode([
+                                'source_type' => 'burial_request',
+                                'source_id' => $r['id'],
+                                'registration_number' => !empty($r['ref_id']) ? $r['ref_id'] : 'REQ-' . $r['id'],
+                                'deceased_name' => $r['deceased'],
+                                'sex' => $r['deceased_sex'] ?? 'Male',
+                                'date_of_death' => !empty($r['date_of_death']) ? $r['date_of_death'] : (!empty($r['date']) ? $r['date'] : date('Y-m-d')),
+                                'informant_name' => $r['name'] ?? '',
+                                'death_cert_date' => !empty($r['cert_date']) ? $r['cert_date'] : date('Y-m-d')
+                              ]), ENT_QUOTES, 'UTF-8') ?>)">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                                Send to Da'wah
                               </button>
                               <button type="button" class="action-menu-item danger" onclick="deleteBurialRecord('<?= htmlspecialchars($r['id']) ?>', '<?= htmlspecialchars(addslashes($r['deceased'])) ?>')">
                                 <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
@@ -332,7 +345,7 @@
                         <td style="font-size:0.82rem;">
                           <?php if(!empty($a['cert_date'])): ?>
                             <div style="font-weight:600; color:var(--damayan-dark);"><?= date('M d, Y', strtotime($a['cert_date'])) ?></div>
-                            <span class="mini-badge done" style="font-size:0.65rem; margin-top:2px; display:inline-block;">✓ Received</span>
+                            <span class="mini-badge done" style="font-size:0.65rem; margin-top:2px; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Received</span>
                           <?php else: ?>
                             <span style="color:var(--text-muted); font-style:italic;">Pending</span>
                           <?php endif; ?>
@@ -367,6 +380,7 @@
   </div>
 
   <?php include __DIR__ . '/burial_modal.php'; ?>
+  <?php include __DIR__ . '/encode_modal.php'; ?>
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
@@ -442,7 +456,7 @@
           const dateCell = document.getElementById('cert-date-cell-' + id);
           if (dateCell && data.formatted_date) {
             dateCell.innerHTML = `<div style="font-weight:600; color:var(--damayan-dark);">${data.formatted_date}</div>
-                                  <span class="mini-badge done" style="font-size:0.65rem; margin-top:2px; display:inline-block;">✓ Received</span>`;
+                                  <span class="mini-badge done" style="font-size:0.65rem; margin-top:2px; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Received</span>`;
           }
 
           const btn = document.getElementById('btn-mark-received-' + id);

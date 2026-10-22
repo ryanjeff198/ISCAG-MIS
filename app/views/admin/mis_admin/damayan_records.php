@@ -150,40 +150,29 @@
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     standardizePage('admin');
-    const reqs = getRequests().filter(r => r.type === 'burial_service');
+    const dbDamayanReqs = <?= json_encode($damayanRequests ?? [], JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const reqs = (dbDamayanReqs && dbDamayanReqs.length > 0) ? dbDamayanReqs : getRequests().filter(r => r.type === 'burial_service');
     const bills = getBilling().filter(b => b.type.toLowerCase().includes('burial'));
 
     document.getElementById('s-total').textContent = reqs.length;
-    document.getElementById('s-pending').textContent = reqs.filter(r => r.status === 'pending').length;
-    document.getElementById('s-completed').textContent = reqs.filter(r => r.status === 'completed').length;
+    document.getElementById('s-pending').textContent = reqs.filter(r => (r.status || '').toLowerCase().includes('pend') || (r.status || '').toLowerCase().includes('submit')).length;
+    document.getElementById('s-completed').textContent = reqs.filter(r => (r.status || '').toLowerCase().includes('complet') || (r.status || '').toLowerCase().includes('releas')).length;
     document.getElementById('s-billing').textContent = bills.length;
     document.getElementById('req-count').textContent = reqs.length + ' records';
 
     // Requests
     const tbody = document.getElementById('req-tbody');
     if (!reqs.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No burial requests found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No burial or funeral requests found.</td></tr>';
     } else {
       tbody.innerHTML = reqs.map(r => `<tr>
-        <td class="td-id">${r.id}</td><td style="font-weight:600;">${r.name || 'Unknown'}</td>
-        <td>${formatDate(r.date)}</td><td><span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
-        <td style="color:var(--text-muted);">${formatDate(r.updatedAt)}</td>
+        <td class="td-id">#${r.id}</td>
+        <td style="font-weight:600;">${r.name || 'Unknown'}</td>
+        <td>${formatDate(r.date)}</td>
+        <td><span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
+        <td style="color:var(--text-muted);font-size:0.8rem;">${r.plot_number || 'Plot: Pending'} (${r.cemetery_pref || 'Local'})</td>
         <td>
-          <div class="action-menu">
-            <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
-              <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-            </button>
-            <div class="action-menu-dropdown">
-              <button class="action-menu-item" onclick="approveReq('${r.id}')">
-                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                Approve Request
-              </button>
-              <button class="action-menu-item danger" onclick="rejectReq('${r.id}')">
-                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                Reject Request
-              </button>
-            </div>
-          </div>
+          <a href="<?= url('/admin/damayan/burial') ?>" class="card-badge" style="text-decoration:none;">Review</a>
         </td>
       </tr>`).join('');
     }

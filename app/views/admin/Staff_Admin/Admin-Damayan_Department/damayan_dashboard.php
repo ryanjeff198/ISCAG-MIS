@@ -167,8 +167,8 @@
           <td class="td-id">
             <span style="font-weight:700; color:var(--damayan-accent);">#${r.id}</span>
             ${r.is_encoded_linked ? `
-              <div style="font-size:0.65rem; font-weight:700; color:#065f46; background:#bbf7d0; padding:1px 6px; border-radius:4px; display:inline-block; margin-top:2px;" title="Linked with Registered Death Certificate #${escapeHtml(r.encoded_reg_no || '')}">
-                ✓ Registered Linked
+              <div style="font-size:0.65rem; font-weight:700; color:#065f46; background:#bbf7d0; padding:1px 6px; border-radius:4px; display:inline-flex; align-items:center; gap:2px; margin-top:2px;" title="Linked with Registered Death Certificate #${escapeHtml(r.encoded_reg_no || '')}">
+                <svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg> Registered Linked
               </div>
             ` : ''}
           </td>

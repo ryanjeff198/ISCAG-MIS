@@ -285,4 +285,188 @@ class Mailer
             return false;
         }
     }
+
+    /**
+     * Send Death Certificate Claiming Schedule & Notification Email
+     *
+     * @param array $data [
+     *   'to_email'            => string (required),
+     *   'to_name'             => string,
+     *   'action'              => string ('SCHEDULED', 'RESCHEDULED', 'CANCELLED', 'RELEASED'),
+     *   'ref_id'              => string,
+     *   'deceased_name'       => string,
+     *   'scheduled_date'      => string,
+     *   'scheduled_time'      => string,
+     *   'location'            => string,
+     *   'instructions'        => string,
+     *   'reason'              => string,
+     *   'recipient_name'      => string,
+     * ]
+     * @return bool
+     */
+    public static function sendDeathCertificateReleaseSchedule(array $data): bool
+    {
+        $toEmail = trim($data['to_email'] ?? '');
+        if (empty($toEmail) || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+            error_log("Mailer Error: Invalid recipient email for death certificate release '$toEmail'");
+            return false;
+        }
+
+        $mail = self::createMailer();
+        if (!$mail) return false;
+
+        $toName        = trim($data['to_name'] ?? 'Authorized Requester');
+        $action        = strtoupper(trim($data['action'] ?? 'SCHEDULED'));
+        $refId         = htmlspecialchars($data['ref_id'] ?? 'N/A');
+        $deceasedName  = htmlspecialchars($data['deceased_name'] ?? 'Deceased');
+        $scheduledDate = htmlspecialchars($data['scheduled_date'] ?? '');
+        $scheduledTime = htmlspecialchars($data['scheduled_time'] ?? '');
+        $location      = htmlspecialchars($data['location'] ?? 'Damayan Department');
+        $instructions  = htmlspecialchars($data['instructions'] ?? '');
+        $reason        = htmlspecialchars($data['reason'] ?? '');
+        $recipientName = htmlspecialchars($data['recipient_name'] ?? '');
+
+        // Configure subject and headings based on action
+        if ($action === 'RESCHEDULED') {
+            $subject = "Revised Claiming Schedule: Death Certificate #{$refId} - ISCAG Damayan";
+            $headline = "Your Death Certificate Release Schedule Has Been Updated";
+            $subtext = "Please take note of the revised appointment date and claiming time at the Damayan Department.";
+            $badgeColor = "#b45309";
+            $badgeText = "Schedule Revised";
+        } elseif ($action === 'CANCELLED') {
+            $subject = "Cancelled Release Schedule: Death Certificate #{$refId} - ISCAG Damayan";
+            $headline = "Death Certificate Claiming Schedule Cancelled";
+            $subtext = "The previously scheduled claiming appointment has been cancelled by the Damayan Department administrator.";
+            $badgeColor = "#dc2626";
+            $badgeText = "Appointment Cancelled";
+        } elseif ($action === 'RELEASED') {
+            $subject = "Certificate Released: Death Certificate #{$refId} - ISCAG Damayan";
+            $headline = "Your Death Certificate Has Been Officially Released";
+            $subtext = "The requested death certificate has been physically released and received.";
+            $badgeColor = "#059669";
+            $badgeText = "Completed & Released";
+        } else {
+            $subject = "Ready for Release: Death Certificate #{$refId} - ISCAG Damayan";
+            $headline = "Your Death Certificate Is Ready for Release";
+            $subtext = "Please go to the Damayan Department to claim your death certificate on the scheduled date and time below.";
+            $badgeColor = "#059669";
+            $badgeText = "Ready for Release";
+        }
+
+        try {
+            $mail->addAddress($toEmail, $toName);
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+
+            $instructionBlock = '';
+            if (!empty($instructions)) {
+                $instructionBlock = "
+                <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin: 16px 0;'>
+                    <strong style='color: #1e293b; font-size: 13px; display: block; margin-bottom: 4px;'>Administrator Instructions:</strong>
+                    <div style='color: #475569; font-size: 13px; line-height: 1.5;'>{$instructions}</div>
+                </div>";
+            }
+
+            $reasonBlock = '';
+            if (!empty($reason)) {
+                $reasonBlock = "
+                <div style='background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 12px 16px; margin: 14px 0;'>
+                    <strong style='color: #92400e; font-size: 13px; display: block; margin-bottom: 3px;'>Reason for Change:</strong>
+                    <div style='color: #78350f; font-size: 13px;'>{$reason}</div>
+                </div>";
+            }
+
+            $recipientBlock = '';
+            if ($action === 'RELEASED' && !empty($recipientName)) {
+                $recipientBlock = "
+                <div style='background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 16px; margin: 14px 0;'>
+                    <strong style='color: #065f46; font-size: 13px; display: block; margin-bottom: 3px;'>Released To:</strong>
+                    <div style='color: #047857; font-size: 13px;'>{$recipientName}</div>
+                </div>";
+            }
+
+            $mail->Body = "
+            <!DOCTYPE html>
+            <html>
+            <head><meta charset='UTF-8'></head>
+            <body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 30px 10px; color: #334155;'>
+                <table width='100%' cellpadding='0' cellspacing='0' style='max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.06);'>
+                    <tr>
+                        <td style='background: #0f5c3a; padding: 24px 30px; text-align: left;'>
+                            <div style='color: #a7f3d0; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;'>ISCAG PILIPINAS — DAMAYAN DEPARTMENT</div>
+                            <h2 style='color: #ffffff; margin: 6px 0 0; font-size: 20px; font-weight: 800;'>Death Certificate Claiming Notice</h2>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='padding: 30px;'>
+                            <div style='display: inline-block; background: {$badgeColor}; color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;'>
+                                {$badgeText}
+                            </div>
+                            <h3 style='margin: 0 0 8px; font-size: 18px; color: #0f172a;'>{$headline}</h3>
+                            <p style='margin: 0 0 20px; font-size: 14px; color: #64748b; line-height: 1.5;'>
+                                {$subtext}
+                            </p>
+
+                            <!-- Case Summary Table -->
+                            <table width='100%' cellpadding='8' cellspacing='0' style='border-collapse: collapse; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; margin-bottom: 16px;'>
+                                <tr>
+                                    <td width='35%' style='color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;'>Case Reference:</td>
+                                    <td style='color: #0f5c3a; font-weight: 700; border-bottom: 1px solid #e2e8f0;'>#{$refId}</td>
+                                </tr>
+                                <tr>
+                                    <td style='color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;'>Deceased Person:</td>
+                                    <td style='color: #1e293b; font-weight: 700; border-bottom: 1px solid #e2e8f0;'>{$deceasedName}</td>
+                                </tr>
+                                " . ($action !== 'CANCELLED' ? "
+                                <tr>
+                                    <td style='color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;'>Scheduled Date:</td>
+                                    <td style='color: #0f172a; font-weight: 700; border-bottom: 1px solid #e2e8f0;'>{$scheduledDate}</td>
+                                </tr>
+                                <tr>
+                                    <td style='color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0;'>Scheduled Time:</td>
+                                    <td style='color: #0f172a; font-weight: 700; border-bottom: 1px solid #e2e8f0;'>{$scheduledTime}</td>
+                                </tr>
+                                <tr>
+                                    <td style='color: #64748b; font-weight: 600;'>Claiming Location:</td>
+                                    <td style='color: #0f5c3a; font-weight: 700;'>{$location}</td>
+                                </tr>
+                                " : "") . "
+                            </table>
+
+                            {$instructionBlock}
+                            {$reasonBlock}
+                            {$recipientBlock}
+
+                            <p style='font-size: 13px; color: #64748b; line-height: 1.5; margin-top: 24px;'>
+                                Please bring a valid government-issued ID when claiming your certificate at the Damayan Department office.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style='background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 30px; text-align: center; font-size: 12px; color: #94a3b8;'>
+                            Islamic Studies, Call and Guidance of the Philippines (ISCAG)<br>
+                            Damayan Department • Civil Registry &amp; Burial Services
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            ";
+
+            $mail->AltBody = "{$headline}\n\n" .
+                "Case Reference: #{$refId}\n" .
+                "Deceased Name:  {$deceasedName}\n" .
+                ($action !== 'CANCELLED' ? "Date:           {$scheduledDate}\nTime:           {$scheduledTime}\nLocation:       {$location}\n" : "") .
+                ($instructions ? "Instructions:   {$instructions}\n" : "") .
+                ($reason ? "Reason:         {$reason}\n" : "") .
+                "\nISCAG Damayan Department";
+
+            $mail->send();
+            return true;
+        } catch (\Throwable $e) {
+            error_log("Mailer Error (Death Cert Schedule): " . $e->getMessage() . ($mail->ErrorInfo ? " | PHPMailer Info: " . $mail->ErrorInfo : ""));
+            return false;
+        }
+    }
 }
+

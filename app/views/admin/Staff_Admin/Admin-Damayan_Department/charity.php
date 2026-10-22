@@ -283,13 +283,17 @@
         <?php if (!empty($stats['pending_verifications']['total']) && $stats['pending_verifications']['total'] > 0): ?>
           <div style="background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #d97706; border-radius:10px; padding:14px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; align-items:center; gap:10px;">
-              <span style="font-size:1.4rem;">⏳</span>
+              <span style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:#fef3c7; color:#d97706; flex-shrink:0;">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.2 3.1.8-1.3-4.5-2.7V7z"/></svg>
+              </span>
               <div>
                 <strong style="color:#92400e; font-size:0.95rem;">Action Required: <?= $stats['pending_verifications']['total'] ?> Donation(s) Awaiting Review & Verification</strong>
-                <div style="font-size:0.8rem; color:#b45309; margin-top:2px;">
-                  📱 <?= $stats['pending_verifications']['digital'] ?> Digital Payment(s) &nbsp;|&nbsp;
-                  💵 <?= $stats['pending_verifications']['cash'] ?> Cash Record(s) &nbsp;|&nbsp;
-                  🍲 <?= $stats['pending_verifications']['food'] ?> Food Coordination Request(s)
+                <div style="font-size:0.8rem; color:#b45309; margin-top:2px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span style="display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg> <?= $stats['pending_verifications']['digital'] ?> Digital Payment(s)</span>
+                  <span>|</span>
+                  <span style="display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg> <?= $stats['pending_verifications']['cash'] ?> Cash Record(s)</span>
+                  <span>|</span>
+                  <span style="display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg> <?= $stats['pending_verifications']['food'] ?> Food Coordination Request(s)</span>
                 </div>
               </div>
             </div>
@@ -599,5 +603,6 @@
       </div>
     </div>
   </div>
+  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
 </body>
 </html>
