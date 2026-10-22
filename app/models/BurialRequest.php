@@ -296,7 +296,22 @@ class BurialRequest
                 "rejected_at DATETIME NULL",
                 "is_archived TINYINT(1) DEFAULT 0",
                 "archived_at DATETIME NULL",
-                "archived_by VARCHAR(200) NULL"
+                "archived_by VARCHAR(200) NULL",
+                "scheduled_release_date DATE NULL",
+                "scheduled_release_time TIME NULL",
+                "release_location VARCHAR(255) DEFAULT 'Damayan Department'",
+                "release_instructions TEXT NULL",
+                "release_scheduled_by_id INT NULL",
+                "release_scheduled_by_name VARCHAR(200) NULL",
+                "release_scheduled_at DATETIME NULL",
+                "certificate_released_at DATETIME NULL",
+                "certificate_released_by VARCHAR(200) NULL",
+                "certificate_recipient_name VARCHAR(200) NULL",
+                "release_notes TEXT NULL",
+                "release_cancelled_at DATETIME NULL",
+                "release_cancelled_by VARCHAR(200) NULL",
+                "release_cancellation_reason TEXT NULL",
+                "reschedule_reason TEXT NULL"
             ];
             foreach ($colsToAdd as $colDef) {
                 try {
@@ -304,7 +319,30 @@ class BurialRequest
                 } catch (\Throwable $e) {}
             }
             try {
+                $this->db->exec("ALTER TABLE burial_requests MODIFY COLUMN death_cert_status VARCHAR(100) DEFAULT 'Request Received'");
+            } catch (\Throwable $e) {}
+            try {
                 $this->db->exec("ALTER TABLE burial_requests MODIFY COLUMN status VARCHAR(50) DEFAULT 'Pending'");
+            } catch (\Throwable $e) {}
+            try {
+                $this->db->exec("CREATE TABLE IF NOT EXISTS burial_schedule_history (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    burial_request_id INT NOT NULL,
+                    ref_id VARCHAR(50) NULL,
+                    action_type VARCHAR(50) NOT NULL,
+                    previous_date DATE NULL,
+                    previous_time TIME NULL,
+                    new_date DATE NULL,
+                    new_time TIME NULL,
+                    location VARCHAR(255) DEFAULT 'Damayan Department',
+                    instructions TEXT NULL,
+                    change_reason TEXT NULL,
+                    admin_id INT NULL,
+                    admin_name VARCHAR(200) NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_bsh_b_id (burial_request_id),
+                    INDEX idx_bsh_ref (ref_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
             } catch (\Throwable $e) {}
             try {
                 $this->db->exec("UPDATE burial_requests 
@@ -1159,14 +1197,22 @@ class BurialRequest
             }
 
             $validStatuses = [
+                'Submitted',
                 'Request Received',
                 'Under Review',
+                'Approved',
+                'Accepted',
                 'Additional Information Required',
                 'Awaiting Authorized Certificate Preparation',
+                'Certificate Prepared',
                 'Certificate Prepared and Certified',
+                'Ready for Release',
+                'Scheduled for Release',
                 'Submitted for Civil Registration',
                 'Registered',
                 'Certified Copy Requested or Received',
+                'Completed',
+                'Released',
                 'Rejected'
             ];
             if (!in_array($status, $validStatuses)) {
@@ -1191,7 +1237,7 @@ class BurialRequest
 
             $res = $stmt->execute([
                 'dc_status' => $status,
-                'overall_status' => $status,
+                'overall_status' => ($status === 'Rejected') ? 'Rejected' : (($status === 'Completed' || $status === 'Released') ? 'Completed' : 'Accepted'),
                 'prep_date' => !empty($data['death_cert_prep_date']) ? $data['death_cert_prep_date'] : null,
                 'cert_date' => !empty($data['death_cert_certified_date']) ? $data['death_cert_certified_date'] : null,
                 'lcro_date' => !empty($data['death_cert_submitted_lcro_date']) ? $data['death_cert_submitted_lcro_date'] : null,
@@ -1230,6 +1276,432 @@ class BurialRequest
         } catch (\PDOException $e) {
             error_log("updateDeathCertStatus error: " . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Schedule Death Certificate Release (Claiming Appointment)
+     * Validates date and time are in the future, records admin, updates stage to 'Ready for Release',
+     * logs audit trail, records schedule history, and notifies user via in-app & email.
+     */
+    public function scheduleCertificateRelease(int $burialId, array $data, ?int $adminId = null, ?string $adminName = null): array {
+        try {
+            $burial = $this->findById($burialId);
+            if (!$burial) {
+                return ['success' => false, 'error' => 'Certificate request not found.'];
+            }
+
+            if (($burial['death_cert_status'] ?? '') === 'Completed' || ($burial['status'] ?? '') === 'Completed') {
+                return ['success' => false, 'error' => 'This death certificate has already been released and completed.'];
+            }
+
+            $date = trim($data['release_date'] ?? '');
+            $time = trim($data['release_time'] ?? '');
+            $instructions = trim($data['release_instructions'] ?? ($data['instructions'] ?? ''));
+            $location = trim($data['release_location'] ?? '') ?: 'Damayan Department';
+            $reason = trim($data['reschedule_reason'] ?? ($data['reason'] ?? ''));
+
+            if (empty($date) || empty($time)) {
+                return ['success' => false, 'error' => 'Both scheduled claiming date and time are required.'];
+            }
+
+            // Validate date and time are strictly in the future
+            $targetTimestamp = strtotime("{$date} {$time}");
+            if (!$targetTimestamp) {
+                return ['success' => false, 'error' => 'Invalid date or time format provided.'];
+            }
+            if ($targetTimestamp <= time()) {
+                return ['success' => false, 'error' => 'Release date and time must be scheduled in the future.'];
+            }
+
+            $adminId = $adminId ?: ($_SESSION['user_id'] ?? null);
+            $adminName = $adminName ?: ($_SESSION['name'] ?? 'Damayan Admin');
+
+            $isReschedule = !empty($burial['scheduled_release_date']);
+            $prevDate = $burial['scheduled_release_date'];
+            $prevTime = $burial['scheduled_release_time'];
+
+            // Update burial_requests record persistently
+            $stmt = $this->db->prepare("UPDATE burial_requests SET
+                death_cert_status = 'Ready for Release',
+                scheduled_release_date = :s_date,
+                scheduled_release_time = :s_time,
+                release_location = :s_loc,
+                release_instructions = :s_inst,
+                release_scheduled_by_id = :s_aid,
+                release_scheduled_by_name = :s_aname,
+                release_scheduled_at = NOW(),
+                release_cancelled_at = NULL,
+                release_cancelled_by = NULL,
+                release_cancellation_reason = NULL,
+                reschedule_reason = :s_reason,
+                updated_at = NOW()
+                WHERE id = :id");
+
+            $ok = $stmt->execute([
+                's_date'   => $date,
+                's_time'   => $time,
+                's_loc'    => $location,
+                's_inst'   => $instructions ?: null,
+                's_aid'    => $adminId,
+                's_aname'  => $adminName,
+                's_reason' => $reason ?: null,
+                'id'       => $burialId
+            ]);
+
+            if (!$ok) {
+                return ['success' => false, 'error' => 'Database update failed when scheduling release.'];
+            }
+
+            // Record into schedule history table
+            $actionType = $isReschedule ? 'RESCHEDULED' : 'SCHEDULED';
+            try {
+                $histStmt = $this->db->prepare("INSERT INTO burial_schedule_history
+                    (burial_request_id, ref_id, action_type, previous_date, previous_time, new_date, new_time, location, instructions, change_reason, admin_id, admin_name)
+                    VALUES (:bid, :ref, :action, :pdate, :ptime, :ndate, :ntime, :loc, :inst, :reason, :aid, :aname)");
+                $histStmt->execute([
+                    'bid'    => $burialId,
+                    'ref'    => $burial['ref_id'],
+                    'action' => $actionType,
+                    'pdate'  => $prevDate ?: null,
+                    'ptime'  => $prevTime ?: null,
+                    'ndate'  => $date,
+                    'ntime'  => $time,
+                    'loc'    => $location,
+                    'inst'   => $instructions ?: null,
+                    'reason' => $reason ?: ($isReschedule ? 'Schedule modified by administrator' : 'Initial schedule confirmed'),
+                    'aid'    => $adminId,
+                    'aname'  => $adminName
+                ]);
+            } catch (\Throwable $th) {
+                error_log("Failed to insert burial_schedule_history: " . $th->getMessage());
+            }
+
+            $formattedDate = date('F j, Y', strtotime($date));
+            $formattedTime = date('g:i A', strtotime($time));
+
+            // Log activity and audit trail
+            $desc = "Release claiming schedule confirmed for {$formattedDate} at {$formattedTime} at {$location} by {$adminName}";
+            if ($instructions) $desc .= " — Instructions: {$instructions}";
+            if ($reason) $desc .= " — Reason: {$reason}";
+
+            $this->logActivity($burialId, $burial['ref_id'], 'Schedule', "Release Scheduled: {$formattedDate} {$formattedTime}", $desc, $adminName);
+
+            if (class_exists('AuditLogger')) {
+                AuditLogger::log('DAMAYAN', $isReschedule ? 'CERTIFICATE_RESCHEDULED' : 'CERTIFICATE_SCHEDULED', "Case #{$burial['ref_id']} — {$desc}");
+            }
+
+            // In-app Notification to Requester
+            try {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notif = new Notification();
+                $notifTitle = $isReschedule 
+                    ? "Updated Release Schedule: Death Certificate #{$burial['ref_id']}" 
+                    : "Death Certificate Ready for Release: #{$burial['ref_id']}";
+                $notifMsg = "Your Death Certificate Is Ready for Release. Please go to the {$location} to claim your death certificate on {$formattedDate} at {$formattedTime}." . ($instructions ? " Instructions: {$instructions}" : "");
+                $notif->create((int)$burial['tenant_id'], $notifTitle, $notifMsg, 'damayan');
+            } catch (\Throwable $e) {
+                error_log("Notification Error: " . $e->getMessage());
+            }
+
+            // Email Notification to Requester (PHPMailer)
+            $emailSent = false;
+            try {
+                $recipientEmail = !empty($burial['informant_email']) ? trim($burial['informant_email']) : '';
+                if (empty($recipientEmail) && !empty($burial['tenant_id'])) {
+                    require_once BASE_PATH . '/app/models/User.php';
+                    $userModel = new User();
+                    $dbUser = $userModel->findById((int)$burial['tenant_id']);
+                    $recipientEmail = $dbUser['email'] ?? '';
+                }
+
+                if (!empty($recipientEmail) && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+                    require_once BASE_PATH . '/app/helpers/Mailer.php';
+                    $emailSent = Mailer::sendDeathCertificateReleaseSchedule([
+                        'to_email'       => $recipientEmail,
+                        'to_name'        => $burial['informant_name'] ?? ($burial['first_name'] ?? 'Authorized Requester'),
+                        'action'         => $actionType,
+                        'ref_id'         => $burial['ref_id'],
+                        'deceased_name'  => $burial['deceased_name'],
+                        'scheduled_date' => $formattedDate,
+                        'scheduled_time' => $formattedTime,
+                        'location'       => $location,
+                        'instructions'   => $instructions,
+                        'reason'         => $reason
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                error_log("Email sending error for release schedule: " . $e->getMessage());
+                $emailSent = false;
+            }
+
+            return [
+                'success'        => true,
+                'message'        => 'Release schedule confirmed successfully.',
+                'scheduled_date' => $date,
+                'formatted_date' => $formattedDate,
+                'scheduled_time' => $time,
+                'formatted_time' => $formattedTime,
+                'location'       => $location,
+                'instructions'   => $instructions,
+                'email_sent'     => $emailSent
+            ];
+        } catch (\PDOException $e) {
+            error_log("scheduleCertificateRelease error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'An unexpected database error occurred.'];
+        }
+    }
+
+    /**
+     * Reschedule Death Certificate Release
+     */
+    public function rescheduleCertificateRelease(int $burialId, array $data, ?int $adminId = null, ?string $adminName = null): array {
+        return $this->scheduleCertificateRelease($burialId, $data, $adminId, $adminName);
+    }
+
+    /**
+     * Cancel Scheduled Release Appointment
+     */
+    public function cancelCertificateRelease(int $burialId, array $data, ?int $adminId = null, ?string $adminName = null): array {
+        try {
+            $burial = $this->findById($burialId);
+            if (!$burial) {
+                return ['success' => false, 'error' => 'Certificate request not found.'];
+            }
+
+            $reason = trim($data['cancellation_reason'] ?? ($data['reason'] ?? 'Appointment cancelled by Damayan Administration'));
+            $adminId = $adminId ?: ($_SESSION['user_id'] ?? null);
+            $adminName = $adminName ?: ($_SESSION['name'] ?? 'Damayan Admin');
+
+            $prevDate = $burial['scheduled_release_date'];
+            $prevTime = $burial['scheduled_release_time'];
+
+            $stmt = $this->db->prepare("UPDATE burial_requests SET
+                death_cert_status = 'Certificate Prepared',
+                release_cancelled_at = NOW(),
+                release_cancelled_by = :c_by,
+                release_cancellation_reason = :c_reason,
+                scheduled_release_date = NULL,
+                scheduled_release_time = NULL,
+                updated_at = NOW()
+                WHERE id = :id");
+
+            $ok = $stmt->execute([
+                'c_by'     => $adminName,
+                'c_reason' => $reason,
+                'id'       => $burialId
+            ]);
+
+            if (!$ok) {
+                return ['success' => false, 'error' => 'Database update failed when cancelling schedule.'];
+            }
+
+            // Insert into history
+            try {
+                $histStmt = $this->db->prepare("INSERT INTO burial_schedule_history
+                    (burial_request_id, ref_id, action_type, previous_date, previous_time, new_date, new_time, location, instructions, change_reason, admin_id, admin_name)
+                    VALUES (:bid, :ref, 'CANCELLED', :pdate, :ptime, NULL, NULL, :loc, NULL, :reason, :aid, :aname)");
+                $histStmt->execute([
+                    'bid'    => $burialId,
+                    'ref'    => $burial['ref_id'],
+                    'pdate'  => $prevDate ?: null,
+                    'ptime'  => $prevTime ?: null,
+                    'loc'    => $burial['release_location'] ?: 'Damayan Department',
+                    'reason' => $reason,
+                    'aid'    => $adminId,
+                    'aname'  => $adminName
+                ]);
+            } catch (\Throwable $th) {}
+
+            $desc = "Release claiming schedule cancelled by {$adminName} — Reason: {$reason}";
+            $this->logActivity($burialId, $burial['ref_id'], 'Schedule', "Release Schedule Cancelled", $desc, $adminName);
+
+            if (class_exists('AuditLogger')) {
+                AuditLogger::log('DAMAYAN', 'CERTIFICATE_SCHEDULE_CANCELLED', "Case #{$burial['ref_id']} — {$desc}");
+            }
+
+            // In-app Notification to Requester
+            try {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notif = new Notification();
+                $notif->create((int)$burial['tenant_id'], "Claiming Schedule Cancelled: #{$burial['ref_id']}",
+                    "Your death certificate release schedule has been cancelled. Reason: {$reason}. The administration will update your schedule shortly.", 'damayan');
+            } catch (\Throwable $e) {}
+
+            // Email Notification
+            $emailSent = false;
+            try {
+                $recipientEmail = !empty($burial['informant_email']) ? trim($burial['informant_email']) : '';
+                if (empty($recipientEmail) && !empty($burial['tenant_id'])) {
+                    require_once BASE_PATH . '/app/models/User.php';
+                    $userModel = new User();
+                    $dbUser = $userModel->findById((int)$burial['tenant_id']);
+                    $recipientEmail = $dbUser['email'] ?? '';
+                }
+
+                if (!empty($recipientEmail) && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+                    require_once BASE_PATH . '/app/helpers/Mailer.php';
+                    $emailSent = Mailer::sendDeathCertificateReleaseSchedule([
+                        'to_email'       => $recipientEmail,
+                        'to_name'        => $burial['informant_name'] ?? ($burial['first_name'] ?? 'Authorized Requester'),
+                        'action'         => 'CANCELLED',
+                        'ref_id'         => $burial['ref_id'],
+                        'deceased_name'  => $burial['deceased_name'],
+                        'scheduled_date' => '',
+                        'scheduled_time' => '',
+                        'location'       => $burial['release_location'] ?: 'Damayan Department',
+                        'instructions'   => '',
+                        'reason'         => $reason
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                $emailSent = false;
+            }
+
+            return ['success' => true, 'message' => 'Scheduled release cancelled successfully.', 'email_sent' => $emailSent];
+        } catch (\PDOException $e) {
+            error_log("cancelCertificateRelease error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'An unexpected database error occurred.'];
+        }
+    }
+
+    /**
+     * Mark Certificate as Officially Released to Requester
+     * Transitions request to Completed status.
+     */
+    public function markCertificateAsReleased(int $burialId, array $data, ?int $adminId = null, ?string $adminName = null): array {
+        try {
+            $burial = $this->findById($burialId);
+            if (!$burial) {
+                return ['success' => false, 'error' => 'Certificate request not found.'];
+            }
+
+            $adminId = $adminId ?: ($_SESSION['user_id'] ?? null);
+            $adminName = $adminName ?: ($_SESSION['name'] ?? 'Damayan Admin');
+            $recipientName = trim($data['recipient_name'] ?? '') ?: ($burial['informant_name'] ?: 'Authorized Requester');
+            $notes = trim($data['release_notes'] ?? '');
+
+            $stmt = $this->db->prepare("UPDATE burial_requests SET
+                status = 'Completed',
+                death_cert_status = 'Completed',
+                certificate_released_at = NOW(),
+                certificate_released_by = :rel_by,
+                certificate_recipient_name = :recip,
+                release_notes = :notes,
+                updated_at = NOW()
+                WHERE id = :id");
+
+            $ok = $stmt->execute([
+                'rel_by' => $adminName,
+                'recip'  => $recipientName,
+                'notes'  => $notes ?: null,
+                'id'     => $burialId
+            ]);
+
+            if (!$ok) {
+                return ['success' => false, 'error' => 'Failed to mark certificate as released.'];
+            }
+
+            // Insert into history
+            try {
+                $histStmt = $this->db->prepare("INSERT INTO burial_schedule_history
+                    (burial_request_id, ref_id, action_type, previous_date, previous_time, new_date, new_time, location, instructions, change_reason, admin_id, admin_name)
+                    VALUES (:bid, :ref, 'RELEASED', :pdate, :ptime, NULL, NULL, :loc, :inst, :reason, :aid, :aname)");
+                $histStmt->execute([
+                    'bid'    => $burialId,
+                    'ref'    => $burial['ref_id'],
+                    'pdate'  => $burial['scheduled_release_date'] ?: null,
+                    'ptime'  => $burial['scheduled_release_time'] ?: null,
+                    'loc'    => $burial['release_location'] ?: 'Damayan Department',
+                    'inst'   => "Released to {$recipientName}",
+                    'reason' => $notes ?: 'Physical release confirmed',
+                    'aid'    => $adminId,
+                    'aname'  => $adminName
+                ]);
+            } catch (\Throwable $th) {}
+
+            $releasedAtStr = date('F j, Y g:i A');
+            $desc = "Certificate Released — Claimed by {$recipientName}, processed by {$adminName} on {$releasedAtStr}" . ($notes ? " (Notes: {$notes})" : "");
+            $this->logActivity($burialId, $burial['ref_id'], 'Release', "Certificate Released", $desc, $adminName);
+
+            if (class_exists('AuditLogger')) {
+                AuditLogger::log('DAMAYAN', 'CERTIFICATE_RELEASED', "Case #{$burial['ref_id']} — {$desc}");
+            }
+
+            // In-app Notification
+            try {
+                require_once BASE_PATH . '/app/models/Notification.php';
+                $notif = new Notification();
+                $notif->create((int)$burial['tenant_id'], "Death Certificate Released: #{$burial['ref_id']}",
+                    "Your death certificate has been officially released and collected by {$recipientName} on {$releasedAtStr}.", 'damayan');
+            } catch (\Throwable $e) {}
+
+            // Email Notification
+            $emailSent = false;
+            try {
+                $recipientEmail = !empty($burial['informant_email']) ? trim($burial['informant_email']) : '';
+                if (empty($recipientEmail) && !empty($burial['tenant_id'])) {
+                    require_once BASE_PATH . '/app/models/User.php';
+                    $userModel = new User();
+                    $dbUser = $userModel->findById((int)$burial['tenant_id']);
+                    $recipientEmail = $dbUser['email'] ?? '';
+                }
+
+                if (!empty($recipientEmail) && filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+                    require_once BASE_PATH . '/app/helpers/Mailer.php';
+                    $emailSent = Mailer::sendDeathCertificateReleaseSchedule([
+                        'to_email'       => $recipientEmail,
+                        'to_name'        => $recipientName,
+                        'action'         => 'RELEASED',
+                        'ref_id'         => $burial['ref_id'],
+                        'deceased_name'  => $burial['deceased_name'],
+                        'scheduled_date' => '',
+                        'scheduled_time' => '',
+                        'location'       => $burial['release_location'] ?: 'Damayan Department',
+                        'instructions'   => $notes,
+                        'recipient_name' => $recipientName,
+                        'reason'         => ''
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                $emailSent = false;
+            }
+
+            return [
+                'success'        => true,
+                'message'        => 'Certificate marked as officially released.',
+                'released_at'    => $releasedAtStr,
+                'recipient_name' => $recipientName,
+                'email_sent'     => $emailSent
+            ];
+        } catch (\PDOException $e) {
+            error_log("markCertificateAsReleased error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'An unexpected database error occurred.'];
+        }
+    }
+
+    /**
+     * Get Claiming Schedule History for a Burial Case
+     */
+    public function getScheduleHistory(int $burialId): array {
+        try {
+            $stmt = $this->db->prepare("SELECT id, burial_request_id, ref_id, action_type,
+                previous_date, previous_time,
+                new_date, new_time,
+                new_date as scheduled_date, new_time as scheduled_time,
+                location, instructions,
+                change_reason, change_reason as reason,
+                admin_id, admin_name,
+                COALESCE(admin_name, 'Damayan Admin') as action_by_name,
+                created_at
+                FROM burial_schedule_history
+                WHERE burial_request_id = :bid
+                ORDER BY created_at DESC");
+            $stmt->execute(['bid' => $burialId]);
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            error_log("getScheduleHistory error: " . $e->getMessage());
+            return [];
         }
     }
 

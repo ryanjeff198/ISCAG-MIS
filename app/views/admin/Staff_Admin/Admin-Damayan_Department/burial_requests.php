@@ -249,6 +249,17 @@
                             <?php if(!empty($r['death_cert_registry_no'])): ?>
                               <div style="font-size:0.72rem; color:var(--damayan-accent); font-weight:600; margin-top:2px;">Reg: <?= htmlspecialchars($r['death_cert_registry_no']) ?></div>
                             <?php endif; ?>
+                            <?php if(!empty($r['scheduled_release_date']) && empty($r['certificate_released_at'])): ?>
+                              <div style="font-size:0.7rem; color:#059669; font-weight:700; margin-top:3px; display:inline-flex; align-items:center; gap:3px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 6px; border-radius:4px;">
+                                <svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                                Claim: <?= date('M d', strtotime($r['scheduled_release_date'])) ?> <?= !empty($r['scheduled_release_time']) ? date('g:i A', strtotime($r['scheduled_release_time'])) : '' ?>
+                              </div>
+                            <?php elseif(!empty($r['certificate_released_at'])): ?>
+                              <div style="font-size:0.7rem; color:#047857; font-weight:700; margin-top:3px; display:inline-flex; align-items:center; gap:3px; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 6px; border-radius:4px;">
+                                <svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:currentColor;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                Released <?= date('M d', strtotime($r['certificate_released_at'])) ?>
+                              </div>
+                            <?php endif; ?>
                           <?php else: ?>
                             <span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">Not Requested</span>
                           <?php endif; ?>

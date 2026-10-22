@@ -3666,9 +3666,14 @@ class AdminController extends Controller
                 'existing_record_verified' => (int)($b['existing_record_verified'] ?? 0),
                 'copy_issued_at' => $b['copy_issued_at'] ?? null,
                 'copy_received_confirmed' => (int)($b['copy_received_confirmed'] ?? 0),
-                'death_cert_requested' => (int)($b['death_cert_requested'] ?? 1),
                 'death_cert_status' => $b['death_cert_status'] ?? 'Request Received',
                 'death_cert_registry_no' => $b['death_cert_registry_no'] ?? '',
+                'scheduled_release_date' => $b['scheduled_release_date'] ?? null,
+                'scheduled_release_time' => $b['scheduled_release_time'] ?? null,
+                'release_location' => $b['release_location'] ?? 'Damayan Department',
+                'release_instructions' => $b['release_instructions'] ?? '',
+                'release_scheduled_by_name' => $b['release_scheduled_by_name'] ?? null,
+                'certificate_released_at' => $b['certificate_released_at'] ?? null,
                 'encoded_cert_id' => !empty($b['encoded_cert_id']) ? (int)$b['encoded_cert_id'] : null,
                 'encoded_reg_no' => $b['encoded_reg_no'] ?? null,
                 'encoded_deceased_name' => $b['encoded_deceased_name'] ?? null,
@@ -4200,6 +4205,7 @@ class AdminController extends Controller
         $auditLogs = $model->getAuditLogs((int)$burial['id']);
         $documents = $model->getDocuments((int)$burial['id']);
         $duplicates = $model->checkPotentialDuplicates($burial);
+        $scheduleHistory = $model->getScheduleHistory((int)$burial['id']);
 
         echo json_encode([
             'success' => true,
@@ -4211,7 +4217,8 @@ class AdminController extends Controller
             'available_plots' => $availablePlots,
             'all_plots' => $allPlots,
             'audit_logs' => $auditLogs,
-            'documents' => $documents
+            'documents' => $documents,
+            'schedule_history' => $scheduleHistory
         ]);
         return;
     }
@@ -4684,6 +4691,141 @@ class AdminController extends Controller
         $res = $model->updateDeathCertStatus($id, $status, $input, $staffName);
 
         echo json_encode($res);
+        return;
+    }
+
+    /**
+     * Schedule Death Certificate Release (Claiming Appointment)
+     */
+    public function scheduleBurialRelease(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? ($input['case_id'] ?? 0));
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing case ID']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+
+        $adminId = (int)($_SESSION['user_id'] ?? 0);
+        $adminName = trim($_SESSION['name'] ?? 'Damayan Admin');
+
+        $result = $model->scheduleCertificateRelease($id, $input, $adminId, $adminName);
+        echo json_encode($result);
+        return;
+    }
+
+    /**
+     * Reschedule Death Certificate Release
+     */
+    public function rescheduleBurialRelease(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? ($input['case_id'] ?? 0));
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing case ID']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+
+        $adminId = (int)($_SESSION['user_id'] ?? 0);
+        $adminName = trim($_SESSION['name'] ?? 'Damayan Admin');
+
+        $result = $model->rescheduleCertificateRelease($id, $input, $adminId, $adminName);
+        echo json_encode($result);
+        return;
+    }
+
+    /**
+     * Cancel Death Certificate Claiming Appointment
+     */
+    public function cancelBurialRelease(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? ($input['case_id'] ?? 0));
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing case ID']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+
+        $adminId = (int)($_SESSION['user_id'] ?? 0);
+        $adminName = trim($_SESSION['name'] ?? 'Damayan Admin');
+
+        $result = $model->cancelCertificateRelease($id, $input, $adminId, $adminName);
+        echo json_encode($result);
+        return;
+    }
+
+    /**
+     * Mark Death Certificate as Physically Released / Completed
+     */
+    public function markBurialReleased(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? ($input['case_id'] ?? 0));
+        if (empty($id)) {
+            echo json_encode(['success' => false, 'error' => 'Missing case ID']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+
+        $adminId = (int)($_SESSION['user_id'] ?? 0);
+        $adminName = trim($_SESSION['name'] ?? 'Damayan Admin');
+
+        $result = $model->markCertificateAsReleased($id, $input, $adminId, $adminName);
+        echo json_encode($result);
+        return;
+    }
+
+    /**
+     * Update Burial / Death Certificate Stage
+     */
+    public function updateBurialStage(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan']);
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid method']); return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? ($input['case_id'] ?? 0));
+        $stage = trim($input['stage'] ?? ($input['status'] ?? ''));
+
+        if (empty($id) || empty($stage)) {
+            echo json_encode(['success' => false, 'error' => 'Missing case ID or stage']); return;
+        }
+
+        require_once BASE_PATH . '/app/models/BurialRequest.php';
+        $model = new BurialRequest();
+
+        $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
+        $result = $model->updateDeathCertStatus($id, $stage, $input, $staffName);
+        echo json_encode($result);
         return;
     }
 

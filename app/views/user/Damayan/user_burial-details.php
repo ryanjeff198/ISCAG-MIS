@@ -79,6 +79,33 @@ $cemeteryPlotReq = !$isCopyRequest && !empty($activeBurial['cemetery_plot_reques
 $dcStatus = $activeBurial['death_cert_status'] ?? 'Request Received';
 $cpStatus = $activeBurial['cemetery_plot_status'] ?? 'Pending Review';
 
+// 6-stage Death Certificate Pipeline
+// Submitted → Under Review → Approved → Certificate Prepared → Ready for Release → Completed
+$dcStageRanks = [
+    'submitted' => 1,
+    'request received' => 1,
+    'under review' => 2,
+    'additional information required' => 2,
+    'pending' => 2,
+    'approved' => 3,
+    'accepted' => 3,
+    'awaiting authorized certificate preparation' => 3,
+    'certificate prepared' => 4,
+    'certificate prepared and certified' => 4,
+    'ready for release' => 5,
+    'submitted for civil registration' => 5,
+    'completed' => 6,
+    'registered' => 6,
+    'certified copy requested or received' => 6,
+    'released' => 6
+];
+$dcRank = $dcStageRanks[strtolower($dcStatus)] ?? 1;
+$dcPercentages = [1 => 0, 2 => 20, 3 => 40, 4 => 60, 5 => 80, 6 => 100];
+$dcProgressPercent = $dcPercentages[$dcRank] ?? 0;
+
+$scheduleHistory = ($hasApplication && !empty($activeBurial['id'])) ? $burialModel->getScheduleHistory((int)$activeBurial['id']) : [];
+$isAuthorizedForRelease = $hasApplication && in_array(strtolower($dcStatus), ['ready for release', 'completed', 'registered', 'released']);
+
 $autoOpenForm = isset($startWithFormOpen) && $startWithFormOpen === true;
 if (isset($_GET['action']) && in_array($_GET['action'], ['request', 'form', 'fill', 'copy'])) {
     $autoOpenForm = true;
@@ -112,7 +139,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Burial &amp; Death Certificate Management — ISCAG Damayan</title>
+    <title>Death Certificate Management — ISCAG Damayan</title>
     <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
     <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -771,7 +798,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         <div class="top-bar">
             <div class="top-bar-left">
                 <div class="top-bar-title">Damayan Service Details</div>
-                <div class="top-bar-subtitle">Burial Assistance &amp; Death Certificate Processing</div>
+                <div class="top-bar-subtitle">Death Certificate Civil Registration &amp; Official Issuance</div>
             </div>
             <div class="top-bar-actions">
                 <a href="<?= url('/user/dashboard') ?>" class="btn-topbar">Main Dashboard</a>
@@ -783,9 +810,9 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             <div class="breadcrumb-nav">
                 <a href="<?= url('/user/dashboard') ?>">Dashboard</a>
                 <span class="sep">/</span>
-                <a href="<?= url('/user/services/burial-dashboard') ?>">Burial Dashboard</a>
+                <a href="<?= url('/user/services/burial-dashboard') ?>">Damayan Dashboard</a>
                 <span class="sep">/</span>
-                <span class="current">Burial &amp; Death Certificate Coordination</span>
+                <span class="current">Death Certificate Processing &amp; Release</span>
             </div>
 
             <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -810,10 +837,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             • Service: <strong style="color:var(--primary);">
                                 <?php if ($isCopyRequest): ?>
                                     Request Another Death Certificate (Copy)
-                                <?php elseif ($requestType === 'both' || ($deathCertReq && $cemeteryPlotReq)): ?>
-                                    Death Certificate &amp; Burial Assistance
-                                <?php elseif ($cemeteryPlotReq || $requestType === 'cemetery_plot'): ?>
-                                    Burial Assistance
                                 <?php else: ?>
                                     Death Certificate Registration
                                 <?php endif; ?>
@@ -878,6 +901,97 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; font-size: 0.85rem; color: #166534;">
                       <strong>Latest Update Submitted on <?= !empty($activeBurial['info_submitted_at']) ? date('M d, Y g:i A', strtotime($activeBurial['info_submitted_at'])) : '—' ?>:</strong><br>
                       <?= htmlspecialchars($activeBurial['additional_info_submitted']) ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- PROMINENT BANNER: CERTIFICATE READY FOR RELEASE WITH CONFIRMED SCHEDULE -->
+                    <?php if ($hasApplication && !empty($activeBurial['scheduled_release_date']) && empty($activeBurial['certificate_released_at']) && strtolower($dcStatus) === 'ready for release'): ?>
+                    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%); border: 2px solid #10b981; border-radius: 16px; padding: 24px 28px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.12); margin-bottom: 28px;">
+                      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:flex-start; gap:16px;">
+                          <div style="width:50px; height:50px; border-radius:12px; background:#10b981; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                          </div>
+                          <div>
+                            <div style="display:inline-flex; align-items:center; gap:6px; background:#d1fae5; color:#065f46; font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:6px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg> Confirmed Claiming Appointment
+                            </div>
+                            <h2 style="font-family:'Lora',serif; font-size:1.4rem; font-weight:800; color:#064e3b; margin:0 0 6px;">
+                              Your Death Certificate Is Ready for Release
+                            </h2>
+                            <p style="font-size:0.95rem; color:#047857; margin:0; line-height:1.5;">
+                              Please go to the <strong>Damayan Department</strong> to claim your death certificate on the scheduled date and time below.
+                            </p>
+                          </div>
+                        </div>
+                        <span class="status-badge approved" style="font-size:0.8rem; padding:6px 14px;">
+                          Ready for Release
+                        </span>
+                      </div>
+
+                      <!-- Actual Saved Schedule from Database -->
+                      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-top:20px; background:#ffffff; border:1.5px solid #a7f3d0; border-radius:12px; padding:16px 20px;">
+                        <div>
+                          <span style="font-size:0.72rem; text-transform:uppercase; font-weight:800; color:#6b7280; display:block; letter-spacing:0.04em; margin-bottom:2px;">Scheduled Date</span>
+                          <strong style="font-size:1.15rem; color:#0f172a;"><?= date('F d, Y', strtotime($activeBurial['scheduled_release_date'])) ?></strong>
+                        </div>
+                        <div>
+                          <span style="font-size:0.72rem; text-transform:uppercase; font-weight:800; color:#6b7280; display:block; letter-spacing:0.04em; margin-bottom:2px;">Scheduled Time</span>
+                          <strong style="font-size:1.15rem; color:#0f172a;"><?= !empty($activeBurial['scheduled_release_time']) ? date('g:i A', strtotime($activeBurial['scheduled_release_time'])) : '10:00 AM' ?></strong>
+                        </div>
+                        <div>
+                          <span style="font-size:0.72rem; text-transform:uppercase; font-weight:800; color:#6b7280; display:block; letter-spacing:0.04em; margin-bottom:2px;">Location</span>
+                          <strong style="font-size:1.05rem; color:#065f46;"><?= htmlspecialchars($activeBurial['release_location'] ?: 'Damayan Department') ?></strong>
+                        </div>
+                        <div>
+                          <span style="font-size:0.72rem; text-transform:uppercase; font-weight:800; color:#6b7280; display:block; letter-spacing:0.04em; margin-bottom:2px;">Scheduled By</span>
+                          <span style="font-size:0.95rem; color:#374151; font-weight:700;"><?= htmlspecialchars($activeBurial['release_scheduled_by_name'] ?: 'Damayan Admin') ?></span>
+                        </div>
+                      </div>
+
+                      <?php if (!empty($activeBurial['release_instructions'])): ?>
+                      <div style="margin-top:14px; background:#f0fdf4; border-left:4px solid #059669; padding:12px 16px; border-radius:0 8px 8px 0; font-size:0.86rem; color:#065f46;">
+                        <strong style="display:block; margin-bottom:3px; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em;">Instructions from Damayan Department:</strong>
+                        <div style="color:#1f2937; line-height:1.5;"><?= nl2br(htmlspecialchars($activeBurial['release_instructions'])) ?></div>
+                      </div>
+                      <?php endif; ?>
+                    </div>
+                    <?php elseif ($hasApplication && !empty($activeBurial['certificate_released_at'])): ?>
+                    <!-- BANNER: CERTIFICATE CLAIMED & COMPLETED -->
+                    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%); border: 2px solid #059669; border-radius: 16px; padding: 20px 24px; margin-bottom: 28px;">
+                      <div style="display:flex; align-items:center; gap:14px;">
+                        <div style="width:44px; height:44px; border-radius:10px; background:#059669; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                        </div>
+                        <div>
+                          <div style="font-size:0.72rem; font-weight:800; color:#065f46; text-transform:uppercase; letter-spacing:0.05em;">Certificate Claimed &bull; Request Completed</div>
+                          <h4 style="margin:2px 0; font-size:1.15rem; color:#064e3b; font-family:'Lora',serif;">Death Certificate Released to Recipient</h4>
+                          <div style="font-size:0.86rem; color:#047857;">
+                            Claimed by <strong><?= htmlspecialchars($activeBurial['certificate_recipient_name'] ?: 'Claimant') ?></strong> on <strong><?= date('F d, Y \a\t g:i A', strtotime($activeBurial['certificate_released_at'])) ?></strong> (Handled by: <?= htmlspecialchars($activeBurial['certificate_released_by'] ?: 'Damayan Staff') ?>).
+                            <?php if (!empty($activeBurial['release_notes'])): ?>
+                              <span style="display:block; margin-top:2px; font-size:0.8rem; color:#475569;"><em>Note: <?= htmlspecialchars($activeBurial['release_notes']) ?></em></span>
+                            <?php endif; ?>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <?php elseif ($hasApplication && !empty($activeBurial['release_cancelled_at']) && empty($activeBurial['scheduled_release_date'])): ?>
+                    <!-- BANNER: CLAIMING SCHEDULE CANCELLED NOTICE -->
+                    <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b; border-radius: 14px; padding: 18px 22px; margin-bottom: 28px;">
+                      <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:38px; height:38px; border-radius:8px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                        </div>
+                        <div>
+                          <div style="font-size:0.75rem; font-weight:800; color:#92400e; text-transform:uppercase; letter-spacing:0.04em;">Claiming Appointment Update</div>
+                          <div style="font-size:0.95rem; font-weight:700; color:#78350f; margin-top:1px;">
+                            Claiming Schedule Cancelled by Damayan Department
+                          </div>
+                          <div style="font-size:0.84rem; color:#92400e; margin-top:2px;">
+                            Reason: <strong><?= htmlspecialchars($activeBurial['release_cancellation_reason'] ?: 'Administrative review') ?></strong>. The request is currently at <strong>Certificate Prepared</strong> stage.
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <?php endif; ?>
 
@@ -1040,19 +1154,87 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             <div class="track-box-header">
                                 <div class="track-box-title">
                                     <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-                                    Death Certificate Registration
+                                    Death Certificate Processing Pipeline
                                 </div>
-                                <?php $dcBadge = getBurialBadgeMeta($dcStatus, in_array(strtolower($dcStatus), ['registered', 'certified copy requested or received']), false); ?>
+                                <?php $dcBadge = getBurialBadgeMeta($dcStatus, in_array(strtolower($dcStatus), ['completed', 'registered', 'certified copy requested or received']), false); ?>
                                 <span class="status-badge <?= $dcBadge['class'] ?>" style="padding:4px 12px; font-size:0.75rem;">
                                     <span class="status-dot" style="width:6px; height:6px;"></span>
                                     <?= htmlspecialchars($dcBadge['label']) ?>
                                 </span>
                             </div>
 
+                            <!-- 6-Stage Tracking Pipeline Progression (Req 3) -->
+                            <div style="background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px;">
+                              <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
+                                Processing Pipeline:
+                              </div>
+                              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; text-align:center;">
+                                <?php
+                                  $dcSteps = [
+                                    1 => '1. Submitted',
+                                    2 => '2. Under Review',
+                                    3 => '3. Approved',
+                                    4 => '4. Prepared',
+                                    5 => '5. Ready for Release',
+                                    6 => '6. Completed'
+                                  ];
+                                  foreach($dcSteps as $sNum => $sLabel):
+                                    $isPassed = ($dcRank > $sNum || ($dcRank === 6 && $sNum === 6));
+                                    $isCurr = ($dcRank === $sNum);
+                                    $bg = $isPassed ? '#d1fae5' : ($isCurr ? '#059669' : '#f1f5f9');
+                                    $col = $isPassed ? '#065f46' : ($isCurr ? '#ffffff' : '#64748b');
+                                    $border = $isPassed ? '#a7f3d0' : ($isCurr ? '#047857' : '#e2e8f0');
+                                ?>
+                                  <div style="background:<?= $bg ?>; color:<?= $col ?>; border:1px solid <?= $border ?>; border-radius:6px; padding:5px 4px; font-size:0.7rem; font-weight:700;">
+                                    <?= $sLabel ?>
+                                    <?php if ($sNum === 5 && !empty($activeBurial['scheduled_release_date'])): ?>
+                                      <div style="font-size:0.62rem; margin-top:2px; font-weight:800; color:<?= $isCurr ? '#fff' : '#047857' ?>;">
+                                        <?= date('M d', strtotime($activeBurial['scheduled_release_date'])) ?>
+                                      </div>
+                                    <?php endif; ?>
+                                  </div>
+                                <?php endforeach; ?>
+                              </div>
+                            </div>
+
+                            <!-- Status & Schedule Data -->
                             <div class="track-field-row">
-                                <span class="track-field-label">Current Stage:</span>
+                                <span class="track-field-label">Current Status:</span>
                                 <span class="track-field-val" style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($dcStatus) ?></span>
                             </div>
+
+                            <?php if (!empty($activeBurial['scheduled_release_date']) && empty($activeBurial['certificate_released_at'])): ?>
+                                <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:10px; padding:12px 14px; margin:10px 0 12px;">
+                                    <div style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                                        Claiming Appointment
+                                    </div>
+                                    <div class="track-field-row" style="margin-bottom:4px;">
+                                        <span class="track-field-label" style="color:#047857;">Scheduled Date &amp; Time:</span>
+                                        <span class="track-field-val" style="color:#064e3b; font-weight:800;">
+                                            <?= date('F d, Y', strtotime($activeBurial['scheduled_release_date'])) ?> at <?= !empty($activeBurial['scheduled_release_time']) ? date('g:i A', strtotime($activeBurial['scheduled_release_time'])) : '10:00 AM' ?>
+                                        </span>
+                                    </div>
+                                    <div class="track-field-row" style="margin-bottom:4px;">
+                                        <span class="track-field-label" style="color:#047857;">Claiming Location:</span>
+                                        <span class="track-field-val" style="color:#064e3b;"><?= htmlspecialchars($activeBurial['release_location'] ?: 'Damayan Department') ?></span>
+                                    </div>
+                                    <div class="track-field-row" style="margin-bottom:0;">
+                                        <span class="track-field-label" style="color:#047857;">Scheduled By:</span>
+                                        <span class="track-field-val" style="color:#064e3b; font-weight:600;"><?= htmlspecialchars($activeBurial['release_scheduled_by_name'] ?: 'Damayan Admin') ?></span>
+                                    </div>
+                                    <?php if (!empty($activeBurial['release_instructions'])): ?>
+                                        <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #bbf7d0; font-size:0.8rem; color:#065f46;">
+                                            <strong>Instructions:</strong> <?= htmlspecialchars($activeBurial['release_instructions']) ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php elseif (!empty($activeBurial['certificate_released_at'])): ?>
+                                <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:10px 12px; margin:10px 0; font-size:0.82rem; color:#065f46;">
+                                    <strong>Physically Released:</strong> Claimed by <strong><?= htmlspecialchars($activeBurial['certificate_recipient_name'] ?: 'Recipient') ?></strong> on <?= date('M d, Y \a\t g:i A', strtotime($activeBurial['certificate_released_at'])) ?> (Staff: <?= htmlspecialchars($activeBurial['certificate_released_by'] ?: 'Admin') ?>).
+                                </div>
+                            <?php endif; ?>
+
                             <div class="track-field-row">
                                 <span class="track-field-label">LCRO Registry Number:</span>
                                 <span class="track-field-val"><?= htmlspecialchars(($activeBurial['death_cert_registry_no'] ?? '') ?: 'Pending Registration') ?></span>
@@ -1061,12 +1243,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                 <div class="track-field-row">
                                     <span class="track-field-label">Registration Date:</span>
                                     <span class="track-field-val"><?= date('M d, Y', strtotime($activeBurial['death_cert_registered_date'])) ?></span>
-                                </div>
-                            <?php endif; ?>
-                            <?php if (!empty($activeBurial['death_cert_lcro_ref'])): ?>
-                                <div class="track-field-row">
-                                    <span class="track-field-label">LCRO Transmittal Ref:</span>
-                                    <span class="track-field-val"><?= htmlspecialchars($activeBurial['death_cert_lcro_ref']) ?></span>
                                 </div>
                             <?php endif; ?>
                             <?php if (!empty($activeBurial['death_cert_certified_copy_ref'])): ?>
@@ -1084,50 +1260,48 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                     <strong>Staff Remarks:</strong> <?= htmlspecialchars($activeBurial['death_cert_remarks']) ?>
                                 </div>
                             <?php endif; ?>
-                        </div>
 
-                        <?php if ($cemeteryPlotReq || !empty($activeBurial['cemetery_plot_requested'])): ?>
-                        <!-- Track B: Burial Assistance & Allocation -->
-                        <div class="track-box active-box">
-                            <div class="track-box-header">
-                                <div class="track-box-title">
-                                    <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-                                    Burial Service &amp; Allocation
+                            <!-- Appointment History / Previous Status Updates -->
+                            <?php if (!empty($scheduleHistory)): ?>
+                                <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--border);">
+                                    <div style="font-size:0.72rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">
+                                        Appointment History:
+                                    </div>
+                                    <div style="display:flex; flex-direction:column; gap:5px;">
+                                        <?php foreach($scheduleHistory as $sh): ?>
+                                            <div style="font-size:0.74rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
+                                                <span>
+                                                    <strong><?= htmlspecialchars($sh['action_type']) ?></strong>
+                                                    <?php if (!empty($sh['scheduled_date'])): ?>
+                                                        &bull; <?= date('M d, Y', strtotime($sh['scheduled_date'])) ?> <?= !empty($sh['scheduled_time']) ? date('g:i A', strtotime($sh['scheduled_time'])) : '' ?>
+                                                    <?php endif; ?>
+                                                    <?php if (!empty($sh['reason'])): ?>
+                                                        (<em><?= htmlspecialchars($sh['reason']) ?></em>)
+                                                    <?php endif; ?>
+                                                </span>
+                                                <span style="color:#94a3b8; font-size:0.68rem;"><?= date('M d, Y', strtotime($sh['created_at'])) ?></span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </div>
-                                <?php $burialBadge = getBurialBadgeMeta($cpStatus, strtolower($cpStatus) === 'plot assigned', strtolower($cpStatus) === 'rejected'); ?>
-                                <span class="status-badge <?= $burialBadge['class'] ?>" style="padding:4px 12px; font-size:0.75rem;">
-                                    <span class="status-dot" style="width:6px; height:6px;"></span>
-                                    <?= htmlspecialchars($burialBadge['label']) ?>
-                                </span>
-                            </div>
+                            <?php endif; ?>
 
-                            <div class="track-field-row">
-                                <span class="track-field-label">Burial Status:</span>
-                                <span class="track-field-val" style="color:var(--primary); font-weight:700;"><?= htmlspecialchars($cpStatus) ?></span>
+                            <!-- Print / Claiming Slip Actions Gated by Authorization (Req 5) -->
+                            <div style="margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
+                                <?php if ($isAuthorizedForRelease): ?>
+                                    <button type="button" class="btn-outline" style="width:100%; justify-content:center; background:#ecfdf5; border-color:#a7f3d0; color:#065f46; font-weight:700;" onclick="window.print()">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                        Print Claiming Slip / Certificate Details
+                                    </button>
+                                <?php else: ?>
+                                    <div style="font-size:0.74rem; color:var(--text-muted); text-align:center; padding:6px; background:#f9fafb; border-radius:6px; border:1px solid #e5e7eb;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                        Official claiming documents unlocked when authorized for release.
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            <div class="track-field-row">
-                                <span class="track-field-label">Burial Location:</span>
-                                <span class="track-field-val"><?= htmlspecialchars($activeBurial['assigned_cemetery_name'] ?: ($activeBurial['cemetery_preference'] ?: 'ISCAG Designated Muslim Cemetery')) ?></span>
-                            </div>
-                            <?php if (!empty($activeBurial['assigned_plot_number'])): ?>
-                            <div class="track-field-row">
-                                <span class="track-field-label">Allocated Space / Plot:</span>
-                                <span class="track-field-val" style="color:#047857; font-weight:700;">Sec <?= htmlspecialchars($activeBurial['assigned_section'] ?: 'General') ?> - Space #<?= htmlspecialchars($activeBurial['assigned_plot_number']) ?></span>
-                            </div>
-                            <?php endif; ?>
-                            <?php if (!empty($activeBurial['plot_assigned_date'])): ?>
-                            <div class="track-field-row">
-                                <span class="track-field-label">Allocation Date:</span>
-                                <span class="track-field-val"><?= date('M d, Y', strtotime($activeBurial['plot_assigned_date'])) ?></span>
-                            </div>
-                            <?php endif; ?>
-                            <?php if (!empty($activeBurial['cemetery_plot_remarks'])): ?>
-                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
-                                <strong>Caretaker Notes:</strong> <?= htmlspecialchars($activeBurial['cemetery_plot_remarks']) ?>
-                            </div>
-                            <?php endif; ?>
                         </div>
-                        <?php else: ?>
+
                         <!-- Track B: Civil Registry Coordination Safeguards -->
                         <div class="track-box active-box">
                             <div class="track-box-header">
@@ -1154,12 +1328,11 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                     Transmittal to the Local Civil Registrar for official registration and entry in the civil register.
                                 </div>
                                 <div>
-                                    <strong style="color:var(--primary-dark); display:block;">4. Tracking &amp; Certified Copies</strong>
-                                    Monitor progress until registration is completed and certified true copies are available.
+                                    <strong style="color:var(--primary-dark); display:block;">4. Tracking &amp; Claiming Release</strong>
+                                    Monitor progress until certificate is prepared and an official claiming date/time is scheduled.
                                 </div>
                             </div>
                         </div>
-                        <?php endif; ?>
                         <?php endif; ?>
 
                     </div>
@@ -1171,7 +1344,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         </div>
                         <div class="guidelines-text">
                             <h5>Damayan Coordination Guidelines</h5>
-                            <p>To submit a new Death Certificate or Burial request, click <strong>Submit New Request</strong> below. Our Damayan Staff coordinates civil registration with official government registries and facilitates Islamic burial arrangements.</p>
+                            <p>To submit a new Death Certificate request, click <strong>Submit New Request</strong> below. Our Damayan Staff coordinates civil registration with official government registries and schedules claiming releases.</p>
                         </div>
                     </div>
                 </div>
@@ -1210,8 +1383,8 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     <!-- Form Header -->
                     <div class="form-card-header">
                         <div class="form-card-title-area">
-                            <h2>Burial &amp; Death Certificate Request Form</h2>
-                            <p>Register a death record and request burial assistance, or request an additional copy of an existing registered death certificate.</p>
+                            <h2>Death Certificate Request Form</h2>
+                            <p>Register a death record for official death certificate issuance, or request an additional copy of an existing registered death certificate.</p>
                         </div>
                         <button type="button" class="btn-close-form" onclick="toggleRequestForm(false)">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -1222,7 +1395,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     <!-- Form Body -->
                     <form id="burial-request-form" class="form-card-body" onsubmit="submitBurialRequest(event)">
                         
-                        <!-- Functionality Selector: 1. Register Death & Burial OR 2. Request Another Death Certificate -->
+                        <!-- Functionality Selector: 1. Register Death OR 2. Request Another Death Certificate -->
                         <div class="form-section-title">
                             <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
                             1. Select Damayan Service Type
@@ -1232,10 +1405,10 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             <div class="type-option-card selected" id="opt-type-register" onclick="selectCertFunction('register')">
                                 <div class="type-option-title">
                                     <input type="radio" name="cert_function_radio" value="register" checked style="accent-color:var(--primary);" />
-                                    Register Death &amp; Burial Assistance
+                                    Register Death Certificate
                                 </div>
                                 <div class="type-option-desc">
-                                    For reporting a newly deceased person for death registration and Islamic burial coordination.
+                                    For reporting a newly deceased person for civil death registration and official certificate issuance.
                                 </div>
                             </div>
                             <div class="type-option-card" id="opt-type-copy" onclick="selectCertFunction('copy')">
@@ -1430,11 +1603,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             </div>
 
 
-                            <!-- Cemetery Preference Section Hidden per Restriction 4 -->
-                            <div id="cemetery-preference-section" style="display:none;">
-                                <input type="hidden" id="deceased-cemetery" value="ISCAG Designated Muslim Cemetery" />
-                                <input type="hidden" id="deceased-pref-section" value="" />
-                            </div>
                         </div>
 
                         <!-- ═══════════════════════════════════════════════════════════ -->
@@ -1493,7 +1661,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         <div class="form-terms-box">
                             <input type="checkbox" id="burial-certify" required />
                             <label for="burial-certify" class="form-terms-label">
-                                I hereby certify that the information provided is true and correct. I authorize the ISCAG Damayan Department to coordinate death certificate processing, verification, and burial arrangements with authorized offices.
+                                I hereby certify that the information provided is true and correct. I authorize the ISCAG Damayan Department to coordinate death certificate processing and verification with authorized civil registries.
                             </label>
                         </div>
 
@@ -1502,7 +1670,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             <button type="button" class="btn-outline" onclick="toggleRequestForm(false)">Cancel</button>
                             <button type="submit" class="btn-submit" id="btn-submit-burial">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span id="btn-submit-burial-text">Submit Registration &amp; Burial Request</span>
+                                <span id="btn-submit-burial-text">Submit Death Certificate Registration</span>
                             </button>
                         </div>
                     </form>
@@ -1512,7 +1680,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             <!-- Back to Dashboard Link -->
             <div style="text-align: center; margin-top: 36px;">
                 <a href="<?= url('/user/services/burial-dashboard') ?>" style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                    ← Back to Burial &amp; Death Certificate Dashboard
+                    ← Back to Death Certificate Dashboard
                 </a>
             </div>
         </div>
@@ -1595,7 +1763,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             if (requesterTitle) {
                 requesterTitle.innerHTML = '<svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 3. Requester / Authorized Representative Information';
             }
-            if (btnSubmitText) btnSubmitText.textContent = 'Submit Registration & Burial Request';
+            if (btnSubmitText) btnSubmitText.textContent = 'Submit Death Certificate Registration';
         }
     }
 
@@ -1820,9 +1988,9 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 formData.append('supporting_document', copyDoc.files[0]);
             }
         } else {
-            formData.append('request_type', 'both');
+            formData.append('request_type', 'death_certificate');
             formData.append('death_cert_requested', '1');
-            formData.append('cemetery_plot_requested', '1');
+            formData.append('cemetery_plot_requested', '0');
             formData.append('firstName', document.getElementById('deceased-first-name')?.value.trim() || '');
             formData.append('middleName', document.getElementById('deceased-middle-name')?.value.trim() || '');
             formData.append('lastName', document.getElementById('deceased-last-name')?.value.trim() || '');
@@ -1867,7 +2035,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             if (data.success) {
                 const toast = document.getElementById('burial-toast');
                 const ref = data.ref_id || 'Submitted';
-                const successTitle = (certAction === 'copy') ? 'Copy Request Submitted!' : 'Registration & Burial Request Submitted!';
+                const successTitle = (certAction === 'copy') ? 'Copy Request Submitted!' : 'Death Certificate Registration Submitted!';
                 toast.innerHTML = '<strong>' + successTitle + '</strong><br>Reference ID: <code>#' + ref + '</code><br><span style="font-size:0.8rem;opacity:0.9;">Opening tracking details...</span>';
                 toast.style.display = 'block';
 
