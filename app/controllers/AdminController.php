@@ -5846,15 +5846,12 @@ class AdminController extends Controller
             }
         }
 
-        // Otherwise stream the official HTML file view as attachment
-        $cleanReg = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $record['registration_number']);
-        header('Content-Type: text/html; charset=utf-8');
-        header('Content-Disposition: attachment; filename="Death_Certificate_' . $cleanReg . '.html"');
-        
+        // Render printable Form 103 view and trigger automatic PDF generation and download
         $this->view('admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/death_certificate_file', [
-            'record' => $record,
-            'dbUser' => null,
-            'download_mode' => true
+            'record'            => $record,
+            'dbUser'            => null,
+            'download_mode'     => true,
+            'auto_download_pdf' => true
         ]);
         exit;
     }

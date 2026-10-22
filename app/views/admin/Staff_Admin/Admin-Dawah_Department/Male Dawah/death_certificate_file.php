@@ -1,9 +1,105 @@
+<?php
+/**
+ * Official Philippine Death Certificate — Municipal Form No. 103 (Revised August 2016)
+ * Office of the Civil Registrar General / Philippine Statistics Authority
+ * Exactly matching official government form standard (Page 1 Front, Page 2 Back)
+ */
+
+if (!function_exists('asset')) {
+    function asset($path) {
+        return '/' . ltrim($path, '/');
+    }
+}
+if (!function_exists('url')) {
+    function url($path = '') {
+        return '/' . ltrim($path, '/');
+    }
+}
+
+$r = $record ?? [];
+
+// Name processing
+$firstName = trim($r['first_name'] ?? '');
+$middleName = trim($r['middle_name'] ?? '');
+$lastName = trim($r['last_name'] ?? '');
+$fullName = trim($r['deceased_name'] ?? '');
+
+if (empty($firstName) && empty($lastName) && !empty($fullName)) {
+    $parts = preg_split('/\s+/', $fullName);
+    if (count($parts) === 1) {
+        $firstName = $parts[0];
+    } elseif (count($parts) === 2) {
+        $firstName = $parts[0];
+        $lastName = $parts[1];
+    } else {
+        $lastName = array_pop($parts);
+        $middleName = array_pop($parts);
+        $firstName = implode(' ', $parts);
+    }
+}
+
+// Dates processing
+$dodTime = !empty($r['date_of_death']) ? strtotime($r['date_of_death']) : null;
+$dodDay = $dodTime ? date('d', $dodTime) : '';
+$dodMonth = $dodTime ? date('F', $dodTime) : '';
+$dodYear = $dodTime ? date('Y', $dodTime) : '';
+$timeOfDeath = !empty($r['time_of_death']) ? date('g:i A', strtotime($r['time_of_death'])) : '';
+
+$dobTime = !empty($r['date_of_birth']) ? strtotime($r['date_of_birth']) : null;
+$dobDay = $dobTime ? date('d', $dobTime) : '';
+$dobMonth = $dobTime ? date('F', $dobTime) : '';
+$dobYear = $dobTime ? date('Y', $dobTime) : '';
+
+// Age processing
+$ageStr = trim((string)($r['age'] ?? ''));
+$ageYears = '';
+if (preg_match('/(\d+)\s*(?:yr|year|y\.?o\.?)/i', $ageStr, $m)) {
+    $ageYears = $m[1];
+} elseif (is_numeric($ageStr)) {
+    $ageYears = $ageStr;
+} elseif ($dobTime && $dodTime) {
+    $ageYears = (string)date_diff(date_create($r['date_of_birth']), date_create($r['date_of_death']))->y;
+}
+
+// Sex & Civil Status
+$sex = strtoupper(trim($r['sex'] ?? 'MALE'));
+$isMale = ($sex === 'MALE');
+$isFemale = ($sex === 'FEMALE');
+
+$civilStatus = strtoupper(trim($r['civil_status'] ?? 'SINGLE'));
+
+// Location & Registry Info
+$province = strtoupper(trim($r['province'] ?? 'CAVITE'));
+$city = strtoupper(trim($r['city_municipality'] ?? 'CITY OF DASMARIÑAS'));
+$regNo = trim($r['registration_number'] ?? '');
+
+$placeOfDeath = trim($r['place_of_death'] ?? 'City of Dasmariñas, Cavite');
+$residence = trim($r['residence'] ?? 'City of Dasmariñas, Cavite');
+$religion = strtoupper(trim($r['religion'] ?? 'ISLAM'));
+$citizenship = strtoupper(trim($r['citizenship'] ?? 'FILIPINO'));
+$occupation = strtoupper(trim($r['occupation'] ?? 'NONE'));
+
+// Parents
+$fatherName = strtoupper(trim($r['father_name'] ?? ''));
+$motherName = strtoupper(trim($r['mother_name'] ?? ''));
+
+// Informant
+$informantName = strtoupper(trim($r['informant_name'] ?? ''));
+$informantRel = strtoupper(trim($r['informant_relationship'] ?? 'IMMEDIATE FAMILY'));
+$certDate = !empty($r['death_cert_date']) ? date('F d, Y', strtotime($r['death_cert_date'])) : date('F d, Y');
+
+// Staff
+$sentByName = strtoupper(trim($r['sent_by_name'] ?? 'DAMAYAN STAFF'));
+$sentDate = !empty($r['sent_at']) ? date('F d, Y', strtotime($r['sent_at'])) : date('F d, Y');
+$ackByName = strtoupper(trim($r['acknowledged_by_name'] ?? 'MALE DA\'WAH OFFICER'));
+$ackDate = !empty($r['acknowledged_at']) ? date('F d, Y', strtotime($r['acknowledged_at'])) : date('F d, Y');
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Official Certificate of Death — <?= htmlspecialchars($record['registration_number']) ?> (<?= htmlspecialchars($record['deceased_name']) ?>)</title>
+  <title>Municipal Form No. 103 (Certificate of Death) — <?= htmlspecialchars($regNo) ?></title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <style>
     * {
@@ -12,24 +108,24 @@
       padding: 0;
     }
     body {
-      background: #475569;
+      background: #334155;
       font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
       color: #000;
-      padding: 20px 10px;
+      padding: 24px 10px 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Screen Toolbar */
+    /* Screen Top Toolbar */
     .screen-toolbar {
       width: 100%;
       max-width: 8.5in;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       gap: 12px;
       flex-wrap: wrap;
     }
@@ -38,294 +134,343 @@
       align-items: center;
       gap: 6px;
       padding: 8px 16px;
-      border-radius: 6px;
+      border-radius: 7px;
       font-weight: 700;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       cursor: pointer;
       text-decoration: none;
       transition: all 0.2s;
       border: 1px solid transparent;
+      font-family: inherit;
     }
     .btn-tool.back {
       background: #ffffff;
       color: #1e293b;
       border-color: #cbd5e1;
     }
-    .btn-tool.back:hover { background: #f1f5f9; }
+    .btn-tool.back:hover { background: #f8fafc; }
+    .btn-tool.nav-page {
+      background: #475569;
+      color: #fff;
+    }
+    .btn-tool.nav-page:hover { background: #64748b; }
     .btn-tool.print {
-      background: #15803d;
+      background: #14532d;
       color: #ffffff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
-    .btn-tool.print:hover { background: #166534; }
+    .btn-tool.print:hover { background: #0f3d21; }
     .btn-tool.download {
-      background: #0369a1;
+      background: #0284c7;
       color: #ffffff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
     }
-    .btn-tool.download:hover { background: #075985; }
+    .btn-tool.download:hover { background: #0369a1; }
 
-    /* Standard Letter Page: 8.5 in x 11 in */
-    .sheet-wrapper {
+    /* Page Break indicator between pages on screen */
+    .page-separator {
+      width: 100%;
+      max-width: 8.5in;
+      text-align: center;
+      margin: 24px 0 16px;
+      color: #cbd5e1;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .page-separator::before, .page-separator::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #64748b;
+    }
+
+    /* Standard Philippine Letter Sheet (8.5in x 11in) */
+    .sheet-page {
       width: 8.5in;
       min-height: 11in;
+      height: 11in;
       background: #ffffff;
-      padding: 0.28in 0.35in;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+      padding: 0.22in 0.28in 0.22in 0.28in;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
       position: relative;
       margin: 0 auto;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
-    /* Subtle background watermark */
-    .watermark-seal {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 4.8in;
-      height: 4.8in;
-      opacity: 0.045;
-      pointer-events: none;
-      z-index: 0;
-      background-image: url('<?= asset('assets/logo.jpg') ?>');
-      background-repeat: no-repeat;
-      background-size: contain;
-      background-position: center;
-    }
-
-    .form-container {
-      position: relative;
-      z-index: 1;
-      border: 2px solid #000;
-      padding: 3px;
-    }
-
-    /* Top Government Header */
-    .form-header-table {
+    /* Outer borders matching official form */
+    .form-border {
+      border: 1.5px solid #000;
       width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 2px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
     }
-    .form-header-table td {
-      vertical-align: middle;
+
+    /* Header styling */
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 6px 1px;
+      font-size: 6.8pt;
+      line-height: 1.15;
     }
-    .top-meta-left {
-      font-size: 8pt;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-    .top-meta-center {
+    .header-center {
       text-align: center;
+      margin-top: -2px;
     }
     .ph-title-1 {
-      font-size: 8.5pt;
-      letter-spacing: 0.05em;
-      font-weight: 600;
-      text-transform: uppercase;
+      font-size: 7.2pt;
+      letter-spacing: 0.04em;
     }
     .ph-title-2 {
-      font-size: 9pt;
+      font-size: 7.8pt;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
     }
     .ph-title-main {
-      font-family: "Times New Roman", Times, serif;
-      font-size: 14pt;
+      font-size: 11.5pt;
       font-weight: 900;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.06em;
+      margin: 1px 0 1px;
       text-transform: uppercase;
-      margin: 2px 0 1px;
     }
-    .ph-title-sub {
-      font-size: 7.5pt;
-      font-style: italic;
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 1px 6px 3px;
+      font-size: 7.4pt;
+    }
+    .meta-col-left {
+      width: 58%;
+      line-height: 1.35;
+    }
+    .meta-line {
+      display: inline-block;
+      border-bottom: 1px solid #000;
+      min-width: 160px;
+      font-weight: 700;
+      padding-left: 4px;
+    }
+    .meta-col-right {
+      width: 38%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
     }
     .registry-box {
-      border: 1.5px solid #000;
-      padding: 4px 6px;
-      font-size: 8pt;
-      line-height: 1.3;
-      background: #fff;
-    }
-    .registry-box .reg-num {
-      font-size: 9.5pt;
-      font-weight: 900;
-      color: #000;
+      border: 1.2px solid #000;
+      padding: 2px 10px;
+      font-size: 8.5pt;
+      font-weight: 800;
       letter-spacing: 0.05em;
+      min-width: 140px;
+      text-align: center;
     }
 
-    /* Standard Philippine Grid Box */
-    .dc-table {
+    /* Main Table Grid */
+    .form-table {
       width: 100%;
       border-collapse: collapse;
-      border: 1px solid #000;
-      font-size: 8pt;
+      border-top: 1.5px solid #000;
+      border-bottom: 1.5px solid #000;
+      table-layout: fixed;
     }
-    .dc-table th, .dc-table td {
+    .form-table td, .form-table th {
       border: 1px solid #000;
-      padding: 2.5px 4px;
+      padding: 1.5px 3.5px;
       vertical-align: top;
+      font-size: 7.2pt;
+      line-height: 1.2;
     }
-    .box-num {
+    .label-num {
       font-weight: 800;
-      font-size: 7.5pt;
-      display: inline-block;
+      font-size: 7pt;
       margin-right: 3px;
     }
-    .box-label {
-      font-size: 6.8pt;
-      text-transform: uppercase;
+    .label-title {
+      font-size: 6.2pt;
       font-weight: 700;
-      color: #111;
-      display: block;
-      margin-bottom: 2px;
-      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
     }
-    .box-val {
+    .label-sub {
+      font-size: 5.8pt;
+      color: #333;
+      font-weight: normal;
+    }
+    .val-cell {
+      font-weight: 700;
+      font-size: 7.8pt;
+      color: #000;
+      margin-top: 1px;
+      min-height: 13px;
+    }
+    .val-cell-lg {
+      font-weight: 800;
       font-size: 8.8pt;
-      font-weight: 700;
-      color: #000;
-      min-height: 14px;
-    }
-    .box-val-lg {
-      font-size: 10pt;
-      font-weight: 800;
-      color: #000;
-    }
-    .sec-header {
-      background: #e2e8f0;
-      font-weight: 800;
-      font-size: 7.5pt;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 2px 5px !important;
-      text-align: left;
+      letter-spacing: 0.03em;
+      margin-top: 1px;
     }
 
-    /* Checkbox representation */
-    .chk-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      margin-right: 12px;
-      font-size: 8pt;
+    /* Section divider header inside table */
+    .section-banner {
+      background: #ffffff;
+      text-align: center;
+      font-weight: 800;
+      font-size: 7.6pt;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 2px !important;
+      border-top: 1.5px solid #000 !important;
+      border-bottom: 1.5px solid #000 !important;
     }
+    .section-banner .sub {
+      font-size: 6pt;
+      font-weight: normal;
+      font-style: italic;
+      text-transform: none;
+      display: block;
+      margin-top: 1px;
+    }
+
+    /* Checkbox & Options */
     .chk-box {
       display: inline-block;
-      width: 11px;
-      height: 11px;
-      border: 1.2px solid #000;
+      width: 9px;
+      height: 9px;
+      border: 1px solid #000;
       text-align: center;
-      line-height: 10px;
-      font-size: 9pt;
+      line-height: 8px;
+      font-size: 7.5pt;
       font-weight: 900;
+      vertical-align: middle;
+      margin-right: 2px;
     }
     .chk-box.checked {
       background: #000;
       color: #fff;
     }
-
-    /* Signatures table */
-    .sig-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: -1px;
-    }
-    .sig-table td {
-      border: 1px solid #000;
-      padding: 3px 5px;
-      vertical-align: top;
-      font-size: 7.5pt;
-    }
-    .sig-line {
-      border-bottom: 1px solid #000;
-      width: 85%;
-      margin: 22px auto 3px;
-      text-align: center;
-    }
-    .sig-name {
-      font-weight: 800;
-      font-size: 8pt;
-      text-align: center;
-      text-transform: uppercase;
-    }
-    .sig-title {
+    .chk-item {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 8px;
       font-size: 6.8pt;
-      text-align: center;
-      text-transform: uppercase;
-      color: #333;
     }
 
-    /* ISCAG Male Da'wah Endorsement Section */
-    .islamic-box {
-      border: 1.5px solid #14532d;
-      background: #f0fdf4;
-      margin-top: 4px;
-      padding: 5px 8px;
-      font-size: 7.5pt;
-      line-height: 1.35;
-    }
-    .islamic-box-header {
+    /* Coding boxes at bottom */
+    .code-grid {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid #bbf7d0;
-      padding-bottom: 3px;
-      margin-bottom: 4px;
-    }
-    .islamic-title {
-      font-weight: 800;
-      font-size: 8pt;
-      color: #14532d;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .islamic-badge {
-      font-size: 7pt;
+      gap: 14px;
+      padding: 2px 6px;
+      font-size: 6pt;
       font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 4px;
-      background: #dcfce7;
-      color: #166534;
-      border: 1px solid #86efac;
+    }
+    .code-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .code-box {
+      width: 12px;
+      height: 13px;
+      border: 1px solid #000;
+      display: inline-block;
     }
 
-    /* Print Setup */
+    /* Underline lines for blank inputs */
+    .blank-line {
+      display: inline-block;
+      border-bottom: 1px solid #000;
+      height: 11px;
+      vertical-align: bottom;
+    }
+
+    /* Page 2 Specific Sections */
+    .page2-header-banner {
+      text-align: center;
+      font-weight: 800;
+      font-size: 7.8pt;
+      text-transform: uppercase;
+      padding: 3px 6px;
+      border-bottom: 1.5px solid #000;
+      letter-spacing: 0.05em;
+    }
+    .p2-section-box {
+      border: 1px solid #000;
+      margin-top: 5px;
+      padding: 4px 6px;
+      font-size: 7pt;
+      line-height: 1.3;
+    }
+    .p2-section-title {
+      text-align: center;
+      font-weight: 800;
+      font-size: 7.8pt;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      letter-spacing: 0.04em;
+    }
+
+    /* Signatures inside boxes */
+    .sig-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding: 0 4px;
+      font-size: 6.8pt;
+    }
+    .sig-field {
+      width: 48%;
+      line-height: 1.4;
+    }
+    .sig-underline {
+      display: inline-block;
+      border-bottom: 1px solid #000;
+      width: 60%;
+      min-height: 12px;
+    }
+
+    /* Print styles */
     @media print {
       @page {
         size: letter portrait;
-        margin: 0.25in 0.3in 0.25in 0.3in;
+        margin: 0.18in 0.22in;
       }
       body {
         background: #ffffff !important;
         padding: 0 !important;
       }
-      .screen-toolbar {
+      .screen-toolbar, .page-separator {
         display: none !important;
       }
-      .sheet-wrapper {
+      .sheet-page {
         width: 100% !important;
-        min-height: auto !important;
+        height: 10.55in !important;
+        min-height: 10.55in !important;
+        max-height: 10.6in !important;
         box-shadow: none !important;
-        padding: 0 !important;
         margin: 0 !important;
+        padding: 0.05in !important;
+        page-break-after: always !important;
+        break-after: page !important;
       }
-      .form-container {
-        border-color: #000 !important;
-      }
-      .sec-header {
-        background: #e2e8f0 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-      .islamic-box {
-        background: #f0fdf4 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+      .sheet-page:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
       }
       .chk-box.checked {
         background: #000 !important;
@@ -339,314 +484,624 @@
 <body>
 
   <!-- Screen Toolbar -->
-  <div class="screen-toolbar">
+  <div class="screen-toolbar no-print">
     <div style="display:flex; align-items:center; gap:8px;">
       <a href="<?= url('/admin/dawah/male/death-certificates') ?>" class="btn-tool back">
-        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Back to Received Certificates
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Back to Received Transmittals
       </a>
-      <a href="<?= url('/admin/dawah/male') ?>" class="btn-tool back">
-        Da'wah Dashboard
-      </a>
-      <?php if (!empty($record['file_path'])): ?>
-        <a href="<?= asset($record['file_path']) ?>" target="_blank" class="btn-tool back">
-          View Original Upload
-        </a>
-      <?php endif; ?>
+      <a href="#page-1" class="btn-tool nav-page">Page 1: Front</a>
+      <a href="#page-2" class="btn-tool nav-page">Page 2: Back / Affidavit</a>
     </div>
     <div style="display:flex; align-items:center; gap:8px;">
-      <a href="<?= url('/admin/dawah/death-certificates/download?id=' . $record['id']) ?>" class="btn-tool download">
-        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Download Official File
-      </a>
+      <button type="button" class="btn-tool download" id="btn-download-pdf" onclick="downloadAsPdf()">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> 📥 Download as PDF
+      </button>
       <button type="button" class="btn-tool print" onclick="window.print()">
-        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> Print Letter Size (Form 103)
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg> 🖨️ Print Form 103 (2 Pages)
       </button>
     </div>
   </div>
 
-  <!-- Standard Philippine Letter Sheet (8.5 x 11 inches) -->
-  <div class="sheet-wrapper">
-    <div class="watermark-seal"></div>
-
-    <div class="form-container">
+  <div id="printable-document-container">
+  <!-- ========================================== -->
+  <!-- PAGE 1: FRONT (MUNICIPAL FORM NO. 103)    -->
+  <!-- ========================================== -->
+  <div class="sheet-page page-1" id="page-1">
+    <div class="form-border">
       
-      <!-- 1. Header: Philippine Municipal Form 103 -->
-      <table class="form-header-table">
+      <!-- Top Title Header -->
+      <div>
+        <div class="header-top">
+          <div>
+            <strong>Municipal Form No. 103</strong><br>
+            <span style="font-size:6.2pt; font-style:italic;">(Revised August 2016)</span>
+          </div>
+          <div style="font-size:6.2pt; font-style:italic;">
+            (To be accomplished in quadruplicate using black ink)
+          </div>
+        </div>
+
+        <div class="header-center">
+          <div class="ph-title-1">Republic of the Philippines</div>
+          <div class="ph-title-2">OFFICE OF THE CIVIL REGISTRAR GENERAL</div>
+          <div class="ph-title-main">CERTIFICATE OF DEATH</div>
+        </div>
+
+        <div class="meta-row">
+          <div class="meta-col-left">
+            <div>Province <span class="meta-line" style="min-width:220px;"><?= htmlspecialchars($province) ?></span></div>
+            <div style="margin-top:2px;">City/Municipality <span class="meta-line" style="min-width:180px;"><?= htmlspecialchars($city) ?></span></div>
+          </div>
+          <div class="meta-col-right">
+            <span style="font-size:7.4pt; font-weight:700;">Registry No.</span>
+            <div class="registry-box"><?= htmlspecialchars($regNo) ?></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Boxed Table (1 to 29) -->
+      <table class="form-table">
+        <colgroup>
+          <col style="width: 25%;">
+          <col style="width: 25%;">
+          <col style="width: 22%;">
+          <col style="width: 14%;">
+          <col style="width: 14%;">
+        </colgroup>
+
+        <!-- 1. NAME & 2. SEX -->
         <tr>
-          <td style="width:28%;" class="top-meta-left">
-            <div>Municipal Form No. 103</div>
-            <div style="font-size:7pt; font-weight:normal; font-style:italic;">(Revised August 2016)</div>
-            <div style="font-size:6.8pt; color:#475569; margin-top:2px;">(To be accomplished in quadruplicate)</div>
+          <td colspan="4">
+            <span class="label-num">1. NAME</span>
+            <span class="label-sub">(First)</span> <span style="font-weight:700;"><?= htmlspecialchars($firstName) ?></span>
+            &nbsp;&nbsp;
+            <span class="label-sub">(Middle)</span> <span style="font-weight:700;"><?= htmlspecialchars($middleName) ?></span>
+            &nbsp;&nbsp;
+            <span class="label-sub">(Last)</span> <span style="font-weight:700;"><?= htmlspecialchars($lastName) ?></span>
+            <div class="val-cell-lg" style="margin-top:2px;">
+              <?= htmlspecialchars($fullName) ?>
+            </div>
           </td>
-          <td style="width:44%;" class="top-meta-center">
-            <div class="ph-title-1">Republic of the Philippines</div>
-            <div class="ph-title-2">Office of the Civil Registrar General</div>
-            <div class="ph-title-main">Certificate of Death</div>
-            <div class="ph-title-sub">Philippine Statistics Authority &bull; Islamic Community Civil Registry</div>
-          </td>
-          <td style="width:28%; text-align:right;">
-            <div class="registry-box" style="display:inline-block; text-align:left;">
-              <div><strong>Province:</strong> <?= htmlspecialchars($record['province'] ?? 'CAVITE') ?></div>
-              <div><strong>City / Municipality:</strong> <?= htmlspecialchars($record['city_municipality'] ?? 'CITY OF DASMARIÑAS') ?></div>
-              <div><strong>Registry No.:</strong> <span class="reg-num">#<?= htmlspecialchars($record['registration_number']) ?></span></div>
+          <td>
+            <span class="label-num">2. SEX</span> <span class="label-sub">(Male/Female)</span>
+            <div class="val-cell" style="margin-top:4px;">
+              <span class="chk-box <?= $isMale ? 'checked' : '' ?>"><?= $isMale ? '✓' : '' ?></span> Male
+              &nbsp;&nbsp;
+              <span class="chk-box <?= $isFemale ? 'checked' : '' ?>"><?= $isFemale ? '✓' : '' ?></span> Female
             </div>
           </td>
         </tr>
-      </table>
 
-      <!-- 2. Main Boxed Table Form (1 to 21) -->
-      <table class="dc-table">
-        
-        <!-- ROW 1: NAME (First, Middle, Last) -->
+        <!-- 3. DATE OF DEATH, 4. DATE OF BIRTH, 5. AGE AT TIME OF DEATH -->
         <tr>
-          <td colspan="4" style="width:70%;">
-            <span class="box-num">1.</span><span class="box-label">NAME OF DECEASED (First, Middle, Last)</span>
-            <div class="box-val-lg" style="letter-spacing:0.04em;">
-              <?= strtoupper(htmlspecialchars($record['deceased_name'])) ?>
-            </div>
-          </td>
-          <td colspan="2" style="width:30%;">
-            <span class="box-num">2.</span><span class="box-label">SEX</span>
-            <div style="margin-top:2px;">
-              <span class="chk-item">
-                <span class="chk-box <?= strtolower($record['sex'] ?? 'male') === 'male' ? 'checked' : '' ?>"><?= strtolower($record['sex'] ?? 'male') === 'male' ? '✓' : '' ?></span> 1. Male
-              </span>
-              <span class="chk-item">
-                <span class="chk-box <?= strtolower($record['sex'] ?? '') === 'female' ? 'checked' : '' ?>"><?= strtolower($record['sex'] ?? '') === 'female' ? '✓' : '' ?></span> 2. Female
-              </span>
-            </div>
-          </td>
-        </tr>
-
-        <!-- ROW 2: DATE OF DEATH & DATE OF BIRTH -->
-        <tr>
-          <td colspan="2" style="width:35%;">
-            <span class="box-num">3.</span><span class="box-label">DATE OF DEATH</span>
-            <div class="box-val">
-              <?= date('F d, Y', strtotime($record['date_of_death'])) ?>
-              <?php if (!empty($record['time_of_death'])): ?>
-                &nbsp;&bull;&nbsp; <?= date('g:i A', strtotime($record['time_of_death'])) ?>
+          <td colspan="2">
+            <span class="label-num">3. DATE OF DEATH</span> <span class="label-sub">(Day, Month, Year)</span>
+            <div class="val-cell">
+              <?= $dodDay ? htmlspecialchars("{$dodDay} {$dodMonth} {$dodYear}") : '—' ?>
+              <?php if (!empty($timeOfDeath)): ?>
+                &nbsp;&bull;&nbsp; <?= htmlspecialchars($timeOfDeath) ?>
               <?php endif; ?>
             </div>
           </td>
-          <td colspan="2" style="width:35%;">
-            <span class="box-num">4.</span><span class="box-label">DATE OF BIRTH</span>
-            <div class="box-val">
-              <?= !empty($record['date_of_birth']) ? date('F d, Y', strtotime($record['date_of_birth'])) : 'Not Indicated' ?>
+          <td>
+            <span class="label-num">4. DATE OF BIRTH</span> <span class="label-sub">(Day) (Month) (Year)</span>
+            <div class="val-cell">
+              <?= $dobDay ? htmlspecialchars("{$dobDay} {$dobMonth} {$dobYear}") : '—' ?>
             </div>
           </td>
-          <td colspan="2" style="width:30%;">
-            <span class="box-num">5.</span><span class="box-label">AGE AT TIME OF DEATH</span>
-            <div class="box-val">
-              <?= !empty($record['age']) ? htmlspecialchars($record['age']) . ' years old' : 'Unspecified' ?>
+          <td colspan="2">
+            <span class="label-num">5. AGE AT THE TIME OF DEATH</span>
+            <div style="display:flex; font-size:5.8pt; gap:4px; margin-top:1px;">
+              <div style="flex:1;">
+                <strong>a. IF 1 YEAR OR ABOVE</strong><br>
+                [Completed years]: <span style="font-weight:800; font-size:7.5pt;"><?= htmlspecialchars($ageYears) ?></span>
+              </div>
+              <div style="flex:1;">
+                <strong>b. UNDER 1 YEAR</strong><br>
+                [Months] [Days]
+              </div>
+              <div style="flex:1;">
+                <strong>c. UNDER 24 HRS</strong><br>
+                [Hours] [Min/Sec]
+              </div>
             </div>
           </td>
         </tr>
 
-        <!-- ROW 3: PLACE OF DEATH -->
+        <!-- 6. PLACE OF DEATH, 7. CIVIL STATUS -->
         <tr>
-          <td colspan="6">
-            <span class="box-num">6.</span><span class="box-label">PLACE OF DEATH (Hospital / Clinic / Institution / House No., St., Barangay, City/Municipality, Province)</span>
-            <div class="box-val">
-              <?= htmlspecialchars($record['place_of_death'] ?? 'City of Dasmariñas, Cavite') ?>
+          <td colspan="3">
+            <span class="label-num">6. PLACE OF DEATH</span>
+            <span class="label-sub">(Name of Hospital/Clinic/Institution/House No., St., Barangay, City/Municipality, Province)</span>
+            <div class="val-cell">
+              <?= htmlspecialchars($placeOfDeath) ?>
+            </div>
+          </td>
+          <td colspan="2">
+            <span class="label-num">7. CIVIL STATUS</span>
+            <span class="label-sub">(Single/Married/Widow/Widower/Annulled/Divorced)</span>
+            <div class="val-cell">
+              <?= htmlspecialchars($civilStatus) ?>
             </div>
           </td>
         </tr>
 
-        <!-- ROW 4: CIVIL STATUS, RELIGION, CITIZENSHIP -->
+        <!-- 8. RELIGION, 9. CITIZENSHIP, 10. RESIDENCE -->
         <tr>
-          <td colspan="2" style="width:35%;">
-            <span class="box-num">7.</span><span class="box-label">CIVIL STATUS</span>
-            <div style="font-size:7.5pt; margin-top:1px;">
-              <?php 
-                $cs = strtolower($record['civil_status'] ?? 'single'); 
-              ?>
-              <span class="chk-item"><span class="chk-box <?= $cs === 'single' ? 'checked' : '' ?>"><?= $cs === 'single' ? '✓' : '' ?></span> Single</span>
-              <span class="chk-item"><span class="chk-box <?= $cs === 'married' ? 'checked' : '' ?>"><?= $cs === 'married' ? '✓' : '' ?></span> Married</span>
-              <span class="chk-item"><span class="chk-box <?= in_array($cs, ['widow', 'widowed']) ? 'checked' : '' ?>"><?= in_array($cs, ['widow', 'widowed']) ? '✓' : '' ?></span> Widowed</span>
-            </div>
+          <td>
+            <span class="label-num">8. RELIGION/RELIGIOUS SECT</span>
+            <div class="val-cell"><?= htmlspecialchars($religion) ?></div>
           </td>
-          <td colspan="2" style="width:35%;">
-            <span class="box-num">8.</span><span class="box-label">RELIGION / RELIGIOUS AFFILIATION</span>
-            <div class="box-val">
-              <?= strtoupper(htmlspecialchars($record['religion'] ?? 'ISLAM')) ?>
-            </div>
+          <td>
+            <span class="label-num">9. CITIZENSHIP</span>
+            <div class="val-cell"><?= htmlspecialchars($citizenship) ?></div>
           </td>
-          <td colspan="2" style="width:30%;">
-            <span class="box-num">9.</span><span class="box-label">CITIZENSHIP</span>
-            <div class="box-val">
-              <?= strtoupper(htmlspecialchars($record['citizenship'] ?? 'FILIPINO')) ?>
-            </div>
+          <td colspan="3">
+            <span class="label-num">10. RESIDENCE</span>
+            <span class="label-sub">(House No., St., Barangay, City/Municipality, Province, Country)</span>
+            <div class="val-cell"><?= htmlspecialchars($residence) ?></div>
           </td>
         </tr>
 
-        <!-- ROW 5: RESIDENCE & OCCUPATION -->
+        <!-- 11. OCCUPATION, 12. FATHER, 13. MOTHER -->
         <tr>
-          <td colspan="4" style="width:70%;">
-            <span class="box-num">10.</span><span class="box-label">RESIDENCE (House No., Street, Barangay, City/Municipality, Province)</span>
-            <div class="box-val">
-              <?= htmlspecialchars($record['residence'] ?? 'City of Dasmariñas, Cavite') ?>
-            </div>
+          <td>
+            <span class="label-num">11. OCCUPATION</span>
+            <div class="val-cell"><?= htmlspecialchars($occupation) ?></div>
           </td>
-          <td colspan="2" style="width:30%;">
-            <span class="box-num">11.</span><span class="box-label">OCCUPATION</span>
-            <div class="box-val">
-              <?= htmlspecialchars($record['occupation'] ?? '—') ?>
-            </div>
+          <td colspan="2">
+            <span class="label-num">12. NAME OF FATHER</span> <span class="label-sub">(First, Middle, Last)</span>
+            <div class="val-cell"><?= htmlspecialchars($fatherName ?: '—') ?></div>
+          </td>
+          <td colspan="2">
+            <span class="label-num">13. MAIDEN NAME OF MOTHER</span> <span class="label-sub">(First, Middle, Last)</span>
+            <div class="val-cell"><?= htmlspecialchars($motherName ?: '—') ?></div>
           </td>
         </tr>
 
-        <!-- ROW 6: PARENTS -->
+        <!-- BANNER: MEDICAL CERTIFICATE -->
         <tr>
-          <td colspan="3" style="width:50%;">
-            <span class="box-num">12.</span><span class="box-label">NAME OF FATHER (First, Middle, Last)</span>
-            <div class="box-val">
-              <?= !empty($record['father_name']) ? htmlspecialchars($record['father_name']) : '—' ?>
-            </div>
-          </td>
-          <td colspan="3" style="width:50%;">
-            <span class="box-num">13.</span><span class="box-label">MAIDEN NAME OF MOTHER (First, Middle, Last)</span>
-            <div class="box-val">
-              <?= !empty($record['mother_name']) ? htmlspecialchars($record['mother_name']) : '—' ?>
-            </div>
+          <td colspan="5" class="section-banner">
+            MEDICAL CERTIFICATE
+            <span class="sub">(For ages 0 to 7 days, accomplish items 14-19a at the back)</span>
           </td>
         </tr>
 
-        <!-- MEDICAL CERTIFICATE HEADER -->
+        <!-- 19b. CAUSES OF DEATH & INTERVAL -->
         <tr>
-          <td colspan="6" class="sec-header">
-            MEDICAL CERTIFICATE &bull; CAUSES OF DEATH &bull; (For Civil Registry &amp; Religious Endorsement)
+          <td colspan="4">
+            <span class="label-num">19b. CAUSES OF DEATH</span> <span class="label-sub">(If the deceased is aged 8 days and over)</span>
+            <div style="font-size:6.8pt; line-height:1.35; padding-left:4px; margin-top:2px;">
+              <div><strong>I. Immediate cause : a.</strong> <?= htmlspecialchars($r['cause_of_death'] ?? 'Natural Causes / Cardiopulmonary Arrest') ?></div>
+              <div>&nbsp;&nbsp;&nbsp;&nbsp;<strong>Antecedent cause : b.</strong> ____________________________________________________________________</div>
+              <div>&nbsp;&nbsp;&nbsp;&nbsp;<strong>Underlying cause : c.</strong> ____________________________________________________________________</div>
+              <div><strong>II. Other significant conditions contributing to death:</strong> Certified for Islamic Janazah Rites</div>
+            </div>
+          </td>
+          <td>
+            <span class="label-title">Interval Between Onset and Death</span>
+            <div style="font-size:6.8pt; line-height:1.4; margin-top:4px;">
+              <div>a. ____________</div>
+              <div>b. ____________</div>
+              <div>c. ____________</div>
+            </div>
           </td>
         </tr>
 
-        <!-- ROW 7: CAUSES OF DEATH -->
+        <!-- 19c. MATERNAL CONDITION -->
         <tr>
-          <td colspan="4" style="width:70%;">
-            <span class="box-num">14.</span><span class="box-label">CAUSES OF DEATH</span>
-            <div style="font-size:7.5pt; padding-left:4px; line-height:1.35;">
-              <div><strong>I. Immediate cause:</strong> <?= !empty($record['cause_of_death']) ? htmlspecialchars($record['cause_of_death']) : 'Cardiopulmonary Arrest / Natural Causes' ?></div>
-              <div><strong>Antecedent cause:</strong> Severe Multi-Organ Stress / Natural Complications</div>
-              <div><strong>Underlying cause:</strong> Natural Health Deterioration &bull; Certified by Attending Health Officer</div>
-              <div style="margin-top:2px;"><strong>II. Other significant conditions:</strong> Certified for Islamic Burial Rites</div>
-            </div>
-          </td>
-          <td colspan="2" style="width:30%;">
-            <span class="box-label">MANNER OF DEATH</span>
-            <div style="font-size:7.5pt; line-height:1.4;">
-              <div><span class="chk-box checked">✓</span> 1. Natural</div>
-              <div><span class="chk-box"></span> 2. Accident</div>
-              <div><span class="chk-box"></span> 3. Others / Pending</div>
+          <td colspan="5">
+            <span class="label-num">19c. MATERNAL CONDITION</span> <span class="label-sub">(If the deceased is female aged 15-49 years old)</span>
+            <div style="font-size:6.5pt; display:flex; gap:10px; margin-top:1px;">
+              <span>____ a. pregnant, not in labour</span>
+              <span>____ b. pregnant, in labour</span>
+              <span>____ c. less than 42 days after delivery</span>
+              <span>____ d. 42 days to 1 year after delivery</span>
+              <span><span class="chk-box"></span> e. None of the choices</span>
             </div>
           </td>
         </tr>
 
-        <!-- ROW 8: ATTENDANT & CORPSE DISPOSAL -->
+        <!-- 19d. DEATH BY EXTERNAL CAUSES & 20. AUTOPSY -->
         <tr>
-          <td colspan="3" style="width:50%;">
-            <span class="box-num">15.</span><span class="box-label">ATTENDANT &amp; CERTIFICATION OF DEATH</span>
-            <div style="font-size:7.5pt;">
-              <span class="chk-item"><span class="chk-box checked">✓</span> Physician</span>
-              <span class="chk-item"><span class="chk-box"></span> Health Officer</span>
-              <span class="chk-item"><span class="chk-box"></span> Hospital Auth.</span>
-            </div>
-            <div style="font-size:6.8pt; color:#374151; margin-top:2px;">
-              "I hereby certify that I attended/examined the deceased and death occurred on the date, time, and causes stated above."
+          <td colspan="4">
+            <span class="label-num">19d. DEATH BY EXTERNAL CAUSES</span>
+            <div style="font-size:6.6pt; line-height:1.3; margin-top:1px;">
+              <div>a. Manner of death (Homicide, Suicide, Accident, Legal intervention, etc.) ________________________________________</div>
+              <div>b. Place of Occurrence of External Cause (e.g. home, farm, factory, street, sea, etc.) _____________________________</div>
             </div>
           </td>
-          <td colspan="3" style="width:50%;">
-            <span class="box-num">16.</span><span class="box-label">CORPSE DISPOSAL &amp; CEMETERY NAME</span>
-            <div style="font-size:7.5pt;">
-              <span class="chk-item"><span class="chk-box checked">✓</span> 1. Burial</span>
-              <span class="chk-item"><span class="chk-box"></span> 2. Cremation</span>
-              <span class="chk-item"><span class="chk-box"></span> 3. Others</span>
-            </div>
-            <div style="font-size:7.8pt; font-weight:700; color:#14532d; margin-top:2px;">
-              Cemetery: <?= htmlspecialchars($record['cemetery_name'] ?? 'ISCAG Muslim Memorial Cemetery, Dasmariñas, Cavite') ?>
+          <td>
+            <span class="label-num">20. AUTOPSY</span> <span class="label-sub">(Yes / No)</span>
+            <div style="margin-top:3px; font-size:7pt;">
+              <span class="chk-box"></span> Yes &nbsp;&nbsp;
+              <span class="chk-box checked">✓</span> No
             </div>
           </td>
         </tr>
 
-        <!-- ROW 9: INFORMANT -->
+        <!-- 21a. ATTENDANT & 21b. DURATION -->
         <tr>
-          <td colspan="6">
-            <span class="box-num">17.</span><span class="box-label">INFORMANT / REPRESENTATIVE</span>
-            <div style="display:flex; justify-content:space-between; font-size:8pt; padding:1px 0;">
-              <div><strong>Name:</strong> <?= htmlspecialchars($record['informant_name'] ?? 'Family Representative') ?></div>
-              <div><strong>Relationship:</strong> <?= htmlspecialchars($record['informant_relationship'] ?? 'Immediate Family') ?></div>
-              <div><strong>Contact:</strong> <?= htmlspecialchars($record['informant_contact'] ?? '—') ?></div>
-              <div><strong>Date:</strong> <?= !empty($record['death_cert_date']) ? date('M d, Y', strtotime($record['death_cert_date'])) : date('M d, Y') ?></div>
+          <td colspan="3">
+            <span class="label-num">21a. ATTENDANT</span>
+            <div style="font-size:6.4pt; margin-top:2px;">
+              <span class="chk-item"><span class="chk-box checked">✓</span> 1 Private Physician</span>
+              <span class="chk-item"><span class="chk-box"></span> 2 Public Health Officer</span>
+              <span class="chk-item"><span class="chk-box"></span> 3 Hospital Authority</span>
+              <span class="chk-item"><span class="chk-box"></span> 4 None</span>
+              <span class="chk-item"><span class="chk-box"></span> 5 Others (Specify)</span>
+            </div>
+          </td>
+          <td colspan="2">
+            <span class="label-num">21b. If attended, state duration (mm/dd/yy)</span>
+            <div style="font-size:6.8pt; margin-top:2px;">
+              From: ________________ &nbsp; To: ________________
             </div>
           </td>
         </tr>
 
+        <!-- 22. CERTIFICATION OF DEATH & REVIEWED BY -->
+        <tr>
+          <td colspan="3">
+            <span class="label-num">22. CERTIFICATION OF DEATH</span>
+            <div style="font-size:6.2pt; line-height:1.2; margin-top:1px;">
+              <span class="chk-box"></span> I hereby certify that the foregoing particulars are correct as near as same can be ascertained and I further certify that I
+              <span class="chk-box checked">✓</span> have attended / <span class="chk-box"></span> have not attended the deceased and that death occurred at
+              <strong><?= !empty($timeOfDeath) ? htmlspecialchars($timeOfDeath) : '______' ?></strong> on the date of death specified above.
+            </div>
+            <div style="font-size:6.4pt; margin-top:3px; line-height:1.25;">
+              <div>Signature _________________________________________________</div>
+              <div>Name in Print <strong>DR. HEALTH OFFICER / ATTENDING PHYSICIAN</strong></div>
+              <div>Title or Position <strong>Medical Officer / Attending Physician</strong></div>
+              <div>Address <strong>City of Dasmariñas, Cavite</strong></div>
+              <div>Date <strong><?= htmlspecialchars($certDate) ?></strong></div>
+            </div>
+          </td>
+          <td colspan="2">
+            <span class="label-title">REVIEWED BY:</span>
+            <div style="text-align:center; margin-top:16px; font-size:6.5pt;">
+              <div style="border-bottom:1px solid #000; width:85%; margin:0 auto 2px;"></div>
+              <div>Signature Over Printed Name of Health Officer</div>
+              <div style="margin-top:6px; text-align:left; font-size:6.4pt;">Date: ________________________</div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- 23. DISPOSAL, 24a. BURIAL PERMIT, 24b. TRANSFER PERMIT -->
+        <tr>
+          <td>
+            <span class="label-num">23. CORPSE DISPOSAL</span>
+            <div style="font-size:6.2pt; margin-top:2px;">
+              <span class="chk-item"><span class="chk-box checked">✓</span> Burial</span>
+              <span class="chk-item"><span class="chk-box"></span> Cremation</span>
+            </div>
+          </td>
+          <td colspan="2">
+            <span class="label-num">24a. BURIAL/CREMATION PERMIT</span>
+            <div style="font-size:6.4pt;">
+              Number: <strong>BP-<?= date('Y') ?>-<?= htmlspecialchars(substr($regNo, -5)) ?></strong><br>
+              Date Issued: <strong><?= htmlspecialchars($certDate) ?></strong>
+            </div>
+          </td>
+          <td colspan="2">
+            <span class="label-num">24b. TRANSFER PERMIT</span>
+            <div style="font-size:6.4pt;">
+              Number: ____________________<br>
+              Date Issued: ________________
+            </div>
+          </td>
+        </tr>
+
+        <!-- 25. CEMETERY NAME -->
+        <tr>
+          <td colspan="5">
+            <span class="label-num">25. NAME AND ADDRESS OF CEMETERY OR CREMATORY</span>
+            <div class="val-cell">
+              <?= htmlspecialchars($r['cemetery_name'] ?? 'ISCAG Muslim Memorial Cemetery, City of Dasmariñas, Cavite') ?>
+            </div>
+          </td>
+        </tr>
+
+        <!-- 26. INFORMANT & 27. PREPARED BY -->
+        <tr>
+          <td colspan="3">
+            <span class="label-num">26. CERTIFICATION OF INFORMANT</span>
+            <div style="font-size:6pt; font-style:italic;">I hereby certify that all information supplied are true and correct to my own knowledge and belief.</div>
+            <div style="font-size:6.4pt; margin-top:2px; line-height:1.25;">
+              <div>Signature _________________________________________________</div>
+              <div>Name in Print <strong><?= htmlspecialchars($informantName ?: 'FAMILY REPRESENTATIVE') ?></strong></div>
+              <div>Relationship to Deceased <strong><?= htmlspecialchars($informantRel) ?></strong></div>
+              <div>Address <strong><?= htmlspecialchars($residence) ?></strong></div>
+              <div>Date <strong><?= htmlspecialchars($certDate) ?></strong></div>
+            </div>
+          </td>
+          <td colspan="2">
+            <span class="label-num">27. PREPARED BY</span>
+            <div style="font-size:6.4pt; margin-top:7px; line-height:1.25;">
+              <div>Signature _______________________________________</div>
+              <div>Name in Print <strong><?= htmlspecialchars($sentByName) ?></strong></div>
+              <div>Title or Position <strong>Damayan Coordinator / Officer</strong></div>
+              <div>Date <strong><?= htmlspecialchars($sentDate) ?></strong></div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- 28. RECEIVED BY & 29. REGISTERED AT LCRO -->
+        <tr>
+          <td colspan="3">
+            <span class="label-num">28. RECEIVED BY</span>
+            <div style="font-size:6.4pt; margin-top:2px; line-height:1.25;">
+              <div>Signature _________________________________________________</div>
+              <div>Name in Print <strong><?= htmlspecialchars($ackByName) ?></strong></div>
+              <div>Title or Position <strong>Male Da'wah Religious Officer</strong></div>
+              <div>Date <strong><?= htmlspecialchars($ackDate) ?></strong></div>
+            </div>
+          </td>
+          <td colspan="2">
+            <span class="label-num">29. REGISTERED AT THE OFFICE OF THE CIVIL REGISTRAR</span>
+            <div style="font-size:6.4pt; margin-top:2px; line-height:1.25;">
+              <div>Signature _______________________________________</div>
+              <div>Name in Print <strong>LOCAL CIVIL REGISTRAR</strong></div>
+              <div>Title or Position <strong>City Civil Registrar</strong></div>
+              <div>Date <strong><?= htmlspecialchars($certDate) ?></strong></div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- REMARKS/ANNOTATIONS -->
+        <tr>
+          <td colspan="5" style="min-height:26px;">
+            <span class="label-title">REMARKS/ANNOTATIONS (For LCRO/OCRG Use Only)</span>
+            <div style="font-size:6.5pt; color:#14532d; font-weight:700; padding:1px 4px;">
+              [ISCAG Civil Registry &bull; Salatul Janazah Religious Transmittal File &bull; Reg: #<?= htmlspecialchars($regNo) ?>]
+              <?php if (!empty($r['transmission_notes'])): ?>
+                &nbsp;&bull;&nbsp; <?= htmlspecialchars($r['transmission_notes']) ?>
+              <?php endif; ?>
+            </div>
+          </td>
+        </tr>
       </table>
 
-      <!-- 3. Signatures Table: Boxes 18, 19, 20 -->
-      <table class="sig-table">
-        <tr>
-          <!-- 18. PREPARED BY (Damayan Civil Registry) -->
-          <td style="width:33.33%;">
-            <span class="box-num">18.</span><span class="box-label">PREPARED BY (Damayan Dept)</span>
-            <div class="sig-line"></div>
-            <div class="sig-name"><?= htmlspecialchars($record['sent_by_name'] ?? 'Damayan Coordinator') ?></div>
-            <div class="sig-title">Damayan Civil Registry Officer</div>
-            <div style="text-align:center; font-size:6.8pt; color:#475569; margin-top:2px;">
-              Transmitted: <?= date('M d, Y &bull; g:i A', strtotime($record['sent_at'])) ?>
-            </div>
-          </td>
-
-          <!-- 19. RECEIVED BY (Male Da'wah Dept) -->
-          <td style="width:33.33%;">
-            <span class="box-num">19.</span><span class="box-label">RECEIVED BY (Male Da'wah Dept)</span>
-            <div class="sig-line"></div>
-            <div class="sig-name"><?= htmlspecialchars($record['acknowledged_by_name'] ?? 'Male Da\'wah Officiating Officer') ?></div>
-            <div class="sig-title">Male Da'wah Religious Officer</div>
-            <div style="text-align:center; font-size:6.8pt; color:#475569; margin-top:2px;">
-              <?= !empty($record['acknowledged_at']) ? 'Acknowledged: ' . date('M d, Y &bull; g:i A', strtotime($record['acknowledged_at'])) : 'Status: ' . htmlspecialchars($record['status']) ?>
-            </div>
-          </td>
-
-          <!-- 20. REGISTERED AT CIVIL REGISTRAR / ISCAG ARCHIVE -->
-          <td style="width:33.34%;">
-            <span class="box-num">20.</span><span class="box-label">OFFICE OF THE CIVIL REGISTRAR</span>
-            <div class="sig-line"></div>
-            <div class="sig-name">LOCAL CIVIL REGISTRAR / ISCAG</div>
-            <div class="sig-title">City of Dasmariñas &bull; ISCAG MIS Archive</div>
-            <div style="text-align:center; font-size:6.8pt; color:#475569; margin-top:2px;">
-              Reg Date: <?= !empty($record['death_cert_date']) ? date('M d, Y', strtotime($record['death_cert_date'])) : date('M d, Y') ?>
-            </div>
-          </td>
-        </tr>
-      </table>
-
-      <!-- 4. Official ISCAG Male Da'wah Islamic Burial & Janazah Endorsement -->
-      <div class="islamic-box">
-        <div class="islamic-box-header">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#14532d;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            <span class="islamic-title">Male Da'wah Department &bull; Islamic Funeral (Janazah) Endorsement</span>
-          </div>
-          <span class="islamic-badge">Status: <?= strtoupper(htmlspecialchars($record['status'])) ?></span>
+      <!-- Bottom Coding Box -->
+      <div>
+        <div style="font-size:6pt; font-weight:700; padding:1px 6px;">
+          TO BE FILLED-UP AT THE OFFICE OF THE CIVIL REGISTRAR
         </div>
-        <div style="color:#0f3d21;">
-          <strong>Islamic Shari'ah Certification:</strong> This certifies that the death certificate and vital statistics of the deceased <strong><?= strtoupper(htmlspecialchars($record['deceased_name'])) ?></strong> (Registry No. <strong>#<?= htmlspecialchars($record['registration_number']) ?></strong>) have been officially transmitted by the Damayan Department and received by the <strong>Male Da'wah Department</strong> for Salatul Janazah (Islamic Funeral Prayer), Ghusl, Kafan, and coordination with the Islamic cemetery.
+        <div class="code-grid">
+          <div class="code-group">5 <span class="code-box"></span><span class="code-box"></span><span class="code-box"></span></div>
+          <div class="code-group">8 <span class="code-box"></span><span class="code-box"></span><span class="code-box"></span></div>
+          <div class="code-group">9 <span class="code-box"></span><span class="code-box"></span></div>
+          <div class="code-group">10 <span class="code-box"></span><span class="code-box"></span><span class="code-box"></span><span class="code-box"></span><span class="code-box"></span><span class="code-box"></span></div>
+          <div class="code-group">11 <span class="code-box"></span><span class="code-box"></span><span class="code-box"></span></div>
+          <div class="code-group">19a(a)/19b <span class="code-box"></span><span class="code-box"></span><span class="code-box"></span></div>
+          <div class="code-group">19a(c) <span class="code-box"></span></div>
         </div>
-        <?php if (!empty($record['transmission_notes'])): ?>
-          <div style="margin-top:3px; padding-top:3px; border-top:1px dashed #bbf7d0; font-size:7pt; color:#14532d;">
-            <strong>Transmittal &amp; Religious Directives:</strong> <?= nl2br(htmlspecialchars($record['transmission_notes'])) ?>
-          </div>
-        <?php endif; ?>
       </div>
 
     </div>
-
-    <!-- Official Document Footnote -->
-    <div style="display:flex; justify-content:space-between; align-items:center; font-size:6.8pt; color:#64748b; margin-top:4px; padding:0 4px;">
-      <span>PSA / Republic of the Philippines &bull; Municipal Form No. 103 (Certified Islamic Endorsement File)</span>
-      <span>Security Hash Ref: #<?= htmlspecialchars($record['registration_number']) ?>-<?= $record['id'] ?>-ISCAG</span>
-      <span>Printed on Standard Letter Bond Paper (8.5&quot; &times; 11&quot;)</span>
-    </div>
-
   </div>
 
+  <!-- Page Separator for Screen View -->
+  <div class="page-separator no-print" data-html2canvas-ignore="true">
+    Page 2: Back / Medical Certificate 0-7 Days / Embalmer / Delayed Registration Affidavit
+  </div>
+
+  <!-- ========================================== -->
+  <!-- PAGE 2: BACK (CHILDREN, AUTOPSY, EMBALMER, -->
+  <!--               AFFIDAVIT FOR DELAYED REG)   -->
+  <!-- ========================================== -->
+  <div class="sheet-page page-2" id="page-2">
+    <div class="form-border" style="padding:4px;">
+      
+      <!-- Section: FOR CHILDREN AGED 0 TO 7 DAYS -->
+      <div style="border:1px solid #000;">
+        <div class="page2-header-banner">
+          FOR CHILDREN AGED 0 TO 7 DAYS
+        </div>
+
+        <table style="width:100%; border-collapse:collapse; font-size:6.8pt;">
+          <colgroup>
+            <col style="width: 33.33%;">
+            <col style="width: 33.33%;">
+            <col style="width: 33.34%;">
+          </colgroup>
+          <tr>
+            <td style="border:1px solid #000; padding:2px 4px;">
+              <strong>14. AGE OF MOTHER</strong>
+              <div style="min-height:12px; margin-top:2px;">__________________</div>
+            </td>
+            <td style="border:1px solid #000; padding:2px 4px;">
+              <strong>15. METHOD OF DELIVERY</strong> <span style="font-size:5.8pt;">(Normal spontaneous vertex, if others, specify)</span>
+              <div style="min-height:12px; margin-top:2px;">____________________________________</div>
+            </td>
+            <td style="border:1px solid #000; padding:2px 4px;">
+              <strong>16. LENGTH OF PREGNANCY:</strong> <span style="font-size:5.8pt;">(In completed weeks)</span>
+              <div style="min-height:12px; margin-top:2px;">__________________</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #000; padding:2px 4px;">
+              <strong>17. TYPE OF BIRTH</strong> <span style="font-size:5.8pt;">(Single, Twin, Triplet, etc)</span>
+              <div style="min-height:12px; margin-top:2px;">__________________</div>
+            </td>
+            <td colspan="2" style="border:1px solid #000; padding:2px 4px;">
+              <strong>18. IF MULTIPLE BIRTH, CHILD WAS</strong> <span style="font-size:5.8pt;">(First, Second, Third, etc)</span>
+              <div style="min-height:12px; margin-top:2px;">__________________</div>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Medical Certificate for 0-7 Days -->
+        <div style="padding:3px 6px; border-top:1px solid #000;">
+          <div style="font-weight:800; font-size:7.2pt; text-align:center; margin-bottom:2px;">MEDICAL CERTIFICATE</div>
+          <div style="font-weight:700; font-size:6.8pt; margin-bottom:2px;">19a. CAUSES OF DEATH</div>
+          <div style="font-size:6.6pt; line-height:1.45; padding-left:6px;">
+            <div>a. Main disease/condition of infant __________________________________________________________________________________</div>
+            <div>b. Other diseases/conditions of infant _________________________________________________________________________________</div>
+            <div>c. Main maternal disease/condition affecting infant _____________________________________________________________________</div>
+            <div>d. Other maternal disease/condition affecting infant ____________________________________________________________________</div>
+            <div>e. Other relevant circumstances _____________________________________________________________________________________</div>
+          </div>
+          <div style="text-align:center; font-weight:800; font-size:7pt; letter-spacing:0.04em; margin-top:3px;">
+            CONTINUE TO FILL UP ITEM 20
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: POSTMORTEM CERTIFICATE OF DEATH -->
+      <div class="p2-section-box">
+        <div class="p2-section-title">POSTMORTEM CERTIFICATE OF DEATH</div>
+        <div style="font-size:6.6pt; line-height:1.4;">
+          I HEREBY CERTIFY that I have performed an autopsy upon the body of the deceased and that the cause of death was
+          <span class="blank-line" style="width:98%;"></span>
+          <span class="blank-line" style="width:98%;"></span>
+        </div>
+        <div class="sig-row">
+          <div class="sig-field">
+            Signature ____________________________________<br>
+            Name in Print ________________________________<br>
+            Date ________________________________________
+          </div>
+          <div class="sig-field">
+            Title/Designation ____________________________<br>
+            Address ______________________________________
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: CERTIFICATION OF EMBALMER -->
+      <div class="p2-section-box">
+        <div class="p2-section-title">CERTIFICATION OF EMBALMER</div>
+        <div style="font-size:6.6pt; line-height:1.35;">
+          I HEREBY CERTIFY that I have embalmed <span class="blank-line" style="width:40%;"></span> following all the regulations prescribed by the Department of Health.
+        </div>
+        <div class="sig-row">
+          <div class="sig-field">
+            Signature ____________________________________<br>
+            Name in Print ________________________________<br>
+            Address ______________________________________
+          </div>
+          <div class="sig-field">
+            Title/Designation ____________________________<br>
+            License No. __________________________________<br>
+            Issued on ________________ at _______________<br>
+            Expiry Date __________________________________
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: AFFIDAVIT FOR DELAYED REGISTRATION OF DEATH -->
+      <div class="p2-section-box" style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div class="p2-section-title">AFFIDAVIT FOR DELAYED REGISTRATION OF DEATH</div>
+          
+          <div style="font-size:6.6pt; line-height:1.35; text-align:justify;">
+            I, <span class="blank-line" style="width:40%;"></span>, of legal age, single/married/divorced/widow/widower, with residence and postal address <span class="blank-line" style="width:42%;"></span>, after being duly sworn in accordance with law, do hereby depose and say:
+          </div>
+
+          <div style="font-size:6.6pt; line-height:1.45; margin-top:4px; padding-left:8px;">
+            <div>
+              1. That <span class="blank-line" style="width:38%;"></span> died on <span class="blank-line" style="width:16%;"></span> in <span class="blank-line" style="width:28%;"></span> and was buried/cremated in <span class="blank-line" style="width:25%;"></span> on <span class="blank-line" style="width:18%;"></span>.
+            </div>
+            <div>
+              2. That the deceased at the time of his/her death:<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span class="chk-box"></span> was attended by <span class="blank-line" style="width:50%;"></span>;<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span class="chk-box"></span> was not attended.
+            </div>
+            <div>
+              3. That the cause of death of the deceased was <span class="blank-line" style="width:68%;"></span>.
+            </div>
+            <div>
+              4. That the reason for the delay in registering this death was due to <span class="blank-line" style="width:60%;"></span>.
+            </div>
+            <div>
+              5. That I am executing this affidavit to attest to the truthfulness of the foregoing statements for all legal intents and purposes.
+            </div>
+          </div>
+
+          <div style="font-size:6.6pt; margin-top:6px;">
+            In truth whereof, I have affixed my signature below this _____ day of ___________________ at ________________________, Philippines.
+          </div>
+
+          <div style="text-align:right; margin-top:14px; font-size:6.6pt;">
+            <div style="display:inline-block; text-align:center; min-width:240px;">
+              <div style="border-bottom:1px solid #000; width:100%; margin-bottom:2px;"></div>
+              (Signature Over Printed Name of Affiant)
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px dashed #666; padding-top:4px; font-size:6.4pt; line-height:1.35; margin-top:6px;">
+          <div>
+            SUBSCRIBED AND SWORN to before me this _____ day of _____________________, Philippines, affiant who exhibited to me his/her CTC/valid ID <span class="blank-line" style="width:140px;"></span> issued on <span class="blank-line" style="width:80px;"></span> at <span class="blank-line" style="width:100px;"></span>.
+          </div>
+
+          <div class="sig-row" style="margin-top:10px;">
+            <div class="sig-field">
+              Signature of the Administering Officer ______________________<br>
+              Name in Print ______________________________________________
+            </div>
+            <div class="sig-field">
+              Position / Title / Designation _____________________________<br>
+              Address ___________________________________________________
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  </div><!-- /#printable-document-container -->
+
+  <script src="<?= asset('JS/html2pdf.bundle.min.js') ?>"></script>
+  <script>
+    async function downloadAsPdf() {
+      const btn = document.getElementById('btn-download-pdf');
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<svg style="animation:spin 1s linear infinite;width:15px;height:15px;display:inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path></svg> Generating Official PDF...`;
+      }
+
+      try {
+        const container = document.getElementById('printable-document-container');
+        const filename = 'Death_Certificate_<?= preg_replace('/[^a-zA-Z0-9_\-]/', '_', $regNo ?: 'Form103') ?>.pdf';
+
+        const opt = {
+          margin:       0,
+          filename:     filename,
+          image:        { type: 'jpeg', quality: 0.99 },
+          html2canvas:  { 
+            scale: 2, 
+            useCORS: true, 
+            logging: false,
+            windowWidth: 816 // standard 8.5in at 96dpi
+          },
+          jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+          pagebreak:    { mode: ['css', 'legacy'] }
+        };
+
+        await html2pdf().set(opt).from(container).save();
+      } catch (err) {
+        console.error('PDF generation error:', err);
+        // Fallback to native print dialog
+        window.print();
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+        }
+      }
+    }
+
+    <?php if (!empty($auto_download_pdf)): ?>
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(downloadAsPdf, 500);
+      });
+    <?php endif; ?>
+  </script>
+  <style>
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
 </body>
 </html>

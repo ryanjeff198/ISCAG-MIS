@@ -3837,7 +3837,24 @@ class BurialRequest
             $stmt = $this->db->prepare("SELECT * FROM dawah_death_certificates WHERE id = :id LIMIT 1");
             $stmt->execute(['id' => $id]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $row ?: null;
+            if (!$row) return null;
+
+            if (!empty($row['source_id']) && ($row['source_type'] ?? '') === 'encoded_certificate') {
+                try {
+                    $encStmt = $this->db->prepare("SELECT * FROM encoded_death_certificates WHERE id = :sid LIMIT 1");
+                    $encStmt->execute(['sid' => $row['source_id']]);
+                    $enc = $encStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($enc) {
+                        foreach ($enc as $k => $v) {
+                            if ((!isset($row[$k]) || $row[$k] === null || $row[$k] === '') && $v !== null && $v !== '') {
+                                $row[$k] = $v;
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {}
+            }
+
+            return $row;
         } catch (\Throwable $e) {
             return null;
         }
