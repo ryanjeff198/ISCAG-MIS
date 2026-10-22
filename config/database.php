@@ -23,10 +23,9 @@ if ($isLocal) {
     define('DB_CHARSET', 'utf8mb4');
 } else {
     // ── InfinityFree / Live Hosting Credentials ───────────────────
-    // Check your InfinityFree Client Area -> "MySQL Details" for DB_HOST & DB_NAME:
-    define('DB_HOST', 'sqlXXX.infinityfree.com'); // <-- Replace with your MySQL Hostname from InfinityFree
+    define('DB_HOST', 'sql106.infinityfree.com');
     define('DB_PORT', '3306');
-    define('DB_NAME', 'if0_43246197_iscag');     // Replace if your created database has a different name
+    define('DB_NAME', 'if0_43246197_iscag'); // If your database name is different, change _iscag to your database suffix
     define('DB_USER', 'if0_43246197');
     define('DB_PASS', 'B0AYg0NXV5OJQUh');
     define('DB_CHARSET', 'utf8mb4');
