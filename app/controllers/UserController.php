@@ -797,7 +797,7 @@ class UserController extends Controller
                 'payment',
                 $studentName,
                 $userId,
-                '/admin/dawah/female'
+                null
             );
         } catch (\Throwable $e) {}
 
@@ -897,7 +897,7 @@ class UserController extends Controller
             return;
         }
 
-        $success = $model->create([
+        $newId = $model->createAndGetId([
             'tenant_id' => $_SESSION['user_id'],
             'groom_name' => $groom,
             'bride_name' => $bride,
@@ -907,22 +907,25 @@ class UserController extends Controller
             'status' => 'pending'
         ]);
 
-        if ($success) {
+        if ($newId) {
+            $refNo = '#MR-' . str_pad((string)$newId, 4, '0', STR_PAD_LEFT);
             try {
                 require_once BASE_PATH . '/app/models/Notification.php';
                 $notif = new Notification();
                 $notif->create(
                     (int)$_SESSION['user_id'],
                     'Marriage Reservation Submitted',
-                    "Your marriage ceremony reservation for $groom & $bride has been submitted successfully and is pending review by the Da'wah Department.",
+                    "Your marriage ceremony reservation ($refNo) for $groom & $bride has been submitted successfully and is pending review by the Da'wah Department.",
                     'info'
                 );
             } catch (Exception $e) {}
         }
 
         echo json_encode([
-            'success' => $success,
-            'message' => $success ? 'Marriage reservation request submitted successfully.' : 'Failed to submit reservation.'
+            'success' => (bool)$newId,
+            'id' => $newId,
+            'ref' => $newId ? ('#MR-' . str_pad((string)$newId, 4, '0', STR_PAD_LEFT)) : '',
+            'message' => $newId ? 'Marriage reservation request submitted successfully.' : 'Failed to submit reservation.'
         ]);
     }
 
@@ -1985,7 +1988,7 @@ class UserController extends Controller
                 'payment',
                 $tenantName,
                 $userId,
-                '/admin/damayan/charity/donations'
+                null
             );
         }
 

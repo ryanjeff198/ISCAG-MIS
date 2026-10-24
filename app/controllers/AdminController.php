@@ -207,7 +207,7 @@ class AdminController extends Controller
                 SELECT cv.id as ref_id, 'Da\'wah' as department, 'Shahadah Conversion' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
                        u.email, cv.created_at as submitted_at, cv.status,
-                       '/admin/dawah/conversion' as action_url
+                       '/admin/mis_admin/dawah_records' as action_url
                 FROM conversion_requests cv
                 LEFT JOIN tenant_accounts u ON cv.tenant_id = u.tenant_id
                 ORDER BY cv.id DESC LIMIT 2
@@ -220,7 +220,7 @@ class AdminController extends Controller
                 SELECT e.id as ref_id, 'Islamic Education' as department, CONCAT('Enrollment: ', COALESCE(e.level,'Course')) as request_type,
                        CONCAT(COALESCE(e.first_name,''), ' ', COALESCE(e.last_name,'')) as applicant,
                        e.contact_number as email, e.created_at as submitted_at, e.status,
-                       '/admin/dawah/education' as action_url
+                       '/admin/mis_admin/dawah_records' as action_url
                 FROM islamic_education_enrollments e
                 ORDER BY e.id DESC LIMIT 4
             ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -232,7 +232,7 @@ class AdminController extends Controller
                 SELECT b.id as ref_id, 'Damayan' as department, 'Burial Service' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
                        u.email, b.submitted_at, b.status,
-                       '/admin/damayan/burial' as action_url
+                       '/admin/mis_admin/damayan_records' as action_url
                 FROM burial_requests b
                 LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
                 ORDER BY b.id DESC LIMIT 3
@@ -245,7 +245,7 @@ class AdminController extends Controller
                 SELECT f.id as ref_id, 'Damayan' as department, 'Funeral Case' as request_type,
                        f.informant_name as applicant,
                        f.informant_email as email, f.reported_at as submitted_at, f.status,
-                       '/admin/damayan/funeral-cases' as action_url
+                       '/admin/mis_admin/damayan_records' as action_url
                 FROM funeral_cases f
                 ORDER BY f.id DESC LIMIT 3
             ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -282,7 +282,7 @@ class AdminController extends Controller
                 'type' => 'Damayan',
                 'title' => 'Pending Burial / Funeral Intakes',
                 'count' => $deptMetrics['damayan']['pending'],
-                'url' => url('/admin/damayan/burial'),
+                'url' => url('/admin/mis_admin/damayan_records'),
                 'level' => 'danger'
             ];
         }
@@ -291,7 +291,7 @@ class AdminController extends Controller
                 'type' => 'Islamic Education',
                 'title' => 'Pending Student Enrollments',
                 'count' => $deptMetrics['education']['pending'],
-                'url' => url('/admin/dawah/education'),
+                'url' => url('/admin/mis_admin/dawah_records'),
                 'level' => 'info'
             ];
         }
@@ -300,7 +300,7 @@ class AdminController extends Controller
                 'type' => 'Da\'wah',
                 'title' => 'Pending Counseling / Marriage Requests',
                 'count' => $deptMetrics['dawah']['pending'],
-                'url' => url('/admin/dawah/counseling'),
+                'url' => url('/admin/mis_admin/dawah_records'),
                 'level' => 'info'
             ];
         }
@@ -6042,7 +6042,8 @@ class AdminController extends Controller
             'Staff_Damayan' => 'Damayan Department Staff',
             'Staff_Male' => 'Da\'wah Male Division Staff',
             'Staff_Female' => 'Islamic Education & Da\'wah Staff',
-            'Tenant' => 'Regular User / Resident'
+            'Guest' => 'Regular User / Guest',
+            'Tenant' => 'Apartment Tenant'
         ];
 
         if (!array_key_exists($newRole, $validRoles)) {

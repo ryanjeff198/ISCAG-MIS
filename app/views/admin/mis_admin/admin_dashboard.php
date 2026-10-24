@@ -419,8 +419,8 @@
                 </div>
               </div>
               <div class="dept-actions">
-                <a href="<?= url('/admin/dawah/education') ?>" class="dept-btn">Student Roster</a>
-                <a href="<?= url('/admin/dawah/education/courses') ?>" class="dept-btn">Courses</a>
+                <a href="<?= url('/admin/mis_admin/dawah_records') ?>" class="dept-btn">Education Logs</a>
+                <a href="<?= url('/admin/mis_admin/dawah_records') ?>" class="dept-btn">Da'wah Records</a>
               </div>
             </div>
 
@@ -452,9 +452,8 @@
                 </div>
               </div>
               <div class="dept-actions">
-                <a href="<?= url('/admin/damayan/burial') ?>" class="dept-btn">Burial Services</a>
-                <a href="<?= url('/admin/damayan/funeral-cases') ?>" class="dept-btn">Funeral Cases</a>
-                <a href="<?= url('/admin/damayan/charity') ?>" class="dept-btn">Charity Fund</a>
+                <a href="<?= url('/admin/mis_admin/damayan_records') ?>" class="dept-btn">Burial Services</a>
+                <a href="<?= url('/admin/mis_admin/damayan_records') ?>" class="dept-btn">Damayan Records</a>
               </div>
             </div>
 

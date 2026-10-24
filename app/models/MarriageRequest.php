@@ -85,6 +85,18 @@ class MarriageRequest
         return $stmt->execute($data);
     }
 
+    public function createAndGetId(array $data): ?int
+    {
+        $fields = array_keys($data);
+        $placeholders = array_map(fn($f) => ":$f", $fields);
+        $sql = "INSERT INTO {$this->table} (" . implode(',', $fields) . ") VALUES (" . implode(',', $placeholders) . ")";
+        $stmt = $this->db->prepare($sql);
+        if ($stmt->execute($data)) {
+            return (int)$this->db->lastInsertId();
+        }
+        return null;
+    }
+
     public function getAll(): array
     {
         $stmt = $this->db->prepare("

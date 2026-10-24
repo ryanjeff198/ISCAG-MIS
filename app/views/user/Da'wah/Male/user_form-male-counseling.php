@@ -395,7 +395,7 @@
     .stat-value.success { color: #10b981; }
 
     /* ══════════════════════════════════════════════════════════ */
-    /* 🌟 APPROVED APPOINTMENT & SCHEDULE HUB STYLES             */
+    /*  APPROVED APPOINTMENT & SCHEDULE HUB STYLES             */
     /* ══════════════════════════════════════════════════════════ */
     
     .appointment-hub-card {
@@ -689,7 +689,7 @@
     .btn-send-inquiry:hover { background: var(--primary-male-dark); }
 
     /* ══════════════════════════════════════════════════════════ */
-    /* 🎟️ PRINTABLE APPOINTMENT SLIP / PASS MODAL STYLES         */
+    /* ️ PRINTABLE APPOINTMENT SLIP / PASS MODAL STYLES         */
     /* ══════════════════════════════════════════════════════════ */
     .slip-modal-card {
       background: #fff; border-radius: 20px; width: 100%; max-width: 580px;
@@ -763,6 +763,355 @@
       .appointment-hero-banner { padding: 24px 20px; }
       .appointment-toolbar { padding: 16px 20px; }
       .user-analytics { grid-template-columns: 1fr; }
+      .approved-calendar-layout { grid-template-columns: 1fr !important; }
+      .pending-summary-grid { grid-template-columns: 1fr !important; }
+    }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /*  APPROVED SCHEDULE CALENDAR COMPONENT                   */
+    /* ══════════════════════════════════════════════════════════ */
+    .schedule-calendar-hub-card {
+      background: #fff; border: 1.5px solid #bbf7d0; border-radius: 18px;
+      padding: 24px 28px; box-shadow: 0 4px 20px rgba(20, 83, 45, 0.05); margin-bottom: 24px;
+    }
+    .approved-calendar-layout {
+      display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px; align-items: stretch;
+    }
+    .approved-cal-container {
+      background: #f8faf9; border: 1px solid var(--border); border-radius: 14px;
+      padding: 18px; display: flex; flex-direction: column;
+    }
+    .approved-cal-top {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .approved-cal-month-nav {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .approved-cal-month-name {
+      font-family: 'Lora', serif; font-size: 1.05rem; font-weight: 700; color: var(--primary-male);
+      min-width: 140px; text-align: center;
+    }
+    .btn-cal-step {
+      width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; color: var(--text-main);
+    }
+    .btn-cal-step:hover { background: var(--primary-male-light); border-color: var(--primary-male); color: var(--primary-male); }
+    .btn-jump-today {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+      background: #fff; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 0.75rem;
+      font-weight: 700; color: #166534; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-jump-today:hover { background: #dcfce7; border-color: #86efac; }
+    
+    .approved-weekdays-row {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center;
+      font-size: 0.7rem; font-weight: 800; color: #9ca3af; text-transform: uppercase;
+      padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px;
+    }
+    .approved-days-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+    }
+    .approved-cal-day {
+      aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; position: relative; border: 1px solid transparent;
+      color: #374151; background: #fff;
+    }
+    .approved-cal-day:hover:not(.empty) { background: #f0fdf4; border-color: #86efac; }
+    .approved-cal-day.empty { background: transparent; cursor: default; }
+    .approved-cal-day.today { font-weight: 800; color: var(--primary-male); }
+    .approved-cal-day.today::after {
+      content: ''; position: absolute; bottom: 3px; width: 4px; height: 4px;
+      border-radius: 50%; background: var(--primary-male);
+    }
+    .approved-cal-day.has-session {
+      background: #14532D !important; color: #fff !important; font-weight: 800;
+      border-color: #d4af37 !important; box-shadow: 0 4px 10px rgba(20, 83, 45, 0.35);
+    }
+    .approved-cal-day.has-session::after {
+      content: ''; position: absolute; bottom: 3px; width: 6px; height: 6px;
+      border-radius: 50%; background: #fde047; box-shadow: 0 0 0 2px #14532D;
+    }
+    .approved-cal-day.selected-view:not(.has-session) {
+      border-color: var(--primary-male); background: #f0fdf4; font-weight: 800;
+    }
+
+    /* Inspector Card */
+    .approved-session-inspector {
+      background: linear-gradient(135deg, #f0fdf4, #fbfefc); border: 1.5px solid #bbf7d0;
+      border-radius: 14px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .inspector-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+      border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.05em; background: #dcfce7; color: #166534; border: 1px solid #86efac;
+      align-self: flex-start; margin-bottom: 8px;
+    }
+    .inspector-date {
+      font-family: 'Lora', serif; font-size: 1.15rem; font-weight: 700; color: #14532D; margin: 0 0 14px;
+    }
+    .inspector-info-list {
+      display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;
+    }
+    .inspector-item {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+      padding-bottom: 8px; border-bottom: 1px dashed #dcfce7; font-size: 0.82rem;
+    }
+    .inspector-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .inspector-item .item-label { color: #6b7280; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; }
+    .inspector-item .item-val { color: #1f2937; font-weight: 700; text-align: right; }
+    .inspector-item .item-val.highlight { color: #166534; font-family: 'Lora', serif; font-weight: 700; }
+    .inspector-actions {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 12px;
+    }
+    .btn-inspector-action {
+      flex: 1; padding: 8px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+      justify-content: center; gap: 6px; transition: all 0.2s; border: none;
+    }
+    .btn-inspector-action.btn-print { background: var(--primary-male); color: #fff; }
+    .btn-inspector-action.btn-print:hover { background: var(--primary-male-dark); }
+    .btn-inspector-action.btn-google-cal { background: #fff; color: #374151; border: 1.5px solid var(--border); }
+    .btn-inspector-action.btn-google-cal:hover { background: #f9fafb; border-color: #9ca3af; }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /*  PENDING REVIEW MODAL STYLES                             */
+    /* ══════════════════════════════════════════════════════════ */
+    .pending-modal-card {
+      background: #fff; border-radius: 20px; width: 100%; max-width: 540px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.25); overflow: hidden;
+      animation: modalPop 0.35s ease; border: 1px solid rgba(0,0,0,0.06);
+    }
+    .pending-modal-header {
+      background: linear-gradient(135deg, #14532D, #0f3d24); padding: 24px 28px;
+      color: #fff; display: flex; align-items: center; gap: 14px; position: relative;
+    }
+    .pending-icon-wrap {
+      width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(212, 175, 55, 0.4); display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0;
+    }
+    .pending-icon-wrap svg { width: 26px; height: 26px; fill: #fff; }
+    .pending-tag {
+      font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+      color: #fde047; margin-bottom: 2px;
+    }
+    .pending-modal-title {
+      font-family: 'Lora', serif; font-size: 1.2rem; font-weight: 700; margin: 0 0 2px; color: #fff;
+    }
+    .pending-modal-sub { font-size: 0.78rem; color: rgba(255,255,255,0.8); margin: 0; }
+    .pending-modal-body { padding: 24px 28px; }
+    .pending-status-banner {
+      display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+      border-radius: 10px; background: #fef3c7; border: 1px solid #fde68a;
+      font-size: 0.82rem; color: #92400e; margin-bottom: 16px;
+    }
+    .status-pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;
+      box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); animation: warningPulse 1.8s infinite;
+    }
+    @keyframes warningPulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+    .pending-primary-msg {
+      font-size: 0.88rem; color: #4b5563; line-height: 1.5; margin: 0 0 16px;
+    }
+    .pending-info-callout {
+      display: flex; gap: 12px; background: #f0fdf4; border: 1px solid #bbf7d0;
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 18px;
+    }
+    .callout-icon {
+      width: 32px; height: 32px; border-radius: 8px; background: #dcfce7;
+      color: #166534; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .callout-icon svg { width: 18px; height: 18px; fill: currentColor; }
+    .callout-content strong {
+      display: block; font-size: 0.82rem; color: #166534; margin-bottom: 2px;
+    }
+    .callout-content p {
+      font-size: 0.78rem; color: #15803d; margin: 0; line-height: 1.45;
+    }
+    .pending-summary-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .pending-summary-item {
+      background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 8px; padding: 10px 12px;
+    }
+    .pending-summary-item .lbl {
+      display: block; font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
+      color: #9ca3af; margin-bottom: 2px;
+    }
+    .pending-summary-item .val {
+      font-size: 0.85rem; font-weight: 700; color: #111827;
+    }
+    .pending-modal-footer {
+      padding: 16px 28px; background: #f9fafb; border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; gap: 10px;
+    }
+    .btn-pending-sec {
+      padding: 9px 18px; background: #fff; border: 1.5px solid var(--border);
+      border-radius: 8px; font-weight: 700; font-size: 0.82rem; color: #4b5563;
+      text-decoration: none; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-pending-sec:hover { background: #f3f4f6; color: #111827; }
+    .btn-pending-pri {
+      padding: 9px 20px; background: var(--primary-male); border: none;
+      border-radius: 8px; font-weight: 700; font-size: 0.82rem; color: #fff;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-pending-pri:hover { background: var(--primary-male-dark); }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /*  VISUAL PENDING REQUEST HUB (PREMIUM REDESIGN)           */
+    /* ══════════════════════════════════════════════════════════ */
+    .pending-hub-card {
+      background: #fff; border-radius: 20px; border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(20, 83, 45, 0.08); overflow: hidden; margin-bottom: 28px;
+    }
+    .pending-hero-banner {
+      background: linear-gradient(135deg, #064e3b 0%, #14532D 60%, #0f3d24 100%);
+      padding: 32px 36px 28px; position: relative; overflow: hidden; color: #fff;
+    }
+    .pending-hero-banner::after {
+      content: ''; position: absolute; right: -40px; bottom: -40px; width: 220px; height: 220px;
+      border-radius: 50%; background: rgba(212, 175, 55, 0.12); pointer-events: none;
+    }
+    .pending-hero-banner::before {
+      content: ''; position: absolute; right: 140px; top: -30px; width: 140px; height: 140px;
+      border-radius: 50%; background: rgba(255, 255, 255, 0.05); pointer-events: none;
+    }
+    .pending-top-row {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;
+      position: relative; z-index: 1; flex-wrap: wrap; margin-bottom: 24px;
+    }
+    .pending-title-area { display: flex; align-items: center; gap: 18px; }
+    .pending-avatar-icon {
+      width: 64px; height: 64px; border-radius: 18px; background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;
+      border: 2px solid rgba(212, 175, 55, 0.5); flex-shrink: 0; box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+    }
+    .pending-avatar-icon svg { width: 32px; height: 32px; fill: #fff; }
+    .pending-headings h3 {
+      font-family: 'Lora', serif; font-size: 1.45rem; font-weight: 700; margin: 0 0 4px;
+      letter-spacing: -0.01em; color: #fff;
+    }
+    .pending-headings p {
+      font-size: 0.85rem; color: rgba(255, 255, 255, 0.85); margin: 0;
+    }
+    .badge-pending-pulse {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px;
+      border-radius: 30px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.06em; background: rgba(245, 158, 11, 0.22); border: 1.5px solid rgba(253, 224, 71, 0.5);
+      backdrop-filter: blur(10px); color: #fef08a; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .pulse-dot-amber {
+      width: 8px; height: 8px; border-radius: 50%; background: #fde047;
+      box-shadow: 0 0 0 0 rgba(253, 224, 71, 0.7); animation: warningPulse 1.8s infinite;
+    }
+
+    /* Metric highlights strip */
+    .pending-schedule-strip {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+      position: relative; z-index: 1;
+    }
+    .pmetric-box {
+      background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 14px 16px;
+      transition: all 0.2s;
+    }
+    .pmetric-box:hover { background: rgba(255, 255, 255, 0.18); transform: translateY(-2px); }
+    .pmetric-lbl {
+      font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+      color: rgba(255, 255, 255, 0.75); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+    }
+    .pmetric-val {
+      font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.3;
+    }
+    .pmetric-val.gold { color: #fde047; }
+
+    /* Pending 2-Column Hub Grid */
+    .pending-hub-grid {
+      display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px; padding: 32px 36px;
+    }
+
+    /* Calendar Preview Teaser Card */
+    .calendar-teaser-card {
+      background: linear-gradient(135deg, #fefce8, #f0fdf4); border: 1.5px dashed #f59e0b;
+      border-radius: 16px; padding: 22px 24px; margin-bottom: 24px; position: relative;
+    }
+    .calendar-teaser-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+      border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.05em; background: #fef3c7; color: #92400e; border: 1px solid #fde68a;
+      margin-bottom: 12px;
+    }
+    .calendar-teaser-content {
+      display: flex; gap: 16px; align-items: center;
+    }
+    .calendar-teaser-icon {
+      width: 52px; height: 52px; border-radius: 14px; background: #fff;
+      border: 2px solid #fde68a; display: flex; align-items: center; justify-content: center;
+      color: #d97706; flex-shrink: 0; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.12);
+    }
+    .calendar-teaser-icon svg { width: 28px; height: 28px; fill: currentColor; }
+    .calendar-teaser-text h5 {
+      font-family: 'Lora', serif; font-size: 1.05rem; font-weight: 700; color: #14532D; margin: 0 0 4px;
+    }
+    .calendar-teaser-text p {
+      font-size: 0.82rem; color: #4b5563; margin: 0; line-height: 1.5;
+    }
+
+    /* Enhanced 3-Phase Step Tracker */
+    .pending-journey-wrap {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; margin-bottom: 24px;
+    }
+    .pending-journey-steps {
+      display: flex; justify-content: space-between; position: relative; margin-top: 14px;
+    }
+    .pending-journey-steps::before {
+      content: ''; position: absolute; top: 22px; left: 12%; right: 12%; height: 3px;
+      background: #e5e7eb; z-index: 1;
+    }
+    .pjourney-step {
+      display: flex; flex-direction: column; align-items: center; position: relative;
+      z-index: 2; text-align: center; flex: 1;
+    }
+    .pjourney-circle {
+      width: 44px; height: 44px; border-radius: 50%; background: #f9fafb;
+      border: 3px solid #e5e7eb; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.9rem; color: #9ca3af; margin-bottom: 8px; transition: all 0.3s;
+    }
+    .pjourney-step.done .pjourney-circle {
+      background: var(--primary-male); border-color: var(--primary-male); color: #fff;
+    }
+    .pjourney-step.active .pjourney-circle {
+      background: #fff; border-color: #f59e0b; color: #d97706;
+      box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.2);
+    }
+    .pjourney-title { font-size: 0.82rem; font-weight: 700; color: #1f2937; margin-bottom: 2px; }
+    .pjourney-desc { font-size: 0.70rem; color: #6b7280; line-height: 1.3; }
+
+    /* Amanah Trust Notice Box */
+    .amanah-trust-box {
+      background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 14px;
+      padding: 18px 20px; display: flex; gap: 14px; align-items: center;
+    }
+    .amanah-icon {
+      width: 40px; height: 40px; border-radius: 10px; background: #dcfce7;
+      color: #166534; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .amanah-icon svg { width: 22px; height: 22px; fill: currentColor; }
+    .amanah-text strong { display: block; font-size: 0.85rem; color: #166534; margin-bottom: 2px; }
+    .amanah-text p { font-size: 0.78rem; color: #15803d; margin: 0; line-height: 1.45; }
+
+    @media (max-width: 960px) {
+      .pending-hub-grid { grid-template-columns: 1fr; padding: 20px; }
+      .pending-schedule-strip { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -848,7 +1197,7 @@
       ?>
 
       <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- 🌟 A. COUNSELING OVERVIEW SUMMARY CARDS                    -->
+      <!--  A. COUNSELING OVERVIEW SUMMARY CARDS                    -->
       <!-- ══════════════════════════════════════════════════════════ -->
       <div class="user-analytics" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
         <div class="stat-card">
@@ -899,7 +1248,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- 🌟 CASE 1: SCHEDULE APPROVED BY ADMIN (APPOINTMENT HUB)    -->
+      <!--  CASE 1: SCHEDULE APPROVED BY ADMIN (APPOINTMENT HUB)    -->
       <!-- ══════════════════════════════════════════════════════════ -->
       <?php if ($isConfirmed && $activeRequest): ?>
       <div class="appointment-hub-card">
@@ -993,11 +1342,97 @@
           </div>
         </div>
 
+        <!--  DEDICATED APPOINTMENT SCHEDULE CALENDAR (APPEARS WHEN ADMIN APPROVES) -->
+        <div style="padding: 28px 36px 0;">
+          <div class="hub-card schedule-calendar-hub-card">
+            <div class="hub-card-title">
+              <span>
+                <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+                Appointment Schedule Calendar
+              </span>
+              <span class="detail-badge-pill" style="background:#dcfce7; color:#166534; font-weight:800;">
+                Confirmed &amp; Scheduled by Administrator
+              </span>
+            </div>
+
+            <div class="approved-calendar-layout">
+              <!-- Calendar Left: Interactive Monthly Grid -->
+              <div class="approved-cal-container">
+                <div class="approved-cal-top">
+                  <div class="approved-cal-month-nav">
+                    <button type="button" class="btn-cal-step" onclick="navApprovedCounselingCal(-1)" title="Previous Month">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                    </button>
+                    <span id="approved-cal-title-counseling" class="approved-cal-month-name">Loading Month...</span>
+                    <button type="button" class="btn-cal-step" onclick="navApprovedCounselingCal(1)" title="Next Month">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </button>
+                  </div>
+                  <button type="button" class="btn-jump-today" onclick="jumpToConfirmedCounselingSession()">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    Jump to My Confirmed Session
+                  </button>
+                </div>
+
+                <div class="approved-weekdays-row">
+                  <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                </div>
+                <div id="approved-cal-grid-counseling" class="approved-days-grid"></div>
+              </div>
+
+              <!-- Calendar Right: Schedule Details Inspector -->
+              <div class="approved-session-inspector">
+                <div>
+                  <div class="inspector-badge">
+                    <span class="pulse-dot"></span>
+                    <span id="inspector-status-text">Confirmed Session</span>
+                  </div>
+                  <h4 class="inspector-date" id="inspector-date-text"><?= !empty($confirmedDate) ? date('l, F j, Y', strtotime($confirmedDate)) : 'Scheduled Consultation' ?></h4>
+                  
+                  <div class="inspector-info-list">
+                    <div class="inspector-item">
+                      <span class="item-label">Consultation Time</span>
+                      <span class="item-val" id="inspector-time-text"><?= htmlspecialchars($confirmedTime) ?></span>
+                    </div>
+                    <div class="inspector-item">
+                      <span class="item-label">Assigned Counselor</span>
+                      <span class="item-val highlight" id="inspector-counselor-text"><?= htmlspecialchars($assignedCounselorName) ?></span>
+                    </div>
+                    <div class="inspector-item">
+                      <span class="item-label">Session Venue</span>
+                      <span class="item-val" id="inspector-venue-text"><?= htmlspecialchars($venueLocation) ?></span>
+                    </div>
+                    <div class="inspector-item">
+                      <span class="item-label">Primary Concern</span>
+                      <span class="item-val"><?= htmlspecialchars(ucfirst($activeRequest['reason'] ?? 'Guidance')) ?></span>
+                    </div>
+                    <div class="inspector-item">
+                      <span class="item-label">Reference Number</span>
+                      <span class="item-val" style="font-family:monospace;"><?= htmlspecialchars($activeRef) ?></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="inspector-actions">
+                  <button type="button" class="btn-inspector-action btn-print" onclick="openAppointmentPassModal(<?= htmlspecialchars(json_encode($activeRequest)) ?>)">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                    Print Slip
+                  </button>
+                  <a href="<?= $calUrl ?>" target="_blank" class="btn-inspector-action btn-google-cal">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm-7-7h5v5h-5z"/></svg>
+                    Google Cal
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Two Column Main Grid -->
         <div class="schedule-hub-grid">
           <!-- Left Column -->
           <div>
-            <!-- 🌟 B. DEDICATED APPOINTMENT SCHEDULE SECTION -->
+            <!--  B. DEDICATED APPOINTMENT SCHEDULE SECTION -->
             <div class="hub-card" style="margin-bottom:24px; border-left: 4px solid var(--primary-male);">
               <h5 class="hub-card-title">
                 <span>
@@ -1039,7 +1474,7 @@
               </div>
             </div>
 
-            <!-- 🌟 D. COUNSELING REQUEST DETAILS SECTION (CONFIDENTIAL) -->
+            <!--  D. COUNSELING REQUEST DETAILS SECTION (CONFIDENTIAL) -->
             <div class="hub-card" style="margin-bottom:24px;">
               <h5 class="hub-card-title">
                 <span>
@@ -1080,7 +1515,7 @@
               </div>
             </div>
 
-            <!-- 🌟 E. 6-STEP DYNAMIC LIFECYCLE JOURNEY TRACKER -->
+            <!--  E. 6-STEP DYNAMIC LIFECYCLE JOURNEY TRACKER -->
             <div class="hub-card">
               <h5 class="hub-card-title">
                 <span>
@@ -1149,7 +1584,7 @@
 
           <!-- Right Column -->
           <div>
-            <!-- 🌟 C. ASSIGNED COUNSELOR INFORMATION SECTION -->
+            <!--  C. ASSIGNED COUNSELOR INFORMATION SECTION -->
             <div class="hub-card counselor-card" style="margin-bottom:24px;">
               <div class="counselor-header">
                 <div class="counselor-avatar" style="width: 56px; height: 56px; border-radius: 14px; background: #fef3c7; color: #b45309; font-size: 1.3rem;">
@@ -1254,101 +1689,260 @@
       </div>
 
       <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- ⏳ CASE 2: PENDING REVIEW HERO (REQUIREMENT 1)             -->
+      <!--  CASE 2: PENDING REVIEW HERO (REQUIREMENT 1)             -->
       <!-- ══════════════════════════════════════════════════════════ -->
       <?php elseif ($isPending && $activeRequest): ?>
-      <div class="status-hero" style="background: white; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06); overflow: hidden; margin-bottom: 24px;">
-        <div class="status-hero-top" style="background: linear-gradient(135deg, #14532D, #166534); padding: 32px 32px 28px; position: relative; overflow: hidden; color: #fff;">
-            <div style="position: absolute; right: -20px; bottom: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 255, 255, 0.1);"></div>
-            <div style="position: absolute; right: 100px; bottom: -30px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 255, 255, 0.05);"></div>
-            
-            <div class="status-hero-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; position: relative; z-index: 1; flex-wrap: wrap;">
-                <div class="status-hero-header-left" style="display: flex; align-items: center; gap: 16px;">
-                    <div class="status-hero-avatar" style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.25); flex-shrink: 0;">
-                        <svg viewBox="0 0 24 24" style="width: 28px; height: 28px; fill: white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                    </div>
-                    <div>
-                        <h4 style="font-family: 'Lora', serif; font-size: 1.35rem; font-weight: 700; color: white; margin: 0 0 4px;">Your Counseling Request Has Been Submitted</h4>
-                        <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin: 0;">Ref No: <strong><?= htmlspecialchars($activeRef) ?></strong> • Date Submitted: <?= !empty($activeRequest['created_at']) ? date('M d, Y', strtotime($activeRequest['created_at'])) : date('M d, Y') ?></p>
-                    </div>
-                </div>
-                <div class="status-badge pending" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 22px; border-radius: 24px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; backdrop-filter: blur(8px); background: rgba(245, 158, 11, 0.25); color: #fef08a; border: 1px solid rgba(253, 224, 71, 0.4);">
-                    <div class="status-badge-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #fef08a;"></div>
-                    Awaiting Review
-                </div>
-            </div>
-        </div>
-
-        <!-- Official Status Message (Requirement 1) -->
-        <div style="padding: 24px 32px 16px; background: #fff; border-bottom: 1px solid var(--border);">
-          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px 22px; text-align: center; margin-bottom: 20px;">
-            <p style="font-family: 'Lora', serif; font-size: 1.05rem; font-style: italic; color: #166534; line-height: 1.6; margin: 0 0 8px;">
-              "Thank you for reaching out to the Counseling and Guidance service. Your request is now pending review by our administrator. You will be notified once your request has been reviewed."
-            </p>
-            <span style="font-size: 0.78rem; font-weight: 700; color: #15803d; text-transform: uppercase; letter-spacing: 0.05em;">
-              ISCAG Guidance &amp; Counseling Desk
-            </span>
-          </div>
-
-          <!-- 3-Step Simple Status Timeline (Requirement 1) -->
-          <div class="timeline-3-wrap">
-            <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); text-align: center; margin-bottom: 16px;">
-              Request Status Timeline
-            </div>
-            <div class="timeline-3-row">
-              <div class="timeline-3-step done">
-                <div class="timeline-3-circle">✓</div>
-                <div class="timeline-3-title">Request Submitted</div>
-                <div class="timeline-3-desc"><?= !empty($activeRequest['created_at']) ? date('M d, Y', strtotime($activeRequest['created_at'])) : 'Completed' ?></div>
+      <div class="pending-hub-card">
+        <!-- Hero Header Banner -->
+        <div class="pending-hero-banner">
+          <div class="pending-top-row">
+            <div class="pending-title-area">
+              <div class="pending-avatar-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
               </div>
-              <div class="timeline-3-step <?= ($curStatus === 'under_review') ? 'active' : '' ?>">
-                <div class="timeline-3-circle"><?= ($curStatus === 'under_review') ? '2' : '2' ?></div>
-                <div class="timeline-3-title">Under Review</div>
-                <div class="timeline-3-desc">Administrator Review</div>
+              <div class="pending-headings">
+                <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:#fde047; margin-bottom:3px;">
+                  Counseling &amp; Spiritual Guidance • Pending Review
+                </div>
+                <h3>Your Counseling Request Has Been Submitted</h3>
+                <p>Ref No: <strong style="color:#fde047; font-family:monospace;"><?= htmlspecialchars($activeRef) ?></strong> • Filed on <?= !empty($activeRequest['created_at']) ? date('M d, Y — g:i A', strtotime($activeRequest['created_at'])) : date('M d, Y') ?></p>
               </div>
-              <div class="timeline-3-step <?= ($curStatus === 'approved_awaiting_schedule') ? 'active' : '' ?>">
-                <div class="timeline-3-circle">3</div>
-                <div class="timeline-3-title">Awaiting Confirmation</div>
-                <div class="timeline-3-desc">Final Schedule &amp; Counselor</div>
+            </div>
+            <div>
+              <div class="badge-pending-pulse">
+                <div class="pulse-dot-amber"></div>
+                Awaiting Administrator Review
               </div>
             </div>
           </div>
+
+          <!-- Frosted Glass Metric Strip -->
+          <div class="pending-schedule-strip">
+            <div class="pmetric-box">
+              <div class="pmetric-lbl">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6z"/></svg>
+                Primary Concern
+              </div>
+              <div class="pmetric-val gold"><?= htmlspecialchars(ucfirst($activeRequest['reason'])) ?></div>
+            </div>
+
+            <div class="pmetric-box">
+              <div class="pmetric-lbl">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+                Preferred Schedule
+              </div>
+              <div class="pmetric-val">
+                <?= !empty($activeRequest['preferred_date']) ? date('M d, Y', strtotime($activeRequest['preferred_date'])) : 'Pending' ?>
+                <?= !empty($activeRequest['preferred_time']) ? ' (' . htmlspecialchars($activeRequest['preferred_time']) . ')' : '' ?>
+              </div>
+            </div>
+
+            <div class="pmetric-box">
+              <div class="pmetric-lbl">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                Consultation Mode
+              </div>
+              <div class="pmetric-val"><?= htmlspecialchars($sessionMode) ?> (Room 204)</div>
+            </div>
+
+            <div class="pmetric-box">
+              <div class="pmetric-lbl">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                Assigned Counselor
+              </div>
+              <div class="pmetric-val" style="color:#e2e8f0; font-size:0.85rem;">Pending Administrator Assignment</div>
+            </div>
+          </div>
         </div>
 
-        <!-- Request Summary Key Details -->
-        <div class="status-summary" style="padding: 18px 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; background: #f9fafb; border-bottom: 1px solid var(--border);">
-            <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Reference No.</div>
-                <div class="summary-stat-value" style="font-family: monospace; font-size: 1rem; font-weight: 800; color: #14532D;"><?= htmlspecialchars($activeRef) ?></div>
-            </div>
-            <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Primary Concern</div>
-                <div class="summary-stat-value" style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D;"><?= htmlspecialchars(ucfirst($activeRequest['reason'])) ?></div>
-            </div>
-            <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Preferred Session</div>
-                <div class="summary-stat-value" style="font-size: 0.92rem; font-weight: 700; color: #14532D;"><?= htmlspecialchars($sessionMode) ?></div>
-            </div>
-            <div class="summary-stat" style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-                <div class="summary-stat-label" style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Preferred Schedule</div>
-                <div class="summary-stat-value" style="font-size: 0.88rem; font-weight: 700; color: #14532D;">
-                  <?= !empty($activeRequest['preferred_date']) ? date('M d', strtotime($activeRequest['preferred_date'])) : 'Pending' ?>
-                  <?= !empty($activeRequest['preferred_time']) ? ' (' . htmlspecialchars($activeRequest['preferred_time']) . ')' : '' ?>
+        <!-- Two Column Main Grid -->
+        <div class="pending-hub-grid">
+          <!-- Left Column -->
+          <div>
+            <!--  Schedule Calendar Teaser / What Happens Next -->
+            <div class="calendar-teaser-card">
+              <div class="calendar-teaser-badge">
+                <span class="status-pulse-dot" style="width:6px;height:6px;"></span>
+                Schedule Calendar Preview Notice
+              </div>
+              <div class="calendar-teaser-content">
+                <div class="calendar-teaser-icon">
+                  <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm-7-7h5v5h-5z"/></svg>
                 </div>
+                <div class="calendar-teaser-text">
+                  <h5>Schedule Calendar Will Unlock Upon Approval</h5>
+                  <p>
+                    Your request is currently being processed by the Da'wah Guidance Scholars. Once approved, the interactive <strong>Schedule Calendar</strong> will automatically appear on this page showing your confirmed consultation date, assigned scholar, and room pass.
+                  </p>
+                </div>
+              </div>
             </div>
+
+            <!--  3-Phase Dynamic Journey Timeline -->
+            <div class="pending-journey-wrap">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h5 style="margin:0; font-family:'Lora',serif; font-size:1.05rem; font-weight:700; color:#14532D;">
+                  Request Progress Journey
+                </h5>
+                <span style="font-size:0.75rem; font-weight:800; color:#d97706; background:#fef3c7; padding:4px 12px; border-radius:20px; border:1px solid #fde68a;">
+                  Step 2 of 3: Under Review
+                </span>
+              </div>
+
+              <div class="pending-journey-steps">
+                <!-- Step 1: Received -->
+                <div class="pjourney-step done">
+                  <div class="pjourney-circle">
+                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                  </div>
+                  <span class="pjourney-title">Request Received</span>
+                  <span class="pjourney-desc"><?= !empty($activeRequest['created_at']) ? date('M d, Y', strtotime($activeRequest['created_at'])) : 'Completed' ?></span>
+                </div>
+
+                <!-- Step 2: Under Review -->
+                <div class="pjourney-step active">
+                  <div class="pjourney-circle">2</div>
+                  <span class="pjourney-title">Administrator Review</span>
+                  <span class="pjourney-desc" style="color:#b45309; font-weight:700;">In Progress</span>
+                </div>
+
+                <!-- Step 3: Approved & Calendar -->
+                <div class="pjourney-step">
+                  <div class="pjourney-circle">
+                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                  </div>
+                  <span class="pjourney-title">Schedule Calendar</span>
+                  <span class="pjourney-desc">Unlocks upon approval</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submitted Request Details Card -->
+            <div class="hub-card" style="margin-bottom:0;">
+              <h5 class="hub-card-title">
+                <span>
+                  <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                  Submitted Consultation Details
+                </span>
+                <span class="detail-badge-pill" style="background:#fef3c7; color:#92400e; font-weight:800;">Pending Review</span>
+              </h5>
+
+              <div class="detail-table">
+                <div class="detail-row">
+                  <span class="detail-key">Primary Concern</span>
+                  <span class="detail-val highlight"><?= htmlspecialchars(ucfirst($activeRequest['reason'])) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Preferred Schedule</span>
+                  <span class="detail-val">
+                    <?= !empty($activeRequest['preferred_date']) ? date('l, F j, Y', strtotime($activeRequest['preferred_date'])) : 'Flexible Date' ?>
+                    <?= !empty($activeRequest['preferred_time']) ? ' at ' . htmlspecialchars($activeRequest['preferred_time']) : '' ?>
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Preferred Mode</span>
+                  <span class="detail-val"><?= htmlspecialchars($sessionMode) ?> (Room 204)</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Reference Number</span>
+                  <span class="detail-val" style="font-family:monospace; font-weight:800; color:var(--primary-male);"><?= htmlspecialchars($activeRef) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Filing Date</span>
+                  <span class="detail-val"><?= !empty($activeRequest['created_at']) ? date('F j, Y — g:i A', strtotime($activeRequest['created_at'])) : '—' ?></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div>
+            <!--  Amanah Trust Guarantee Box -->
+            <div class="amanah-trust-box" style="margin-bottom:24px;">
+              <div class="amanah-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+              </div>
+              <div class="amanah-text">
+                <strong>Strict Confidentiality (Amanah)</strong>
+                <p>All guidance conversations and client data are protected under Islamic trust standards and Da'wah Department privacy policies.</p>
+              </div>
+            </div>
+
+            <!-- Da'wah Department Office Desk -->
+            <div class="hub-card counselor-card" style="margin-bottom:24px;">
+              <div class="counselor-header">
+                <div class="counselor-avatar" style="width: 56px; height: 56px; border-radius: 14px; background: #fef3c7; color: #b45309; font-size: 1.3rem;">
+                  <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div class="counselor-info">
+                  <h5 style="margin:0 0 2px; font-size:1rem; font-weight:700; color:#1f2937;">Ustaz Norman Ungasin</h5>
+                  <p style="margin:0 0 4px; font-size:0.78rem; color:#b45309; font-weight:700;">Resident Islamic Guidance Scholar</p>
+                  <span style="font-size:0.72rem; color:#6b7280;">ISCAG Da'wah Department Head</span>
+                </div>
+              </div>
+
+              <div class="counselor-contacts">
+                <div class="contact-item">
+                  <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                  <span>Office Direct: <strong>+63 906 574 0819</strong></span>
+                </div>
+                <div class="contact-item">
+                  <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                  <span>Official Email: <strong>kizumikaze1@gmail.com</strong></span>
+                </div>
+                <div class="contact-item">
+                  <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  <span>Office: <strong>2nd Floor Da'wah Room 201</strong></span>
+                </div>
+              </div>
+
+              <div style="background:#fefce8; border-radius:10px; padding:12px; border:1px solid #fde68a;">
+                <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#b45309; margin-bottom:2px;">Review Turnaround</div>
+                <div style="font-size:0.82rem; color:#451a03; line-height:1.4;">
+                  Requests are typically reviewed within <strong>24 to 48 hours</strong>. You will receive an in-app notification upon confirmation.
+                </div>
+              </div>
+            </div>
+
+            <!-- Pre-Session Guidance Checklist -->
+            <div class="hub-card">
+              <h5 class="hub-card-title">
+                <span>
+                  <svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+                  While Awaiting Confirmation
+                </span>
+              </h5>
+              <div class="checklist-list">
+                <div class="check-item">
+                  <div class="check-num">1</div>
+                  <div class="check-content">
+                    <strong>Prepare Specific Questions</strong>
+                    <p>Writing down key points helps maximize the benefit of your 1-hour consultation.</p>
+                  </div>
+                </div>
+                <div class="check-item">
+                  <div class="check-num">2</div>
+                  <div class="check-content">
+                    <strong>Purity of Intention (Niyyah)</strong>
+                    <p>Approach the guidance session seeking sincere Islamic reconciliation and spiritual growth.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Strict Rule Notice & Action Buttons (Requirement 1) -->
-        <div style="padding: 24px 32px; background: #fff; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
-          <div style="font-size: 0.85rem; color: #4b5563; max-width: 540px; line-height: 1.5;">
-            <strong>Appointment Notice:</strong> An assigned counselor and confirmed appointment schedule will be displayed only after the administrator reviews and finalizes your session details.
+        <!-- Action Toolbar at Bottom -->
+        <div style="padding: 20px 36px 24px; background: #fafafa; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <div style="font-size: 0.85rem; color: #4b5563;">
+            Need to change your preferred time or topic before admin review?
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <a href="<?= url('/user/dashboard') ?>" class="btn-action-tool btn-tool-cal">
               ← Return to Dashboard
             </a>
             <a href="<?= url('/user/services/counseling/status?id=' . $activeRequest['id']) ?>" class="btn-action-tool btn-tool-guidance">
-              View Request Status Page →
+              View Status Page →
             </a>
             <button type="button" class="btn-action-tool btn-tool-cal" onclick="toggleBookingForm()">
               Submit Another Request
@@ -1358,7 +1952,7 @@
       </div>
 
       <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- ❌ CASE 3: REJECTED REQUEST NOTICE                         -->
+      <!--  CASE 3: REJECTED REQUEST NOTICE                         -->
       <!-- ══════════════════════════════════════════════════════════ -->
       <?php elseif ($isRejected && $activeRequest): ?>
       <div class="section-card" style="margin-bottom:24px; border-left: 4px solid #ef4444;">
@@ -1384,7 +1978,7 @@
       <?php endif; ?>
 
       <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- 📝 BOOKING FORM WRAPPER (PRESERVES EXISTING FORM INTACT)   -->
+      <!--  BOOKING FORM WRAPPER (PRESERVES EXISTING FORM INTACT)   -->
       <!-- ══════════════════════════════════════════════════════════ -->
       <div id="counseling-booking-form-wrap" style="<?= ($isConfirmed || $isPending) ? 'display:none;' : '' ?>;">
 
@@ -1577,7 +2171,7 @@
       </div> <!-- end counseling-booking-form-wrap -->
 
       <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- 📜 MY APPLICATION HISTORY TABLE                            -->
+      <!--  MY APPLICATION HISTORY TABLE                            -->
       <!-- ══════════════════════════════════════════════════════════ -->
       <div class="section-card" style="margin-top:24px;">
         <div class="section-card-header">
@@ -1657,7 +2251,7 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════ -->
-<!-- 🎟️ PRINTABLE APPOINTMENT PASS MODAL                        -->
+<!-- ️ PRINTABLE APPOINTMENT PASS MODAL                        -->
 <!-- ══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="appointment-pass-modal">
   <div class="slip-modal-card">
@@ -1754,7 +2348,7 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════ -->
-<!-- 🔔 COUNSELING ALERT / NOTIFICATION MODAL                   -->
+<!--  COUNSELING ALERT / NOTIFICATION MODAL                   -->
 <!-- ══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="counseling-alert-modal" onclick="if(event.target===this) closeCounselingAlertModal()">
   <div class="counseling-alert-card" role="dialog" aria-modal="true" aria-labelledby="counseling-alert-title">
@@ -1777,6 +2371,72 @@
     <div class="counseling-alert-actions">
       <button type="button" class="btn-alert-btn secondary" id="counseling-alert-cancel-btn" style="display:none;" onclick="closeCounselingAlertModal(false)">Cancel</button>
       <button type="button" class="btn-alert-btn primary" id="counseling-alert-confirm-btn" onclick="closeCounselingAlertModal(true)">Acknowledge</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  COUNSELING PENDING REVIEW MODAL                         -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="counseling-pending-modal" onclick="if(event.target===this) closeCounselingPendingModal(false)">
+  <div class="pending-modal-card" role="dialog" aria-modal="true" aria-labelledby="cpm-title">
+    <div class="pending-modal-header">
+      <div class="pending-icon-wrap">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      </div>
+      <div>
+        <div class="pending-tag">Request Successfully Submitted</div>
+        <h3 class="pending-modal-title" id="cpm-title">Pending Administrator Review</h3>
+        <p class="pending-modal-sub">Reference Number: <strong id="cpm-ref-text">#MC-AUTO</strong></p>
+      </div>
+      <button type="button" class="btn-close-modal" onclick="closeCounselingPendingModal(false)" style="margin-left:auto; color:rgba(255,255,255,0.7);">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </div>
+
+    <div class="pending-modal-body">
+      <div class="pending-status-banner">
+        <span class="status-pulse-dot"></span>
+        <span>Status: <strong>Pending Administrator Review &amp; Counselor Assignment</strong></span>
+      </div>
+
+      <p class="pending-primary-msg">
+        As-salamu alaykum. Your counseling appointment request has been transmitted to the ISCAG Da'wah &amp; Guidance Department.
+      </p>
+
+      <div class="pending-info-callout">
+        <div class="callout-icon">
+          <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+        </div>
+        <div class="callout-content">
+          <strong>Official Schedule Calendar Notice:</strong>
+          <p>Once the administrator reviews and approves your form, your <strong>Official Schedule Calendar</strong> will automatically appear here with your confirmed appointment date, session time, room number, and assigned Islamic counselor.</p>
+        </div>
+      </div>
+
+      <div class="pending-summary-grid">
+        <div class="pending-summary-item">
+          <span class="lbl">Primary Concern</span>
+          <span class="val" id="cpm-reason">—</span>
+        </div>
+        <div class="pending-summary-item">
+          <span class="lbl">Preferred Schedule</span>
+          <span class="val" id="cpm-schedule">—</span>
+        </div>
+        <div class="pending-summary-item">
+          <span class="lbl">Consultation Mode</span>
+          <span class="val" id="cpm-mode">In-Person Consultation</span>
+        </div>
+        <div class="pending-summary-item">
+          <span class="lbl">Reviewing Office</span>
+          <span class="val">ISCAG Da'wah Department</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pending-modal-footer">
+      <a href="<?= url('/user/dashboard') ?>" class="btn-pending-sec">Return to Dashboard</a>
+      <button type="button" class="btn-pending-pri" onclick="closeCounselingPendingModal(true)">View Status in Portal</button>
     </div>
   </div>
 </div>
@@ -2211,40 +2871,13 @@
         const targetUrl = res.redirect || ('<?= url('/user/services/counseling/status') ?>?id=' + (res.id || ''));
         const dateFormatted = new Date(prefDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-        const detailsHtml = `
-          <div class="alert-detail-row">
-            <span class="alert-detail-label">Reference Number:</span>
-            <span class="alert-detail-val"><span class="alert-ref-pill">${escapeHtml(refFormatted)}</span></span>
-          </div>
-          <div class="alert-detail-row">
-            <span class="alert-detail-label">Preferred Schedule:</span>
-            <span class="alert-detail-val">${escapeHtml(dateFormatted)} at ${escapeHtml(prefTime)}</span>
-          </div>
-          <div class="alert-detail-row">
-            <span class="alert-detail-label">Concern Topic:</span>
-            <span class="alert-detail-val" style="color:var(--primary);">${escapeHtml(reason)}</span>
-          </div>
-          <div class="alert-detail-row">
-            <span class="alert-detail-label">Consultation Mode:</span>
-            <span class="alert-detail-val">In-Person (ISCAG Center)</span>
-          </div>
-        `;
-
-        showCounselingAlert({
-          title: 'Request Submitted Successfully!',
-          message: 'As-salamu alaykum. Your counseling appointment request has been recorded. Our authorized counselor will review your request shortly.',
-          type: 'success',
-          detailsHtml: detailsHtml,
-          confirmText: 'View Request Status',
-          cancelText: 'Stay on Portal',
-          autoRedirectUrl: targetUrl,
-          autoRedirectSeconds: 5,
-          onConfirm: () => {
-            window.location.href = targetUrl;
-          },
-          onCancel: () => {
-            window.location.reload();
-          }
+        openCounselingPendingModal({
+          ref: refFormatted,
+          reason: reason,
+          schedule: `${dateFormatted} at ${prefTime}`,
+          mode: sessionType,
+          id: res.id,
+          targetUrl: targetUrl
         });
         return;
       } else {
@@ -2272,6 +2905,148 @@
         submitBtn.innerText = 'Submit Request';
       }
     }
+  }
+
+  // ── Counseling Pending Modal Functions ──
+  function openCounselingPendingModal(data) {
+    const modal = document.getElementById('counseling-pending-modal');
+    if (!modal) return;
+    if (data.ref) {
+      const refEl = document.getElementById('cpm-ref-text');
+      if (refEl) refEl.innerText = data.ref;
+    }
+    if (data.reason) {
+      const rEl = document.getElementById('cpm-reason');
+      if (rEl) rEl.innerText = data.reason;
+    }
+    if (data.schedule) {
+      const sEl = document.getElementById('cpm-schedule');
+      if (sEl) sEl.innerText = data.schedule;
+    }
+    if (data.mode) {
+      const mEl = document.getElementById('cpm-mode');
+      if (mEl) mEl.innerText = data.mode;
+    }
+    modal.classList.add('active');
+  }
+
+  function closeCounselingPendingModal(shouldReload = true) {
+    const modal = document.getElementById('counseling-pending-modal');
+    if (modal) modal.classList.remove('active');
+    if (shouldReload) {
+      window.location.reload();
+    }
+  }
+
+  // ── Approved Counseling Schedule Calendar Logic ──
+  const CONFIRMED_COUNSELING_DATE = <?= !empty($confirmedDate) ? json_encode(date('Y-m-d', strtotime($confirmedDate))) : 'null' ?>;
+  const CONFIRMED_COUNSELING_TIME = <?= json_encode($confirmedTime ?? '10:00 AM') ?>;
+  const ASSIGNED_COUNSELOR_NAME = <?= json_encode($assignedCounselorName ?? 'Ustaz') ?>;
+  const CONFIRMED_COUNSELING_VENUE = <?= json_encode($venueLocation ?? 'ISCAG Center Room 204') ?>;
+
+  let approvedCalYear = CONFIRMED_COUNSELING_DATE ? new Date(CONFIRMED_COUNSELING_DATE + 'T00:00:00').getFullYear() : new Date().getFullYear();
+  let approvedCalMonth = CONFIRMED_COUNSELING_DATE ? new Date(CONFIRMED_COUNSELING_DATE + 'T00:00:00').getMonth() : new Date().getMonth();
+  let selectedApprovedDay = CONFIRMED_COUNSELING_DATE;
+
+  function renderApprovedCounselingCal() {
+    const titleEl = document.getElementById('approved-cal-title-counseling');
+    const gridEl = document.getElementById('approved-cal-grid-counseling');
+    if (!titleEl || !gridEl) return;
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    titleEl.innerText = `${monthNames[approvedCalMonth]} ${approvedCalYear}`;
+
+    const firstDayIndex = new Date(approvedCalYear, approvedCalMonth, 1).getDay();
+    const daysInMonth = new Date(approvedCalYear, approvedCalMonth + 1, 0).getDate();
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    let html = '';
+    for (let i = 0; i < firstDayIndex; i++) {
+      html += `<div class="approved-cal-day empty"></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${approvedCalYear}-${String(approvedCalMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isConfirmedSession = (CONFIRMED_COUNSELING_DATE === dateStr);
+      const isToday = (todayStr === dateStr);
+      const isSelected = (selectedApprovedDay === dateStr);
+
+      let classes = ['approved-cal-day'];
+      if (isConfirmedSession) classes.push('has-session');
+      if (isToday) classes.push('today');
+      if (isSelected && !isConfirmedSession) classes.push('selected-view');
+
+      html += `
+        <div class="${classes.join(' ')}" onclick="selectApprovedCounselingDay('${dateStr}')" title="${isConfirmedSession ? 'Confirmed Counseling Session' : ''}">
+          <span>${d}</span>
+        </div>
+      `;
+    }
+
+    gridEl.innerHTML = html;
+  }
+
+  function navApprovedCounselingCal(dir) {
+    approvedCalMonth += dir;
+    if (approvedCalMonth < 0) {
+      approvedCalMonth = 11;
+      approvedCalYear--;
+    } else if (approvedCalMonth > 11) {
+      approvedCalMonth = 0;
+      approvedCalYear++;
+    }
+    renderApprovedCounselingCal();
+  }
+
+  function jumpToConfirmedCounselingSession() {
+    if (!CONFIRMED_COUNSELING_DATE) return;
+    const d = new Date(CONFIRMED_COUNSELING_DATE + 'T00:00:00');
+    approvedCalYear = d.getFullYear();
+    approvedCalMonth = d.getMonth();
+    selectedApprovedDay = CONFIRMED_COUNSELING_DATE;
+    renderApprovedCounselingCal();
+    updateApprovedInspector(CONFIRMED_COUNSELING_DATE);
+  }
+
+  function selectApprovedCounselingDay(dateStr) {
+    selectedApprovedDay = dateStr;
+    renderApprovedCounselingCal();
+    updateApprovedInspector(dateStr);
+  }
+
+  function updateApprovedInspector(dateStr) {
+    const isSessionDay = (dateStr === CONFIRMED_COUNSELING_DATE);
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    const formatted = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+    const dateEl = document.getElementById('inspector-date-text');
+    const statusEl = document.getElementById('inspector-status-text');
+    const timeEl = document.getElementById('inspector-time-text');
+    const counselorEl = document.getElementById('inspector-counselor-text');
+    const venueEl = document.getElementById('inspector-venue-text');
+
+    if (dateEl) dateEl.innerText = formatted;
+    if (statusEl) {
+      statusEl.innerText = isSessionDay ? 'Confirmed Session' : 'No Scheduled Session';
+    }
+    if (timeEl) {
+      timeEl.innerText = isSessionDay ? CONFIRMED_COUNSELING_TIME : 'No Appointment';
+    }
+    if (counselorEl) {
+      counselorEl.innerText = isSessionDay ? ASSIGNED_COUNSELOR_NAME : '—';
+    }
+    if (venueEl) {
+      venueEl.innerText = isSessionDay ? CONFIRMED_COUNSELING_VENUE : '—';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('approved-cal-grid-counseling')) {
+      renderApprovedCounselingCal();
+    }
+  });
+  if (document.getElementById('approved-cal-grid-counseling')) {
+    renderApprovedCounselingCal();
   }
 </script>
 </body>
