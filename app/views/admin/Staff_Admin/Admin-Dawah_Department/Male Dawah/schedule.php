@@ -323,6 +323,8 @@ function fmtTime($t) {
     }
     .sched-type-tag.counseling { color: #6d28d9; }
     .sched-type-tag.marriage { color: #b45309; }
+    .sched-type-tag.conversion { color: #0f766e; }
+    .sched-type-tag.education { color: #0369a1; }
     .sched-type-tag.event { color: #0284c7; }
     .sched-type-tag.blocked { color: #dc2626; }
     
@@ -552,7 +554,7 @@ function fmtTime($t) {
                     </div>
                   <?php else: ?>
                     <?php foreach ($availableSchedules as $s): 
-                      $typeClass = ($s['category'] ?? '') === 'counseling' ? 'counseling' : (($s['category'] ?? '') === 'marriage' ? 'marriage' : 'event');
+                      $typeClass = ($s['category'] ?? '') === 'counseling' ? 'counseling' : (($s['category'] ?? '') === 'marriage' ? 'marriage' : (($s['category'] ?? '') === 'conversion' ? 'conversion' : 'event'));
                       $dateVal = $s['date'] ?? '';
                     ?>
                       <div class="sched-item-row available-item" data-date="<?= htmlspecialchars($dateVal) ?>" data-text="<?= htmlspecialchars(strtolower(($s['name'] ?? '') . ' ' . ($s['desc'] ?? '') . ' ' . ($s['location'] ?? ''))) ?>">
@@ -672,10 +674,10 @@ function fmtTime($t) {
                       $pCat = $p['category'] ?? 'counseling';
                       $pDate = $p['preferred_date'] ?: ($p['date'] ?? '');
                       $pTime = $p['preferred_time'] ?: ($p['time'] ?? '');
-                      $typeClass = $pCat === 'counseling' ? 'counseling' : 'marriage';
+                      $typeClass = $pCat === 'counseling' ? 'counseling' : ($pCat === 'marriage' ? 'marriage' : ($pCat === 'conversion' ? 'conversion' : 'event'));
                       $reviewLink = ($pCat === 'marriage') 
                         ? url('/admin/dawah/marriage') 
-                        : url('/admin/dawah/counseling');
+                        : (($pCat === 'conversion') ? url('/admin/dawah/conversion') : (($pCat === 'education') ? url('/admin/dawah/education') : url('/admin/dawah/counseling')));
                     ?>
                       <div class="sched-item-row pending-item" data-date="<?= htmlspecialchars($pDate) ?>" data-text="<?= htmlspecialchars(strtolower(($p['name'] ?? '') . ' ' . ($p['desc'] ?? '') . ' ' . ($p['contact'] ?? ''))) ?>">
                         <div class="sched-datetime-col">

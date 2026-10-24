@@ -2845,7 +2845,82 @@ class AdminController extends Controller
             }
         }
 
-        // 3. Fetch Manual Assignments (Classes/Seminars)
+        // 3. Fetch Islamic Studies / Conversion (Shahadah)
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
+        $conversionModel = new ConversionRequest();
+        $conversionRaw = $conversionModel->getAll();
+        $conversionScheds = [];
+        $conversionPending = [];
+
+        foreach ($conversionRaw as $r) {
+            $st = strtolower($r['status'] ?? 'pending');
+            $isApproved = in_array($st, ['approved', 'accepted', 'confirmed']);
+            $isPending = in_array($st, ['pending', 'under_review']);
+            $cName = trim(($r['fname'] ?? '') . ' ' . ($r['lname'] ?? ''));
+            if (!empty($r['adopted_name'])) {
+                $cName .= ' (' . $r['adopted_name'] . ')';
+            }
+
+            $item = [
+                'id' => $r['id'],
+                'type' => 'Islamic Studies / Conversion',
+                'category' => 'conversion',
+                'name' => $cName ?: 'Applicant',
+                'contact' => $r['residence'] ?? '',
+                'age' => $r['age'] ?? null,
+                'date' => !empty($r['conversion_date']) ? $r['conversion_date'] : date('Y-m-d', strtotime($r['created_at'])),
+                'time' => $r['preferred_time'] ?? '10:00 AM',
+                'preferred_date' => !empty($r['conversion_date']) ? $r['conversion_date'] : date('Y-m-d', strtotime($r['created_at'])),
+                'preferred_time' => $r['preferred_time'] ?? '10:00 AM',
+                'desc' => 'Islamic Studies & Shahadah — Adopted: ' . ($r['adopted_name'] ?? '—'),
+                'counselor' => $r['officiant'] ?? 'Da\'wah Ustaz / Officiant',
+                'location' => $r['venue'] ?? 'ISCAG Main Mosque',
+                'status' => $st
+            ];
+
+            if ($isApproved) {
+                $conversionScheds[] = $item;
+            } elseif ($isPending) {
+                $conversionPending[] = $item;
+            }
+        }
+
+        // 4. Fetch Male Islamic Education Enrollments
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        $eduModel = new IslamicEducation();
+        $eduRaw = $eduModel->getAllByGender($dawah_type);
+        $eduScheds = [];
+        $eduPending = [];
+
+        foreach ($eduRaw as $e) {
+            $st = strtolower($e['status'] ?? 'pending');
+            $isApproved = in_array($st, ['active', 'accepted', 'approved', 'completed']);
+            $isPending = ($st === 'pending');
+            $eName = trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? ''));
+            $item = [
+                'id' => $e['id'],
+                'type' => 'Islamic Education Class',
+                'category' => 'education',
+                'name' => $eName ?: 'Student',
+                'contact' => $e['contact_number'] ?? '',
+                'age' => null,
+                'date' => !empty($e['date_of_shahadah']) ? $e['date_of_shahadah'] : date('Y-m-d', strtotime($e['created_at'])),
+                'time' => '09:00 AM',
+                'preferred_date' => date('Y-m-d', strtotime($e['created_at'])),
+                'preferred_time' => '09:00 AM',
+                'desc' => 'Islamic Studies: ' . ($e['program_name'] ?? 'General Program') . ' (' . ($e['level'] ?? 'Basic') . ')',
+                'counselor' => $e['prepared_by'] ?? 'Ustaz / Instructor',
+                'location' => 'ISCAG Madrasah Hall',
+                'status' => $st
+            ];
+            if ($isApproved) {
+                $eduScheds[] = $item;
+            } elseif ($isPending) {
+                $eduPending[] = $item;
+            }
+        }
+
+        // 5. Fetch Manual Assignments (Classes/Seminars)
         $manualRaw = $manualModel->getByDepartment($dawah_type);
         $manualScheds = array_map(function($r) {
             return [
@@ -2867,13 +2942,13 @@ class AdminController extends Controller
         }, $manualRaw);
 
         // Available / Confirmed schedules (sorted by date/time)
-        $availableSchedules = array_merge($counselingScheds, $marriageScheds, $manualScheds);
+        $availableSchedules = array_merge($counselingScheds, $marriageScheds, $conversionScheds, $eduScheds, $manualScheds);
         usort($availableSchedules, function($a, $b) {
             return strtotime(($a['date'] ?? '') . ' ' . ($a['time'] ?? '')) <=> strtotime(($b['date'] ?? '') . ' ' . ($b['time'] ?? ''));
         });
 
         // Pending schedules (sorted by requested date)
-        $pendingSchedules = array_merge($counselingPending, $marriagePending);
+        $pendingSchedules = array_merge($counselingPending, $marriagePending, $conversionPending, $eduPending);
         usort($pendingSchedules, function($a, $b) {
             return strtotime(($a['date'] ?? '') . ' ' . ($a['time'] ?? '')) <=> strtotime(($b['date'] ?? '') . ' ' . ($b['time'] ?? ''));
         });
