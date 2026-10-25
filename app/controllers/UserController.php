@@ -797,7 +797,7 @@ class UserController extends Controller
                 'payment',
                 $studentName,
                 $userId,
-                '/admin/dawah/female'
+                null
             );
         } catch (\Throwable $e) {}
 
@@ -897,7 +897,7 @@ class UserController extends Controller
             return;
         }
 
-        $success = $model->create([
+        $newId = $model->createAndGetId([
             'tenant_id' => $_SESSION['user_id'],
             'groom_name' => $groom,
             'bride_name' => $bride,
@@ -907,22 +907,25 @@ class UserController extends Controller
             'status' => 'pending'
         ]);
 
-        if ($success) {
+        if ($newId) {
+            $refNo = '#MR-' . str_pad((string)$newId, 4, '0', STR_PAD_LEFT);
             try {
                 require_once BASE_PATH . '/app/models/Notification.php';
                 $notif = new Notification();
                 $notif->create(
                     (int)$_SESSION['user_id'],
                     'Marriage Reservation Submitted',
-                    "Your marriage ceremony reservation for $groom & $bride has been submitted successfully and is pending review by the Da'wah Department.",
+                    "Your marriage ceremony reservation ($refNo) for $groom & $bride has been submitted successfully and is pending review by the Da'wah Department.",
                     'info'
                 );
             } catch (Exception $e) {}
         }
 
         echo json_encode([
-            'success' => $success,
-            'message' => $success ? 'Marriage reservation request submitted successfully.' : 'Failed to submit reservation.'
+            'success' => (bool)$newId,
+            'id' => $newId,
+            'ref' => $newId ? ('#MR-' . str_pad((string)$newId, 4, '0', STR_PAD_LEFT)) : '',
+            'message' => $newId ? 'Marriage reservation request submitted successfully.' : 'Failed to submit reservation.'
         ]);
     }
 
@@ -1001,24 +1004,28 @@ class UserController extends Controller
             'status' => 'pending'
         ];
 
-        $success = $model->create($data);
+        $newId = $model->createAndGetId($data);
+        $success = (bool)$newId;
 
         if ($success) {
+            $refNo = '#CV-' . str_pad((string)$newId, 4, '0', STR_PAD_LEFT);
             try {
                 require_once BASE_PATH . '/app/models/Notification.php';
                 $notif = new Notification();
                 $notif->create(
                     (int)$userId,
                     'Conversion Registration Submitted',
-                    "Your Islamic Conversion (Shahadah) registration for {$adoptedName} has been submitted successfully and is pending review.",
+                    "Your Islamic Conversion (Shahadah) registration ($refNo) for {$adoptedName} has been submitted successfully and is pending review.",
                     'info'
                 );
             } catch (Exception $e) {}
-            AuditLogger::log('DAWAH', 'CONVERSION_SUBMIT', "User submitted conversion registration for adopted name: {$adoptedName}");
+            AuditLogger::log('DAWAH', 'CONVERSION_SUBMIT', "User submitted conversion registration $refNo for adopted name: {$adoptedName}");
         }
 
         echo json_encode([
             'success' => $success,
+            'id' => $newId,
+            'ref' => $newId ? ('#CV-' . str_pad((string)$newId, 4, '0', STR_PAD_LEFT)) : '',
             'message' => $success ? 'Conversion registration submitted successfully.' : 'Failed to submit registration.'
         ]);
         exit;
@@ -1985,7 +1992,7 @@ class UserController extends Controller
                 'payment',
                 $tenantName,
                 $userId,
-                '/admin/damayan/charity/donations'
+                null
             );
         }
 

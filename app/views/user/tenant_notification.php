@@ -275,7 +275,11 @@ foreach ($notifs as $n) {
 
                     <?php if (empty($notifs)): ?>
                         <div class="empty-state">
-                            <div class="empty-icon">🔔</div>
+                            <div class="empty-icon" style="display:flex;justify-content:center;align-items:center;margin-bottom:16px;">
+                                <svg viewBox="0 0 24 24" style="width:52px;height:52px;fill:var(--border);">
+                                    <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                                </svg>
+                            </div>
                             <div class="empty-text">No notifications yet.</div>
                         </div>
                     <?php else: ?>
@@ -283,10 +287,9 @@ foreach ($notifs as $n) {
                             <?php foreach ($notifs as $n): ?>
                                 <?php 
                                     $typeClass = '';
-                                    $icon = '🔔';
-                                    if ($n['type'] === 'approve' || $n['type'] === 'success') { $typeClass = 'type-approve'; $icon = 'check_circle'; }
-                                    if ($n['type'] === 'alert' || $n['type'] === 'warning') { $typeClass = 'type-alert'; $icon = 'warning'; }
-                                    if ($n['type'] === 'reject' || $n['type'] === 'error') { $typeClass = 'type-reject'; $icon = 'error'; }
+                                    if ($n['type'] === 'approve' || $n['type'] === 'success') { $typeClass = 'type-approve'; }
+                                    elseif ($n['type'] === 'alert' || $n['type'] === 'warning') { $typeClass = 'type-alert'; }
+                                    elseif ($n['type'] === 'reject' || $n['type'] === 'error') { $typeClass = 'type-reject'; }
                                     
                                     $timeStr = date('M d, Y h:i A', strtotime($n['created_at']));
                                     $is_unread = !$n['is_read'];
@@ -301,11 +304,9 @@ foreach ($notifs as $n) {
                                 ?>
                                 <div class="notif-item <?= $is_unread ? 'unread' : '' ?>" id="notif-<?= $n['notification_id'] ?>" onclick="viewNotification(event, <?= htmlspecialchars(json_encode($notifData)) ?>)">
                                     <div class="notif-icon-wrap <?= $typeClass ?>">
-                                        <!-- Using emojis/text in absence of icon fonts -->
-                                        <?php if ($icon === 'check_circle') echo '✅'; 
-                                              elseif ($icon === 'warning') echo '⚠️';
-                                              elseif ($icon === 'error') echo '❌';
-                                              else echo '🔔'; ?>
+                                        <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;">
+                                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                                        </svg>
                                     </div>
                                     <div class="notif-details">
                                         <div class="notif-item-header">
@@ -340,9 +341,14 @@ foreach ($notifs as $n) {
     <div class="modal-overlay" id="notifDetailModal" onclick="closeNotifModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <div>
-                    <h3 class="modal-title" id="mdlTitle">--</h3>
-                    <div class="modal-time" id="mdlTime">--</div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:38px;height:38px;border-radius:10px;background:rgba(23,107,69,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="modal-title" id="mdlTitle">--</h3>
+                        <div class="modal-time" id="mdlTime">--</div>
+                    </div>
                 </div>
                 <button class="modal-close" onclick="closeNotifModal()">&times;</button>
             </div>

@@ -427,10 +427,14 @@ foreach ($history as $req) {
         .then(res => res.json())
         .then(data => {
             if(data.success) {
-                showNotification('Success!', 'Request submitted successfully. The dashboard will now reflect your pending status.');
-                // Override closeNotif to redirect to the new dashboard
+                showNotification(
+                    'Request Submitted — Pending Review',
+                    'Your counseling appointment request has been successfully submitted to the Da\'wah Department. It is currently pending review by our administrator. Once approved, your official schedule calendar will appear on your counseling portal with your confirmed session details.',
+                    'success'
+                );
+                // Override closeNotif to redirect to the counseling dashboard
                 document.getElementById('notif-modal').querySelector('.btn-notif').onclick = function() {
-                    window.location.href = '<?= url('/user/services/education/female/counseling') ?>'; // Wait, what is the route to the new dashboard?
+                    window.location.href = '<?= url('/user/services/education/female/counseling') ?>';
                 };
             } else {
                 showNotification('Error', data.message || 'Failed to submit request.', 'error');

@@ -139,7 +139,8 @@
             <option value="Staff_Damayan">Staff — Damayan</option>
             <option value="Staff_Female">Staff — Islamic Education</option>
             <option value="Staff_Male">Staff — Da'wah (Male)</option>
-            <option value="Tenant">Regular User / Resident</option>
+            <option value="Guest">Regular User (Guest)</option>
+            <option value="Tenant">Apartment Tenant</option>
           </select>
           <select class="filter-select" id="filter-department">
             <option value="">All Departments</option>
@@ -234,7 +235,8 @@
             <option value="Staff_Damayan">Damayan & Funeral Services Staff</option>
             <option value="Staff_Female">Islamic Education & Da'wah (Female)</option>
             <option value="Staff_Male">Da'wah Department (Male Division)</option>
-            <option value="Tenant">Regular User / Resident</option>
+            <option value="Guest">Regular User (Guest)</option>
+            <option value="Tenant">Apartment Tenant</option>
           </select>
         </div>
 
@@ -282,7 +284,8 @@
       if (r === 'Staff_Damayan') return { dept: 'Damayan Department', badge: 'badge-dept-damayan', label: 'Damayan Staff', deptKey: 'Damayan' };
       if (r === 'Staff_Female') return { dept: 'Islamic Education', badge: 'badge-dept-education', label: 'Education Staff', deptKey: 'Education' };
       if (r === 'Staff_Male') return { dept: 'Da\'wah Department', badge: 'badge-dept-dawah', label: 'Da\'wah Staff', deptKey: 'Dawah' };
-      return { dept: 'General Resident', badge: 'badge-status badge-pending', label: 'Regular User', deptKey: 'Resident' };
+      if (r === 'Tenant') return { dept: 'Apartments (Tenant)', badge: 'badge-dept-apartments', label: 'Apartment Tenant', deptKey: 'Apartments' };
+      return { dept: 'General Resident', badge: 'badge-status badge-pending', label: 'Guest', deptKey: 'Resident' };
     }
 
     <?php
@@ -308,7 +311,7 @@
             'email' => $u['email'] ?? '',
             'gender' => strtolower($sex ?? 'none'),
             'phone' => $u['contactnum'] ?? '',
-            'role' => $u['role'] ?? 'Tenant',
+            'role' => $u['role'] ?? 'Guest',
             'status' => $isActive ? 'active' : 'inactive',
             'joined' => $u['date_applied'] ?? date('Y-m-d'),
             'profilePct' => $profilePct
@@ -321,7 +324,7 @@
     function updateStats(users) {
       const total = users.length;
       const active = users.filter(u => u.status === 'active').length;
-      const staff = users.filter(u => u.role !== 'Tenant' && u.role !== 'User').length;
+      const staff = users.filter(u => !['Guest', 'Tenant', 'User', ''].includes(u.role)).length;
       const inactive = users.filter(u => u.status === 'inactive').length;
 
       document.getElementById('stat-total').textContent = total;

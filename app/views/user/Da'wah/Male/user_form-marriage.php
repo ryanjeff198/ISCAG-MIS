@@ -187,7 +187,7 @@
     }
 
     /* ══════════════════════════════════════════════════════════ */
-    /* 💍 APPROVED MARRIAGE APPOINTMENT HUB STYLES               */
+    /*  APPROVED MARRIAGE APPOINTMENT HUB STYLES               */
     /* ══════════════════════════════════════════════════════════ */
     .marriage-hub-card {
       background: #fff; border-radius: 20px; border: 1px solid var(--border);
@@ -340,8 +340,365 @@
       .no-print { display: none !important; }
     }
 
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    /* ══════════════════════════════════════════════════════════ */
+    /*  APPROVED MARRIAGE CEREMONY SCHEDULE CALENDAR          */
+    /* ══════════════════════════════════════════════════════════ */
+    .marriage-calendar-hub-card {
+      background: #fff; border: 1.5px solid #fed7aa; border-radius: 18px;
+      padding: 24px 28px; box-shadow: 0 4px 20px rgba(180, 83, 9, 0.05); margin-bottom: 24px;
+    }
+    .marriage-cal-layout {
+      display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px; align-items: stretch;
+    }
+    .marriage-cal-container {
+      background: #fdfbf7; border: 1px solid #fed7aa; border-radius: 14px;
+      padding: 18px; display: flex; flex-direction: column;
+    }
+    .marriage-cal-top {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .marriage-cal-month-nav {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .marriage-cal-month-name {
+      font-family: 'Lora', serif; font-size: 1.05rem; font-weight: 700; color: #9a3412;
+      min-width: 140px; text-align: center;
+    }
+    .btn-mcal-step {
+      width: 32px; height: 32px; border-radius: 8px; border: 1px solid #fed7aa;
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; color: var(--text-main);
+    }
+    .btn-mcal-step:hover { background: #fffbeb; border-color: #d97706; color: #b45309; }
+    .btn-jump-ceremony {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+      background: #fff; border: 1px solid #fed7aa; border-radius: 8px; font-size: 0.75rem;
+      font-weight: 700; color: #b45309; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-jump-ceremony:hover { background: #fef3c7; border-color: #f59e0b; }
+    
+    .marriage-weekdays-row {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center;
+      font-size: 0.7rem; font-weight: 800; color: #9ca3af; text-transform: uppercase;
+      padding-bottom: 8px; border-bottom: 1px solid #fed7aa; margin-bottom: 8px;
+    }
+    .marriage-days-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+    }
+    .marriage-cal-day {
+      aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; position: relative; border: 1px solid transparent;
+      color: #374151; background: #fff;
+    }
+    .marriage-cal-day:hover:not(.empty) { background: #fffbeb; border-color: #fde68a; }
+    .marriage-cal-day.empty { background: transparent; cursor: default; }
+    .marriage-cal-day.today { font-weight: 800; color: #b45309; }
+    .marriage-cal-day.today::after {
+      content: ''; position: absolute; bottom: 3px; width: 4px; height: 4px;
+      border-radius: 50%; background: #b45309;
+    }
+    .marriage-cal-day.has-ceremony {
+      background: linear-gradient(135deg, #14532D, #0f3e21) !important; color: #fff !important; font-weight: 800;
+      border-color: #f59e0b !important; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+    }
+    .marriage-cal-day.has-ceremony::after {
+      content: ''; position: absolute; bottom: 3px; width: 6px; height: 6px;
+      border-radius: 50%; background: #fde047; box-shadow: 0 0 0 2px #14532D;
+    }
+    .marriage-cal-day.selected-view:not(.has-ceremony) {
+      border-color: #f59e0b; background: #fffbeb; font-weight: 800;
+    }
+
+    /* Marriage Inspector Card */
+    .marriage-session-inspector {
+      background: linear-gradient(135deg, #fffbeb, #fff); border: 1.5px solid #fed7aa;
+      border-radius: 14px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .minspector-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+      border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.05em; background: #d1fae5; color: #047857; border: 1px solid #a7f3d0;
+      align-self: flex-start; margin-bottom: 8px;
+    }
+    .minspector-date {
+      font-family: 'Lora', serif; font-size: 1.15rem; font-weight: 700; color: #14532D; margin: 0 0 14px;
+    }
+    .minspector-info-list {
+      display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;
+    }
+    .minspector-item {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+      padding-bottom: 8px; border-bottom: 1px dashed #fed7aa; font-size: 0.82rem;
+    }
+    .minspector-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .minspector-item .mitem-label { color: #6b7280; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; }
+    .minspector-item .mitem-val { color: #1f2937; font-weight: 700; text-align: right; }
+    .minspector-item .mitem-val.highlight { color: #b45309; font-family: 'Lora', serif; font-weight: 700; }
+    .minspector-actions {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 12px;
+    }
+    .btn-minspector-action {
+      flex: 1; padding: 8px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+      justify-content: center; gap: 6px; transition: all 0.2s; border: none;
+    }
+    .btn-minspector-action.btn-mprint { background: var(--primary); color: #fff; }
+    .btn-minspector-action.btn-mprint:hover { background: var(--primary-dark); }
+    .btn-minspector-action.btn-mcal { background: #fff; color: #374151; border: 1.5px solid var(--border); }
+    .btn-minspector-action.btn-mcal:hover { background: #f9fafb; border-color: #9ca3af; }
+
+    /* ══════════════════════════════════════════════════════════ */
+    /*  MARRIAGE PENDING MODAL STYLES                           */
+    /* ══════════════════════════════════════════════════════════ */
+    .marriage-pending-card {
+      background: #fff; border-radius: 20px; width: 100%; max-width: 540px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.25); overflow: hidden;
+      animation: modalPop 0.35s ease; border: 1px solid rgba(0,0,0,0.06);
+    }
+    .marriage-pending-header {
+      background: linear-gradient(135deg, #14532D, #0f3d24); padding: 24px 28px;
+      color: #fff; display: flex; align-items: center; gap: 14px; position: relative;
+    }
+    .marriage-icon-wrap {
+      width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(212, 175, 55, 0.4); display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0;
+    }
+    .marriage-icon-wrap svg { width: 26px; height: 26px; fill: #fff; }
+    .marriage-tag {
+      font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+      color: #fde047; margin-bottom: 2px;
+    }
+    .marriage-modal-title {
+      font-family: 'Lora', serif; font-size: 1.2rem; font-weight: 700; margin: 0 0 2px; color: #fff;
+    }
+    .marriage-modal-sub { font-size: 0.78rem; color: rgba(255,255,255,0.8); margin: 0; }
+    .marriage-pending-body { padding: 24px 28px; }
+    .marriage-status-banner {
+      display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+      border-radius: 10px; background: #fef3c7; border: 1px solid #fde68a;
+      font-size: 0.82rem; color: #92400e; margin-bottom: 16px;
+    }
+    .status-pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;
+      box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); animation: warningPulse 1.8s infinite;
+    }
+    .marriage-primary-msg {
+      font-size: 0.88rem; color: #4b5563; line-height: 1.5; margin: 0 0 16px;
+    }
+    .marriage-info-callout {
+      display: flex; gap: 12px; background: #f0fdf4; border: 1px solid #bbf7d0;
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 18px;
+    }
+    .mcallout-icon {
+      width: 32px; height: 32px; border-radius: 8px; background: #dcfce7;
+      color: #166534; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .mcallout-icon svg { width: 18px; height: 18px; fill: currentColor; }
+    .mcallout-content strong {
+      display: block; font-size: 0.82rem; color: #166534; margin-bottom: 2px;
+    }
+    .mcallout-content p {
+      font-size: 0.78rem; color: #15803d; margin: 0; line-height: 1.45;
+    }
+    .marriage-summary-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .marriage-summary-item {
+      background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 8px; padding: 10px 12px;
+    }
+    .marriage-summary-item .mlbl {
+      display: block; font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
+      color: #9ca3af; margin-bottom: 2px;
+    }
+    .marriage-summary-item .mval {
+      font-size: 0.85rem; font-weight: 700; color: #111827;
+    }
+    .marriage-modal-footer {
+      padding: 16px 28px; background: #f9fafb; border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; gap: 10px;
+    }
+    .btn-mpending-sec {
+      padding: 9px 18px; background: #fff; border: 1.5px solid var(--border);
+      border-radius: 8px; font-weight: 700; font-size: 0.82rem; color: #4b5563;
+      text-decoration: none; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-mpending-sec:hover { background: #f3f4f6; color: #111827; }
+    .btn-mpending-pri {
+      padding: 9px 20px; background: var(--primary); border: none;
+      border-radius: 8px; font-weight: 700; font-size: 0.82rem; color: #fff;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-mpending-pri:hover { background: var(--primary-dark); }
+    
+    /* ══════════════════════════════════════════════════════════ */
+    /*  VISUAL MARRIAGE PENDING RESERVATION HUB                 */
+    /* ══════════════════════════════════════════════════════════ */
+    .marriage-pending-hub-card {
+      background: #fff; border-radius: 20px; border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(20, 83, 45, 0.08); overflow: hidden; margin-bottom: 28px;
+    }
+    .marriage-pending-hero-banner {
+      background: linear-gradient(135deg, #064e3b 0%, #14532D 60%, #0f3d24 100%);
+      padding: 32px 36px 28px; position: relative; overflow: hidden; color: #fff;
+    }
+    .marriage-pending-hero-banner::after {
+      content: ''; position: absolute; right: -40px; bottom: -40px; width: 240px; height: 240px;
+      border-radius: 50%; background: radial-gradient(circle, rgba(212, 175, 55, 0.16) 0%, transparent 70%); pointer-events: none;
+    }
+    .marriage-pending-hero-banner::before {
+      content: ''; position: absolute; right: 140px; top: -30px; width: 150px; height: 150px;
+      border-radius: 50%; background: rgba(255, 255, 255, 0.05); pointer-events: none;
+    }
+    .marriage-pending-top-row {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;
+      position: relative; z-index: 1; flex-wrap: wrap; margin-bottom: 24px;
+    }
+    .marriage-pending-title-area { display: flex; align-items: center; gap: 18px; }
+    .marriage-pending-avatar-icon {
+      width: 64px; height: 64px; border-radius: 18px; background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;
+      border: 2px solid rgba(212, 175, 55, 0.5); flex-shrink: 0; box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+    }
+    .marriage-pending-avatar-icon svg { width: 32px; height: 32px; fill: #fff; }
+    .marriage-pending-headings h3 {
+      font-family: 'Lora', serif; font-size: 1.45rem; font-weight: 700; margin: 0 0 4px;
+      letter-spacing: -0.01em; color: #fff;
+    }
+    .marriage-pending-headings p {
+      font-size: 0.85rem; color: rgba(255, 255, 255, 0.85); margin: 0;
+    }
+    .marriage-badge-pending-pulse {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px;
+      border-radius: 30px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.06em; background: rgba(245, 158, 11, 0.22); border: 1.5px solid rgba(253, 224, 71, 0.5);
+      backdrop-filter: blur(10px); color: #fef08a; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Metric highlights strip */
+    .marriage-pending-schedule-strip {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+      position: relative; z-index: 1;
+    }
+    .marriage-pmetric-box {
+      background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 14px; padding: 14px 16px;
+      transition: all 0.2s;
+    }
+    .marriage-pmetric-box:hover { background: rgba(255, 255, 255, 0.18); transform: translateY(-2px); }
+    .marriage-pmetric-lbl {
+      font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+      color: rgba(255, 255, 255, 0.75); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+    }
+    .marriage-pmetric-val {
+      font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.3;
+    }
+    .marriage-pmetric-val.gold { color: #fde047; }
+
+    /* Pending 2-Column Hub Grid */
+    .marriage-pending-hub-grid {
+      display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px; padding: 32px 36px;
+    }
+
+    /* Calendar Preview Teaser Card */
+    .marriage-calendar-teaser-card {
+      background: linear-gradient(135deg, #fefce8, #f0fdf4); border: 1.5px dashed #f59e0b;
+      border-radius: 16px; padding: 22px 24px; margin-bottom: 24px; position: relative;
+    }
+    .marriage-calendar-teaser-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+      border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.05em; background: #fef3c7; color: #92400e; border: 1px solid #fde68a;
+      margin-bottom: 12px;
+    }
+    .marriage-calendar-teaser-content {
+      display: flex; gap: 16px; align-items: center;
+    }
+    .marriage-calendar-teaser-icon {
+      width: 52px; height: 52px; border-radius: 14px; background: #fff;
+      border: 2px solid #fde68a; display: flex; align-items: center; justify-content: center;
+      color: #d97706; flex-shrink: 0; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.12);
+    }
+    .marriage-calendar-teaser-icon svg { width: 28px; height: 28px; fill: currentColor; }
+    .marriage-calendar-teaser-text h5 {
+      font-family: 'Lora', serif; font-size: 1.05rem; font-weight: 700; color: #14532D; margin: 0 0 4px;
+    }
+    .marriage-calendar-teaser-text p {
+      font-size: 0.82rem; color: #4b5563; margin: 0; line-height: 1.5;
+    }
+
+    /* Enhanced 3-Phase Step Tracker */
+    .marriage-pending-journey-wrap {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; margin-bottom: 24px;
+    }
+    .marriage-pending-journey-steps {
+      display: flex; justify-content: space-between; position: relative; margin-top: 14px;
+    }
+    .marriage-pending-journey-steps::before {
+      content: ''; position: absolute; top: 22px; left: 12%; right: 12%; height: 3px;
+      background: #e5e7eb; z-index: 1;
+    }
+    .marriage-pjourney-step {
+      display: flex; flex-direction: column; align-items: center; position: relative;
+      z-index: 2; text-align: center; flex: 1;
+    }
+    .marriage-pjourney-circle {
+      width: 44px; height: 44px; border-radius: 50%; background: #f9fafb;
+      border: 3px solid #e5e7eb; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.9rem; color: #9ca3af; margin-bottom: 8px; transition: all 0.3s;
+    }
+    .marriage-pjourney-step.done .marriage-pjourney-circle {
+      background: var(--primary); border-color: var(--primary); color: #fff;
+    }
+    .marriage-pjourney-step.active .marriage-pjourney-circle {
+      background: #fff; border-color: #f59e0b; color: #d97706;
+      box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.2);
+    }
+    .marriage-pjourney-title { font-size: 0.82rem; font-weight: 700; color: #1f2937; margin-bottom: 2px; }
+    .marriage-pjourney-desc { font-size: 0.70rem; color: #6b7280; line-height: 1.3; }
+
+    /* Marriage Checklist Card */
+    .marriage-checklist-box {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.03); margin-bottom: 24px;
+    }
+    .marriage-checklist-item {
+      display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; font-size: 0.85rem;
+    }
+    .marriage-checklist-item:last-child { margin-bottom: 0; }
+    .marriage-bullet-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #166534;
+      flex-shrink: 0; margin-top: 6px; box-shadow: 0 0 0 3px #dcfce7;
+    }
+    .marriage-checklist-item strong { display: block; color: #1f2937; margin-bottom: 2px; }
+    .marriage-checklist-item p { margin: 0; color: #6b7280; font-size: 0.78rem; line-height: 1.4; }
+
+    /* Office & Sunnah Cards */
+    .marriage-office-desk-card {
+      background: linear-gradient(to bottom, #fdfbf7, #fff); border: 1px solid #fed7aa;
+      border-radius: 16px; padding: 22px 24px; margin-bottom: 24px;
+    }
+    .marriage-sunnah-box {
+      background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 16px; padding: 20px 22px;
+    }
+    .marriage-sunnah-box h5 {
+      font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D; margin: 0 0 6px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .marriage-sunnah-box p {
+      font-size: 0.82rem; color: #166534; line-height: 1.5; margin: 0; font-style: italic;
+    }
+    
+    @media (max-width: 960px) {
+      .marriage-cal-layout { grid-template-columns: 1fr !important; }
+      .marriage-summary-grid { grid-template-columns: 1fr !important; }
+      .marriage-pending-hub-grid { grid-template-columns: 1fr !important; padding: 20px !important; }
+      .marriage-pending-schedule-strip { grid-template-columns: 1fr 1fr !important; }
+      .marriage-pending-hero-banner { padding: 24px 20px !important; }
+    }
   </style>
 </head>
 <body>
@@ -548,52 +905,257 @@
       </div>
       <?php elseif ($hasPending && $activeRequest): ?>
 
-      <!-- ⏳ PENDING: UNDER REVIEW STATUS -->
-      <div style="background: white; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06); overflow: hidden; margin-bottom: 24px;">
-        <div style="background: linear-gradient(135deg, #14532D, #166534); padding: 28px 32px 24px; color: white; position: relative; overflow: hidden;">
-          <div style="position: absolute; right: -20px; bottom: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 255, 255, 0.1);"></div>
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; position: relative; z-index: 1;">
-            <div style="display: flex; align-items: center; gap: 16px;">
-              <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.25); flex-shrink: 0;">
-                <svg viewBox="0 0 24 24" style="width: 28px; height: 28px; fill: white;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      <!--  PENDING: VISUAL MARRIAGE RESERVATION HUB -->
+      <div class="marriage-pending-hub-card">
+        <!-- Hero Banner with Islamic Deep Emerald & Gold Accents -->
+        <div class="marriage-pending-hero-banner">
+          <div class="marriage-pending-top-row">
+            <div class="marriage-pending-title-area">
+              <div class="marriage-pending-avatar-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               </div>
-              <div>
-                <h5 style="font-family: 'Lora', serif; font-size: 1.2rem; font-weight: 700; color: white; margin: 0 0 2px;">Marriage Reservation Under Review</h5>
-                <p style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.7); margin: 0;">Ref No: <strong>#MR-<?= str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT) ?></strong> • Submitted on <?= date('M d, Y', strtotime($activeRequest['created_at'])) ?></p>
+              <div class="marriage-pending-headings">
+                <h3>Marriage Solemnization Reservation</h3>
+                <p>Booking Ref: <strong>#MR-<?= str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT) ?></strong> • Filed on <?= date('M d, Y', strtotime($activeRequest['created_at'])) ?> • Da'wah Marriage Bureau</p>
               </div>
             </div>
-            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 22px; border-radius: 24px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; background: rgba(245, 158, 11, 0.25); color: #fef08a; border: 1px solid rgba(253, 224, 71, 0.4);">
-              Awaiting Verification
+            <div class="marriage-badge-pending-pulse">
+              <span class="pulse-dot-amber"></span>
+              Awaiting Document &amp; Officiant Verification
+            </div>
+          </div>
+
+          <!-- Glassmorphism 4-Metric Strip -->
+          <div class="marriage-pending-schedule-strip">
+            <div class="marriage-pmetric-box">
+              <div class="marriage-pmetric-lbl">
+                <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                Groom
+              </div>
+              <div class="marriage-pmetric-val"><?= htmlspecialchars($activeRequest['groom_name'] ?? '—') ?></div>
+            </div>
+            <div class="marriage-pmetric-box">
+              <div class="marriage-pmetric-lbl">
+                <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                Bride
+              </div>
+              <div class="marriage-pmetric-val"><?= htmlspecialchars($activeRequest['bride_name'] ?? '—') ?></div>
+            </div>
+            <div class="marriage-pmetric-box">
+              <div class="marriage-pmetric-lbl">
+                <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+                Requested Date
+              </div>
+              <div class="marriage-pmetric-val gold"><?= isset($activeRequest['marriage_date']) ? date('M d, Y', strtotime($activeRequest['marriage_date'])) : '—' ?></div>
+            </div>
+            <div class="marriage-pmetric-box">
+              <div class="marriage-pmetric-lbl">
+                <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                Time &amp; Venue
+              </div>
+              <div class="marriage-pmetric-val"><?= htmlspecialchars($activeRequest['marriage_time'] ?? 'TBD') ?> • <?= htmlspecialchars($activeRequest['marriage_venue'] ?? 'ISCAG Main Mosque') ?></div>
             </div>
           </div>
         </div>
 
-        <div style="padding: 18px 32px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; background: #f9fafb; border-top: 1px solid var(--border);">
-          <div style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-            <div style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Groom</div>
-            <div style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D;"><?= htmlspecialchars($activeRequest['groom_name'] ?? '—') ?></div>
+        <!-- Action Toolbar -->
+        <div class="marriage-toolbar">
+          <div class="toolbar-left-msg">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            Your solemnization request is currently undergoing review and schedule clearance by the ISCAG Da'wah Department.
           </div>
-          <div style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-            <div style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Bride</div>
-            <div style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #14532D;"><?= htmlspecialchars($activeRequest['bride_name'] ?? '—') ?></div>
-          </div>
-          <div style="text-align: center; padding: 14px 10px; background: white; border-radius: 10px; border: 1px solid var(--border);">
-            <div style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Preferred Date</div>
-            <div style="font-family: 'Lora', serif; font-size: 0.95rem; font-weight: 700; color: #f59e0b;"><?= isset($activeRequest['marriage_date']) ? date('M d, Y', strtotime($activeRequest['marriage_date'])) : '—' ?></div>
+          <div class="toolbar-actions">
+            <a href="<?= url('/user/dashboard') ?>" class="btn-action-tool btn-tool-gold">
+              ← Return to Dashboard
+            </a>
+            <button type="button" class="btn-action-tool" style="background:#fff; border:1.5px solid var(--border); color:#374151;" onclick="document.querySelector('.section-card').scrollIntoView({behavior:'smooth'})">
+              View History
+            </button>
           </div>
         </div>
 
-        <div style="padding: 24px 32px; text-align: center; background: #fff;">
-          <p style="font-size: 0.92rem; color: #4b5563; line-height: 1.6; max-width: 600px; margin: 0 auto 16px;">
-            Your marriage solemnization request has been received. The Da'wah Department is currently reviewing your reservation. You will be notified once your ceremony is officially approved and scheduled.
-          </p>
-          <a href="<?= url('/user/dashboard') ?>" class="btn-submit" style="display:inline-block; padding:10px 24px; text-decoration:none;">Return to Dashboard</a>
+        <!-- 2-Column Pending Details Grid -->
+        <div class="marriage-pending-hub-grid">
+          <!-- LEFT COLUMN: Calendar Teaser, 3-Phase Journey, Details -->
+          <div>
+            <!-- Interactive Schedule Calendar Teaser Card -->
+            <div class="marriage-calendar-teaser-card">
+              <div class="marriage-calendar-teaser-badge">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                Ceremony Schedule Calendar • Unlocks on Approval
+              </div>
+              <div class="marriage-calendar-teaser-content">
+                <div class="marriage-calendar-teaser-icon">
+                  <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+                </div>
+                <div class="marriage-calendar-teaser-text">
+                  <h5>Interactive Ceremony Schedule Calendar</h5>
+                  <p>
+                    Once the ISCAG Da'wah Administrator verifies your documents and assigns the solemnizing Ustaz, the <strong>Official Marriage Schedule Calendar</strong> and <strong>Printable Ceremony Pass</strong> will automatically unlock right here on your portal.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3-Phase Journey Tracker -->
+            <div class="marriage-pending-journey-wrap">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-family:'Lora',serif; font-size:1.05rem; font-weight:700; color:#111827;">Verification &amp; Scheduling Workflow</span>
+                <span class="detail-badge-pill" style="background:#fef3c7; color:#92400e; font-weight:800; border:1px solid #fde68a;">Phase 2 in Progress</span>
+              </div>
+              <div class="marriage-pending-journey-steps">
+                <div class="marriage-pjourney-step done">
+                  <div class="marriage-pjourney-circle">
+                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                  </div>
+                  <div class="marriage-pjourney-title">Request Received</div>
+                  <div class="marriage-pjourney-desc">Form &amp; details logged into ISCAG MIS</div>
+                </div>
+                <div class="marriage-pjourney-step active">
+                  <div class="marriage-pjourney-circle">2</div>
+                  <div class="marriage-pjourney-title">Document &amp; Schedule Review</div>
+                  <div class="marriage-pjourney-desc">Da'wah Ustaz reviewing documents &amp; venue</div>
+                </div>
+                <div class="marriage-pjourney-step">
+                  <div class="marriage-pjourney-circle">3</div>
+                  <div class="marriage-pjourney-title">Calendar &amp; Ceremony Pass</div>
+                  <div class="marriage-pjourney-desc">Unlocks printable pass &amp; confirmed calendar</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Couple & Booking Information Card -->
+            <div class="hub-card">
+              <div class="hub-card-title">
+                <span>
+                  <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  Reservation Specification
+                </span>
+                <span class="detail-badge-pill" style="background:#e0f2fe; color:#0369a1; font-weight:800; border:1px solid #bae6fd;">Nikah Solemnization</span>
+              </div>
+              <div class="detail-table">
+                <div class="detail-row">
+                  <span class="detail-key">Reference Number</span>
+                  <span class="detail-val highlight">#MR-<?= str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Groom Legal Name</span>
+                  <span class="detail-val"><?= htmlspecialchars($activeRequest['groom_name']) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Bride Legal Name</span>
+                  <span class="detail-val"><?= htmlspecialchars($activeRequest['bride_name']) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Requested Ceremony Date</span>
+                  <span class="detail-val"><?= isset($activeRequest['marriage_date']) ? date('l, F d, Y', strtotime($activeRequest['marriage_date'])) : '—' ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Preferred Time Slot</span>
+                  <span class="detail-val"><?= htmlspecialchars($activeRequest['marriage_time'] ?? 'Morning Slot') ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Assigned Solemnization Venue</span>
+                  <span class="detail-val"><?= htmlspecialchars($activeRequest['marriage_venue'] ?? 'ISCAG Main Mosque') ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Application Submission Date</span>
+                  <span class="detail-val"><?= date('F d, Y • h:i A', strtotime($activeRequest['created_at'])) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-key">Assigned Processing Bureau</span>
+                  <span class="detail-val" style="color:var(--primary); font-weight:800;">ISCAG Da'wah Department (Marriage Section)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Document Checklist, Office Card & Sunnah Blessing -->
+          <div>
+            <!-- Required Document Checklist Card -->
+            <div class="marriage-checklist-box">
+              <div class="hub-card-title" style="margin-bottom:14px;">
+                <span>
+                  <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                  Documents Required on Ceremony
+                </span>
+                <span class="detail-badge-pill" style="background:#fef3c7; color:#92400e; font-weight:800; border:1px solid #fde68a;">Prepare Prior</span>
+              </div>
+              <div class="marriage-checklist-item">
+                <div class="marriage-bullet-dot"></div>
+                <div>
+                  <strong>Valid Identification Cards</strong>
+                  <p>Government IDs (Passport, PhilSys, Driver's License) for groom and bride.</p>
+                </div>
+              </div>
+              <div class="marriage-checklist-item">
+                <div class="marriage-bullet-dot"></div>
+                <div>
+                  <strong>PSA Birth Certificates &amp; CENOMAR</strong>
+                  <p>Certificate of No Marriage record from Philippine Statistics Authority.</p>
+                </div>
+              </div>
+              <div class="marriage-checklist-item">
+                <div class="marriage-bullet-dot"></div>
+                <div>
+                  <strong>Two Adult Male Witnesses (Shuhood)</strong>
+                  <p>Both witnesses must be practicing Muslim males with valid photo IDs.</p>
+                </div>
+              </div>
+              <div class="marriage-checklist-item">
+                <div class="marriage-bullet-dot"></div>
+                <div>
+                  <strong>Agreed Mahr (Bridal Gift)</strong>
+                  <p>Specify the confirmed Mahr (prompt or deferred) agreed between both parties.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Da'wah Marriage Office Desk Card -->
+            <div class="marriage-office-desk-card">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                <div style="width:44px; height:44px; border-radius:12px; background:#fef3c7; display:flex; align-items:center; justify-content:center; color:#d97706; flex-shrink:0;">
+                  <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:currentColor;"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+                </div>
+                <div>
+                  <h5 style="margin:0 0 2px; font-size:0.95rem; font-weight:700; color:#1f2937;">Da'wah Department Office</h5>
+                  <p style="margin:0; font-size:0.75rem; color:#b45309; font-weight:600;">Marriage Secretariat Desk</p>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px; font-size:0.8rem; color:#4b5563; line-height:1.4;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; color:#1f2937; min-width:70px;">Location:</span>
+                  <span>Room 102, ISCAG Islamic Complex</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; color:#1f2937; min-width:70px;">Hours:</span>
+                  <span>Mon – Sat: 8:00 AM – 5:00 PM</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:700; color:#1f2937; min-width:70px;">Officiant:</span>
+                  <span>Accredited ISCAG Islamic Solemnizer</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Islamic Sunnah Box -->
+            <div class="marriage-sunnah-box">
+              <h5>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                The Blessing of Nikah
+              </h5>
+              <p>
+                "Marriage is from my Sunnah, and whoever does not follow my Sunnah is not from me."<br />
+                <span style="font-size:0.72rem; color:#15803d; font-weight:700; text-transform:uppercase;">— Sunan Ibn Majah 1846</span>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       <?php elseif ($hasApproved && $activeRequest): ?>
 
-      <!-- 💍 APPROVED: MARRIAGE CEREMONY APPOINTMENT HUB -->
+      <!--  APPROVED: MARRIAGE CEREMONY APPOINTMENT HUB -->
       <div class="marriage-hub-card">
         <!-- Hero Banner -->
         <div class="marriage-hero-banner">
@@ -659,6 +1221,96 @@
             <a href="<?= url('/user/dashboard') ?>" class="btn-action-tool btn-tool-gold">
               ← Return to Dashboard
             </a>
+          </div>
+        </div>
+
+        <!--  DEDICATED CEREMONY SCHEDULE CALENDAR (APPEARS WHEN ADMIN APPROVES) -->
+        <div style="padding: 28px 36px 0;">
+          <div class="hub-card marriage-calendar-hub-card">
+            <div class="hub-card-title">
+              <span>
+                <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+                Marriage Ceremony Schedule Calendar
+              </span>
+              <span class="detail-badge-pill" style="background:#d1fae5; color:#047857; font-weight:800;">
+                Confirmed &amp; Scheduled by Administrator
+              </span>
+            </div>
+
+            <div class="marriage-cal-layout">
+              <!-- Calendar Left: Interactive Monthly Grid -->
+              <div class="marriage-cal-container">
+                <div class="marriage-cal-top">
+                  <div class="marriage-cal-month-nav">
+                    <button type="button" class="btn-mcal-step" onclick="navApprovedMarriageCal(-1)" title="Previous Month">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                    </button>
+                    <span id="approved-cal-title-marriage" class="marriage-cal-month-name">Loading Month...</span>
+                    <button type="button" class="btn-mcal-step" onclick="navApprovedMarriageCal(1)" title="Next Month">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </button>
+                  </div>
+                  <button type="button" class="btn-jump-ceremony" onclick="jumpToApprovedCeremony()">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    Jump to Ceremony Date
+                  </button>
+                </div>
+
+                <div class="marriage-weekdays-row">
+                  <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                </div>
+                <div id="approved-cal-grid-marriage" class="marriage-days-grid"></div>
+              </div>
+
+              <!-- Calendar Right: Ceremony Details Inspector -->
+              <div class="marriage-session-inspector">
+                <div>
+                  <div class="minspector-badge">
+                    <span class="pulse-dot"></span>
+                    <span id="minspector-status-text">Approved Solemnization</span>
+                  </div>
+                  <h4 class="minspector-date" id="minspector-date-text"><?= date('l, F d, Y', strtotime($activeRequest['marriage_date'])) ?></h4>
+                  
+                  <div class="minspector-info-list">
+                    <div class="minspector-item">
+                      <span class="mitem-label">Ceremony Time</span>
+                      <span class="mitem-val" id="minspector-time-text"><?= htmlspecialchars($activeRequest['marriage_time']) ?></span>
+                    </div>
+                    <div class="minspector-item">
+                      <span class="mitem-label">Couple</span>
+                      <span class="mitem-val highlight"><?= htmlspecialchars($activeRequest['groom_name']) ?> &amp; <?= htmlspecialchars($activeRequest['bride_name']) ?></span>
+                    </div>
+                    <div class="minspector-item">
+                      <span class="mitem-label">Solemnization Venue</span>
+                      <span class="mitem-val" id="minspector-venue-text"><?= htmlspecialchars($activeRequest['marriage_venue'] ?? 'ISCAG Main Mosque') ?></span>
+                    </div>
+                    <div class="minspector-item">
+                      <span class="mitem-label">Officiant Body</span>
+                      <span class="mitem-val">ISCAG Da'wah Department</span>
+                    </div>
+                    <div class="minspector-item">
+                      <span class="mitem-label">Reference Number</span>
+                      <span class="mitem-val" style="font-family:monospace;">#MR-<?= str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT) ?></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="minspector-actions">
+                  <button type="button" class="btn-minspector-action btn-mprint" onclick="openPassModal()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                    Print Pass
+                  </button>
+                  <?php 
+                    $mcalDate = date('Ymd', strtotime($activeRequest['marriage_date']));
+                    $mcalUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" . urlencode("ISCAG Marriage Ceremony — " . $activeRequest['groom_name'] . " & " . $activeRequest['bride_name']) . "&dates=" . $mcalDate . "T010000Z/" . $mcalDate . "T030000Z&details=" . urlencode("ISCAG Islamic Marriage Solemnization Ceremony. Ref: #MR-" . str_pad($activeRequest['id'], 4, '0', STR_PAD_LEFT)) . "&location=" . urlencode($activeRequest['marriage_venue'] ?? 'ISCAG Main Mosque');
+                  ?>
+                  <a href="<?= $mcalUrl ?>" target="_blank" class="btn-minspector-action btn-mcal">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm-7-7h5v5h-5z"/></svg>
+                    Google Cal
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -789,7 +1441,7 @@
   </div>
 </div>
 
-<!-- 🎟️ PRINTABLE CEREMONY PASS MODAL -->
+<!-- ️ PRINTABLE CEREMONY PASS MODAL -->
 <?php if ($hasApproved && $activeRequest): ?>
 <div class="pass-modal-backdrop" id="pass-modal" onclick="if(event.target===this) closePassModal()">
   <div class="pass-modal-card">
@@ -863,6 +1515,72 @@
   </div>
 </div>
 <?php endif; ?>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  MARRIAGE PENDING REVIEW MODAL                           -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="marriage-pending-modal" onclick="if(event.target===this) closeMarriagePendingModal(false)">
+  <div class="marriage-pending-card" role="dialog" aria-modal="true" aria-labelledby="mpm-title">
+    <div class="marriage-pending-header">
+      <div class="marriage-icon-wrap">
+        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </div>
+      <div>
+        <div class="marriage-tag">Reservation Successfully Submitted</div>
+        <h3 class="marriage-modal-title" id="mpm-title">Pending Da'wah Department Review</h3>
+        <p class="marriage-modal-sub">Reference Number: <strong id="mpm-ref-text">#MR-AUTO</strong></p>
+      </div>
+      <button type="button" class="btn-close-modal" onclick="closeMarriagePendingModal(false)" style="margin-left:auto; color:rgba(255,255,255,0.7);">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </div>
+
+    <div class="marriage-pending-body">
+      <div class="marriage-status-banner">
+        <span class="status-pulse-dot"></span>
+        <span>Status: <strong>Pending Administrator Review &amp; Ceremony Scheduling</strong></span>
+      </div>
+
+      <p class="marriage-primary-msg">
+        Barakallahu feekum. Your marriage ceremony reservation request has been submitted to the ISCAG Da'wah Department.
+      </p>
+
+      <div class="marriage-info-callout">
+        <div class="mcallout-icon">
+          <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/></svg>
+        </div>
+        <div class="mcallout-content">
+          <strong>Official Schedule Calendar Notice:</strong>
+          <p>Once the administrator reviews and approves your reservation form, your <strong>Official Marriage Schedule Calendar</strong> will automatically appear here with your confirmed solemnization date, ceremony time slot, and venue confirmation.</p>
+        </div>
+      </div>
+
+      <div class="marriage-summary-grid">
+        <div class="marriage-summary-item">
+          <span class="mlbl">Groom's Name</span>
+          <span class="mval" id="mpm-groom">—</span>
+        </div>
+        <div class="marriage-summary-item">
+          <span class="mlbl">Bride's Name</span>
+          <span class="mval" id="mpm-bride">—</span>
+        </div>
+        <div class="marriage-summary-item">
+          <span class="mlbl">Requested Date &amp; Time</span>
+          <span class="mval" id="mpm-schedule">—</span>
+        </div>
+        <div class="marriage-summary-item">
+          <span class="mlbl">Ceremony Venue</span>
+          <span class="mval" id="mpm-venue">ISCAG Main Mosque</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="marriage-modal-footer">
+      <a href="<?= url('/user/dashboard') ?>" class="btn-mpending-sec">Return to Dashboard</a>
+      <button type="button" class="btn-mpending-pri" onclick="closeMarriagePendingModal(true)">View Status in Portal</button>
+    </div>
+  </div>
+</div>
 
 <script>
   // ── Render History ──
@@ -1009,8 +1727,14 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast('Reservation submitted successfully!');
-          setTimeout(() => location.reload(), 1200);
+          const formattedDate = new Date(formData.marriage_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          openMarriagePendingModal({
+            ref: data.ref || ('#MR-' + String(data.id || 'AUTO').padStart(4, '0')),
+            groom: formData.groom_name,
+            bride: formData.bride_name,
+            schedule: `${formattedDate} at ${formData.marriage_time}`,
+            venue: formData.marriage_venue || 'ISCAG Main Mosque'
+          });
         } else {
           showToast(data.message || 'Failed to submit reservation.', '#e74c3c');
         }
@@ -1018,6 +1742,148 @@
         showToast('An error occurred. Please try again.', '#e74c3c');
       }
     };
+  }
+
+  // ── Marriage Pending Modal Functions ──
+  function openMarriagePendingModal(data) {
+    const modal = document.getElementById('marriage-pending-modal');
+    if (!modal) return;
+    if (data.ref) {
+      const refEl = document.getElementById('mpm-ref-text');
+      if (refEl) refEl.innerText = data.ref;
+    }
+    if (data.groom) {
+      const gEl = document.getElementById('mpm-groom');
+      if (gEl) gEl.innerText = data.groom;
+    }
+    if (data.bride) {
+      const bEl = document.getElementById('mpm-bride');
+      if (bEl) bEl.innerText = data.bride;
+    }
+    if (data.schedule) {
+      const sEl = document.getElementById('mpm-schedule');
+      if (sEl) sEl.innerText = data.schedule;
+    }
+    if (data.venue) {
+      const vEl = document.getElementById('mpm-venue');
+      if (vEl) vEl.innerText = data.venue;
+    }
+    modal.classList.add('active');
+  }
+
+  function closeMarriagePendingModal(shouldReload = true) {
+    const modal = document.getElementById('marriage-pending-modal');
+    if (modal) modal.classList.remove('active');
+    if (shouldReload) {
+      window.location.reload();
+    }
+  }
+
+  // ── Approved Marriage Schedule Calendar Logic ──
+  const APPROVED_MARRIAGE_DATE = <?= ($hasApproved && !empty($activeRequest['marriage_date'])) ? json_encode(date('Y-m-d', strtotime($activeRequest['marriage_date']))) : 'null' ?>;
+  const APPROVED_MARRIAGE_TIME = <?= ($hasApproved && !empty($activeRequest['marriage_time'])) ? json_encode($activeRequest['marriage_time']) : 'null' ?>;
+  const APPROVED_MARRIAGE_VENUE = <?= ($hasApproved && !empty($activeRequest['marriage_venue'])) ? json_encode($activeRequest['marriage_venue']) : json_encode('ISCAG Main Mosque') ?>;
+  const APPROVED_MARRIAGE_COUPLE = <?= ($hasApproved && $activeRequest) ? json_encode(($activeRequest['groom_name'] ?? '') . ' & ' . ($activeRequest['bride_name'] ?? '')) : '""' ?>;
+
+  let mApprovedCalYear = APPROVED_MARRIAGE_DATE ? new Date(APPROVED_MARRIAGE_DATE + 'T00:00:00').getFullYear() : new Date().getFullYear();
+  let mApprovedCalMonth = APPROVED_MARRIAGE_DATE ? new Date(APPROVED_MARRIAGE_DATE + 'T00:00:00').getMonth() : new Date().getMonth();
+  let selectedApprovedMarriageDay = APPROVED_MARRIAGE_DATE;
+
+  function renderApprovedMarriageCal() {
+    const titleEl = document.getElementById('approved-cal-title-marriage');
+    const gridEl = document.getElementById('approved-cal-grid-marriage');
+    if (!titleEl || !gridEl) return;
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    titleEl.innerText = `${monthNames[mApprovedCalMonth]} ${mApprovedCalYear}`;
+
+    const firstDayIndex = new Date(mApprovedCalYear, mApprovedCalMonth, 1).getDay();
+    const daysInMonth = new Date(mApprovedCalYear, mApprovedCalMonth + 1, 0).getDate();
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    let html = '';
+    for (let i = 0; i < firstDayIndex; i++) {
+      html += `<div class="marriage-cal-day empty"></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${mApprovedCalYear}-${String(mApprovedCalMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isCeremonyDay = (APPROVED_MARRIAGE_DATE === dateStr);
+      const isToday = (todayStr === dateStr);
+      const isSelected = (selectedApprovedMarriageDay === dateStr);
+
+      let classes = ['marriage-cal-day'];
+      if (isCeremonyDay) classes.push('has-ceremony');
+      if (isToday) classes.push('today');
+      if (isSelected && !isCeremonyDay) classes.push('selected-view');
+
+      html += `
+        <div class="${classes.join(' ')}" onclick="selectApprovedMarriageDay('${dateStr}')" title="${isCeremonyDay ? 'Confirmed Wedding Ceremony' : ''}">
+          <span>${d}</span>
+        </div>
+      `;
+    }
+
+    gridEl.innerHTML = html;
+  }
+
+  function navApprovedMarriageCal(dir) {
+    mApprovedCalMonth += dir;
+    if (mApprovedCalMonth < 0) {
+      mApprovedCalMonth = 11;
+      mApprovedCalYear--;
+    } else if (mApprovedCalMonth > 11) {
+      mApprovedCalMonth = 0;
+      mApprovedCalYear++;
+    }
+    renderApprovedMarriageCal();
+  }
+
+  function jumpToApprovedCeremony() {
+    if (!APPROVED_MARRIAGE_DATE) return;
+    const d = new Date(APPROVED_MARRIAGE_DATE + 'T00:00:00');
+    mApprovedCalYear = d.getFullYear();
+    mApprovedCalMonth = d.getMonth();
+    selectedApprovedMarriageDay = APPROVED_MARRIAGE_DATE;
+    renderApprovedMarriageCal();
+    updateMarriageInspector(APPROVED_MARRIAGE_DATE);
+  }
+
+  function selectApprovedMarriageDay(dateStr) {
+    selectedApprovedMarriageDay = dateStr;
+    renderApprovedMarriageCal();
+    updateMarriageInspector(dateStr);
+  }
+
+  function updateMarriageInspector(dateStr) {
+    const isCeremony = (dateStr === APPROVED_MARRIAGE_DATE);
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    const formatted = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+    const dateEl = document.getElementById('minspector-date-text');
+    const statusEl = document.getElementById('minspector-status-text');
+    const timeEl = document.getElementById('minspector-time-text');
+    const venueEl = document.getElementById('minspector-venue-text');
+
+    if (dateEl) dateEl.innerText = formatted;
+    if (statusEl) {
+      statusEl.innerText = isCeremony ? 'Approved Solemnization' : 'No Scheduled Ceremony';
+    }
+    if (timeEl) {
+      timeEl.innerText = isCeremony ? (APPROVED_MARRIAGE_TIME || '—') : '—';
+    }
+    if (venueEl) {
+      venueEl.innerText = isCeremony ? APPROVED_MARRIAGE_VENUE : '—';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('approved-cal-grid-marriage')) {
+      renderApprovedMarriageCal();
+    }
+  });
+  if (document.getElementById('approved-cal-grid-marriage')) {
+    renderApprovedMarriageCal();
   }
 
   // ── Pass Modal ──

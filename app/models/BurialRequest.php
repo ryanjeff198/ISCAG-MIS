@@ -695,7 +695,7 @@ class BurialRequest
                     'damayan',
                     $data['informant_name'] ?? 'Applicant',
                     (int)$data['tenant_id'],
-                    url('/admin/damayan/burial-requests')
+                    null
                 );
             } catch (\Throwable $ane) {}
 
@@ -2125,7 +2125,7 @@ class BurialRequest
                         'damayan',
                         $userName,
                         $tenantId,
-                        url('/admin/damayan/burial-requests')
+                        null
                     );
                 } catch (\Throwable $e) {}
 
@@ -2799,7 +2799,7 @@ class BurialRequest
                         'damayan',
                         $userName,
                         (int)$burial['tenant_id'],
-                        url('/admin/damayan/burial-requests')
+                        null
                     );
                 } catch (\Throwable $e) {}
 

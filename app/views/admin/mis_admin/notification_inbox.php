@@ -82,7 +82,7 @@ $unreadCount = $unreadCount ?? 0;
             <?php else: ?>
               <?php foreach ($notifications as $n): ?>
                 <div class="notif-card <?= $n['is_read'] ? '' : 'unread' ?>" 
-                     onclick="markAsRead(<?= $n['id'] ?>)" 
+                     onclick="openNotificationModal(<?= (int)$n['id'] ?>)" 
                      data-id="<?= $n['id'] ?>"
                      style="cursor:pointer;">
                   <div class="notif-icon type-<?= htmlspecialchars($n['type'] ?? 'system') ?>">
@@ -94,53 +94,99 @@ $unreadCount = $unreadCount ?? 0;
                       <span class="notif-time"><?= timeAgoAdmin($n['created_at']) ?></span>
                     </div>
                     <p class="notif-message"><?= htmlspecialchars($n['message']) ?></p>
-                    <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-                      <span style="font-size:0.72rem;color:var(--text-muted);">By: <?= htmlspecialchars($n['actor_name'] ?? 'System') ?></span>
-                      <?php if (!empty($n['source_url'])): ?>
-                        <a href="<?= url($n['source_url']) ?>" 
-                           style="font-size:0.75rem;color:var(--primary);font-weight:600;text-decoration:none;"
-                           onclick="event.stopPropagation();">View Source →</a>
-                      <?php endif; ?>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+                      <span style="font-size:0.75rem;color:var(--text-muted);">Sender: <?= htmlspecialchars($n['actor_name'] ?? 'System') ?></span>
+                      <span style="font-size:0.75rem;color:var(--primary);font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                        View Alert
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+                      </span>
                     </div>
                   </div>
                 </div>
               <?php endforeach; ?>
             <?php endif; ?>
           </div>
-
-          <!-- Detail View (shown when clicking a notification) -->
-          <div class="notif-detail-view section-card-body" id="notif-detail-view" style="display:none;">
-          </div>
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- ═══ NOTIFICATION DETAILS MODAL ═══ -->
+  <div class="modal-backdrop" id="notif-modal" style="display:none;">
+    <div class="modal-content" style="max-width:520px;">
+      <div class="modal-bar"></div>
+      <div class="modal-header">
+        <h5 id="notif-modal-title">Notification Details</h5>
+        <button class="modal-close"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+      </div>
+      <div class="modal-body" id="notif-modal-body">
+        <!-- Injected via JavaScript -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-topbar primary" onclick="closeModal('notif-modal')">Close</button>
+      </div>
+    </div>
   </div>
 
   <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
     standardizePage('admin');
 
-    // Source link and label helpers
-    function getSourceLink(type) {
-      const map = {
-        approve: '<?= url('/admin/mis_admin/apartment_confirmation') ?>',
-        request: '<?= url('/admin/apartment/renewals') ?>',
-        payment: '<?= url('/admin/mis_admin/billing') ?>',
-        alert: '<?= url('/admin/mis_admin/billing') ?>',
-        system: '<?= url('/admin/dashboard') ?>'
-      };
-      return map[type] || '<?= url('/admin/dashboard') ?>';
+    const allNotifs = <?= json_encode(array_map(function($n) {
+        return [
+            'id' => (int)$n['id'],
+            'title' => $n['title'] ?? '',
+            'message' => $n['message'] ?? '',
+            'type' => $n['type'] ?? 'system',
+            'actor' => $n['actor_name'] ?? 'System',
+            'created_at' => $n['created_at'] ? date('M j, Y — g:i A', strtotime($n['created_at'])) : '',
+            'is_read' => (bool)($n['is_read'] ?? 0)
+        ];
+    }, $notifications), JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+    function openNotificationModal(id) {
+      const n = allNotifs.find(item => item.id === id);
+      if (!n) return;
+
+      markAsRead(id);
+
+      const typeLabel = (n.type || 'system').toUpperCase();
+      document.getElementById('notif-modal-title').textContent = n.title;
+      document.getElementById('notif-modal-body').innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border);">
+          <div style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--primary-light, #e6f4ea);color:var(--primary, #176b45);">
+            <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:currentColor;">
+              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:0.95rem;color:var(--text-main);">${escapeHtml(n.title)}</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);display:flex;gap:10px;align-items:center;margin-top:2px;">
+              <span style="font-weight:600;color:var(--primary);">${escapeHtml(typeLabel)}</span>
+              <span>•</span>
+              <span>${escapeHtml(n.created_at)}</span>
+            </div>
+          </div>
+        </div>
+        <div style="background:#f8faf9;padding:12px 14px;border-radius:8px;border:1px solid var(--border);margin-bottom:14px;font-size:0.82rem;color:var(--text-muted);">
+          <strong>Sender / Actor:</strong> ${escapeHtml(n.actor || 'System')}
+        </div>
+        <div style="font-size:0.92rem;color:var(--text-main);line-height:1.6;white-space:pre-wrap;background:#fff;padding:14px;border-radius:8px;border:1px solid var(--border);">
+          ${escapeHtml(n.message)}
+        </div>
+      `;
+
+      openModal('notif-modal');
     }
 
-    function getSourceLabel(type) {
-      const map = {
-        approve: 'View Applications',
-        request: 'View Renewals',
-        payment: 'Manage Billing',
-        alert: 'Check Payments',
-        system: 'Go to Dashboard'
-      };
-      return map[type] || 'Go to Section';
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
     // ── Mark single notification as read (AJAX) ──
@@ -195,6 +241,7 @@ $unreadCount = $unreadCount ?? 0;
       }
     }
 
+    setupModalClose('notif-modal');
     if (typeof loadUserNav === 'function') loadUserNav();
   </script>
 </body>

@@ -306,7 +306,7 @@ class ApartmentController extends Controller {
                 'request',
                 $tenantName,
                 $userId,
-                '/admin/apartment/confirmation'
+                null
             );
 
             // Notify the tenant
@@ -1146,7 +1146,7 @@ class ApartmentController extends Controller {
                 'request',
                 $tenantName,
                 $userId,
-                '/admin/apartment/renewals'
+                null
             );
 
             // Notify the tenant

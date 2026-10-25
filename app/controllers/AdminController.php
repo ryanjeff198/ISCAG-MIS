@@ -207,7 +207,7 @@ class AdminController extends Controller
                 SELECT cv.id as ref_id, 'Da\'wah' as department, 'Shahadah Conversion' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
                        u.email, cv.created_at as submitted_at, cv.status,
-                       '/admin/dawah/conversion' as action_url
+                       '/admin/mis_admin/dawah_records' as action_url
                 FROM conversion_requests cv
                 LEFT JOIN tenant_accounts u ON cv.tenant_id = u.tenant_id
                 ORDER BY cv.id DESC LIMIT 2
@@ -220,7 +220,7 @@ class AdminController extends Controller
                 SELECT e.id as ref_id, 'Islamic Education' as department, CONCAT('Enrollment: ', COALESCE(e.level,'Course')) as request_type,
                        CONCAT(COALESCE(e.first_name,''), ' ', COALESCE(e.last_name,'')) as applicant,
                        e.contact_number as email, e.created_at as submitted_at, e.status,
-                       '/admin/dawah/education' as action_url
+                       '/admin/mis_admin/dawah_records' as action_url
                 FROM islamic_education_enrollments e
                 ORDER BY e.id DESC LIMIT 4
             ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -232,7 +232,7 @@ class AdminController extends Controller
                 SELECT b.id as ref_id, 'Damayan' as department, 'Burial Service' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
                        u.email, b.submitted_at, b.status,
-                       '/admin/damayan/burial' as action_url
+                       '/admin/mis_admin/damayan_records' as action_url
                 FROM burial_requests b
                 LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
                 ORDER BY b.id DESC LIMIT 3
@@ -245,7 +245,7 @@ class AdminController extends Controller
                 SELECT f.id as ref_id, 'Damayan' as department, 'Funeral Case' as request_type,
                        f.informant_name as applicant,
                        f.informant_email as email, f.reported_at as submitted_at, f.status,
-                       '/admin/damayan/funeral-cases' as action_url
+                       '/admin/mis_admin/damayan_records' as action_url
                 FROM funeral_cases f
                 ORDER BY f.id DESC LIMIT 3
             ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -282,7 +282,7 @@ class AdminController extends Controller
                 'type' => 'Damayan',
                 'title' => 'Pending Burial / Funeral Intakes',
                 'count' => $deptMetrics['damayan']['pending'],
-                'url' => url('/admin/damayan/burial'),
+                'url' => url('/admin/mis_admin/damayan_records'),
                 'level' => 'danger'
             ];
         }
@@ -291,7 +291,7 @@ class AdminController extends Controller
                 'type' => 'Islamic Education',
                 'title' => 'Pending Student Enrollments',
                 'count' => $deptMetrics['education']['pending'],
-                'url' => url('/admin/dawah/education'),
+                'url' => url('/admin/mis_admin/dawah_records'),
                 'level' => 'info'
             ];
         }
@@ -300,7 +300,7 @@ class AdminController extends Controller
                 'type' => 'Da\'wah',
                 'title' => 'Pending Counseling / Marriage Requests',
                 'count' => $deptMetrics['dawah']['pending'],
-                'url' => url('/admin/dawah/counseling'),
+                'url' => url('/admin/mis_admin/dawah_records'),
                 'level' => 'info'
             ];
         }
@@ -2845,7 +2845,82 @@ class AdminController extends Controller
             }
         }
 
-        // 3. Fetch Manual Assignments (Classes/Seminars)
+        // 3. Fetch Islamic Studies / Conversion (Shahadah)
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
+        $conversionModel = new ConversionRequest();
+        $conversionRaw = $conversionModel->getAll();
+        $conversionScheds = [];
+        $conversionPending = [];
+
+        foreach ($conversionRaw as $r) {
+            $st = strtolower($r['status'] ?? 'pending');
+            $isApproved = in_array($st, ['approved', 'accepted', 'confirmed']);
+            $isPending = in_array($st, ['pending', 'under_review']);
+            $cName = trim(($r['fname'] ?? '') . ' ' . ($r['lname'] ?? ''));
+            if (!empty($r['adopted_name'])) {
+                $cName .= ' (' . $r['adopted_name'] . ')';
+            }
+
+            $item = [
+                'id' => $r['id'],
+                'type' => 'Islamic Studies / Conversion',
+                'category' => 'conversion',
+                'name' => $cName ?: 'Applicant',
+                'contact' => $r['residence'] ?? '',
+                'age' => $r['age'] ?? null,
+                'date' => !empty($r['conversion_date']) ? $r['conversion_date'] : date('Y-m-d', strtotime($r['created_at'])),
+                'time' => $r['preferred_time'] ?? '10:00 AM',
+                'preferred_date' => !empty($r['conversion_date']) ? $r['conversion_date'] : date('Y-m-d', strtotime($r['created_at'])),
+                'preferred_time' => $r['preferred_time'] ?? '10:00 AM',
+                'desc' => 'Islamic Studies & Shahadah — Adopted: ' . ($r['adopted_name'] ?? '—'),
+                'counselor' => $r['officiant'] ?? 'Da\'wah Ustaz / Officiant',
+                'location' => $r['venue'] ?? 'ISCAG Main Mosque',
+                'status' => $st
+            ];
+
+            if ($isApproved) {
+                $conversionScheds[] = $item;
+            } elseif ($isPending) {
+                $conversionPending[] = $item;
+            }
+        }
+
+        // 4. Fetch Male Islamic Education Enrollments
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        $eduModel = new IslamicEducation();
+        $eduRaw = $eduModel->getAllByGender($dawah_type);
+        $eduScheds = [];
+        $eduPending = [];
+
+        foreach ($eduRaw as $e) {
+            $st = strtolower($e['status'] ?? 'pending');
+            $isApproved = in_array($st, ['active', 'accepted', 'approved', 'completed']);
+            $isPending = ($st === 'pending');
+            $eName = trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? ''));
+            $item = [
+                'id' => $e['id'],
+                'type' => 'Islamic Education Class',
+                'category' => 'education',
+                'name' => $eName ?: 'Student',
+                'contact' => $e['contact_number'] ?? '',
+                'age' => null,
+                'date' => !empty($e['date_of_shahadah']) ? $e['date_of_shahadah'] : date('Y-m-d', strtotime($e['created_at'])),
+                'time' => '09:00 AM',
+                'preferred_date' => date('Y-m-d', strtotime($e['created_at'])),
+                'preferred_time' => '09:00 AM',
+                'desc' => 'Islamic Studies: ' . ($e['program_name'] ?? 'General Program') . ' (' . ($e['level'] ?? 'Basic') . ')',
+                'counselor' => $e['prepared_by'] ?? 'Ustaz / Instructor',
+                'location' => 'ISCAG Madrasah Hall',
+                'status' => $st
+            ];
+            if ($isApproved) {
+                $eduScheds[] = $item;
+            } elseif ($isPending) {
+                $eduPending[] = $item;
+            }
+        }
+
+        // 5. Fetch Manual Assignments (Classes/Seminars)
         $manualRaw = $manualModel->getByDepartment($dawah_type);
         $manualScheds = array_map(function($r) {
             return [
@@ -2867,13 +2942,13 @@ class AdminController extends Controller
         }, $manualRaw);
 
         // Available / Confirmed schedules (sorted by date/time)
-        $availableSchedules = array_merge($counselingScheds, $marriageScheds, $manualScheds);
+        $availableSchedules = array_merge($counselingScheds, $marriageScheds, $conversionScheds, $eduScheds, $manualScheds);
         usort($availableSchedules, function($a, $b) {
             return strtotime(($a['date'] ?? '') . ' ' . ($a['time'] ?? '')) <=> strtotime(($b['date'] ?? '') . ' ' . ($b['time'] ?? ''));
         });
 
         // Pending schedules (sorted by requested date)
-        $pendingSchedules = array_merge($counselingPending, $marriagePending);
+        $pendingSchedules = array_merge($counselingPending, $marriagePending, $conversionPending, $eduPending);
         usort($pendingSchedules, function($a, $b) {
             return strtotime(($a['date'] ?? '') . ' ' . ($a['time'] ?? '')) <=> strtotime(($b['date'] ?? '') . ' ' . ($b['time'] ?? ''));
         });
@@ -6042,7 +6117,8 @@ class AdminController extends Controller
             'Staff_Damayan' => 'Damayan Department Staff',
             'Staff_Male' => 'Da\'wah Male Division Staff',
             'Staff_Female' => 'Islamic Education & Da\'wah Staff',
-            'Tenant' => 'Regular User / Resident'
+            'Guest' => 'Regular User / Guest',
+            'Tenant' => 'Apartment Tenant'
         ];
 
         if (!array_key_exists($newRole, $validRoles)) {

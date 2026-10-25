@@ -287,7 +287,7 @@ class CharityProgram
                     'cash' => "{$donorName} submitted a cash donation record of ₱" . number_format($amount, 2) . " for {$targetProgram}.",
                     default => "{$donorName} submitted ₱" . number_format($amount, 2) . " via {$paymentMethod} (Ref: " . ($paymentRef ?: 'N/A') . "). Proof uploaded, awaiting verification."
                 };
-                $sourceUrl = "/admin/damayan/charity/donations?search=" . urlencode($donationRef);
+                $sourceUrl = null;
                 $notifStmt = $this->db->prepare("INSERT INTO admin_notifications (title, message, type, actor_name, actor_id, source_url, is_read, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, NOW())");
                 $notifStmt->execute([$notifTitle, $notifMsg, 'charity', $donorName, $tenantId, $sourceUrl]);
             } catch (Exception $ne) {
