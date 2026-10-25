@@ -957,7 +957,7 @@ class ApartmentController extends Controller {
         $paymentIds = [];
         $refNo = $pending['reference_number'] ?? ('ISCAG-PAY-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)));
 
-        if (!empty($sessionId) && $sessionId !== '{CHECKOUT_SESSION_ID}') {
+        if (!empty($sessionId)) {
             $sessionData = PayMongoHelper::getCheckoutSession($sessionId);
             $logEntry .= "PayMongo API success: " . ($sessionData['success'] ? 'YES' : 'NO') . "\n";
             
