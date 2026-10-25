@@ -1306,7 +1306,7 @@ if (!$activeRequest && !empty($history)) {
       </div>
 
       <?php if ($hasPending || $hasApproved): ?>
-      <!-- 📢 ACTIVE REGISTRATION STATUS HERO -->
+      <!-- ACTIVE REGISTRATION STATUS HERO -->
       <div class="status-hero" style="background: white; border-radius: 16px; border: 1px solid var(--border-subtle); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03); overflow: hidden; margin-bottom: 28px;">
         <div class="status-hero-top" style="background: #0f5c3a; padding: 22px 28px; position: relative; overflow: hidden;">
             <div class="status-hero-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; position: relative; z-index: 1; flex-wrap: wrap;">
@@ -1377,7 +1377,7 @@ if (!$activeRequest && !empty($history)) {
       <?php endif; ?>
 
       <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- 📋 REGISTRATION FORM (Structure Recreated from Picture)   -->
+      <!-- REGISTRATION FORM (Structure Recreated from Picture)   -->
       <!-- ══════════════════════════════════════════════════════════ -->
       <div class="reg-form-card" id="registration-form-card">
         <!-- Hero Header -->
@@ -1761,7 +1761,7 @@ if (!$activeRequest && !empty($history)) {
       </div>
 
       <!-- ══════════════════════════════════════════════════════════ -->
-      <!-- 📜 APPLICATION HISTORY TABLE                              -->
+      <!-- APPLICATION HISTORY TABLE                              -->
       <!-- ══════════════════════════════════════════════════════════ -->
       <div class="section-card" id="my-registrations-card" style="margin-top:24px;">
         <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center;">
@@ -1860,7 +1860,7 @@ if (!$activeRequest && !empty($history)) {
 </div>
 
 <!-- ══════════════════════════════════════════════════════════ -->
-<!-- 🔔 CUSTOM FEEDBACK / ALERT MODAL                           -->
+<!-- CUSTOM FEEDBACK / ALERT MODAL                           -->
 <!-- ══════════════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="edu-alert-modal" onclick="if(event.target===this) closeEduAlert()">
   <div class="edu-alert-card" role="dialog" aria-modal="true">
@@ -1881,7 +1881,7 @@ if (!$activeRequest && !empty($history)) {
 </div>
 
 <!-- ══════════════════════════════════════════════════════════ -->
-<!-- 📄 HIGH-FIDELITY REGISTRATION FORM PRINTABLE MODAL         -->
+<!-- HIGH-FIDELITY REGISTRATION FORM PRINTABLE MODAL         -->
 <!-- ══════════════════════════════════════════════════════════ -->
 <div id="slip-modal" class="slip-modal" onclick="if(event.target===this) closeSlipModal()">
   <div class="slip-paper-card">

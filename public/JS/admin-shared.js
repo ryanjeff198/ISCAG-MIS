@@ -1100,61 +1100,97 @@ function standardizePage(role) {
   initTableSearch();
 }
 
-function toggleActionMenu(btn, e) {
-  if (e) e.stopPropagation();
-  const dropdown = btn.nextElementSibling;
-  if (!dropdown) return;
-  const isShow = dropdown.classList.contains('show');
-  
-  // Close all other menus first and move them back to their parents
-  document.querySelectorAll('.action-menu-dropdown').forEach(d => {
+function closeAllActionMenus() {
+  document.querySelectorAll('.action-menu-dropdown.show').forEach(d => {
     d.classList.remove('show');
+    d.style.display = 'none';
     d.style.top = '-9999px';
-    // If it was moved to body, we don't strictly need to move it back immediately,
-    // but we should ensure the style is clean.
+    d.style.left = '-9999px';
   });
-
-  if (!isShow) {
-    // 1. Move the dropdown to document.body to escape ALL overflow/spacing constraints
-    if (dropdown.parentElement !== document.body) {
-        document.body.appendChild(dropdown);
-    }
-
-    // 2. Position it relative to the button using fixed coords
-    const rect = btn.getBoundingClientRect();
-    dropdown.style.position = 'fixed';
-    dropdown.style.display = 'block'; // Ensure it's measurable
-    dropdown.style.zIndex = '99999';
-    dropdown.style.width = '180px';
-    
-    let top = rect.bottom + 8;
-    let left = rect.right - 180;
-    
-    // 3. Collision check
-    const dropdownHeight = dropdown.offsetHeight || 150;
-    if (top + dropdownHeight > window.innerHeight) {
-        top = rect.top - dropdownHeight - 8;
-    }
-    
-    dropdown.style.top = top + 'px';
-    dropdown.style.left = left + 'px';
-    dropdown.classList.add('show');
-  }
 }
 
-window.addEventListener('click', () => {
-    document.querySelectorAll('.action-menu-dropdown').forEach(d => {
-        d.classList.remove('show');
-        d.style.top = '-9999px'; // Move out of view instead of just hiding
-    });
+function toggleActionMenu(btn, e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  
+  // Find the dropdown element associated with this button without detaching from DOM
+  let dropdown = btn.nextElementSibling;
+  if (!dropdown || !dropdown.classList.contains('action-menu-dropdown')) {
+    const parent = btn.closest('.action-menu');
+    dropdown = parent ? parent.querySelector('.action-menu-dropdown') : null;
+  }
+  if (!dropdown && btn._dropdown && document.body.contains(btn._dropdown)) {
+    dropdown = btn._dropdown;
+  }
+  if (!dropdown) return;
+
+  btn._dropdown = dropdown;
+  dropdown._btn = btn;
+
+  const isAlreadyOpen = dropdown.classList.contains('show') && dropdown.style.display !== 'none';
+
+  // Always close any other currently open action menus first
+  closeAllActionMenus();
+
+  // If this menu was already open, clicking its button again toggles it closed
+  if (isAlreadyOpen) {
+    return;
+  }
+
+  // Open and position the dropdown using fixed coordinates relative to the button
+  const rect = btn.getBoundingClientRect();
+  const dropdownWidth = 180;
+  
+  dropdown.style.position = 'fixed';
+  dropdown.style.display = 'block';
+  dropdown.style.zIndex = '99999';
+  dropdown.style.width = dropdownWidth + 'px';
+  dropdown.classList.add('show');
+
+  const dropdownHeight = dropdown.offsetHeight || 150;
+
+  let top = rect.bottom + 6;
+  let left = rect.right - dropdownWidth;
+
+  // Collision detection: keep horizontally on screen
+  if (left < 10) {
+    left = Math.max(10, rect.left);
+  }
+  if (left + dropdownWidth > window.innerWidth - 10) {
+    left = window.innerWidth - dropdownWidth - 10;
+  }
+
+  // Collision detection: open upwards if it would go off the bottom edge
+  if (top + dropdownHeight > window.innerHeight - 10) {
+    top = Math.max(10, rect.top - dropdownHeight - 6);
+  }
+
+  dropdown.style.top = top + 'px';
+  dropdown.style.left = left + 'px';
+}
+
+window.addEventListener('click', (e) => {
+  if (e && e.target && e.target.closest && (e.target.closest('.action-menu-btn') || e.target.closest('.action-menu-dropdown'))) {
+    return;
+  }
+  closeAllActionMenus();
 });
 
 window.addEventListener('scroll', () => {
-    document.querySelectorAll('.action-menu-dropdown').forEach(d => {
-        d.classList.remove('show');
-        d.style.top = '-9999px';
-    });
+  closeAllActionMenus();
 }, true);
+
+window.addEventListener('resize', () => {
+  closeAllActionMenus();
+});
+
+document.addEventListener('click', (e) => {
+  if (e && e.target && e.target.closest && e.target.closest('.action-menu-item')) {
+    closeAllActionMenus();
+  }
+});
 
 // Removed redundant initNotifBadge
 

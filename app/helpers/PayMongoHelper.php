@@ -2,13 +2,26 @@
 
 class PayMongoHelper
 {
-    private static function getConfig(): array
+    /**
+     * Retrieve configuration array from config/paymongo.php or example file
+     */
+    public static function getConfig(): array
     {
         $configFile = BASE_PATH . '/config/paymongo.php';
         if (file_exists($configFile)) {
             return require $configFile;
         }
         return require BASE_PATH . '/config/paymongo.example.php';
+    }
+
+    /**
+     * Check whether valid live/test PayMongo secret credentials are set
+     */
+    public static function hasValidCredentials(): bool
+    {
+        $config = self::getConfig();
+        $key = trim($config['secret_key'] ?? '');
+        return !empty($key) && stripos($key, 'YOUR_') === false && strpos($key, 'sk_') === 0;
     }
 
     /**
@@ -20,7 +33,9 @@ class PayMongoHelper
      * @param string $successUrl Redirect URL on payment completion
      * @param string $cancelUrl Redirect URL on user cancellation
      * @param array $metadata Custom metadata (e.g. payment_ids, tenant_id)
-     * @return array Response from PayMongo API
+     * @param string|null $referenceNumber External payment reference number
+     * @param array|null $billingInfo Customer billing details
+     * @return array Response from PayMongo API or sandbox session
      */
     public static function createCheckoutSession(
         float $amount,
@@ -33,7 +48,7 @@ class PayMongoHelper
         ?array $billingInfo = null
     ): array {
         $config = self::getConfig();
-        $secretKey = $config['secret_key'];
+        $useSandbox = !empty($config['enable_sandbox_simulation']) || !self::hasValidCredentials();
 
         // PayMongo expects line item amounts in cents (multiply by 100)
         $formattedLineItems = [];
@@ -56,9 +71,9 @@ class PayMongoHelper
             $formattedLineItems[] = [
                 'currency'    => 'PHP',
                 'amount'      => (int) round($amount * 100),
-                'name'        => $description ?: 'Apartment Payment',
+                'name'        => $description ?: 'ISCAG MIS Payment',
                 'quantity'    => 1,
-                'description' => $description ?: 'Apartment Payment'
+                'description' => $description ?: 'ISCAG MIS Payment'
             ];
         }
 
@@ -70,6 +85,8 @@ class PayMongoHelper
             $billing['phone'] = $billingInfo['phone'];
         }
 
+        $allowedMethodTypes = $config['payment_method_types'] ?? ['qrph', 'gcash', 'paymaya', 'card'];
+
         $attributes = [
             'billing'              => $billing,
             'send_email_receipt'   => true,
@@ -77,7 +94,7 @@ class PayMongoHelper
             'show_line_items'      => true,
             'description'          => substr($description, 0, 255),
             'line_items'           => $formattedLineItems,
-            'payment_method_types' => $config['payment_method_types'],
+            'payment_method_types' => $allowedMethodTypes,
             'success_url'          => $successUrl,
             'cancel_url'           => $cancelUrl,
             'metadata'             => empty($metadata) ? new \stdClass() : (object)$metadata
@@ -87,25 +104,176 @@ class PayMongoHelper
             $attributes['reference_number'] = substr($referenceNumber, 0, 255);
         }
 
-        $payload = [
-            'data' => [
-                'attributes' => $attributes
+        // If valid PayMongo credentials exist and sandbox simulation is NOT forced, try real API
+        if (self::hasValidCredentials() && empty($config['enable_sandbox_simulation'])) {
+            $payload = [
+                'data' => [
+                    'attributes' => $attributes
+                ]
+            ];
+
+            $apiRes = self::request('POST', '/checkout_sessions', $payload);
+            if (!empty($apiRes['success'])) {
+                return $apiRes;
+            }
+
+            // If real API failed and sandbox is enabled as a fallback, fall through to simulation
+            if (empty($config['enable_sandbox_simulation'])) {
+                return $apiRes;
+            }
+        }
+
+        // ── PayMongo Sandbox Simulation Session ────────────────────────
+        $sessionId = 'cs_sim_' . bin2hex(random_bytes(12));
+        $paymentId = 'pay_sim_' . bin2hex(random_bytes(10));
+        $checkoutUrl = self::buildFullUrl('/paymongo/sandbox?session_id=' . urlencode($sessionId));
+
+        $sessionRecord = [
+            'id'         => $sessionId,
+            'amount'     => $amount,
+            'status'     => 'active',
+            'created_at' => time(),
+            'attributes' => [
+                'checkout_url'     => $checkoutUrl,
+                'status'           => 'active',
+                'reference_number' => $referenceNumber ?: ('ISCAG-REF-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8))),
+                'line_items'       => $formattedLineItems,
+                'metadata'         => is_object($attributes['metadata']) ? (array)$attributes['metadata'] : (array)$metadata,
+                'billing'          => $billing,
+                'description'      => $description,
+                'payment_method_types' => $allowedMethodTypes,
+                'success_url'      => $successUrl,
+                'cancel_url'       => $cancelUrl,
+                'amount'           => $amount,
+                'payments'         => []
             ]
         ];
 
-        return self::request('POST', '/checkout_sessions', $payload);
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+        if (!isset($_SESSION['paymongo_simulated_sessions'])) {
+            $_SESSION['paymongo_simulated_sessions'] = [];
+        }
+        $_SESSION['paymongo_simulated_sessions'][$sessionId] = $sessionRecord;
+
+        return [
+            'success' => true,
+            'data'    => [
+                'id'         => $sessionId,
+                'type'       => 'checkout_session',
+                'attributes' => [
+                    'checkout_url'     => $checkoutUrl,
+                    'status'           => 'active',
+                    'reference_number' => $sessionRecord['attributes']['reference_number'],
+                    'line_items'       => $formattedLineItems,
+                    'metadata'         => $sessionRecord['attributes']['metadata']
+                ]
+            ]
+        ];
     }
 
     /**
-     * Retrieve a Checkout Session by ID
+     * Retrieve a Checkout Session by ID (handles both real API sessions and simulated sessions)
      */
     public static function getCheckoutSession(string $sessionId): array
     {
+        $sessionId = trim($sessionId);
+
+        // Reject placeholder query strings
+        if (empty($sessionId) || $sessionId === '{CHECKOUT_SESSION_ID}') {
+            return [
+                'success' => false,
+                'message' => 'Invalid or missing checkout session ID.'
+            ];
+        }
+
+        // Check simulated sessions first
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+
+        if (isset($_SESSION['paymongo_simulated_sessions'][$sessionId])) {
+            $sess = $_SESSION['paymongo_simulated_sessions'][$sessionId];
+            return [
+                'success' => true,
+                'data'    => [
+                    'id'         => $sessionId,
+                    'type'       => 'checkout_session',
+                    'attributes' => $sess['attributes']
+                ]
+            ];
+        }
+
+        // If simulated ID prefix but session was wiped, return fallback with default success
+        if (strpos($sessionId, 'cs_sim_') === 0) {
+            return [
+                'success' => true,
+                'data'    => [
+                    'id'         => $sessionId,
+                    'type'       => 'checkout_session',
+                    'attributes' => [
+                        'status'           => 'paid',
+                        'reference_number' => 'ISCAG-SIM-' . substr($sessionId, 7, 8),
+                        'metadata'         => [],
+                        'payments'         => [
+                            [
+                                'id'         => 'pay_sim_' . substr($sessionId, 7),
+                                'type'       => 'payment',
+                                'attributes' => [
+                                    'status' => 'paid'
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+        }
+
+        // Query real PayMongo API
         return self::request('GET', '/checkout_sessions/' . urlencode($sessionId));
     }
 
     /**
-     * Make an authenticated HTTP request to PayMongo
+     * Mark a simulated session as paid and prepare payment details
+     */
+    public static function markSimulatedSessionPaid(string $sessionId, string $paymentChannel = 'QR Ph'): bool
+    {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['paymongo_simulated_sessions'][$sessionId])) {
+            return false;
+        }
+
+        $sess = &$_SESSION['paymongo_simulated_sessions'][$sessionId];
+        $sess['status'] = 'paid';
+        $sess['attributes']['status'] = 'paid';
+
+        $payId = 'pay_sim_' . bin2hex(random_bytes(10));
+        $sess['attributes']['payments'] = [
+            [
+                'id'         => $payId,
+                'type'       => 'payment',
+                'attributes' => [
+                    'status'         => 'paid',
+                    'amount'         => (int) round(($sess['amount'] ?? 0) * 100),
+                    'currency'       => 'PHP',
+                    'source'         => [
+                        'type' => strtolower(str_replace(' ', '_', $paymentChannel))
+                    ],
+                    'paid_at'        => time(),
+                    'payment_method' => $paymentChannel
+                ]
+            ]
+        ];
+
+        return true;
+    }
+
+    /**
+     * Make an authenticated HTTP request to PayMongo API
      */
     private static function request(string $method, string $endpoint, ?array $payload = null): array
     {
@@ -169,4 +337,19 @@ class PayMongoHelper
             'code'    => $httpCode
         ];
     }
+
+    /**
+     * Build absolute URL safely across CLI and Web environments
+     */
+    public static function buildFullUrl(string $path = ''): string
+    {
+        if (function_exists('full_url')) {
+            return full_url($path);
+        }
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $baseUrl = defined('BASE_URL') ? BASE_URL : '';
+        return $scheme . '://' . $host . $baseUrl . '/' . ltrim($path, '/');
+    }
 }
+

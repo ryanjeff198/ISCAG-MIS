@@ -397,6 +397,8 @@ class UserController extends Controller
             'approved' => count(array_filter($history, fn($h) => in_array(strtolower($h['status'] ?? ''), ['active', 'accepted', 'approved', 'enrolled', 'completed'])))
         ];
 
+        $_SESSION['female_education_enrolled'] = $hasApproved;
+
         $this->view('user/Da\'wah/Female/user_form-female-education', [
             'dbUser' => $dbUser,
             'history' => $history,
@@ -711,6 +713,16 @@ class UserController extends Controller
                     } elseif (!empty($meta['reference_number'])) {
                         $refNo = $meta['reference_number'];
                     }
+
+                    // Recover metadata if session state was lost
+                    if (empty($pending) || (int)($pending['tenant_id'] ?? 0) !== (int)$userId) {
+                        if (!empty($meta['existing_id']) && (int)$meta['existing_id'] > 0) {
+                            $existingId = (int)$meta['existing_id'];
+                        }
+                        if (!empty($meta['amount'])) {
+                            $amount = (float)$meta['amount'];
+                        }
+                    }
                 }
             } catch (\Throwable $e) {}
         }
@@ -727,7 +739,7 @@ class UserController extends Controller
         }
 
         $regId = 0;
-        $existingId = $pending['existing_registration_id'] ?? 0;
+        $existingId = $existingId ?? ($pending['existing_registration_id'] ?? 0);
 
         if ($existingId > 0) {
             $regId = (int)$existingId;
@@ -739,6 +751,7 @@ class UserController extends Controller
                 'payment_status'    => 'Paid',
                 'status'            => 'pending'
             ]);
+            $eduModel->ensureSessionsSeeded($regId);
         } else {
             $formData = $pending['form_data'] ?? [];
             if (empty($formData)) {
@@ -750,8 +763,8 @@ class UserController extends Controller
                     'last_name' => $dbUser['last_name'] ?? '',
                     'contact_number' => $dbUser['phone'] ?? ($dbUser['contact_number'] ?? ''),
                     'address' => $dbUser['address'] ?? ($dbUser['current_address'] ?? 'ISCAG Community'),
-                    'batch_no' => 'Batch 08',
-                    'level' => 'Level 1 — Basic Arabic & Tajweed',
+                    'batch_no' => !empty($meta['batch_no']) ? $meta['batch_no'] : 'Batch 08',
+                    'level' => !empty($meta['level']) ? $meta['level'] : 'Level 1 — Basic Arabic & Tajweed',
                     'gender' => 'female',
                     'status' => 'pending'
                 ];
@@ -765,6 +778,9 @@ class UserController extends Controller
             $formData['status'] = 'pending';
 
             $regId = $eduModel->createRegistration($formData);
+            if ($regId) {
+                $eduModel->ensureSessionsSeeded($regId);
+            }
         }
 
         $refCode = '#EDU-' . str_pad((string)$regId, 4, '0', STR_PAD_LEFT);
@@ -812,26 +828,83 @@ class UserController extends Controller
     {
         Auth::protectRole(['Guest', 'Tenant']);
         require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
         $userModel = new User();
-        $dbUser = $userModel->findById($_SESSION['user_id']) ?: [];
-        $extraInfo = $userModel->getAdditionalInfo($_SESSION['user_id']) ?: [];
+        $dbUser = $userModel->findById($userId) ?: [];
+        $extraInfo = $userModel->getAdditionalInfo($userId) ?: [];
         $dbUser = array_merge($dbUser, $extraInfo);
-        $this->view('user/Da\'wah/Female/user_female-school', ['dbUser' => $dbUser, 'active_page' => 'female_school']);
+
+        $eduModel = new IslamicEducation();
+        $allEnrollments = $eduModel->getByUser($userId);
+
+        $approvedStatuses = ['active', 'accepted', 'approved', 'enrolled', 'completed'];
+        $approvedEnrollments = array_values(array_filter($allEnrollments, function ($e) use ($approvedStatuses) {
+            return in_array(strtolower($e['status'] ?? ''), $approvedStatuses);
+        }));
+
+        $isApproved = !empty($approvedEnrollments);
+        $_SESSION['female_education_enrolled'] = $isApproved;
+
+        $pendingStatuses = ['pending', 'under_review'];
+        $pendingEnrollment = null;
+        foreach ($allEnrollments as $e) {
+            if (in_array(strtolower($e['status'] ?? ''), $pendingStatuses)) {
+                $pendingEnrollment = $e;
+                break;
+            }
+        }
+        $hasPending = ($pendingEnrollment !== null);
+
+        $enrolledCourses = [];
+        foreach ($approvedEnrollments as $appr) {
+            $c = trim($appr['level'] ?? '');
+            if (empty($c)) $c = trim($appr['program_name'] ?? '');
+            if (!empty($c) && !in_array($c, $enrolledCourses)) {
+                $enrolledCourses[] = $c;
+            }
+        }
+
+        $this->view('user/Da\'wah/Female/user_female-school', [
+            'dbUser' => $dbUser,
+            'active_page' => 'female_school',
+            'isApproved' => $isApproved,
+            'hasPending' => $hasPending,
+            'pendingEnrollment' => $pendingEnrollment,
+            'approvedEnrollments' => $approvedEnrollments,
+            'enrolledCourses' => $enrolledCourses,
+            'latestEnrollment' => $allEnrollments[0] ?? null
+        ]);
     }
 
     public function femaleSubjects(): void
     {
         Auth::protectRole(['Guest', 'Tenant']);
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $eduModel = new IslamicEducation();
+        $allEnrollments = $eduModel->getByUser($userId);
+        $approvedStatuses = ['active', 'accepted', 'approved', 'enrolled', 'completed'];
+        $isApproved = false;
+        foreach ($allEnrollments as $e) {
+            if (in_array(strtolower($e['status'] ?? ''), $approvedStatuses)) {
+                $isApproved = true;
+                break;
+            }
+        }
+        $_SESSION['female_education_enrolled'] = $isApproved;
+
         // Check if enrolled - security gate
-        if (empty($_SESSION['female_education_enrolled'])) {
+        if (!$isApproved) {
             $this->redirect('/user/services/education/female');
             return;
         }
 
         require_once BASE_PATH . '/app/models/User.php';
         $userModel = new User();
-        $dbUser = $userModel->findById($_SESSION['user_id']) ?: [];
-        $extraInfo = $userModel->getAdditionalInfo($_SESSION['user_id']) ?: [];
+        $dbUser = $userModel->findById($userId) ?: [];
+        $extraInfo = $userModel->getAdditionalInfo($userId) ?: [];
         $dbUser = array_merge($dbUser, $extraInfo);
         
         $this->view('user/Da\'wah/Female/user_female-subjects', ['dbUser' => $dbUser, 'active_page' => 'female_subjects']);
@@ -1903,7 +1976,7 @@ class UserController extends Controller
         $refNo        = $pending['reference_number'] ?? ('ISCAG-DON-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)));
 
         // Verify with PayMongo API if session_id is available
-        if (!empty($sessionId)) {
+        if (!empty($sessionId) && $sessionId !== '{CHECKOUT_SESSION_ID}') {
             $sessionData = PayMongoHelper::getCheckoutSession($sessionId);
 
             if ($sessionData['success']) {

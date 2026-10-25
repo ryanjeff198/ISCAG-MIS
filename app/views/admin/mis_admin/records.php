@@ -273,7 +273,7 @@
     </div>
   </div>
 
-  <script src="<?= asset('JS/admin-shared.js') ?>"></script>
+  <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
     standardizePage('admin');
 
