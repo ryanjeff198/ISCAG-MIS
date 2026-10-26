@@ -9,9 +9,94 @@ class PayMongoHelper
     {
         $configFile = BASE_PATH . '/config/paymongo.php';
         if (file_exists($configFile)) {
-            return require $configFile;
+            $config = require $configFile;
+        } else {
+            $config = require BASE_PATH . '/config/paymongo.example.php';
         }
-        return require BASE_PATH . '/config/paymongo.example.php';
+
+        // Support environment variables override
+        if (!empty($_ENV['PAYMONGO_SECRET_KEY'])) {
+            $config['secret_key'] = $_ENV['PAYMONGO_SECRET_KEY'];
+        }
+        if (!empty($_ENV['PAYMONGO_PUBLIC_KEY'])) {
+            $config['public_key'] = $_ENV['PAYMONGO_PUBLIC_KEY'];
+        }
+
+        // Handle dual-environment config structure if present (test / live mode)
+        if (isset($config['mode'])) {
+            $mode = strtolower(trim($config['mode']));
+            if ($mode === 'live' && !empty($config['live']['secret_key'])) {
+                $liveKey = self::sanitizeKey($config['live']['secret_key']);
+                if (strpos($liveKey, 'sk_live_') === 0) {
+                    $config['secret_key'] = $liveKey;
+                    $config['public_key'] = self::sanitizeKey($config['live']['public_key'] ?? '');
+                }
+            } elseif ($mode === 'test' && !empty($config['test']['secret_key'])) {
+                $config['secret_key'] = self::sanitizeKey($config['test']['secret_key']);
+                $config['public_key'] = self::sanitizeKey($config['test']['public_key'] ?? '');
+            }
+        }
+
+        // Sanitize keys to strip leading/trailing whitespace, accidental quotes, newlines
+        $config['secret_key'] = self::sanitizeKey($config['secret_key'] ?? '');
+        $config['public_key'] = self::sanitizeKey($config['public_key'] ?? '');
+        $config['api_base']   = rtrim($config['api_base'] ?? 'https://api.paymongo.com/v1', '/');
+
+        return $config;
+    }
+
+    /**
+     * Sanitize an API key string:
+     * - Strips leading / trailing spaces, tabs, newlines
+     * - Strips accidental single/double quotes and backticks from copy-pasting
+     */
+    public static function sanitizeKey(?string $key): string
+    {
+        if ($key === null) return '';
+        return trim($key, " \t\n\r\0\x0B\"'`");
+    }
+
+    /**
+     * Validate secret key format and return detailed diagnostic message if invalid
+     */
+    public static function validateCredentials(?string $key = null): array
+    {
+        $config = self::getConfig();
+        $secretKey = self::sanitizeKey($key ?? ($config['secret_key'] ?? ''));
+
+        if (empty($secretKey) || stripos($secretKey, 'YOUR_') !== false) {
+            return [
+                'valid'   => false,
+                'message' => 'PayMongo secret key is not configured. Please set a valid secret key (sk_test_... or sk_live_...) in config/paymongo.php.'
+            ];
+        }
+
+        if (strpos($secretKey, 'pk_') === 0) {
+            return [
+                'valid'   => false,
+                'message' => 'Invalid key: A Public Key ("pk_...") was configured as the secret key. Please use your Secret Key ("sk_test_..." or "sk_live_...") in config/paymongo.php.'
+            ];
+        }
+
+        if (strpos($secretKey, 'org_') === 0 || strpos($secretKey, 'merch_') === 0) {
+            return [
+                'valid'   => false,
+                'message' => 'Invalid key: An Organization / Merchant ID was entered instead of an API Secret Key. Go to PayMongo Dashboard > Developers > API Keys and copy the Secret Key.'
+            ];
+        }
+
+        if (strpos($secretKey, 'sk_test_') !== 0 && strpos($secretKey, 'sk_live_') !== 0) {
+            return [
+                'valid'   => false,
+                'message' => 'Invalid merchant key format: PayMongo secret keys must start with "sk_test_" or "sk_live_". Please verify your key in config/paymongo.php.'
+            ];
+        }
+
+        return [
+            'valid'   => true,
+            'key'     => $secretKey,
+            'is_live' => strpos($secretKey, 'sk_live_') === 0
+        ];
     }
 
     /**
@@ -19,9 +104,8 @@ class PayMongoHelper
      */
     public static function hasValidCredentials(): bool
     {
-        $config = self::getConfig();
-        $key = trim($config['secret_key'] ?? '');
-        return !empty($key) && stripos($key, 'YOUR_') === false && strpos($key, 'sk_') === 0;
+        $val = self::validateCredentials();
+        return $val['valid'];
     }
 
     /**
@@ -104,8 +188,19 @@ class PayMongoHelper
             $attributes['reference_number'] = substr($referenceNumber, 0, 255);
         }
 
+        // Validate credentials before attempting API call
+        $validation = self::validateCredentials();
+        if (!$validation['valid']) {
+            if (empty($config['enable_sandbox_simulation'])) {
+                return [
+                    'success' => false,
+                    'message' => $validation['message']
+                ];
+            }
+        }
+
         // If valid PayMongo credentials exist and sandbox simulation is NOT forced, try real API
-        if (self::hasValidCredentials() && empty($config['enable_sandbox_simulation'])) {
+        if ($validation['valid'] && empty($config['enable_sandbox_simulation'])) {
             $payload = [
                 'data' => [
                     'attributes' => $attributes
@@ -278,8 +373,15 @@ class PayMongoHelper
     private static function request(string $method, string $endpoint, ?array $payload = null): array
     {
         $config = self::getConfig();
-        $url = rtrim($config['api_base'], '/') . $endpoint;
-        $secretKey = $config['secret_key'];
+        $url = rtrim($config['api_base'] ?? 'https://api.paymongo.com/v1', '/') . $endpoint;
+        $secretKey = self::sanitizeKey($config['secret_key'] ?? '');
+
+        if (empty($secretKey)) {
+            return [
+                'success' => false,
+                'message' => 'PayMongo secret key is missing. Please configure config/paymongo.php.'
+            ];
+        }
 
         $ch = curl_init($url);
         $headers = [
@@ -328,6 +430,9 @@ class PayMongoHelper
         $errorMsg = 'Payment gateway error';
         if (!empty($data['errors']) && is_array($data['errors'])) {
             $errorMsg = $data['errors'][0]['detail'] ?? $data['errors'][0]['code'] ?? $errorMsg;
+            if (stripos($errorMsg, 'merchant key format') !== false) {
+                $errorMsg .= '. Please ensure config/paymongo.php contains a valid PayMongo secret key starting with "sk_test_" or "sk_live_" without extra spaces or quotes.';
+            }
         }
 
         return [

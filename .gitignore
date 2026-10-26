@@ -7,7 +7,7 @@ node_modules/
 *.log
 
 # Sensitive Config
-config/paymongo.php
+# config/paymongo.php is tracked with multi-environment safe test defaults (like database.php and mail.php)
 
 # XAMPP/OS specific
 .DS_Store
