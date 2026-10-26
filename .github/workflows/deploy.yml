@@ -42,6 +42,7 @@ jobs:
             check_*.php
             test_*.php
             test.*
+            test
             flush_*.php
             migrate_*.php
             tmp_*.php
