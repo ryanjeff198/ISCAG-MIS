@@ -34,6 +34,7 @@ jobs:
             **/tmp/**
             **/IDs/**
             **/brain/**
+            **/2BR Type/**
             *.log
             *.txt
             *.json
