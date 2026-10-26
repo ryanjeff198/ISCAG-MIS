@@ -32,10 +32,20 @@ jobs:
             **/.vscode/**
             **/scratch/**
             **/tmp/**
+            **/IDs/**
+            **/brain/**
             *.log
             *.txt
+            *.json
             debug_*.php
             check_*.php
             test_*.php
             test.*
-            *.json
+            flush_*.php
+            migrate_*.php
+            tmp_*.php
+            fix_*.php
+            timejump.php
+            release_unit.php
+            sync_units_with_apps.php
+            Art.HTML
