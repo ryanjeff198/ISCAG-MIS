@@ -399,6 +399,21 @@ class BurialRequest
                 $refId = $data['ref_id'];
             }
 
+            $dobVal = !empty($data['date_of_birth']) ? $data['date_of_birth'] : null;
+            $dodVal = !empty($data['date_of_death']) ? $data['date_of_death'] : null;
+            if (!empty($dobVal) && !empty($dodVal)) {
+                $dobTime = strtotime($dobVal);
+                $dodTime = strtotime($dodVal);
+                if ($dobTime !== false && $dodTime !== false && $dobTime >= $dodTime) {
+                    $this->db->rollBack();
+                    return [
+                        'success' => false,
+                        'error' => 'Invalid date of birth. The date of birth must be earlier than the date of death.',
+                        'message' => 'Invalid date of birth. The date of birth must be earlier than the date of death.'
+                    ];
+                }
+            }
+
             $fName = trim($data['deceased_first_name'] ?? ($data['first_name'] ?? ''));
             $mName = trim($data['deceased_middle_name'] ?? ($data['middle_name'] ?? ''));
             $lName = trim($data['deceased_last_name'] ?? ($data['last_name'] ?? ''));
@@ -1120,6 +1135,16 @@ class BurialRequest
             if (empty($fullName)) $fullName = trim($data['full_name'] ?? $burial['deceased_name']);
 
             $sex = in_array(ucfirst($data['sex'] ?? 'Male'), ['Male', 'Female']) ? ucfirst($data['sex']) : 'Male';
+
+            $dobVal = !empty($data['date_of_birth']) ? $data['date_of_birth'] : null;
+            $dodVal = !empty($data['date_of_death']) ? $data['date_of_death'] : null;
+            if (!empty($dobVal) && !empty($dodVal)) {
+                $dobTime = strtotime($dobVal);
+                $dodTime = strtotime($dodVal);
+                if ($dobTime !== false && $dodTime !== false && $dobTime >= $dodTime) {
+                    return false;
+                }
+            }
 
             // 1. Update deceased_records
             $decStmt = $this->db->prepare("UPDATE deceased_records 
@@ -3107,6 +3132,18 @@ class BurialRequest
             $dateOfBirth = sprintf('%04d-%02d-%02d', $dobYear, $dobMonth, $dobDay);
         } elseif (!empty($data['date_of_birth'])) {
             $dateOfBirth = date('Y-m-d', strtotime($data['date_of_birth']));
+        }
+
+        if (!empty($dateOfBirth) && !empty($dateOfDeath)) {
+            $dobTime = strtotime($dateOfBirth);
+            $dodTime = strtotime($dateOfDeath);
+            if ($dobTime !== false && $dodTime !== false && $dobTime >= $dodTime) {
+                return [
+                    'success' => false,
+                    'error' => 'Invalid date of birth. The date of birth must be earlier than the date of death.',
+                    'message' => 'Invalid date of birth. The date of birth must be earlier than the date of death.'
+                ];
+            }
         }
 
         $ageYears = isset($data['age_years']) && $data['age_years'] !== '' ? (int)$data['age_years'] : null;

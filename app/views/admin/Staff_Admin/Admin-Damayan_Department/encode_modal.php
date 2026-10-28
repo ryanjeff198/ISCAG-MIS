@@ -756,8 +756,8 @@
     const birthDate = new Date(bYear, bMonth - 1, bDay);
     const deathDate = new Date(dYear, dMonth - 1, dDay);
 
-    if (deathDate < birthDate) {
-      summaryEl.innerHTML = '<span style="color:#dc2626; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Date of Death cannot be earlier than Date of Birth.</span>';
+    if (deathDate <= birthDate) {
+      summaryEl.innerHTML = '<span style="color:#dc2626; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Invalid date of birth. The date of birth must be earlier than the date of death.</span>';
       document.getElementById('enc-age-years').value = '';
       document.getElementById('enc-age-months').value = '';
       document.getElementById('enc-age-days').value = '';
@@ -941,6 +941,16 @@
       showAlert('Required Field', 'Please complete the Date of Death (Day, Month, Year).', 'warning');
       document.getElementById('enc-dod-day').focus();
       return;
+    }
+
+    if (dobDay && dobMonth && dobYear && dodDay && dodMonth && dodYear) {
+      const birthDate = new Date(parseInt(dobYear), parseInt(dobMonth) - 1, parseInt(dobDay));
+      const deathDate = new Date(parseInt(dodYear), parseInt(dodMonth) - 1, parseInt(dodDay));
+      if (birthDate >= deathDate) {
+        showAlert('Invalid Date of Birth', 'Invalid date of birth. The date of birth must be earlier than the date of death.', 'error');
+        document.getElementById('enc-dob-day').focus();
+        return;
+      }
     }
 
     submitBtn.disabled = true;

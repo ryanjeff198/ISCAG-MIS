@@ -1601,11 +1601,12 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Date of Birth</label>
-                                    <input type="date" id="deceased-dob" class="form-control" />
+                                    <input type="date" id="deceased-dob" class="form-control" onchange="validateDamayanDates(false)" oninput="validateDamayanDates(false)" />
+                                    <span id="deceased-dob-error" style="color:#dc2626; font-size:0.75rem; display:none; margin-top:3px;"></span>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Date of Death <span class="req">*</span></label>
-                                    <input type="date" id="deceased-dod" class="form-control" value="<?= date('Y-m-d') ?>" required />
+                                    <input type="date" id="deceased-dod" class="form-control" value="<?= date('Y-m-d') ?>" required onchange="validateDamayanDates(false)" oninput="validateDamayanDates(false)" />
                                 </div>
                             </div>
 
@@ -2057,6 +2058,36 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         } catch(e) {}
     }
 
+    // ── Birthday and Date of Death Validation ──
+    function validateDamayanDates(showAlert = false) {
+        const dobInput = document.getElementById('deceased-dob');
+        const dodInput = document.getElementById('deceased-dod');
+        const errEl = document.getElementById('deceased-dob-error');
+        if (!dobInput || !dodInput) return true;
+        const dobVal = dobInput.value;
+        const dodVal = dodInput.value;
+        if (dobVal && dodVal && dobVal >= dodVal) {
+            const msg = 'Invalid date of birth. The date of birth must be earlier than the date of death.';
+            if (errEl) {
+                errEl.textContent = msg;
+                errEl.style.display = 'block';
+            }
+            dobInput.style.borderColor = '#dc2626';
+            if (showAlert) {
+                alert(msg);
+                dobInput.focus();
+            }
+            return false;
+        } else {
+            if (errEl) {
+                errEl.textContent = '';
+                errEl.style.display = 'none';
+            }
+            dobInput.style.borderColor = '';
+            return true;
+        }
+    }
+
     // ── Submit Request via AJAX ──
     async function submitBurialRequest(event) {
         event.preventDefault();
@@ -2068,6 +2099,23 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }
 
         const certAction = document.getElementById('selected-cert-action').value;
+
+        // Date of birth and date of death validation for registration
+        if (certAction === 'register') {
+            const dobVal = document.getElementById('deceased-dob')?.value;
+            const dodVal = document.getElementById('deceased-dod')?.value;
+            if (dobVal && dodVal && dobVal >= dodVal) {
+                alert('Invalid date of birth. The date of birth must be earlier than the date of death.');
+                const errEl = document.getElementById('deceased-dob-error');
+                if (errEl) {
+                    errEl.textContent = 'Invalid date of birth. The date of birth must be earlier than the date of death.';
+                    errEl.style.display = 'block';
+                }
+                document.getElementById('deceased-dob')?.focus();
+                return;
+            }
+        }
+
         const selectedDecId = document.getElementById('selected-deceased-id')?.value;
         const copySelectDecId = document.getElementById('copy-select-deceased')?.value;
         const linkedEncId = document.getElementById('linked-encoded-cert-id')?.value;

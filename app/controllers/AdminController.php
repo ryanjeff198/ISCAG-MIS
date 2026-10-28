@@ -4525,6 +4525,19 @@ class AdminController extends Controller
         $id = (int)($input['id'] ?? 0);
         $staffName = $_SESSION['name'] ?? 'Damayan Staff';
 
+        $dob = trim($input['date_of_birth'] ?? ($input['dob'] ?? ''));
+        $dod = trim($input['date_of_death'] ?? ($input['dod'] ?? ''));
+        if (!empty($dob) && !empty($dod)) {
+            if (strtotime($dob) >= strtotime($dod)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Invalid date of birth. The date of birth must be earlier than the date of death.',
+                    'message' => 'Invalid date of birth. The date of birth must be earlier than the date of death.'
+                ]);
+                return;
+            }
+        }
+
         require_once BASE_PATH . '/app/models/BurialRequest.php';
         $model = new BurialRequest();
         $success = $model->updateDeceasedRecord($id, $input, $staffName);
@@ -5597,6 +5610,27 @@ class AdminController extends Controller
         if (empty($deceasedName)) {
             echo json_encode(['success' => false, 'error' => 'Full Name of the Deceased (First and Last Name) is required.']);
             exit;
+        }
+
+        $dodDay = !empty($input['date_of_death_day']) ? (int)$input['date_of_death_day'] : null;
+        $dodMonth = !empty($input['date_of_death_month']) ? (int)$input['date_of_death_month'] : null;
+        $dodYear = !empty($input['date_of_death_year']) ? (int)$input['date_of_death_year'] : null;
+        $dod = ($dodYear && $dodMonth && $dodDay) ? sprintf('%04d-%02d-%02d', $dodYear, $dodMonth, $dodDay) : (!empty($input['date_of_death']) ? date('Y-m-d', strtotime($input['date_of_death'])) : null);
+
+        $dobDay = !empty($input['date_of_birth_day']) ? (int)$input['date_of_birth_day'] : null;
+        $dobMonth = !empty($input['date_of_birth_month']) ? (int)$input['date_of_birth_month'] : null;
+        $dobYear = !empty($input['date_of_birth_year']) ? (int)$input['date_of_birth_year'] : null;
+        $dob = ($dobYear && $dobMonth && $dobDay) ? sprintf('%04d-%02d-%02d', $dobYear, $dobMonth, $dobDay) : (!empty($input['date_of_birth']) ? date('Y-m-d', strtotime($input['date_of_birth'])) : null);
+
+        if (!empty($dob) && !empty($dod)) {
+            if (strtotime($dob) >= strtotime($dod)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Invalid date of birth. The date of birth must be earlier than the date of death.',
+                    'message' => 'Invalid date of birth. The date of birth must be earlier than the date of death.'
+                ]);
+                exit;
+            }
         }
 
         require_once BASE_PATH . '/app/models/BurialRequest.php';

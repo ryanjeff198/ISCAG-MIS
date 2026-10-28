@@ -47,6 +47,7 @@ class IslamicEducation {
             "ADD COLUMN parent_contact VARCHAR(50) NULL AFTER parent_address",
             "ADD COLUMN student_signature VARCHAR(150) NULL AFTER parent_contact",
             "ADD COLUMN guardian_signature VARCHAR(150) NULL AFTER student_signature",
+            "ADD COLUMN parent_consent TINYINT(1) DEFAULT 0 AFTER guardian_signature",
             "ADD COLUMN batch_no VARCHAR(50) DEFAULT 'Batch 08' AFTER guardian_signature",
             "ADD COLUMN level VARCHAR(100) DEFAULT 'Basic' AFTER batch_no",
             "ADD COLUMN payment_method VARCHAR(50) DEFAULT 'Cash' AFTER level",
@@ -116,7 +117,7 @@ class IslamicEducation {
             'facebook_account', 'studied_islamic_before', 'previous_school',
             'emergency_name', 'emergency_relationship', 'emergency_address', 'emergency_contact',
             'is_minor', 'parent_name', 'parent_address', 'parent_contact',
-            'student_signature', 'guardian_signature', 'batch_no', 'level',
+            'student_signature', 'guardian_signature', 'parent_consent', 'batch_no', 'level',
             'payment_method', 'fee_amount', 'payment_channel', 'payment_reference', 'payment_status',
             'approved_by', 'prepared_by', 'program_name', 'gender', 'status'
         ];

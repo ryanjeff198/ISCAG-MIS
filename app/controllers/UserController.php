@@ -437,6 +437,47 @@ class UserController extends Controller
             return;
         }
 
+        if (empty($dob)) {
+            echo json_encode(['success' => false, 'message' => 'Date of birth is required.']);
+            return;
+        }
+
+        $dobTime = strtotime($dob);
+        if ($dobTime === false) {
+            echo json_encode(['success' => false, 'message' => 'Invalid date of birth format.']);
+            return;
+        }
+
+        $today = new DateTime('today');
+        $birthDate = new DateTime($dob);
+        if ($birthDate > $today) {
+            echo json_encode(['success' => false, 'message' => 'Invalid date of birth. Future dates are not allowed.']);
+            return;
+        }
+
+        // Exact age calculation
+        $calcAge = $today->diff($birthDate)->y;
+        $isMinor = ($calcAge < 18) ? 1 : 0;
+        $parentConsent = 0;
+
+        if ($isMinor) {
+            $parentConsent = !empty($input['parent_consent']) ? 1 : 0;
+            if (!$parentConsent) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Parent or legal guardian consent is required for applicants below 18 years old.'
+                ]);
+                return;
+            }
+            if (empty(trim($input['parent_name'] ?? ''))) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Parent or legal guardian name is required for applicants below 18 years old.'
+                ]);
+                return;
+            }
+        }
+
         require_once BASE_PATH . '/app/models/IslamicEducation.php';
         require_once BASE_PATH . '/app/models/Notification.php';
         $eduModel = new IslamicEducation();
@@ -462,12 +503,13 @@ class UserController extends Controller
             'emergency_relationship' => trim($input['emergency_relationship'] ?? ''),
             'emergency_address' => trim($input['emergency_address'] ?? ''),
             'emergency_contact' => trim($input['emergency_contact'] ?? ''),
-            'is_minor' => !empty($input['is_minor']) ? 1 : 0,
-            'parent_name' => trim($input['parent_name'] ?? ''),
-            'parent_address' => trim($input['parent_address'] ?? ''),
-            'parent_contact' => trim($input['parent_contact'] ?? ''),
+            'is_minor' => $isMinor,
+            'parent_name' => $isMinor ? trim($input['parent_name'] ?? '') : '',
+            'parent_address' => $isMinor ? trim($input['parent_address'] ?? '') : '',
+            'parent_contact' => $isMinor ? trim($input['parent_contact'] ?? '') : '',
+            'parent_consent' => $parentConsent,
             'student_signature' => trim($input['student_signature'] ?? ''),
-            'guardian_signature' => trim($input['guardian_signature'] ?? ''),
+            'guardian_signature' => $isMinor ? trim($input['guardian_signature'] ?? '') : '',
             'batch_no' => trim($input['batch_no'] ?? 'Batch 08'),
             'level' => $chosenLevel,
             'payment_method' => (stripos(trim($input['payment_method'] ?? 'Cash'), 'online') !== false || stripos(trim($input['payment_method'] ?? ''), 'gcash') !== false) ? 'Online Payment' : 'Cash',
@@ -565,6 +607,42 @@ class UserController extends Controller
                 echo json_encode(['success' => false, 'message' => 'Date of birth is required.']);
                 return;
             }
+
+            $dobTime = strtotime($dob);
+            if ($dobTime === false) {
+                echo json_encode(['success' => false, 'message' => 'Invalid date of birth format.']);
+                return;
+            }
+
+            $today = new DateTime('today');
+            $birthDate = new DateTime($dob);
+            if ($birthDate > $today) {
+                echo json_encode(['success' => false, 'message' => 'Invalid date of birth. Future dates are not allowed.']);
+                return;
+            }
+
+            $calcAge = $today->diff($birthDate)->y;
+            $isMinor = ($calcAge < 18) ? 1 : 0;
+            $parentConsent = 0;
+
+            if ($isMinor) {
+                $parentConsent = !empty($body['parent_consent']) ? 1 : 0;
+                if (!$parentConsent) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Parent or legal guardian consent is required for applicants below 18 years old.'
+                    ]);
+                    return;
+                }
+                if (empty(trim($body['parent_name'] ?? ''))) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Parent or legal guardian name is required for applicants below 18 years old.'
+                    ]);
+                    return;
+                }
+            }
+
             if (empty($address)) {
                 echo json_encode(['success' => false, 'message' => 'Residential address is required.']);
                 return;
@@ -591,12 +669,13 @@ class UserController extends Controller
                 'emergency_relationship' => trim($body['emergency_relationship'] ?? ''),
                 'emergency_address' => trim($body['emergency_address'] ?? ''),
                 'emergency_contact' => trim($body['emergency_contact'] ?? ''),
-                'is_minor' => !empty($body['is_minor']) ? 1 : 0,
-                'parent_name' => trim($body['parent_name'] ?? ''),
-                'parent_address' => trim($body['parent_address'] ?? ''),
-                'parent_contact' => trim($body['parent_contact'] ?? ''),
+                'is_minor' => $isMinor,
+                'parent_name' => $isMinor ? trim($body['parent_name'] ?? '') : '',
+                'parent_address' => $isMinor ? trim($body['parent_address'] ?? '') : '',
+                'parent_contact' => $isMinor ? trim($body['parent_contact'] ?? '') : '',
+                'parent_consent' => $parentConsent,
                 'student_signature' => trim($body['student_signature'] ?? $studentName),
-                'guardian_signature' => trim($body['guardian_signature'] ?? ''),
+                'guardian_signature' => $isMinor ? trim($body['guardian_signature'] ?? '') : '',
                 'batch_no' => $batchNo,
                 'level' => $level,
                 'payment_method' => 'Online Payment',
@@ -1408,6 +1487,20 @@ class UserController extends Controller
             if (empty($dod)) {
                 echo json_encode(['success' => false, 'message' => 'Date of death is required.']);
                 return;
+            }
+            $dobInput = trim($input['dob'] ?? ($input['date_of_birth'] ?? ''));
+            if (!empty($dobInput)) {
+                $dobTime = strtotime($dobInput);
+                $dodTime = strtotime($dod);
+                if ($dobTime !== false && $dodTime !== false) {
+                    if ($dobTime >= $dodTime) {
+                        echo json_encode([
+                            'success' => false,
+                            'message' => 'Invalid date of birth. The date of birth must be earlier than the date of death.'
+                        ]);
+                        return;
+                    }
+                }
             }
             if (empty($pod)) {
                 echo json_encode(['success' => false, 'message' => 'Place of death is required.']);
