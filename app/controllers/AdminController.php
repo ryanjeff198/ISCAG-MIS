@@ -3032,6 +3032,18 @@ class AdminController extends Controller
         $occupation = trim($_POST['occupation'] ?? '');
         $address = trim($_POST['address'] ?? '');
 
+        require_once BASE_PATH . '/app/helpers/PhoneHelper.php';
+        if (!empty($phone)) {
+            if (!PhoneHelper::isValid($phone)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => PhoneHelper::getErrorMessage()
+                ]);
+                exit;
+            }
+            $phone = PhoneHelper::normalize($phone);
+        }
+
         $db = getDbConnection();
         if (!empty($firstName)) {
             $stmt = $db->prepare("UPDATE tenant_accounts SET first_name = :fn, last_name = :ln WHERE tenant_id = :id");

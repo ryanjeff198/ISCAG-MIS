@@ -68,7 +68,17 @@ class ApartmentController extends Controller {
         $model = new ApartmentApp();
         $ok = true;
 
+        require_once BASE_PATH . '/app/helpers/PhoneHelper.php';
+
         if (!empty($body['addinfo']) && is_array($body['addinfo'])) {
+            if (!empty($body['addinfo']['ref_contact'])) {
+                $refContact = trim($body['addinfo']['ref_contact']);
+                if (!PhoneHelper::isValid($refContact)) {
+                    echo json_encode(['success' => false, 'message' => PhoneHelper::getErrorMessage()]);
+                    return;
+                }
+                $body['addinfo']['ref_contact'] = PhoneHelper::normalize($refContact);
+            }
             if (!$model->saveInfo($userId, $body['addinfo'])) {
                 $ok = false;
             }

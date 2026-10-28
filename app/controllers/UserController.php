@@ -141,11 +141,22 @@ class UserController extends Controller
             return;
         }
 
+        require_once BASE_PATH . '/app/helpers/PhoneHelper.php';
+        $phoneInput = trim($_POST['phone'] ?? '');
+        if ($phoneInput !== '') {
+            if (!PhoneHelper::isValid($phoneInput)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => PhoneHelper::getErrorMessage()]);
+                return;
+            }
+            $phoneInput = PhoneHelper::normalize($phoneInput);
+        }
+
         // Collect fields from modal.
         // As per requirements: Sex and Name are NOT changeable.
         $data = [
             'email'      => $_POST['email'] ?? null,
-            'phone'      => $_POST['phone'] ?? null,
+            'phone'      => ($phoneInput !== '') ? $phoneInput : null,
             'address'    => $_POST['address'] ?? null,
             'dob'        => $_POST['dob'] ?? null,
             'civil'      => $_POST['civil'] ?? null,
@@ -432,9 +443,30 @@ class UserController extends Controller
             return;
         }
 
-        if (empty($contact)) {
-            echo json_encode(['success' => false, 'message' => 'Contact number is required.']);
+        require_once BASE_PATH . '/app/helpers/PhoneHelper.php';
+
+        if (empty($contact) || !PhoneHelper::isValid($contact)) {
+            echo json_encode(['success' => false, 'message' => PhoneHelper::getErrorMessage()]);
             return;
+        }
+        $contact = PhoneHelper::normalize($contact);
+
+        $emergencyContact = trim($input['emergency_contact'] ?? '');
+        if (!empty($emergencyContact)) {
+            if (!PhoneHelper::isValid($emergencyContact)) {
+                echo json_encode(['success' => false, 'message' => PhoneHelper::getErrorMessage()]);
+                return;
+            }
+            $emergencyContact = PhoneHelper::normalize($emergencyContact);
+        }
+
+        $parentContact = trim($input['parent_contact'] ?? '');
+        if (!empty($parentContact)) {
+            if (!PhoneHelper::isValid($parentContact)) {
+                echo json_encode(['success' => false, 'message' => PhoneHelper::getErrorMessage()]);
+                return;
+            }
+            $parentContact = PhoneHelper::normalize($parentContact);
         }
 
         if (empty($dob)) {
@@ -502,11 +534,11 @@ class UserController extends Controller
             'emergency_name' => trim($input['emergency_name'] ?? ''),
             'emergency_relationship' => trim($input['emergency_relationship'] ?? ''),
             'emergency_address' => trim($input['emergency_address'] ?? ''),
-            'emergency_contact' => trim($input['emergency_contact'] ?? ''),
+            'emergency_contact' => $emergencyContact,
             'is_minor' => $isMinor,
             'parent_name' => $isMinor ? trim($input['parent_name'] ?? '') : '',
             'parent_address' => $isMinor ? trim($input['parent_address'] ?? '') : '',
-            'parent_contact' => $isMinor ? trim($input['parent_contact'] ?? '') : '',
+            'parent_contact' => $isMinor ? $parentContact : '',
             'parent_consent' => $parentConsent,
             'student_signature' => trim($input['student_signature'] ?? ''),
             'guardian_signature' => $isMinor ? trim($input['guardian_signature'] ?? '') : '',
@@ -1049,6 +1081,19 @@ class UserController extends Controller
             return;
         }
 
+        date_default_timezone_set('Asia/Manila');
+        $today = date('Y-m-d');
+        $marriageTimestamp = strtotime($date);
+        $marriageDate = $marriageTimestamp ? date('Y-m-d', $marriageTimestamp) : null;
+
+        if (!$marriageDate || $marriageDate <= $today) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Appointments can only be scheduled starting tomorrow. Please select a future date.'
+            ]);
+            return;
+        }
+
         $newId = $model->createAndGetId([
             'tenant_id' => $_SESSION['user_id'],
             'groom_name' => $groom,
@@ -1298,8 +1343,33 @@ class UserController extends Controller
         $date = !empty($input['preferred_date']) ? trim($input['preferred_date']) : null;
         $time = !empty($input['preferred_time']) ? trim($input['preferred_time']) : null;
 
+        require_once BASE_PATH . '/app/helpers/PhoneHelper.php';
+        if (!empty($contactNumber)) {
+            if (!PhoneHelper::isValid($contactNumber)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => PhoneHelper::getErrorMessage()
+                ]);
+                return;
+            }
+            $contactNumber = PhoneHelper::normalize($contactNumber);
+        }
+
         if (empty($reason)) {
             echo json_encode(['success' => false, 'message' => 'Please select the primary concern for counseling.']);
+            return;
+        }
+
+        date_default_timezone_set('Asia/Manila');
+        $today = date('Y-m-d');
+        $preferredTimestamp = $date ? strtotime($date) : false;
+        $preferredDate = $preferredTimestamp ? date('Y-m-d', $preferredTimestamp) : null;
+
+        if (!$preferredDate || $preferredDate <= $today) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Appointments can only be scheduled starting tomorrow. Please select a future date.'
+            ]);
             return;
         }
 
@@ -1463,6 +1533,15 @@ class UserController extends Controller
         $informantName = trim($input['informantName'] ?? ($input['informant_name'] ?? ''));
         $informantContact = trim($input['informantContact'] ?? ($input['informant_contact'] ?? ''));
         $relationship = trim($input['relationship'] ?? 'Relative');
+
+        require_once BASE_PATH . '/app/helpers/PhoneHelper.php';
+        if (!empty($informantContact)) {
+            if (!PhoneHelper::isValid($informantContact)) {
+                echo json_encode(['success' => false, 'message' => PhoneHelper::getErrorMessage()]);
+                return;
+            }
+            $informantContact = PhoneHelper::normalize($informantContact);
+        }
 
         // Validation based on cert action type
         if ($certActionType === 'copy') {

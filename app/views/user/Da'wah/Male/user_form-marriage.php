@@ -820,7 +820,7 @@
                     <div class="trigger-text">
                       <span class="trigger-label">Preferred Date & Time</span>
                       <span class="trigger-value" id="selected-schedule-text">Not selected</span>
-                      <input type="hidden" name="marriage_date" id="input-date" required />
+                      <input type="hidden" name="marriage_date" id="input-date" min="<?= date('Y-m-d', strtotime('+1 day')) ?>" required />
                       <input type="hidden" name="marriage_time" id="input-time" required />
                     </div>
                   </div>
@@ -1627,6 +1627,17 @@
     }
   }
 
+  function getTodayDateStr() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
+
+  function getTomorrowDateStr() {
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    return `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+  }
+
   function renderCalendar() {
     if(!calGrid) return;
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -1640,19 +1651,28 @@
       calGrid.innerHTML += `<div class="calendar-day disabled"></div>`;
     }
     
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayDateStr();
+    const tomorrowStr = getTomorrowDateStr();
     
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const blockReason = BLOCKED_DATES[dateStr];
       const isBlocked = !!blockReason;
-      const isPast = dateStr < todayStr;
+      const isPastOrToday = dateStr < tomorrowStr;
       const isToday = dateStr === todayStr;
+      const isSelected = selectedDate === dateStr;
+
+      let titleAttr = '';
+      if (isBlocked) {
+        titleAttr = 'Unavailable: ' + blockReason;
+      } else if (isPastOrToday) {
+        titleAttr = isToday ? 'Today is unavailable. Earliest appointment is tomorrow.' : 'Past date unavailable';
+      }
       
       calGrid.innerHTML += `
-        <div class="calendar-day ${isBlocked ? 'booked' : ''} ${isPast ? 'disabled' : ''} ${isToday ? 'today' : ''}" 
-             title="${isBlocked ? 'Unavailable: ' + blockReason : ''}"
-             onclick="${isBlocked ? `showBlockReason('${blockReason}')` : ((!isPast) ? `selectDate('${dateStr}')` : '')}">
+        <div class="calendar-day ${isBlocked ? 'booked' : ''} ${isPastOrToday ? 'disabled' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" 
+             title="${titleAttr}"
+             onclick="${isBlocked ? `showBlockReason('${blockReason}')` : ((!isPastOrToday) ? `selectDate('${dateStr}')` : '')}">
           ${day}
         </div>
       `;
@@ -1664,11 +1684,16 @@
   };
 
   window.selectDate = (date) => {
+    const tomorrowStr = getTomorrowDateStr();
+    if (!date || date < tomorrowStr) {
+      showToast('Appointments can only be scheduled starting tomorrow. Please select a future date.', '#e74c3c');
+      return;
+    }
     selectedDate = date;
     if(calStep) calStep.classList.remove('active');
     if(timeStep) timeStep.classList.add('active');
     const el = document.getElementById('display-selected-date');
-    if(el) el.innerText = new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    if(el) el.innerText = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
   window.selectTime = (time) => {
@@ -1684,10 +1709,15 @@
   };
 
   if(confirmBtn) confirmBtn.onclick = () => {
+    const tomorrowStr = getTomorrowDateStr();
+    if (!selectedDate || selectedDate < tomorrowStr) {
+      showToast('Appointments can only be scheduled starting tomorrow. Please select a future date.', '#e74c3c');
+      return;
+    }
     const schedText = document.getElementById('selected-schedule-text');
     const inputDate = document.getElementById('input-date');
     const inputTime = document.getElementById('input-time');
-    if(schedText) schedText.innerText = `${new Date(selectedDate).toLocaleDateString()} at ${selectedTime}`;
+    if(schedText) schedText.innerText = `${new Date(selectedDate + 'T00:00:00').toLocaleDateString()} at ${selectedTime}`;
     if(inputDate) inputDate.value = selectedDate;
     if(inputTime) inputTime.value = selectedTime;
     closeModal();
@@ -1699,6 +1729,29 @@
     else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     renderCalendar();
   };
+
+  function scheduleMidnightUpdate() {
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+    setTimeout(() => {
+      const tomorrowStr = getTomorrowDateStr();
+      const inDate = document.getElementById('input-date');
+      if (inDate) inDate.min = tomorrowStr;
+      if (selectedDate && selectedDate < tomorrowStr) {
+        selectedDate = null;
+        selectedTime = null;
+        const schedText = document.getElementById('selected-schedule-text');
+        if (schedText) schedText.innerText = 'Not selected';
+        if (inDate) inDate.value = '';
+        const inTime = document.getElementById('input-time');
+        if (inTime) inTime.value = '';
+      }
+      renderCalendar();
+      scheduleMidnightUpdate();
+    }, msUntilMidnight);
+  }
+  scheduleMidnightUpdate();
 
   // ── Booking Form Submission ──
   const bookingForm = document.getElementById('marriage-booking-form');
@@ -1716,6 +1769,12 @@
 
       if (!formData.marriage_date || !formData.marriage_time) {
         showToast('Please select a date and time schedule.', '#e67e22');
+        return;
+      }
+
+      const tomorrowStr = getTomorrowDateStr();
+      if (formData.marriage_date < tomorrowStr) {
+        showToast('Appointments can only be scheduled starting tomorrow. Please select a future date.', '#e74c3c');
         return;
       }
 

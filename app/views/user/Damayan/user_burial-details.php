@@ -1729,6 +1729,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 <!-- Notification Toast -->
 <div class="toast-notify" id="burial-toast"></div>
 
+<script src="<?= asset('js/phone-validator.js') ?>"></script>
 <script>
     // ── Function Selector Switching (Register vs Copy) ──
     function selectCertFunction(func) {
@@ -2200,9 +2201,16 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             formData.append('deceased_id', deceasedId);
         }
 
+        const informantPhone = document.getElementById('informant-phone').value.trim();
+        if (informantPhone !== '' && typeof isValidPhone === 'function' && !isValidPhone(informantPhone)) {
+            alert('Please enter a valid phone number with the correct country code and number format.');
+            document.getElementById('informant-phone').focus();
+            return;
+        }
+
         formData.append('relationship', document.getElementById('informant-rel').value);
         formData.append('informantName', document.getElementById('informant-name').value.trim());
-        formData.append('informantContact', document.getElementById('informant-phone').value.trim());
+        formData.append('informantContact', informantPhone);
         formData.append('informantEmail', document.getElementById('informant-email').value.trim());
         formData.append('informantAddress', document.getElementById('informant-address').value.trim());
         formData.append('additionalNotes', document.getElementById('additional-notes').value.trim());

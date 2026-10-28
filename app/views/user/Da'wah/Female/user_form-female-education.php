@@ -2129,6 +2129,7 @@ if (!$activeRequest && !empty($history)) {
   </div>
 </div>
 
+<script src="<?= asset('js/phone-validator.js') ?>"></script>
 <script>
   // ── Toast Notification (Matching tenant_payment.php) ──
   function showToast(msg, isErr = false) {
@@ -2500,6 +2501,17 @@ if (!$activeRequest && !empty($history)) {
       return;
     }
 
+    if (typeof isValidPhone === 'function' && !isValidPhone(contact)) {
+      showEduAlert({
+        title: 'Valid Phone Number Required',
+        message: 'Please enter a valid phone number with the correct country code and number format.',
+        type: 'warning',
+        confirmText: 'Correct Phone Number',
+        onConfirm: () => document.getElementById('reg-contact')?.focus()
+      });
+      return;
+    }
+
     if (!emName || !emRel || !emContact) {
       showEduAlert({
         title: 'Emergency Contact Required',
@@ -2509,6 +2521,31 @@ if (!$activeRequest && !empty($history)) {
         onConfirm: () => document.getElementById('reg-emergency-name')?.focus()
       });
       return;
+    }
+
+    if (typeof isValidPhone === 'function' && !isValidPhone(emContact)) {
+      showEduAlert({
+        title: 'Valid Emergency Phone Required',
+        message: 'Please enter a valid phone number with the correct country code and number format.',
+        type: 'warning',
+        confirmText: 'Correct Phone Number',
+        onConfirm: () => document.getElementById('reg-emergency-contact')?.focus()
+      });
+      return;
+    }
+
+    if (age < 18) {
+      const parentContact = document.getElementById('reg-parent-contact')?.value.trim();
+      if (parentContact && typeof isValidPhone === 'function' && !isValidPhone(parentContact)) {
+        showEduAlert({
+          title: 'Valid Parent Contact Required',
+          message: 'Please enter a valid phone number with the correct country code and number format.',
+          type: 'warning',
+          confirmText: 'Correct Phone Number',
+          onConfirm: () => document.getElementById('reg-parent-contact')?.focus()
+        });
+        return;
+      }
     }
 
     if (!studentSig) {

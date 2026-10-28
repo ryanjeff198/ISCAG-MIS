@@ -438,6 +438,7 @@ $phpUser = [
         </div>
     </div>
 
+    <script src="<?= asset('js/phone-validator.js') ?>"></script>
     <script>
         // ══════════════════════════════════════════
         // Inlined data helpers (from js/data.js)
@@ -1018,6 +1019,16 @@ $phpUser = [
         });
 
         modalSaveBtn.addEventListener('click', () => {
+            const phoneEl = document.getElementById('f-phone');
+            if (phoneEl) {
+                const phoneVal = phoneEl.value.trim();
+                if (phoneVal !== '' && typeof isValidPhone === 'function' && !isValidPhone(phoneVal)) {
+                    showToast('Please enter a valid phone number with the correct country code and number format.', 'var(--danger)');
+                    phoneEl.focus();
+                    return;
+                }
+            }
+
             const data = {};
             Object.entries(fields).forEach(([key, id]) => {
                 const el = document.getElementById(id);

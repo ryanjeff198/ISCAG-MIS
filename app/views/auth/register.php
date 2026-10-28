@@ -503,6 +503,7 @@ body {
         <div class="field">
           <label for="phone">Phone Number</label>
           <input type="tel" name="contactnum" id="phone" placeholder="+63 9XX XXX XXXX" value="<?= e($data['contactnum'] ?? '') ?>"/>
+          <div id="phoneError" style="font-size: 12px; color: var(--danger); margin-top: 4px; display: none;"></div>
         </div>
 
         <div class="field" style="position: relative;">
@@ -606,6 +607,7 @@ body {
   <div id="footer-placeholder"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="<?= asset('js/phone-validator.js') ?>"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -728,6 +730,53 @@ body {
       document.getElementById('acceptTermsBtn').addEventListener('click', function() {
         document.getElementById('terms').checked = true;
       });
+
+      // Phone Number Validation
+      const phoneInput = document.getElementById('phone');
+      const phoneError = document.getElementById('phoneError');
+      const registrationForm = document.getElementById('registrationForm');
+
+      function validatePhoneInput() {
+        if (!phoneInput || !phoneError) return true;
+        const val = phoneInput.value.trim();
+        if (val === '') {
+          phoneError.textContent = '';
+          phoneError.style.display = 'none';
+          phoneInput.style.borderColor = '';
+          return true;
+        }
+
+        if (typeof isValidPhone === 'function' && !isValidPhone(val)) {
+          phoneError.textContent = 'Please enter a valid phone number with the correct country code and number format.';
+          phoneError.style.display = 'block';
+          phoneInput.style.borderColor = '#dc3545';
+          return false;
+        } else {
+          phoneError.textContent = '';
+          phoneError.style.display = 'none';
+          phoneInput.style.borderColor = '#198754';
+          return true;
+        }
+      }
+
+      if (phoneInput) {
+        phoneInput.addEventListener('blur', validatePhoneInput);
+        phoneInput.addEventListener('input', function() {
+          if (phoneError.style.display === 'block') {
+            validatePhoneInput();
+          }
+        });
+      }
+
+      if (registrationForm) {
+        registrationForm.addEventListener('submit', function(e) {
+          if (!validatePhoneInput()) {
+            e.preventDefault();
+            phoneInput.focus();
+            return false;
+          }
+        });
+      }
     });
   </script>
 

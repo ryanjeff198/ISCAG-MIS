@@ -101,10 +101,19 @@ class AuthController extends Controller
                 }
             }
 
+            require_once BASE_PATH . '/app/helpers/PhoneHelper.php';
             $contactnum = trim($_POST['contactnum'] ?? '');
-            if (!empty($contactnum) && $this->userModel->exists('contactnum', $contactnum)) {
-                // If we are updating an existing unverified user, we should allow it if the phone matches the same user
-                if (!$existingUser || $existingUser['contactnum'] !== $contactnum) {
+            if (!empty($contactnum)) {
+                if (!PhoneHelper::isValid($contactnum)) {
+                    $error = PhoneHelper::getErrorMessage();
+                    $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
+                    return;
+                }
+                $contactnum = PhoneHelper::normalize($contactnum);
+                $postedData['contactnum'] = $contactnum;
+
+                $excludeId = $existingUser ? (int)$existingUser['tenant_id'] : null;
+                if ($this->userModel->phoneExists($contactnum, $excludeId)) {
                     $error = "Phone number already used.";
                     $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
                     return;
