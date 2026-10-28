@@ -1569,8 +1569,8 @@ if (!$activeRequest && !empty($history)) {
               <!-- Dates: Date of Birth & Date of Shahadah -->
               <div class="form-grid-2">
                 <div class="form-group">
-                  <label>Date of Birth <span class="req">*</span></label>
-                  <input type="date" name="birthdate" id="reg-dob" class="form-input-control" onchange="checkMinorStatus(this.value)" value="<?= htmlspecialchars($dbUser['birthdate'] ?? '') ?>" required />
+                  <label>Date of Birth <span class="req">*</span> <span id="calculated-age-badge" style="display:none; margin-left:8px; font-size:0.75rem; padding:2px 8px; border-radius:10px; font-weight:700; background:#fce7f3; color:#be185d;"></span></label>
+                  <input type="date" name="birthdate" id="reg-dob" class="form-input-control" max="<?= date('Y-m-d') ?>" onchange="checkMinorStatus(this.value)" oninput="checkMinorStatus(this.value)" value="<?= htmlspecialchars($dbUser['birthdate'] ?? '') ?>" required />
                 </div>
                 <div class="form-group" id="shahadah-date-group">
                   <label>Date of Shahadah</label>
@@ -1672,8 +1672,8 @@ if (!$activeRequest && !empty($history)) {
               </div>
             </div>
 
-            <!-- ── SECTION 4: PARENT INFORMATION (IF MINOR) ── -->
-            <div class="form-segment" id="minor-segment">
+            <!-- ── SECTION 4: PARENT / GUARDIAN INFORMATION & CONDITIONAL CONSENT (IF MINOR) ── -->
+            <div class="form-segment" id="minor-segment" style="display:none;">
               <div class="segment-header">
                 <div class="segment-icon-badge">
                   <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
@@ -1686,16 +1686,16 @@ if (!$activeRequest && !empty($history)) {
 
               <div class="minor-notice-box" id="minor-callout" style="display:none;">
                 <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                <span>Based on the entered date of birth, this applicant is below 18 years old. Parent / Guardian information is required.</span>
+                <span id="minor-callout-text">Based on the entered date of birth, this applicant is below 18 years old. Parent / Guardian consent and information are required.</span>
               </div>
 
               <div class="form-grid-2">
                 <div class="form-group">
-                  <label>Parent's Name</label>
+                  <label>Parent's Name <span class="req">*</span></label>
                   <input type="text" name="parent_name" id="reg-parent-name" class="form-input-control" placeholder="Mother or Father's Full Name" />
                 </div>
                 <div class="form-group">
-                  <label>Parent's Contact Number</label>
+                  <label>Parent's Contact Number <span class="req">*</span></label>
                   <input type="tel" name="parent_contact" id="reg-parent-contact" class="form-input-control" placeholder="09XX-XXX-XXXX" />
                 </div>
               </div>
@@ -1704,6 +1704,19 @@ if (!$activeRequest && !empty($history)) {
                 <div class="form-group">
                   <label>Parent's Address</label>
                   <input type="text" name="parent_address" id="reg-parent-address" class="form-input-control" placeholder="Complete Residential Address" />
+                </div>
+              </div>
+
+              <!-- Required Conditional Consent for Minors (Under 18) -->
+              <div class="form-grid-1" style="margin-top:14px;" id="minor-consent-container">
+                <div style="background:#fff1f2; border:1.5px solid #fecdd3; border-radius:12px; padding:14px 18px;">
+                  <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer; margin:0; font-size:0.86rem; color:#9f1239; line-height:1.5;">
+                    <input type="checkbox" name="parent_consent" id="reg-parent-consent" value="1" style="width:19px; height:19px; margin-top:2px; accent-color:var(--primary-female, #ec4899); cursor:pointer; flex-shrink:0;" />
+                    <span>
+                      <strong style="color:#881337;">Parent or Legal Guardian Consent Confirmation <span class="req" style="color:#e11d48;">*</span>:</strong><br />
+                      I hereby give my explicit consent and authorization as the parent or legal guardian for this applicant (under 18 years old) to register and participate in the ISCAG Da'wah Female Education Program. I certify that all information provided is accurate and truthful.
+                    </span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -2116,6 +2129,7 @@ if (!$activeRequest && !empty($history)) {
   </div>
 </div>
 
+<script src="<?= asset('js/phone-validator.js') ?>"></script>
 <script>
   // ── Toast Notification (Matching tenant_payment.php) ──
   function showToast(msg, isErr = false) {
@@ -2213,28 +2227,108 @@ if (!$activeRequest && !empty($history)) {
     }
   }
 
-  // ── Age & Minor Check ──
-  function checkMinorStatus(dobVal) {
-    if (!dobVal) return;
-    const dob = new Date(dobVal);
+  // ── Exact Age Calculation (considering whether birthday already celebrated in current year) ──
+  function calculateExactAge(dobVal) {
+    if (!dobVal) return null;
+    const parts = dobVal.split('-');
+    if (parts.length !== 3) return null;
+    const birthYear = parseInt(parts[0], 10);
+    const birthMonth = parseInt(parts[1], 10) - 1;
+    const birthDay = parseInt(parts[2], 10);
+
     const today = new Date();
-    let age = today.getFullYear() - dob.getFullYear();
-    const m = today.getMonth() - dob.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth();
+    const todayDay = today.getDate();
+
+    const birthDate = new Date(birthYear, birthMonth, birthDay);
+    const currentDate = new Date(todayYear, todayMonth, todayDay);
+    if (birthDate > currentDate) {
+      return -1; // Future date
+    }
+
+    let age = todayYear - birthYear;
+    if (todayMonth < birthMonth || (todayMonth === birthMonth && todayDay < birthDay)) {
       age--;
     }
+    return age;
+  }
+
+  // ── Age & Minor Check ──
+  function checkMinorStatus(dobVal) {
+    const minorSeg = document.getElementById('minor-segment');
     const callout = document.getElementById('minor-callout');
+    const calloutText = document.getElementById('minor-callout-text');
     const parentName = document.getElementById('reg-parent-name');
     const parentContact = document.getElementById('reg-parent-contact');
+    const parentConsent = document.getElementById('reg-parent-consent');
+    const ageBadge = document.getElementById('calculated-age-badge');
 
+    if (!dobVal) {
+      if (minorSeg) minorSeg.style.display = 'none';
+      if (ageBadge) { ageBadge.style.display = 'none'; ageBadge.textContent = ''; }
+      if (parentConsent) { parentConsent.required = false; parentConsent.checked = false; }
+      return;
+    }
+
+    const age = calculateExactAge(dobVal);
+
+    if (age === null) {
+      if (minorSeg) minorSeg.style.display = 'none';
+      if (ageBadge) { ageBadge.style.display = 'none'; ageBadge.textContent = ''; }
+      return;
+    }
+
+    if (age < 0) {
+      // Future birthday rejected
+      showEduAlert({
+        title: 'Invalid Date of Birth',
+        message: 'Invalid date of birth. Future dates are not allowed.',
+        type: 'warning',
+        confirmText: 'Correct Date',
+        onConfirm: () => {
+          const input = document.getElementById('reg-dob');
+          if (input) {
+            input.value = '';
+            input.focus();
+          }
+        }
+      });
+      if (minorSeg) minorSeg.style.display = 'none';
+      if (ageBadge) { ageBadge.style.display = 'none'; ageBadge.textContent = ''; }
+      if (parentConsent) { parentConsent.required = false; parentConsent.checked = false; }
+      return;
+    }
+
+    // Display calculated age badge automatically
+    if (ageBadge) {
+      ageBadge.style.display = 'inline-block';
+      ageBadge.textContent = `Age: ${age} year${age === 1 ? '' : 's'} old` + (age < 18 ? ' (Minor)' : '');
+    }
+
+    // Conditional Consent for Minors:
+    // If applicant < 18 (including below 5 years old):
+    // Display consent section, require parent/legal guardian consent before submission.
+    // If applicant >= 18:
+    // Hide or disable conditional consent requirement.
     if (age < 18) {
+      if (minorSeg) minorSeg.style.display = 'block';
       if (callout) callout.style.display = 'flex';
+      if (calloutText) {
+        calloutText.textContent = `Based on the entered date of birth, the applicant is ${age} year${age === 1 ? '' : 's'} old (below 18). Parent or legal guardian consent is required for applicants below 18 years old.`;
+      }
       if (parentName) parentName.setAttribute('required', 'required');
       if (parentContact) parentContact.setAttribute('required', 'required');
+      if (parentConsent) parentConsent.required = true;
     } else {
+      if (minorSeg) minorSeg.style.display = 'none';
       if (callout) callout.style.display = 'none';
       if (parentName) parentName.removeAttribute('required');
       if (parentContact) parentContact.removeAttribute('required');
+      if (parentConsent) {
+        parentConsent.required = false;
+        parentConsent.checked = false;
+      }
     }
   }
 
@@ -2340,6 +2434,51 @@ if (!$activeRequest && !empty($history)) {
       return;
     }
 
+    const age = calculateExactAge(dob);
+    if (age === null || age < 0) {
+      showEduAlert({
+        title: 'Invalid Date of Birth',
+        message: 'Invalid date of birth. Future dates are not allowed.',
+        type: 'warning',
+        confirmText: 'Select Valid Date',
+        onConfirm: () => document.getElementById('reg-dob')?.focus()
+      });
+      return;
+    }
+
+    if (age < 18) {
+      const parentName = document.getElementById('reg-parent-name')?.value.trim();
+      const parentConsent = document.getElementById('reg-parent-consent')?.checked;
+
+      if (!parentConsent) {
+        showEduAlert({
+          title: 'Guardian Consent Required',
+          message: 'Parent or legal guardian consent is required for applicants below 18 years old.',
+          type: 'warning',
+          confirmText: 'Provide Consent',
+          onConfirm: () => {
+            const consentBox = document.getElementById('reg-parent-consent');
+            if (consentBox) {
+              consentBox.focus();
+              consentBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+        });
+        return;
+      }
+
+      if (!parentName) {
+        showEduAlert({
+          title: 'Parent / Guardian Name Required',
+          message: 'Please provide the parent or legal guardian name for applicants below 18 years old.',
+          type: 'warning',
+          confirmText: 'Enter Name',
+          onConfirm: () => document.getElementById('reg-parent-name')?.focus()
+        });
+        return;
+      }
+    }
+
     if (!address) {
       showEduAlert({
         title: 'Residential Address Required',
@@ -2362,6 +2501,17 @@ if (!$activeRequest && !empty($history)) {
       return;
     }
 
+    if (typeof isValidPhone === 'function' && !isValidPhone(contact)) {
+      showEduAlert({
+        title: 'Valid Phone Number Required',
+        message: 'Please enter a valid phone number with the correct country code and number format.',
+        type: 'warning',
+        confirmText: 'Correct Phone Number',
+        onConfirm: () => document.getElementById('reg-contact')?.focus()
+      });
+      return;
+    }
+
     if (!emName || !emRel || !emContact) {
       showEduAlert({
         title: 'Emergency Contact Required',
@@ -2371,6 +2521,31 @@ if (!$activeRequest && !empty($history)) {
         onConfirm: () => document.getElementById('reg-emergency-name')?.focus()
       });
       return;
+    }
+
+    if (typeof isValidPhone === 'function' && !isValidPhone(emContact)) {
+      showEduAlert({
+        title: 'Valid Emergency Phone Required',
+        message: 'Please enter a valid phone number with the correct country code and number format.',
+        type: 'warning',
+        confirmText: 'Correct Phone Number',
+        onConfirm: () => document.getElementById('reg-emergency-contact')?.focus()
+      });
+      return;
+    }
+
+    if (age < 18) {
+      const parentContact = document.getElementById('reg-parent-contact')?.value.trim();
+      if (parentContact && typeof isValidPhone === 'function' && !isValidPhone(parentContact)) {
+        showEduAlert({
+          title: 'Valid Parent Contact Required',
+          message: 'Please enter a valid phone number with the correct country code and number format.',
+          type: 'warning',
+          confirmText: 'Correct Phone Number',
+          onConfirm: () => document.getElementById('reg-parent-contact')?.focus()
+        });
+        return;
+      }
     }
 
     if (!studentSig) {
@@ -2388,6 +2563,16 @@ if (!$activeRequest && !empty($history)) {
     const formData = new FormData(form);
     const payload = {};
     formData.forEach((val, key) => payload[key] = val);
+    payload.is_minor = (age < 18) ? 1 : 0;
+    payload.parent_consent = (age < 18 && document.getElementById('reg-parent-consent')?.checked) ? 1 : 0;
+    if (age >= 18) {
+      payload.parent_consent = 0;
+      payload.is_minor = 0;
+      payload.parent_name = '';
+      payload.parent_contact = '';
+      payload.parent_address = '';
+      payload.guardian_signature = '';
+    }
 
     // ── Online Payment Branch via PayMongo ──
     if (payload.payment_method === 'Online Payment') {
@@ -2640,6 +2825,9 @@ if (!$activeRequest && !empty($history)) {
     const dobInput = document.getElementById('reg-dob');
     if (dobInput && dobInput.value) {
       checkMinorStatus(dobInput.value);
+    } else {
+      const minorSeg = document.getElementById('minor-segment');
+      if (minorSeg) minorSeg.style.display = 'none';
     }
 
     // Auto show toast & slip alert if returned from successful PayMongo checkout

@@ -2388,6 +2388,7 @@ if ($userId) {
   </div><!-- /.app-wrapper -->
 
   <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
+  <script src="<?= asset('js/phone-validator.js') ?>"></script>
   <script>
     // ═══ DATA HELPERS ═══
     const STORAGE_KEYS = {
@@ -2782,6 +2783,20 @@ if ($userId) {
             el.focus();
             return;
           }
+        }
+
+        const phoneInputEl = document.getElementById('phone');
+        if (phoneInputEl && phoneInputEl.value.trim() !== '' && typeof isValidPhone === 'function' && !isValidPhone(phoneInputEl.value.trim())) {
+          showToast('Please enter a valid phone number with the correct country code and number format.', '#8b2e2e');
+          phoneInputEl.focus();
+          return;
+        }
+
+        const refContactInputEl = document.getElementById('ref-contact');
+        if (refContactInputEl && refContactInputEl.value.trim() !== '' && typeof isValidPhone === 'function' && !isValidPhone(refContactInputEl.value.trim())) {
+          showToast('Please enter a valid phone number with the correct country code and number format.', '#8b2e2e');
+          refContactInputEl.focus();
+          return;
         }
 
         // 2. Validate declaration checkboxes

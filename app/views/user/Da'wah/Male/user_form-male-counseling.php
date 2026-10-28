@@ -2085,7 +2085,7 @@
                   <div class="trigger-text">
                     <span class="trigger-label">Preferred Date & Time</span>
                     <span class="trigger-value" id="selected-schedule-text">Click to choose date & slot</span>
-                    <input type="hidden" name="preferred_date" id="input-date" required />
+                    <input type="hidden" name="preferred_date" id="input-date" min="<?= date('Y-m-d', strtotime('+1 day')) ?>" required />
                     <input type="hidden" name="preferred_time" id="input-time" required />
                   </div>
                 </div>
@@ -2444,6 +2444,7 @@
 <!-- Floating Toast Container -->
 <div class="counseling-toast-box" id="counseling-toast-box"></div>
 
+<script src="<?= asset('js/phone-validator.js') ?>"></script>
 <script>
   // ── Appointment Pass Modal Logic ──
   function openAppointmentPassModal(data) {
@@ -2694,6 +2695,17 @@
     if(timeStep) timeStep.classList.remove('active');
   }
 
+  function getTodayDateStr() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
+
+  function getTomorrowDateStr() {
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    return `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+  }
+
   function renderCalendar() {
     if(!calGrid || !calTitle) return;
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -2707,19 +2719,28 @@
       calGrid.innerHTML += `<div class="calendar-day disabled"></div>`;
     }
     
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayDateStr();
+    const tomorrowStr = getTomorrowDateStr();
     
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const blockReason = BLOCKED_DATES[dateStr];
       const isBlocked = !!blockReason;
-      const isPast = dateStr < todayStr;
+      const isPastOrToday = dateStr < tomorrowStr;
       const isToday = dateStr === todayStr;
+      const isSelected = selectedDate === dateStr;
+
+      let titleAttr = '';
+      if (isBlocked) {
+        titleAttr = 'Unavailable: ' + escapeHtml(blockReason);
+      } else if (isPastOrToday) {
+        titleAttr = isToday ? 'Today is unavailable. Earliest appointment is tomorrow.' : 'Past date unavailable';
+      }
       
       calGrid.innerHTML += `
-        <div class="calendar-day ${isBlocked ? 'booked' : ''} ${isPast ? 'disabled' : ''} ${isToday ? 'today' : ''} ${selectedDate === dateStr ? 'selected' : ''}" 
-             title="${isBlocked ? 'Unavailable: ' + blockReason : ''}"
-             onclick="${isBlocked ? `showBlockReason('${escapeHtml(blockReason)}')` : ((!isPast) ? `selectDate('${dateStr}')` : '')}">
+        <div class="calendar-day ${isBlocked ? 'booked' : ''} ${isPastOrToday ? 'disabled' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" 
+             title="${titleAttr}"
+             onclick="${isBlocked ? `showBlockReason('${escapeHtml(blockReason)}')` : ((!isPastOrToday) ? `selectDate('${dateStr}')` : '')}">
           ${day}
         </div>
       `;
@@ -2736,11 +2757,21 @@
   };
 
   window.selectDate = (date) => {
+    const tomorrowStr = getTomorrowDateStr();
+    if (!date || date < tomorrowStr) {
+      showCounselingAlert({
+        title: 'Invalid Appointment Date',
+        message: 'Appointments can only be scheduled starting tomorrow. Please select a future date.',
+        type: 'warning',
+        confirmText: 'Understood'
+      });
+      return;
+    }
     selectedDate = date;
     if(calStep) calStep.classList.remove('active');
     if(timeStep) timeStep.classList.add('active');
     const disp = document.getElementById('display-selected-date');
-    if(disp) disp.innerText = new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    if(disp) disp.innerText = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
   window.selectTime = (time) => {
@@ -2756,10 +2787,20 @@
   };
 
   if(confirmBtn) confirmBtn.onclick = () => {
+    const tomorrowStr = getTomorrowDateStr();
+    if (!selectedDate || selectedDate < tomorrowStr) {
+      showCounselingAlert({
+        title: 'Invalid Appointment Date',
+        message: 'Appointments can only be scheduled starting tomorrow. Please select a future date.',
+        type: 'warning',
+        confirmText: 'Select Date'
+      });
+      return;
+    }
     const txt = document.getElementById('selected-schedule-text');
     const inDate = document.getElementById('input-date');
     const inTime = document.getElementById('input-time');
-    if(txt) txt.innerText = `${new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${selectedTime}`;
+    if(txt) txt.innerText = `${new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${selectedTime}`;
     if(inDate) inDate.value = selectedDate;
     if(inTime) inTime.value = selectedTime;
     closeModal();
@@ -2771,6 +2812,29 @@
     else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     renderCalendar();
   };
+
+  function scheduleMidnightUpdate() {
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+    setTimeout(() => {
+      const tomorrowStr = getTomorrowDateStr();
+      const inDate = document.getElementById('input-date');
+      if (inDate) inDate.min = tomorrowStr;
+      if (selectedDate && selectedDate < tomorrowStr) {
+        selectedDate = null;
+        selectedTime = null;
+        const txt = document.getElementById('selected-schedule-text');
+        if (txt) txt.innerText = 'Click to choose date & slot';
+        if (inDate) inDate.value = '';
+        const inTime = document.getElementById('input-time');
+        if (inTime) inTime.value = '';
+      }
+      renderCalendar();
+      scheduleMidnightUpdate();
+    }, msUntilMidnight);
+  }
+  scheduleMidnightUpdate();
 
   // ── Form Submission Handler ──
   async function submitCounselingForm() {
@@ -2790,6 +2854,21 @@
         onConfirm: () => {
           const el = document.getElementById('reason-select');
           if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }
+      });
+      return;
+    }
+
+    const contactEl = document.getElementById('input-contact');
+    const contactVal = contactEl ? contactEl.value.trim() : '';
+    if (contactVal !== '' && typeof isValidPhone === 'function' && !isValidPhone(contactVal)) {
+      showCounselingAlert({
+        title: 'Valid Phone Number Required',
+        message: 'Please enter a valid phone number with the correct country code and number format.',
+        type: 'warning',
+        confirmText: 'Correct Phone Number',
+        onConfirm: () => {
+          if (contactEl) { contactEl.focus(); contactEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         }
       });
       return;
@@ -2815,6 +2894,20 @@
         message: 'Please choose your preferred consultation date and available time slot using the calendar.',
         type: 'warning',
         confirmText: 'Select Date & Time',
+        onConfirm: () => {
+          document.getElementById('open-calendar')?.click();
+        }
+      });
+      return;
+    }
+
+    const tomorrowStr = getTomorrowDateStr();
+    if (prefDate < tomorrowStr) {
+      showCounselingAlert({
+        title: 'Invalid Appointment Date',
+        message: 'Appointments can only be scheduled starting tomorrow. Please select a future date.',
+        type: 'warning',
+        confirmText: 'Select Future Date',
         onConfirm: () => {
           document.getElementById('open-calendar')?.click();
         }

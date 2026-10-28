@@ -239,7 +239,7 @@ foreach ($history as $req) {
                         <div class="trigger-text">
                           <span class="trigger-label">Preferred Date & Time</span>
                           <span class="trigger-value" id="selected-schedule-text">Not selected</span>
-                          <input type="hidden" name="preferred_date" id="input-date" required />
+                          <input type="hidden" name="preferred_date" id="input-date" min="<?= date('Y-m-d', strtotime('+1 day')) ?>" required />
                           <input type="hidden" name="preferred_time" id="input-time" required />
                         </div>
                       </div>
@@ -420,6 +420,13 @@ foreach ($history as $req) {
         const formData = new FormData(this);
         formData.append('gender', 'female');
         
+        const prefDate = formData.get('preferred_date');
+        const tomorrowStr = getTomorrowDateStr();
+        if (!prefDate || prefDate < tomorrowStr) {
+            showNotification('Invalid Date', 'Appointments can only be scheduled starting tomorrow. Please select a future date.', 'error');
+            return;
+        }
+
         fetch('<?= url('/user/services/counseling/submit') ?>', {
             method: 'POST',
             body: formData
@@ -472,6 +479,17 @@ foreach ($history as $req) {
       }, 300);
     }
 
+    function getTodayDateStr() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
+    function getTomorrowDateStr() {
+      const now = new Date();
+      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      return `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    }
+
     function renderCalendar() {
       const firstDay = new Date(currentYear, currentMonth, 1).getDay();
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -484,19 +502,19 @@ foreach ($history as $req) {
         calGrid.innerHTML += `<div class="calendar-day disabled"></div>`;
       }
       
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const todayStr = getTodayDateStr();
+      const tomorrowStr = getTomorrowDateStr();
       
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const blockReason = BLOCKED_DATES[dateStr];
         const isBlocked = !!blockReason;
-        const isPast = dateStr < todayStr;
+        const isPastOrToday = dateStr < tomorrowStr;
         const isToday = dateStr === todayStr;
         
         let classes = 'calendar-day';
         if (isBlocked) classes += ' booked';
-        if (isPast) classes += ' disabled';
+        if (isPastOrToday) classes += ' disabled';
         if (isToday) classes += ' today';
         if (selectedDate === dateStr) classes += ' selected';
         
@@ -506,7 +524,9 @@ foreach ($history as $req) {
         if (isBlocked) {
             dayEl.title = 'Unavailable: ' + blockReason;
             dayEl.onclick = () => showNotification('Date Unavailable', blockReason, 'error');
-        } else if (!isPast) {
+        } else if (isPastOrToday) {
+            dayEl.title = isToday ? 'Today is unavailable. Earliest appointment is tomorrow.' : 'Past date unavailable';
+        } else {
             dayEl.onclick = () => selectDate(dateStr);
         }
         calGrid.appendChild(dayEl);
@@ -514,10 +534,15 @@ foreach ($history as $req) {
     }
 
     window.selectDate = (date) => {
+      const tomorrowStr = getTomorrowDateStr();
+      if (!date || date < tomorrowStr) {
+        showNotification('Invalid Date', 'Appointments can only be scheduled starting tomorrow. Please select a future date.', 'error');
+        return;
+      }
       selectedDate = date;
       calStep.classList.remove('active');
       timeStep.classList.add('active');
-      document.getElementById('display-selected-date').innerText = new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      document.getElementById('display-selected-date').innerText = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     };
 
     window.selectTime = (el, time) => {
@@ -533,7 +558,12 @@ foreach ($history as $req) {
     };
 
     if(confirmBtn) confirmBtn.onclick = () => {
-      const d = new Date(selectedDate);
+      const tomorrowStr = getTomorrowDateStr();
+      if (!selectedDate || selectedDate < tomorrowStr) {
+        showNotification('Invalid Date', 'Appointments can only be scheduled starting tomorrow. Please select a future date.', 'error');
+        return;
+      }
+      const d = new Date(selectedDate + 'T00:00:00');
       const formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       document.getElementById('selected-schedule-text').innerText = `${formattedDate} at ${selectedTime}`;
       document.getElementById('input-date').value = selectedDate;
@@ -547,6 +577,29 @@ foreach ($history as $req) {
       else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
       renderCalendar();
     };
+
+    function scheduleMidnightUpdate() {
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+      const msUntilMidnight = midnight.getTime() - now.getTime();
+      setTimeout(() => {
+        const tomorrowStr = getTomorrowDateStr();
+        const inDate = document.getElementById('input-date');
+        if (inDate) inDate.min = tomorrowStr;
+        if (selectedDate && selectedDate < tomorrowStr) {
+          selectedDate = null;
+          selectedTime = null;
+          const schedText = document.getElementById('selected-schedule-text');
+          if (schedText) schedText.innerText = 'Not selected';
+          if (inDate) inDate.value = '';
+          const inTime = document.getElementById('input-time');
+          if (inTime) inTime.value = '';
+        }
+        renderCalendar();
+        scheduleMidnightUpdate();
+      }, msUntilMidnight);
+    }
+    scheduleMidnightUpdate();
 </script>
 </body>
 </html>

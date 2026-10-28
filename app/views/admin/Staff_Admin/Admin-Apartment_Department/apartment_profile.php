@@ -367,6 +367,7 @@
   </div>
 
   <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
+  <script src="<?= asset('js/phone-validator.js') ?>"></script>
   <script>
     <?php
       $fullName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? ''));
@@ -468,10 +469,17 @@
     document.getElementById('profile-modal').addEventListener('click', e => { if (e.target.id === 'profile-modal') closeModal(); });
 
     function saveProfile() {
+      const phoneVal = document.getElementById('f-phone').value.trim();
+      if (phoneVal && typeof isValidPhone === 'function' && !isValidPhone(phoneVal)) {
+        alert('Please enter a valid phone number with the correct country code and number format.');
+        document.getElementById('f-phone').focus();
+        return;
+      }
+
       const p = getProfile();
       p.name = document.getElementById('f-name').value.trim() || p.name;
       p.email = document.getElementById('f-email').value.trim() || p.email;
-      p.phone = document.getElementById('f-phone').value.trim();
+      p.phone = phoneVal;
       p.gender = document.getElementById('f-gender').value;
       p.arabic = document.getElementById('f-arabic').value.trim();
       p.occupation = document.getElementById('f-occupation').value.trim();

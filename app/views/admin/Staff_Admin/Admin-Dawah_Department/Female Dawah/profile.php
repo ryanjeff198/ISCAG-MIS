@@ -335,6 +335,7 @@ $initials = strtoupper(substr($dbUser['first_name'] ?? 'F', 0, 1) . substr($dbUs
   <div id="profile-toast" class="profile-toast"></div>
 
   <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
+  <script src="<?= asset('js/phone-validator.js') ?>"></script>
   <script>
     const DB_PROFILE = {
       name: "<?= addslashes($fullName) ?>",
@@ -473,6 +474,11 @@ $initials = strtoupper(substr($dbUser['first_name'] ?? 'F', 0, 1) . substr($dbUs
       if (!email) {
         alert('Please enter your email address.');
         document.getElementById('f-email').focus();
+        return;
+      }
+      if (phone && typeof isValidPhone === 'function' && !isValidPhone(phone)) {
+        alert('Please enter a valid phone number with the correct country code and number format.');
+        document.getElementById('f-phone').focus();
         return;
       }
 

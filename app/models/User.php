@@ -72,6 +72,31 @@ class User
     }
 
     /**
+     * Check if a phone number or its equivalent formats already exist.
+     */
+    public function phoneExists(string $phone, ?int $excludeUserId = null): bool
+    {
+        require_once BASE_PATH . '/app/helpers/PhoneHelper.php';
+        $equivalents = PhoneHelper::getEquivalentFormats($phone);
+        if (empty($equivalents)) {
+            return false;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($equivalents), '?'));
+        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE contactnum IN ($placeholders)";
+        $params = $equivalents;
+
+        if ($excludeUserId !== null) {
+            $sql .= " AND tenant_id != ?";
+            $params[] = $excludeUserId;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchColumn() > 0;
+    }
+
+    /**
      * Update user verification status and OTP.
      */
     public function updateOTP(string $email, string $otp, string $expiry): bool
