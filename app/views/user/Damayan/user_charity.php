@@ -49,6 +49,8 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
 
     body {
       font-family: 'Source Sans 3', sans-serif;
+      font-size: 14.5px;
+      line-height: 1.6;
       background-color: var(--content-bg, #f4f6f5);
       color: var(--text-dark);
       margin: 0;

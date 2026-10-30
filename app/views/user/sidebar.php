@@ -6,7 +6,7 @@ $initials = strtoupper($first_initial . $last_initial);
 
 $active_page = $active_page ?? 'dashboard';
 ?>
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar" style="font-family:'Source Sans 3',sans-serif; font-size:14.5px;">
     <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
         <svg viewBox="0 0 24 24">
             <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />

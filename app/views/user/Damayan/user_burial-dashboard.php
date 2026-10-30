@@ -100,21 +100,37 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
 <title>ISCAG — Damayan Death Certificate Dashboard</title>
 <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
 <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#f4f6f8;--primary:#1b5e20;--primary-light:#e8f5e9;--gold:#D4AF37;
-    --text-main:#1f2937;--text-muted:#6b7280;--border:#f3f4f6;--white:#fff;
-    --radius:16px;--shadow:0 4px 20px rgba(0,0,0,0.03);
-    --success:#059669;--success-light:#ecfdf5;
+    --bg: #f4f6f5;
+    --primary: #176b45;
+    --primary-dark: #0f5c3a;
+    --primary-light: #e8f5ed;
+    --gold: #c79a2b;
+    --text-main: #1f2e2a;
+    --text-muted: #6f7f78;
+    --border: #d9e3de;
+    --white: #fff;
+    --radius: 16px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.04);
+    --success: #2f8a60;
+    --success-light: #ecfdf5;
   }
-  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text-main);margin:0;}
-  .burial-wrapper{padding:40px;max-width:1200px;margin:0 auto;}
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 14.5px;
+    line-height: 1.6;
+    background: var(--bg);
+    color: var(--text-main);
+    margin: 0;
+  }
+  .burial-wrapper{padding:32px 40px;max-width:1200px;margin:0 auto;}
 
   /* Greeting */
-  .greeting{margin-bottom:32px;}
-  .greeting h1{font-family:'Lora',serif;font-size:1.8rem;font-weight:700;margin:0;color:var(--text-main);}
-  .greeting p{color:var(--text-muted);margin:6px 0 0;font-size:.95rem;}
+  .greeting{margin-bottom:28px;}
+  .greeting h1{font-family:'Lora',serif;font-size:1.45rem;font-weight:700;margin:0;color:var(--text-main);}
+  .greeting p{color:var(--text-muted);margin:4px 0 0;font-size:.88rem;}
 
   /* Grid */
   .grid-container{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;}

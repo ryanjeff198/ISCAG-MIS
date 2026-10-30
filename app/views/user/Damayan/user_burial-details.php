@@ -144,18 +144,18 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
     <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #1b5e20;
-            --primary-dark: #0f3d14;
-            --primary-light: #e8f5e9;
-            --primary-accent: #2e7d32;
-            --gold: #c9a84c;
-            --gold-light: #fef9e7;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
+            --primary: #176b45;
+            --primary-dark: #0f5c3a;
+            --primary-light: #e8f5ed;
+            --primary-accent: #2f8a60;
+            --gold: #c79a2b;
+            --gold-light: #fcf6e8;
+            --text-main: #1f2e2a;
+            --text-muted: #6f7f78;
+            --border: #d9e3de;
             --success-bg: #ecfdf5;
             --success-text: #065f46;
             --warning-bg: #fffbeb;
@@ -163,14 +163,16 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             --danger: #dc2626;
             --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
             --shadow-md: 0 10px 30px rgba(0,0,0,0.06);
-            --shadow-lg: 0 20px 40px rgba(27,94,32,0.08);
-            --radius-lg: 20px;
+            --shadow-lg: 0 20px 40px rgba(23,107,69,0.08);
+            --radius-lg: 16px;
             --radius-md: 12px;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: #f8fafc;
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 14.5px;
+            line-height: 1.6;
+            background: var(--content-bg, #f4f6f5);
             color: var(--text-main);
             margin: 0;
             padding: 0;
@@ -241,7 +243,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }
         .app-header-left h1 {
             font-family: 'Lora', serif;
-            font-size: 1.85rem;
+            font-size: 1.45rem;
             color: var(--primary-dark);
             margin: 4px 0 6px;
             line-height: 1.25;
@@ -650,14 +652,14 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             margin-left: 2px;
         }
         .form-control, .form-select {
-            padding: 12px 14px;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-size: 0.92rem;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.88rem;
             color: var(--text-main);
             background: #fff;
             transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
+            font-family: inherit;
             width: 100%;
             box-sizing: border-box;
         }
