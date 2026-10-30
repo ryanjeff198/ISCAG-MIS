@@ -1629,8 +1629,9 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                 <div class="form-group">
                                     <label class="form-label">Civil Status</label>
                                     <select id="deceased-civil-status" class="form-select">
-                                        <option value="Married">Married</option>
+                                        <option value="" selected>Select Status</option>
                                         <option value="Single">Single</option>
+                                        <option value="Married">Married</option>
                                         <option value="Widowed">Widowed</option>
                                         <option value="Divorced">Divorced</option>
                                     </select>
@@ -1825,7 +1826,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         document.getElementById('deceased-dod').value = (opt.getAttribute('data-dod') || '').substring(0, 10);
         document.getElementById('deceased-pod').value = opt.getAttribute('data-pod') || '';
         document.getElementById('deceased-residence').value = opt.getAttribute('data-residence') || '';
-        document.getElementById('deceased-civil-status').value = opt.getAttribute('data-civil') || 'Married';
+        document.getElementById('deceased-civil-status').value = opt.getAttribute('data-civil') || '';
         document.getElementById('deceased-citizenship').value = opt.getAttribute('data-nationality') || 'Filipino';
         document.getElementById('deceased-religion').value = opt.getAttribute('data-religion') || 'Islam';
     }
@@ -2187,7 +2188,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             formData.append('pod', document.getElementById('deceased-pod')?.value.trim() || '');
             formData.append('residence', document.getElementById('deceased-residence')?.value.trim() || '');
             formData.append('religion', document.getElementById('deceased-religion')?.value || 'Islam');
-            formData.append('civilStatus', document.getElementById('deceased-civil-status')?.value || 'Married');
+            formData.append('civilStatus', document.getElementById('deceased-civil-status')?.value || '');
             formData.append('citizenship', document.getElementById('deceased-citizenship')?.value || 'Filipino');
 
             const fileInput = document.getElementById('supporting-document-file');

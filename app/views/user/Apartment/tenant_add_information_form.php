@@ -2066,19 +2066,19 @@ if ($userId) {
                   <td class="field-label">Civil Status:</td>
                   <td class="field-value">
                     <select id="civil-status">
-                      <option value="">— Select —</option>
-                      <option <?= ($appData['civil_status'] ?? '') == 'Single' ? 'selected' : '' ?>>Single</option>
-                      <option <?= ($appData['civil_status'] ?? '') == 'Married' ? 'selected' : '' ?>>Married</option>
-                      <option <?= ($appData['civil_status'] ?? '') == 'Widowed' ? 'selected' : '' ?>>Widowed</option>
-                      <option <?= ($appData['civil_status'] ?? '') == 'Divorced' ? 'selected' : '' ?>>Divorced</option>
+                      <option value="" <?= empty($appData['civil_status']) ? 'selected' : '' ?>>Select Status</option>
+                      <option value="Single" <?= ($appData['civil_status'] ?? '') == 'Single' ? 'selected' : '' ?>>Single</option>
+                      <option value="Married" <?= ($appData['civil_status'] ?? '') == 'Married' ? 'selected' : '' ?>>Married</option>
+                      <option value="Widowed" <?= ($appData['civil_status'] ?? '') == 'Widowed' ? 'selected' : '' ?>>Widowed</option>
+                      <option value="Divorced" <?= ($appData['civil_status'] ?? '') == 'Divorced' ? 'selected' : '' ?>>Divorced</option>
                     </select>
                   </td>
                   <td class="field-label">Sex:</td>
                   <td class="field-value">
                     <select id="sex">
-                      <option value="">— Select —</option>
-                      <option <?= ($appData['sex'] ?? '') == 'Male' ? 'selected' : '' ?>>Male</option>
-                      <option <?= ($appData['sex'] ?? '') == 'Female' ? 'selected' : '' ?>>Female</option>
+                      <option value="" <?= empty($appData['sex']) ? 'selected' : '' ?>>Select Sex</option>
+                      <option value="Male" <?= ($appData['sex'] ?? '') == 'Male' ? 'selected' : '' ?>>Male</option>
+                      <option value="Female" <?= ($appData['sex'] ?? '') == 'Female' ? 'selected' : '' ?>>Female</option>
                     </select>
                   </td>
                 </tr>

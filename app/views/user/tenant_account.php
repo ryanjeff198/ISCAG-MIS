@@ -397,11 +397,11 @@ $phpUser = [
                     </div>
                     <div><label class="form-label">Civil Status</label>
                         <select class="form-select" id="f-civil">
-                            <option value="">— Select —</option>
-                            <option>Single</option>
-                            <option>Married</option>
-                            <option>Widowed</option>
-                            <option>Divorced</option>
+                            <option value="">Select Status</option>
+                            <option value="Single">Single</option>
+                            <option value="Married">Married</option>
+                            <option value="Widowed">Widowed</option>
+                            <option value="Divorced">Divorced</option>
                         </select>
                     </div>
                 </div>
@@ -696,17 +696,26 @@ $phpUser = [
         };
         Object.entries(fields).forEach(([key, id]) => {
             const el = document.getElementById(id);
-            if (el && user[key]) {
-                if (el.tagName === 'SELECT') {
-                    const val = String(user[key]).toLowerCase();
-                    for (let i = 0; i < el.options.length; i++) {
-                        if (el.options[i].value.toLowerCase() === val) {
-                            el.selectedIndex = i;
-                            break;
+            if (el) {
+                if (user[key]) {
+                    if (el.tagName === 'SELECT') {
+                        const val = String(user[key]).toLowerCase();
+                        let found = false;
+                        for (let i = 0; i < el.options.length; i++) {
+                            if (el.options[i].value.toLowerCase() === val) {
+                                el.selectedIndex = i;
+                                found = true;
+                                break;
+                            }
                         }
+                        if (!found && el.options.length > 0) {
+                            el.selectedIndex = 0;
+                        }
+                    } else {
+                        el.value = user[key];
                     }
-                } else {
-                    el.value = user[key];
+                } else if (el.tagName === 'SELECT') {
+                    el.selectedIndex = 0;
                 }
             }
         });

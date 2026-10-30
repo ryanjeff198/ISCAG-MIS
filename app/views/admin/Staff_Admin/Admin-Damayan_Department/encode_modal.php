@@ -229,8 +229,9 @@
             <div>
               <label class="enc-label">Civil Status</label>
               <select id="enc-civil-status" class="enc-select">
+                <option value="" selected>Select Status</option>
                 <option value="Single">Single</option>
-                <option value="Married" selected>Married</option>
+                <option value="Married">Married</option>
                 <option value="Widowed">Widowed</option>
                 <option value="Divorced">Divorced</option>
                 <option value="Annulled">Annulled</option>

@@ -2020,6 +2020,7 @@
             <div>
               <label class="form-label">Civil Status</label>
               <select class="form-select" id="input-civil">
+                <option value="" selected>Select Status</option>
                 <option value="Single">Single</option>
                 <option value="Married">Married</option>
                 <option value="Widower">Widower</option>

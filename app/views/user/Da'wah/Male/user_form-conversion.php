@@ -1013,7 +1013,7 @@ foreach ($history as $req) {
                 <div>
                   <label class="form-label">Civil Status <span class="required">*</span></label>
                   <select name="civil_status" class="form-select" required>
-                    <option value="">— Select —</option>
+                    <option value="">Select Status</option>
                     <option>Single</option>
                     <option>Married</option>
                     <option>Widow/Widower</option>
