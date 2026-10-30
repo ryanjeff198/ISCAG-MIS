@@ -190,6 +190,104 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
   .badge-tag.warning { background: #fffbeb; color: #b45309; }
   .badge-tag.danger { background: #fef2f2; color: #dc2626; }
 
+  /* ── Form Section Title & Selector Cards ── */
+  .form-section-title {
+    font-family: 'Lora', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .form-section-title svg {
+    width: 20px;
+    height: 20px;
+    fill: var(--primary);
+  }
+
+  .type-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+  .type-option-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #ffffff;
+  }
+  .type-option-card:hover {
+    border-color: #a7f3d0;
+    background: #f8fafc;
+  }
+  .type-option-card.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .type-option-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .type-option-desc {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  .dept-reg-card {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .dept-reg-card label {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.86rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .dept-reg-card .form-control {
+    background: #fff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 11px 16px;
+    font-size: 0.92rem;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .dept-reg-card .form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(27,94,32,0.12);
+  }
+
+  @media(max-width:768px){
+    .type-selector-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   @media(max-width:900px){
     .summary-row{grid-template-columns:1fr;}
     .dual-card,.details-card,.guidelines-card,.services-card{grid-column:span 12;}
@@ -346,18 +444,60 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
 <div class="grid-container">
 
 <?php if (!$hasRequest): ?>
-  <!-- Empty State when user has no submissions -->
-  <div class="card" style="grid-column:span 12; text-align:center; padding:50px 30px;">
-    <div style="width:64px; height:64px; border-radius:18px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+  <!-- Redesigned Death Certificate Request Form (Replaces Empty-State Section) -->
+  <div class="card" style="grid-column: span 12; padding: 32px 36px; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 8px;">
+    
+    <!-- Section Heading -->
+    <div class="form-section-title">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      1. Select Processing Purpose
     </div>
-    <h2 style="font-family:'Lora',serif; font-size:1.5rem; margin:0 0 8px; color:var(--text-main);">No Damayan Requests Filed Yet</h2>
-    <p style="color:var(--text-muted); max-width:540px; margin:0 auto 22px; font-size:0.92rem; line-height:1.6;">
-      Assalamu Alaikum. You have not filed any death certificate processing requests. Click below to begin your application.
-    </p>
-    <a href="<?= url('/user/services/burial-details?action=request') ?>" class="btn-action btn-primary-act" style="display:inline-flex; text-decoration:none; margin:0 auto;">
-      Submit Death Certificate Request →
-    </a>
+
+    <form id="dash-cert-purpose-form" method="GET" action="<?= url('/user/services/burial-details') ?>" onsubmit="return handleDashPurposeSubmit(event);">
+      <input type="hidden" name="action" value="request" />
+      <input type="hidden" id="dash-selected-purpose" name="purpose" value="register" />
+
+      <!-- Processing Purpose Options (Side by side on desktop, stacked on mobile) -->
+      <div class="type-selector-grid">
+        <div class="type-option-card selected" id="dash-opt-register" onclick="selectDashCertPurpose('register')">
+          <div class="type-option-title">
+            <input type="radio" name="dash_purpose_radio" value="register" checked style="accent-color:var(--primary); cursor:pointer;" />
+            Initial Certificate Processing &amp; Issuance
+          </div>
+          <div class="type-option-desc">
+            For processing and scheduled release of an official death certificate on file with the Damayan Department.
+          </div>
+        </div>
+
+        <div class="type-option-card" id="dash-opt-copy" onclick="selectDashCertPurpose('copy')">
+          <div class="type-option-title">
+            <input type="radio" name="dash_purpose_radio" value="copy" style="accent-color:var(--primary); cursor:pointer;" />
+            Additional Certificate Copy Request
+          </div>
+          <div class="type-option-desc">
+            Exclusively for users requesting additional certified copies of an existing registered death certificate.
+          </div>
+        </div>
+      </div>
+
+      <!-- Department Certificate Registry Number Input Field -->
+      <div class="dept-reg-card">
+        <label for="dash-reg-cert-no">
+          DEPARTMENT CERTIFICATE REGISTRY NUMBER <span style="color:#dc2626; font-weight:bold;">*</span>:
+        </label>
+        <input type="text" id="dash-reg-cert-no" name="reg_no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkDashRegCertNumber(this.value)" oninput="debouncedDashCheckRegCert(this.value)" autocomplete="off" />
+        <span id="dash-reg-cert-feedback" style="font-size:0.78rem; color:var(--text-muted); margin-top:6px; display:block; line-height:1.4;">
+          Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.
+        </span>
+      </div>
+
+      <!-- Action Button -->
+      <div style="display:flex; justify-content:flex-end; align-items:center;">
+        <button type="submit" id="dash-btn-submit-purpose" class="btn-action btn-primary-act" style="cursor:pointer;">
+          <span id="dash-btn-submit-text">Proceed to Request Application</span> →
+        </button>
+      </div>
+    </form>
   </div>
 <?php else: ?>
 
@@ -859,7 +999,8 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
     </div>
   </div>
 
-  <!-- Action Buttons -->
+  <?php if ($hasRequest): ?>
+  <!-- Action Buttons (Shown when an active request exists) -->
   <div class="action-row">
     <button class="btn-action btn-outline-act" onclick="window.print()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
@@ -870,10 +1011,113 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
       Submit New Request
     </a>
   </div>
+  <?php endif; ?>
 
 </div>
 </div>
 </div>
 </div>
+
+<script>
+function selectDashCertPurpose(type) {
+  const hiddenInput = document.getElementById('dash-selected-purpose');
+  if (hiddenInput) hiddenInput.value = type;
+
+  const regCard = document.getElementById('dash-opt-register');
+  const copyCard = document.getElementById('dash-opt-copy');
+  const btnText = document.getElementById('dash-btn-submit-text');
+
+  if (type === 'copy') {
+    if (copyCard) {
+      copyCard.classList.add('selected');
+      const r = copyCard.querySelector('input[type="radio"]');
+      if (r) r.checked = true;
+    }
+    if (regCard) {
+      regCard.classList.remove('selected');
+      const r = regCard.querySelector('input[type="radio"]');
+      if (r) r.checked = false;
+    }
+    if (btnText) btnText.textContent = 'Proceed to Copy Request';
+  } else {
+    if (regCard) {
+      regCard.classList.add('selected');
+      const r = regCard.querySelector('input[type="radio"]');
+      if (r) r.checked = true;
+    }
+    if (copyCard) {
+      copyCard.classList.remove('selected');
+      const r = copyCard.querySelector('input[type="radio"]');
+      if (r) r.checked = false;
+    }
+    if (btnText) btnText.textContent = 'Proceed to Request Application';
+  }
+}
+
+let dashCertLookupTimeout = null;
+function debouncedDashCheckRegCert(val) {
+  clearTimeout(dashCertLookupTimeout);
+  dashCertLookupTimeout = setTimeout(() => {
+    checkDashRegCertNumber(val);
+  }, 300);
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, function(m) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+}
+
+async function checkDashRegCertNumber(val) {
+  val = (val || '').trim();
+  const fb = document.getElementById('dash-reg-cert-feedback');
+  if (!val) {
+    if (fb) fb.innerHTML = 'Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.';
+    return;
+  }
+  try {
+    const res = await fetch('<?= url('/user/damayan/lookup-cert') ?>?reg=' + encodeURIComponent(val));
+    const data = await res.json();
+    if (data && data.found && data.record) {
+      if (fb) {
+        fb.innerHTML = `
+          <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:10px 14px; margin-top:8px;">
+            <div style="color:#059669; font-weight:800; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
+              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              ✓ Verified in Damayan Department Archive
+            </div>
+            <div style="font-size:0.8rem; color:#064e3b; margin-top:4px; line-height:1.4;">
+              <strong>Deceased:</strong> ${escapeHtml(data.record.deceased_name)}<br>
+              <strong>Registry Number:</strong> <code>${escapeHtml(data.record.registration_number)}</code><br>
+              <strong>Archive Source:</strong> ${escapeHtml(data.record.source || 'Encoded Archive')}
+            </div>
+          </div>
+        `;
+      }
+    } else {
+      if (fb) {
+        fb.innerHTML = `
+          <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 14px; margin-top:8px; color:#92400e; font-size:0.8rem; line-height:1.4;">
+            <strong>⚠ Record Not Found in Department Archive:</strong> Only death certificates registered within the Damayan Department can be processed. Please double-check your registry number.
+          </div>
+        `;
+      }
+    }
+  } catch(e) {}
+}
+
+function handleDashPurposeSubmit(event) {
+  const regInput = document.getElementById('dash-reg-cert-no');
+  const regVal = (regInput ? regInput.value : '').trim();
+  if (!regVal) {
+    event.preventDefault();
+    alert('Please enter your Department Certificate Registry Number before proceeding.');
+    if (regInput) regInput.focus();
+    return false;
+  }
+  return true;
+}
+</script>
+
 </body>
 </html>

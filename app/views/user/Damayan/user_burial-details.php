@@ -670,16 +670,21 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         /* ── Radio / Type Cards ── */
         .type-selector-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 16px;
-            margin-bottom: 28px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .type-selector-grid {
+                grid-template-columns: 1fr;
+            }
         }
         .type-option-card {
             border: 2px solid var(--border);
             border-radius: 14px;
-            padding: 18px;
+            padding: 18px 20px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -704,7 +709,39 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         .type-option-desc {
             font-size: 0.8rem;
             color: var(--text-muted);
-            line-height: 1.4;
+            line-height: 1.45;
+        }
+        .dept-reg-card {
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .dept-reg-card label {
+            color: var(--primary-dark);
+            font-weight: 700;
+            font-size: 0.86rem;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .dept-reg-card .form-control {
+            background: #fff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 11px 16px;
+            font-size: 0.92rem;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .dept-reg-card .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(27,94,32,0.12);
         }
 
         .form-terms-box {
@@ -1428,7 +1465,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             1. Select Processing Purpose
                         </div>
 
-                        <div class="type-selector-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div class="type-selector-grid">
                             <div class="type-option-card selected" id="opt-type-register" onclick="selectCertFunction('register')">
                                 <div class="type-option-title">
                                     <input type="radio" name="cert_function_radio" value="register" checked style="accent-color:var(--primary);" />
@@ -1449,6 +1486,16 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             </div>
                         </div>
                         <input type="hidden" id="selected-cert-action" name="cert_action_type" value="register" />
+
+                        <!-- Department Certificate Registry Number (Positioned directly below the cards) -->
+                        <div class="dept-reg-card">
+                            <label class="form-label" for="reg-cert-no">
+                                DEPARTMENT CERTIFICATE REGISTRY NUMBER <span class="req" style="color:var(--danger,#dc2626); font-weight:bold;">*</span>:
+                            </label>
+                            <input type="text" id="reg-cert-no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkRegCertNumber(this.value)" oninput="debouncedCheckRegCert(this.value)" />
+                            <input type="hidden" id="linked-reg-cert-id" value="" />
+                            <span id="reg-cert-feedback" style="font-size:0.78rem; color:var(--text-muted); margin-top:6px; display:block; line-height:1.4;">Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.</span>
+                        </div>
 
                         <!-- ═══════════════════════════════════════════════════════════ -->
                         <!-- A. COPY-SPECIFIC CONTAINER (Existing Certificate Details)    -->
@@ -1530,16 +1577,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         <!-- Displayed ONLY when 'Initial Certificate Processing' is on  -->
                         <!-- ═══════════════════════════════════════════════════════════ -->
                         <div id="registration-deceased-fields" style="display: block;">
-                            
-                            <!-- Certificate Registry Number Verification (Department Custody & Record Verification) -->
-                            <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:12px; padding:16px 20px; margin-bottom:20px;">
-                                <label class="form-label" style="color:var(--primary-dark); font-weight:700; margin-bottom:6px; display:block;">
-                                    Department Certificate Registry Number <span class="req">*</span>:
-                                </label>
-                                <input type="text" id="reg-cert-no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkRegCertNumber(this.value)" oninput="debouncedCheckRegCert(this.value)" />
-                                <input type="hidden" id="linked-reg-cert-id" value="" />
-                                <span id="reg-cert-feedback" style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; display:block;">Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.</span>
-                            </div>
 
                             <!-- Existing Deceased Auto-Fill Selector (Avoid duplicate data entry - Req 4) -->
                             <?php if (!empty($existingDeceased)): ?>
@@ -1946,6 +1983,16 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             if (data && data.found && data.record) {
                 isCertVerifiedInDept = true;
                 if (hiddenRegId) hiddenRegId.value = data.record.id || '';
+                const hiddenEncId = document.getElementById('linked-encoded-cert-id');
+                if (hiddenEncId) hiddenEncId.value = data.record.id || '';
+                const existingCertInput = document.getElementById('existing-cert-no');
+                if (existingCertInput && (!existingCertInput.value || existingCertInput.value !== val)) {
+                    existingCertInput.value = val;
+                }
+                const copyNameInput = document.getElementById('copy-deceased-name');
+                if (copyNameInput && !copyNameInput.value.trim() && data.record.deceased_name) {
+                    copyNameInput.value = data.record.deceased_name;
+                }
                 if (fb) {
                     fb.innerHTML = `
                         <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:10px 14px; margin-top:6px;">
@@ -2498,8 +2545,24 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('action') === 'copy') {
+        const purposeParam = urlParams.get('purpose') || urlParams.get('action');
+        if (purposeParam === 'copy') {
             selectCertFunction('copy');
+        } else if (purposeParam === 'register' || purposeParam === 'request') {
+            selectCertFunction('register');
+        }
+        const regParam = (urlParams.get('reg_no') || urlParams.get('reg') || '').trim();
+        if (regParam) {
+            const regInput = document.getElementById('reg-cert-no');
+            if (regInput) {
+                regInput.value = regParam;
+                checkRegCertNumber(regParam);
+            }
+            const copyCertInput = document.getElementById('existing-cert-no');
+            if (copyCertInput && !copyCertInput.value) {
+                copyCertInput.value = regParam;
+                checkExistingCertNumber(regParam);
+            }
         }
     });
 </script>
