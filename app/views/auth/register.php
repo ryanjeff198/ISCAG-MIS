@@ -576,11 +576,6 @@ body {
               </div>
               <div class="modal-body" style="padding: 35px 40px; color: var(--txt-2); line-height: 1.75; font-size: 14.5px; max-height: 65vh; overflow-y: auto;">
                 <div class="terms-content">
-                  <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; font-size: 0.88rem; color: #166534;">
-                    <strong>Effective Date:</strong> <?= date('F d, Y') ?><br>
-                    Welcome to the ISCAG Philippines Web-Based Management Information System. By accessing or using this system, you agree to follow the Terms and Conditions stated below. Please read them carefully before proceeding.
-                  </div>
-
                   <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">1. Acceptance of Terms</h6>
                   <p style="margin-bottom: 18px;">By creating an account, logging in, or using any feature of the system, you acknowledge that you have read, understood, and agreed to these Terms and Conditions. If you do not agree with these terms, you should not access or use the system.</p>
 
