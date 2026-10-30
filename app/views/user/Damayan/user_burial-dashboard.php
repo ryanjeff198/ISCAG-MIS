@@ -446,6 +446,20 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
   <!-- Unified Processing Purpose Request Card (Replaces Empty-State Section / Arranged like Photo 3) -->
   <div class="card" style="grid-column: span 12; padding: 36px 40px; border-radius: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 24px; background: #ffffff;">
     
+    <!-- Civil Registration & Certificate Issuance Guidelines -->
+    <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 18px 22px; margin-bottom: 24px;">
+      <div style="font-weight: 800; font-size: 0.95rem; color: var(--primary-dark); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+        Death Certificate Civil Registration &amp; Issuance Guidelines
+      </div>
+      <p style="margin: 0 0 8px; font-size: 0.84rem; color: #374151; line-height: 1.55;">
+        • <strong>Haven't registered yet?</strong> We encourage families and informants to select <strong>Register Certificate</strong> below. Registering officially records the deceased in the Damayan Department civil registry archives and initiates the processing and release of your official certified death certificate.
+      </p>
+      <p style="margin: 0; font-size: 0.84rem; color: #374151; line-height: 1.55;">
+        • <strong>Already registered?</strong> If your death certificate is already on record with the department, choose <strong>Additional Certificate Copy Request</strong> to schedule certified copies without re-entering registration details.
+      </p>
+    </div>
+
     <!-- Section Heading (From Second Photo) -->
     <div class="form-section-title">
       <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
@@ -458,12 +472,12 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
 
       <!-- 1. TOP: Department Certificate Registry Number (Positioned at TOP as in Third Photo) -->
       <div class="dept-reg-card">
-        <label for="dash-reg-cert-no">
-          DEPARTMENT CERTIFICATE REGISTRY NUMBER <span style="color:#dc2626; font-weight:bold;">*</span>:
+        <label for="dash-reg-cert-no" id="dash-reg-label">
+          DEPARTMENT CERTIFICATE REGISTRY NUMBER <span id="dash-reg-req-tag" style="color:var(--text-muted); font-size:0.8rem; font-weight:normal;">(Optional - if already assigned by LCRO/Hospital)</span>:
         </label>
         <input type="text" id="dash-reg-cert-no" name="reg_no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkDashRegCertNumber(this.value)" oninput="debouncedDashCheckRegCert(this.value)" autocomplete="off" />
         <span id="dash-reg-cert-feedback" style="font-size:0.78rem; color:var(--text-muted); margin-top:6px; display:block; line-height:1.4;">
-          Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.
+          Leave blank if registering a new death certificate without an existing number, or enter to verify and link an existing record.
         </span>
       </div>
 
@@ -472,10 +486,10 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
         <div class="type-option-card selected" id="dash-opt-register" onclick="selectDashCertPurpose('register')">
           <div class="type-option-title">
             <input type="radio" name="dash_purpose_radio" value="register" checked style="accent-color:var(--primary); cursor:pointer;" />
-            Initial Certificate Processing &amp; Issuance
+            Register Certificate
           </div>
           <div class="type-option-desc">
-            For processing and scheduled release of an official death certificate on file with the Damayan Department.
+            Register a new death certificate to establish an official civil record and schedule certified certificate release.
           </div>
         </div>
 
@@ -485,7 +499,7 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
             Additional Certificate Copy Request
           </div>
           <div class="type-option-desc">
-            Exclusively for users requesting additional certified copies of an existing registered death certificate.
+            Request additional certified copies of a death certificate that is already registered on file.
           </div>
         </div>
       </div>
@@ -493,7 +507,7 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
       <!-- Action Button -->
       <div style="display:flex; justify-content:flex-end; align-items:center;">
         <button type="submit" id="dash-btn-submit-purpose" class="btn-action btn-primary-act" style="cursor:pointer; padding:12px 30px; font-weight:700; border-radius:12px;">
-          <span id="dash-btn-submit-text">Proceed to Request Application</span> →
+          <span id="dash-btn-submit-text">Proceed to Register Certificate</span> →
         </button>
       </div>
     </form>
@@ -1026,6 +1040,8 @@ function selectDashCertPurpose(type) {
   const regCard = document.getElementById('dash-opt-register');
   const copyCard = document.getElementById('dash-opt-copy');
   const btnText = document.getElementById('dash-btn-submit-text');
+  const regTag = document.getElementById('dash-reg-req-tag');
+  const regFeedback = document.getElementById('dash-reg-cert-feedback');
 
   if (type === 'copy') {
     if (copyCard) {
@@ -1039,6 +1055,8 @@ function selectDashCertPurpose(type) {
       if (r) r.checked = false;
     }
     if (btnText) btnText.textContent = 'Proceed to Copy Request';
+    if (regTag) regTag.innerHTML = '<span style="color:#dc2626; font-weight:bold;">*</span>';
+    if (regFeedback) regFeedback.textContent = 'Enter the registry number of your already registered death certificate to locate your record.';
   } else {
     if (regCard) {
       regCard.classList.add('selected');
@@ -1050,7 +1068,9 @@ function selectDashCertPurpose(type) {
       const r = copyCard.querySelector('input[type="radio"]');
       if (r) r.checked = false;
     }
-    if (btnText) btnText.textContent = 'Proceed to Request Application';
+    if (btnText) btnText.textContent = 'Proceed to Register Certificate';
+    if (regTag) regTag.innerHTML = '(Optional - if already assigned by LCRO/Hospital)';
+    if (regFeedback) regFeedback.textContent = 'Leave blank if registering a new death certificate without an existing number, or enter to verify and link an existing record.';
   }
 }
 
@@ -1107,11 +1127,13 @@ async function checkDashRegCertNumber(val) {
 }
 
 function handleDashPurposeSubmit(event) {
+  const purpose = document.getElementById('dash-selected-purpose')?.value || 'register';
   const regInput = document.getElementById('dash-reg-cert-no');
   const regVal = (regInput ? regInput.value : '').trim();
-  if (!regVal) {
+  
+  if (purpose === 'copy' && !regVal) {
     event.preventDefault();
-    alert('Please enter your Department Certificate Registry Number before proceeding.');
+    alert('Please enter your Department Certificate Registry Number to locate your existing record before requesting an additional copy.');
     if (regInput) regInput.focus();
     return false;
   }

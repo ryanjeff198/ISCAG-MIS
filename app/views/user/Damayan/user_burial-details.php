@@ -24,21 +24,21 @@ $userAddress = $dbUser['address'] ?? '';
 
 $burialModel = new BurialRequest();
 
-// Fetch request by ID if provided in query string, otherwise load user's most recent request
+// Fetch request by ID if provided in query string
 $reqId = $_GET['id'] ?? ($_GET['case'] ?? '');
-$activeBurial = null;
+$isExplicitRequest = isset($_GET['action']) && in_array(strtolower($_GET['action']), ['request', 'new', 'form', 'register', 'copy']);
+$isPurposeSet = !empty($_GET['purpose']);
 
-if (!empty($reqId)) {
+$activeBurial = null;
+if (!empty($reqId) && !$isExplicitRequest && !$isPurposeSet) {
     $foundBurial = $burialModel->findByRefId($reqId);
     if ($foundBurial && ($foundBurial['tenant_id'] == $userId || Auth::hasRole(['Admin', 'Staff_Damayan']))) {
         $activeBurial = $foundBurial;
     }
-} else {
-    $userBurials = $burialModel->getByTenantId((int)$userId);
-    if (!empty($userBurials)) {
-        $activeBurial = $burialModel->findByRefId($userBurials[0]['ref_id']);
-    }
 }
+
+// Show tracking app-card ONLY when viewing an active submitted case and not entering new request/register
+$showAppCard = !empty($activeBurial) && empty($isExplicitRequest) && empty($isPurposeSet);
 
 // Existing deceased records to allow auto-fill and prevent duplicate data entry
 $existingDeceased = $burialModel->getDeceasedRecords((int)$userId);
@@ -886,9 +886,14 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 <span class="sep">/</span>
                 <a href="<?= url('/user/services/burial-dashboard') ?>">Damayan Dashboard</a>
                 <span class="sep">/</span>
-                <span class="current">Death Certificate Processing &amp; Release</span>
+                <?php if ($showAppCard): ?>
+                    <span class="current">Death Certificate Request #<?= htmlspecialchars($appId) ?></span>
+                <?php else: ?>
+                    <span class="current">Death Certificate Registration &amp; Request Form</span>
+                <?php endif; ?>
             </div>
 
+            <?php if ($showAppCard): ?>
             <!-- ═══════════════════════════════════════════════════════════════ -->
             <!-- CARD 1: ACTIVE REQUEST STATUS & TRACKING                        -->
             <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -1427,35 +1432,46 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     </div>
                 </footer>
             </div>
+            <?php endif; ?>
 
             <!-- ═══════════════════════════════════════════════════════════════ -->
             <!-- CARD 2: THE REQUEST FORM (APPEARS ON CLICKING "SUBMIT REQUEST") -->
             <!-- ═══════════════════════════════════════════════════════════════ -->
-            <div id="burial-form-container">
+            <div id="burial-form-container" style="display: <?= $showAppCard ? 'none' : 'block' ?>;">
                 <div class="form-card" id="burial-form-card">
                     <!-- Form Header -->
                     <div class="form-card-header">
                         <div class="form-card-title-area">
-                            <h2>Death Certificate Processing Form</h2>
-                            <p>Exclusively for processing and scheduling release of death certificates recorded within the ISCAG Damayan Department archive.</p>
+                            <h2>Death Certificate Registration &amp; Request Form</h2>
+                            <p>Register an official death certificate with the ISCAG Damayan Department or request additional certified copies.</p>
                         </div>
-                        <button type="button" class="btn-close-form" onclick="toggleRequestForm(false)">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            Close Form
-                        </button>
+                        <?php if ($showAppCard): ?>
+                            <button type="button" class="btn-close-form" onclick="toggleRequestForm(false)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                Close Form
+                            </button>
+                        <?php else: ?>
+                            <a href="<?= url('/user/services/burial-dashboard') ?>" class="btn-close-form" style="text-decoration:none;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                                Back to Dashboard
+                            </a>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Form Body -->
                     <form id="burial-request-form" class="form-card-body" onsubmit="submitBurialRequest(event)">
 
-                        <!-- Department Archive Requirement Notice -->
-                        <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 12px; padding: 16px 20px; margin-bottom: 22px;">
-                            <div style="font-weight: 800; font-size: 0.92rem; color: var(--primary-dark); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                        <!-- Civil Registration & Certificate Issuance Guidelines -->
+                        <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 18px 22px; margin-bottom: 24px;">
+                            <div style="font-weight: 800; font-size: 0.95rem; color: var(--primary-dark); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-                                ISCAG Damayan Department Certificate Processing Requirement
+                                Death Certificate Civil Registration &amp; Issuance Guidelines
                             </div>
-                            <p style="margin: 0; font-size: 0.82rem; color: #374151; line-height: 1.5;">
-                                In accordance with Damayan Department guidelines, processing is available <strong>only for death certificates that exist within the department records</strong>. Please identify the certificate using the registry number or select a recorded deceased person from the department archive below.
+                            <p style="margin: 0 0 8px; font-size: 0.84rem; color: #374151; line-height: 1.55;">
+                                • <strong>Haven't registered yet?</strong> We encourage families and informants to select <strong>Register Certificate</strong> below. Registering officially records the deceased in the Damayan Department civil registry archives and initiates the processing and release of your official certified death certificate.
+                            </p>
+                            <p style="margin: 0; font-size: 0.84rem; color: #374151; line-height: 1.55;">
+                                • <strong>Already registered?</strong> If your death certificate is already on record with the department, choose <strong>Additional Certificate Copy Request</strong> to schedule certified copies without re-entering registration details.
                             </p>
                         </div>
                         
@@ -1467,12 +1483,12 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 
                         <!-- 1. TOP: Department Certificate Registry Number (Positioned at TOP as in Third Photo) -->
                         <div class="dept-reg-card">
-                            <label class="form-label" for="reg-cert-no">
-                                DEPARTMENT CERTIFICATE REGISTRY NUMBER <span class="req" style="color:var(--danger,#dc2626); font-weight:bold;">*</span>:
+                            <label class="form-label" id="details-reg-label" for="reg-cert-no">
+                                DEPARTMENT CERTIFICATE REGISTRY NUMBER <span id="details-reg-req-tag" style="color:var(--text-muted); font-size:0.8rem; font-weight:normal;">(Optional - if already assigned by LCRO/Hospital)</span>:
                             </label>
                             <input type="text" id="reg-cert-no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkRegCertNumber(this.value)" oninput="debouncedCheckRegCert(this.value)" />
                             <input type="hidden" id="linked-reg-cert-id" value="" />
-                            <span id="reg-cert-feedback" style="font-size:0.78rem; color:var(--text-muted); margin-top:6px; display:block; line-height:1.4;">Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.</span>
+                            <span id="reg-cert-feedback" style="font-size:0.78rem; color:var(--text-muted); margin-top:6px; display:block; line-height:1.4;">Leave blank if registering a new death certificate without an existing number, or enter to verify and link an existing record.</span>
                         </div>
 
                         <!-- 2. BOTTOM: Two Processing Options Side-by-Side (Positioned BELOW as in Third Photo) -->
@@ -1480,10 +1496,10 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             <div class="type-option-card selected" id="opt-type-register" onclick="selectCertFunction('register')">
                                 <div class="type-option-title">
                                     <input type="radio" name="cert_function_radio" value="register" checked style="accent-color:var(--primary);" />
-                                    Initial Certificate Processing &amp; Issuance
+                                    Register Certificate
                                 </div>
                                 <div class="type-option-desc">
-                                    For processing and scheduled release of an official death certificate on file with the Damayan Department.
+                                    Register a new death certificate to establish an official civil record and schedule certified certificate release.
                                 </div>
                             </div>
                             <div class="type-option-card" id="opt-type-copy" onclick="selectCertFunction('copy')">
@@ -1492,7 +1508,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                                     Additional Certificate Copy Request
                                 </div>
                                 <div class="type-option-desc">
-                                    Exclusively for users requesting additional certified copies of an existing registered death certificate.
+                                    Request additional certified copies of a death certificate that is already registered on file.
                                 </div>
                             </div>
                         </div>
@@ -1575,7 +1591,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 
                         <!-- ═══════════════════════════════════════════════════════════ -->
                         <!-- B. REGISTRATION DECEASED FIELDS CONTAINER                   -->
-                        <!-- Displayed ONLY when 'Initial Certificate Processing' is on  -->
+                        <!-- Displayed ONLY when 'Register Certificate' is on  -->
                         <!-- ═══════════════════════════════════════════════════════════ -->
                         <div id="registration-deceased-fields" style="display: block;">
 
@@ -1813,6 +1829,11 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             document.getElementById('copy-deceased-name')?.setAttribute('required', 'required');
             document.getElementById('copy-reason')?.setAttribute('required', 'required');
 
+            const regTag = document.getElementById('details-reg-req-tag');
+            const regFeedback = document.getElementById('reg-cert-feedback');
+            if (regTag) regTag.innerHTML = '<span style="color:var(--danger,#dc2626); font-weight:bold;">*</span>';
+            if (regFeedback) regFeedback.textContent = 'Enter the registry number of your already registered death certificate to locate your record.';
+
             if (requesterTitle) {
                 requesterTitle.innerHTML = '<svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 2. Requester / Authorized Representative Information';
             }
@@ -1839,10 +1860,15 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             document.getElementById('copy-deceased-name')?.removeAttribute('required');
             document.getElementById('copy-reason')?.removeAttribute('required');
 
+            const regTag = document.getElementById('details-reg-req-tag');
+            const regFeedback = document.getElementById('reg-cert-feedback');
+            if (regTag) regTag.innerHTML = '(Optional - if already assigned by LCRO/Hospital)';
+            if (regFeedback) regFeedback.textContent = 'Leave blank if registering a new death certificate without an existing number, or enter to verify and link an existing record.';
+
             if (requesterTitle) {
                 requesterTitle.innerHTML = '<svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> 3. Requester / Authorized Representative Information';
             }
-            if (btnSubmitText) btnSubmitText.textContent = 'Submit Death Certificate Registration';
+            if (btnSubmitText) btnSubmitText.textContent = 'Register Death Certificate';
         }
     }
 
@@ -2173,17 +2199,14 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         const regCertNo = document.getElementById('reg-cert-no')?.value.trim() || '';
         const existingCertNo = document.getElementById('existing-cert-no')?.value.trim() || '';
 
-        // Verification Gate: Certificate must be confirmed in department archive
-        const isVerified = isCertVerifiedInDept || selectedDecId || copySelectDecId || linkedEncId || linkedRegId || (certAction === 'register' ? regCertNo : existingCertNo);
-
-        if (!isVerified) {
-            alert('Processing is only available for death certificates recorded within the ISCAG Damayan Department. Please enter a valid registration number or select a recorded deceased person from the department archive.');
-            if (certAction === 'register') {
-                document.getElementById('reg-cert-no')?.focus();
-            } else {
+        // Verification Gate: Existing certificate record must be confirmed in department archive only for copy requests
+        if (certAction === 'copy') {
+            const isCopyVerified = isCertVerifiedInDept || selectedDecId || copySelectDecId || linkedEncId || existingCertNo;
+            if (!isCopyVerified) {
+                alert('To request an additional copy, the death certificate must exist within the ISCAG Damayan Department records. Please enter a valid registration number or select a recorded deceased person from the department archive.');
                 document.getElementById('existing-cert-no')?.focus();
+                return;
             }
-            return;
         }
 
         const btnSubmit = document.getElementById('btn-submit-burial');
