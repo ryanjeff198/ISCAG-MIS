@@ -565,32 +565,101 @@ body {
 
         <!-- Terms Modal -->
         <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content" style="border-radius: 20px; border: none; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.2);">
               <div class="modal-header" style="background: var(--green); color: white; border: none; padding: 25px;">
-                <h5 class="modal-title" id="termsModalLabel" style="font-family: 'Poppins', sans-serif; font-weight: 700; letter-spacing: 1px;">TERMS & CONDITIONS</h5>
+                <div>
+                  <h5 class="modal-title" id="termsModalLabel" style="font-family: 'Poppins', sans-serif; font-weight: 700; letter-spacing: 0.5px; margin: 0;">TERMS AND CONDITIONS</h5>
+                  <div style="font-size: 0.82rem; opacity: 0.9; margin-top: 4px;">ISCAG Philippines – Web-Based Management Information System</div>
+                </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
-              <div class="modal-body" style="padding: 40px; color: var(--txt-2); line-height: 1.8; font-size: 15px; max-height: 60vh; overflow-y: auto;">
+              <div class="modal-body" style="padding: 35px 40px; color: var(--txt-2); line-height: 1.75; font-size: 14.5px; max-height: 65vh; overflow-y: auto;">
                 <div class="terms-content">
-                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 15px;">1. Acceptance of Terms</h6>
-                  <p style="margin-bottom: 20px;">By accessing and using the ISCAG Philippines Management Information System (MIS), you agree to be bound by these Terms and Conditions. If you do not agree, please do not use the system.</p>
-                  
-                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 15px;">2. User Conduct</h6>
-                  <p style="margin-bottom: 20px;">You are responsible for maintaining the confidentiality of your account credentials. You agree to use the system only for its intended purposes and in accordance with Islamic values and Philippine laws.</p>
-                  
-                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 15px;">3. Privacy & Data Protection</h6>
-                  <p style="margin-bottom: 20px;">We respect your privacy. Any personal data collected through this system will be handled in accordance with our Privacy Policy and the Data Privacy Act of 2012. Your information will be used solely for administrative and spiritual guidance services.</p>
-                  
-                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 15px;">4. System Integrity</h6>
-                  <p style="margin-bottom: 20px;">Unauthorized attempts to modify, breach, or damage the system are strictly prohibited and may result in legal action and termination of account access.</p>
-                  
-                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 15px;">5. Amendments</h6>
-                  <p>ISCAG Philippines reserves the right to modify these terms at any time. Continued use of the system after such changes constitutes acceptance of the new terms.</p>
+                  <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; font-size: 0.88rem; color: #166534;">
+                    <strong>Effective Date:</strong> <?= date('F d, Y') ?><br>
+                    Welcome to the ISCAG Philippines Web-Based Management Information System. By accessing or using this system, you agree to follow the Terms and Conditions stated below. Please read them carefully before proceeding.
+                  </div>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">1. Acceptance of Terms</h6>
+                  <p style="margin-bottom: 18px;">By creating an account, logging in, or using any feature of the system, you acknowledge that you have read, understood, and agreed to these Terms and Conditions. If you do not agree with these terms, you should not access or use the system.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">2. Purpose of the System</h6>
+                  <p style="margin-bottom: 18px;">The ISCAG Management Information System is designed to provide a centralized platform for managing the organization's services, records, transactions, and daily operations. It supports apartment and tenant management, billing and payments, Islamic education, marriage services, Da'wah activities, Damayan and burial services, donations, and other organizational transactions.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">3. User Accounts and Responsibilities</h6>
+                  <p style="margin-bottom: 10px;">All users are responsible for maintaining the confidentiality and security of their account credentials.</p>
+                  <p style="margin-bottom: 6px;">Users must:</p>
+                  <ul style="margin-bottom: 14px; padding-left: 20px;">
+                    <li>Provide accurate and updated personal information during registration.</li>
+                    <li>Keep their usernames and passwords confidential.</li>
+                    <li>Avoid sharing their accounts with unauthorized individuals.</li>
+                    <li>Notify the system administrator of any suspicious account activity.</li>
+                    <li>Use the system only for its intended purposes.</li>
+                    <li>Ensure that all submitted information and documents are accurate and legitimate.</li>
+                  </ul>
+                  <p style="margin-bottom: 18px;">Users are responsible for activities performed through their respective accounts.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">4. User Access and Permissions</h6>
+                  <p style="margin-bottom: 10px;">Access to the system's features and information is limited based on the user's assigned authorization. Users are only permitted to access and use the functions provided to their accounts.</p>
+                  <p style="margin-bottom: 18px;">Users must not attempt to access restricted features, confidential records, or information beyond their authorized permissions. Any unauthorized access, misuse, or violation of access restrictions may result in appropriate administrative action, including account suspension or deactivation.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">5. Accuracy of Information and Submitted Documents</h6>
+                  <p style="margin-bottom: 10px;">Users must ensure that all information, applications, and uploaded documents submitted through the system are truthful, complete, and accurate.</p>
+                  <p style="margin-bottom: 10px;">ISCAG Philippines reserves the right to review, verify, reject, or request corrections to submitted information and documents when necessary.</p>
+                  <p style="margin-bottom: 18px;">Providing false, misleading, or unauthorized information may result in the rejection of applications or appropriate account restrictions.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">6. Proper Use of the System</h6>
+                  <p style="margin-bottom: 6px;">Users agree not to:</p>
+                  <ul style="margin-bottom: 14px; padding-left: 20px;">
+                    <li>Use the system for fraudulent, illegal, or unauthorized activities.</li>
+                    <li>Attempt to access another user's account.</li>
+                    <li>Modify, damage, or interfere with system functions and stored information.</li>
+                    <li>Upload malicious files or harmful content.</li>
+                    <li>Misuse, copy, or disclose confidential organizational information without authorization.</li>
+                    <li>Use the system to harass, threaten, or harm other users.</li>
+                  </ul>
+                  <p style="margin-bottom: 18px;">Any misuse of the system may result in account suspension or other appropriate administrative action.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">7. Privacy and Protection of Personal Information</h6>
+                  <p style="margin-bottom: 10px;">ISCAG Philippines respects the privacy of its users and is committed to protecting personal information collected through the system.</p>
+                  <p style="margin-bottom: 10px;">Personal information may be collected, processed, stored, and used for legitimate organizational purposes, including account management, service requests, tenant records, billing, payments, and administrative transactions.</p>
+                  <p style="margin-bottom: 10px;">The collection and processing of personal information shall be subject to the applicable provisions of the Data Privacy Act of 2012 (Republic Act No. 10173) and its implementing rules and regulations.</p>
+                  <p style="margin-bottom: 18px;">For more information, users should refer to the system's separate Privacy Notice.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">8. Records, Transactions, and Payments</h6>
+                  <p style="margin-bottom: 10px;">Users are responsible for reviewing the accuracy of their submitted applications, payment information, and transaction details.</p>
+                  <p style="margin-bottom: 10px;">The system provides access to billing statements, payment records, applications, and other transaction-related information. Users should report any incorrect records or discrepancies to the assigned department staff for verification.</p>
+                  <p style="margin-bottom: 18px;">Submission of an application or payment document does not automatically guarantee approval or confirmation. All transactions remain subject to the organization's verification and approval procedures.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">9. System Availability and Maintenance</h6>
+                  <p style="margin-bottom: 10px;">ISCAG Philippines aims to maintain the availability and proper operation of the system. However, temporary interruptions may occur due to maintenance, technical issues, updates, or other circumstances beyond the organization's control.</p>
+                  <p style="margin-bottom: 18px;">The organization reserves the right to update, modify, or temporarily restrict access to certain system features when necessary.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">10. Account Suspension and Termination</h6>
+                  <p style="margin-bottom: 10px;">ISCAG Philippines reserves the right to suspend, deactivate, or restrict an account when a user violates these Terms and Conditions, provides false information, misuses system resources, or engages in unauthorized activities.</p>
+                  <p style="margin-bottom: 18px;">Account access may also be modified when a user's role, status, or authorization changes.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">11. Changes to the Terms and Conditions</h6>
+                  <p style="margin-bottom: 18px;">ISCAG Philippines reserves the right to revise or update these Terms and Conditions when necessary. Any changes will be posted or communicated through the system. Users are encouraged to review the updated terms regularly.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">12. Contact and Assistance</h6>
+                  <p style="margin-bottom: 18px;">For questions, concerns, technical issues, or reports regarding the system, users may contact the authorized ISCAG Philippines administrator or the appropriate department staff through the organization's official communication channels.</p>
+
+                  <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">13. Agreement and Consent</h6>
+                  <p style="margin-bottom: 6px;">By selecting the "I Agree" option and proceeding to use the system, you confirm that:</p>
+                  <ul style="margin-bottom: 18px; padding-left: 20px;">
+                    <li>You have read and understood these Terms and Conditions.</li>
+                    <li>You agree to comply with the rules and responsibilities stated above.</li>
+                    <li>You understand that your account access is subject to your assigned user role and authorization.</li>
+                    <li>You agree to use the system responsibly and only for legitimate purposes.</li>
+                  </ul>
+
+                  <p style="font-weight: 600; color: var(--green); margin-top: 24px; margin-bottom: 0;">Thank you for using the ISCAG Philippines Web-Based Management Information System.</p>
                 </div>
               </div>
               <div class="modal-footer" style="padding: 20px 40px; border: none; background: #f9f9f9;">
-                <button type="button" class="btn-auth" id="acceptTermsBtn" data-bs-dismiss="modal" style="width: auto; padding: 10px 30px;">I Understand</button>
+                <button type="button" class="btn-auth" id="acceptTermsBtn" data-bs-dismiss="modal" style="width: auto; padding: 10px 30px;">I Agree</button>
               </div>
             </div>
           </div>
