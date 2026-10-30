@@ -113,6 +113,298 @@
             .action-bar { flex-direction: column; text-align: center; }
             .action-bar-btns { width: 100%; justify-content: center; }
         }
+
+        /* ══════════════ FORMAL PRINTABLE CONTRACT STYLES ══════════════ */
+        .printable-contract-sheet {
+            display: none;
+        }
+
+        .contract-page {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-family: 'Times New Roman', Times, 'Nimbus Roman No9 L', serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            width: 100%;
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 44px 50px;
+            box-sizing: border-box !important;
+        }
+
+        .contract-page-break {
+            height: 20px;
+        }
+
+        .contract-doc-header {
+            text-align: center;
+            margin-bottom: 14px;
+        }
+
+        .contract-doc-title {
+            font-size: 15pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0 0 3px;
+            color: #000000 !important;
+        }
+
+        .contract-doc-subtitle {
+            font-size: 11pt;
+            font-weight: bold;
+            margin: 0 0 10px;
+            color: #000000 !important;
+        }
+
+        .contract-doc-p {
+            text-align: justify;
+            text-justify: inter-word;
+            margin-bottom: 10px;
+            color: #000000 !important;
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+
+        .contract-doc-clause {
+            margin-bottom: 9px;
+            text-align: justify;
+            text-justify: inter-word;
+            color: #000000 !important;
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+
+        .contract-doc-clause p {
+            margin: 0;
+            color: #000000 !important;
+        }
+
+        .contract-doc-field {
+            font-weight: bold;
+            text-decoration: underline;
+            color: #000000 !important;
+        }
+
+        .contract-doc-signatures {
+            margin-top: 18px;
+            page-break-inside: avoid;
+            color: #000000 !important;
+        }
+
+        .contract-sig-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+            margin-top: 10px;
+            background: transparent !important;
+            table-layout: fixed;
+        }
+
+        .contract-sig-table td {
+            border: none;
+            padding: 0;
+            vertical-align: top;
+            background: transparent !important;
+            color: #000000 !important;
+        }
+
+        .contract-sig-role {
+            font-weight: bold;
+            font-size: 10.5pt;
+            margin-bottom: 28px;
+        }
+
+        .contract-sig-line {
+            border-top: 1px solid #000;
+            padding-top: 4px;
+            font-weight: bold;
+            font-size: 10.5pt;
+        }
+
+        .contract-sig-desc {
+            font-size: 9pt;
+            color: #222;
+        }
+
+        .contract-sig-date {
+            font-size: 9pt;
+            margin-top: 2px;
+        }
+
+
+        /* ─── Contract Preview Modal ─── */
+        .contract-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: rgba(15, 30, 22, 0.75);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .contract-modal-overlay.show {
+            display: flex;
+        }
+        .contract-modal-box {
+            background: #f1f5f9;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 920px;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.4);
+        }
+        .contract-modal-topbar {
+            background: white;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .contract-modal-scroll {
+            padding: 24px 20px 50px;
+            overflow-y: auto;
+            flex: 1;
+            background: #cbd5e1; /* Clean neutral desk surface */
+            box-sizing: border-box;
+        }
+        .contract-modal-scroll .printable-contract-sheet {
+            display: block !important;
+            background: transparent !important;
+        }
+        .contract-modal-scroll .contract-page {
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18) !important;
+            border-radius: 4px;
+            margin: 0 auto 28px auto !important;
+        }
+        .contract-modal-scroll .contract-page * {
+            color: #000000 !important;
+        }
+        .contract-modal-scroll .contract-page-break {
+            height: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        @media print {
+            @page {
+                size: letter portrait;
+                margin: 0 !important;
+            }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                width: 100% !important;
+            }
+            .app-wrapper,
+            .top-bar,
+            .sidebar,
+            .contract-modal-overlay,
+            .confirm-overlay,
+            .toast-msg {
+                display: none !important;
+            }
+            #printableContractSheet {
+                display: block !important;
+                position: static !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                box-shadow: none !important;
+            }
+            .contract-page {
+                display: block !important;
+                box-sizing: border-box !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 18mm 20mm 16mm 20mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-family: 'Times New Roman', Times, serif !important;
+                font-size: 10.5pt !important;
+                line-height: 1.45 !important;
+            }
+            .contract-page-1 {
+                page-break-after: always !important;
+                break-after: page !important;
+            }
+            .contract-page-2 {
+                page-break-before: always !important;
+                break-before: page !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }
+            .contract-page-break {
+                display: none !important;
+            }
+            .contract-doc-header {
+                text-align: center !important;
+                margin-bottom: 12px !important;
+            }
+            .contract-doc-title {
+                font-size: 14pt !important;
+                margin-bottom: 3px !important;
+                color: #000000 !important;
+            }
+            .contract-doc-subtitle {
+                font-size: 10.5pt !important;
+                margin-bottom: 10px !important;
+                color: #000000 !important;
+            }
+            .contract-doc-p {
+                margin-bottom: 8px !important;
+                font-size: 10.5pt !important;
+                line-height: 1.45 !important;
+                text-align: justify !important;
+            }
+            .contract-doc-clause {
+                margin-bottom: 8px !important;
+                font-size: 10.5pt !important;
+                line-height: 1.45 !important;
+                text-align: justify !important;
+            }
+            .contract-doc-signatures {
+                margin-top: 16px !important;
+                page-break-inside: avoid !important;
+            }
+            .contract-doc-signatures p {
+                margin-top: 8px !important;
+                margin-bottom: 12px !important;
+                font-size: 10.5pt !important;
+                line-height: 1.45 !important;
+            }
+            .contract-sig-table {
+                margin-top: 8px !important;
+            }
+            .contract-sig-role {
+                margin-bottom: 26px !important;
+                font-size: 10pt !important;
+            }
+            .contract-sig-line {
+                font-size: 10pt !important;
+                padding-top: 3px !important;
+            }
+            .contract-sig-desc, .contract-sig-date {
+                font-size: 8.5pt !important;
+                margin-top: 2px !important;
+            }
+            .contract-doc-footer {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -125,7 +417,13 @@
                     <div class="top-bar-title">Lease Contract</div>
                     <div class="top-bar-subtitle">Review and manage your apartment lease agreement</div>
                 </div>
-                <div class="top-bar-actions">
+                <div class="top-bar-actions" style="display:flex; gap:10px;">
+                    <?php if (!empty($lease)): ?>
+                    <button type="button" class="btn-topbar primary" onclick="openContractModal()" style="display:inline-flex; align-items:center; gap:8px;">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        Preview Formal Agreement
+                    </button>
+                    <?php endif; ?>
                     <a href="<?= url('/user/dashboard') ?>" class="btn-topbar">← Back to Dashboard</a>
                 </div>
             </div>
@@ -144,14 +442,58 @@
                     </div>
 <?php else:
     $statusClass = strtolower($lease['lease_status']);
-    $tenantName = htmlspecialchars(($lease['first_name'] ?? '') . ' ' . ($lease['last_name'] ?? ''));
+
+    // Priority: Formal legal name from the filed apartment application (tenant_addinfo)
+    $filedApplicantName = '';
+    if (!empty($tenantInfo['givenname']) || !empty($tenantInfo['familyname'])) {
+        $nameParts = array_filter([
+            trim($tenantInfo['givenname'] ?? ''),
+            trim($tenantInfo['middlename'] ?? ''),
+            trim($tenantInfo['familyname'] ?? '')
+        ]);
+        $filedApplicantName = implode(' ', $nameParts);
+    }
+    
+    $tenantName = $filedApplicantName ?: trim(($lease['first_name'] ?? '') . ' ' . ($lease['last_name'] ?? ''));
+    if (!$tenantName) $tenantName = $_SESSION['user_full_name'] ?? $_SESSION['name'] ?? 'Tenant';
+    $tenantName = htmlspecialchars($tenantName);
+
     $unitType = htmlspecialchars($lease['unit_type'] ?? $lease['roomtype'] ?? 'N/A');
     $monthlyRent = number_format((float)($lease['monthly_rent'] ?? 0), 2);
     $deposit = number_format((float)($lease['deposit_amount'] ?? 0), 2);
     $advance = number_format((float)($lease['advance_amount'] ?? 0), 2);
-    $startDate = $lease['start_date'] ? date('F j, Y', strtotime($lease['start_date'])) : 'TBD';
-    $endDate = $lease['end_date'] ? date('F j, Y', strtotime($lease['end_date'])) : 'TBD';
+    $startDate = $lease['start_date'] ? date('F j, Y', strtotime($lease['start_date'])) : 'Date of Move-In';
+    $endDate = $lease['end_date'] ? date('F j, Y', strtotime($lease['end_date'])) : 'End of Lease Term';
     $createdAt = $lease['created_at'] ? date('F j, Y g:i A', strtotime($lease['created_at'])) : 'N/A';
+
+    // Occupants count (Tenant + family members)
+    $occupants = 1;
+    if (!empty($lease['tenant_id'])) {
+        try {
+            $dbOcc = getDbConnection();
+            $stmtOcc = $dbOcc->prepare("SELECT COUNT(*) FROM family_members WHERE tenant_id = :tid");
+            $stmtOcc->execute(['tid' => $lease['tenant_id']]);
+            $occupants = (int)$stmtOcc->fetchColumn() + 1;
+        } catch (\Exception $e) {
+            $occupants = 1;
+        }
+    }
+
+    // Room / Unit display
+    $building = $lease['building'] ?? '';
+    $roomNumber = $lease['room_number'] ?? '';
+    if (!empty($building) && !empty($roomNumber)) {
+        $unitDisplay = htmlspecialchars($building . ' — Room ' . $roomNumber . ' (' . $unitType . ')');
+    } elseif (!empty($roomNumber)) {
+        $unitDisplay = htmlspecialchars('Room ' . $roomNumber . ' (' . $unitType . ')');
+    } else {
+        $unitDisplay = htmlspecialchars($unitType . ' (Unit Assignment Pending)');
+    }
+
+    $leaseMonths = ($lease['end_date'] && $lease['start_date']) 
+        ? round((strtotime($lease['end_date']) - strtotime($lease['start_date'])) / (30*24*3600)) 
+        : 12;
+    if ($leaseMonths <= 0) $leaseMonths = 12;
 
     // Parse inclusions and rules from typeData
     $inclusions = [];
@@ -344,6 +686,10 @@
                             <p>You have accepted this lease agreement. Welcome to ISCAG Apartment!</p>
                         </div>
                         <div class="action-bar-btns">
+                            <button type="button" class="btn-action outline" onclick="printLeaseAgreement()">
+                                <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                                Print Contract
+                            </button>
                             <a href="<?= url('/user/apartment/info') ?>" class="btn-action primary">View Apartment Info</a>
                         </div>
                     </div>
@@ -372,9 +718,13 @@
                         <div class="action-bar" style="border-color: rgba(47,138,96,0.3); background: rgba(47,138,96,0.03);">
                             <div class="action-bar-text">
                                 <h4 style="color:#2f8a60;">✓ Lease Active</h4>
-                                <p>Your lease contract is fully active. You can request a contract renewal here to extend your stay by 12 months.</p>
+                                <p>Your lease contract is fully active. You can print your official agreement or request a contract extension.</p>
                             </div>
                             <div class="action-bar-btns" style="align-items: center;">
+                                <button type="button" class="btn-action outline" onclick="printLeaseAgreement()" style="margin-right: 10px;">
+                                    <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                                    Print Contract
+                                </button>
                                 <select id="renew-term-select" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafc; font-weight: 600; color: var(--primary-dark); cursor: pointer; margin-right: 10px;">
                                     <option value="12">12 Months</option>
                                     <option value="9">9 Months</option>
@@ -395,6 +745,140 @@
             </div><!-- /.page-body -->
         </div><!-- /.main-content -->
     </div><!-- /.app-wrapper -->
+
+    <?php if (!empty($lease)): ?>
+    <!-- ══════════════ FORMAL PRINTABLE CONTRACT DOCUMENT ══════════════ -->
+    <div id="printableContractSheet" class="printable-contract-sheet">
+        <!-- ─── PAGE 1 ─── -->
+        <div class="contract-page contract-page-1">
+            <div class="contract-doc-header">
+                <h1 class="contract-doc-title">RESIDENTIAL LEASE AGREEMENT</h1>
+                <div class="contract-doc-subtitle">[Darul Iman Apartment Complex]</div>
+            </div>
+
+            <p class="contract-doc-p">
+                This Residential Rental Agreement (&ldquo;Agreement&rdquo;) is entered into by and between 
+                <strong class="contract-doc-field"><?= $tenantName ?></strong> (&ldquo;Tenant&rdquo;), and 
+                <strong class="contract-doc-field">ISLAMIC STUDIES, CALL AND GUIDANCE OF THE PHILIPPINES (ISCAG)</strong> (&ldquo;Landlord&rdquo;). 
+                Landlord and Tenant are collectively referred to in this Agreement as the &ldquo;Parties&rdquo;. 
+                This Agreement shall be effective as of the date executed by Landlord, as set forth below.
+            </p>
+
+            <p class="contract-doc-p">
+                For the covenants contained herein, and other good and valuable consideration, the receipt and sufficiency of which is hereby acknowledged, the Parties agree as follows:
+            </p>
+
+            <div class="contract-doc-clause">
+                <p><strong>1. PREMISES:</strong> The leased premises shall be comprised of that certain personal apartment residence located at <strong>#31 Jose Abad Santos St., Salitran I, Dasmariñas City, Cavite, Philippines 4114</strong>, specifically identified as <strong class="contract-doc-field"><?= $unitDisplay ?></strong> (&ldquo;Premises&rdquo;). Landlord leases the Premises to Tenant and Tenant leases the Premises from Landlord on the terms and conditions set forth herein.</p>
+            </div>
+
+            <div class="contract-doc-clause">
+                <p><strong>2. TERM:</strong> The term of this Agreement shall be a period of <strong class="contract-doc-field"><?= $leaseMonths ?> month(s)</strong>, beginning on <strong class="contract-doc-field"><?= $startDate ?></strong>, and ending on <strong class="contract-doc-field"><?= $endDate ?></strong>. Any holding over after the expiration or earlier termination of the term without Landlord&rsquo;s prior written consent shall be a default of this Agreement and shall not be construed to be a tenancy from month to month, unless Tenant pays and Landlord accepts payment of rent for the next full calendar month (plus, if the term ends on a day other than the last day of the month, rent for the remainder of the month during which the term ends). If such payment of rent is so paid and accepted, this Agreement will automatically renew on a month to month basis, and will continue as such until terminated by either party in accordance with the following: written notice of termination is to be given by either party at least thirty (30) days before the designated date of termination, and the designated date of termination shall be the last day of a calendar month. If notice of termination is given, this Agreement shall terminate on the date for which notice is properly given. Except as otherwise set forth in this Agreement, all of the terms and conditions of this Agreement shall apply during any month to month tenancy.</p>
+            </div>
+
+            <div class="contract-doc-clause">
+                <p><strong>3. MONTHLY RENT:</strong> The rent to be paid by Tenant to Landlord throughout the term of this Agreement is <strong class="contract-doc-field">₱<?= $monthlyRent ?></strong> per month and shall be due on the <strong>5th day of each calendar month</strong>. Tenant shall pay any delinquent rents promptly. Failure to pay the full rent amount within two (2) consecutive months shall result in a &ldquo;Notice to Vacate&rdquo; with a one (1) month grace period to relocate. All delinquent rents or other expenses due from Tenant shall accrue interest or penalties as authorized under ISCAG policies until paid. Rent for the first month shall be paid to Landlord at the time this Agreement is executed. Tenant shall not deduct or offset against rent unless expressly permitted by applicable law.</p>
+            </div>
+
+            <div class="contract-doc-clause">
+                <p><strong>4. SECURITY DEPOSIT & ADVANCE RENT:</strong> Upon execution of this Agreement, Tenant shall deposit with Landlord the sum of <strong class="contract-doc-field">₱<?= $deposit ?></strong> as a Security Deposit (refundable upon lawful termination of lease, less any unpaid rent, utilities, lost fixtures, or damages to the unit caused by negligence beyond ordinary wear and tear) and the sum of <strong class="contract-doc-field">₱<?= $advance ?></strong> as Advance Rent equivalent to one (1) month rent.</p>
+            </div>
+
+        </div>
+
+        <div class="contract-page-break"></div>
+
+        <!-- ─── PAGE 2 ─── -->
+        <div class="contract-page contract-page-2">
+            <div class="contract-doc-clause">
+                <p><strong>5. UTILITIES:</strong> To the extent permitted by applicable utility service providers, Tenant shall be responsible for and shall pay, prior to delinquency, for all utility consumption. Monthly water consumption is computed at ₱100.00 per person based on <strong class="contract-doc-field"><?= $occupants ?> declared occupant(s)</strong>. Tenant shall also pay the mandatory monthly community contribution of <strong>₱150.00</strong> for security and garbage collection services. Electricity shall be billed according to individual sub-meter readings.</p>
+            </div>
+
+            <div class="contract-doc-clause">
+                <p><strong>6. OCCUPANCY & USE:</strong> The Premises shall be occupied and used strictly for residential purposes only. Total occupancy shall not exceed <strong class="contract-doc-field"><?= max(2, $occupants) ?> person(s)</strong> as declared. Any excess occupants beyond the registered count must be reported and approved by Landlord. Tenant shall not sub-lease, assign, mortgage, or transfer any rights to the Premises without prior written consent from ISCAG Management.</p>
+            </div>
+
+            <div class="contract-doc-clause">
+                <p><strong>7. CONDITION & MAINTENANCE:</strong> Tenant acknowledges receipt of the Premises in good, clean, and tenantable condition. Tenant agrees to maintain the Premises in a sanitary, orderly condition and immediately notify Landlord in writing of any defective or hazardous conditions. Tenant shall be liable for damages resulting from negligence, misuse, or intentional acts.</p>
+            </div>
+
+            <div class="contract-doc-clause">
+                <p><strong>8. HOUSE RULES & COMMUNITY GUIDELINES:</strong> Tenant agrees to strictly observe and abide by all ISCAG apartment house rules, Islamic community values, and safety regulations at all times. Incitement of other tenants to withhold rent or breach community order is strictly prohibited and constitutes grounds for immediate termination of the lease and eviction from the premises.<?php if (!empty($inclusions)): ?><br>• <strong>Included Amenities:</strong> <?= htmlspecialchars(implode(', ', $inclusions)) ?>.<?php endif; ?></p>
+            </div>
+
+            <div class="contract-doc-clause">
+                <p><strong>9. TERMINATION:</strong> Either party may terminate this Agreement by providing thirty (30) days advance written notice. Early termination by Tenant prior to the expiration of the agreed lease term shall result in the forfeiture of the Security Deposit.</p>
+            </div>
+
+            <div class="contract-doc-clause">
+                <p><strong>10. GOVERNING LAW:</strong> This Agreement shall be construed, interpreted, and governed by the laws of the Republic of the Philippines and the jurisdiction of the competent courts of Dasmariñas City, Cavite.</p>
+            </div>
+
+            <div class="contract-doc-signatures">
+                <p style="margin-top: 20px; margin-bottom: 20px;"><strong>IN WITNESS WHEREOF</strong>, the Parties have executed this Residential Lease Agreement as of the date first above written.</p>
+                
+                <table class="contract-sig-table">
+                    <tr>
+                        <td style="width: 48%; padding-right: 12px;">
+                            <div class="contract-sig-role">LANDLORD / LESSOR:</div>
+                            <div class="contract-sig-line">ISCAG – PHILIPPINES</div>
+                            <div class="contract-sig-desc">Authorized Management Representative</div>
+                            <div class="contract-sig-date">Date: _________________________________</div>
+                        </td>
+                        <td style="width: 4%;"></td>
+                        <td style="width: 48%; padding-left: 12px;">
+                            <div class="contract-sig-role">TENANT / LESSEE:</div>
+                            <div class="contract-sig-line"><?= strtoupper($tenantName) ?></div>
+                            <div class="contract-sig-desc">Tenant / Lessee</div>
+                            <div class="contract-sig-date">Date: _________________________________</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" style="padding-top: 26px;">
+                            <div class="contract-sig-role" style="margin-bottom: 30px;">SIGNED IN THE PRESENCE OF:</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 48%; padding-right: 12px;">
+                            <div class="contract-sig-line" style="font-weight: normal; font-size: 10pt;">Witness Signature over Printed Name</div>
+                        </td>
+                        <td style="width: 4%;"></td>
+                        <td style="width: 48%; padding-left: 12px;">
+                            <div class="contract-sig-line" style="font-weight: normal; font-size: 10pt;">Witness Signature over Printed Name</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ MODAL ON-SCREEN PREVIEW ══════════════ -->
+    <div class="contract-modal-overlay" id="contract-modal" onclick="if(event.target===this) closeContractModal()">
+        <div class="contract-modal-box">
+            <div class="contract-modal-topbar">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(23,107,69,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center;">
+                        <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">Official Lease Agreement Preview</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Contract #LSE-<?= str_pad($lease['lease_id'], 4, '0', STR_PAD_LEFT) ?> · <?= $tenantName ?></div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" class="btn-action primary" onclick="printLeaseAgreement()" style="padding: 8px 18px; font-size: 0.82rem;">
+                        <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                        Print Document
+                    </button>
+                    <button type="button" onclick="closeContractModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; padding: 0 8px; line-height: 1;">&times;</button>
+                </div>
+            </div>
+            <div class="contract-modal-scroll" id="contract-modal-scroll">
+                <!-- Injected contract cloned for display -->
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Confirmation Modal -->
     <div class="confirm-overlay" id="confirm-modal">
@@ -535,6 +1019,34 @@
                 () => leaseAction('reject')
             );
         });
+    }
+
+    // ── Contract Modal & Print ──
+    function printLeaseAgreement() {
+        const originalTitle = document.title;
+        document.title = ' ';
+        window.print();
+        setTimeout(() => {
+            document.title = originalTitle;
+        }, 1500);
+    }
+
+    function openContractModal() {
+        const modal = document.getElementById('contract-modal');
+        const scrollBox = document.getElementById('contract-modal-scroll');
+        const sourceSheet = document.getElementById('printableContractSheet');
+        if (!modal || !scrollBox || !sourceSheet) return;
+
+        scrollBox.innerHTML = '';
+        const clone = sourceSheet.cloneNode(true);
+        clone.id = 'previewContractClone';
+        scrollBox.appendChild(clone);
+        modal.classList.add('show');
+    }
+
+    function closeContractModal() {
+        const modal = document.getElementById('contract-modal');
+        if (modal) modal.classList.remove('show');
     }
 
     // ── Contract Renewal ──
