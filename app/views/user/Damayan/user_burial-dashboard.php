@@ -446,20 +446,6 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
   <!-- Unified Processing Purpose Request Card (Replaces Empty-State Section / Arranged like Photo 3) -->
   <div class="card" style="grid-column: span 12; padding: 36px 40px; border-radius: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 24px; background: #ffffff;">
     
-    <!-- Civil Registration & Certificate Issuance Guidelines -->
-    <div style="background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 18px 22px; margin-bottom: 24px;">
-      <div style="font-weight: 800; font-size: 0.95rem; color: var(--primary-dark); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-        Death Certificate Civil Registration &amp; Issuance Guidelines
-      </div>
-      <p style="margin: 0 0 8px; font-size: 0.84rem; color: #374151; line-height: 1.55;">
-        • <strong>Haven't registered yet?</strong> We encourage families and informants to select <strong>Register Certificate</strong> below. Registering officially records the deceased in the Damayan Department civil registry archives and initiates the processing and release of your official certified death certificate.
-      </p>
-      <p style="margin: 0; font-size: 0.84rem; color: #374151; line-height: 1.55;">
-        • <strong>Already registered?</strong> If your death certificate is already on record with the department, choose <strong>Additional Certificate Copy Request</strong> to schedule certified copies without re-entering registration details.
-      </p>
-    </div>
-
     <!-- Section Heading (From Second Photo) -->
     <div class="form-section-title">
       <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
