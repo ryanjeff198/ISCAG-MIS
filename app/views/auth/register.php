@@ -642,7 +642,7 @@ body {
                   <p style="margin-bottom: 18px;">For questions, concerns, technical issues, or reports regarding the system, users may contact the authorized ISCAG Philippines administrator or the appropriate department staff through the organization's official communication channels.</p>
 
                   <h6 style="color: var(--green); font-weight: 700; margin-bottom: 8px;">13. Agreement and Consent</h6>
-                  <p style="margin-bottom: 6px;">By selecting the "I Agree" option and proceeding to use the system, you confirm that:</p>
+                  <p style="margin-bottom: 6px;">By selecting the <b> "I Agree" </b> option and proceeding to use the system, you confirm that:</p>
                   <ul style="margin-bottom: 18px; padding-left: 20px;">
                     <li>You have read and understood these Terms and Conditions.</li>
                     <li>You agree to comply with the rules and responsibilities stated above.</li>
