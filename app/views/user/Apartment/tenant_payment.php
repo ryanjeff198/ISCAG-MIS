@@ -122,6 +122,24 @@
         .section-divider { display: flex; align-items: center; gap: 12px; margin: 32px 0 20px; }
         .section-divider .divider-line { flex: 1; height: 1px; background: var(--border); }
         .section-divider .divider-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); white-space: nowrap; }
+
+        /* Filter Bar */
+        .filter-bar { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: linear-gradient(to right, #f8fdfb, #f1f8f5); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+        .filter-bar label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); white-space: nowrap; }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-toggle { display: inline-flex; background: #e8ede9; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+        .filter-toggle-btn { padding: 6px 14px; font-size: 0.78rem; font-weight: 600; border: none; background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; font-family: inherit; white-space: nowrap; }
+        .filter-toggle-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(23, 107, 69, 0.25); }
+        .filter-toggle-btn:hover:not(.active) { background: rgba(23, 107, 69, 0.08); color: var(--primary-dark); }
+        .filter-date-input { padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.8rem; font-family: inherit; color: var(--text-main); background: white; transition: border-color 0.2s; }
+        .filter-date-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1); }
+        .filter-clear-btn { padding: 6px 12px; font-size: 0.75rem; font-weight: 600; border: 1.5px solid var(--border); border-radius: 8px; background: white; color: var(--text-muted); cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        .filter-clear-btn:hover { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
+        .filter-separator { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+        .filter-results-count { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-left: auto; white-space: nowrap; }
+        .no-results-row { text-align: center; padding: 32px 16px !important; }
+        .no-results-row td { border-bottom: none !important; }
+        tr.filter-hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -544,7 +562,32 @@
                                 <div class="payment-icon blue"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg></div>
                                 <h3 class="payment-title">Recurring Charges</h3>
                             </div>
-                            <span style="font-size:0.78rem; color:var(--text-muted); font-weight:600;"><?= count($recurringCharges) ?> item(s)</span>
+                            <span id="recurringItemCount" style="font-size:0.78rem; color:var(--text-muted); font-weight:600;"><?= count($recurringCharges) ?> item(s)</span>
+                        </div>
+
+                        <!-- Filter Bar -->
+                        <div class="filter-bar" id="recurringFilterBar">
+                            <div class="filter-group">
+                                <label>Status:</label>
+                                <div class="filter-toggle">
+                                    <button type="button" class="filter-toggle-btn active" data-filter="unpaid" onclick="setStatusFilter('unpaid', this)">Unpaid</button>
+                                    <button type="button" class="filter-toggle-btn" data-filter="all" onclick="setStatusFilter('all', this)">All</button>
+                                </div>
+                            </div>
+                            <div class="filter-separator"></div>
+                            <div class="filter-group">
+                                <label>From:</label>
+                                <input type="date" class="filter-date-input" id="filterDateFrom" onchange="applyFilters()">
+                            </div>
+                            <div class="filter-group">
+                                <label>To:</label>
+                                <input type="date" class="filter-date-input" id="filterDateTo" onchange="applyFilters()">
+                            </div>
+                            <button type="button" class="filter-clear-btn" onclick="clearFilters()" title="Reset all filters">
+                                <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;vertical-align:-2px;margin-right:3px;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                Clear
+                            </button>
+                            <span class="filter-results-count" id="filterResultsCount"></span>
                         </div>
 
                         <div class="payment-body">
@@ -557,8 +600,10 @@
                                         <th class="text-right">Amount</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <?php foreach ($recurringCharges as $rc): 
+                                <tbody id="recurringTableBody">
+                                    <?php 
+                                    $rcIdx = 0;
+                                    foreach ($recurringCharges as $rc): 
                                         $badgeClass = 'rent';
                                         if (stripos($rc['type'], 'Water') !== false) $badgeClass = 'water';
                                         elseif (stripos($rc['type'], 'Parking') !== false) $badgeClass = 'parking';
@@ -571,8 +616,10 @@
                                                 'amount' => $rc['amount']
                                             ];
                                         }
+                                        $rcDateRaw = date('Y-m-d', strtotime($rc['date']));
+                                        $rcStatusRaw = strtolower($rc['status']);
                                     ?>
-                                    <tr>
+                                    <tr class="recurring-row" data-status="<?= $rcStatusRaw ?>" data-date="<?= $rcDateRaw ?>" data-orig-order="<?= $rcIdx++ ?>">
                                         <td style="font-size:0.85rem; color:var(--text-main); font-weight:600;">
                                             <?= date('M d, Y', strtotime($rc['date'])) ?>
                                         </td>
@@ -592,6 +639,13 @@
                                         </td>
                                     </tr>
                                     <?php endforeach; ?>
+                                    <tr class="no-results-row filter-hidden" id="noFilterResults">
+                                        <td colspan="4" style="text-align:center; padding:32px 16px; color:var(--text-muted);">
+                                            <svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:var(--border);margin-bottom:8px;display:block;margin:0 auto 8px;"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                                            <strong style="display:block;margin-bottom:4px;">No charges match your filters</strong>
+                                            <span style="font-size:0.82rem;">Try adjusting the status or date range to see more results.</span>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
 
@@ -717,6 +771,115 @@
         let currentModalItems = [];
         let currentModalAmount = 0;
         let advancePayloadData = advPayloadDataDefault;
+
+        // ─── Filter & Sorting Logic ───
+        let currentStatusFilter = 'unpaid';
+
+        function sortRecurringRows(order) {
+            const tbody = document.getElementById('recurringTableBody');
+            if (!tbody) return;
+            const rows = Array.from(tbody.querySelectorAll('.recurring-row'));
+            const noResults = document.getElementById('noFilterResults');
+
+            rows.sort((a, b) => {
+                if (order === 'desc') {
+                    const dateA = a.getAttribute('data-date') || '';
+                    const dateB = b.getAttribute('data-date') || '';
+                    if (dateA !== dateB) {
+                        return dateB.localeCompare(dateA); // latest date on top
+                    }
+                    return (parseInt(b.getAttribute('data-orig-order') || 0)) - (parseInt(a.getAttribute('data-orig-order') || 0));
+                } else {
+                    return (parseInt(a.getAttribute('data-orig-order') || 0)) - (parseInt(b.getAttribute('data-orig-order') || 0));
+                }
+            });
+
+            rows.forEach(r => tbody.appendChild(r));
+            if (noResults) tbody.appendChild(noResults);
+        }
+
+        function setStatusFilter(filter, btn) {
+            currentStatusFilter = filter;
+            document.querySelectorAll('.filter-toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            sortRecurringRows('desc');
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const rows = document.querySelectorAll('.recurring-row');
+            const dateFrom = document.getElementById('filterDateFrom')?.value || '';
+            const dateTo = document.getElementById('filterDateTo')?.value || '';
+            let visibleCount = 0;
+            const totalCount = rows.length;
+
+            rows.forEach(row => {
+                const status = row.getAttribute('data-status');
+                const date = row.getAttribute('data-date');
+                let show = true;
+
+                // Status filter
+                if (currentStatusFilter === 'unpaid' && status === 'paid') {
+                    show = false;
+                }
+
+                // Date range filter
+                if (show && dateFrom && date < dateFrom) {
+                    show = false;
+                }
+                if (show && dateTo && date > dateTo) {
+                    show = false;
+                }
+
+                if (show) {
+                    row.classList.remove('filter-hidden');
+                    visibleCount++;
+                } else {
+                    row.classList.add('filter-hidden');
+                }
+            });
+
+            // Show/hide no-results row
+            const noResults = document.getElementById('noFilterResults');
+            if (noResults) {
+                noResults.classList.toggle('filter-hidden', visibleCount > 0);
+            }
+
+            // Update item count
+            const countEl = document.getElementById('recurringItemCount');
+            if (countEl) {
+                countEl.textContent = visibleCount + ' of ' + totalCount + ' item(s)';
+            }
+
+            // Update filter results count badge
+            const resultsCount = document.getElementById('filterResultsCount');
+            if (resultsCount) {
+                if (currentStatusFilter !== 'unpaid' || dateFrom || dateTo) {
+                    resultsCount.textContent = visibleCount + ' result(s)';
+                } else {
+                    resultsCount.textContent = '';
+                }
+            }
+        }
+
+        function clearFilters() {
+            currentStatusFilter = 'unpaid';
+            document.querySelectorAll('.filter-toggle-btn').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-filter') === 'unpaid');
+            });
+            const dateFrom = document.getElementById('filterDateFrom');
+            const dateTo = document.getElementById('filterDateTo');
+            if (dateFrom) dateFrom.value = '';
+            if (dateTo) dateTo.value = '';
+            sortRecurringRows('desc');
+            applyFilters();
+        }
+
+        // Apply default filter on page load (always latest to oldest)
+        document.addEventListener('DOMContentLoaded', function() {
+            sortRecurringRows('desc');
+            applyFilters();
+        });
 
         function showToast(msg, isErr = false) {
             const t = document.getElementById('toastMsg');
