@@ -1542,18 +1542,11 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             </div>
                             <?php endif; ?>
 
-                            <div class="form-grid cols-2" style="margin-bottom: 14px;">
-                                <div class="form-group">
-                                    <label class="form-label">Deceased Person Full Name (as appearing on Certificate) <span class="req">*</span></label>
-                                    <input type="text" id="copy-deceased-name" class="form-control" placeholder="e.g. Abdullah Masoud Al-Mansoor" />
-                                    <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Name as recorded on the original death certificate.</span>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Existing Certificate / Registry Number (If Available)</label>
-                                    <input type="text" id="existing-cert-no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkExistingCertNumber(this.value)" oninput="debouncedCheckCert(this.value)" />
-                                    <input type="hidden" id="linked-encoded-cert-id" value="" />
-                                    <span id="existing-cert-feedback" style="font-size:0.75rem; color:var(--text-muted); margin-top:2px; display:block;">Allows staff to locate and link the existing record immediately.</span>
-                                </div>
+                            <input type="hidden" id="linked-encoded-cert-id" value="" />
+                            <div class="form-group" style="margin-bottom: 14px;">
+                                <label class="form-label">Deceased Person Full Name (as appearing on Certificate) <span class="req">*</span></label>
+                                <input type="text" id="copy-deceased-name" class="form-control" placeholder="e.g. Abdullah Masoud Al-Mansoor" />
+                                <span style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Name as recorded on the original death certificate.</span>
                             </div>
 
                             <div class="form-grid cols-2" style="margin-bottom: 14px;">
@@ -1899,8 +1892,9 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             document.getElementById('copy-deceased-dod').value = dod;
         }
         const refNo = opt.getAttribute('data-ref') || '';
-        if (refNo && document.getElementById('existing-cert-no') && !document.getElementById('existing-cert-no').value) {
-            document.getElementById('existing-cert-no').value = refNo;
+        if (refNo && document.getElementById('reg-cert-no') && !document.getElementById('reg-cert-no').value) {
+            document.getElementById('reg-cert-no').value = refNo;
+            checkRegCertNumber(refNo);
         }
     }
 
@@ -2064,10 +2058,10 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         const dodInput = document.getElementById('copy-deceased-dod');
         if (dodInput && dod) dodInput.value = dod;
 
-        const certInput = document.getElementById('existing-cert-no');
-        if (certInput && ref) {
-            certInput.value = ref;
-            checkExistingCertNumber(ref);
+        const regInput = document.getElementById('reg-cert-no');
+        if (regInput && ref) {
+            regInput.value = ref;
+            checkRegCertNumber(ref);
         }
     }
 
@@ -2183,14 +2177,14 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         const linkedEncId = document.getElementById('linked-encoded-cert-id')?.value;
         const linkedRegId = document.getElementById('linked-reg-cert-id')?.value;
         const regCertNo = document.getElementById('reg-cert-no')?.value.trim() || '';
-        const existingCertNo = document.getElementById('existing-cert-no')?.value.trim() || '';
+        const existingCertNo = document.getElementById('existing-cert-no')?.value?.trim() || regCertNo;
 
         // Verification Gate: Existing certificate record must be confirmed in department archive only for copy requests
         if (certAction === 'copy') {
-            const isCopyVerified = isCertVerifiedInDept || selectedDecId || copySelectDecId || linkedEncId || existingCertNo;
+            const isCopyVerified = isCertVerifiedInDept || selectedDecId || copySelectDecId || linkedEncId || existingCertNo || regCertNo;
             if (!isCopyVerified) {
                 alert('To request an additional copy, the death certificate must exist within the ISCAG Damayan Department records. Please enter a valid registration number or select a recorded deceased person from the department archive.');
-                document.getElementById('existing-cert-no')?.focus();
+                document.getElementById('reg-cert-no')?.focus();
                 return;
             }
         }
@@ -2221,7 +2215,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             formData.append('cemetery_plot_requested', '0');
             formData.append('deceased_name', decName);
             formData.append('copy_reason', reason);
-            formData.append('existing_cert_no', existingCertNo);
+            formData.append('existing_cert_no', existingCertNo || regCertNo);
             formData.append('encoded_cert_id', linkedEncId);
             formData.append('num_copies', document.getElementById('num-copies')?.value || '1');
             formData.append('dod', document.getElementById('copy-deceased-dod')?.value || '');
