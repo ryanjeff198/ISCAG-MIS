@@ -2785,6 +2785,29 @@ if ($userId) {
           }
         }
 
+        const dobInputEl = document.getElementById('dob');
+        if (dobInputEl && dobInputEl.value.trim()) {
+          const parts = dobInputEl.value.trim().split('-');
+          if (parts.length === 3) {
+            const birth = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            const today = new Date();
+            const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            if (birth > todayDate) {
+              showToast('Invalid date of birth. Future dates are not allowed.', '#8b2e2e');
+              dobInputEl.focus();
+              return;
+            }
+            let calcAge = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) calcAge--;
+            if (calcAge <= 10) {
+              showToast('You cannot proceed because the age is 10 or below. Minimum age is 11 years old.', '#8b2e2e');
+              dobInputEl.focus();
+              return;
+            }
+          }
+        }
+
         const phoneInputEl = document.getElementById('phone');
         if (phoneInputEl && phoneInputEl.value.trim() !== '' && typeof isValidPhone === 'function' && !isValidPhone(phoneInputEl.value.trim())) {
           showToast('Please enter a valid phone number with the correct country code and number format.', '#8b2e2e');
@@ -3075,6 +3098,12 @@ if ($userId) {
           const m = today.getMonth() - birth.getMonth();
           if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
           ageInput.value = age >= 0 ? age : 0;
+          if (age <= 10) {
+            showToast('Age is 10 or below. You cannot proceed unless age is at least 11.', '#8b2e2e');
+            this.style.borderColor = '#8b2e2e';
+          } else {
+            this.style.borderColor = '';
+          }
         }
       });
     }

@@ -152,13 +152,38 @@ class UserController extends Controller
             $phoneInput = PhoneHelper::normalize($phoneInput);
         }
 
+        $dob = !empty($_POST['dob']) ? trim($_POST['dob']) : null;
+        if (!empty($dob)) {
+            $dobTime = strtotime($dob);
+            if ($dobTime === false) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Invalid date of birth format.']);
+                return;
+            }
+
+            $today = new DateTime('today');
+            $birthDate = new DateTime($dob);
+            if ($birthDate > $today) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Invalid date of birth. Future dates are not allowed.']);
+                return;
+            }
+
+            $calcAge = $today->diff($birthDate)->y;
+            if ($calcAge <= 10) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'You cannot proceed because the age is 10 or below. Minimum age is 11 years old.']);
+                return;
+            }
+        }
+
         // Collect fields from modal.
         // As per requirements: Sex and Name are NOT changeable.
         $data = [
             'email'      => $_POST['email'] ?? null,
             'phone'      => ($phoneInput !== '') ? $phoneInput : null,
             'address'    => $_POST['address'] ?? null,
-            'dob'        => $_POST['dob'] ?? null,
+            'dob'        => $dob,
             'civil'      => $_POST['civil'] ?? null,
             'occupation' => $_POST['occupation'] ?? null,
             'arabicName' => $_POST['arabicName'] ?? null,
@@ -487,27 +512,18 @@ class UserController extends Controller
             return;
         }
 
-        // Exact age calculation
+        // Exact age calculation - all ages allowed; parent/guardian info is optional for minors
         $calcAge = $today->diff($birthDate)->y;
         $isMinor = ($calcAge < 18) ? 1 : 0;
-        $parentConsent = 0;
+        $parentConsent = ($isMinor && !empty($input['parent_consent'])) ? 1 : 0;
 
-        if ($isMinor) {
-            $parentConsent = !empty($input['parent_consent']) ? 1 : 0;
-            if (!$parentConsent) {
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Parent or legal guardian consent is required for applicants below 18 years old.'
-                ]);
+        $parentContact = trim($input['parent_contact'] ?? '');
+        if ($isMinor && !empty($parentContact)) {
+            if (!PhoneHelper::isValid($parentContact)) {
+                echo json_encode(['success' => false, 'message' => 'Invalid parent contact number format.']);
                 return;
             }
-            if (empty(trim($input['parent_name'] ?? ''))) {
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Parent or legal guardian name is required for applicants below 18 years old.'
-                ]);
-                return;
-            }
+            $parentContact = PhoneHelper::normalize($parentContact);
         }
 
         require_once BASE_PATH . '/app/models/IslamicEducation.php';
@@ -653,27 +669,10 @@ class UserController extends Controller
                 return;
             }
 
+            // All ages allowed; parent/guardian details optional for minors
             $calcAge = $today->diff($birthDate)->y;
             $isMinor = ($calcAge < 18) ? 1 : 0;
-            $parentConsent = 0;
-
-            if ($isMinor) {
-                $parentConsent = !empty($body['parent_consent']) ? 1 : 0;
-                if (!$parentConsent) {
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'Parent or legal guardian consent is required for applicants below 18 years old.'
-                    ]);
-                    return;
-                }
-                if (empty(trim($body['parent_name'] ?? ''))) {
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'Parent or legal guardian name is required for applicants below 18 years old.'
-                    ]);
-                    return;
-                }
-            }
+            $parentConsent = ($isMinor && !empty($body['parent_consent'])) ? 1 : 0;
 
             if (empty($address)) {
                 echo json_encode(['success' => false, 'message' => 'Residential address is required.']);

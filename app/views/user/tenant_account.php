@@ -386,8 +386,15 @@ $phpUser = [
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;">
                     <div><label class="form-label">Contact Number *</label><input type="tel" class="form-control"
                             id="f-phone" placeholder="09XX-XXX-XXXX" value="<?= htmlspecialchars($account['contactnum'] ?? '') ?>" /></div>
-                    <div><label class="form-label">Date of Birth</label><input type="date" class="form-control"
-                            id="f-dob" value="<?= $info['birthdate'] ?? '' ?>" /></div>
+                    <div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                            <label class="form-label" style="margin-bottom:0;">Date of Birth</label>
+                            <span id="f-dob-age" style="font-size:0.75rem;font-weight:700;display:none;"></span>
+                        </div>
+                        <input type="date" class="form-control"
+                            id="f-dob" max="<?= date('Y-m-d') ?>" value="<?= $info['birthdate'] ?? '' ?>" style="margin-top:4px;" />
+                        <div id="f-dob-error" style="color:var(--danger);font-size:0.75rem;display:none;margin-top:4px;font-weight:600;line-height:1.3;"></div>
+                    </div>
                     <div><label class="form-label">Civil Status</label>
                         <select class="form-select" id="f-civil">
                             <option value="">— Select —</option>
@@ -944,6 +951,90 @@ $phpUser = [
 
         updateBadgeUI(user.profileComplete);
 
+        function calculateAge(dobVal) {
+            if (!dobVal) return null;
+            const parts = dobVal.split('-');
+            if (parts.length !== 3) return null;
+            const birthYear = parseInt(parts[0], 10);
+            const birthMonth = parseInt(parts[1], 10) - 1;
+            const birthDay = parseInt(parts[2], 10);
+            if (isNaN(birthYear) || isNaN(birthMonth) || isNaN(birthDay)) return null;
+
+            const today = new Date();
+            const todayYear = today.getFullYear();
+            const todayMonth = today.getMonth();
+            const todayDay = today.getDate();
+
+            const birthDate = new Date(birthYear, birthMonth, birthDay);
+            const currentDate = new Date(todayYear, todayMonth, todayDay);
+            if (birthDate > currentDate) {
+                return -1; // Future date
+            }
+
+            let age = todayYear - birthYear;
+            if (todayMonth < birthMonth || (todayMonth === birthMonth && todayDay < birthDay)) {
+                age--;
+            }
+            return age;
+        }
+
+        function validateDobField(dobVal) {
+            const dobEl = document.getElementById('f-dob');
+            const dobErrorEl = document.getElementById('f-dob-error');
+            const dobAgeEl = document.getElementById('f-dob-age');
+
+            if (!dobVal || dobVal.trim() === '') {
+                if (dobErrorEl) { dobErrorEl.style.display = 'none'; dobErrorEl.textContent = ''; }
+                if (dobAgeEl) { dobAgeEl.style.display = 'none'; dobAgeEl.textContent = ''; }
+                if (dobEl) dobEl.style.borderColor = '';
+                return true;
+            }
+
+            const age = calculateAge(dobVal.trim());
+            if (age === null || age < 0) {
+                if (dobErrorEl) {
+                    dobErrorEl.textContent = 'Invalid date of birth. Future dates are not allowed.';
+                    dobErrorEl.style.display = 'block';
+                }
+                if (dobAgeEl) { dobAgeEl.style.display = 'none'; }
+                if (dobEl) dobEl.style.borderColor = 'var(--danger)';
+                return false;
+            }
+
+            if (age <= 10) {
+                if (dobErrorEl) {
+                    dobErrorEl.textContent = `Age (${age} yrs old) is 10 or below. You cannot proceed unless age is at least 11.`;
+                    dobErrorEl.style.display = 'block';
+                }
+                if (dobAgeEl) {
+                    dobAgeEl.textContent = `${age} yrs old`;
+                    dobAgeEl.style.color = 'var(--danger)';
+                    dobAgeEl.style.display = 'inline';
+                }
+                if (dobEl) dobEl.style.borderColor = 'var(--danger)';
+                return false;
+            }
+
+            // Valid age >= 11
+            if (dobErrorEl) {
+                dobErrorEl.style.display = 'none';
+                dobErrorEl.textContent = '';
+            }
+            if (dobAgeEl) {
+                dobAgeEl.textContent = `${age} yrs old`;
+                dobAgeEl.style.color = 'var(--success)';
+                dobAgeEl.style.display = 'inline';
+            }
+            if (dobEl) dobEl.style.borderColor = '';
+            return true;
+        }
+
+        const dobInput = document.getElementById('f-dob');
+        if (dobInput) {
+            dobInput.addEventListener('input', () => validateDobField(dobInput.value));
+            dobInput.addEventListener('change', () => validateDobField(dobInput.value));
+        }
+
         function openModal() {
             snapshot = {};
             Object.entries(fields).forEach(([key, id]) => {
@@ -964,6 +1055,8 @@ $phpUser = [
                     }
                 }
             });
+            const dobEl = document.getElementById('f-dob');
+            if (dobEl) validateDobField(dobEl.value);
             profileModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
@@ -989,6 +1082,8 @@ $phpUser = [
                     }
                 });
             }
+            const dobEl = document.getElementById('f-dob');
+            if (dobEl) validateDobField(dobEl.value);
             profileModal.style.display = 'none';
             document.body.style.overflow = '';
         }
@@ -1026,6 +1121,25 @@ $phpUser = [
                     showToast('Please enter a valid phone number with the correct country code and number format.', 'var(--danger)');
                     phoneEl.focus();
                     return;
+                }
+            }
+
+            const dobEl = document.getElementById('f-dob');
+            if (dobEl) {
+                const dobVal = dobEl.value.trim();
+                if (dobVal !== '') {
+                    if (!validateDobField(dobVal)) {
+                        const age = calculateAge(dobVal);
+                        if (age === null || age < 0) {
+                            showToast('Invalid date of birth. Future dates are not allowed.', 'var(--danger)');
+                        } else if (age <= 10) {
+                            showToast('You cannot proceed because the age is 10 or below. Minimum age is 11 years old.', 'var(--danger)');
+                        } else {
+                            showToast('Please enter a valid date of birth.', 'var(--danger)');
+                        }
+                        dobEl.focus();
+                        return;
+                    }
                 }
             }
 

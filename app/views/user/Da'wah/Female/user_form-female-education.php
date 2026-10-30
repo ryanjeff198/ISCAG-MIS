@@ -1680,41 +1680,41 @@ if (!$activeRequest && !empty($history)) {
                 </div>
                 <div>
                   <h4 class="segment-title">If Minor, Please Indicate Parent's Name</h4>
-                  <p class="segment-subtitle">Parent or legal guardian details for students under 18</p>
+                  <p class="segment-subtitle">Parent or legal guardian details for students under 18 (Optional)</p>
                 </div>
               </div>
 
               <div class="minor-notice-box" id="minor-callout" style="display:none;">
                 <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                <span id="minor-callout-text">Based on the entered date of birth, this applicant is below 18 years old. Parent / Guardian consent and information are required.</span>
+                <span id="minor-callout-text">Based on the entered date of birth, this applicant is below 18 years old. Parent / Guardian information is optional.</span>
               </div>
 
               <div class="form-grid-2">
                 <div class="form-group">
-                  <label>Parent's Name <span class="req">*</span></label>
+                  <label>Parent's Name <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">(Optional)</span></label>
                   <input type="text" name="parent_name" id="reg-parent-name" class="form-input-control" placeholder="Mother or Father's Full Name" />
                 </div>
                 <div class="form-group">
-                  <label>Parent's Contact Number <span class="req">*</span></label>
+                  <label>Parent's Contact Number <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">(Optional)</span></label>
                   <input type="tel" name="parent_contact" id="reg-parent-contact" class="form-input-control" placeholder="09XX-XXX-XXXX" />
                 </div>
               </div>
 
               <div class="form-grid-1">
                 <div class="form-group">
-                  <label>Parent's Address</label>
+                  <label>Parent's Address <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">(Optional)</span></label>
                   <input type="text" name="parent_address" id="reg-parent-address" class="form-input-control" placeholder="Complete Residential Address" />
                 </div>
               </div>
 
-              <!-- Required Conditional Consent for Minors (Under 18) -->
+              <!-- Optional Consent for Minors (Under 18) -->
               <div class="form-grid-1" style="margin-top:14px;" id="minor-consent-container">
                 <div style="background:#fff1f2; border:1.5px solid #fecdd3; border-radius:12px; padding:14px 18px;">
                   <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer; margin:0; font-size:0.86rem; color:#9f1239; line-height:1.5;">
                     <input type="checkbox" name="parent_consent" id="reg-parent-consent" value="1" style="width:19px; height:19px; margin-top:2px; accent-color:var(--primary-female, #ec4899); cursor:pointer; flex-shrink:0;" />
                     <span>
-                      <strong style="color:#881337;">Parent or Legal Guardian Consent Confirmation <span class="req" style="color:#e11d48;">*</span>:</strong><br />
-                      I hereby give my explicit consent and authorization as the parent or legal guardian for this applicant (under 18 years old) to register and participate in the ISCAG Da'wah Female Education Program. I certify that all information provided is accurate and truthful.
+                      <strong style="color:#881337;">Parent or Legal Guardian Consent Confirmation <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">(Optional)</span>:</strong><br />
+                      I hereby give consent and authorization as the parent or legal guardian for this applicant to register and participate in the ISCAG Da'wah Female Education Program.
                     </span>
                   </label>
                 </div>
@@ -2306,20 +2306,19 @@ if (!$activeRequest && !empty($history)) {
       ageBadge.textContent = `Age: ${age} year${age === 1 ? '' : 's'} old` + (age < 18 ? ' (Minor)' : '');
     }
 
-    // Conditional Consent for Minors:
-    // If applicant < 18 (including below 5 years old):
-    // Display consent section, require parent/legal guardian consent before submission.
+    // Minors (< 18 years old):
+    // Display minor section with optional parent/guardian fields; no blocking restriction.
     // If applicant >= 18:
-    // Hide or disable conditional consent requirement.
+    // Hide minor section.
     if (age < 18) {
       if (minorSeg) minorSeg.style.display = 'block';
       if (callout) callout.style.display = 'flex';
       if (calloutText) {
-        calloutText.textContent = `Based on the entered date of birth, the applicant is ${age} year${age === 1 ? '' : 's'} old (below 18). Parent or legal guardian consent is required for applicants below 18 years old.`;
+        calloutText.textContent = `Based on the entered date of birth, the applicant is ${age} year${age === 1 ? '' : 's'} old (below 18). Parent or legal guardian details are optional and all ages are welcome to register.`;
       }
-      if (parentName) parentName.setAttribute('required', 'required');
-      if (parentContact) parentContact.setAttribute('required', 'required');
-      if (parentConsent) parentConsent.required = true;
+      if (parentName) parentName.removeAttribute('required');
+      if (parentContact) parentContact.removeAttribute('required');
+      if (parentConsent) parentConsent.required = false;
     } else {
       if (minorSeg) minorSeg.style.display = 'none';
       if (callout) callout.style.display = 'none';
@@ -2446,39 +2445,7 @@ if (!$activeRequest && !empty($history)) {
       return;
     }
 
-    if (age < 18) {
-      const parentName = document.getElementById('reg-parent-name')?.value.trim();
-      const parentConsent = document.getElementById('reg-parent-consent')?.checked;
-
-      if (!parentConsent) {
-        showEduAlert({
-          title: 'Guardian Consent Required',
-          message: 'Parent or legal guardian consent is required for applicants below 18 years old.',
-          type: 'warning',
-          confirmText: 'Provide Consent',
-          onConfirm: () => {
-            const consentBox = document.getElementById('reg-parent-consent');
-            if (consentBox) {
-              consentBox.focus();
-              consentBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          }
-        });
-        return;
-      }
-
-      if (!parentName) {
-        showEduAlert({
-          title: 'Parent / Guardian Name Required',
-          message: 'Please provide the parent or legal guardian name for applicants below 18 years old.',
-          type: 'warning',
-          confirmText: 'Enter Name',
-          onConfirm: () => document.getElementById('reg-parent-name')?.focus()
-        });
-        return;
-      }
-    }
-
+    // Age validation: All ages are welcome; parent/guardian consent is optional for minors.
     if (!address) {
       showEduAlert({
         title: 'Residential Address Required',
