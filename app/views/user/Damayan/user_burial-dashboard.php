@@ -443,11 +443,10 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
 <!-- Summary Cards -->
 <div class="grid-container">
 
-<?php if (!$hasRequest): ?>
-  <!-- Redesigned Death Certificate Request Form (Replaces Empty-State Section) -->
-  <div class="card" style="grid-column: span 12; padding: 32px 36px; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 8px;">
+  <!-- Unified Processing Purpose Request Card (Replaces Empty-State Section / Arranged like Photo 3) -->
+  <div class="card" style="grid-column: span 12; padding: 36px 40px; border-radius: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 24px; background: #ffffff;">
     
-    <!-- Section Heading -->
+    <!-- Section Heading (From Second Photo) -->
     <div class="form-section-title">
       <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
       1. Select Processing Purpose
@@ -457,7 +456,18 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
       <input type="hidden" name="action" value="request" />
       <input type="hidden" id="dash-selected-purpose" name="purpose" value="register" />
 
-      <!-- Processing Purpose Options (Side by side on desktop, stacked on mobile) -->
+      <!-- 1. TOP: Department Certificate Registry Number (Positioned at TOP as in Third Photo) -->
+      <div class="dept-reg-card">
+        <label for="dash-reg-cert-no">
+          DEPARTMENT CERTIFICATE REGISTRY NUMBER <span style="color:#dc2626; font-weight:bold;">*</span>:
+        </label>
+        <input type="text" id="dash-reg-cert-no" name="reg_no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkDashRegCertNumber(this.value)" oninput="debouncedDashCheckRegCert(this.value)" autocomplete="off" />
+        <span id="dash-reg-cert-feedback" style="font-size:0.78rem; color:var(--text-muted); margin-top:6px; display:block; line-height:1.4;">
+          Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.
+        </span>
+      </div>
+
+      <!-- 2. BOTTOM: Two Processing Options Side-by-Side (Positioned BELOW as in Third Photo) -->
       <div class="type-selector-grid">
         <div class="type-option-card selected" id="dash-opt-register" onclick="selectDashCertPurpose('register')">
           <div class="type-option-title">
@@ -480,26 +490,16 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
         </div>
       </div>
 
-      <!-- Department Certificate Registry Number Input Field -->
-      <div class="dept-reg-card">
-        <label for="dash-reg-cert-no">
-          DEPARTMENT CERTIFICATE REGISTRY NUMBER <span style="color:#dc2626; font-weight:bold;">*</span>:
-        </label>
-        <input type="text" id="dash-reg-cert-no" name="reg_no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkDashRegCertNumber(this.value)" oninput="debouncedDashCheckRegCert(this.value)" autocomplete="off" />
-        <span id="dash-reg-cert-feedback" style="font-size:0.78rem; color:var(--text-muted); margin-top:6px; display:block; line-height:1.4;">
-          Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.
-        </span>
-      </div>
-
       <!-- Action Button -->
       <div style="display:flex; justify-content:flex-end; align-items:center;">
-        <button type="submit" id="dash-btn-submit-purpose" class="btn-action btn-primary-act" style="cursor:pointer;">
+        <button type="submit" id="dash-btn-submit-purpose" class="btn-action btn-primary-act" style="cursor:pointer; padding:12px 30px; font-weight:700; border-radius:12px;">
           <span id="dash-btn-submit-text">Proceed to Request Application</span> →
         </button>
       </div>
     </form>
   </div>
-<?php else: ?>
+
+<?php if ($hasRequest): ?>
 
   <?php if(count($allRequests) > 1): ?>
   <!-- Case Selector Bar if multiple cases exist -->

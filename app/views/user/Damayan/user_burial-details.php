@@ -1459,12 +1459,23 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             </p>
                         </div>
                         
-                        <!-- Functionality Selector: 1. Register Death OR 2. Request Another Death Certificate -->
+                        <!-- Functionality Selector: 1. Select Processing Purpose -->
                         <div class="form-section-title">
                             <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
                             1. Select Processing Purpose
                         </div>
 
+                        <!-- 1. TOP: Department Certificate Registry Number (Positioned at TOP as in Third Photo) -->
+                        <div class="dept-reg-card">
+                            <label class="form-label" for="reg-cert-no">
+                                DEPARTMENT CERTIFICATE REGISTRY NUMBER <span class="req" style="color:var(--danger,#dc2626); font-weight:bold;">*</span>:
+                            </label>
+                            <input type="text" id="reg-cert-no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkRegCertNumber(this.value)" oninput="debouncedCheckRegCert(this.value)" />
+                            <input type="hidden" id="linked-reg-cert-id" value="" />
+                            <span id="reg-cert-feedback" style="font-size:0.78rem; color:var(--text-muted); margin-top:6px; display:block; line-height:1.4;">Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.</span>
+                        </div>
+
+                        <!-- 2. BOTTOM: Two Processing Options Side-by-Side (Positioned BELOW as in Third Photo) -->
                         <div class="type-selector-grid">
                             <div class="type-option-card selected" id="opt-type-register" onclick="selectCertFunction('register')">
                                 <div class="type-option-title">
@@ -1486,16 +1497,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             </div>
                         </div>
                         <input type="hidden" id="selected-cert-action" name="cert_action_type" value="register" />
-
-                        <!-- Department Certificate Registry Number (Positioned directly below the cards) -->
-                        <div class="dept-reg-card">
-                            <label class="form-label" for="reg-cert-no">
-                                DEPARTMENT CERTIFICATE REGISTRY NUMBER <span class="req" style="color:var(--danger,#dc2626); font-weight:bold;">*</span>:
-                            </label>
-                            <input type="text" id="reg-cert-no" class="form-control" placeholder="e.g. 2026-00412, #2023-2-0001113, or LCRO Registry #" onblur="checkRegCertNumber(this.value)" oninput="debouncedCheckRegCert(this.value)" />
-                            <input type="hidden" id="linked-reg-cert-id" value="" />
-                            <span id="reg-cert-feedback" style="font-size:0.78rem; color:var(--text-muted); margin-top:6px; display:block; line-height:1.4;">Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.</span>
-                        </div>
 
                         <!-- ═══════════════════════════════════════════════════════════ -->
                         <!-- A. COPY-SPECIFIC CONTAINER (Existing Certificate Details)    -->
