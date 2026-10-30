@@ -600,8 +600,10 @@
                                         <th class="text-right">Amount</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <?php foreach ($recurringCharges as $rc): 
+                                <tbody id="recurringTableBody">
+                                    <?php 
+                                    $rcIdx = 0;
+                                    foreach ($recurringCharges as $rc): 
                                         $badgeClass = 'rent';
                                         if (stripos($rc['type'], 'Water') !== false) $badgeClass = 'water';
                                         elseif (stripos($rc['type'], 'Parking') !== false) $badgeClass = 'parking';
@@ -617,7 +619,7 @@
                                         $rcDateRaw = date('Y-m-d', strtotime($rc['date']));
                                         $rcStatusRaw = strtolower($rc['status']);
                                     ?>
-                                    <tr class="recurring-row" data-status="<?= $rcStatusRaw ?>" data-date="<?= $rcDateRaw ?>">
+                                    <tr class="recurring-row" data-status="<?= $rcStatusRaw ?>" data-date="<?= $rcDateRaw ?>" data-orig-order="<?= $rcIdx++ ?>">
                                         <td style="font-size:0.85rem; color:var(--text-main); font-weight:600;">
                                             <?= date('M d, Y', strtotime($rc['date'])) ?>
                                         </td>
@@ -770,13 +772,37 @@
         let currentModalAmount = 0;
         let advancePayloadData = advPayloadDataDefault;
 
-        // ─── Filter Logic ───
+        // ─── Filter & Sorting Logic ───
         let currentStatusFilter = 'unpaid';
+
+        function sortRecurringRows(order) {
+            const tbody = document.getElementById('recurringTableBody');
+            if (!tbody) return;
+            const rows = Array.from(tbody.querySelectorAll('.recurring-row'));
+            const noResults = document.getElementById('noFilterResults');
+
+            rows.sort((a, b) => {
+                if (order === 'desc') {
+                    const dateA = a.getAttribute('data-date') || '';
+                    const dateB = b.getAttribute('data-date') || '';
+                    if (dateA !== dateB) {
+                        return dateB.localeCompare(dateA); // latest date on top
+                    }
+                    return (parseInt(b.getAttribute('data-orig-order') || 0)) - (parseInt(a.getAttribute('data-orig-order') || 0));
+                } else {
+                    return (parseInt(a.getAttribute('data-orig-order') || 0)) - (parseInt(b.getAttribute('data-orig-order') || 0));
+                }
+            });
+
+            rows.forEach(r => tbody.appendChild(r));
+            if (noResults) tbody.appendChild(noResults);
+        }
 
         function setStatusFilter(filter, btn) {
             currentStatusFilter = filter;
             document.querySelectorAll('.filter-toggle-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            sortRecurringRows('desc');
             applyFilters();
         }
 
@@ -845,11 +871,13 @@
             const dateTo = document.getElementById('filterDateTo');
             if (dateFrom) dateFrom.value = '';
             if (dateTo) dateTo.value = '';
+            sortRecurringRows('desc');
             applyFilters();
         }
 
-        // Apply default filter (unpaid only) on page load
+        // Apply default filter on page load (always latest to oldest)
         document.addEventListener('DOMContentLoaded', function() {
+            sortRecurringRows('desc');
             applyFilters();
         });
 

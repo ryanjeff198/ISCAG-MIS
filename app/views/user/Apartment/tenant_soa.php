@@ -66,12 +66,27 @@
     .btn-topbar.primary { background: var(--primary); color: white; display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; }
     .btn-topbar.primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
+    /* Filter Bar */
+    .soa-filter-bar { display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: linear-gradient(to right, #f8fdfb, #f1f8f5); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .soa-filter-bar label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); white-space: nowrap; }
+    .soa-filter-group { display: flex; align-items: center; gap: 8px; }
+    .soa-filter-toggle { display: inline-flex; background: #e8ede9; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .soa-filter-toggle-btn { padding: 6px 14px; font-size: 0.78rem; font-weight: 600; border: none; background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; font-family: inherit; white-space: nowrap; }
+    .soa-filter-toggle-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(23, 107, 69, 0.25); }
+    .soa-filter-toggle-btn:hover:not(.active) { background: rgba(23, 107, 69, 0.08); color: var(--primary-dark); }
+    .soa-filter-date { padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.8rem; font-family: inherit; color: var(--text-main); background: white; transition: border-color 0.2s; }
+    .soa-filter-date:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1); }
+    .soa-filter-clear { padding: 6px 12px; font-size: 0.75rem; font-weight: 600; border: 1.5px solid var(--border); border-radius: 8px; background: white; color: var(--text-muted); cursor: pointer; transition: all 0.2s; font-family: inherit; }
+    .soa-filter-clear:hover { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
+    .soa-filter-separator { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+    .soa-filter-count { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-left: auto; white-space: nowrap; }
+    tr.soa-hidden { display: none !important; }
 
     @media print {
       body * { visibility: hidden; }
       .soa-container, .soa-container * { visibility: visible; }
       .soa-container { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; box-shadow: none; border: none; margin: 0; padding: 20px; }
-      .top-bar, .sidebar { display: none !important; }
+      .top-bar, .sidebar, .soa-filter-bar { display: none !important; }
     }
   </style>
 </head>
@@ -123,19 +138,43 @@
             }
           }
         ?>
-        <!-- Filter Form (Hidden from print) -->
-        <div class="filter-bar" style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
-          <form method="GET" action="" style="display:flex; gap:10px; align-items:center;">
-            <label for="monthFilter" style="font-size: 0.9rem; font-weight: 600; color: var(--text-main);">Filter by Month:</label>
-            <select name="month" id="monthFilter" onchange="this.form.submit()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); font-family: inherit;">
-              <option value="all" <?= $filterMonth === 'all' ? 'selected' : '' ?>>All Time</option>
-              <?php foreach ($availableMonths as $am): 
-                $amLabel = date('F Y', strtotime($am . '-01'));
-              ?>
-                <option value="<?= $am ?>" <?= $filterMonth === $am ? 'selected' : '' ?>><?= $amLabel ?></option>
-              <?php endforeach; ?>
-            </select>
-          </form>
+        <!-- Filter Bar -->
+        <div class="soa-filter-bar" id="soaFilterBar">
+          <div class="soa-filter-group">
+            <label>Month:</label>
+            <form method="GET" action="" style="display:inline; margin:0;">
+              <select name="month" id="monthFilter" onchange="this.form.submit()" style="padding: 6px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-family: inherit; font-size: 0.8rem; background: white; cursor: pointer;">
+                <option value="all" <?= $filterMonth === 'all' ? 'selected' : '' ?>>All Time</option>
+                <?php foreach ($availableMonths as $am): 
+                  $amLabel = date('F Y', strtotime($am . '-01'));
+                ?>
+                  <option value="<?= $am ?>" <?= $filterMonth === $am ? 'selected' : '' ?>><?= $amLabel ?></option>
+                <?php endforeach; ?>
+              </select>
+            </form>
+          </div>
+          <div class="soa-filter-separator"></div>
+          <div class="soa-filter-group">
+            <label>Show:</label>
+            <div class="soa-filter-toggle">
+              <button type="button" class="soa-filter-toggle-btn active" data-filter="unpaid" onclick="setSoaStatusFilter('unpaid', this)">Unpaid</button>
+              <button type="button" class="soa-filter-toggle-btn" data-filter="all" onclick="setSoaStatusFilter('all', this)">All</button>
+            </div>
+          </div>
+          <div class="soa-filter-separator"></div>
+          <div class="soa-filter-group">
+            <label>From:</label>
+            <input type="date" class="soa-filter-date" id="soaDateFrom" onchange="applySoaFilters()">
+          </div>
+          <div class="soa-filter-group">
+            <label>To:</label>
+            <input type="date" class="soa-filter-date" id="soaDateTo" onchange="applySoaFilters()">
+          </div>
+          <button type="button" class="soa-filter-clear" onclick="clearSoaFilters()" title="Reset filters">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;vertical-align:-2px;margin-right:3px;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            Clear
+          </button>
+          <span class="soa-filter-count" id="soaFilterCount"></span>
         </div>
 
         <!-- Statement Document (The Exact Admin View) -->
@@ -243,9 +282,11 @@
               $totalCharges = 0; 
               $totalPayments = 0;
               $lastPeriod = '';
+              $sectionIndex = 0;
+              $rowIndex = 0;
 
               if (($filterMonth ?? 'all') !== 'all' && $runningBalance != 0): ?>
-                <tr>
+                <tr class="soa-balance-forwarded">
                   <td colspan="6"><strong>Balance Forwarded from Previous Months (<?= $runningBalance < 0 ? 'Overpayment Credit' : 'Unpaid Balance' ?>)</strong></td>
                   <td style="text-align:right; font-weight:700; color:<?= $runningBalance > 0 ? 'var(--danger)' : 'var(--success)' ?>"><?= $runningBalance < 0 ? '-' : '' ?>₱<?= number_format(abs($runningBalance), 2) ?></td>
                 </tr>
@@ -261,8 +302,10 @@
 
               foreach ($transactions as $t): 
                 $period = $t['period'] ?? getCategoryLabel($t['type']);
-                if ($period !== $lastPeriod): ?>
-                  <tr><td colspan="7" class="soa-section-title"><?= $period ?></td></tr>
+                if ($period !== $lastPeriod): 
+                  $sectionIndex++;
+                ?>
+                  <tr class="soa-section-row" data-section-idx="<?= $sectionIndex ?>" data-period="<?= htmlspecialchars($period) ?>"><td colspan="7" class="soa-section-title"><?= $period ?></td></tr>
                   <?php $lastPeriod = $period; 
                 endif;
 
@@ -270,7 +313,7 @@
                 $totalCharges += $t['charge'];
                 $totalPayments += $t['payment'];
               ?>
-              <tr class="<?= $t['payment'] > 0 ? 'row-payment' : 'row-charge' ?>">
+              <tr class="<?= $t['payment'] > 0 ? 'row-payment' : 'row-charge' ?> soa-data-row" data-section-idx="<?= $sectionIndex ?>" data-orig-idx="<?= $rowIndex++ ?>" data-row-type="<?= $t['payment'] > 0 ? 'paid' : 'unpaid' ?>" data-row-date="<?= date('Y-m-d', strtotime($t['date'])) ?>">
                 <td><?= date('Y-m-d', strtotime($t['date'])) ?></td>
                 <td><span class="type-badge <?= getBadgeClass($t['type']) ?>"><?= $t['type'] ?></span></td>
                 <td><?= htmlspecialchars($t['description']) ?></td>
@@ -311,6 +354,186 @@
   </div>
 
   <script>
+    // ─── SOA Filter & Sorting Logic ───
+    let soaStatusFilter = 'unpaid';
+
+    function sortSoaRows(order) {
+      const tbody = document.querySelector('.soa-table tbody');
+      if (!tbody) return;
+
+      const sectionRows = Array.from(tbody.querySelectorAll('.soa-section-row'));
+      const balanceRow = tbody.querySelector('.soa-balance-forwarded');
+
+      if (sectionRows.length === 0) {
+        const dataRows = Array.from(tbody.querySelectorAll('.soa-data-row'));
+        dataRows.sort((a, b) => {
+          if (order === 'desc') {
+            const dateA = a.getAttribute('data-row-date') || '';
+            const dateB = b.getAttribute('data-row-date') || '';
+            if (dateA !== dateB) return dateB.localeCompare(dateA);
+            return (parseInt(b.getAttribute('data-orig-idx') || 0)) - (parseInt(a.getAttribute('data-orig-idx') || 0));
+          } else {
+            return (parseInt(a.getAttribute('data-orig-idx') || 0)) - (parseInt(b.getAttribute('data-orig-idx') || 0));
+          }
+        });
+        if (balanceRow) {
+          if (order === 'desc') tbody.appendChild(balanceRow);
+          else tbody.insertBefore(balanceRow, tbody.firstChild);
+        }
+        dataRows.forEach(r => tbody.appendChild(r));
+        return;
+      }
+
+      // Group section headers with their data rows
+      const groups = [];
+      sectionRows.forEach(sRow => {
+        const sIdx = sRow.getAttribute('data-section-idx');
+        const dataRows = Array.from(tbody.querySelectorAll(`.soa-data-row[data-section-idx="${sIdx}"]`));
+
+        let maxDate = '';
+        dataRows.forEach(r => {
+          const d = r.getAttribute('data-row-date') || '';
+          if (!maxDate || d > maxDate) maxDate = d;
+        });
+
+        groups.push({
+          sectionRow: sRow,
+          dataRows: dataRows,
+          sectionIdx: parseInt(sIdx) || 0,
+          maxDate: maxDate
+        });
+      });
+
+      if (order === 'desc') {
+        // Latest period section on top, oldest on bottom
+        groups.sort((a, b) => {
+          if (b.maxDate !== a.maxDate) {
+            return b.maxDate.localeCompare(a.maxDate);
+          }
+          return b.sectionIdx - a.sectionIdx;
+        });
+
+        // Within each section, sort data rows latest to oldest
+        groups.forEach(g => {
+          g.dataRows.sort((a, b) => {
+            const dateA = a.getAttribute('data-row-date') || '';
+            const dateB = b.getAttribute('data-row-date') || '';
+            if (dateA !== dateB) {
+              return dateB.localeCompare(dateA);
+            }
+            return (parseInt(b.getAttribute('data-orig-idx') || 0)) - (parseInt(a.getAttribute('data-orig-idx') || 0));
+          });
+        });
+      } else {
+        // Natural chronological order: sectionIdx ASC
+        groups.sort((a, b) => a.sectionIdx - b.sectionIdx);
+
+        // Within each section, original order: data-orig-idx ASC
+        groups.forEach(g => {
+          g.dataRows.sort((a, b) => {
+            return (parseInt(a.getAttribute('data-orig-idx') || 0)) - (parseInt(b.getAttribute('data-orig-idx') || 0));
+          });
+        });
+      }
+
+      // Rebuild tbody in sorted order
+      if (balanceRow && order === 'asc') {
+        tbody.appendChild(balanceRow);
+      }
+
+      groups.forEach(g => {
+        tbody.appendChild(g.sectionRow);
+        g.dataRows.forEach(r => tbody.appendChild(r));
+      });
+
+      if (balanceRow && order === 'desc') {
+        tbody.appendChild(balanceRow);
+      }
+    }
+
+    function setSoaStatusFilter(filter, btn) {
+      soaStatusFilter = filter;
+      document.querySelectorAll('.soa-filter-toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      sortSoaRows('desc');
+      applySoaFilters();
+    }
+
+    function applySoaFilters() {
+      const rows = document.querySelectorAll('.soa-data-row');
+      const dateFrom = document.getElementById('soaDateFrom')?.value || '';
+      const dateTo = document.getElementById('soaDateTo')?.value || '';
+      let visibleCount = 0;
+      const totalCount = rows.length;
+
+      rows.forEach(row => {
+        const type = row.getAttribute('data-row-type');
+        const date = row.getAttribute('data-row-date');
+        let show = true;
+
+        // Status filter
+        if (soaStatusFilter === 'unpaid' && type === 'paid') {
+          show = false;
+        }
+
+        // Date range filter
+        if (show && dateFrom && date < dateFrom) {
+          show = false;
+        }
+        if (show && dateTo && date > dateTo) {
+          show = false;
+        }
+
+        if (show) {
+          row.classList.remove('soa-hidden');
+          visibleCount++;
+        } else {
+          row.classList.add('soa-hidden');
+        }
+      });
+
+      // Auto-hide section headers that have no visible data rows following them
+      const sectionRows = document.querySelectorAll('.soa-section-row');
+      sectionRows.forEach(section => {
+        let hasVisible = false;
+        let sibling = section.nextElementSibling;
+        while (sibling && !sibling.classList.contains('soa-section-row')) {
+          if (sibling.classList.contains('soa-data-row') && !sibling.classList.contains('soa-hidden')) {
+            hasVisible = true;
+            break;
+          }
+          sibling = sibling.nextElementSibling;
+        }
+        section.classList.toggle('soa-hidden', !hasVisible);
+      });
+
+      // Update results count
+      const countEl = document.getElementById('soaFilterCount');
+      if (countEl) {
+        countEl.textContent = visibleCount + ' of ' + totalCount + ' transaction(s)';
+      }
+    }
+
+    function clearSoaFilters() {
+      soaStatusFilter = 'unpaid';
+      document.querySelectorAll('.soa-filter-toggle-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-filter') === 'unpaid');
+      });
+      const dateFrom = document.getElementById('soaDateFrom');
+      const dateTo = document.getElementById('soaDateTo');
+      if (dateFrom) dateFrom.value = '';
+      if (dateTo) dateTo.value = '';
+      sortSoaRows('desc');
+      applySoaFilters();
+    }
+
+    // Apply default filter on page load (always latest to oldest)
+    document.addEventListener('DOMContentLoaded', function() {
+      sortSoaRows('desc');
+      applySoaFilters();
+    });
+
+    // ─── Excel Export ───
     function exportSoaToExcel() {
       const soaContainer = document.querySelector('.soa-container');
       if (!soaContainer) return;
