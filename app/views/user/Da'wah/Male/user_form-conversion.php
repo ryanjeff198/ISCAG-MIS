@@ -1022,11 +1022,11 @@ foreach ($history as $req) {
             <div class="form-grid cols-3">
               <div>
                 <label class="form-label">Date of Birth <span class="required">*</span></label>
-                <input type="date" name="dob" id="dob" class="form-control" max="<?= date('Y-m-d') ?>" value="<?= htmlspecialchars($dbUser['birthdate'] ?? $dbUser['dob'] ?? '') ?>" required />
+                <input type="date" name="dob" id="dob" class="form-control" max="<?= date('Y-m-d') ?>" value="<?= htmlspecialchars($dbUser['birthdate'] ?? $dbUser['dob'] ?? '') ?>" oninput="syncDobToAge(false)" onchange="syncDobToAge(true)" required />
               </div>
               <div>
                 <label class="form-label">Age <span class="required">*</span></label>
-                <input type="number" name="age" id="age" class="form-control" min="0" placeholder="Auto-calculated" readonly style="background: #f8faf9; cursor: default;" required />
+                <input type="number" name="age" id="age" class="form-control" min="0" readonly style="background: #f8faf9; cursor: default;" required />
               </div>
               <div>
                 <label class="form-label">Occupation <span class="required">*</span></label>
@@ -1313,12 +1313,25 @@ foreach ($history as $req) {
   // ── Date of Birth -> Age Calculation ──
   function calculateAge(dobVal) {
     if (!dobVal) return null;
-    const parts = dobVal.split('-');
-    if (parts.length !== 3) return null;
-    const birthYear = parseInt(parts[0], 10);
-    const birthMonth = parseInt(parts[1], 10) - 1;
-    const birthDay = parseInt(parts[2], 10);
-    if (isNaN(birthYear) || isNaN(birthMonth) || isNaN(birthDay)) return null;
+    let birthYear, birthMonth, birthDay;
+    if (dobVal.indexOf('-') !== -1) {
+      const parts = dobVal.split('-');
+      if (parts.length === 3) {
+        birthYear = parseInt(parts[0], 10);
+        birthMonth = parseInt(parts[1], 10) - 1;
+        birthDay = parseInt(parts[2], 10);
+      }
+    }
+    if (isNaN(birthYear) || isNaN(birthMonth) || isNaN(birthDay)) {
+      const parsed = new Date(dobVal);
+      if (isNaN(parsed.getTime())) return null;
+      birthYear = parsed.getFullYear();
+      birthMonth = parsed.getMonth();
+      birthDay = parsed.getDate();
+    }
+    if (isNaN(birthYear) || isNaN(birthMonth) || isNaN(birthDay) || birthYear < 1900) {
+      return null;
+    }
 
     const today = new Date();
     const todayYear = today.getFullYear();
@@ -1335,7 +1348,7 @@ foreach ($history as $req) {
     if (todayMonth < birthMonth || (todayMonth === birthMonth && todayDay < birthDay)) {
       age--;
     }
-    return age;
+    return age >= 0 ? age : -1;
   }
 
   function syncDobToAge(showToastError = true) {
@@ -1350,7 +1363,10 @@ foreach ($history as $req) {
     }
 
     const age = calculateAge(dobVal);
-    if (age === null || age < 0) {
+    if (age === null) {
+      return;
+    }
+    if (age < 0) {
       ageInput.value = '';
       dobInput.classList.add('is-invalid');
       if (showToastError) {
@@ -1362,6 +1378,9 @@ foreach ($history as $req) {
       ageInput.classList.remove('is-invalid');
     }
   }
+
+  window.calculateAge = calculateAge;
+  window.syncDobToAge = syncDobToAge;
 
   const dobEl = document.getElementById('dob') || document.querySelector('input[name="dob"]');
   const ageEl = document.getElementById('age') || document.querySelector('input[name="age"]');
@@ -1377,6 +1396,17 @@ foreach ($history as $req) {
       }
     });
   }
+
+  document.addEventListener('change', function(e) {
+    if (e.target && (e.target.id === 'dob' || e.target.name === 'dob')) {
+      syncDobToAge(true);
+    }
+  });
+  document.addEventListener('input', function(e) {
+    if (e.target && (e.target.id === 'dob' || e.target.name === 'dob')) {
+      syncDobToAge(false);
+    }
+  });
 
   // Initial calculation on page load
   if (dobEl && dobEl.value) {
@@ -1497,6 +1527,7 @@ foreach ($history as $req) {
         submitBtn.textContent = 'Submit Conversion Registration';
       }
       showToast('Connection error. Please try again.', '#8b2e2e');
+    });
   }
 
   // ── Conversion Pending Modal Functions ──
