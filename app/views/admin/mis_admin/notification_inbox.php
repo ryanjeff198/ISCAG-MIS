@@ -213,6 +213,7 @@ $unreadCount = $unreadCount ?? 0;
             }
           }
           if (statEl) statEl.textContent = data.unread;
+          if (typeof updateAllAdminNotifDots === 'function') updateAllAdminNotifDots(data.unread);
         }
       } catch (e) {
         console.error('Failed to mark notification:', e);
@@ -234,6 +235,7 @@ $unreadCount = $unreadCount ?? 0;
           if (badge) badge.style.display = 'none';
           const statEl = document.getElementById('stat-unread-val');
           if (statEl) statEl.textContent = '0';
+          if (typeof updateAllAdminNotifDots === 'function') updateAllAdminNotifDots(0);
           showToast('All notifications marked as read', 'var(--success)');
         }
       } catch (e) {

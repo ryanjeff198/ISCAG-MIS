@@ -233,14 +233,17 @@
       `;
     }
 
-    function markAllRead() {
+    async function markAllRead() {
+      try {
+        await fetch('<?= url('/admin/notifications/mark-all-read') ?>', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      } catch (e) {}
       localStorage.setItem('staff_notifs_read', Date.now().toString());
       const container = document.getElementById('notif-container');
-      container.querySelectorAll('.unread').forEach(node => node.classList.remove('unread'));
-      document.getElementById('unread-badge').style.display = 'none';
-      document.querySelectorAll('.notif-dot').forEach(d => d.remove());
+      if (container) container.querySelectorAll('.unread').forEach(node => node.classList.remove('unread'));
+      const badge = document.getElementById('unread-badge');
+      if (badge) badge.style.display = 'none';
+      if (typeof updateAllAdminNotifDots === 'function') updateAllAdminNotifDots(0);
       showToast('All notifications marked as read', 'var(--success)');
-      // Refresh the sidebar dot
       initNotifBadge('staff');
     }
 

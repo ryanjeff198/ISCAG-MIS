@@ -54,7 +54,8 @@
             <div class="top-bar-subtitle">System alerts, service requests, and administrative updates</div>
           </div>
         </div>
-        <div class="top-bar-actions">
+        <div class="top-bar-actions" style="display:flex;gap:10px;align-items:center;">
+          <button class="btn-topbar primary" onclick="markAllRead()" style="background:var(--damayan-accent);color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;">Mark All Read</button>
           <a href="<?= url('/admin/damayan') ?>" class="btn-topbar" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:700;color:var(--damayan-accent);">
             <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Dashboard
           </a>
@@ -137,6 +138,16 @@
       document.getElementById('detail-status').textContent = n.unread ? 'Unread' : 'Read';
       
       openModal('notif-modal');
+    }
+    
+    async function markAllRead() {
+      try {
+        await fetch('<?= url('/admin/notifications/mark-all-read') ?>', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      } catch (e) {}
+      notifications.forEach(n => n.unread = false);
+      renderNotifications();
+      if (typeof updateAllAdminNotifDots === 'function') updateAllAdminNotifDots(0);
+      initNotifBadge('staff');
     }
     
     renderNotifications();

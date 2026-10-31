@@ -5,6 +5,14 @@ $last_initial = count($name_parts) > 1 ? substr(end($name_parts), 0, 1) : '';
 $initials = strtoupper($first_initial . $last_initial);
 
 $active_page = $active_page ?? 'dashboard';
+
+$userUnreadCount = 0;
+if (!empty($_SESSION['user_id'])) {
+    try {
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $userUnreadCount = (new Notification())->getUnreadCount((int)$_SESSION['user_id']);
+    } catch (\Exception $e) {}
+}
 ?>
 <aside class="sidebar" id="sidebar" style="font-family:'Source Sans 3',sans-serif; font-size:14.5px;">
     <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
@@ -50,12 +58,13 @@ $active_page = $active_page ?? 'dashboard';
             </svg>
             <span class="nav-item-label">My Profile</span>
         </a>
-        <a href="<?= url('/user/notifications') ?>" class="nav-item <?= $active_page === 'notifications' ? 'active' : '' ?>" data-tooltip="Notifications">
+        <a href="<?= url('/user/notifications') ?>" class="nav-item <?= $active_page === 'notifications' ? 'active' : '' ?>" data-tooltip="Notifications" style="position:relative;">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path
                     d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
             </svg>
             <span class="nav-item-label">Notifications</span>
+            <span class="notif-dot" id="user-notif-dot" style="<?= $userUnreadCount > 0 ? '' : 'display:none;' ?>"><?= $userUnreadCount > 99 ? '99+' : $userUnreadCount ?></span>
         </a>
         <div class="nav-section-label">Services</div>
 
@@ -410,9 +419,11 @@ $active_page = $active_page ?? 'dashboard';
                     
                     // Update Notification Dot
                     const dot = document.querySelector('.notif-dot');
-                    const unreadCount = notifs.filter(n => n.is_read == 0).length;
+                    const unreadCount = (typeof data.unread_count !== 'undefined')
+                        ? Number(data.unread_count)
+                        : notifs.filter(n => n.is_read == 0).length;
                     if (dot) {
-                        dot.textContent = unreadCount;
+                        dot.textContent = unreadCount > 99 ? '99+' : unreadCount;
                         dot.style.display = unreadCount > 0 ? 'flex' : 'none';
                     }
 
@@ -480,7 +491,7 @@ $active_page = $active_page ?? 'dashboard';
         }
 
         setTimeout(checkUserStatus, 800);
-        if (sessionUser.role === 'Guest') setInterval(checkUserStatus, 15000);
+        setInterval(checkUserStatus, 10000);
     })();
 
     // ── 4. LOGOUT MODAL ──

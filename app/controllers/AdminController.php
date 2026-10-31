@@ -6252,12 +6252,35 @@ class AdminController extends Controller
         ]);
     }
 
+    /**
+     * AJAX: Get unread admin/staff notification count for authenticated user role.
+     */
+    public function getAdminUnreadNotifCount(): void {
+        Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
+        header('Content-Type: application/json');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
+        $model = new AdminNotification();
+        $role = $_SESSION['role'] ?? 'Admin';
+        $count = $model->getUnreadCountForRole($role);
+
+        echo json_encode([
+            'success' => true,
+            'count'   => $count,
+            'role'    => $role
+        ]);
+        exit;
+    }
+
     public function notificationInbox(): void {
         Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
         require_once BASE_PATH . '/app/models/AdminNotification.php';
         $model = new AdminNotification();
-        $notifications = $model->getAll(100);
-        $unreadCount = $model->getUnreadCount();
+        $role = $_SESSION['role'] ?? 'Admin';
+        $notifications = $model->getAllForRole($role, 100);
+        $unreadCount = $model->getUnreadCountForRole($role);
 
         $this->view('admin/mis_admin/notification_inbox', [
             'active_page'   => 'notification',
@@ -6279,7 +6302,8 @@ class AdminController extends Controller
         require_once BASE_PATH . '/app/models/AdminNotification.php';
         $model = new AdminNotification();
         $ok = $model->markAsRead($id);
-        echo json_encode(['success' => $ok, 'unread' => $model->getUnreadCount()]);
+        $role = $_SESSION['role'] ?? 'Admin';
+        echo json_encode(['success' => $ok, 'unread' => $model->getUnreadCountForRole($role)]);
     }
 
     /**
@@ -6290,7 +6314,8 @@ class AdminController extends Controller
         header('Content-Type: application/json');
         require_once BASE_PATH . '/app/models/AdminNotification.php';
         $model = new AdminNotification();
-        $ok = $model->markAllAsRead();
+        $role = $_SESSION['role'] ?? 'Admin';
+        $ok = $model->markAllAsReadForRole($role);
         echo json_encode(['success' => $ok, 'unread' => 0]);
     }
 

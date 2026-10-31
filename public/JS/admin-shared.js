@@ -758,54 +758,73 @@ function addNotification(tenantId, title, message, type, link) {
 }
 
 /**
- * initNotifBadge() — Call on every page to show/hide a badge on the
- * Notifications sidebar link when there are unread notifications.
+ * updateAllAdminNotifDots(unread) — Update or create .notif-dot elements on sidebar
  */
-function initNotifBadge(role) {
-  let unread = 0;
-  if (role === 'tenant') {
-    const user = getUser();
-    const notifs = getNotifications();
-    unread = notifs.filter(n => n.tenantId === user.id && !n.read).length;
-  } else {
-    const hasPhpBadge = document.querySelector('.notif-dot:not(.dynamic-notif-dot)');
-    if (hasPhpBadge) return;
-    
-    // In many modern admin pages, we handle notifications server-side.
-    // We only use the local activity log if explicitly needed.
-    unread = 0;
-  }
-  
-  // Update sidebar badge if it exists (legacy selector)
-  const badge = document.querySelector('.notif-dot');
-  if (badge) {
-    if (unread > 0) {
-      badge.textContent = unread > 99 ? '99+' : unread;
+function updateAllAdminNotifDots(unread) {
+  const count = Number(unread) || 0;
+
+  // 1. Update any existing .notif-dot inside .nav-item
+  document.querySelectorAll('.nav-item .notif-dot').forEach(badge => {
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : count;
       badge.style.display = 'flex';
     } else {
       badge.style.display = 'none';
     }
-  }
+  });
 
-  // Also update based on label (new selector)
+  // 2. Also ensure notification links have a .notif-dot if one wasn't rendered yet
   document.querySelectorAll('.nav-item').forEach(link => {
     const label = link.querySelector('.nav-item-label');
-    if (label && (label.textContent.trim() === 'Notifications' || label.textContent.trim() === 'Admin Inbox')) {
-      // Avoid duplicating the dot if it was already handled by the .notif-dot selector
-      if (link.querySelector('.notif-dot')) return;
+    const href = link.getAttribute('href') || '';
+    const isNotif = (label && (
+      label.textContent.trim() === 'Notifications' || 
+      label.textContent.trim() === 'Admin Inbox' || 
+      label.textContent.trim() === 'System Notifications'
+    )) || href.includes('/notification');
 
-      const existingDot = link.querySelector('.dynamic-notif-dot');
-      if (existingDot) existingDot.remove();
-
-      if (unread > 0) {
-        const dot = document.createElement('span');
-        dot.className = 'notif-dot dynamic-notif-dot';
-        dot.textContent = unread > 99 ? '99+' : unread;
+    if (isNotif) {
+      let badge = link.querySelector('.notif-dot');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'notif-dot';
         link.style.position = 'relative';
-        link.appendChild(dot);
+        link.appendChild(badge);
+      }
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
       }
     }
   });
+}
+
+/**
+ * initNotifBadge() — Call on every page to show/hide a badge on the
+ * Notifications sidebar link when there are unread notifications.
+ */
+function initNotifBadge(role) {
+  if (role === 'tenant') return;
+
+  const basePath = (typeof window.APP_URL !== 'undefined' ? window.APP_URL : '');
+  fetch(basePath + '/admin/notifications/unread-count?t=' + Date.now(), {
+    headers: { 'Accept': 'application/json' },
+    cache: 'no-store'
+  })
+    .then(res => {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(data => {
+      if (data && typeof data.count !== 'undefined') {
+        updateAllAdminNotifDots(data.count);
+      }
+    })
+    .catch(() => {
+      // Fallback: keep current rendered status if fetch fails
+    });
 }
 
 // ── Workflow Logic ──
@@ -1210,6 +1229,7 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
   initLogoutModal();
   initTableSearch();
   initNotifBadge('admin');
+  setInterval(() => initNotifBadge('admin'), 10000);
 } else {
   document.addEventListener('DOMContentLoaded', () => {
     initAdminData();
@@ -1218,5 +1238,6 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
     initLogoutModal();
     initTableSearch();
     initNotifBadge('admin');
+    setInterval(() => initNotifBadge('admin'), 10000);
   });
 }

@@ -103,9 +103,17 @@
       <span class="nav-item-label">Finance</span>
     </a>
 
-    <a href="<?= url('/admin/damayan/notifications') ?>" class="nav-item <?= ($active_page ?? '') == 'notifications' ? 'active' : '' ?>" data-tooltip="Notifications">
+<?php
+  $damayanUnread = 0;
+  try {
+      require_once BASE_PATH . '/app/models/AdminNotification.php';
+      $damayanUnread = (new AdminNotification())->getUnreadCountForRole($_SESSION['role'] ?? 'Staff_Damayan');
+  } catch (\Exception $e) {}
+?>
+    <a href="<?= url('/admin/damayan/notifications') ?>" class="nav-item <?= ($active_page ?? '') == 'notifications' ? 'active' : '' ?>" data-tooltip="Notifications" style="position:relative;">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" /></svg>
       <span class="nav-item-label">Notifications</span>
+      <span class="notif-dot" style="<?= $damayanUnread > 0 ? '' : 'display:none;' ?>"><?= $damayanUnread > 99 ? '99+' : $damayanUnread ?></span>
     </a>
   </nav>
   <div class="sidebar-footer">

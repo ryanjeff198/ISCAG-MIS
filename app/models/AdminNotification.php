@@ -59,12 +59,74 @@ class AdminNotification
     }
 
     /**
-     * Get unread count.
+     * Get allowed notification types based on user role.
+     */
+    public static function getAllowedTypesForRole(?string $role): array
+    {
+        switch ($role) {
+            case 'Staff_Tenant':
+                return ['apartment', 'apartment_application', 'parking_application', 'contract_renewal', 'moveout_request', 'maintenance', 'payment', 'request'];
+            case 'Staff_Damayan':
+                return ['damayan', 'burial', 'charity', 'funeral', 'cemetery', 'death_certificate', 'payment'];
+            case 'Staff_Male':
+                return ['counseling', 'marriage', 'conversion', 'dawah', 'male_counseling', 'death_certificate'];
+            case 'Staff_Female':
+                return ['counseling', 'education', 'female_education', 'female_counseling', 'dawah'];
+            case 'Admin':
+            default:
+                return [];
+        }
+    }
+
+    /**
+     * Fetch admin notifications filtered by role (newest first).
+     */
+    public function getAllForRole(?string $role = null, int $limit = 100): array
+    {
+        if (!$role || $role === 'Admin') {
+            return $this->getAll($limit);
+        }
+
+        $types = self::getAllowedTypesForRole($role);
+        if (empty($types)) {
+            return $this->getAll($limit);
+        }
+
+        $placeholders = implode(',', array_fill(0, count($types), '?'));
+        $sql = "SELECT * FROM {$this->table} WHERE (type IN ($placeholders) OR type = 'system' OR type IS NULL) ORDER BY created_at DESC LIMIT " . (int)$limit;
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($types);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Get overall unread count.
      */
     public function getUnreadCount(): int
     {
         $sql = "SELECT COUNT(*) FROM {$this->table} WHERE is_read = 0";
         return (int) $this->db->query($sql)->fetchColumn();
+    }
+
+    /**
+     * Get unread count for a specific role.
+     */
+    public function getUnreadCountForRole(?string $role = null): int
+    {
+        if (!$role || $role === 'Admin') {
+            return $this->getUnreadCount();
+        }
+
+        $types = self::getAllowedTypesForRole($role);
+        if (empty($types)) {
+            return $this->getUnreadCount();
+        }
+
+        $placeholders = implode(',', array_fill(0, count($types), '?'));
+        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE is_read = 0 AND (type IN ($placeholders) OR type = 'system' OR type IS NULL)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($types);
+        return (int) $stmt->fetchColumn();
     }
 
     /**
@@ -84,5 +146,25 @@ class AdminNotification
     {
         $sql = "UPDATE {$this->table} SET is_read = 1 WHERE is_read = 0";
         return $this->db->exec($sql) !== false;
+    }
+
+    /**
+     * Mark all notifications as read for a specific role.
+     */
+    public function markAllAsReadForRole(?string $role = null): bool
+    {
+        if (!$role || $role === 'Admin') {
+            return $this->markAllAsRead();
+        }
+
+        $types = self::getAllowedTypesForRole($role);
+        if (empty($types)) {
+            return $this->markAllAsRead();
+        }
+
+        $placeholders = implode(',', array_fill(0, count($types), '?'));
+        $sql = "UPDATE {$this->table} SET is_read = 1 WHERE is_read = 0 AND (type IN ($placeholders) OR type = 'system' OR type IS NULL)";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($types);
     }
 }
