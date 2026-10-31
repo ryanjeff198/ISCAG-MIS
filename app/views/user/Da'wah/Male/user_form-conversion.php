@@ -1026,7 +1026,7 @@ foreach ($history as $req) {
               </div>
               <div>
                 <label class="form-label">Age <span class="required">*</span></label>
-                <input type="number" name="age" id="age" class="form-control" min="0" readonly style="background: #f8faf9; cursor: default;" required />
+                <input type="number" name="age" id="age" class="form-control" min="11" readonly style="background: #f8faf9; cursor: default;" required />
               </div>
               <div>
                 <label class="form-label">Occupation <span class="required">*</span></label>
@@ -1369,8 +1369,16 @@ foreach ($history as $req) {
     if (age < 0) {
       ageInput.value = '';
       dobInput.classList.add('is-invalid');
+      ageInput.classList.remove('is-invalid');
       if (showToastError) {
         showToast('Invalid date of birth. Future dates are not allowed.', '#e67e22');
+      }
+    } else if (age <= 10) {
+      ageInput.value = age;
+      dobInput.classList.add('is-invalid');
+      ageInput.classList.add('is-invalid');
+      if (showToastError) {
+        showToast('You cannot proceed because the age is 10 or below. Minimum age is 11 years old.', '#e67e22');
       }
     } else {
       dobInput.classList.remove('is-invalid');
@@ -1481,6 +1489,14 @@ foreach ($history as $req) {
       const calcedAge = calculateAge(payload.dob);
       if (calcedAge === null || calcedAge < 0) {
         showToast('Invalid date of birth. Future dates are not allowed.', '#e67e22');
+        return;
+      }
+      if (calcedAge <= 10) {
+        const dobInput = document.getElementById('dob');
+        const ageInput = document.getElementById('age');
+        if (dobInput) dobInput.classList.add('is-invalid');
+        if (ageInput) ageInput.classList.add('is-invalid');
+        showToast('You cannot proceed because the age is 10 or below. Minimum age is 11 years old.', '#e67e22');
         return;
       }
       payload.age = calcedAge;
