@@ -974,211 +974,150 @@ foreach ($history as $req) {
       <!-- ══════════════════════════════════════════════════════════ -->
       <?php else: ?>
 
-      <div class="step-indicator" id="step-indicator">
-        <div class="step-dot active"></div>
-        <div class="step-dot"></div>
-      </div>
-
       <form id="conversion-form" method="POST" onsubmit="return false;">
-        <!-- STEP 1: PERSONAL & FAMILY INFORMATION -->
-        <div class="form-step active" id="step-1">
-          <div class="section-card">
-            <div class="section-card-header">
-              <h6>
-                <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;margin-right:8px;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                Personal Information
-              </h6>
-            </div>
-            <div class="section-card-body">
-              <div class="form-grid cols-3">
-                <div>
-                  <label class="form-label">First Name <span class="required">*</span></label>
-                  <input type="text" name="fname" class="form-control" value="<?= htmlspecialchars($dbUser['first_name'] ?? '') ?>" required />
-                </div>
-                <div>
-                  <label class="form-label">Middle Name</label>
-                  <input type="text" name="mname" class="form-control" />
-                </div>
-                <div>
-                  <label class="form-label">Last Name <span class="required">*</span></label>
-                  <input type="text" name="lname" class="form-control" value="<?= htmlspecialchars($dbUser['last_name'] ?? '') ?>" required />
-                </div>
-              </div>
-
-              <div class="form-grid cols-3">
-                <div>
-                  <label class="form-label">Sex <span class="required">*</span></label>
-                  <input type="text" name="sex" class="form-control" value="Male" readonly style="background: #f8faf9; cursor: not-allowed;" />
-                </div>
-                <div>
-                  <label class="form-label">Civil Status <span class="required">*</span></label>
-                  <select name="civil_status" class="form-select" required>
-                    <option value="">Select Status</option>
-                    <option>Single</option>
-                    <option>Married</option>
-                    <option>Widow/Widower</option>
-                    <option>Divorced</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="form-label">Citizenship <span class="required">*</span></label>
-                  <input type="text" name="citizenship" class="form-control" value="Filipino" required />
-                </div>
-              </div>
-
-              <div class="form-grid cols-3">
-                <div>
-                  <label class="form-label">Date of Birth <span class="required">*</span></label>
-                  <input type="date" name="dob" class="form-control" required />
-                </div>
-                <div>
-                  <label class="form-label">Age <span class="required">*</span></label>
-                  <input type="number" name="age" class="form-control" min="0" required />
-                </div>
-                <div>
-                  <label class="form-label">Occupation <span class="required">*</span></label>
-                  <select name="occupation" id="occupation" class="form-select" required>
-                    <option value="">— Select Occupation Type —</option>
-                    <option>Student</option>
-                    <option>Private Employee</option>
-                    <option>Government Employee</option>
-                    <option>Self-employed / Business Owner</option>
-                    <option>Professional</option>
-                    <option>Skilled / Technical Worker</option>
-                    <option>Service / Sales Worker</option>
-                    <option>Laborer / Agricultural Worker</option>
-                    <option>Retired</option>
-                    <option>Unemployed / Homemaker</option>
-                    <option value="Others">Others</option>
-                  </select>
-                  <div id="occupation_other_wrap" class="other-field-wrap">
-                    <input type="text" name="occupation_other" id="occupation_other" class="form-control" placeholder="Please specify..." />
-                  </div>
-                </div>
-              </div>
-
-              <div class="section-divider" data-label="Former Religion"></div>
-              <div class="form-grid cols-2">
-                <div>
-                  <label class="form-label">Former Religion / Sect <span class="required">*</span></label>
-                  <select name="former_religion" id="former_religion" class="form-select" required>
-                    <option value="">— Select —</option>
-                    <option>Roman Catholic</option>
-                    <option>Protestant</option>
-                    <option>Iglesia ni Cristo</option>
-                    <option>Seventh-day Adventist</option>
-                    <option value="Others">Others</option>
-                  </select>
-                  <div id="former_religion_other_wrap" class="other-field-wrap">
-                    <input type="text" name="former_religion_other" id="former_religion_other" class="form-control" placeholder="Please specify..." />
-                  </div>
-                </div>
-              </div>
-
-              <div class="section-divider" data-label="Place of Birth & Residence"></div>
-              <div class="form-grid cols-2">
-                <div>
-                  <label class="form-label">Place of Birth <span class="required">*</span></label>
-                  <input type="text" name="pob" class="form-control" placeholder="Hospital/Clinic/Institution/Street, City, Province" required />
-                </div>
-                <div>
-                  <label class="form-label">Present Residence <span class="required">*</span></label>
-                  <input type="text" name="residence" class="form-control" placeholder="House No., St., Barangay, City, Province" required />
-                </div>
-              </div>
-
-              <div class="section-divider" data-label="Family Information"></div>
-              <div class="form-grid cols-2">
-                <div>
-                  <label class="form-label">Name of Father <span class="required">*</span></label>
-                  <input type="text" name="father_name" class="form-control" required />
-                </div>
-                <div>
-                  <label class="form-label">Religion of Father <span class="required">*</span></label>
-                  <input type="text" name="father_religion" class="form-control" required />
-                </div>
-              </div>
-              <div class="form-grid cols-2">
-                <div>
-                  <label class="form-label">Maiden Name of Mother <span class="required">*</span></label>
-                  <input type="text" name="mother_name" class="form-control" required />
-                </div>
-                <div>
-                  <label class="form-label">Religion of Mother <span class="required">*</span></label>
-                  <input type="text" name="mother_religion" class="form-control" required />
-                </div>
-              </div>
-            </div>
+        <div class="section-card">
+          <div class="section-card-header">
+            <h6>
+              <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;margin-right:8px;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              Personal &amp; Conversion Information
+            </h6>
           </div>
-          
-          <div class="form-submit-row" style="margin-top: 30px;">
-            <button type="button" class="btn-submit next-btn" data-next="2">Next: Testimony & Adopted Name →</button>
+          <div class="section-card-body">
+            <div class="form-grid cols-3">
+              <div>
+                <label class="form-label">First Name <span class="required">*</span></label>
+                <input type="text" name="fname" class="form-control" value="<?= htmlspecialchars($dbUser['first_name'] ?? '') ?>" required />
+              </div>
+              <div>
+                <label class="form-label">Middle Name</label>
+                <input type="text" name="mname" class="form-control" value="<?= htmlspecialchars($dbUser['middle_name'] ?? '') ?>" />
+              </div>
+              <div>
+                <label class="form-label">Last Name <span class="required">*</span></label>
+                <input type="text" name="lname" class="form-control" value="<?= htmlspecialchars($dbUser['last_name'] ?? '') ?>" required />
+              </div>
+            </div>
+
+            <div class="form-grid cols-3">
+              <div>
+                <label class="form-label">Sex <span class="required">*</span></label>
+                <input type="text" name="sex" class="form-control" value="Male" readonly style="background: #f8faf9; cursor: not-allowed;" />
+              </div>
+              <div>
+                <label class="form-label">Civil Status <span class="required">*</span></label>
+                <select name="civil_status" class="form-select" required>
+                  <option value="">Select Status</option>
+                  <option <?= ($dbUser['civil_status'] ?? '') === 'Single' ? 'selected' : '' ?>>Single</option>
+                  <option <?= ($dbUser['civil_status'] ?? '') === 'Married' ? 'selected' : '' ?>>Married</option>
+                  <option <?= ($dbUser['civil_status'] ?? '') === 'Widow/Widower' ? 'selected' : '' ?>>Widow/Widower</option>
+                  <option <?= ($dbUser['civil_status'] ?? '') === 'Divorced' ? 'selected' : '' ?>>Divorced</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Citizenship <span class="required">*</span></label>
+                <input type="text" name="citizenship" class="form-control" value="Filipino" required />
+              </div>
+            </div>
+
+            <div class="form-grid cols-3">
+              <div>
+                <label class="form-label">Date of Birth <span class="required">*</span></label>
+                <input type="date" name="dob" id="dob" class="form-control" max="<?= date('Y-m-d') ?>" value="<?= htmlspecialchars($dbUser['birthdate'] ?? $dbUser['dob'] ?? '') ?>" required />
+              </div>
+              <div>
+                <label class="form-label">Age <span class="required">*</span></label>
+                <input type="number" name="age" id="age" class="form-control" min="0" placeholder="Auto-calculated" readonly style="background: #f8faf9; cursor: default;" required />
+              </div>
+              <div>
+                <label class="form-label">Occupation <span class="required">*</span></label>
+                <select name="occupation" id="occupation" class="form-select" required>
+                  <option value="">— Select Occupation Type —</option>
+                  <option>Student</option>
+                  <option>Private Employee</option>
+                  <option>Government Employee</option>
+                  <option>Self-employed / Business Owner</option>
+                  <option>Professional</option>
+                  <option>Skilled / Technical Worker</option>
+                  <option>Service / Sales Worker</option>
+                  <option>Laborer / Agricultural Worker</option>
+                  <option>Retired</option>
+                  <option>Unemployed / Homemaker</option>
+                  <option value="Others">Others</option>
+                </select>
+                <div id="occupation_other_wrap" class="other-field-wrap">
+                  <input type="text" name="occupation_other" id="occupation_other" class="form-control" placeholder="Please specify..." />
+                </div>
+              </div>
+            </div>
+
+            <div class="section-divider" data-label="Conversion Details"></div>
+            <div class="form-grid cols-2">
+              <div>
+                <label class="form-label">Adopted Muslim Name <span class="required">*</span></label>
+                <input type="text" name="adopted_name" class="form-control" placeholder="Enter your chosen Muslim name" required />
+              </div>
+              <div>
+                <label class="form-label">Date of Conversion <span class="required">*</span></label>
+                <input type="date" name="conversion_date" class="form-control" value="<?= date('Y-m-d') ?>" required />
+              </div>
+            </div>
+
+            <div class="section-divider" data-label="Former Religion"></div>
+            <div class="form-grid cols-2">
+              <div>
+                <label class="form-label">Former Religion / Sect <span class="required">*</span></label>
+                <select name="former_religion" id="former_religion" class="form-select" required>
+                  <option value="">— Select —</option>
+                  <option>Roman Catholic</option>
+                  <option>Protestant</option>
+                  <option>Iglesia ni Cristo</option>
+                  <option>Seventh-day Adventist</option>
+                  <option value="Others">Others</option>
+                </select>
+                <div id="former_religion_other_wrap" class="other-field-wrap">
+                  <input type="text" name="former_religion_other" id="former_religion_other" class="form-control" placeholder="Please specify..." />
+                </div>
+              </div>
+            </div>
+
+            <div class="section-divider" data-label="Place of Birth & Residence"></div>
+            <div class="form-grid cols-2">
+              <div>
+                <label class="form-label">Place of Birth <span class="required">*</span></label>
+                <input type="text" name="pob" class="form-control" placeholder="Hospital/Clinic/Institution/Street, City, Province" required />
+              </div>
+              <div>
+                <label class="form-label">Present Residence <span class="required">*</span></label>
+                <input type="text" name="residence" class="form-control" placeholder="House No., St., Barangay, City, Province" value="<?= htmlspecialchars($dbUser['address'] ?? '') ?>" required />
+              </div>
+            </div>
+
+            <div class="section-divider" data-label="Family Information"></div>
+            <div class="form-grid cols-2">
+              <div>
+                <label class="form-label">Name of Father <span class="required">*</span></label>
+                <input type="text" name="father_name" class="form-control" required />
+              </div>
+              <div>
+                <label class="form-label">Religion of Father <span class="required">*</span></label>
+                <input type="text" name="father_religion" class="form-control" required />
+              </div>
+            </div>
+            <div class="form-grid cols-2">
+              <div>
+                <label class="form-label">Maiden Name of Mother <span class="required">*</span></label>
+                <input type="text" name="mother_name" class="form-control" required />
+              </div>
+              <div>
+                <label class="form-label">Religion of Mother <span class="required">*</span></label>
+                <input type="text" name="mother_religion" class="form-control" required />
+              </div>
+            </div>
           </div>
         </div>
-
-        <!-- STEP 2: TESTIMONY, NAME, & WITNESSES -->
-        <div class="form-step" id="step-2">
-          <div class="section-card">
-            <div class="section-card-header">
-              <h6>
-                <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;margin-right:8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                Testimony of Faith (Shahada)
-              </h6>
-            </div>
-            <div class="section-card-body">
-              <div class="testimony-box">
-                <p style="font-size: 0.95rem; line-height: 1.6;">
-                  I, <strong id="display-name" style="color:var(--primary-dark);">[Full Name]</strong>, do hereby willfully and willingly embrace Islam as my new religion. In evidence hereof, I hereby utter the testimony:
-                </p>
-                <div class="shahada-text">
-                  ASH-HADU ALLA ILAHA ILLALLAH<br>
-                  WA ASH-HADU ANNA MUHAMMADAR RASULULLAH
-                </div>
-                <p class="shahada-translation">
-                  "I bear witness that there is no god but Allah,<br>
-                  and I bear witness that Muhammad is the Messenger of Allah."
-                </p>
-              </div>
-
-              <div class="form-grid cols-2">
-                <div>
-                  <label class="form-label">Adopted Muslim Name <span class="required">*</span></label>
-                  <input type="text" name="adopted_name" class="form-control" placeholder="Enter your chosen Muslim name" required />
-                </div>
-                <div>
-                  <label class="form-label">Date of Conversion <span class="required">*</span></label>
-                  <input type="date" name="conversion_date" class="form-control" value="<?= date('Y-m-d') ?>" required />
-                </div>
-              </div>
-
-              <div class="section-divider" data-label="Witnesses"></div>
-              <div class="form-grid cols-2">
-                <div>
-                  <label class="form-label">Witness 1 (Full Name) <span class="required">*</span></label>
-                  <input type="text" name="witness1_name" class="form-control" required />
-                  <input type="text" name="witness1_address" class="form-control" placeholder="Complete Address" style="margin-top:8px;" required />
-                </div>
-                <div>
-                  <label class="form-label">Witness 2 (Full Name) <span class="required">*</span></label>
-                  <input type="text" name="witness2_name" class="form-control" required />
-                  <input type="text" name="witness2_address" class="form-control" placeholder="Complete Address" style="margin-top:8px;" required />
-                </div>
-              </div>
-
-              <div class="section-divider" data-label="Declaration"></div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="declaration" required>
-                <label class="form-check-label" for="declaration" style="font-size: 0.85rem; line-height: 1.6;">
-                  I solemnly swear that I have embraced Islam of my own free will, without any compulsion or threat from anyone, and that the information provided in this form is true and correct.
-                </label>
-              </div>
-            </div>
-          </div>
-          
-          <div class="form-submit-row" style="margin-top: 30px;">
-            <button type="button" class="btn-cancel prev-btn" data-prev="1">← Back</button>
-            <button type="button" class="btn-submit" id="final-submit-btn" onclick="submitConversionForm()">Submit Conversion Registration</button>
-          </div>
+        
+        <div class="form-submit-row" style="margin-top: 30px;">
+          <button type="button" class="btn-submit" id="final-submit-btn" onclick="submitConversionForm()">Submit Conversion Registration</button>
         </div>
       </form>
       <?php endif; ?>
@@ -1371,53 +1310,77 @@ foreach ($history as $req) {
 </div>
 
 <script>
-  // ── Multi-step Logic ──
-  document.querySelectorAll('.next-btn').forEach(btn => {
-    btn.onclick = () => {
-      const current = btn.closest('.form-step');
-      const nextId = 'step-' + btn.getAttribute('data-next');
-      const next = document.getElementById(nextId);
-      
-      // Basic validation for current step
-      const inputs = current.querySelectorAll('input[required], select[required]');
-      let valid = true;
-      inputs.forEach(i => { if(!i.value) { i.classList.add('is-invalid'); valid = false; } else { i.classList.remove('is-invalid'); } });
-      
-      if(valid) {
-        // Sync name to testimony
-        const fn = document.querySelector('input[name="fname"]').value;
-        const ln = document.querySelector('input[name="lname"]').value;
-        const disp = document.getElementById('display-name');
-        if(disp) disp.textContent = fn + ' ' + ln;
+  // ── Date of Birth -> Age Calculation ──
+  function calculateAge(dobVal) {
+    if (!dobVal) return null;
+    const parts = dobVal.split('-');
+    if (parts.length !== 3) return null;
+    const birthYear = parseInt(parts[0], 10);
+    const birthMonth = parseInt(parts[1], 10) - 1;
+    const birthDay = parseInt(parts[2], 10);
+    if (isNaN(birthYear) || isNaN(birthMonth) || isNaN(birthDay)) return null;
 
-        current.classList.remove('active');
-        next.classList.add('active');
-        updateDots(btn.getAttribute('data-next'));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        showToast('Please fill in all required fields.', '#e67e22');
+    const today = new Date();
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth();
+    const todayDay = today.getDate();
+
+    const birthDate = new Date(birthYear, birthMonth, birthDay);
+    const currentDate = new Date(todayYear, todayMonth, todayDay);
+    if (birthDate > currentDate) {
+      return -1; // Future date
+    }
+
+    let age = todayYear - birthYear;
+    if (todayMonth < birthMonth || (todayMonth === birthMonth && todayDay < birthDay)) {
+      age--;
+    }
+    return age;
+  }
+
+  function syncDobToAge(showToastError = true) {
+    const dobInput = document.getElementById('dob') || document.querySelector('input[name="dob"]');
+    const ageInput = document.getElementById('age') || document.querySelector('input[name="age"]');
+    if (!dobInput || !ageInput) return;
+
+    const dobVal = dobInput.value;
+    if (!dobVal) {
+      ageInput.value = '';
+      return;
+    }
+
+    const age = calculateAge(dobVal);
+    if (age === null || age < 0) {
+      ageInput.value = '';
+      dobInput.classList.add('is-invalid');
+      if (showToastError) {
+        showToast('Invalid date of birth. Future dates are not allowed.', '#e67e22');
       }
-    };
-  });
+    } else {
+      dobInput.classList.remove('is-invalid');
+      ageInput.value = age;
+      ageInput.classList.remove('is-invalid');
+    }
+  }
 
-  document.querySelectorAll('.prev-btn').forEach(btn => {
-    btn.onclick = () => {
-      const current = btn.closest('.form-step');
-      const prevId = 'step-' + btn.getAttribute('data-prev');
-      const prev = document.getElementById(prevId);
-      current.classList.remove('active');
-      prev.classList.add('active');
-      updateDots(btn.getAttribute('data-prev'));
-    };
-  });
-
-  function updateDots(step) {
-    const dots = document.querySelectorAll('.step-dot');
-    dots.forEach((dot, idx) => {
-      dot.classList.remove('active', 'completed');
-      if (idx + 1 < step) dot.classList.add('completed');
-      if (idx + 1 == step) dot.classList.add('active');
+  const dobEl = document.getElementById('dob') || document.querySelector('input[name="dob"]');
+  const ageEl = document.getElementById('age') || document.querySelector('input[name="age"]');
+  if (dobEl) {
+    dobEl.addEventListener('input', () => syncDobToAge(false));
+    dobEl.addEventListener('change', () => syncDobToAge(true));
+  }
+  if (ageEl && dobEl) {
+    ageEl.addEventListener('click', () => {
+      if (!dobEl.value) {
+        dobEl.focus();
+        showToast('Please select your Date of Birth first to calculate your age.', '#2563eb');
+      }
     });
+  }
+
+  // Initial calculation on page load
+  if (dobEl && dobEl.value) {
+    syncDobToAge(false);
   }
 
   // ── Toggle Other Religion ──
@@ -1458,24 +1421,48 @@ foreach ($history as $req) {
 
   // ── Submit Conversion Form ──
   function submitConversionForm() {
-    const decl = document.getElementById('declaration');
-    if(decl && !decl.checked) {
-      showToast('Please check the declaration box before submitting.', '#e67e22');
+    syncDobToAge(false);
+
+    const form = document.getElementById('conversion-form');
+    if (!form) return;
+
+    // Validate all required inputs
+    const requiredInputs = form.querySelectorAll('input[required], select[required]');
+    let hasError = false;
+    requiredInputs.forEach(i => {
+      if (!i.value || !i.value.trim()) {
+        i.classList.add('is-invalid');
+        hasError = true;
+      } else {
+        i.classList.remove('is-invalid');
+      }
+    });
+
+    if (hasError) {
+      showToast('Please fill in all required fields.', '#e67e22');
       return;
     }
 
-    const form = document.getElementById('conversion-form');
     const formData = new FormData(form);
     const payload = {};
     formData.forEach((val, key) => payload[key] = val);
 
-    if(!payload.fname || !payload.lname || !payload.adopted_name) {
+    if (payload.dob) {
+      const calcedAge = calculateAge(payload.dob);
+      if (calcedAge === null || calcedAge < 0) {
+        showToast('Invalid date of birth. Future dates are not allowed.', '#e67e22');
+        return;
+      }
+      payload.age = calcedAge;
+    }
+
+    if (!payload.fname || !payload.lname || !payload.adopted_name) {
       showToast('Please complete required fields: Name and Adopted Muslim Name.', '#e67e22');
       return;
     }
 
     const submitBtn = document.getElementById('final-submit-btn');
-    if(submitBtn) {
+    if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Submitting Registration...';
     }
@@ -1510,7 +1497,6 @@ foreach ($history as $req) {
         submitBtn.textContent = 'Submit Conversion Registration';
       }
       showToast('Connection error. Please try again.', '#8b2e2e');
-    });
   }
 
   // ── Conversion Pending Modal Functions ──

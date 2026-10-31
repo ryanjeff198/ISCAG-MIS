@@ -1131,6 +1131,10 @@ class UserController extends Controller
         $userId = $_SESSION['user_id'] ?? null;
         $userModel = new User();
         $dbUser = $userId ? $userModel->findById($userId) : [];
+        if ($userId && $dbUser) {
+            $extraInfo = $userModel->getAdditionalInfo($userId) ?: [];
+            $dbUser = array_merge($dbUser, $extraInfo);
+        }
         
         require_once BASE_PATH . '/app/models/ConversionRequest.php';
         $conversionModel = new ConversionRequest();
@@ -1173,6 +1177,20 @@ class UserController extends Controller
         require_once BASE_PATH . '/app/models/ConversionRequest.php';
         $model = new ConversionRequest();
 
+        $dob = !empty($input['dob']) ? $input['dob'] : null;
+        $age = !empty($input['age']) ? (int)$input['age'] : null;
+        if ($dob && $age === null) {
+            try {
+                $bDate = new DateTime($dob);
+                $today = new DateTime('today');
+                if ($bDate <= $today) {
+                    $age = $bDate->diff($today)->y;
+                }
+            } catch (Exception $e) {
+                $age = null;
+            }
+        }
+
         $data = [
             'tenant_id' => $userId,
             'fname' => $fname,
@@ -1182,8 +1200,8 @@ class UserController extends Controller
             'sex' => $input['sex'] ?? 'Male',
             'civil_status' => $input['civil_status'] ?? '',
             'citizenship' => $input['citizenship'] ?? 'Filipino',
-            'dob' => !empty($input['dob']) ? $input['dob'] : null,
-            'age' => !empty($input['age']) ? (int)$input['age'] : null,
+            'dob' => $dob,
+            'age' => $age,
             'occupation' => trim(($input['occupation'] ?? '') === 'Others' ? ($input['occupation_other'] ?? 'Others') : ($input['occupation'] ?? '')),
             'former_religion' => trim(($input['former_religion'] ?? '') === 'Others' ? ($input['former_religion_other'] ?? 'Others') : ($input['former_religion'] ?? '')),
             'pob' => trim($input['pob'] ?? ''),
