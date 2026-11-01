@@ -877,7 +877,12 @@
     }
   }
 
+  let isSubmittingEncode = false;
   async function submitEncodeDeathCert() {
+    if (isSubmittingEncode) {
+      return;
+    }
+
     const province = document.getElementById('enc-province').value.trim();
     const cityMunicipality = document.getElementById('enc-city-municipality').value.trim();
     const regNo = document.getElementById('enc-reg-no').value.trim();
@@ -954,8 +959,9 @@
       }
     }
 
+    isSubmittingEncode = true;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = 'Saving...';
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving...';
 
     const payload = {
       province: province,
@@ -1009,12 +1015,14 @@
         setTimeout(() => location.reload(), 1200);
       } else {
         showAlert('Registration Error', data.error || data.message || 'Failed to save registered certificate.', 'error');
+        isSubmittingEncode = false;
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Save &amp; Record Certificate';
       }
     } catch(e) {
       console.error(e);
       showAlert('Error', 'An error occurred while saving the registered certificate.', 'error');
+      isSubmittingEncode = false;
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Save &amp; Record Certificate';
     }

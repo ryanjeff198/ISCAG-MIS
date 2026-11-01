@@ -110,6 +110,26 @@ class IslamicEducation {
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    public function findDuplicateRegistration(int $userId, string $fname, string $lname, string $batchNo, string $gender = 'female'): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT id, status, batch_no, level FROM islamic_education_enrollments
+            WHERE (tenant_id = :tenant_id OR (LOWER(TRIM(first_name)) = LOWER(:fname) AND LOWER(TRIM(last_name)) = LOWER(:lname)))
+              AND LOWER(gender) = LOWER(:gender)
+              AND batch_no = :batch
+              AND LOWER(status) IN ('pending', 'under_review', 'active', 'accepted', 'approved', 'enrolled')
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'tenant_id' => $userId,
+            'fname' => trim($fname),
+            'lname' => trim($lname),
+            'gender' => $gender,
+            'batch' => trim($batchNo)
+        ]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
     public function createRegistration($data) {
         $fields = [
             'tenant_id', 'first_name', 'last_name', 'middle_initial', 'muslim_name',

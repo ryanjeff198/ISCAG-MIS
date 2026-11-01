@@ -602,15 +602,19 @@
       }
     }
 
+    let isSubmittingDist = false;
     function submitDistForm(e) {
       e.preventDefault();
+      if (isSubmittingDist) return;
+      isSubmittingDist = true;
+
       const form = document.getElementById('dist-form');
       const formData = new FormData(form);
       const btn = document.getElementById('btn-save-dist');
       const errBox = document.getElementById('dist-error');
 
       btn.disabled = true;
-      btn.textContent = 'Recording Distribution...';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Recording Distribution...';
       errBox.style.display = 'none';
 
       fetch('<?= url('/admin/damayan/charity/distributions/save') ?>', {
@@ -619,17 +623,19 @@
       })
       .then(r => r.json())
       .then(res => {
-        btn.disabled = false;
-        btn.textContent = 'Confirm & Complete Distribution';
         if (res.success) {
           closeDistModal();
           window.location.reload();
         } else {
+          isSubmittingDist = false;
+          btn.disabled = false;
+          btn.textContent = 'Confirm & Complete Distribution';
           errBox.textContent = res.error || 'Failed to record distribution.';
           errBox.style.display = 'block';
         }
       })
       .catch(err => {
+        isSubmittingDist = false;
         btn.disabled = false;
         btn.textContent = 'Confirm & Complete Distribution';
         errBox.textContent = 'Server communication error. Please try again.';

@@ -1756,12 +1756,14 @@
   // ── Booking Form Submission ──
   const bookingForm = document.getElementById('marriage-booking-form');
   if (bookingForm) {
+    let isSubmitting = false;
     bookingForm.onsubmit = async (e) => {
       e.preventDefault();
+      if (isSubmitting) return false;
       
       const formData = {
-        groom_name: document.getElementById('groom_name').value,
-        bride_name: document.getElementById('bride_name').value,
+        groom_name: document.getElementById('groom_name').value.trim(),
+        bride_name: document.getElementById('bride_name').value.trim(),
         marriage_venue: document.getElementById('marriage_venue').value,
         marriage_date: document.getElementById('input-date').value,
         marriage_time: document.getElementById('input-time').value
@@ -1776,6 +1778,16 @@
       if (formData.marriage_date < tomorrowStr) {
         showToast('Appointments can only be scheduled starting tomorrow. Please select a future date.', '#e74c3c');
         return;
+      }
+
+      const submitBtn = document.getElementById('submit-booking-btn');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        isSubmitting = true;
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.7';
+        submitBtn.style.cursor = 'not-allowed';
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display:inline-block;width:1rem;height:1rem;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spinner-border .75s linear infinite;vertical-align:-0.125em;"></span>Submitting...';
       }
 
       try {
@@ -1795,9 +1807,23 @@
             venue: formData.marriage_venue || 'ISCAG Main Mosque'
           });
         } else {
+          isSubmitting = false;
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.innerHTML = originalBtnText;
+          }
           showToast(data.message || 'Failed to submit reservation.', '#e74c3c');
         }
       } catch(err) {
+        isSubmitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+          submitBtn.style.cursor = 'pointer';
+          submitBtn.innerHTML = originalBtnText;
+        }
         showToast('An error occurred. Please try again.', '#e74c3c');
       }
     };

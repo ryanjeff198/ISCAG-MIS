@@ -776,13 +776,17 @@ $uploadedDocs = $uploadedDocs ?? [];
             }
         }
 
+        let isSubmittingMaint = false;
         async function submitMaintenance(e) {
+            if (isSubmittingMaint) return;
+            isSubmittingMaint = true;
+
             const btn = document.getElementById('maintenanceSubmitBtn');
             const form = document.getElementById('maintenanceForm');
             const formData = new FormData(form);
 
             btn.disabled = true;
-            btn.textContent = 'Submitting...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...';
 
             try {
                 const res = await fetch('<?= url("/user/apartment/maintenance/submit") ?>', {
@@ -795,13 +799,16 @@ $uploadedDocs = $uploadedDocs ?? [];
                     openSuccessModal();
                 } else {
                     alert(res.message || 'Failed to submit request');
+                    btn.disabled = false;
+                    btn.textContent = 'Submit Request';
                 }
             } catch (err) {
                 console.error(err);
                 alert('An error occurred. Please try again.');
-            } finally {
                 btn.disabled = false;
                 btn.textContent = 'Submit Request';
+            } finally {
+                isSubmittingMaint = false;
             }
         }
 
@@ -835,10 +842,14 @@ $uploadedDocs = $uploadedDocs ?? [];
             document.body.style.overflow = 'auto';
         }
 
+        let isSubmittingMoveOut = false;
         async function submitMoveOutRequest() {
+            if (isSubmittingMoveOut) return;
+            isSubmittingMoveOut = true;
+
             const btn = document.getElementById('btnProceedMoveOut');
             btn.disabled = true;
-            btn.textContent = 'Submitting Request...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting Request...';
 
             try {
                 const res = await fetch('<?= url("/user/apartment/moveout/submit") ?>', {
@@ -857,12 +868,14 @@ $uploadedDocs = $uploadedDocs ?? [];
                     openSuccessModal();
                 } else {
                     alert(res.message || 'Failed to submit request');
+                    isSubmittingMoveOut = false;
                     btn.disabled = false;
                     btn.textContent = 'Proceed to Request';
                 }
             } catch (err) {
                 console.error(err);
                 alert('Network error. Please try again.');
+                isSubmittingMoveOut = false;
                 btn.disabled = false;
                 btn.textContent = 'Proceed to Request';
             }

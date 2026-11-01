@@ -89,13 +89,18 @@ class AuthController extends Controller
                 return;
             }
 
-            $email = trim($_POST['email'] ?? '');
+            $email = strtolower(trim($_POST['email'] ?? ''));
+            $firstName = trim(preg_replace('/\s+/', ' ', $_POST['first_name'] ?? ''));
+            $lastName = trim(preg_replace('/\s+/', ' ', $_POST['last_name'] ?? ''));
+            $postedData['email'] = $email;
+            $postedData['first_name'] = $firstName;
+            $postedData['last_name'] = $lastName;
             
             // Check if email already exists
             $existingUser = $this->userModel->findByEmail($email);
             if ($existingUser) {
                 if ($existingUser['is_verified']) {
-                    $error = "Email already registered and verified.";
+                    $error = "Email already registered and verified. Please log in.";
                     $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
                     return;
                 }
@@ -118,14 +123,24 @@ class AuthController extends Controller
                     $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
                     return;
                 }
+
+                // Check if an existing verified account with the same name and contact number already exists
+                $db = getDbConnection();
+                $namePhoneCheck = $db->prepare("SELECT tenant_id FROM tenant_accounts WHERE LOWER(TRIM(first_name)) = LOWER(:fn) AND LOWER(TRIM(last_name)) = LOWER(:ln) AND contactnum = :phone AND is_verified = 1 LIMIT 1");
+                $namePhoneCheck->execute([':fn' => $firstName, ':ln' => $lastName, ':phone' => $contactnum]);
+                if ($namePhoneCheck->fetch()) {
+                    $error = "An account with this name and phone number already exists. Please log in.";
+                    $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
+                    return;
+                }
             }
 
             $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $otpExpiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
             $data = [
-                'first_name' => trim($_POST['first_name'] ?? ''),
-                'last_name' => trim($_POST['last_name'] ?? ''),
+                'first_name' => $firstName,
+                'last_name' => $lastName,
                 'sex' => $_POST['sex'] ?? 'Male',
                 'email' => $email,
                 'contactnum' => $contactnum,

@@ -2147,9 +2147,14 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
     }
 
     // ── Submit Request via AJAX ──
+    let isSubmittingBurial = false;
     async function submitBurialRequest(event) {
         event.preventDefault();
         
+        if (isSubmittingBurial) {
+            return;
+        }
+
         const certifyCheck = document.getElementById('burial-certify');
         if (!certifyCheck || !certifyCheck.checked) {
             alert('Please check the certification box to confirm the request.');
@@ -2269,8 +2274,9 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         formData.append('informantAddress', document.getElementById('informant-address').value.trim());
         formData.append('additionalNotes', document.getElementById('additional-notes').value.trim());
 
+        isSubmittingBurial = true;
         btnSubmit.disabled = true;
-        btnSubmit.innerHTML = 'Submitting Request...';
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting Request...';
 
         try {
             const response = await fetch('<?= url("/user/services/burial/submit") ?>', {
@@ -2278,7 +2284,23 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 body: formData
             });
 
-            const data = await response.json();
+            const text = await response.text();
+            let data = null;
+            try {
+                data = JSON.parse(text);
+            } catch (jsonErr) {
+                const match = text.match(/\{[\s\S]*\}/);
+                if (match) {
+                    try {
+                        data = JSON.parse(match[0]);
+                    } catch (e2) {}
+                }
+            }
+
+            if (!data) {
+                console.error('Non-JSON response received from server:', text);
+                throw new Error('Server returned an unexpected response format. Please try again or contact support.');
+            }
 
             if (data.success) {
                 const toast = document.getElementById('burial-toast');
@@ -2296,14 +2318,20 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         } catch (error) {
             console.error('Submission error:', error);
             alert(error.message || 'Failed to submit request. Please check your inputs and try again.');
+            isSubmittingBurial = false;
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = originalText;
         }
     }
 
     // ── Submit Additional Requirements Response via AJAX ──
+    let isSubmittingResp = false;
     async function submitRequirementsResponse(event) {
         event.preventDefault();
+        if (isSubmittingResp) {
+            return;
+        }
+
         const refId = document.getElementById('resp-ref-id').value;
         const infoText = document.getElementById('resp-info-text').value.trim();
         const btn = document.getElementById('btn-submit-resp');
@@ -2314,8 +2342,9 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             return;
         }
 
+        isSubmittingResp = true;
         btn.disabled = true;
-        btn.innerHTML = 'Submitting...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...';
 
         const formData = new FormData();
         formData.append('ref_id', refId);
@@ -2345,6 +2374,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         } catch (err) {
             console.error(err);
             alert(err.message || 'Error submitting response.');
+            isSubmittingResp = false;
             btn.disabled = false;
             btn.innerHTML = originalText;
         }

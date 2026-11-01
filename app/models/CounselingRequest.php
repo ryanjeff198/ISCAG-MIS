@@ -234,6 +234,42 @@ class CounselingRequest
         return $all[0];
     }
 
+    public function findDuplicate(int $userId, string $date, string $reason, string $gender): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT id, status, preferred_date, preferred_time FROM {$this->table}
+            WHERE tenant_id = :tenant_id
+              AND preferred_date = :pdate
+              AND LOWER(gender) = LOWER(:gender)
+              AND LOWER(status) NOT IN ('rejected', 'cancelled', 'completed')
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'tenant_id' => $userId,
+            'pdate' => $date,
+            'gender' => $gender
+        ]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public function findPendingByConcern(int $userId, string $reason, string $gender): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT id, status, preferred_date FROM {$this->table}
+            WHERE tenant_id = :tenant_id
+              AND LOWER(TRIM(reason)) = LOWER(TRIM(:reason))
+              AND LOWER(gender) = LOWER(:gender)
+              AND LOWER(status) IN ('pending', 'under_review')
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'tenant_id' => $userId,
+            'reason' => $reason,
+            'gender' => $gender
+        ]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
     public function getByGender(string $gender = 'male'): array
     {
         $stmt = $this->db->prepare("

@@ -67,6 +67,28 @@ class ConversionRequest
         return null;
     }
 
+    public function findDuplicate(string $fname, string $lname, ?string $dob, int $tenantId): ?array
+    {
+        $query = "
+            SELECT id, status FROM {$this->table}
+            WHERE ((LOWER(TRIM(fname)) = LOWER(:fname) AND LOWER(TRIM(lname)) = LOWER(:lname)" . ($dob ? " AND dob = :dob" : "") . ")
+               OR (tenant_id = :tenant_id AND LOWER(TRIM(fname)) = LOWER(:fname) AND LOWER(TRIM(lname)) = LOWER(:lname)))
+              AND LOWER(status) NOT IN ('rejected', 'cancelled')
+            LIMIT 1
+        ";
+        $stmt = $this->db->prepare($query);
+        $params = [
+            'fname' => trim($fname),
+            'lname' => trim($lname),
+            'tenant_id' => $tenantId
+        ];
+        if ($dob) {
+            $params['dob'] = $dob;
+        }
+        $stmt->execute($params);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
     public function findPendingByUser(int $userId): ?array
     {
         $stmt = $this->db->prepare("

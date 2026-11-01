@@ -631,15 +631,19 @@
       }
     }
 
+    let isSubmittingAlloc = false;
     function submitAllocForm(e) {
       e.preventDefault();
+      if (isSubmittingAlloc) return;
+      isSubmittingAlloc = true;
+
       const form = document.getElementById('alloc-form');
       const formData = new FormData(form);
       const btn = document.getElementById('btn-save-alloc');
       const errBox = document.getElementById('alloc-error');
 
       btn.disabled = true;
-      btn.textContent = 'Processing Allocation...';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing Allocation...';
       errBox.style.display = 'none';
 
       fetch('<?= url('/admin/damayan/charity/allocations/save') ?>', {
@@ -648,17 +652,19 @@
       })
       .then(r => r.json())
       .then(res => {
-        btn.disabled = false;
-        btn.textContent = 'Confirm & Save Allocation';
         if (res.success) {
           closeAllocModal();
           window.location.reload();
         } else {
+          isSubmittingAlloc = false;
+          btn.disabled = false;
+          btn.textContent = 'Confirm & Save Allocation';
           errBox.textContent = res.error || 'Failed to complete allocation.';
           errBox.style.display = 'block';
         }
       })
       .catch(err => {
+        isSubmittingAlloc = false;
         btn.disabled = false;
         btn.textContent = 'Confirm & Save Allocation';
         errBox.textContent = 'Server communication error. Please try again.';

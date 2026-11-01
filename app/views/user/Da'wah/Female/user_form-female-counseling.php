@@ -414,9 +414,15 @@ foreach ($history as $req) {
         }
     }
 
+    let isSubmittingFemaleCounseling = false;
     document.getElementById('counselingForm')?.addEventListener('submit', function(e) {
         e.preventDefault();
+        if (isSubmittingFemaleCounseling) return false;
         
+        const form = this;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+
         const formData = new FormData(this);
         formData.append('gender', 'female');
         
@@ -425,6 +431,14 @@ foreach ($history as $req) {
         if (!prefDate || prefDate < tomorrowStr) {
             showNotification('Invalid Date', 'Appointments can only be scheduled starting tomorrow. Please select a future date.', 'error');
             return;
+        }
+
+        isSubmittingFemaleCounseling = true;
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.7';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display:inline-block;width:1rem;height:1rem;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spinner-border .75s linear infinite;vertical-align:-0.125em;"></span>Submitting...';
         }
 
         fetch('<?= url('/user/services/counseling/submit') ?>', {
@@ -444,10 +458,24 @@ foreach ($history as $req) {
                     window.location.href = '<?= url('/user/services/education/female/counseling') ?>';
                 };
             } else {
+                isSubmittingFemaleCounseling = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
                 showNotification('Error', data.message || 'Failed to submit request.', 'error');
             }
         })
         .catch(err => {
+            isSubmittingFemaleCounseling = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+                submitBtn.innerHTML = originalBtnHtml;
+            }
             showNotification('Error', 'An unexpected error occurred.', 'error');
         });
     });

@@ -53,6 +53,40 @@ class MarriageRequest
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    public function findDuplicate(int $tenantId, string $groom, string $bride, string $date): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT id, status FROM {$this->table}
+            WHERE (tenant_id = :tenant_id OR (LOWER(TRIM(groom_name)) = LOWER(:groom) AND LOWER(TRIM(bride_name)) = LOWER(:bride)))
+              AND marriage_date = :mdate
+              AND LOWER(status) NOT IN ('rejected', 'cancelled')
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'tenant_id' => $tenantId,
+            'groom' => trim($groom),
+            'bride' => trim($bride),
+            'mdate' => $date
+        ]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    public function findActiveByCouple(int $tenantId, string $groom, string $bride): ?array
+    {
+        $stmt = $this->db->prepare("
+            SELECT id, status, marriage_date FROM {$this->table}
+            WHERE (tenant_id = :tenant_id OR (LOWER(TRIM(groom_name)) = LOWER(:groom) AND LOWER(TRIM(bride_name)) = LOWER(:bride)))
+              AND LOWER(status) IN ('pending', 'approved', 'scheduled', 'under_review')
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'tenant_id' => $tenantId,
+            'groom' => trim($groom),
+            'bride' => trim($bride)
+        ]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
     public function getByUser(int $userId): array
     {
         $stmt = $this->db->prepare("

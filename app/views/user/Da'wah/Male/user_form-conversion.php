@@ -1458,7 +1458,9 @@ foreach ($history as $req) {
   }
 
   // ── Submit Conversion Form ──
+  let isSubmittingConversion = false;
   function submitConversionForm() {
+    if (isSubmittingConversion) return;
     syncDobToAge(false);
 
     const form = document.getElementById('conversion-form');
@@ -1510,8 +1512,9 @@ foreach ($history as $req) {
     const submitBtn = document.getElementById('final-submit-btn');
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Submitting Registration...';
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display:inline-block;width:1rem;height:1rem;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spinner-border .75s linear infinite;vertical-align:-0.125em;"></span>Submitting Registration...';
     }
+    isSubmittingConversion = true;
 
     fetch('<?= url('/user/services/conversion/submit') ?>', {
       method: 'POST',
@@ -1530,17 +1533,19 @@ foreach ($history as $req) {
           date: formattedDate
         });
       } else {
+        isSubmittingConversion = false;
         if(submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit Conversion Registration';
+          submitBtn.innerHTML = 'Submit Conversion Registration';
         }
         showToast(data.message || 'Error submitting registration.', '#8b2e2e');
       }
     })
     .catch(err => {
+      isSubmittingConversion = false;
       if(submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Conversion Registration';
+        submitBtn.innerHTML = 'Submit Conversion Registration';
       }
       showToast('Connection error. Please try again.', '#8b2e2e');
     });

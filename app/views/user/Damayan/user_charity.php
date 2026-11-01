@@ -2078,16 +2078,20 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
     }
 
     // ── Direct Walk-in Donation Submission Handler ──
+    let isSubmittingDirectDonation = false;
     async function handleDonationSubmit(e) {
       if (e && typeof e.preventDefault === 'function') {
         e.preventDefault();
       }
+      if (isSubmittingDirectDonation) return false;
 
       // Validate Amount
       if (currentAmount <= 0 || isNaN(currentAmount)) {
         showToast('Please select or enter a valid donation amount greater than ₱0.00.', '#dc2626');
         return;
       }
+
+      isSubmittingDirectDonation = true;
 
       const p = PROGRAM_DATA[currentProgram];
       const formData = new FormData();
@@ -2115,14 +2119,17 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
 
         const data = await res.json();
         if (data.success) {
+          isSubmittingDirectDonation = false;
           openDonationSlipModal(data.donation_ref);
         } else {
+          isSubmittingDirectDonation = false;
           if (btn) btn.disabled = false;
           if (label) label.textContent = 'Confirm & Get Walk-in Donation Slip';
           showToast(data.error || 'Failed to submit donation. Please review your entries.', '#dc2626');
         }
       } catch (err) {
         console.error(err);
+        isSubmittingDirectDonation = false;
         if (btn) btn.disabled = false;
         if (label) label.textContent = 'Confirm & Get Walk-in Donation Slip';
         showToast('A network error occurred. Please try again.', '#dc2626');
@@ -2422,11 +2429,15 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
     }
 
     // ── PayMongo Donation Submission ──
+    let isSubmittingPaymongoDonation = false;
     async function submitPayMongoDonation() {
+      if (isSubmittingPaymongoDonation) return false;
       if (currentAmount <= 0 || isNaN(currentAmount)) {
         showToast('Please select or enter a valid donation amount greater than ₱0.00.', '#dc2626');
         return;
       }
+
+      isSubmittingPaymongoDonation = true;
 
       const btn = document.getElementById('btn-paymongo-pay');
       const label = document.getElementById('btn-paymongo-label');
@@ -2457,12 +2468,14 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
           label.textContent = 'Redirecting to PayMongo...';
           window.location.href = data.checkout_url;
         } else {
+          isSubmittingPaymongoDonation = false;
           showToast(data.message || 'Could not initiate PayMongo checkout.', '#dc2626');
           btn.disabled = false;
           label.innerHTML = 'Donate ₱<span id="pm-btn-amount">' + currentAmount.toFixed(2) + '</span> via PayMongo';
         }
       } catch (err) {
         console.error('PayMongo Charity Checkout Error:', err);
+        isSubmittingPaymongoDonation = false;
         showToast(err.message || 'Error connecting to payment gateway.', '#dc2626');
         btn.disabled = false;
         label.innerHTML = 'Donate ₱<span id="pm-btn-amount">' + currentAmount.toFixed(2) + '</span> via PayMongo';

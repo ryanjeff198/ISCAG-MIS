@@ -2838,7 +2838,9 @@
   scheduleMidnightUpdate();
 
   // ── Form Submission Handler ──
+  let isSubmittingMaleCounseling = false;
   async function submitCounselingForm() {
+    if (isSubmittingMaleCounseling) return false;
     const reason = document.getElementById('reason-select')?.value;
     const prefDate = document.getElementById('input-date')?.value;
     const prefTime = document.getElementById('input-time')?.value;
@@ -2981,6 +2983,7 @@
           type: 'error',
           confirmText: 'Review Details'
         });
+        isSubmittingMaleCounseling = false;
         if(submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerText = 'Submit Request';
@@ -2988,6 +2991,7 @@
       }
     } catch (err) {
       console.error(err);
+      isSubmittingMaleCounseling = false;
       showCounselingAlert({
         title: 'Connection Error',
         message: 'An unexpected network error occurred while submitting your counseling request. Please check your connection and try again.',

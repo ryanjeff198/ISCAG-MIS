@@ -458,13 +458,28 @@ class UserController extends Controller
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
         $userId = (int)($_SESSION['user_id'] ?? 0);
 
-        $fname = trim($input['first_name'] ?? '');
-        $lname = trim($input['last_name'] ?? '');
+        $fname = trim(preg_replace('/\s+/', ' ', $input['first_name'] ?? ''));
+        $lname = trim(preg_replace('/\s+/', ' ', $input['last_name'] ?? ''));
         $contact = trim($input['contact_number'] ?? '');
         $dob = !empty($input['birthdate']) ? trim($input['birthdate']) : null;
+        $batchNo = trim($input['batch_no'] ?? 'Batch 08');
 
         if (empty($fname) || empty($lname)) {
             echo json_encode(['success' => false, 'message' => 'First name and Last name are required.']);
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/IslamicEducation.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $eduModel = new IslamicEducation();
+
+        // Check for duplicate active/pending registration
+        $duplicate = $eduModel->findDuplicateRegistration($userId, $fname, $lname, $batchNo, 'female');
+        if ($duplicate) {
+            echo json_encode([
+                'success' => false,
+                'message' => "An active or pending enrollment for {$fname} {$lname} in {$batchNo} already exists (Status: " . ucfirst($duplicate['status']) . "). Duplicate submissions are not allowed."
+            ]);
             return;
         }
 
@@ -516,19 +531,6 @@ class UserController extends Controller
         $calcAge = $today->diff($birthDate)->y;
         $isMinor = ($calcAge < 18) ? 1 : 0;
         $parentConsent = ($isMinor && !empty($input['parent_consent'])) ? 1 : 0;
-
-        $parentContact = trim($input['parent_contact'] ?? '');
-        if ($isMinor && !empty($parentContact)) {
-            if (!PhoneHelper::isValid($parentContact)) {
-                echo json_encode(['success' => false, 'message' => 'Invalid parent contact number format.']);
-                return;
-            }
-            $parentContact = PhoneHelper::normalize($parentContact);
-        }
-
-        require_once BASE_PATH . '/app/models/IslamicEducation.php';
-        require_once BASE_PATH . '/app/models/Notification.php';
-        $eduModel = new IslamicEducation();
 
         $chosenLevel = trim($input['level'] ?? 'Level 1 — Basic Arabic & Tajweed');
         $chosenProg = !empty($input['program_name']) ? trim($input['program_name']) : $chosenLevel;
@@ -637,8 +639,8 @@ class UserController extends Controller
             $contact = $existing['contact_number'] ?? ($dbUser['contact_number'] ?? ($dbUser['phone'] ?? ''));
             $formData = $existing;
         } else {
-            $fname = trim($body['first_name'] ?? '');
-            $lname = trim($body['last_name'] ?? '');
+            $fname = trim(preg_replace('/\s+/', ' ', $body['first_name'] ?? ''));
+            $lname = trim(preg_replace('/\s+/', ' ', $body['last_name'] ?? ''));
             $contact = trim($body['contact_number'] ?? '');
             $dob = !empty($body['birthdate']) ? trim($body['birthdate']) : null;
             $address = trim($body['address'] ?? '');
@@ -647,6 +649,17 @@ class UserController extends Controller
                 echo json_encode(['success' => false, 'message' => 'First name and Last name are required before proceeding to payment.']);
                 return;
             }
+
+            // Check for duplicate active/pending registration
+            $duplicate = $eduModel->findDuplicateRegistration($userId, $fname, $lname, $batchNo, 'female');
+            if ($duplicate) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => "An active or pending enrollment for {$fname} {$lname} in {$batchNo} already exists (Status: " . ucfirst($duplicate['status']) . "). Duplicate submissions are not allowed."
+                ]);
+                return;
+            }
+
             if (empty($contact)) {
                 echo json_encode(['success' => false, 'message' => 'Contact number is required.']);
                 return;
@@ -1069,10 +1082,10 @@ class UserController extends Controller
         require_once BASE_PATH . '/app/models/MarriageRequest.php';
         $model = new MarriageRequest();
 
-        $groom = trim($input['groom_name'] ?? '');
-        $bride = trim($input['bride_name'] ?? '');
-        $date  = $input['marriage_date'] ?? null;
-        $time  = $input['marriage_time'] ?? null;
+        $groom = trim(preg_replace('/\s+/', ' ', $input['groom_name'] ?? ''));
+        $bride = trim(preg_replace('/\s+/', ' ', $input['bride_name'] ?? ''));
+        $date  = trim($input['marriage_date'] ?? '');
+        $time  = trim($input['marriage_time'] ?? '');
         $venue = trim($input['marriage_venue'] ?? 'ISCAG Mosque');
 
         if (empty($groom) || empty($bride) || empty($date) || empty($time)) {
@@ -1093,11 +1106,32 @@ class UserController extends Controller
             return;
         }
 
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+
+        // Check for duplicate reservation for same couple on same date or existing active reservation
+        $existingDuplicate = $model->findDuplicate($userId, $groom, $bride, $marriageDate);
+        if ($existingDuplicate) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'A marriage reservation for this couple or date has already been submitted (Status: ' . ucfirst($existingDuplicate['status']) . '). Duplicate submissions are not allowed.'
+            ]);
+            return;
+        }
+
+        $existingActive = $model->findActiveByCouple($userId, $groom, $bride);
+        if ($existingActive) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'An active marriage reservation already exists for this couple (Ref: #MR-' . str_pad((string)$existingActive['id'], 4, '0', STR_PAD_LEFT) . '). Please await review before submitting a new reservation.'
+            ]);
+            return;
+        }
+
         $newId = $model->createAndGetId([
-            'tenant_id' => $_SESSION['user_id'],
+            'tenant_id' => $userId,
             'groom_name' => $groom,
             'bride_name' => $bride,
-            'marriage_date' => $date,
+            'marriage_date' => $marriageDate,
             'marriage_time' => $time,
             'marriage_venue' => $venue,
             'status' => 'pending'
@@ -1196,10 +1230,19 @@ class UserController extends Controller
             return;
         }
 
+        $existingDuplicate = $model->findDuplicate($fname, $lname, $dob, (int)$userId);
+        if ($existingDuplicate) {
+            echo json_encode([
+                'success' => false,
+                'message' => "A conversion (Shahadah) registration for {$fname} {$lname} has already been submitted (Status: " . ucfirst($existingDuplicate['status']) . "). Duplicate submissions are not allowed."
+            ]);
+            return;
+        }
+
         $data = [
             'tenant_id' => $userId,
             'fname' => $fname,
-            'mname' => trim($input['mname'] ?? ''),
+            'mname' => trim(preg_replace('/\s+/', ' ', $input['mname'] ?? '')),
             'lname' => $lname,
             'adopted_name' => $adoptedName,
             'sex' => $input['sex'] ?? 'Male',
@@ -1401,10 +1444,29 @@ class UserController extends Controller
         require_once BASE_PATH . '/app/models/CounselingRequest.php';
         require_once BASE_PATH . '/app/models/Notification.php';
         $model = new CounselingRequest();
+
+        // Check for duplicate reservation on the same date or pending request with identical concern
+        $existingDuplicate = $model->findDuplicate($userId, $preferredDate, $reason, $gender ?: 'male');
+        if ($existingDuplicate) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'You already have an appointment request for this date (Status: ' . ucfirst($existingDuplicate['status']) . '). Duplicate submissions are not allowed.'
+            ]);
+            return;
+        }
+
+        $existingPending = $model->findPendingByConcern($userId, $reason, $gender ?: 'male');
+        if ($existingPending) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'You already have a pending counseling request regarding this concern. Please await review before submitting another request.'
+            ]);
+            return;
+        }
         
         $newId = $model->createAndGetId([
             'tenant_id' => $userId,
-            'full_name' => $fullName,
+            'full_name' => trim(preg_replace('/\s+/', ' ', $fullName)),
             'age' => $age,
             'civil_status' => $civilStatus,
             'address' => $address,
@@ -1529,17 +1591,27 @@ class UserController extends Controller
     }
     public function submitBurial(): void {
         Auth::protect();
-        header('Content-Type: application/json');
+        if (ob_get_level() === 0) {
+            ob_start();
+        }
+        $sendJson = function(array $data): void {
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($data);
+            exit;
+        };
         
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            $sendJson(['success' => false, 'message' => 'Invalid request method.']);
             return;
         }
 
         // Support both FormData (multipart/form-data) and JSON
         $input = !empty($_POST) ? $_POST : json_decode(file_get_contents('php://input'), true);
         if (!$input) {
-            echo json_encode(['success' => false, 'message' => 'No request data provided.']);
+            $sendJson(['success' => false, 'message' => 'No request data provided.']);
             return;
         }
 
@@ -1562,7 +1634,7 @@ class UserController extends Controller
         require_once BASE_PATH . '/app/helpers/PhoneHelper.php';
         if (!empty($informantContact)) {
             if (!PhoneHelper::isValid($informantContact)) {
-                echo json_encode(['success' => false, 'message' => PhoneHelper::getErrorMessage()]);
+                $sendJson(['success' => false, 'message' => PhoneHelper::getErrorMessage()]);
                 return;
             }
             $informantContact = PhoneHelper::normalize($informantContact);
@@ -1572,24 +1644,24 @@ class UserController extends Controller
         if ($certActionType === 'copy') {
             $decName = trim($input['deceased_name'] ?? ($input['deceasedName'] ?? "$fName $lName"));
             if (empty($decName) && empty($input['existing_cert_no'])) {
-                echo json_encode(['success' => false, 'message' => 'Deceased name as appearing on the certificate is required.']);
+                $sendJson(['success' => false, 'message' => 'Deceased name as appearing on the certificate is required.']);
                 return;
             }
             if (empty($informantName) || empty($informantContact)) {
-                echo json_encode(['success' => false, 'message' => 'Requester name and contact number are required.']);
+                $sendJson(['success' => false, 'message' => 'Requester name and contact number are required.']);
                 return;
             }
             if (empty($input['copy_reason'])) {
-                echo json_encode(['success' => false, 'message' => 'Please provide the reason for requesting another death certificate copy.']);
+                $sendJson(['success' => false, 'message' => 'Please provide the reason for requesting another death certificate copy.']);
                 return;
             }
         } else {
             if (empty($fName) || empty($lName)) {
-                echo json_encode(['success' => false, 'message' => 'Deceased first and last name are required.']);
+                $sendJson(['success' => false, 'message' => 'Deceased first and last name are required.']);
                 return;
             }
             if (empty($dod)) {
-                echo json_encode(['success' => false, 'message' => 'Date of death is required.']);
+                $sendJson(['success' => false, 'message' => 'Date of death is required.']);
                 return;
             }
             $dobInput = trim($input['dob'] ?? ($input['date_of_birth'] ?? ''));
@@ -1598,7 +1670,7 @@ class UserController extends Controller
                 $dodTime = strtotime($dod);
                 if ($dobTime !== false && $dodTime !== false) {
                     if ($dobTime >= $dodTime) {
-                        echo json_encode([
+                        $sendJson([
                             'success' => false,
                             'message' => 'Invalid date of birth. The date of birth must be earlier than the date of death.'
                         ]);
@@ -1607,15 +1679,15 @@ class UserController extends Controller
                 }
             }
             if (empty($pod)) {
-                echo json_encode(['success' => false, 'message' => 'Place of death is required.']);
+                $sendJson(['success' => false, 'message' => 'Place of death is required.']);
                 return;
             }
             if (empty($residence)) {
-                echo json_encode(['success' => false, 'message' => 'Deceased usual residence address is required.']);
+                $sendJson(['success' => false, 'message' => 'Deceased usual residence address is required.']);
                 return;
             }
             if (empty($informantName) || empty($informantContact)) {
-                echo json_encode(['success' => false, 'message' => 'Applicant/Informant name and contact number are required.']);
+                $sendJson(['success' => false, 'message' => 'Applicant/Informant name and contact number are required.']);
                 return;
             }
         }
@@ -1628,7 +1700,7 @@ class UserController extends Controller
             $fullName = trim($input['deceased_name'] ?? '');
         }
 
-        // Gate: Processing is only available for death certificates recorded within the Damayan Department
+        // Gate: For copy requests, existing certificate record must be confirmed in department archive
         $existingCertNo = trim($input['existing_cert_no'] ?? ($input['registry_number'] ?? ''));
         $encodedCertId = !empty($input['encoded_cert_id']) ? (int)$input['encoded_cert_id'] : null;
         $deceasedId = !empty($input['deceased_id']) ? (int)$input['deceased_id'] : null;
@@ -1676,10 +1748,11 @@ class UserController extends Controller
             }
         }
 
-        if (!$certFoundInDept) {
-            echo json_encode([
+        // Gate only blocks copy requests when no archive record is found
+        if ($certActionType === 'copy' && !$certFoundInDept) {
+            $sendJson([
                 'success' => false,
-                'message' => 'Processing is only available for death certificates recorded within the ISCAG Damayan Department. Please enter a valid registration number or select a recorded deceased record from the department archive.'
+                'message' => 'To request an additional copy, the death certificate must exist within the ISCAG Damayan Department records. Please enter a valid registration number or select a recorded deceased record from the department archive.'
             ]);
             return;
         }
@@ -1687,14 +1760,25 @@ class UserController extends Controller
         if ($linkedEncodedRecord && empty($fullName)) {
             $fullName = $linkedEncodedRecord['deceased_name'];
         }
+        $fullName = trim(preg_replace('/\s+/', ' ', $fullName));
 
-        // Duplicate check (for new registrations only)
-        if ($certActionType === 'register' && $model->checkDuplicate((int)$_SESSION['user_id'], $fullName, $dod)) {
-            echo json_encode([
-                'success' => false, 
-                'message' => 'An active death certificate registration request for this deceased person has already been submitted within the last 24 hours.'
-            ]);
-            return;
+        // Duplicate check (prevent duplicate submissions)
+        if ($certActionType === 'copy') {
+            if ($model->checkDuplicateCopy((int)$_SESSION['user_id'], $fullName, $existingCertNo)) {
+                $sendJson([
+                    'success' => false, 
+                    'message' => 'An active request for an additional death certificate copy for this record is already pending.'
+                ]);
+                return;
+            }
+        } else {
+            if ($model->checkDuplicate((int)$_SESSION['user_id'], $fullName, $dod)) {
+                $sendJson([
+                    'success' => false, 
+                    'message' => 'An active death certificate registration request for this deceased person has already been submitted within the last 24 hours.'
+                ]);
+                return;
+            }
         }
 
         // Handle file upload if present
@@ -1771,7 +1855,7 @@ class UserController extends Controller
         $result = $model->create($data);
 
         if (!$result || empty($result['success'])) {
-            echo json_encode(['success' => false, 'message' => 'Failed to save request to database.']);
+            $sendJson(['success' => false, 'message' => 'Failed to save request to database.']);
             return;
         }
 
@@ -1807,7 +1891,7 @@ class UserController extends Controller
             ? 'Request for another death certificate copy submitted successfully.' 
             : 'Death certificate registration submitted successfully.';
 
-        echo json_encode([
+        $sendJson([
             'success' => true,
             'ref_id' => $refId,
             'message' => $successMsg
@@ -2193,6 +2277,17 @@ class UserController extends Controller
                         $amount        = (float)($meta['amount'] ?? $amount);
                         $targetProgram = $meta['target_program'] ?? $targetProgram;
                     }
+                }
+
+                // Prevent duplicate record creation on refresh
+                $db = getDbConnection();
+                $dupCheck = $db->prepare("SELECT id, donation_ref FROM charitydonations WHERE (payment_ref = :ref OR donation_ref = :ref) AND :ref != '' LIMIT 1");
+                $dupCheck->execute(['ref' => $refNo]);
+                $alreadyDonated = $dupCheck->fetch(PDO::FETCH_ASSOC);
+                if ($alreadyDonated) {
+                    unset($_SESSION['paymongo_pending_charity']);
+                    header('Location: ' . url('/user/services/charity?paid=1&ref=' . urlencode($alreadyDonated['donation_ref'] ?? $refNo)));
+                    exit;
                 }
 
                 // Get payment ID from PayMongo response for the reference if needed

@@ -833,11 +833,24 @@ body {
       }
 
       if (registrationForm) {
+        let isSubmitting = false;
         registrationForm.addEventListener('submit', function(e) {
           if (!validatePhoneInput()) {
             e.preventDefault();
             phoneInput.focus();
             return false;
+          }
+          if (isSubmitting) {
+            e.preventDefault();
+            return false;
+          }
+          isSubmitting = true;
+          const submitBtn = document.getElementById('registerBtn');
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.7';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="width: 1rem; height: 1rem; vertical-align: -0.125em;"></span>Processing...';
           }
         });
       }

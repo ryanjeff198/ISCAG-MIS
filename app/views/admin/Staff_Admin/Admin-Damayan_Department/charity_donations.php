@@ -1080,14 +1080,18 @@
       document.getElementById('donation-verify-modal').style.display = 'none';
     }
 
+    let isSubmittingVerify = false;
     function submitVerifyForm(e) {
       e.preventDefault();
+      if (isSubmittingVerify) return;
+      isSubmittingVerify = true;
+
       const form = document.getElementById('verify-form');
       const formData = new FormData(form);
       const btn = document.getElementById('btn-submit-verify');
 
       btn.disabled = true;
-      btn.textContent = 'Saving Decision...';
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving Decision...';
 
       fetch('<?= url('/admin/damayan/charity/donations/verify') ?>', {
         method: 'POST',
@@ -1095,16 +1099,18 @@
       })
       .then(r => r.json())
       .then(res => {
-        btn.disabled = false;
-        btn.textContent = 'Save Verification Decision';
         if (res.success) {
           closeVerifyModal();
           window.location.reload();
         } else {
+          isSubmittingVerify = false;
+          btn.disabled = false;
+          btn.textContent = 'Save Verification Decision';
           alert(res.error || 'Failed to update verification status.');
         }
       })
       .catch(err => {
+        isSubmittingVerify = false;
         btn.disabled = false;
         btn.textContent = 'Save Verification Decision';
         alert('Server communication error. Please try again.');

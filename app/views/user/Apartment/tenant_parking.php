@@ -735,11 +735,16 @@ $assignedBldg = $appInfo['building'] ?? 'N/A';
         // ── FORM SUBMISSION ──
         const form = document.getElementById('parking-form');
         if (form) {
+            let isSubmittingParking = false;
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
+                if (isSubmittingParking) return false;
+                isSubmittingParking = true;
                 const btn = document.getElementById('btn-submit');
-                btn.disabled = true;
-                btn.textContent = 'Submitting...';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display:inline-block;width:1rem;height:1rem;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spinner-border .75s linear infinite;vertical-align:-0.125em;"></span>Submitting...';
+                }
 
                 const vehicles = [];
                 document.querySelectorAll('.vehicle-block-doc').forEach(block => {
@@ -767,16 +772,22 @@ $assignedBldg = $appInfo['building'] ?? 'N/A';
                         showToast('Application submitted successfully!', 'var(--success)');
                         setTimeout(() => window.location.reload(), 1500);
                     } else {
+                        isSubmittingParking = false;
                         showToast(data.message || 'Error submitting application.', '#f5222d');
-                        btn.disabled = false;
-                        btn.textContent = 'Submit Application';
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = 'Submit Application';
+                        }
                     }
                 })
                 .catch(err => {
                     console.error(err);
+                    isSubmittingParking = false;
                     showToast('Network error. Please try again.', '#f5222d');
-                    btn.disabled = false;
-                    btn.textContent = 'Submit Application';
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = 'Submit Application';
+                    }
                 });
             });
         }

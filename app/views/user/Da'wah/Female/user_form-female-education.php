@@ -2396,8 +2396,12 @@ if (!$activeRequest && !empty($history)) {
   }
 
   // ── Submit Registration Form ──
+  let isSubmittingEdu = false;
   async function submitRegistrationForm(e) {
     e.preventDefault();
+    if (isSubmittingEdu) return false;
+    isSubmittingEdu = true;
+
     const form = document.getElementById('female-education-form');
     const submitBtn = document.getElementById('btn-submit-form');
 
@@ -2412,6 +2416,7 @@ if (!$activeRequest && !empty($history)) {
     const studentSig = document.getElementById('reg-student-sig')?.value.trim();
 
     if (!fname || !lname) {
+      isSubmittingEdu = false;
       showEduAlert({
         title: 'Full Name Required',
         message: 'Please provide both your First Name and Last Name as required on the official registration form.',
@@ -2423,6 +2428,7 @@ if (!$activeRequest && !empty($history)) {
     }
 
     if (!dob) {
+      isSubmittingEdu = false;
       showEduAlert({
         title: 'Date of Birth Required',
         message: 'Please specify your date of birth for age verification and class grouping.',
@@ -2578,6 +2584,7 @@ if (!$activeRequest && !empty($history)) {
             type: 'error'
           });
           submitBtn.disabled = false;
+          isSubmittingEdu = false;
           handlePaymentModeChange('Online Payment');
           return;
         }
@@ -2589,6 +2596,7 @@ if (!$activeRequest && !empty($history)) {
           type: 'error'
         });
         submitBtn.disabled = false;
+        isSubmittingEdu = false;
         handlePaymentModeChange('Online Payment');
         return;
       }
@@ -2637,6 +2645,7 @@ if (!$activeRequest && !empty($history)) {
 
         // Reset submit button
         submitBtn.disabled = false;
+        isSubmittingEdu = false;
         handlePaymentModeChange(payload.payment_method || 'Online Payment');
       } else {
         showEduAlert({
@@ -2645,6 +2654,7 @@ if (!$activeRequest && !empty($history)) {
           type: 'error'
         });
         submitBtn.disabled = false;
+        isSubmittingEdu = false;
         handlePaymentModeChange(payload.payment_method || 'Online Payment');
       }
     } catch (err) {
@@ -2655,6 +2665,7 @@ if (!$activeRequest && !empty($history)) {
         type: 'error'
       });
       submitBtn.disabled = false;
+      isSubmittingEdu = false;
       handlePaymentModeChange(payload.payment_method || 'Online Payment');
     }
   }

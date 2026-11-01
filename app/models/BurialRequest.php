@@ -379,6 +379,34 @@ class BurialRequest
     }
 
     /**
+     * Check for duplicate copy requests while one is pending or submitted within 24 hours
+     */
+    public function checkDuplicateCopy(int $tenantId, string $deceasedName, ?string $existingCertNo = null): bool {
+        try {
+            $sql = "SELECT COUNT(*) FROM burial_requests 
+                    WHERE tenant_id = :tid 
+                      AND cert_action_type = 'copy'
+                      AND status NOT IN ('Rejected')
+                      AND (
+                          (LOWER(TRIM(deceased_name)) = LOWER(TRIM(:dname)) AND submitted_at >= NOW() - INTERVAL 24 HOUR)";
+            $params = [
+                'tid' => $tenantId,
+                'dname' => $deceasedName
+            ];
+            if (!empty($existingCertNo)) {
+                $sql .= " OR (existing_cert_no IS NOT NULL AND existing_cert_no != '' AND UPPER(TRIM(existing_cert_no)) = UPPER(TRIM(:cert_no)) AND status NOT IN ('Completed', 'Rejected'))";
+                $params['cert_no'] = $existingCertNo;
+            }
+            $sql .= ")";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return ((int)$stmt->fetchColumn()) > 0;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
      * Create a new request:
      * - Register Death Certificate (cert_action_type = 'register')
      * - Request Another Death Certificate (cert_action_type = 'copy')
@@ -2946,7 +2974,7 @@ class BurialRequest
         }
         if (!$burial) return [];
 
-        $id = (int)$burial['id'];
+        $id = (int)($burial['id'] ?? 0);
         $deceasedName = trim($burial['deceased_name'] ?? '');
         $regNo = trim($burial['death_cert_registry_no'] ?? ($burial['existing_cert_no'] ?? ''));
 
@@ -3142,6 +3170,23 @@ class BurialRequest
                     'success' => false,
                     'error' => 'Invalid date of birth. The date of birth must be earlier than the date of death.',
                     'message' => 'Invalid date of birth. The date of birth must be earlier than the date of death.'
+                ];
+            }
+        }
+
+        // Prevent duplicate certificate record for identical deceased name and date of death
+        if (!empty($dateOfDeath)) {
+            $stmtIdentical = $this->db->prepare("SELECT id, registration_number FROM encoded_death_certificates 
+                                                  WHERE LOWER(TRIM(deceased_name)) = LOWER(TRIM(:dname)) 
+                                                    AND date_of_death = :dod LIMIT 1");
+            $stmtIdentical->execute(['dname' => $deceasedName, 'dod' => $dateOfDeath]);
+            $existingIdentical = $stmtIdentical->fetch(PDO::FETCH_ASSOC);
+            if ($existingIdentical) {
+                $msg = "A death certificate for '{$deceasedName}' with Date of Death '{$dateOfDeath}' has already been recorded under Registration No: {$existingIdentical['registration_number']}.";
+                return [
+                    'success' => false,
+                    'error' => $msg,
+                    'message' => $msg
                 ];
             }
         }

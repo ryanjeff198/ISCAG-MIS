@@ -246,6 +246,25 @@ class ApartmentController extends Controller {
         }
 
         $model = new ApartmentApp();
+        $db = getDbConnection();
+
+        // Check for duplicate plate numbers
+        foreach ($body['vehicles'] as $vehicle) {
+            $plate = strtoupper(trim(preg_replace('/\s+/', '', $vehicle['plateNo'] ?? '')));
+            if (empty($plate)) continue;
+
+            $dupStmt = $db->prepare("SELECT parking_id, status FROM tenant_parking WHERE tenant_id = ? AND UPPER(REPLACE(plateno, ' ', '')) = ? AND status IN ('Pending', 'Approved') LIMIT 1");
+            $dupStmt->execute([$userId, $plate]);
+            $existing = $dupStmt->fetch(PDO::FETCH_ASSOC);
+            if ($existing) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => "A parking registration for vehicle plate {$vehicle['plateNo']} is already " . strtolower($existing['status']) . ". Duplicate submissions are not allowed."
+                ]);
+                return;
+            }
+        }
+
         $allSuccess = true;
 
         foreach ($body['vehicles'] as $vehicle) {
@@ -253,10 +272,10 @@ class ApartmentController extends Controller {
             $payload = [
                 'date' => $body['date'] ?? date('Y-m-d'),
                 'dateStarted' => $body['dateStarted'] ?? '',
-                'vehicleName' => $vehicle['vehicleName'],
-                'vehicleOwner' => $vehicle['vehicleOwner'],
-                'vehicleType' => $vehicle['vehicleType'],
-                'plateNo' => $vehicle['plateNo']
+                'vehicleName' => trim($vehicle['vehicleName'] ?? ''),
+                'vehicleOwner' => trim($vehicle['vehicleOwner'] ?? ''),
+                'vehicleType' => trim($vehicle['vehicleType'] ?? ''),
+                'plateNo' => strtoupper(trim($vehicle['plateNo'] ?? ''))
             ];
 
             if (!$model->saveParkingApplication($userId, $payload)) {
@@ -303,6 +322,16 @@ class ApartmentController extends Controller {
         
         require_once BASE_PATH . '/app/models/ApartmentApp.php';
         $model = new ApartmentApp();
+
+        $app = $model->getApplication($userId);
+        if ($app && in_array(strtolower($app['status'] ?? ''), ['pending', 'approved'])) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Your application has already been submitted and is currently ' . ucfirst($app['status']) . '.'
+            ]);
+            return;
+        }
+
         $ok = $model->updateStatusByTenant($userId, 'Pending');
         
         if ($ok) {
@@ -1139,6 +1168,14 @@ class ApartmentController extends Controller {
             return;
         }
 
+        $db = getDbConnection();
+        $dupStmt = $db->prepare("SELECT renewal_id FROM lease_renewals WHERE lease_id = ? AND status IN ('Pending', 'Under Review') LIMIT 1");
+        $dupStmt->execute([$leaseId]);
+        if ($dupStmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'A lease renewal request is already pending review for this contract.']);
+            return;
+        }
+
         require_once BASE_PATH . '/app/models/LeaseRenewal.php';
         $renewalModel = new LeaseRenewal();
 
@@ -1286,12 +1323,20 @@ class ApartmentController extends Controller {
         header('Content-Type: application/json');
         $userId = $_SESSION['user_id'];
         
-        $category = $_POST['category'] ?? '';
-        $description = $_POST['description'] ?? '';
+        $category = trim($_POST['category'] ?? '');
+        $description = trim($_POST['description'] ?? '');
         $attachment = null;
 
         if (empty($category) || empty($description)) {
             echo json_encode(['success' => false, 'message' => 'Category and description are required']);
+            return;
+        }
+
+        $db = getDbConnection();
+        $dupMaint = $db->prepare("SELECT id FROM tenant_maintenance WHERE tenant_id = ? AND category = ? AND description = ? AND status IN ('Pending', 'In Progress', 'Assigned') LIMIT 1");
+        $dupMaint->execute([$userId, $category, $description]);
+        if ($dupMaint->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'An active maintenance request for this issue has already been submitted and is currently being processed.']);
             return;
         }
 
