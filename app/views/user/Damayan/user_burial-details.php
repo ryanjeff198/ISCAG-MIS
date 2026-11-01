@@ -2103,14 +2103,34 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 if (hiddenDecId && data.record.deceased_id) hiddenDecId.value = data.record.deceased_id;
 
                 if (fb) {
-                    fb.innerHTML = `
-                        <div style="background:#ecfdf5; border:1.5px solid #10b981; border-radius:10px; padding:12px 16px; margin-top:8px;">
-                            <div style="color:#059669; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
-                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#059669;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                                Already Registered
+                    if (isCopy) {
+                        fb.innerHTML = `
+                            <div style="background:#fff7ed; border:1.5px solid #f97316; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                                <div style="color:#c2410c; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#ea580c;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                    Already Registered
+                                </div>
+                                <div style="color:#9a3412; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                                    Death certificate record verified on file. You may proceed with your copy request.
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    } else {
+                        fb.innerHTML = `
+                            <div style="background:#fff7ed; border:1.5px solid #f97316; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                                <div style="color:#c2410c; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#ea580c;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                    Already Registered
+                                </div>
+                                <div style="color:#9a3412; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                                    This death certificate is already registered in ISCAG Damayan records. Please choose <strong>Additional Certificate Copy Request</strong> to request a copy.
+                                </div>
+                                <button type="button" onclick="selectCertFunction('copy')" style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; background:#ea580c; color:#ffffff; font-weight:700; font-size:0.8rem; padding:6px 14px; border-radius:8px; border:none; cursor:pointer;">
+                                    👉 Select Additional Certificate Copy Request
+                                </button>
+                            </div>
+                        `;
+                    }
                 }
                 return true;
             } else {
@@ -2120,14 +2140,34 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 if (hiddenRegId) hiddenRegId.value = '';
 
                 if (fb) {
-                    fb.innerHTML = `
-                        <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-top:8px;">
-                            <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
-                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#d97706;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                                Not Registered
+                    if (isCopy) {
+                        fb.innerHTML = `
+                            <div style="background:#fff7ed; border:1.5px solid #f97316; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                                <div style="color:#c2410c; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#ea580c;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                    Not Registered
+                                </div>
+                                <div style="color:#9a3412; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                                    This registry number is not registered in ISCAG Damayan records. Please choose <strong>Register Certificate</strong> to register this record first.
+                                </div>
+                                <button type="button" onclick="selectCertFunction('register')" style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; background:#ea580c; color:#ffffff; font-weight:700; font-size:0.8rem; padding:6px 14px; border-radius:8px; border:none; cursor:pointer;">
+                                    👉 Select Register Certificate
+                                </button>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    } else {
+                        fb.innerHTML = `
+                            <div style="background:#fff7ed; border:1.5px solid #f97316; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                                <div style="color:#c2410c; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#ea580c;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                    Not Registered
+                                </div>
+                                <div style="color:#9a3412; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                                    Registry number is available. You may proceed to register this new death certificate.
+                                </div>
+                            </div>
+                        `;
+                    }
                 }
                 return false;
             }
@@ -2187,9 +2227,12 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             if (fb) {
                 fb.innerHTML = `
                     <div style="background:#fef2f2; border:1.5px solid #ef4444; border-radius:10px; padding:12px 16px; margin-top:6px;">
-                        <div style="color:#dc2626; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+                        <div style="color:#dc2626; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
                             <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#dc2626;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                             Invalid Registry No.
+                        </div>
+                        <div style="color:#991b1b; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                            Please enter a valid registry number format (e.g. 2026-00412 or #2023-2-0001113).
                         </div>
                     </div>
                 `;
@@ -2205,10 +2248,13 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 if (hiddenEncId) hiddenEncId.value = data.record.id;
                 if (fb) {
                     fb.innerHTML = `
-                        <div style="background:#ecfdf5; border:1.5px solid #10b981; border-radius:10px; padding:12px 16px; margin-top:6px;">
-                            <div style="color:#059669; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
-                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#059669;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                        <div style="background:#fff7ed; border:1.5px solid #f97316; border-radius:10px; padding:12px 16px; margin-top:6px;">
+                            <div style="color:#c2410c; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#ea580c;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
                                 Already Registered
+                            </div>
+                            <div style="color:#9a3412; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                                Death certificate record verified on file.
                             </div>
                         </div>
                     `;
@@ -2222,11 +2268,17 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 if (hiddenEncId) hiddenEncId.value = '';
                 if (fb) {
                     fb.innerHTML = `
-                        <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-top:6px;">
-                            <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
-                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#d97706;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <div style="background:#fff7ed; border:1.5px solid #f97316; border-radius:10px; padding:12px 16px; margin-top:6px;">
+                            <div style="color:#c2410c; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#ea580c;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                                 Not Registered
                             </div>
+                            <div style="color:#9a3412; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                                This registry number is not registered on file. Please select <strong>Register Certificate</strong> to register first.
+                            </div>
+                            <button type="button" onclick="selectCertFunction('register')" style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; background:#ea580c; color:#ffffff; font-weight:700; font-size:0.8rem; padding:6px 14px; border-radius:8px; border:none; cursor:pointer;">
+                                👉 Select Register Certificate
+                            </button>
                         </div>
                     `;
                 }
@@ -2303,9 +2355,12 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     if (fb) {
                         fb.innerHTML = `
                             <div style="background:#fef2f2; border:1.5px solid #ef4444; border-radius:10px; padding:12px 16px; margin-top:8px;">
-                                <div style="color:#dc2626; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+                                <div style="color:#dc2626; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
                                     <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#dc2626;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                                     Invalid Registry No.
+                                </div>
+                                <div style="color:#991b1b; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                                    Please enter a valid registry number format (e.g. 2026-00412 or #2023-2-0001113).
                                 </div>
                             </div>
                         `;
@@ -2317,11 +2372,17 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     const fb = document.getElementById('reg-cert-feedback');
                     if (fb) {
                         fb.innerHTML = `
-                            <div style="background:#ecfdf5; border:1.5px solid #10b981; border-radius:10px; padding:12px 16px; margin-top:8px;">
-                                <div style="color:#059669; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
-                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#059669;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                            <div style="background:#fff7ed; border:1.5px solid #f97316; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                                <div style="color:#c2410c; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#ea580c;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
                                     Already Registered
                                 </div>
+                                <div style="color:#9a3412; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                                    This death certificate is already registered in ISCAG Damayan records. Please choose <strong>Additional Certificate Copy Request</strong> to request a copy.
+                                </div>
+                                <button type="button" onclick="selectCertFunction('copy')" style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; background:#ea580c; color:#ffffff; font-weight:700; font-size:0.8rem; padding:6px 14px; border-radius:8px; border:none; cursor:pointer;">
+                                    👉 Select Additional Certificate Copy Request
+                                </button>
                             </div>
                         `;
                     }
@@ -2344,9 +2405,12 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 if (fb) {
                     fb.innerHTML = `
                         <div style="background:#fef2f2; border:1.5px solid #ef4444; border-radius:10px; padding:12px 16px; margin-top:8px;">
-                            <div style="color:#dc2626; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+                            <div style="color:#dc2626; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
                                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#dc2626;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                                 Invalid Registry No.
+                            </div>
+                            <div style="color:#991b1b; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                                Please enter a valid registry number to proceed with a copy request.
                             </div>
                         </div>
                     `;
@@ -2358,11 +2422,17 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 const fb = document.getElementById('reg-cert-feedback');
                 if (fb) {
                     fb.innerHTML = `
-                        <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-top:8px;">
-                            <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
-                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#d97706;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <div style="background:#fff7ed; border:1.5px solid #f97316; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                            <div style="color:#c2410c; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.92rem;">
+                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#ea580c;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                                 Not Registered
                             </div>
+                            <div style="color:#9a3412; font-size:0.84rem; margin-top:4px; line-height:1.4;">
+                                This registry number is not registered in ISCAG Damayan records. Please choose <strong>Register Certificate</strong> to register this record first.
+                            </div>
+                            <button type="button" onclick="selectCertFunction('register')" style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; background:#ea580c; color:#ffffff; font-weight:700; font-size:0.8rem; padding:6px 14px; border-radius:8px; border:none; cursor:pointer;">
+                                👉 Select Register Certificate
+                            </button>
                         </div>
                     `;
                 }
