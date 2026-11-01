@@ -4596,40 +4596,14 @@ class AdminController extends Controller
 
         require_once BASE_PATH . '/app/models/BurialRequest.php';
         $model = new BurialRequest();
-        $record = $model->findEncodedByRegistrationNo($reg);
+        $record = $model->findRegisteredCertificate($reg);
 
         if ($record) {
             echo json_encode([
                 'success' => true,
                 'found' => true,
-                'record' => [
-                    'id' => $record['id'],
-                    'registration_number' => $record['registration_number'],
-                    'deceased_name' => $record['deceased_name'],
-                    'representative_name' => $record['representative_name'] ?? '',
-                    'source' => 'Damayan Encoded Archive',
-                    'encoded_by_name' => $record['encoded_by_name'] ?? 'Damayan Staff',
-                    'encoded_at' => $record['encoded_at'] ?? null
-                ]
-            ]);
-            return;
-        }
-
-        // Also check official registered records in burial_requests and death_records
-        $dup = $model->isDuplicateDeathCertRegNo($reg);
-        if ($dup) {
-            echo json_encode([
-                'success' => true,
-                'found' => true,
-                'record' => [
-                    'id' => null,
-                    'registration_number' => $dup['registration_number'],
-                    'deceased_name' => $dup['deceased_name'],
-                    'representative_name' => $dup['representative_name'] ?? '',
-                    'source' => $dup['source'] ?? 'Registered Department Records',
-                    'encoded_by_name' => $dup['encoded_by'] ?? 'ISCAG Damayan System',
-                    'encoded_at' => $dup['date'] ?? null
-                ]
+                'is_registered' => true,
+                'record' => $record
             ]);
             return;
         }

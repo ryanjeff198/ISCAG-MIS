@@ -2867,6 +2867,185 @@ class BurialRequest
 
     /**
      * Look up an encoded death certificate by registration number
+    /**
+     * Search for an existing registered death certificate across all archive sources:
+     * 1. encoded_death_certificates (by registration_number)
+     * 2. burial_requests (by death_cert_registry_no, existing_cert_no, or ref_id)
+     * 3. death_records (by registry_no)
+     * 4. dawah_death_certificates (by registration_number)
+     */
+    public function findRegisteredCertificate(string $search): ?array {
+        $search = trim($search);
+        if (empty($search)) return null;
+        $norm = self::normalizeRegNo($search);
+
+        try {
+            // 1. Check encoded_death_certificates
+            $sql1 = "SELECT id, registration_number, deceased_name, first_name, middle_name, last_name, 
+                            sex, date_of_birth, date_of_death, time_of_death, place_of_death, residence, 
+                            civil_status, religion, citizenship, representative_name, encoded_by_name, encoded_at 
+                     FROM encoded_death_certificates 
+                     WHERE (LOWER(TRIM(registration_number)) = LOWER(TRIM(:s1))
+                        OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm1)
+                     ORDER BY id DESC LIMIT 1";
+            $stmt1 = $this->db->prepare($sql1);
+            $stmt1->execute(['s1' => $search, 'norm1' => $norm]);
+            $row1 = $stmt1->fetch(PDO::FETCH_ASSOC);
+            if ($row1) {
+                return [
+                    'id' => (int)$row1['id'],
+                    'encoded_cert_id' => (int)$row1['id'],
+                    'deceased_id' => null,
+                    'registration_number' => $row1['registration_number'],
+                    'deceased_name' => $row1['deceased_name'],
+                    'first_name' => $row1['first_name'] ?? '',
+                    'middle_name' => $row1['middle_name'] ?? '',
+                    'last_name' => $row1['last_name'] ?? '',
+                    'sex' => $row1['sex'] ?? 'Male',
+                    'date_of_death' => $row1['date_of_death'],
+                    'date_of_birth' => $row1['date_of_birth'],
+                    'place_of_death' => $row1['place_of_death'] ?? '',
+                    'residence' => $row1['residence'] ?? '',
+                    'civil_status' => $row1['civil_status'] ?? '',
+                    'religion' => $row1['religion'] ?? 'Islam',
+                    'nationality' => $row1['citizenship'] ?? 'Filipino',
+                    'representative_name' => $row1['representative_name'] ?? '',
+                    'source' => 'Damayan Encoded Archive',
+                    'source_type' => 'encoded',
+                    'status' => 'Archived / Official'
+                ];
+            }
+
+            // 2. Check burial_requests (official civil records)
+            $sql2 = "SELECT id, ref_id, tenant_id, deceased_id, encoded_cert_id, deceased_name, 
+                            deceased_first_name, deceased_middle_name, deceased_last_name, deceased_sex, 
+                            date_of_birth, date_of_death, place_of_death, residence, civil_status, 
+                            nationality, religion, informant_name, death_cert_registry_no, existing_cert_no, 
+                            status, death_cert_status, submitted_at 
+                     FROM burial_requests 
+                     WHERE status NOT IN ('Rejected')
+                       AND (
+                           LOWER(TRIM(ref_id)) = LOWER(TRIM(:s2))
+                           OR (death_cert_registry_no IS NOT NULL AND death_cert_registry_no != '' AND (LOWER(TRIM(death_cert_registry_no)) = LOWER(TRIM(:s3)) OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(death_cert_registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm2))
+                           OR (existing_cert_no IS NOT NULL AND existing_cert_no != '' AND (LOWER(TRIM(existing_cert_no)) = LOWER(TRIM(:s4)) OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(existing_cert_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm3))
+                       )
+                     ORDER BY id DESC LIMIT 1";
+            $stmt2 = $this->db->prepare($sql2);
+            $stmt2->execute([
+                's2' => $search,
+                's3' => $search,
+                'norm2' => $norm,
+                's4' => $search,
+                'norm3' => $norm
+            ]);
+            $row2 = $stmt2->fetch(PDO::FETCH_ASSOC);
+            if ($row2) {
+                $regNum = !empty($row2['death_cert_registry_no']) ? $row2['death_cert_registry_no'] : (!empty($row2['existing_cert_no']) ? $row2['existing_cert_no'] : $row2['ref_id']);
+                return [
+                    'id' => (int)$row2['id'],
+                    'burial_request_id' => (int)$row2['id'],
+                    'encoded_cert_id' => !empty($row2['encoded_cert_id']) ? (int)$row2['encoded_cert_id'] : null,
+                    'deceased_id' => !empty($row2['deceased_id']) ? (int)$row2['deceased_id'] : null,
+                    'ref_id' => $row2['ref_id'],
+                    'registration_number' => $regNum,
+                    'deceased_name' => $row2['deceased_name'],
+                    'first_name' => $row2['deceased_first_name'] ?? '',
+                    'middle_name' => $row2['deceased_middle_name'] ?? '',
+                    'last_name' => $row2['deceased_last_name'] ?? '',
+                    'sex' => $row2['deceased_sex'] ?? 'Male',
+                    'date_of_death' => $row2['date_of_death'],
+                    'date_of_birth' => $row2['date_of_birth'],
+                    'place_of_death' => $row2['place_of_death'] ?? '',
+                    'residence' => $row2['residence'] ?? '',
+                    'civil_status' => $row2['civil_status'] ?? '',
+                    'religion' => $row2['religion'] ?? 'Islam',
+                    'nationality' => $row2['nationality'] ?? 'Filipino',
+                    'representative_name' => $row2['informant_name'] ?? '',
+                    'source' => 'Registered Record (Ref #' . $row2['ref_id'] . ')',
+                    'source_type' => 'burial_request',
+                    'status' => $row2['death_cert_status'] ?: $row2['status']
+                ];
+            }
+
+            // 3. Check death_records if table exists
+            try {
+                $sql3 = "SELECT deceased_id, registry_no, dfirst_name, dmiddle_name, last_name, 
+                                CONCAT_WS(' ', dfirst_name, dmiddle_name, last_name) as deceased_name, 
+                                date_of_death 
+                         FROM death_records 
+                         WHERE (LOWER(TRIM(registry_no)) = LOWER(TRIM(:s5))
+                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm4)
+                         LIMIT 1";
+                $stmt3 = $this->db->prepare($sql3);
+                $stmt3->execute(['s5' => $search, 'norm4' => $norm]);
+                $row3 = $stmt3->fetch(PDO::FETCH_ASSOC);
+                if ($row3) {
+                    return [
+                        'id' => null,
+                        'encoded_cert_id' => null,
+                        'deceased_id' => (int)($row3['deceased_id'] ?? 0),
+                        'registration_number' => $row3['registry_no'],
+                        'deceased_name' => trim($row3['deceased_name']),
+                        'first_name' => $row3['dfirst_name'] ?? '',
+                        'middle_name' => $row3['dmiddle_name'] ?? '',
+                        'last_name' => $row3['last_name'] ?? '',
+                        'sex' => 'Male',
+                        'date_of_death' => $row3['date_of_death'] ?? null,
+                        'date_of_birth' => null,
+                        'place_of_death' => '',
+                        'residence' => '',
+                        'civil_status' => '',
+                        'religion' => 'Islam',
+                        'nationality' => 'Filipino',
+                        'representative_name' => '',
+                        'source' => 'Civil Registry Records',
+                        'source_type' => 'death_record',
+                        'status' => 'Registered'
+                    ];
+                }
+            } catch (\Throwable $e3) {}
+
+            // 4. Check dawah_death_certificates if table exists
+            try {
+                $sql4 = "SELECT id, registration_number, deceased_name, first_name, middle_name, last_name, 
+                                date_of_death, informant_name 
+                         FROM dawah_death_certificates 
+                         WHERE (LOWER(TRIM(registration_number)) = LOWER(TRIM(:s6))
+                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(registration_number)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm5)
+                         LIMIT 1";
+                $stmt4 = $this->db->prepare($sql4);
+                $stmt4->execute(['s6' => $search, 'norm5' => $norm]);
+                $row4 = $stmt4->fetch(PDO::FETCH_ASSOC);
+                if ($row4) {
+                    return [
+                        'id' => (int)$row4['id'],
+                        'encoded_cert_id' => null,
+                        'deceased_id' => null,
+                        'registration_number' => $row4['registration_number'],
+                        'deceased_name' => $row4['deceased_name'],
+                        'first_name' => $row4['first_name'] ?? '',
+                        'middle_name' => $row4['middle_name'] ?? '',
+                        'last_name' => $row4['last_name'] ?? '',
+                        'sex' => 'Male',
+                        'date_of_death' => $row4['date_of_death'] ?? null,
+                        'date_of_birth' => null,
+                        'representative_name' => $row4['informant_name'] ?? '',
+                        'source' => "Da'wah Death Registry",
+                        'source_type' => 'dawah',
+                        'status' => 'Registered'
+                    ];
+                }
+            } catch (\Throwable $e4) {}
+
+            return null;
+        } catch (\PDOException $e) {
+            error_log("findRegisteredCertificate error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Look up an encoded death certificate by registration number
      */
     public function findEncodedByRegistrationNo(string $regNo): ?array {
         $regNo = trim($regNo);
@@ -2920,21 +3099,26 @@ class BurialRequest
                 ];
             }
 
-            // Check 2: burial_requests (official completed registrations only)
-            $stmt2 = $this->db->prepare("SELECT id, ref_id, death_cert_registry_no, deceased_name, informant_name, submitted_at 
+            // Check 2: burial_requests (official civil records)
+            $stmt2 = $this->db->prepare("SELECT id, ref_id, death_cert_registry_no, existing_cert_no, deceased_name, informant_name, date_of_death, submitted_at 
                                          FROM burial_requests 
-                                         WHERE (LOWER(death_cert_registry_no) = LOWER(:reg)
-                                            OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(death_cert_registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm) 
+                                         WHERE status NOT IN ('Rejected')
+                                           AND (
+                                               (death_cert_registry_no IS NOT NULL AND death_cert_registry_no != '' AND (LOWER(TRIM(death_cert_registry_no)) = LOWER(TRIM(:reg1)) OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(death_cert_registry_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm1))
+                                               OR (existing_cert_no IS NOT NULL AND existing_cert_no != '' AND (LOWER(TRIM(existing_cert_no)) = LOWER(TRIM(:reg2)) OR REPLACE(REPLACE(REPLACE(REPLACE(LOWER(TRIM(existing_cert_no)), '#', ''), ' ', ''), '-', ''), '/', '') = :norm2))
+                                               OR LOWER(TRIM(ref_id)) = LOWER(TRIM(:reg3))
+                                           )
                                          LIMIT 1");
-            $stmt2->execute(['reg' => $regNo, 'norm' => $norm]);
+            $stmt2->execute(['reg1' => $regNo, 'norm1' => $norm, 'reg2' => $regNo, 'norm2' => $norm, 'reg3' => $regNo]);
             $row2 = $stmt2->fetch(PDO::FETCH_ASSOC);
             if ($row2) {
                 return [
                     'is_duplicate' => true,
                     'source' => 'Official Registered Records (# ' . $row2['ref_id'] . ')',
-                    'registration_number' => $row2['death_cert_registry_no'],
+                    'registration_number' => $row2['death_cert_registry_no'] ?: ($row2['existing_cert_no'] ?: $row2['ref_id']),
                     'deceased_name' => $row2['deceased_name'],
                     'representative_name' => $row2['informant_name'],
+                    'date_of_death' => $row2['date_of_death'],
                     'date' => $row2['submitted_at']
                 ];
             }

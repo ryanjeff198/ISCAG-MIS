@@ -1716,16 +1716,31 @@ class UserController extends Controller
             }
         }
 
+        // Check if registry number is already registered when in 'register' mode
+        if ($certActionType === 'register' && !empty($existingCertNo)) {
+            $alreadyRegistered = $model->findRegisteredCertificate($existingCertNo);
+            if ($alreadyRegistered) {
+                $decName = $alreadyRegistered['deceased_name'] ?? 'existing record';
+                $sendJson([
+                    'success' => false,
+                    'message' => "Certificate Registry Number '{$existingCertNo}' is already registered in ISCAG records for deceased '{$decName}'. Duplicate registrations cannot be created. Please submit an Additional Certificate Copy Request instead."
+                ]);
+                return;
+            }
+        }
+
         if (!$certFoundInDept && !empty($existingCertNo)) {
-            $enc = $model->findEncodedByRegistrationNo($existingCertNo);
-            if ($enc) {
+            $regRecord = $model->findRegisteredCertificate($existingCertNo);
+            if ($regRecord) {
                 $certFoundInDept = true;
-                $linkedEncodedRecord = $enc;
-                $encodedCertId = (int)$enc['id'];
-            } else {
-                $dup = $model->isDuplicateDeathCertRegNo($existingCertNo);
-                if ($dup) {
-                    $certFoundInDept = true;
+                if (!empty($regRecord['encoded_cert_id'])) {
+                    $encodedCertId = (int)$regRecord['encoded_cert_id'];
+                }
+                if (!empty($regRecord['deceased_id'])) {
+                    $deceasedId = (int)$regRecord['deceased_id'];
+                }
+                if (empty($fullName) && !empty($regRecord['deceased_name'])) {
+                    $fullName = $regRecord['deceased_name'];
                 }
             }
         }
