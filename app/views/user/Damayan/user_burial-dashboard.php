@@ -1035,6 +1035,23 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
 </div>
 
 <script>
+let isDashRegVerified = false;
+
+function isRegistryNumberComplete(val, isBlur = false) {
+  val = (val || '').trim();
+  if (!val) return false;
+  const clean = val.replace(/^#/, '').trim();
+  if (!/[-\/]/.test(clean)) return false;
+  
+  const alphanumOnly = clean.replace(/[^A-Za-z0-9]/g, '');
+  const minDigits = isBlur ? 7 : 8;
+  if (alphanumOnly.length < minDigits) return false;
+
+  const minLastPart = isBlur ? 3 : 4;
+  const lastPartRegex = new RegExp(`[-\\/][A-Za-z0-9]{${minLastPart},}$`);
+  return lastPartRegex.test(clean);
+}
+
 function selectDashCertPurpose(type) {
   const hiddenInput = document.getElementById('dash-selected-purpose');
   if (hiddenInput) hiddenInput.value = type;
@@ -1044,6 +1061,7 @@ function selectDashCertPurpose(type) {
   const btnText = document.getElementById('dash-btn-submit-text');
   const regTag = document.getElementById('dash-reg-req-tag');
   const regFeedback = document.getElementById('dash-reg-cert-feedback');
+  const curVal = document.getElementById('dash-reg-cert-no')?.value?.trim();
 
   if (type === 'copy') {
     if (copyCard) {
@@ -1058,7 +1076,12 @@ function selectDashCertPurpose(type) {
     }
     if (btnText) btnText.textContent = 'Proceed to Copy Request';
     if (regTag) regTag.innerHTML = '<span style="color:#dc2626; font-weight:bold;">*</span>';
-    if (regFeedback) regFeedback.textContent = 'Enter the registry number of your already registered death certificate to locate your record.';
+    
+    if (curVal && isRegistryNumberComplete(curVal, true)) {
+      checkDashRegCertNumber(curVal, true);
+    } else if (regFeedback) {
+      regFeedback.innerHTML = '<span style="color:var(--text-muted); font-size:0.78rem;">Enter the registry number of your already registered death certificate to locate your record.</span>';
+    }
   } else {
     if (regCard) {
       regCard.classList.add('selected');
@@ -1072,7 +1095,12 @@ function selectDashCertPurpose(type) {
     }
     if (btnText) btnText.textContent = 'Proceed to Register Certificate';
     if (regTag) regTag.innerHTML = '(Optional - if already assigned by LCRO/Hospital)';
-    if (regFeedback) regFeedback.textContent = 'Leave blank if registering a new death certificate without an existing number, or enter to verify and link an existing record.';
+    
+    if (curVal && isRegistryNumberComplete(curVal, true)) {
+      checkDashRegCertNumber(curVal, true);
+    } else if (regFeedback) {
+      regFeedback.innerHTML = '<span style="color:var(--text-muted); font-size:0.78rem;">Leave blank if registering a new death certificate without an existing number, or enter to verify and link an existing record.</span>';
+    }
   }
 }
 
@@ -1080,7 +1108,7 @@ let dashCertLookupTimeout = null;
 function debouncedDashCheckRegCert(val) {
   clearTimeout(dashCertLookupTimeout);
   dashCertLookupTimeout = setTimeout(() => {
-    checkDashRegCertNumber(val);
+    checkDashRegCertNumber(val, false);
   }, 300);
 }
 
@@ -1090,34 +1118,55 @@ function escapeHtml(str) {
   });
 }
 
-async function checkDashRegCertNumber(val) {
+async function checkDashRegCertNumber(val, isBlur = false) {
   val = (val || '').trim();
   const fb = document.getElementById('dash-reg-cert-feedback');
+  const purpose = document.getElementById('dash-selected-purpose')?.value || 'register';
+  
   if (!val) {
-    if (fb) fb.innerHTML = 'Enter the certificate registration number to verify it exists within the ISCAG Damayan Department records.';
+    isDashRegVerified = false;
+    if (fb) {
+      fb.innerHTML = purpose === 'copy'
+        ? '<span style="color:var(--text-muted); font-size:0.78rem;">Enter the registry number of your already registered death certificate to locate your record.</span>'
+        : '<span style="color:var(--text-muted); font-size:0.78rem;">Leave blank if registering a new death certificate without an existing number, or enter to verify and link an existing record.</span>';
+    }
     return;
   }
+
+  // If incomplete format or length, do not display a premature validation result
+  if (!isRegistryNumberComplete(val, isBlur)) {
+    isDashRegVerified = false;
+    if (fb) {
+      fb.innerHTML = purpose === 'copy'
+        ? '<span style="color:var(--text-muted); font-size:0.78rem;">Enter the registry number of your already registered death certificate to locate your record.</span>'
+        : '<span style="color:var(--text-muted); font-size:0.78rem;">Leave blank if registering a new death certificate without an existing number, or enter to verify and link an existing record.</span>';
+    }
+    return;
+  }
+
   try {
     const res = await fetch('<?= url('/user/damayan/lookup-cert') ?>?reg=' + encodeURIComponent(val));
     const data = await res.json();
     if (data && data.found && data.record) {
+      isDashRegVerified = true;
       if (fb) {
         fb.innerHTML = `
-          <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:8px 12px; margin-top:8px;">
-            <div style="color:#059669; font-weight:700; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
-              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-              Registered
+          <div style="background:#ecfdf5; border:1.5px solid #10b981; border-radius:10px; padding:12px 16px; margin-top:8px;">
+            <div style="color:#059669; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#059669;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+              Death Certificate Registry Number Successfully Verified.
             </div>
           </div>
         `;
       }
     } else {
+      isDashRegVerified = false;
       if (fb) {
         fb.innerHTML = `
-          <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px 12px; margin-top:8px;">
-            <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
-              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#b45309;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-              Not Registered
+          <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-top:8px;">
+            <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#d97706;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              Death Certificate Registry Number Not Yet Registered.
             </div>
           </div>
         `;
@@ -1130,12 +1179,48 @@ function handleDashPurposeSubmit(event) {
   const purpose = document.getElementById('dash-selected-purpose')?.value || 'register';
   const regInput = document.getElementById('dash-reg-cert-no');
   const regVal = (regInput ? regInput.value : '').trim();
+  const fb = document.getElementById('dash-reg-cert-feedback');
   
-  if (purpose === 'copy' && !regVal) {
-    event.preventDefault();
-    alert('Please enter your Department Certificate Registry Number to locate your existing record before requesting an additional copy.');
-    if (regInput) regInput.focus();
-    return false;
+  if (purpose === 'copy') {
+    if (!regVal) {
+      event.preventDefault();
+      if (fb) {
+        fb.innerHTML = `
+          <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-top:8px;">
+            <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#d97706;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              Please enter your Department Certificate Registry Number to proceed with an additional copy request.
+            </div>
+          </div>
+        `;
+      }
+      if (regInput) regInput.focus();
+      return false;
+    }
+    
+    if (!isRegistryNumberComplete(regVal, true) || !isDashRegVerified) {
+      event.preventDefault();
+      if (fb) {
+        fb.innerHTML = `
+          <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-top:8px;">
+            <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+              <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#d97706;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              Death Certificate Registry Number Not Yet Registered.
+            </div>
+          </div>
+        `;
+      }
+      if (regInput) regInput.focus();
+      return false;
+    }
+  } else {
+    // Register Certificate option follows existing workflow
+    if (regVal && isRegistryNumberComplete(regVal, true) && isDashRegVerified) {
+      event.preventDefault();
+      alert('This Certificate Registry Number is already registered in ISCAG Damayan records. You cannot submit a duplicate registration. Please select "Additional Certificate Copy Request".');
+      if (regInput) regInput.focus();
+      return false;
+    }
   }
   return true;
 }
