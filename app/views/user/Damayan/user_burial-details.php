@@ -1992,17 +1992,32 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }, 300);
     }
 
+    function isRegistryNumberFormatValid(val) {
+        val = (val || '').trim();
+        if (!val) return false;
+        const clean = val.replace(/^#/, '').trim();
+        if (!/[-\/]/.test(clean)) return false;
+        if (/[^A-Za-z0-9\-\/\s]/.test(clean)) return false;
+        
+        const alphanumOnly = clean.replace(/[^A-Za-z0-9]/g, '');
+        if (alphanumOnly.length < 5) return false;
+
+        const lastPartRegex = /[-\/][A-Za-z0-9]{2,}$/;
+        return lastPartRegex.test(clean);
+    }
+
     function isRegistryNumberComplete(val, isBlur = false) {
         val = (val || '').trim();
         if (!val) return false;
         const clean = val.replace(/^#/, '').trim();
         if (!/[-\/]/.test(clean)) return false;
+        if (/[^A-Za-z0-9\-\/\s]/.test(clean)) return false;
         
         const alphanumOnly = clean.replace(/[^A-Za-z0-9]/g, '');
-        const minDigits = isBlur ? 7 : 8;
+        const minDigits = isBlur ? 5 : 7;
         if (alphanumOnly.length < minDigits) return false;
 
-        const minLastPart = isBlur ? 3 : 4;
+        const minLastPart = isBlur ? 2 : 3;
         const lastPartRegex = new RegExp(`[-\\/][A-Za-z0-9]{${minLastPart},}$`);
         return lastPartRegex.test(clean);
     }
@@ -2032,10 +2047,27 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     ? '<span style="color:var(--text-muted); font-size:0.78rem;">Enter the registry number of your already registered death certificate to locate your record.</span>'
                     : '<span style="color:var(--text-muted); font-size:0.78rem;">Leave blank if registering a new death certificate without an existing number, or enter to verify and link an existing record.</span>';
             }
-            return;
+            return false;
         }
 
-        // Do not display a premature validation result if incomplete format or length
+        // If on blur and format is invalid, show Invalid Registry No.
+        if (isBlur && !isRegistryNumberFormatValid(val)) {
+            isCertVerifiedInDept = false;
+            isRegNumberAlreadyRegistered = false;
+            if (fb) {
+                fb.innerHTML = `
+                    <div style="background:#fef2f2; border:1.5px solid #ef4444; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                        <div style="color:#dc2626; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+                            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#dc2626;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                            Invalid Registry No.
+                        </div>
+                    </div>
+                `;
+            }
+            return false;
+        }
+
+        // Do not display a premature validation result if incomplete format or length while typing
         if (!isRegistryNumberComplete(val, isBlur)) {
             isCertVerifiedInDept = false;
             isRegNumberAlreadyRegistered = false;
@@ -2044,7 +2076,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     ? '<span style="color:var(--text-muted); font-size:0.78rem;">Enter the registry number of your already registered death certificate to locate your record.</span>'
                     : '<span style="color:var(--text-muted); font-size:0.78rem;">Leave blank if registering a new death certificate without an existing number, or enter to verify and link an existing record.</span>';
             }
-            return;
+            return false;
         }
 
         try {
@@ -2075,11 +2107,12 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         <div style="background:#ecfdf5; border:1.5px solid #10b981; border-radius:10px; padding:12px 16px; margin-top:8px;">
                             <div style="color:#059669; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
                                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#059669;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                                Death Certificate Registry Number Successfully Verified.
+                                Already Registered
                             </div>
                         </div>
                     `;
                 }
+                return true;
             } else {
                 isCertVerifiedInDept = false;
                 isRegNumberAlreadyRegistered = false;
@@ -2091,15 +2124,19 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-top:8px;">
                             <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
                                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#d97706;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                                Death Certificate Registry Number Not Yet Registered.
+                                Not Registered
                             </div>
                         </div>
                     `;
                 }
+                return false;
             }
         } catch(e) {
             console.error('Error checking registry number:', e);
+            return false;
         }
+
+
     }
 
     function switchToCopyRequest(regNo) {
@@ -2143,6 +2180,23 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             isCertVerifiedInDept = false;
             return;
         }
+
+        if (!isRegistryNumberFormatValid(val)) {
+            isCertVerifiedInDept = false;
+            if (hiddenEncId) hiddenEncId.value = '';
+            if (fb) {
+                fb.innerHTML = `
+                    <div style="background:#fef2f2; border:1.5px solid #ef4444; border-radius:10px; padding:12px 16px; margin-top:6px;">
+                        <div style="color:#dc2626; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+                            <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#dc2626;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                            Invalid Registry No.
+                        </div>
+                    </div>
+                `;
+            }
+            return;
+        }
+
         try {
             const res = await fetch('<?= url('/user/damayan/lookup-cert') ?>?reg=' + encodeURIComponent(val));
             const data = await res.json();
@@ -2154,7 +2208,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         <div style="background:#ecfdf5; border:1.5px solid #10b981; border-radius:10px; padding:12px 16px; margin-top:6px;">
                             <div style="color:#059669; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
                                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#059669;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                                Death Certificate Registry Number Successfully Verified.
+                                Already Registered
                             </div>
                         </div>
                     `;
@@ -2171,7 +2225,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-top:6px;">
                             <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
                                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#d97706;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                                Death Certificate Registry Number Not Yet Registered.
+                                Not Registered
                             </div>
                         </div>
                     `;
@@ -2243,10 +2297,37 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             }
 
             const regCertNoVal = document.getElementById('reg-cert-no')?.value?.trim();
-            if (regCertNoVal && isRegistryNumberComplete(regCertNoVal, true) && isRegNumberAlreadyRegistered) {
-                alert('This Certificate Registry Number is already registered in ISCAG Damayan records. You cannot submit a duplicate registration. Please switch to "Additional Certificate Copy Request".');
-                document.getElementById('reg-cert-no')?.focus();
-                return;
+            if (regCertNoVal) {
+                if (!isRegistryNumberFormatValid(regCertNoVal)) {
+                    const fb = document.getElementById('reg-cert-feedback');
+                    if (fb) {
+                        fb.innerHTML = `
+                            <div style="background:#fef2f2; border:1.5px solid #ef4444; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                                <div style="color:#dc2626; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#dc2626;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                    Invalid Registry No.
+                                </div>
+                            </div>
+                        `;
+                    }
+                    document.getElementById('reg-cert-no')?.focus();
+                    return;
+                }
+                if (isRegNumberAlreadyRegistered) {
+                    const fb = document.getElementById('reg-cert-feedback');
+                    if (fb) {
+                        fb.innerHTML = `
+                            <div style="background:#ecfdf5; border:1.5px solid #10b981; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                                <div style="color:#059669; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#059669;flex-shrink:0;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                    Already Registered
+                                </div>
+                            </div>
+                        `;
+                    }
+                    document.getElementById('reg-cert-no')?.focus();
+                    return;
+                }
             }
         }
 
@@ -2258,8 +2339,18 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 
         // Verification Gate: Existing certificate record must be confirmed in department archive only for copy requests
         if (certAction === 'copy') {
-            if (!regCertNo) {
-                alert('Please enter your Department Certificate Registry Number to proceed with an additional copy request.');
+            if (!regCertNo || !isRegistryNumberFormatValid(regCertNo)) {
+                const fb = document.getElementById('reg-cert-feedback');
+                if (fb) {
+                    fb.innerHTML = `
+                        <div style="background:#fef2f2; border:1.5px solid #ef4444; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                            <div style="color:#dc2626; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#dc2626;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                Invalid Registry No.
+                            </div>
+                        </div>
+                    `;
+                }
                 document.getElementById('reg-cert-no')?.focus();
                 return;
             }
@@ -2270,16 +2361,16 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         <div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-top:8px;">
                             <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:8px; font-size:0.9rem;">
                                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#d97706;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                                Death Certificate Registry Number Not Yet Registered.
+                                Not Registered
                             </div>
                         </div>
                     `;
                 }
-                alert('Death Certificate Registry Number Not Yet Registered.\n\nAdditional copy requests can only be processed for death certificates already registered in ISCAG Damayan records.');
                 document.getElementById('reg-cert-no')?.focus();
                 return;
             }
         }
+
 
         const btnSubmit = document.getElementById('btn-submit-burial');
         const originalText = btnSubmit.innerHTML;
