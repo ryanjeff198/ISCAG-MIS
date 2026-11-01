@@ -1103,15 +1103,10 @@ async function checkDashRegCertNumber(val) {
     if (data && data.found && data.record) {
       if (fb) {
         fb.innerHTML = `
-          <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:10px 14px; margin-top:8px;">
-            <div style="color:#059669; font-weight:800; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
+          <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:8px 12px; margin-top:8px;">
+            <div style="color:#059669; font-weight:700; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
               <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-              ✓ Verified in Damayan Department Archive
-            </div>
-            <div style="font-size:0.8rem; color:#064e3b; margin-top:4px; line-height:1.4;">
-              <strong>Deceased:</strong> ${escapeHtml(data.record.deceased_name)}<br>
-              <strong>Registry Number:</strong> <code>${escapeHtml(data.record.registration_number)}</code><br>
-              <strong>Archive Source:</strong> ${escapeHtml(data.record.source || 'Encoded Archive')}
+              Registered
             </div>
           </div>
         `;
@@ -1119,8 +1114,11 @@ async function checkDashRegCertNumber(val) {
     } else {
       if (fb) {
         fb.innerHTML = `
-          <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 14px; margin-top:8px; color:#92400e; font-size:0.8rem; line-height:1.4;">
-            <strong>⚠ Record Not Found in Department Archive:</strong> Only death certificates registered within the Damayan Department can be processed. Please double-check your registry number.
+          <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px 12px; margin-top:8px;">
+            <div style="color:#b45309; font-weight:700; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
+              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#b45309;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              Not Registered
+            </div>
           </div>
         `;
       }

@@ -2059,7 +2059,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             <div style="background:#ecfdf5; border:1.5px solid #10b981; border-radius:10px; padding:12px 16px; margin-top:8px;">
                                 <div style="color:#059669; font-weight:800; display:flex; align-items:center; gap:8px; font-size:0.88rem;">
                                     <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                                    ✓ Registered Death Certificate Found &amp; Verified
+                                    Registered Death Certificate Found &amp; Verified
                                 </div>
                                 <div style="font-size:0.82rem; color:#064e3b; margin-top:6px; line-height:1.5;">
                                     <strong>Deceased:</strong> ${escapeHtml(data.record.deceased_name)}<br>
@@ -2190,7 +2190,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         <div style="background:#ecfdf5; border:1px solid #10b981; border-radius:8px; padding:10px 14px; margin-top:6px;">
                             <div style="color:#059669; font-weight:800; display:flex; align-items:center; gap:6px; font-size:0.85rem;">
                                 <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#059669;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-                                ✓ Verified in Damayan Department Archive
+                                Verified in Damayan Department Archive
                             </div>
                             <div style="font-size:0.8rem; color:#064e3b; margin-top:4px; line-height:1.4;">
                                 <strong>Deceased:</strong> ${escapeHtml(data.record.deceased_name)}<br>
