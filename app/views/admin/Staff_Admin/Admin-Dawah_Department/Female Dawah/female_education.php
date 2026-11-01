@@ -1037,6 +1037,10 @@
     </div>
   </div>
 
+  <script>
+    window.DAWAH_SECTION = 'female';
+    window.STAFF_DEPARTMENT_ROLE = 'Staff_Female';
+  </script>
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     syncSessionUser('<?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>', '<?= $dbUser['email'] ?? '' ?>', '<?= $_SESSION['role'] ?? '' ?>');

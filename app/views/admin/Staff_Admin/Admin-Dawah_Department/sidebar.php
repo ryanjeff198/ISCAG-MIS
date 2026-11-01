@@ -188,16 +188,18 @@ $initials = strtoupper($first_initial . $last_initial);
 
 <?php
   $dawahUnread = 0;
+  $isFemaleDawah = (($dawah_type ?? '') === 'female' || ($_SESSION['role'] ?? '') === 'Staff_Female');
+  $dawahRole = $isFemaleDawah ? 'Staff_Female' : 'Staff_Male';
   try {
       require_once BASE_PATH . '/app/models/AdminNotification.php';
-      $dawahRole = $_SESSION['role'] ?? ((($dawah_type ?? '') == 'female') ? 'Staff_Female' : 'Staff_Male');
       $dawahUnread = (new AdminNotification())->getUnreadCountForRole($dawahRole);
   } catch (\Exception $e) {}
+  $dawahNotifUrl = url($isFemaleDawah ? '/admin/dawah/notifications?type=female' : '/admin/dawah/notifications');
 ?>
-    <a href="<?= url('/admin/dawah/notifications') ?>" class="nav-item <?= ($active_page ?? '') == 'notifications' ? 'active' : '' ?>" data-tooltip="System Notifications" style="position:relative;">
+    <a href="<?= $dawahNotifUrl ?>" class="nav-item <?= ($active_page ?? '') == 'notifications' ? 'active' : '' ?>" data-tooltip="System Notifications" style="position:relative;">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" /></svg>
       <span class="nav-item-label">Notifications</span>
-      <span class="notif-dot" style="<?= $dawahUnread > 0 ? '' : 'display:none;' ?>"><?= $dawahUnread > 99 ? '99+' : $dawahUnread ?></span>
+      <span class="notif-dot" id="dawah-notif-dot" data-role="<?= $dawahRole ?>" style="<?= $dawahUnread > 0 ? '' : 'display:none;' ?>"><?= $dawahUnread > 99 ? '99+' : $dawahUnread ?></span>
     </a>
   </nav>
   <div class="sidebar-footer">

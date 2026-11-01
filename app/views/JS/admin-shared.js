@@ -631,8 +631,8 @@ function addNotification(tenantId, title, message, type, link) {
 function updateAllAdminNotifDots(unread) {
   const count = Number(unread) || 0;
 
-  // 1. Update any existing .notif-dot inside .nav-item
-  document.querySelectorAll('.nav-item .notif-dot').forEach(badge => {
+  // 1. Update any existing .notif-dot or #dawah-notif-dot inside .nav-item
+  document.querySelectorAll('.nav-item .notif-dot, #dawah-notif-dot, .notif-dot').forEach(badge => {
     if (count > 0) {
       badge.textContent = count > 99 ? '99+' : count;
       badge.style.display = 'flex';
@@ -677,22 +677,47 @@ function initNotifBadge(role) {
   if (role === 'tenant') return;
 
   const basePath = (typeof window.APP_URL !== 'undefined' ? window.APP_URL : '');
-  fetch(basePath + '/admin/notifications/unread-count?t=' + Date.now(), {
-    headers: { 'Accept': 'application/json' },
-    cache: 'no-store'
-  })
-    .then(res => {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
+  
+  // Detect department role (e.g. Female Da'wah section)
+  const dawahDot = document.getElementById('dawah-notif-dot');
+  const dawahDotRole = dawahDot ? dawahDot.getAttribute('data-role') : null;
+  const isFemalePage = (window.DAWAH_SECTION === 'female') || 
+                       (window.location.href.includes('/dawah/female')) || 
+                       (window.location.href.includes('type=female'));
+  const deptRole = window.STAFF_DEPARTMENT_ROLE || dawahDotRole || (isFemalePage ? 'Staff_Female' : null);
+
+  const fetchUnread = () => {
+    let url = basePath + '/admin/notifications/unread-count?t=' + Date.now();
+    if (deptRole) {
+      url += '&role=' + encodeURIComponent(deptRole);
+    }
+
+    fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store'
     })
-    .then(data => {
-      if (data && typeof data.count !== 'undefined') {
-        updateAllAdminNotifDots(data.count);
-      }
-    })
-    .catch(() => {
-      // Fallback: keep current rendered status if fetch fails
-    });
+      .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(data => {
+        if (data && typeof data.count !== 'undefined') {
+          updateAllAdminNotifDots(data.count);
+        }
+      })
+      .catch(() => {
+        // Fallback: keep current rendered status if fetch fails
+      });
+  };
+
+  fetchUnread();
+
+  // Responsive polling: auto-refresh every 12 seconds and whenever the window gains focus
+  if (!window._notifBadgePollingActive) {
+    window._notifBadgePollingActive = true;
+    setInterval(fetchUnread, 12000);
+    window.addEventListener('focus', fetchUnread);
+  }
 }
 
 // ── Workflow Logic ──
@@ -1094,14 +1119,12 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
   initAdminData();
   initLogoutModal();
   initTableSearch();
-  initNotifBadge('admin');
-  setInterval(() => initNotifBadge('admin'), 10000);
+  initNotifBadge();
 } else {
   document.addEventListener('DOMContentLoaded', () => {
     initAdminData();
     initLogoutModal();
     initTableSearch();
-    initNotifBadge('admin');
-    setInterval(() => initNotifBadge('admin'), 10000);
+    initNotifBadge();
   });
 }

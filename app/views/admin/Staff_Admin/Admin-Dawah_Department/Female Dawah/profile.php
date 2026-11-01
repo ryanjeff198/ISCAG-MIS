@@ -334,6 +334,10 @@ $initials = strtoupper(substr($dbUser['first_name'] ?? 'F', 0, 1) . substr($dbUs
   <!-- Toast Element -->
   <div id="profile-toast" class="profile-toast"></div>
 
+  <script>
+    window.DAWAH_SECTION = 'female';
+    window.STAFF_DEPARTMENT_ROLE = 'Staff_Female';
+  </script>
   <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= asset('js/phone-validator.js') ?>"></script>
   <script>

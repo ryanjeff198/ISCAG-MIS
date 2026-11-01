@@ -71,7 +71,7 @@ class AdminNotification
             case 'Staff_Male':
                 return ['counseling', 'marriage', 'conversion', 'dawah', 'male_counseling', 'death_certificate'];
             case 'Staff_Female':
-                return ['counseling', 'education', 'female_education', 'female_counseling', 'dawah'];
+                return ['counseling', 'education', 'female_education', 'female_counseling', 'dawah', 'female_payment', 'female_education_payment'];
             case 'Admin':
             default:
                 return [];

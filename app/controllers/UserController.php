@@ -590,6 +590,19 @@ class UserController extends Controller
                 );
             } catch (Exception $e) {}
 
+            try {
+                require_once BASE_PATH . '/app/models/AdminNotification.php';
+                $adminNotif = new AdminNotification();
+                $adminNotif->create(
+                    "New Female Education Registration ($refCode)",
+                    "A new student enrollment has been submitted by {$fname} {$lname} for {$chosenProg} ({$batchNo}).",
+                    'female_education',
+                    "{$fname} {$lname}",
+                    $userId,
+                    url('/admin/dawah/education/requests')
+                );
+            } catch (\Throwable $e) {}
+
             echo json_encode([
                 'success' => true,
                 'id' => $newId,
@@ -936,7 +949,7 @@ class UserController extends Controller
             $adminNotif->create(
                 'Female Education Registration & Payment Received',
                 "{$studentName} registered for Da'wah Female Section ($refCode) and paid ₱" . number_format($amount, 2) . " via PayMongo (Ref: {$refNo}).",
-                'payment',
+                'female_education',
                 $studentName,
                 $userId,
                 null
@@ -1497,6 +1510,24 @@ class UserController extends Controller
                 );
             } catch (Exception $e) {
                 error_log("Counseling notification error: " . $e->getMessage());
+            }
+
+            // Send admin in-app notification to appropriate dawah staff
+            try {
+                require_once BASE_PATH . '/app/models/AdminNotification.php';
+                $adminNotif = new AdminNotification();
+                $counselingType = ($gender === 'female') ? 'female_counseling' : 'male_counseling';
+                $counselingUrl = ($gender === 'female') ? url('/admin/dawah/female/counseling') : url('/admin/dawah/counseling');
+                $adminNotif->create(
+                    "New Counseling Request ($refNo)",
+                    "A new {$gender} counseling request has been submitted by {$fullName} for concern: '{$reason}'.",
+                    $counselingType,
+                    $fullName,
+                    $userId,
+                    $counselingUrl
+                );
+            } catch (\Throwable $e) {
+                error_log("Admin counseling notification error: " . $e->getMessage());
             }
 
             echo json_encode([

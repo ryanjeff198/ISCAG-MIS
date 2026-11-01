@@ -414,7 +414,10 @@ if (!function_exists('getNotifModuleIconSvg')) {
         }
 
         // Background server call
-        const payload = JSON.stringify({ id: id });
+        const payload = JSON.stringify({ 
+            id: id,
+            role: window.STAFF_DEPARTMENT_ROLE || ''
+        });
         fetch(MARK_READ_ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -451,7 +454,8 @@ if (!function_exists('getNotifModuleIconSvg')) {
         try {
             await fetch(MARK_ALL_ENDPOINT, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ role: window.STAFF_DEPARTMENT_ROLE || '' })
             });
         } catch (e) {
             console.warn('Mark all background sync error:', e);
@@ -489,7 +493,7 @@ if (!function_exists('getNotifModuleIconSvg')) {
 
     function updateSidebarAndHeaderBadges(count) {
         // Update all sidebar .notif-dot indicators
-        document.querySelectorAll('.notif-dot, #user-notif-dot, #sidebar-notif-badge').forEach(dot => {
+        document.querySelectorAll('.notif-dot, #user-notif-dot, #sidebar-notif-badge, #dawah-notif-dot').forEach(dot => {
             if (count > 0) {
                 dot.textContent = count > 99 ? '99+' : count;
                 dot.style.display = 'flex';

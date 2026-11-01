@@ -40,12 +40,18 @@ $dawah_type = 'female';
 
         <?php 
           $context = 'dawah';
+          $markReadUrl = url('/admin/notifications/mark-read?role=Staff_Female');
+          $markAllUrl = url('/admin/notifications/mark-all-read?role=Staff_Female');
           include BASE_PATH . '/app/views/components/notification_module.php'; 
         ?>
       </div>
     </div>
   </div>
 
+  <script>
+    window.DAWAH_SECTION = 'female';
+    window.STAFF_DEPARTMENT_ROLE = 'Staff_Female';
+  </script>
   <script src="<?= asset('JS/admin-shared.js') ?>?v=<?= time() ?>"></script>
   <script>
     <?php

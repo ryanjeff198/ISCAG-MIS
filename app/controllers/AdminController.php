@@ -616,12 +616,15 @@ class AdminController extends Controller
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
 
-        // Determine department type based on role
+        // Determine department type based on explicit query param or session role
+        $typeParam = strtolower(trim($_GET['type'] ?? ''));
         $role = $_SESSION['role'] ?? 'Staff_Male';
-        $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        $dawah_type = ($typeParam === 'female' || $role === 'Staff_Female') ? 'female' : 'male';
+        $targetRole = ($dawah_type === 'female') ? 'Staff_Female' : (($role === 'Admin') ? 'Admin' : 'Staff_Male');
+
         $notifModel = new AdminNotification();
-        $notifications = $notifModel->getAllForRole($role, 100);
-        $unreadCount = $notifModel->getUnreadCountForRole($role);
+        $notifications = $notifModel->getAllForRole($targetRole, 100);
+        $unreadCount = $notifModel->getUnreadCountForRole($targetRole);
 
         $viewPath = ($dawah_type === 'female') 
             ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/notifications'
@@ -6261,7 +6264,10 @@ class AdminController extends Controller
 
         require_once BASE_PATH . '/app/models/AdminNotification.php';
         $model = new AdminNotification();
-        $role = $_SESSION['role'] ?? 'Admin';
+        $sessionRole = $_SESSION['role'] ?? 'Admin';
+        $reqRole = $_GET['role'] ?? '';
+        $allowedRoles = ['Staff_Female', 'Staff_Male', 'Staff_Tenant', 'Staff_Damayan'];
+        $role = ($reqRole && in_array($reqRole, $allowedRoles) && ($sessionRole === 'Admin' || $sessionRole === $reqRole)) ? $reqRole : $sessionRole;
         $count = $model->getUnreadCountForRole($role);
 
         echo json_encode([
@@ -6293,14 +6299,17 @@ class AdminController extends Controller
     public function markAdminNotifRead(): void {
         Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
         header('Content-Type: application/json');
-        $body = json_decode(file_get_contents('php://input'), true);
+        $body = json_decode(file_get_contents('php://input'), true) ?: [];
         $id = (int)($body['id'] ?? 0);
         if (!$id) { echo json_encode(['success' => false]); return; }
 
         require_once BASE_PATH . '/app/models/AdminNotification.php';
         $model = new AdminNotification();
         $ok = $model->markAsRead($id);
-        $role = $_SESSION['role'] ?? 'Admin';
+        $sessionRole = $_SESSION['role'] ?? 'Admin';
+        $reqRole = $body['role'] ?? ($_GET['role'] ?? '');
+        $allowedRoles = ['Staff_Female', 'Staff_Male', 'Staff_Tenant', 'Staff_Damayan'];
+        $role = ($reqRole && in_array($reqRole, $allowedRoles) && ($sessionRole === 'Admin' || $sessionRole === $reqRole)) ? $reqRole : $sessionRole;
         echo json_encode(['success' => $ok, 'unread' => $model->getUnreadCountForRole($role)]);
     }
 
@@ -6312,7 +6321,11 @@ class AdminController extends Controller
         header('Content-Type: application/json');
         require_once BASE_PATH . '/app/models/AdminNotification.php';
         $model = new AdminNotification();
-        $role = $_SESSION['role'] ?? 'Admin';
+        $sessionRole = $_SESSION['role'] ?? 'Admin';
+        $body = json_decode(file_get_contents('php://input'), true) ?: [];
+        $reqRole = $body['role'] ?? ($_GET['role'] ?? '');
+        $allowedRoles = ['Staff_Female', 'Staff_Male', 'Staff_Tenant', 'Staff_Damayan'];
+        $role = ($reqRole && in_array($reqRole, $allowedRoles) && ($sessionRole === 'Admin' || $sessionRole === $reqRole)) ? $reqRole : $sessionRole;
         $ok = $model->markAllAsReadForRole($role);
         echo json_encode(['success' => $ok, 'unread' => 0]);
     }
