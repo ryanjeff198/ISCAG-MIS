@@ -101,8 +101,11 @@ class UserController extends Controller
             $notifModel->markAsRead((int)$viewId, (int)$userId);
         }
 
+        $unreadCount = $notifModel->getUnreadCount($userId);
+
         $this->view('user/tenant_notification', [
             'notifications' => $notifications,
+            'unreadCount' => $unreadCount,
             'account' => $account,
             'info' => $info,
             'viewId' => $viewId,

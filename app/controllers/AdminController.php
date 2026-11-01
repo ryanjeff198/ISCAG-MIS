@@ -593,29 +593,46 @@ class AdminController extends Controller
     {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
         require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
-        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_notification', ['dbUser' => $dbUser]);
+        $notifModel = new AdminNotification();
+        $role = $_SESSION['role'] ?? 'Staff_Tenant';
+        $notifications = $notifModel->getAllForRole($role, 100);
+        $unreadCount = $notifModel->getUnreadCountForRole($role);
+        $this->view('admin/Staff_Admin/Admin-Apartment_Department/apartment_notification', [
+            'active_page'   => 'notifications',
+            'dbUser'        => $dbUser,
+            'notifications' => $notifications,
+            'unreadCount'   => $unreadCount
+        ]);
     }
 
     public function dawahNotifications(): void
     {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
         require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
 
         // Determine department type based on role
-        $role = $_SESSION['role'] ?? '';
+        $role = $_SESSION['role'] ?? 'Staff_Male';
         $dawah_type = ($role === 'Staff_Female') ? 'female' : 'male';
+        $notifModel = new AdminNotification();
+        $notifications = $notifModel->getAllForRole($role, 100);
+        $unreadCount = $notifModel->getUnreadCountForRole($role);
+
         $viewPath = ($dawah_type === 'female') 
             ? 'admin/Staff_Admin/Admin-Dawah_Department/Female Dawah/notifications'
             : 'admin/Staff_Admin/Admin-Dawah_Department/Male Dawah/notifications';
 
         $this->view($viewPath, [
-            'active_page' => 'notifications',
-            'dawah_type' => $dawah_type,
-            'dbUser' => $dbUser
+            'active_page'   => 'notifications',
+            'dawah_type'    => $dawah_type,
+            'dbUser'        => $dbUser,
+            'notifications' => $notifications,
+            'unreadCount'   => $unreadCount
         ]);
     }
 
@@ -4257,11 +4274,18 @@ class AdminController extends Controller
     public function damayanNotifications(): void {
         Auth::protectRole(['Admin', 'Staff_Damayan']);
         require_once BASE_PATH . '/app/models/User.php';
+        require_once BASE_PATH . '/app/models/AdminNotification.php';
         $userModel = new User();
         $dbUser = $userModel->findById($_SESSION['user_id']);
+        $notifModel = new AdminNotification();
+        $role = $_SESSION['role'] ?? 'Staff_Damayan';
+        $notifications = $notifModel->getAllForRole($role, 100);
+        $unreadCount = $notifModel->getUnreadCountForRole($role);
         $this->view('admin/Staff_Admin/Admin-Damayan_Department/notifications', [
-            'active_page' => 'notifications',
-            'dbUser' => $dbUser
+            'active_page'   => 'notifications',
+            'dbUser'        => $dbUser,
+            'notifications' => $notifications,
+            'unreadCount'   => $unreadCount
         ]);
     }
 
