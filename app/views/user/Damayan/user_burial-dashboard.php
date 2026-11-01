@@ -1195,7 +1195,8 @@ async function checkDashRegCertNumber(val, isBlur = false) {
                 This death certificate is already registered in ISCAG Damayan records. Please choose <strong>Additional Certificate Copy Request</strong> to request a copy.
               </div>
               <button type="button" onclick="selectDashCertPurpose('copy')" style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; background:#ea580c; color:#ffffff; font-weight:700; font-size:0.8rem; padding:6px 14px; border-radius:8px; border:none; cursor:pointer;">
-                👉 Select Additional Certificate Copy Request
+                <svg viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;flex-shrink:0;"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                Select Additional Certificate Copy Request
               </button>
             </div>
           `;
@@ -1228,7 +1229,8 @@ async function checkDashRegCertNumber(val, isBlur = false) {
                 This registry number is not registered in ISCAG Damayan records. Please choose <strong>Register Certificate</strong> to register this record first.
               </div>
               <button type="button" onclick="selectDashCertPurpose('register')" style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; background:#ea580c; color:#ffffff; font-weight:700; font-size:0.8rem; padding:6px 14px; border-radius:8px; border:none; cursor:pointer;">
-                👉 Select Register Certificate
+                <svg viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;flex-shrink:0;"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                Select Register Certificate
               </button>
             </div>
           `;
@@ -1298,7 +1300,8 @@ async function handleDashPurposeSubmit(event) {
               This registry number is not registered in ISCAG Damayan records. Please choose <strong>Register Certificate</strong> to register this record first.
             </div>
             <button type="button" onclick="selectDashCertPurpose('register')" style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; background:#ea580c; color:#ffffff; font-weight:700; font-size:0.8rem; padding:6px 14px; border-radius:8px; border:none; cursor:pointer;">
-              👉 Select Register Certificate
+              <svg viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;flex-shrink:0;"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+              Select Register Certificate
             </button>
           </div>
         `;
@@ -1341,7 +1344,8 @@ async function handleDashPurposeSubmit(event) {
                 This death certificate is already registered in ISCAG Damayan records. Please choose <strong>Additional Certificate Copy Request</strong> to request a copy.
               </div>
               <button type="button" onclick="selectDashCertPurpose('copy')" style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; background:#ea580c; color:#ffffff; font-weight:700; font-size:0.8rem; padding:6px 14px; border-radius:8px; border:none; cursor:pointer;">
-                👉 Select Additional Certificate Copy Request
+                <svg viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;flex-shrink:0;"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                Select Additional Certificate Copy Request
               </button>
             </div>
           `;
