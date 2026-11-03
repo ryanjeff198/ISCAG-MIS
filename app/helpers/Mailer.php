@@ -5,9 +5,15 @@ use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
 
 // Use relative paths and include them once
-require_once __DIR__ . '/../libs/PHPMailer/Exception.php';
-require_once __DIR__ . '/../libs/PHPMailer/PHPMailer.php';
-require_once __DIR__ . '/../libs/PHPMailer/SMTP.php';
+if (file_exists(__DIR__ . '/../mail_service/Exception.php')) {
+    require_once __DIR__ . '/../mail_service/Exception.php';
+    require_once __DIR__ . '/../mail_service/PHPMailer.php';
+    require_once __DIR__ . '/../mail_service/SMTP.php';
+} elseif (file_exists(__DIR__ . '/../libs/PHPMailer/Exception.php')) {
+    require_once __DIR__ . '/../libs/PHPMailer/Exception.php';
+    require_once __DIR__ . '/../libs/PHPMailer/PHPMailer.php';
+    require_once __DIR__ . '/../libs/PHPMailer/SMTP.php';
+}
 
 class Mailer
 {

@@ -23,11 +23,11 @@ if ($isLocal) {
     define('DB_CHARSET', 'utf8mb4');
 } else {
     // ── InfinityFree / Live Hosting Credentials ───────────────────
-    define('DB_HOST', 'sql106.infinityfree.com');
+    define('DB_HOST', 'localhost');
     define('DB_PORT', '3306');
-    define('DB_NAME', 'if0_43246197_iscag'); // If your database name is different, change _iscag to your database suffix
-    define('DB_USER', 'if0_43246197');
-    define('DB_PASS', 'B0AYg0NXV5OJQUh');
+    define('DB_NAME', 'iscag');
+    define('DB_USER', 'iscag_admin');
+    define('DB_PASS', '-k=aJK]P~98(E2Od');
     define('DB_CHARSET', 'utf8mb4');
 }
 
