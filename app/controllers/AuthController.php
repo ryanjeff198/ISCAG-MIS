@@ -24,12 +24,20 @@ class AuthController extends Controller
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
 
+            // Check if account exists first
+            $existingAccount = $this->userModel->findByEmail($email);
+            if (!$existingAccount) {
+                $error = "This account is not yet registered. Please register first.";
+                $this->view('auth/login', ['error' => $error, 'email' => $email]);
+                return;
+            }
+
             $user = $this->userModel->authenticate($email, $password);
 
             if ($user) {
                 if (!$user['is_verified']) {
                     $error = "Please verify your account first.";
-                    $this->view('auth/login', ['error' => $error]);
+                    $this->view('auth/login', ['error' => $error, 'email' => $email]);
                     return;
                 }
 
@@ -57,8 +65,8 @@ class AuthController extends Controller
                 }
                 exit;
             } else {
-                $error = "Invalid email or password.";
-                $this->view('auth/login', ['error' => $error]);
+                $error = "Incorrect password. Please try again.";
+                $this->view('auth/login', ['error' => $error, 'email' => $email]);
                 return;
             }
         }

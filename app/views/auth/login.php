@@ -243,7 +243,10 @@ body {
       <h1 class="auth-title">Log in</h1>
 
       <?php if (isset($error)): ?>
-        <div class="alert alert-danger" style="font-size: 13px; margin-bottom: 15px; color: var(--danger); background: var(--danger-bg); padding: 10px; border-radius: 6px; border: 1px solid var(--danger);"><?= $error ?></div>
+        <div class="alert alert-danger d-flex align-items-center" style="font-size: 13px; margin-bottom: 15px; color: var(--danger); background: var(--danger-bg); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--danger); gap: 8px;">
+          <i class="bi bi-exclamation-triangle-fill flex-shrink-0" style="font-size: 16px;"></i>
+          <div><?= $error ?></div>
+        </div>
       <?php endif; ?>
 
       <?php if (isset($_GET['verified'])): ?>
@@ -258,7 +261,7 @@ body {
         <input type="hidden" name="csrf_token" value="<?= Security::csrfToken() ?>">
         <div class="mb-3">
           <label class="form-label">Email Address</label>
-          <input type="email" name="email" class="form-control" placeholder="juan@email.com" required/>
+          <input type="email" name="email" class="form-control" placeholder="juan@email.com" value="<?= htmlspecialchars($email ?? '') ?>" required/>
         </div>
 
         <div class="mb-3">
