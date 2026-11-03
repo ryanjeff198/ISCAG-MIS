@@ -6,6 +6,7 @@
     <div class="sidebar-brand">
       <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
       <div class="brand-text"><strong>ISCAG MIS</strong><span>Damayan Department</span></div>
+        <button class="sidebar-mobile-close" id="sidebarMobileClose" aria-label="Close menu" type="button">&times;</button>
     </div>
   </div>
   <div class="sidebar-user" onclick="window.location.href='<?= url('/admin/damayan/profile') ?>'" style="cursor:pointer; transition: background 0.2s;" title="View Profile">
@@ -123,5 +124,6 @@
     </a>
   </div>
 </aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
 

@@ -22,6 +22,7 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
         <div class="sidebar-brand">
             <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
             <div class="brand-text"><strong>ISCAG MIS</strong><span>Admin Portal</span></div>
+        <button class="sidebar-mobile-close" id="sidebarMobileClose" aria-label="Close menu" type="button">&times;</button>
         </div>
     </div>
 
@@ -127,3 +128,4 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
         </a>
     </div>
 </aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>

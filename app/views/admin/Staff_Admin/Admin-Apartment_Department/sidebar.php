@@ -14,6 +14,7 @@ $sidebar_initials = strtoupper(substr($name_parts[0], 0, 1) . (count($name_parts
     <div class="sidebar-brand">
       <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
       <div class="brand-text"><strong>ISCAG MIS</strong><span>Apartment Manager</span></div>
+        <button class="sidebar-mobile-close" id="sidebarMobileClose" aria-label="Close menu" type="button">&times;</button>
     </div>
   </div>
   <div class="sidebar-user">
@@ -103,3 +104,4 @@ $sidebar_initials = strtoupper(substr($name_parts[0], 0, 1) . (count($name_parts
     </a>
   </div>
 </aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>

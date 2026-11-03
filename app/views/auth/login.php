@@ -207,14 +207,40 @@ body {
 @media (max-width: 768px) {
   .auth-split {
     flex-direction: column;
+    min-height: 100vh;
+    height: auto;
   }
 
   .auth-left {
-    height: 200px;
+    height: 150px;
+    padding: 16px;
+    flex: none;
+  }
+
+  .auth-header-title {
+    font-size: 1.05rem;
+    line-height: 1.2;
+    margin-bottom: 0;
+  }
+
+  .auth-header-desc {
+    display: none;
   }
 
   .auth-right {
-    padding: 20px;
+    padding: 24px 16px 40px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .auth-card {
+    max-width: 100%;
+    width: 100%;
+    padding: 0;
+  }
+
+  .form-control {
+    font-size: 16px !important;
   }
 }
   </style>

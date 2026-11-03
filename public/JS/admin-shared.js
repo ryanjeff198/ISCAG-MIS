@@ -487,19 +487,94 @@ function currencyFormat(amount) {
 function initSidebar() {
   const sidebar = document.getElementById('sidebar');
   const toggle = document.getElementById('sidebar-toggle');
-  if (!sidebar || !toggle) return;
-  if (toggle.dataset.bound) return;
-  toggle.dataset.bound = 'true';
+  if (!sidebar) return;
 
-  toggle.addEventListener('click', (e) => {
-    e.preventDefault();
-    sidebar.classList.toggle('collapsed');
-    if (sidebar.classList.contains('collapsed')) {
-      document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
-      document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
-      document.querySelectorAll('.nav-dropdown-wrap').forEach(w => w.classList.remove('open'));
+  if (toggle && !toggle.dataset.bound) {
+    toggle.dataset.bound = 'true';
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      sidebar.classList.toggle('collapsed');
+      if (sidebar.classList.contains('collapsed')) {
+        document.querySelectorAll('.nav-dropdown').forEach(m => m.classList.remove('open'));
+        document.querySelectorAll('.nav-dropdown-trigger').forEach(btn => btn.classList.remove('open'));
+        document.querySelectorAll('.nav-dropdown-wrap').forEach(w => w.classList.remove('open'));
+      }
+    });
+  }
+
+  // Mobile drawer, backdrop & top bar setup
+  if (!sidebar.dataset.mobileBound) {
+    sidebar.dataset.mobileBound = 'true';
+
+    let backdrop = document.getElementById('sidebarBackdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.className = 'sidebar-backdrop';
+      backdrop.id = 'sidebarBackdrop';
+      document.body.appendChild(backdrop);
     }
-  });
+
+    const sidebarHeader = sidebar.querySelector('.sidebar-header');
+    let mobileClose = sidebar.querySelector('#sidebarMobileClose');
+    if (sidebarHeader && !mobileClose) {
+      mobileClose = document.createElement('button');
+      mobileClose.className = 'sidebar-mobile-close';
+      mobileClose.id = 'sidebarMobileClose';
+      mobileClose.type = 'button';
+      mobileClose.setAttribute('aria-label', 'Close menu');
+      mobileClose.innerHTML = '&times;';
+      sidebarHeader.appendChild(mobileClose);
+    }
+
+    const mainContent = document.querySelector('.main-content') || document.querySelector('main');
+    if (mainContent && !document.querySelector('.mobile-portal-bar')) {
+      const mobileBar = document.createElement('div');
+      mobileBar.className = 'mobile-portal-bar';
+      const roleText = sidebar.querySelector('.sidebar-user .user-info span')?.textContent?.trim() || 'Admin';
+      mobileBar.innerHTML = `
+        <button class="mobile-hamburger-btn" id="mobileSidebarToggle" type="button" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="mobile-portal-brand">
+          <img src="/ISCAG-MIS/public/assets/logo.jpg" alt="Logo" onerror="this.src='/public/assets/logo.jpg'; this.onerror=null;">
+          <span>ISCAG MIS</span>
+        </div>
+        <div class="mobile-portal-user-badge">
+          <span>${roleText}</span>
+        </div>
+      `;
+      mainContent.insertBefore(mobileBar, mainContent.firstChild);
+
+      const mobileToggle = mobileBar.querySelector('#mobileSidebarToggle');
+      if (mobileToggle) {
+        mobileToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          sidebar.classList.add('mobile-open');
+          backdrop.classList.add('active');
+          document.body.classList.add('sidebar-mobile-opened');
+        });
+      }
+    }
+
+    const closeMobileSidebar = () => {
+      sidebar.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('active');
+      document.body.classList.remove('sidebar-mobile-opened');
+    };
+
+    if (mobileClose) mobileClose.addEventListener('click', closeMobileSidebar);
+    if (backdrop) backdrop.addEventListener('click', closeMobileSidebar);
+
+    sidebar.querySelectorAll('.sidebar-nav a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 991) closeMobileSidebar();
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 991) closeMobileSidebar();
+    });
+  }
 }
 
 function initDropdowns() {

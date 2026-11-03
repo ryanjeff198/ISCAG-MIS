@@ -433,18 +433,40 @@ body {
   }
 
   .auth-left {
-    height: 250px;
+    height: 150px;
+    padding: 16px;
     flex: none;
   }
 
+  .auth-header-title {
+    font-size: 1.05rem;
+    line-height: 1.2;
+    margin-bottom: 0;
+  }
+
+  .auth-header-desc {
+    display: none;
+  }
+
   .auth-right {
-    padding: 20px;
+    padding: 24px 16px 40px;
     height: auto;
     overflow: visible;
   }
 
   .name-row {
     flex-direction: column;
+  }
+
+  .requirements-container {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-top: 10px;
+  }
+
+  input, select {
+    font-size: 16px !important;
   }
 }
 </style>

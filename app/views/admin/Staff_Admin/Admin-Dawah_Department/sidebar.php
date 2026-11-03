@@ -15,6 +15,7 @@ $initials = strtoupper($first_initial . $last_initial);
         <strong>ISCAG MIS</strong>
         <span>Da'wah Department</span>
       </div>
+        <button class="sidebar-mobile-close" id="sidebarMobileClose" aria-label="Close menu" type="button">&times;</button>
     </div>
   </div>
   <div class="sidebar-user">
@@ -209,6 +210,7 @@ $initials = strtoupper($first_initial . $last_initial);
     </a>
   </div>
 </aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
 <script>
   (function() {

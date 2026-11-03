@@ -24,6 +24,7 @@ if (!empty($_SESSION['user_id'])) {
         <div class="sidebar-brand">
             <img src="<?= asset('assets/logo.jpg') ?>" style="max-width:48px;max-height:48px;border-radius:8px;" alt="ISCAG" />
             <div class="brand-text"><strong>ISCAG MIS</strong><span>User Portal</span></div>
+        <button class="sidebar-mobile-close" id="sidebarMobileClose" aria-label="Close menu" type="button">&times;</button>
         </div>
     </div>
     <div class="sidebar-user">
@@ -322,6 +323,7 @@ if (!empty($_SESSION['user_id'])) {
         </div>
     </div>
 </aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 <script>
     /**
      * ISCAG MIS — Sidebar & Shared Portal Logic
@@ -358,6 +360,69 @@ if (!empty($_SESSION['user_id'])) {
         if (sidebar && sidebarToggle) {
             sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
         }
+
+        // Mobile Top Bar & Hamburger Logic
+        (function setupMobileUserNav() {
+            let backdrop = document.getElementById("sidebarBackdrop");
+            if (!backdrop) {
+                backdrop = document.createElement("div");
+                backdrop.className = "sidebar-backdrop";
+                backdrop.id = "sidebarBackdrop";
+                document.body.appendChild(backdrop);
+            }
+
+            const mobileClose = document.getElementById("sidebarMobileClose");
+            const mainContent = document.querySelector(".main-content") || document.querySelector("main");
+
+            if (mainContent && !document.querySelector(".mobile-portal-bar")) {
+                const mobileBar = document.createElement("div");
+                mobileBar.className = "mobile-portal-bar";
+                mobileBar.innerHTML = `
+                    <button class="mobile-hamburger-btn" id="mobileSidebarToggle" type="button" aria-label="Open menu">
+                        <span></span><span></span><span></span>
+                    </button>
+                    <div class="mobile-portal-brand">
+                        <img src="<?= asset('assets/logo.jpg') ?>" alt="Logo" />
+                        <span>ISCAG MIS</span>
+                    </div>
+                    <div class="mobile-portal-user-badge">
+                        <span><?= htmlspecialchars($_SESSION['role'] ?? 'User') ?></span>
+                    </div>
+                `;
+                mainContent.insertBefore(mobileBar, mainContent.firstChild);
+
+                const mobileToggle = mobileBar.querySelector("#mobileSidebarToggle");
+                if (mobileToggle) {
+                    mobileToggle.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        if (sidebar) sidebar.classList.add("mobile-open");
+                        if (backdrop) backdrop.classList.add("active");
+                        document.body.classList.add("sidebar-mobile-opened");
+                    });
+                }
+            }
+
+            function closeMobileNav() {
+                if (sidebar) sidebar.classList.remove("mobile-open");
+                if (backdrop) backdrop.classList.remove("active");
+                document.body.classList.remove("sidebar-mobile-opened");
+            }
+
+            if (mobileClose) mobileClose.addEventListener("click", closeMobileNav);
+            if (backdrop) backdrop.addEventListener("click", closeMobileNav);
+
+            if (sidebar) {
+                sidebar.querySelectorAll(".sidebar-nav a").forEach(a => {
+                    a.addEventListener("click", () => {
+                        if (window.innerWidth <= 991) closeMobileNav();
+                    });
+                });
+            }
+
+            window.addEventListener("resize", () => {
+                if (window.innerWidth > 991) closeMobileNav();
+            });
+        })();
 
         function initDropdown(triggerId, menuId, wrapId) {
             const trigger = document.getElementById(triggerId);
