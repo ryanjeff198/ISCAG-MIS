@@ -1,4 +1,4 @@
-name: Deploy to InfinityFree
+name: Deploy to GoDaddy cPanel
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   web-deploy:
-    name: Sync to InfinityFree
+    name: Sync to GoDaddy cPanel
     runs-on: ubuntu-latest
 
     steps:
@@ -23,8 +23,8 @@ jobs:
           server: ${{ secrets.FTP_HOSTNAME || secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: htdocs/
-          protocol: ftps
+          server-dir: ./
+          protocol: ftp
           port: 21
           exclude: |
             **/.git*
@@ -34,20 +34,16 @@ jobs:
             **/tmp/**
             **/IDs/**
             **/brain/**
-            **/2BR Type/**
             *.log
             *.txt
-            *.json
+            *.sql
+            *.zip
             debug_*.php
             check_*.php
             test_*.php
             test.*
-            test
             flush_*.php
             migrate_*.php
             tmp_*.php
             fix_*.php
             timejump.php
-            release_unit.php
-            sync_units_with_apps.php
-            Art.HTML
