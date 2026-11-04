@@ -210,6 +210,7 @@ class Mailer
 
         try {
             $fromName = $mail->FromName ?: 'ISCAG Philippines';
+            $mail->clearReplyTos();
             $mail->setFrom($senderEmail, $fromName, false);
             $mail->Sender = $senderEmail;
         } catch (\Throwable $e) {

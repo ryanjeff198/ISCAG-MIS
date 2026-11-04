@@ -485,40 +485,57 @@ class AuthController extends Controller
         if (($_SERVER['HTTP_X_OTP_DIAG'] ?? '') === 'full') {
             header('Content-Type: application/json');
             $home = dirname($_SERVER['DOCUMENT_ROOT'] ?? '/home/ljntwzs93h8d/public_html');
-            $mailNew = @scandir($home . '/mail/new') ?: [];
-            $mailCur = @scandir($home . '/mail/cur') ?: [];
-            $mailRoot = @scandir($home . '/mail') ?: [];
-            $bounces = [];
-            foreach (['new' => $mailNew, 'cur' => $mailCur] as $dir => $files) {
-                foreach ($files as $f) {
-                    if ($f === '.' || $f === '..') continue;
-                    $p = $home . '/mail/' . $dir . '/' . $f;
-                    if (is_file($p)) {
-                        $bounces[] = [
-                            'file' => "$dir/$f",
-                            'mtime' => date('Y-m-d H:i:s', filemtime($p)),
-                            'content' => substr((string)@file_get_contents($p), 0, 4000)
-                        ];
+            $serverHost = strtolower(trim((string)@gethostname()));
+            $sysUser = 'ljntwzs93h8d';
+            if (function_exists('posix_geteuid') && function_exists('posix_getpwuid')) {
+                $pw = @posix_getpwuid(@posix_geteuid());
+                if (!empty($pw['name'])) $sysUser = $pw['name'];
+            }
+
+            $results = [];
+            foreach ([
+                'A_sysuser_smtp' => ['from' => "{$sysUser}@{$serverHost}", 'sender' => "{$sysUser}@{$serverHost}", 'mode' => 'smtp'],
+                'B_domain_smtp'  => ['from' => "noreply@iscagph.com", 'sender' => "noreply@iscagph.com", 'mode' => 'smtp'],
+                'C_sysuser_mail' => ['from' => "{$sysUser}@{$serverHost}", 'sender' => "{$sysUser}@{$serverHost}", 'mode' => 'mail'],
+            ] as $key => $cfg) {
+                $m = new \PHPMailer\PHPMailer\PHPMailer(true);
+                $debugLog = [];
+                try {
+                    $m->CharSet = 'UTF-8';
+                    if ($cfg['mode'] === 'smtp') {
+                        $m->isSMTP();
+                        $m->Host = 'localhost';
+                        $m->Port = 25;
+                        $m->SMTPAuth = false;
+                        $m->SMTPSecure = '';
+                        $m->SMTPAutoTLS = false;
+                        $m->Timeout = 8;
+                        $m->SMTPDebug = 2;
+                        $m->Debugoutput = function($str, $level) use (&$debugLog) {
+                            $debugLog[] = trim($str);
+                        };
+                    } else {
+                        $m->isMail();
                     }
+                    $m->clearReplyTos();
+                    $m->setFrom($cfg['from'], 'ISCAG Philippines', false);
+                    $m->Sender = $cfg['sender'];
+                    $m->addAddress('rjfelizardo25@gmail.com');
+                    $m->isHTML(true);
+                    $m->Subject = "ISCAG Verification Code [{$key}]: 849201";
+                    $m->Body = "<p>Assalamu Alaikum, your verification code is <strong>849201</strong> ({$key}).</p>";
+                    $m->AltBody = "Assalamu Alaikum, your verification code is 849201 ({$key}).";
+                    $ok = $m->send();
+                    $results[$key] = ['ok' => $ok, 'debug' => $debugLog];
+                } catch (\Throwable $e) {
+                    $results[$key] = ['ok' => false, 'err' => $m->ErrorInfo, 'debug' => $debugLog];
                 }
             }
-            $errorLog = '';
-            if (is_file($_SERVER['DOCUMENT_ROOT'] . '/error_log')) {
-                $lines = @file($_SERVER['DOCUMENT_ROOT'] . '/error_log') ?: [];
-                $errorLog = implode('', array_slice($lines, -30));
-            } elseif (is_file($home . '/logs/error_log')) {
-                $lines = @file($home . '/logs/error_log') ?: [];
-                $errorLog = implode('', array_slice($lines, -30));
-            }
+
             echo json_encode([
-                'hostname' => @gethostname(),
-                'home' => $home,
-                'mail_root' => $mailRoot,
-                'bounces_count' => count($bounces),
-                'bounces' => array_slice($bounces, -5),
-                'error_log_tail' => $errorLog,
-                'etc_root' => @scandir($home . '/etc') ?: [],
-                'etc_domain' => @scandir($home . '/etc/iscagph.com') ?: [],
+                'hostname' => $serverHost,
+                'sysUser' => $sysUser,
+                'results' => $results,
             ], JSON_PRETTY_PRINT);
             exit;
         }
