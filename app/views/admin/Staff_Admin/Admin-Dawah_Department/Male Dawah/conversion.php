@@ -116,49 +116,137 @@ $dawah_type = $dawah_type ?? 'male';
     /* ── Action Buttons ── */
     .actions-cell { display: flex; align-items: center; gap: 6px; }
     .btn-circle {
-      width: 32px; height: 32px; border-radius: 50%; border: none;
+      width: 32px; height: 32px; border-radius: 8px;
       display: inline-flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.2s ease;
+      border: 1px solid var(--border, #e2e8f0); background: #f8fafc;
+      cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); padding: 0;
+      color: #475569;
     }
-    .btn-circle svg { width: 15px; height: 15px; }
-    .btn-circle.eye { background: #e0f2fe; color: #0284c7; }
-    .btn-circle.eye:hover { background: #0284c7; color: #fff; }
-    .btn-circle.check { background: #dcfce7; color: #16a34a; }
-    .btn-circle.check:hover { background: #16a34a; color: #fff; }
-    .btn-circle.reject { background: #fee2e2; color: #dc2626; }
-    .btn-circle.reject:hover { background: #dc2626; color: #fff; }
+    .btn-circle svg { width: 17px; height: 17px; fill: currentColor; }
+    .btn-circle:hover, .btn-circle.active { 
+      background: #e2e8f0; 
+      border-color: #cbd5e1;
+      color: var(--primary-dark, #0f172a);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    
+    .btn-circle.schedule { color: #6d28d9; }
+    .btn-circle.schedule:hover { background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; }
+    .btn-circle.eye { color: #1d4ed8; }
+    .btn-circle.eye:hover { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+    .btn-circle.delete { color: #dc2626; }
+    .btn-circle.delete:hover { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+    .btn-circle.dots { border-radius: 8px; }
 
-    /* Modal Styles */
+    /* Floating 3-Dots Action Dropdown Menu */
+    .conversion-action-menu {
+      position: fixed;
+      display: none;
+      min-width: 175px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.14), 0 8px 10px -6px rgba(0,0,0,0.08);
+      padding: 6px;
+      z-index: 999999;
+      animation: convMenuFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes convMenuFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .action-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #334155;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .action-dropdown-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      fill: currentColor;
+    }
+    .action-dropdown-item:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .action-dropdown-item.schedule { color: #6d28d9; }
+    .action-dropdown-item.schedule:hover { background: #f5f3ff; color: #5b21b6; }
+    .action-dropdown-item.view { color: #1d4ed8; }
+    .action-dropdown-item.view:hover { background: #eff6ff; color: #1e40af; }
+    .action-dropdown-item.accept { color: #166534; }
+    .action-dropdown-item.accept:hover { background: #f0fdf4; color: #14532D; }
+    .action-dropdown-item.reject { color: #9a3412; }
+    .action-dropdown-item.reject:hover { background: #fff7ed; color: #c2410c; }
+    .action-dropdown-item.delete { color: #dc2626; }
+    .action-dropdown-item.delete:hover { background: #fef2f2; color: #b91c1c; }
+    .action-dropdown-divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 4px 0;
+    }
+
+    /* Modal Styling */
     .conversion-modal-backdrop {
-      position: fixed; inset: 0; z-index: 99999;
-      background: rgba(15, 30, 22, 0.7); backdrop-filter: blur(8px);
-      display: none; align-items: center; justify-content: center; padding: 20px;
+      position: fixed; inset: 0; background: rgba(15,30,22,0.65);
+      backdrop-filter: blur(5px); z-index: 99999; display: none;
+      align-items: center; justify-content: center; padding: 16px;
     }
     .conversion-modal-card {
-      background: #fff; border-radius: 20px; width: 100%; max-width: 650px;
-      box-shadow: 0 30px 70px rgba(0,0,0,0.3); overflow: hidden;
-      border: 1px solid rgba(0,0,0,0.08); animation: slideUp 0.3s ease;
+      background: white; border-radius: 16px; width: 100%;
+      max-width: 650px; box-shadow: 0 25px 70px rgba(0,0,0,0.3);
+      overflow: hidden; border: 1px solid rgba(0,0,0,0.08);
+      max-height: calc(90vh); display: flex; flex-direction: column;
     }
     .conversion-modal-header {
-      padding: 20px 24px; border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center; background: #fdfdfd;
+      padding: 18px 24px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      background: #fafafa;
     }
     .conversion-modal-close {
-      background: none; border: none; font-size: 1.8rem; cursor: pointer; color: #6b7280; line-height: 1;
+      background: none; border: none; font-size: 24px; line-height: 1;
+      color: var(--text-muted); cursor: pointer;
     }
-    .conversion-modal-close:hover { color: var(--primary); }
-    .conversion-modal-body { padding: 24px; max-height: 75vh; overflow-y: auto; }
+    .conversion-modal-body {
+      padding: 22px 24px; overflow-y: auto; flex: 1;
+      display: flex; flex-direction: column; gap: 14px;
+    }
     .conversion-modal-footer {
-      padding: 16px 24px; background: #f9fafb; border-top: 1px solid var(--border);
-      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 14px 24px; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      background: #f8fafc;
     }
-    .info-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-    .info-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-    .info-box { background: #f9fafb; padding: 14px; border-radius: 12px; border: 1px solid var(--border); }
-    .info-box.highlight { background: #f0fdf4; border-color: #dcfce7; }
-    .info-box-lbl { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
-    .info-box-val { font-size: 0.95rem; font-weight: 700; color: #1f2937; }
-    .info-box-val.gold { color: #b8860b; font-family: 'Lora', serif; }
+    .info-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .info-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .info-box {
+      border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+      background: #fafafa;
+    }
+    .info-box.highlight {
+      background: #f0fdf4; border-color: #bbf7d0;
+    }
+    .info-box.schedule {
+      background: #faf5ff; border-color: #e9d5ff;
+    }
+    .info-box-lbl {
+      font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 3px; letter-spacing: 0.04em;
+    }
+    .info-box-val { font-weight: 700; font-size: 0.95rem; color: var(--text-main); }
+    .info-box-val.gold { color: var(--primary-dark); }
   </style>
 </head>
 <body>
@@ -167,66 +255,67 @@ $dawah_type = $dawah_type ?? 'male';
       $active_page = 'conversion';
       include BASE_PATH . '/app/views/admin/Staff_Admin/Admin-Dawah_Department/sidebar.php'; 
     ?>
+    
     <div class="main-content">
+      <!-- Top Bar -->
       <div class="top-bar">
         <div class="top-bar-left">
-          <div class="top-bar-title">Conversion to Islam Records &amp; Shahadah</div>
-          <div class="top-bar-subtitle"><?= $dawah_type === 'female' ? "Female" : "Male" ?> Da'wah Department — Revert registrations, Islamic name records &amp; certificate issuance</div>
+            <div class="top-bar-title"><?= $dawah_type === 'female' ? "Female" : "Male" ?> Islamic Conversion &amp; Shahadah</div>
+            <div class="top-bar-subtitle">Da'wah Department — Manage conversion applications, ceremony schedules, and certificates</div>
         </div>
         <div class="top-bar-actions">
-           <span id="admin-name" style="font-weight:700;color:var(--text-main);font-size:0.9rem;"></span>
-           <button class="btn-topbar primary" onclick="window.print()">🖨️ Print Report</button>
+          <span id="admin-name" style="font-weight:700;color:var(--text-main);font-size:0.9rem;"></span>
         </div>
       </div>
+
       <div class="page-body">
         <div class="breadcrumb-bar">
-          <a href="<?= url('/admin/dawah/' . ($dawah_type === 'female' ? 'female' : 'male')) ?>">Da'wah Department</a>
+          <a href="<?= url('/admin/dawah/' . ($dawah_type === 'female' ? 'female' : 'male')) ?>">Dashboard</a>
           <span class="sep">›</span>
-          <span>Conversion</span>
+          <span>Islamic Conversion</span>
           <span class="sep">›</span>
-          <span class="current">Conversion Records</span>
+          <span class="current">All Records</span>
         </div>
 
-        <!-- Dynamic Insights Summary -->
+        <!-- Admin Insights Ribbon -->
         <div class="admin-insights" id="insights-container">
           <!-- Rendered by JS -->
         </div>
 
         <!-- Tab Nav -->
         <div class="tab-nav">
-          <button type="button" class="tab-btn active" onclick="setFilter('pending', this)">
-            Pending Review <span class="tab-count pending" id="tab-count-pending">0</span>
+          <button class="tab-btn active" onclick="setFilter('pending', this)">
+            Pending <span class="tab-count pending" id="tab-count-pending">0</span>
           </button>
-          <button type="button" class="tab-btn" onclick="setFilter('approved', this)">
+          <button class="tab-btn" onclick="setFilter('approved', this)">
             Accepted / Approved <span class="tab-count approved" id="tab-count-approved">0</span>
           </button>
-          <button type="button" class="tab-btn" onclick="setFilter('rejected', this)">
+          <button class="tab-btn" onclick="setFilter('rejected', this)">
             Rejected <span class="tab-count rejected" id="tab-count-rejected">0</span>
           </button>
-          <button type="button" class="tab-btn" onclick="setFilter('all', this)">
+          <button class="tab-btn" onclick="setFilter('all', this)">
             All Records <span class="tab-count" id="tab-count-all">0</span>
           </button>
         </div>
 
+        <!-- Section Card Table -->
         <div class="section-card">
-          <div class="section-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="section-card-header">
             <h6>
-              <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--accent);margin-right:8px;"><path d="M12 2L1 21h22L12 2zm0 3.8L19.5 19H4.5L12 5.8zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
-              Conversion Applications Registry
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              Conversion Applications
             </h6>
-            <div id="results-count-badge" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">
-              Showing 0 records
-            </div>
+            <span class="results-badge" id="results-count-badge">Loading records...</span>
           </div>
           <div class="section-card-body" style="padding:0;">
             <div class="table-wrapper">
               <table class="mis-table">
                 <thead>
                   <tr>
-                    <th>Ref #</th>
-                    <th>Legal Name</th>
-                    <th>Adopted Muslim Name</th>
-                    <th>Date of Conversion</th>
+                    <th>Record ID</th>
+                    <th>Legal Full Name</th>
+                    <th>Adopted Name</th>
+                    <th>Ceremony Schedule</th>
                     <th>Residence</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -240,6 +329,88 @@ $dawah_type = $dawah_type ?? 'male';
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══ Set / Update Schedule Ceremony Modal ═══ -->
+  <div id="conversion-schedule-modal" class="conversion-modal-backdrop" onclick="if(event.target===this) closeScheduleModal()">
+    <div class="conversion-modal-card" style="max-width:600px;">
+      <div style="height:4px; background:linear-gradient(90deg, #14532D, #7c3aed);"></div>
+      <div class="conversion-modal-header">
+        <h5 style="margin:0; font-family:'Lora',serif; color:#14532D; font-size:1.18rem; font-weight:800; display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#7c3aed;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+          Schedule Conversion Ceremony (Shahadah)
+        </h5>
+        <button type="button" onclick="closeScheduleModal()" class="conversion-modal-close">&times;</button>
+      </div>
+
+      <form id="form-conversion-schedule" onsubmit="submitScheduleConversion(event)" style="padding:22px 24px; max-height:calc(85vh - 120px); overflow-y:auto;">
+        <input type="hidden" id="cs-request-id" name="id" value="" />
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#166534;">Applicant</span>
+            <div id="cs-applicant-name" style="font-weight:800; font-size:1.02rem; color:#14532D; margin-top:2px;">—</div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#166534;">Record ID</span>
+            <div id="cs-ref-no" style="font-weight:800; font-size:0.95rem; color:#14532D; margin-top:2px;">#CR-0000</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+              Ceremony Date <span style="color:#ef4444;">*</span>
+            </label>
+            <input type="date" id="cs-date" required min="<?= date('Y-m-d') ?>" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+              Ceremony Time <span style="color:#ef4444;">*</span>
+            </label>
+            <input type="time" id="cs-time" required value="10:00" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" />
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Ceremony Venue / Location
+          </label>
+          <input type="text" id="cs-venue" value="ISCAG Main Mosque, Da'wah Ceremony Hall" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem;" />
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Presiding Ustaz / Officiant
+          </label>
+          <input type="text" id="cs-officiant" value="Da'wah Division Ustaz / Officiant" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem;" />
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Application Status
+          </label>
+          <select id="cs-status" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600; background:#fff;">
+            <option value="approved">Approved &amp; Scheduled</option>
+            <option value="pending">Keep as Pending Review</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Instructions / Guidance for Applicant
+          </label>
+          <textarea id="cs-notes" rows="2" placeholder="e.g. Please bring two Muslim adult witnesses and a valid government ID. May Allah bless you." style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.88rem; font-family:inherit;"></textarea>
+        </div>
+
+        <div style="padding:14px 0 0; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" onclick="closeScheduleModal()" style="padding:9px 18px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-weight:600; cursor:pointer;">Cancel</button>
+          <button type="submit" id="cs-submit-btn" class="btn-topbar primary" style="padding:9px 22px; font-weight:700;">
+            Confirm &amp; Save Schedule
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -262,6 +433,24 @@ $dawah_type = $dawah_type ?? 'male';
           <div class="info-box highlight">
             <div class="info-box-lbl">Adopted Muslim Name</div>
             <div id="modal-adopted-name" class="info-box-val gold">—</div>
+          </div>
+        </div>
+
+        <!-- Schedule details -->
+        <div class="info-box schedule">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <div class="info-box-lbl" style="color:#6b21a8; display:flex; align-items:center; gap:6px;">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+              Ceremony Schedule &amp; Location
+            </div>
+            <button type="button" onclick="openScheduleFromDetails()" style="background:none; border:none; color:#7c3aed; font-size:0.78rem; font-weight:700; cursor:pointer; text-decoration:underline;">
+              Edit Schedule
+            </button>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.88rem;">
+            <div><strong style="color:#581c87;">Date &amp; Time:</strong> <span id="modal-conv-date-full" style="color:#3b0764; font-weight:600;">—</span></div>
+            <div><strong style="color:#581c87;">Officiant:</strong> <span id="modal-officiant" style="color:#3b0764;">—</span></div>
+            <div style="grid-column:span 2;"><strong style="color:#581c87;">Venue:</strong> <span id="modal-venue" style="color:#3b0764;">—</span></div>
           </div>
         </div>
 
@@ -325,11 +514,47 @@ $dawah_type = $dawah_type ?? 'male';
         </div>
       </div>
       <div class="conversion-modal-footer">
-        <button type="button" onclick="closeConversionModal()" class="btn-topbar">Close</button>
-        <button type="button" id="modal-btn-reject" class="btn-topbar danger" style="display:none;">Reject</button>
-        <button type="button" id="modal-btn-approve" class="btn-topbar primary" style="display:none;">Accept &amp; Issue Certificate</button>
+        <button type="button" id="modal-btn-delete" class="btn-topbar danger" style="display:flex; align-items:center; gap:6px;">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          Delete Record
+        </button>
+        <div style="display:flex; gap:10px;">
+          <button type="button" onclick="closeConversionModal()" class="btn-topbar">Close</button>
+          <button type="button" id="modal-btn-schedule" class="btn-topbar" style="background:#7c3aed; color:#fff; display:flex; align-items:center; gap:6px;">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            Set Schedule
+          </button>
+          <button type="button" id="modal-btn-reject" class="btn-topbar danger" style="display:none;">Reject</button>
+          <button type="button" id="modal-btn-approve" class="btn-topbar primary" style="display:none;">Accept &amp; Issue Certificate</button>
+        </div>
       </div>
     </div>
+  </div>
+
+  <!-- ═══ 3-Dots Action Dropdown Menu ═══ -->
+  <div id="conversion-req-action-menu" class="conversion-action-menu">
+    <button type="button" class="action-dropdown-item schedule" onclick="triggerReqAction('schedule')">
+      <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+      <span>Set Schedule</span>
+    </button>
+    <button type="button" class="action-dropdown-item view" onclick="triggerReqAction('view')">
+      <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+      <span>View Details</span>
+    </button>
+    <div class="action-dropdown-divider"></div>
+    <button type="button" class="action-dropdown-item accept" onclick="triggerReqAction('approve')">
+      <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      <span>Accept &amp; Certificate</span>
+    </button>
+    <button type="button" class="action-dropdown-item reject" onclick="triggerReqAction('reject')">
+      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      <span>Reject Application</span>
+    </button>
+    <div class="action-dropdown-divider"></div>
+    <button type="button" class="action-dropdown-item delete" onclick="triggerReqAction('delete')">
+      <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      <span>Delete</span>
+    </button>
   </div>
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
@@ -337,8 +562,12 @@ $dawah_type = $dawah_type ?? 'male';
     syncSessionUser('<?= trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?>', '<?= $dbUser['email'] ?? '' ?>', '<?= $_SESSION['role'] ?? '' ?>');
     standardizePage('staff');
 
-    const applications = <?= json_encode($applications ?? ($records ?? [])) ?>;
+    let applications = <?= json_encode($applications ?? ($records ?? [])) ?>;
+    const recordsMap = {};
+    applications.forEach(a => { if (a && a.id) recordsMap[a.id] = a; });
+
     let currentFilter = 'pending';
+    let currentViewingId = null;
 
     function renderInsights() {
       const container = document.getElementById('insights-container');
@@ -370,7 +599,6 @@ $dawah_type = $dawah_type ?? 'male';
         </div>
       `;
 
-      // Update tab counts
       document.getElementById('tab-count-pending').innerText = pending;
       document.getElementById('tab-count-approved').innerText = approved;
       document.getElementById('tab-count-rejected').innerText = rejected;
@@ -416,30 +644,32 @@ $dawah_type = $dawah_type ?? 'male';
         }
 
         const legalName = `${app.fname || ''} ${app.mname ? app.mname + ' ' : ''}${app.lname || ''}`.trim() || '—';
-        const convDate = app.conversion_date ? new Date(app.conversion_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-        const isPending = ['pending', 'under_review'].includes(st);
+        const datePart = app.conversion_date ? new Date(app.conversion_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        const timePart = app.preferred_time ? ` (${app.preferred_time})` : '';
+        const schedDisplay = datePart ? `${datePart}${timePart}` : '<span style="color:#9ca3af;font-style:italic;">Not scheduled</span>';
 
         return `
-          <tr>
+          <tr id="row-${app.id}">
             <td class="td-id">#CR-${String(app.id).padStart(4, '0')}</td>
             <td style="font-weight:700; color:#111827;">${legalName}</td>
             <td style="font-weight:700; color:var(--primary);">${app.adopted_name || '—'}</td>
-            <td>${convDate}</td>
+            <td style="color:#374151; font-weight:600;">${schedDisplay}</td>
             <td>${app.residence || '—'}</td>
             <td><span class="badge-status ${sc}"><span class="status-dot"></span>${displayStatus}</span></td>
             <td>
               <div class="actions-cell">
-                <button class="btn-circle eye" onclick='viewConversionDetails(${JSON.stringify(app)})' title="View Details">
+                <button type="button" class="btn-circle schedule" onclick="openScheduleModal(${app.id})" title="Set Schedule">
+                  <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                </button>
+                <button type="button" class="btn-circle eye" onclick="viewConversionDetailsById(${app.id})" title="View Details">
                   <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                 </button>
-                ${isPending ? `
-                  <button class="btn-circle check" onclick="handleConversionAction(${app.id}, 'approve')" title="Accept &amp; Issue Certificate">
-                    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                  </button>
-                  <button class="btn-circle reject" onclick="handleConversionAction(${app.id}, 'reject')" title="Reject">
-                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                  </button>
-                ` : ''}
+                <button type="button" class="btn-circle delete" onclick="deleteConversionRecord(${app.id})" title="Delete Record">
+                  <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+                <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, ${app.id})" title="Actions">
+                  <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                </button>
               </div>
             </td>
           </tr>
@@ -447,7 +677,13 @@ $dawah_type = $dawah_type ?? 'male';
       }).join('');
     }
 
+    function viewConversionDetailsById(id) {
+      const app = recordsMap[id];
+      if (app) viewConversionDetails(app);
+    }
+
     function viewConversionDetails(app) {
+      currentViewingId = app.id;
       const legalName = `${app.fname || ''} ${app.mname ? app.mname + ' ' : ''}${app.lname || ''}`.trim() || '—';
       document.getElementById('modal-legal-name').innerText = legalName;
       document.getElementById('modal-adopted-name').innerText = app.adopted_name || '—';
@@ -460,8 +696,16 @@ $dawah_type = $dawah_type ?? 'male';
       document.getElementById('modal-mother').innerText = `${app.mother_name || '—'} (${app.mother_religion || '—'})`;
       document.getElementById('modal-w1').innerText = `${app.witness1_name || '—'} ${app.witness1_address ? '— ' + app.witness1_address : ''}`;
       document.getElementById('modal-w2').innerText = `${app.witness2_name || '—'} ${app.witness2_address ? '— ' + app.witness2_address : ''}`;
-      document.getElementById('modal-conv-date').innerText = app.conversion_date ? new Date(app.conversion_date).toLocaleDateString('en-US', { weekday:'long', month: 'long', day: 'numeric', year: 'numeric' }) : '—';
       
+      const convDate = app.conversion_date ? new Date(app.conversion_date).toLocaleDateString('en-US', { weekday:'long', month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+      document.getElementById('modal-conv-date').innerText = convDate;
+
+      // Schedule Box
+      const timeFmt = app.preferred_time ? ` at ${app.preferred_time}` : '';
+      document.getElementById('modal-conv-date-full').innerText = app.conversion_date ? `${convDate}${timeFmt}` : 'Not scheduled yet';
+      document.getElementById('modal-venue').innerText = app.venue || 'ISCAG Main Mosque, Da\'wah Ceremony Hall';
+      document.getElementById('modal-officiant').innerText = app.officiant || 'Da\'wah Division Ustaz / Officiant';
+
       const st = (app.status || 'pending').toLowerCase();
       let statusLabel = 'PENDING';
       if (['accepted', 'approved', 'confirmed'].includes(st)) statusLabel = 'ACCEPTED';
@@ -470,6 +714,7 @@ $dawah_type = $dawah_type ?? 'male';
 
       const btnApprove = document.getElementById('modal-btn-approve');
       const btnReject = document.getElementById('modal-btn-reject');
+      const btnDelete = document.getElementById('modal-btn-delete');
       const isPending = ['pending', 'under_review'].includes(st);
 
       if (isPending) {
@@ -482,6 +727,16 @@ $dawah_type = $dawah_type ?? 'male';
         btnReject.style.display = 'none';
       }
 
+      btnDelete.onclick = () => {
+        closeConversionModal();
+        deleteConversionRecord(app.id);
+      };
+
+      document.getElementById('modal-btn-schedule').onclick = () => {
+        closeConversionModal();
+        openScheduleModal(app.id);
+      };
+
       document.getElementById('conversion-modal').style.display = 'flex';
     }
 
@@ -489,6 +744,171 @@ $dawah_type = $dawah_type ?? 'male';
       document.getElementById('conversion-modal').style.display = 'none';
     }
 
+    function openScheduleFromDetails() {
+      if (currentViewingId) {
+        closeConversionModal();
+        openScheduleModal(currentViewingId);
+      }
+    }
+
+    /* ── Schedule Modal ── */
+    function openScheduleModal(id) {
+      const r = recordsMap[id];
+      if (!r) return;
+
+      document.getElementById('cs-request-id').value = id;
+      const reqId = '#CR-' + String(r.id).padStart(4, '0');
+      const applicantName = `${r.fname || ''} ${r.mname ? r.mname + ' ' : ''}${r.lname || ''}`.trim() || (`${r.first_name || ''} ${r.last_name || ''}`.trim()) || 'Applicant #' + id;
+      document.getElementById('cs-applicant-name').textContent = applicantName;
+      document.getElementById('cs-ref-no').textContent = reqId;
+
+      if (r.conversion_date) {
+        document.getElementById('cs-date').value = r.conversion_date;
+      } else {
+        document.getElementById('cs-date').value = new Date().toISOString().split('T')[0];
+      }
+
+      if (r.preferred_time) {
+        const m = r.preferred_time.match(/(\d{1,2}):(\d{2})/);
+        if (m) {
+          let hrs = parseInt(m[1]);
+          if (r.preferred_time.toLowerCase().includes('pm') && hrs < 12) hrs += 12;
+          if (r.preferred_time.toLowerCase().includes('am') && hrs === 12) hrs = 0;
+          document.getElementById('cs-time').value = `${String(hrs).padStart(2, '0')}:${m[2]}`;
+        }
+      } else {
+        document.getElementById('cs-time').value = '10:00';
+      }
+
+      if (r.venue) document.getElementById('cs-venue').value = r.venue;
+      if (r.officiant) document.getElementById('cs-officiant').value = r.officiant;
+      if (r.notes) document.getElementById('cs-notes').value = r.notes;
+
+      document.getElementById('cs-status').value = 'approved';
+      document.getElementById('conversion-schedule-modal').style.display = 'flex';
+    }
+
+    function closeScheduleModal() {
+      const m = document.getElementById('conversion-schedule-modal');
+      if (m) m.style.display = 'none';
+    }
+
+    async function submitScheduleConversion(e) {
+      e.preventDefault();
+      const id = document.getElementById('cs-request-id').value;
+      const date = document.getElementById('cs-date').value;
+      const time = document.getElementById('cs-time').value;
+      const venue = document.getElementById('cs-venue').value;
+      const officiant = document.getElementById('cs-officiant').value;
+      const notes = document.getElementById('cs-notes').value;
+      const status = document.getElementById('cs-status').value;
+
+      if (!id || !date || !time) {
+        alert('Please provide ceremony date and time.');
+        return;
+      }
+
+      const [h, m] = time.split(':');
+      let hr = parseInt(h);
+      const ampm = hr >= 12 ? 'PM' : 'AM';
+      hr = hr % 12 || 12;
+      const timeFmt = `${hr}:${m} ${ampm}`;
+
+      const btn = document.getElementById('cs-submit-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Saving Schedule...';
+      }
+
+      try {
+        const response = await fetch('<?= url("/admin/dawah/conversion/schedule") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: id,
+            conversion_date: date,
+            preferred_time: timeFmt,
+            venue: venue,
+            officiant: officiant,
+            notes: notes,
+            status: status
+          })
+        });
+
+        const res = await response.json();
+        if (res.success) {
+          if (recordsMap[id]) {
+            recordsMap[id].conversion_date = date;
+            recordsMap[id].preferred_time = timeFmt;
+            recordsMap[id].venue = venue;
+            recordsMap[id].officiant = officiant;
+            recordsMap[id].notes = notes;
+            recordsMap[id].status = status;
+          }
+
+          if (typeof showAlert === 'function') {
+            showAlert('Schedule Saved', res.message || 'Conversion ceremony schedule saved successfully.', 'success');
+          } else {
+            alert(res.message || 'Conversion ceremony schedule saved successfully.');
+          }
+          closeScheduleModal();
+          setTimeout(() => location.reload(), 900);
+        } else {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Confirm & Save Schedule';
+          }
+          alert(res.message || 'Failed to save ceremony schedule.');
+        }
+      } catch (err) {
+        console.error(err);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Confirm & Save Schedule';
+        }
+        alert('A network error occurred while saving the schedule.');
+      }
+    }
+
+    /* ── Delete Conversion Record ── */
+    async function deleteConversionRecord(id) {
+      const r = recordsMap[id];
+      const reqRef = '#CR-' + String(id).padStart(4, '0');
+      const name = r ? (`${r.fname || ''} ${r.lname || ''}`.trim() || `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Record') : 'Record';
+
+      const confirmMsg = `Are you sure you want to DELETE conversion record ${reqRef} for "${name}"?\n\nThis will permanently remove the record from the database.`;
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        const response = await fetch('<?= url("/admin/dawah/conversion/delete") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+        });
+
+        const res = await response.json();
+        if (res.success) {
+          if (typeof showAlert === 'function') {
+            showAlert('Deleted Successfully', res.message || `Conversion record ${reqRef} has been removed.`, 'success');
+          } else {
+            alert(res.message || `Conversion record ${reqRef} has been removed.`);
+          }
+
+          // Remove locally and re-render
+          applications = applications.filter(a => a.id != id);
+          delete recordsMap[id];
+          renderInsights();
+          renderTable();
+        } else {
+          alert(res.message || 'Failed to delete conversion record.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('A network error occurred while deleting the record.');
+      }
+    }
+
+    /* ── Accept / Reject Process Request Handler ── */
     async function handleConversionAction(id, action) {
       const title = action === 'approve' ? 'Accept Conversion & Issue Certificate' : 'Reject Conversion Application';
       const message = `Are you sure you want to ${action === 'approve' ? 'accept' : 'reject'} this conversion application? The applicant will be notified immediately.`;
@@ -508,7 +928,7 @@ $dawah_type = $dawah_type ?? 'male';
             } else {
               alert(result.message || 'Operation successful.');
             }
-            setTimeout(() => location.reload(), 1000);
+            setTimeout(() => location.reload(), 900);
           } else {
             if (typeof showAlert === 'function') {
               showAlert('Action Failed', result.message || 'Could not process request.', 'error');
@@ -530,6 +950,85 @@ $dawah_type = $dawah_type ?? 'male';
         }
       }
     }
+
+    /* ── 3-Dots Action Menu Handlers ── */
+    let activeReqId = null;
+    let activeReqButton = null;
+
+    function toggleReqMenu(e, id) {
+      e.stopPropagation();
+      const menu = document.getElementById('conversion-req-action-menu');
+      const btn = e.currentTarget;
+
+      if (menu.style.display === 'block' && activeReqId === id) {
+        closeReqMenu();
+        return;
+      }
+
+      activeReqId = id;
+      if (activeReqButton) activeReqButton.classList.remove('active');
+      activeReqButton = btn;
+      activeReqButton.classList.add('active');
+
+      menu.style.display = 'block';
+
+      const rect = btn.getBoundingClientRect();
+      const menuWidth = 180;
+      const menuHeight = menu.offsetHeight || 190;
+
+      let top = rect.bottom + 6;
+      let left = rect.right - menuWidth;
+
+      if (top + menuHeight > window.innerHeight) {
+        top = Math.max(10, rect.top - menuHeight - 6);
+      }
+      if (left < 10) {
+        left = Math.max(10, rect.left);
+      }
+
+      menu.style.top = `${top}px`;
+      menu.style.left = `${left}px`;
+    }
+
+    function closeReqMenu() {
+      const menu = document.getElementById('conversion-req-action-menu');
+      if (menu) menu.style.display = 'none';
+      if (activeReqButton) {
+        activeReqButton.classList.remove('active');
+        activeReqButton = null;
+      }
+      activeReqId = null;
+    }
+
+    function triggerReqAction(action) {
+      if (!activeReqId) return;
+      const id = activeReqId;
+      closeReqMenu();
+
+      if (action === 'schedule') {
+        openScheduleModal(id);
+      } else if (action === 'view') {
+        viewConversionDetailsById(id);
+      } else if (action === 'delete') {
+        deleteConversionRecord(id);
+      } else if (action === 'approve') {
+        handleConversionAction(id, 'approve');
+      } else if (action === 'reject') {
+        handleConversionAction(id, 'reject');
+      }
+    }
+
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('conversion-req-action-menu');
+      if (menu && menu.style.display === 'block') {
+        if (!menu.contains(e.target) && !e.target.closest('.btn-circle.dots')) {
+          closeReqMenu();
+        }
+      }
+    });
+
+    window.addEventListener('scroll', closeReqMenu, true);
+    window.addEventListener('resize', closeReqMenu);
 
     renderInsights();
     renderTable();

@@ -2776,6 +2776,119 @@ class AdminController extends Controller
         }
     }
 
+    public function scheduleConversion(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+        $date = trim($input['conversion_date'] ?? ($input['appointment_date'] ?? ''));
+        $time = trim($input['preferred_time'] ?? ($input['appointment_time'] ?? '10:00 AM'));
+        $venue = trim($input['venue'] ?? 'ISCAG Main Mosque, Da\'wah Ceremony Hall');
+        $officiant = trim($input['officiant'] ?? 'Da\'wah Division Ustaz / Officiant');
+        $notes = trim($input['notes'] ?? '');
+        $status = trim($input['status'] ?? 'approved');
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Invalid conversion request ID.']);
+            exit;
+        }
+
+        if (empty($date)) {
+            echo json_encode(['success' => false, 'message' => 'Please select the conversion ceremony date.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $model = new ConversionRequest();
+        $req = $model->getById($id);
+
+        if (!$req) {
+            echo json_encode(['success' => false, 'message' => 'Conversion request not found.']);
+            exit;
+        }
+
+        $success = $model->updateSchedule($id, [
+            'conversion_date' => $date,
+            'preferred_time'  => $time,
+            'venue'           => $venue,
+            'officiant'       => $officiant,
+            'notes'           => $notes,
+            'status'          => $status
+        ]);
+
+        if ($success) {
+            $refNo = '#CR-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+            $dateFmt = date('M d, Y', strtotime($date));
+            $applicant = trim(($req['fname'] ?? '') . ' ' . ($req['lname'] ?? ''));
+
+            if (!empty($req['tenant_id'])) {
+                $notif = new Notification();
+                $notif->create(
+                    (int)$req['tenant_id'],
+                    'Conversion Ceremony Scheduled',
+                    "As-salamu alaykum. Your Conversion to Islam (Shahadah) ceremony ($refNo) has been scheduled for {$dateFmt} at {$time} ({$venue}). Officiant: {$officiant}.",
+                    'success'
+                );
+            }
+
+            $this->logAudit('DAWAH', 'SCHEDULE_CONVERSION', "Scheduled conversion ceremony for $refNo ($applicant) on $dateFmt at $time ($venue)");
+        }
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? 'Conversion ceremony schedule has been saved successfully.' : 'Failed to update schedule in database.'
+        ]);
+        exit;
+    }
+
+    public function deleteConversion(): void {
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            exit;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($input['id'] ?? 0);
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'message' => 'Invalid request ID.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
+        $model = new ConversionRequest();
+        $req = $model->getById($id);
+
+        if (!$req) {
+            echo json_encode(['success' => false, 'message' => 'Conversion request not found.']);
+            exit;
+        }
+
+        $success = $model->delete($id);
+
+        if ($success) {
+            $refNo = '#CR-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
+            $applicant = trim(($req['fname'] ?? '') . ' ' . ($req['lname'] ?? ''));
+            $this->logAudit('DAWAH', 'DELETE_CONVERSION_REQUEST', "Deleted conversion request $refNo (ID: $id) for $applicant");
+        }
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $success ? 'Conversion request has been deleted successfully.' : 'Failed to delete conversion request.'
+        ]);
+        exit;
+    }
+
     public function dawahSchedule(): void {
         Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
         require_once BASE_PATH . '/app/models/User.php';

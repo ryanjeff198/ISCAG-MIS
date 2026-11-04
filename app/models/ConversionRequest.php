@@ -36,6 +36,10 @@ class ConversionRequest
             mother_name VARCHAR(255),
             mother_religion VARCHAR(100),
             conversion_date DATE NOT NULL,
+            preferred_time VARCHAR(50),
+            venue VARCHAR(255),
+            officiant VARCHAR(255),
+            notes TEXT,
             witness1_name VARCHAR(255),
             witness1_address VARCHAR(255),
             witness2_name VARCHAR(255),
@@ -44,6 +48,22 @@ class ConversionRequest
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (tenant_id) REFERENCES tenant_accounts(tenant_id)
         )");
+
+        // Ensure newly introduced columns exist on already-created tables
+        try {
+            $cols = [
+                'preferred_time' => 'VARCHAR(50) DEFAULT NULL',
+                'venue'          => 'VARCHAR(255) DEFAULT NULL',
+                'officiant'      => 'VARCHAR(255) DEFAULT NULL',
+                'notes'          => 'TEXT DEFAULT NULL'
+            ];
+            foreach ($cols as $col => $def) {
+                $check = $this->db->query("SHOW COLUMNS FROM {$this->table} LIKE '{$col}'")->fetch();
+                if (!$check) {
+                    @$this->db->exec("ALTER TABLE {$this->table} ADD COLUMN {$col} {$def}");
+                }
+            }
+        } catch (\Throwable $t) {}
     }
 
     public function create(array $data): bool
@@ -138,5 +158,50 @@ class ConversionRequest
     {
         $stmt = $this->db->prepare("UPDATE {$this->table} SET status = :status WHERE id = :id");
         return $stmt->execute(['status' => $status, 'id' => $id]);
+    }
+
+    public function updateSchedule(int $id, array $data): bool
+    {
+        $fields = [];
+        $params = ['id' => $id];
+
+        if (isset($data['conversion_date'])) {
+            $fields[] = "conversion_date = :conversion_date";
+            $params['conversion_date'] = $data['conversion_date'];
+        }
+        if (isset($data['preferred_time'])) {
+            $fields[] = "preferred_time = :preferred_time";
+            $params['preferred_time'] = $data['preferred_time'];
+        }
+        if (isset($data['venue'])) {
+            $fields[] = "venue = :venue";
+            $params['venue'] = $data['venue'];
+        }
+        if (isset($data['officiant'])) {
+            $fields[] = "officiant = :officiant";
+            $params['officiant'] = $data['officiant'];
+        }
+        if (isset($data['notes'])) {
+            $fields[] = "notes = :notes";
+            $params['notes'] = $data['notes'];
+        }
+        if (!empty($data['status'])) {
+            $fields[] = "status = :status";
+            $params['status'] = $data['status'];
+        }
+
+        if (empty($fields)) {
+            return false;
+        }
+
+        $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
+
+    public function delete(int $id): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
     }
 }
