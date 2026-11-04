@@ -327,16 +327,7 @@ $dawah_type = $dawah_type ?? 'male';
                         </td>
                         <td>
                           <div class="actions-cell">
-                            <button type="button" class="btn-circle schedule" onclick="openScheduleModal(<?= $id ?>)" title="Set Schedule">
-                              <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-                            </button>
-                            <button type="button" class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
-                              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                            </button>
-                            <button type="button" class="btn-circle delete" onclick="deleteConversionReqRecord(<?= $id ?>)" title="Delete">
-                              <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                            </button>
-                            <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, <?= $id ?>)" title="Actions">
+                            <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, <?= $id ?>)" title="Actions" aria-label="Actions">
                               <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                             </button>
                           </div>
@@ -407,16 +398,7 @@ $dawah_type = $dawah_type ?? 'male';
                         </td>
                         <td>
                           <div class="actions-cell">
-                            <button type="button" class="btn-circle schedule" onclick="openScheduleModal(<?= $id ?>)" title="Set Schedule">
-                              <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-                            </button>
-                            <button type="button" class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
-                              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                            </button>
-                            <button type="button" class="btn-circle delete" onclick="deleteConversionReqRecord(<?= $id ?>)" title="Delete">
-                              <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                            </button>
-                            <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, <?= $id ?>)" title="Actions">
+                            <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, <?= $id ?>)" title="Actions" aria-label="Actions">
                               <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                             </button>
                           </div>
@@ -487,16 +469,7 @@ $dawah_type = $dawah_type ?? 'male';
                         </td>
                         <td>
                           <div class="actions-cell">
-                            <button type="button" class="btn-circle schedule" onclick="openScheduleModal(<?= $id ?>)" title="Set Schedule">
-                              <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-                            </button>
-                            <button type="button" class="btn-circle eye" onclick="openViewModal(<?= $id ?>)" title="View Details">
-                              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                            </button>
-                            <button type="button" class="btn-circle delete" onclick="deleteConversionReqRecord(<?= $id ?>)" title="Delete">
-                              <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                            </button>
-                            <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, <?= $id ?>)" title="Actions">
+                            <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, <?= $id ?>)" title="Actions" aria-label="Actions">
                               <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                             </button>
                           </div>
@@ -544,7 +517,7 @@ $dawah_type = $dawah_type ?? 'male';
             <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
               Ceremony Date <span style="color:#ef4444;">*</span>
             </label>
-            <input type="date" id="cs-date" required min="<?= date('Y-m-d') ?>" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" />
+            <input type="date" id="cs-date" required style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" />
           </div>
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
@@ -881,7 +854,11 @@ $dawah_type = $dawah_type ?? 'male';
       if (r.conversion_date) {
         document.getElementById('cs-date').value = r.conversion_date;
       } else {
-        document.getElementById('cs-date').value = new Date().toISOString().split('T')[0];
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dt = String(d.getDate()).padStart(2, '0');
+        document.getElementById('cs-date').value = `${y}-${m}-${dt}`;
       }
 
       if (r.preferred_time) {
@@ -1003,40 +980,58 @@ $dawah_type = $dawah_type ?? 'male';
         return `${rec.fname || ''} ${rec.mname ? rec.mname + ' ' : ''}${rec.lname || ''}`.trim() || `${rec.first_name || ''} ${rec.last_name || ''}`.trim();
       }
 
-      const confirmMsg = `Are you sure you want to DELETE conversion request ${reqRef} for "${name}"?\n\nThis action cannot be undone and will permanently remove this record from the system.`;
-      if (!confirm(confirmMsg)) return;
+      const doDelete = async () => {
+        try {
+          const response = await fetch('<?= url("/admin/dawah/conversion/delete") ?>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+          });
 
-      try {
-        const response = await fetch('<?= url("/admin/dawah/conversion/delete") ?>', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: id })
-        });
+          const res = await response.json();
+          if (res.success) {
+            if (typeof showAlert === 'function') {
+              showAlert('Deleted Successfully', res.message || `Conversion request ${reqRef} has been removed.`, 'success');
+            } else {
+              alert(res.message || `Conversion request ${reqRef} has been removed.`);
+            }
 
-        const res = await response.json();
-        if (res.success) {
-          if (typeof showAlert === 'function') {
-            showAlert('Deleted Successfully', res.message || `Conversion request ${reqRef} has been removed.`, 'success');
+            const row = document.getElementById('row-' + id);
+            if (row) row.remove();
+
+            // Decrement count
+            const statTotal = document.getElementById('stat-total');
+            if (statTotal) {
+              statTotal.textContent = Math.max(0, parseInt(statTotal.textContent || '0') - 1);
+            }
+
+            setTimeout(() => location.reload(), 800);
           } else {
-            alert(res.message || `Conversion request ${reqRef} has been removed.`);
+            if (typeof showAlert === 'function') {
+              showAlert('Deletion Failed', res.message || 'Failed to delete conversion request.', 'error');
+            } else {
+              alert(res.message || 'Failed to delete conversion request.');
+            }
           }
-
-          const row = document.getElementById('row-' + id);
-          if (row) row.remove();
-
-          // Decrement count
-          const statTotal = document.getElementById('stat-total');
-          if (statTotal) {
-            statTotal.textContent = Math.max(0, parseInt(statTotal.textContent || '0') - 1);
+        } catch (err) {
+          console.error(err);
+          if (typeof showAlert === 'function') {
+            showAlert('Network Error', 'A network error occurred while deleting the request.', 'error');
+          } else {
+            alert('A network error occurred while deleting the request.');
           }
-
-          setTimeout(() => location.reload(), 800);
-        } else {
-          alert(res.message || 'Failed to delete conversion request.');
         }
-      } catch (err) {
-        console.error(err);
-        alert('A network error occurred while deleting the request.');
+      };
+
+      const title = 'Delete Conversion Request';
+      const msg = `Are you sure you want to DELETE conversion request ${reqRef} for "${name}"?\n\nThis action cannot be undone and will permanently remove this record from the system.`;
+
+      if (typeof showConfirm === 'function') {
+        showConfirm(title, msg, doDelete, 'danger');
+      } else {
+        if (confirm(`${title}\n\n${msg}`)) {
+          doDelete();
+        }
       }
     }
 

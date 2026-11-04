@@ -1,6 +1,6 @@
 <?php
 require_once BASE_PATH . '/app/helpers/Auth.php';
-Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
 $dawah_type = $dawah_type ?? 'male';
 ?>
 <!DOCTYPE html>
@@ -12,7 +12,7 @@ $dawah_type = $dawah_type ?? 'male';
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
-    /* ── Apartment Admin Consistent Styling ── */
+    /* ── Insights Ribbon ── */
     .admin-insights {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -114,7 +114,7 @@ $dawah_type = $dawah_type ?? 'male';
     .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
     /* ── Action Buttons ── */
-    .actions-cell { display: flex; align-items: center; gap: 6px; }
+    .actions-cell { display: flex; align-items: center; justify-content: center; }
     .btn-circle {
       width: 32px; height: 32px; border-radius: 8px;
       display: inline-flex; align-items: center; justify-content: center;
@@ -122,20 +122,13 @@ $dawah_type = $dawah_type ?? 'male';
       cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); padding: 0;
       color: #475569;
     }
-    .btn-circle svg { width: 17px; height: 17px; fill: currentColor; }
+    .btn-circle svg { width: 18px; height: 18px; fill: currentColor; }
     .btn-circle:hover, .btn-circle.active { 
       background: #e2e8f0; 
       border-color: #cbd5e1;
       color: var(--primary-dark, #0f172a);
       box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     }
-    
-    .btn-circle.schedule { color: #6d28d9; }
-    .btn-circle.schedule:hover { background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; }
-    .btn-circle.eye { color: #1d4ed8; }
-    .btn-circle.eye:hover { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
-    .btn-circle.delete { color: #dc2626; }
-    .btn-circle.delete:hover { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
     .btn-circle.dots { border-radius: 8px; }
 
     /* Floating 3-Dots Action Dropdown Menu */
@@ -187,10 +180,6 @@ $dawah_type = $dawah_type ?? 'male';
     .action-dropdown-item.schedule:hover { background: #f5f3ff; color: #5b21b6; }
     .action-dropdown-item.view { color: #1d4ed8; }
     .action-dropdown-item.view:hover { background: #eff6ff; color: #1e40af; }
-    .action-dropdown-item.accept { color: #166534; }
-    .action-dropdown-item.accept:hover { background: #f0fdf4; color: #14532D; }
-    .action-dropdown-item.reject { color: #9a3412; }
-    .action-dropdown-item.reject:hover { background: #fff7ed; color: #c2410c; }
     .action-dropdown-item.delete { color: #dc2626; }
     .action-dropdown-item.delete:hover { background: #fef2f2; color: #b91c1c; }
     .action-dropdown-divider {
@@ -199,7 +188,7 @@ $dawah_type = $dawah_type ?? 'male';
       margin: 4px 0;
     }
 
-    /* Modal Styling */
+    /* Modal Backdrop & Cards */
     .conversion-modal-backdrop {
       position: fixed; inset: 0; background: rgba(15,30,22,0.65);
       backdrop-filter: blur(5px); z-index: 99999; display: none;
@@ -209,7 +198,7 @@ $dawah_type = $dawah_type ?? 'male';
       background: white; border-radius: 16px; width: 100%;
       max-width: 650px; box-shadow: 0 25px 70px rgba(0,0,0,0.3);
       overflow: hidden; border: 1px solid rgba(0,0,0,0.08);
-      max-height: calc(90vh); display: flex; flex-direction: column;
+      max-height: 90vh; display: flex; flex-direction: column;
     }
     .conversion-modal-header {
       padding: 18px 24px; border-bottom: 1px solid var(--border);
@@ -274,7 +263,7 @@ $dawah_type = $dawah_type ?? 'male';
           <span class="sep">›</span>
           <span>Islamic Conversion</span>
           <span class="sep">›</span>
-          <span class="current">All Records</span>
+          <span class="current">Conversion Management</span>
         </div>
 
         <!-- Admin Insights Ribbon -->
@@ -282,9 +271,12 @@ $dawah_type = $dawah_type ?? 'male';
           <!-- Rendered by JS -->
         </div>
 
-        <!-- Tab Nav -->
+        <!-- Tab Nav: Default to All Records so cases are never hidden -->
         <div class="tab-nav">
-          <button class="tab-btn active" onclick="setFilter('pending', this)">
+          <button class="tab-btn active" onclick="setFilter('all', this)">
+            All Records <span class="tab-count" id="tab-count-all">0</span>
+          </button>
+          <button class="tab-btn" onclick="setFilter('pending', this)">
             Pending <span class="tab-count pending" id="tab-count-pending">0</span>
           </button>
           <button class="tab-btn" onclick="setFilter('approved', this)">
@@ -293,9 +285,6 @@ $dawah_type = $dawah_type ?? 'male';
           <button class="tab-btn" onclick="setFilter('rejected', this)">
             Rejected <span class="tab-count rejected" id="tab-count-rejected">0</span>
           </button>
-          <button class="tab-btn" onclick="setFilter('all', this)">
-            All Records <span class="tab-count" id="tab-count-all">0</span>
-          </button>
         </div>
 
         <!-- Section Card Table -->
@@ -303,7 +292,7 @@ $dawah_type = $dawah_type ?? 'male';
           <div class="section-card-header">
             <h6>
               <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-              Conversion Applications
+              Conversion Applications &amp; Records
             </h6>
             <span class="results-badge" id="results-count-badge">Loading records...</span>
           </div>
@@ -318,7 +307,7 @@ $dawah_type = $dawah_type ?? 'male';
                     <th>Ceremony Schedule</th>
                     <th>Residence</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    <th style="text-align:center;">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="conversion-tbody">
@@ -332,14 +321,14 @@ $dawah_type = $dawah_type ?? 'male';
     </div>
   </div>
 
-  <!-- ═══ Set / Update Schedule Ceremony Modal ═══ -->
+  <!-- ═══ 1. Set / Update Schedule Ceremony Modal ═══ -->
   <div id="conversion-schedule-modal" class="conversion-modal-backdrop" onclick="if(event.target===this) closeScheduleModal()">
     <div class="conversion-modal-card" style="max-width:600px;">
       <div style="height:4px; background:linear-gradient(90deg, #14532D, #7c3aed);"></div>
       <div class="conversion-modal-header">
         <h5 style="margin:0; font-family:'Lora',serif; color:#14532D; font-size:1.18rem; font-weight:800; display:flex; align-items:center; gap:8px;">
           <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#7c3aed;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-          Schedule Conversion Ceremony (Shahadah)
+          Set Conversion Ceremony Schedule
         </h5>
         <button type="button" onclick="closeScheduleModal()" class="conversion-modal-close">&times;</button>
       </div>
@@ -363,7 +352,7 @@ $dawah_type = $dawah_type ?? 'male';
             <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
               Ceremony Date <span style="color:#ef4444;">*</span>
             </label>
-            <input type="date" id="cs-date" required min="<?= date('Y-m-d') ?>" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" />
+            <input type="date" id="cs-date" required style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" />
           </div>
           <div>
             <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
@@ -414,7 +403,7 @@ $dawah_type = $dawah_type ?? 'male';
     </div>
   </div>
 
-  <!-- 📜 Conversion Details Modal -->
+  <!-- ═══ 2. Conversion Details (View) Modal ═══ -->
   <div id="conversion-modal" class="conversion-modal-backdrop" onclick="if(event.target===this) closeConversionModal()">
     <div class="conversion-modal-card">
       <div class="conversion-modal-header">
@@ -531,7 +520,7 @@ $dawah_type = $dawah_type ?? 'male';
     </div>
   </div>
 
-  <!-- ═══ 3-Dots Action Dropdown Menu ═══ -->
+  <!-- ═══ 3. Floating 3-Dots Action Dropdown Menu ═══ -->
   <div id="conversion-req-action-menu" class="conversion-action-menu">
     <button type="button" class="action-dropdown-item schedule" onclick="triggerReqAction('schedule')">
       <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
@@ -539,16 +528,7 @@ $dawah_type = $dawah_type ?? 'male';
     </button>
     <button type="button" class="action-dropdown-item view" onclick="triggerReqAction('view')">
       <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-      <span>View Details</span>
-    </button>
-    <div class="action-dropdown-divider"></div>
-    <button type="button" class="action-dropdown-item accept" onclick="triggerReqAction('approve')">
-      <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-      <span>Accept &amp; Certificate</span>
-    </button>
-    <button type="button" class="action-dropdown-item reject" onclick="triggerReqAction('reject')">
-      <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      <span>Reject Application</span>
+      <span>View</span>
     </button>
     <div class="action-dropdown-divider"></div>
     <button type="button" class="action-dropdown-item delete" onclick="triggerReqAction('delete')">
@@ -566,7 +546,7 @@ $dawah_type = $dawah_type ?? 'male';
     const recordsMap = {};
     applications.forEach(a => { if (a && a.id) recordsMap[a.id] = a; });
 
-    let currentFilter = 'pending';
+    let currentFilter = 'all';
     let currentViewingId = null;
 
     function renderInsights() {
@@ -577,32 +557,32 @@ $dawah_type = $dawah_type ?? 'male';
       const rejected = applications.filter(a => ['rejected', 'disapproved', 'cancelled'].includes((a.status || '').toLowerCase())).length;
 
       container.innerHTML = `
-        <div class="insight-card pending" onclick="setFilter('pending', document.querySelector('.tab-btn:nth-child(1)'))">
-          <div class="insight-label">Pending Review</div>
-          <div class="insight-value warning">${pending}</div>
-          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>
-        </div>
-        <div class="insight-card approved" onclick="setFilter('approved', document.querySelector('.tab-btn:nth-child(2)'))">
-          <div class="insight-label">Accepted / Approved</div>
-          <div class="insight-value success">${approved}</div>
-          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
-        </div>
-        <div class="insight-card rejected" onclick="setFilter('rejected', document.querySelector('.tab-btn:nth-child(3)'))">
-          <div class="insight-label">Rejected</div>
-          <div class="insight-value danger">${rejected}</div>
-          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
-        </div>
-        <div class="insight-card total" onclick="setFilter('all', document.querySelector('.tab-btn:nth-child(4)'))">
+        <div class="insight-card total" onclick="setFilter('all', document.querySelector('.tab-btn:nth-child(1)'))">
           <div class="insight-label">Total Conversions</div>
           <div class="insight-value info">${total}</div>
           <svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3.8L19.5 19H4.5L12 5.8zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
         </div>
+        <div class="insight-card pending" onclick="setFilter('pending', document.querySelector('.tab-btn:nth-child(2)'))">
+          <div class="insight-label">Pending Review</div>
+          <div class="insight-value warning">${pending}</div>
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>
+        </div>
+        <div class="insight-card approved" onclick="setFilter('approved', document.querySelector('.tab-btn:nth-child(3)'))">
+          <div class="insight-label">Accepted / Approved</div>
+          <div class="insight-value success">${approved}</div>
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
+        </div>
+        <div class="insight-card rejected" onclick="setFilter('rejected', document.querySelector('.tab-btn:nth-child(4)'))">
+          <div class="insight-label">Rejected</div>
+          <div class="insight-value danger">${rejected}</div>
+          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" /></svg>
+        </div>
       `;
 
+      document.getElementById('tab-count-all').innerText = total;
       document.getElementById('tab-count-pending').innerText = pending;
       document.getElementById('tab-count-approved').innerText = approved;
       document.getElementById('tab-count-rejected').innerText = rejected;
-      document.getElementById('tab-count-all').innerText = total;
     }
 
     function setFilter(val, btn) {
@@ -624,7 +604,7 @@ $dawah_type = $dawah_type ?? 'male';
         filtered = filtered.filter(a => ['rejected', 'disapproved', 'cancelled'].includes((a.status || '').toLowerCase()));
       }
 
-      document.getElementById('results-count-badge').innerText = `Showing ${filtered.length} record${filtered.length !== 1 ? 's' : ''}`;
+      document.getElementById('results-count-badge').innerText = `Showing ${filtered.length} of ${applications.length} records`;
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No conversion records found for this filter.</td></tr>`;
@@ -658,16 +638,7 @@ $dawah_type = $dawah_type ?? 'male';
             <td><span class="badge-status ${sc}"><span class="status-dot"></span>${displayStatus}</span></td>
             <td>
               <div class="actions-cell">
-                <button type="button" class="btn-circle schedule" onclick="openScheduleModal(${app.id})" title="Set Schedule">
-                  <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-                </button>
-                <button type="button" class="btn-circle eye" onclick="viewConversionDetailsById(${app.id})" title="View Details">
-                  <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                </button>
-                <button type="button" class="btn-circle delete" onclick="deleteConversionRecord(${app.id})" title="Delete Record">
-                  <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                </button>
-                <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, ${app.id})" title="Actions">
+                <button type="button" class="btn-circle dots" onclick="toggleReqMenu(event, ${app.id})" title="Actions" aria-label="Actions" id="action-btn-${app.id}">
                   <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
                 </button>
               </div>
@@ -678,7 +649,7 @@ $dawah_type = $dawah_type ?? 'male';
     }
 
     function viewConversionDetailsById(id) {
-      const app = recordsMap[id];
+      const app = applications.find(a => Number(a.id) === Number(id)) || recordsMap[id];
       if (app) viewConversionDetails(app);
     }
 
@@ -751,9 +722,9 @@ $dawah_type = $dawah_type ?? 'male';
       }
     }
 
-    /* ── Schedule Modal ── */
+    /* ── Schedule Modal Logic ── */
     function openScheduleModal(id) {
-      const r = recordsMap[id];
+      const r = applications.find(a => Number(a.id) === Number(id)) || recordsMap[id];
       if (!r) return;
 
       document.getElementById('cs-request-id').value = id;
@@ -765,7 +736,11 @@ $dawah_type = $dawah_type ?? 'male';
       if (r.conversion_date) {
         document.getElementById('cs-date').value = r.conversion_date;
       } else {
-        document.getElementById('cs-date').value = new Date().toISOString().split('T')[0];
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dt = String(d.getDate()).padStart(2, '0');
+        document.getElementById('cs-date').value = `${y}-${m}-${dt}`;
       }
 
       if (r.preferred_time) {
@@ -775,16 +750,18 @@ $dawah_type = $dawah_type ?? 'male';
           if (r.preferred_time.toLowerCase().includes('pm') && hrs < 12) hrs += 12;
           if (r.preferred_time.toLowerCase().includes('am') && hrs === 12) hrs = 0;
           document.getElementById('cs-time').value = `${String(hrs).padStart(2, '0')}:${m[2]}`;
+        } else {
+          document.getElementById('cs-time').value = '10:00';
         }
       } else {
         document.getElementById('cs-time').value = '10:00';
       }
 
-      if (r.venue) document.getElementById('cs-venue').value = r.venue;
-      if (r.officiant) document.getElementById('cs-officiant').value = r.officiant;
-      if (r.notes) document.getElementById('cs-notes').value = r.notes;
-
+      document.getElementById('cs-venue').value = r.venue || 'ISCAG Main Mosque, Da\'wah Ceremony Hall';
+      document.getElementById('cs-officiant').value = r.officiant || 'Da\'wah Division Ustaz / Officiant';
+      document.getElementById('cs-notes').value = r.notes || '';
       document.getElementById('cs-status').value = 'approved';
+
       document.getElementById('conversion-schedule-modal').style.display = 'flex';
     }
 
@@ -837,6 +814,15 @@ $dawah_type = $dawah_type ?? 'male';
 
         const res = await response.json();
         if (res.success) {
+          const rec = applications.find(a => Number(a.id) === Number(id));
+          if (rec) {
+            rec.conversion_date = date;
+            rec.preferred_time = timeFmt;
+            rec.venue = venue;
+            rec.officiant = officiant;
+            rec.notes = notes;
+            rec.status = status;
+          }
           if (recordsMap[id]) {
             recordsMap[id].conversion_date = date;
             recordsMap[id].preferred_time = timeFmt;
@@ -852,6 +838,8 @@ $dawah_type = $dawah_type ?? 'male';
             alert(res.message || 'Conversion ceremony schedule saved successfully.');
           }
           closeScheduleModal();
+          renderInsights();
+          renderTable();
           setTimeout(() => location.reload(), 900);
         } else {
           if (btn) {
@@ -870,41 +858,59 @@ $dawah_type = $dawah_type ?? 'male';
       }
     }
 
-    /* ── Delete Conversion Record ── */
+    /* ── Delete Conversion Record Handler ── */
     async function deleteConversionRecord(id) {
-      const r = recordsMap[id];
+      const r = applications.find(a => Number(a.id) === Number(id)) || recordsMap[id];
       const reqRef = '#CR-' + String(id).padStart(4, '0');
       const name = r ? (`${r.fname || ''} ${r.lname || ''}`.trim() || `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Record') : 'Record';
 
-      const confirmMsg = `Are you sure you want to DELETE conversion record ${reqRef} for "${name}"?\n\nThis will permanently remove the record from the database.`;
-      if (!confirm(confirmMsg)) return;
+      const doDelete = async () => {
+        try {
+          const response = await fetch('<?= url("/admin/dawah/conversion/delete") ?>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+          });
 
-      try {
-        const response = await fetch('<?= url("/admin/dawah/conversion/delete") ?>', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: id })
-        });
+          const res = await response.json();
+          if (res.success) {
+            if (typeof showAlert === 'function') {
+              showAlert('Deleted Successfully', res.message || `Conversion record ${reqRef} has been removed.`, 'success');
+            } else {
+              alert(res.message || `Conversion record ${reqRef} has been removed.`);
+            }
 
-        const res = await response.json();
-        if (res.success) {
-          if (typeof showAlert === 'function') {
-            showAlert('Deleted Successfully', res.message || `Conversion record ${reqRef} has been removed.`, 'success');
+            // Remove locally and re-render
+            applications = applications.filter(a => Number(a.id) !== Number(id));
+            delete recordsMap[id];
+            renderInsights();
+            renderTable();
           } else {
-            alert(res.message || `Conversion record ${reqRef} has been removed.`);
+            if (typeof showAlert === 'function') {
+              showAlert('Deletion Failed', res.message || 'Failed to delete conversion record.', 'error');
+            } else {
+              alert(res.message || 'Failed to delete conversion record.');
+            }
           }
-
-          // Remove locally and re-render
-          applications = applications.filter(a => a.id != id);
-          delete recordsMap[id];
-          renderInsights();
-          renderTable();
-        } else {
-          alert(res.message || 'Failed to delete conversion record.');
+        } catch (err) {
+          console.error(err);
+          if (typeof showAlert === 'function') {
+            showAlert('Network Error', 'A network error occurred while deleting the record.', 'error');
+          } else {
+            alert('A network error occurred while deleting the record.');
+          }
         }
-      } catch (err) {
-        console.error(err);
-        alert('A network error occurred while deleting the record.');
+      };
+
+      const title = 'Delete Conversion Record';
+      const msg = `Are you sure you want to delete conversion record ${reqRef} for "${name}"?\n\nThis will permanently remove the record from the database.`;
+
+      if (typeof showConfirm === 'function') {
+        showConfirm(title, msg, doDelete, 'danger');
+      } else {
+        if (confirm(`${title}\n\n${msg}`)) {
+          doDelete();
+        }
       }
     }
 
@@ -974,7 +980,7 @@ $dawah_type = $dawah_type ?? 'male';
 
       const rect = btn.getBoundingClientRect();
       const menuWidth = 180;
-      const menuHeight = menu.offsetHeight || 190;
+      const menuHeight = menu.offsetHeight || 150;
 
       let top = rect.bottom + 6;
       let left = rect.right - menuWidth;
@@ -1011,10 +1017,6 @@ $dawah_type = $dawah_type ?? 'male';
         viewConversionDetailsById(id);
       } else if (action === 'delete') {
         deleteConversionRecord(id);
-      } else if (action === 'approve') {
-        handleConversionAction(id, 'approve');
-      } else if (action === 'reject') {
-        handleConversionAction(id, 'reject');
       }
     }
 

@@ -2777,7 +2777,7 @@ class AdminController extends Controller
     }
 
     public function scheduleConversion(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -2849,7 +2849,7 @@ class AdminController extends Controller
     }
 
     public function deleteConversion(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
