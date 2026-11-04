@@ -149,7 +149,7 @@ class AuthController extends Controller
             }
 
             $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $otpExpiry = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+            $otpExpiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
 
             $data = [
                 'first_name' => $firstName,
@@ -357,7 +357,7 @@ class AuthController extends Controller
 
             if ($user) {
                 $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
-                $expiry = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+                $expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
                 
                 $this->userModel->updateOTP($email, $otp, $expiry);
                 
@@ -441,7 +441,7 @@ class AuthController extends Controller
 
             // Update the email and generate new OTP
             $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
-            $expiry = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+            $expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
 
             // We need a way to update the email of an unverified user
             // I'll add a helper to User model or do it here.
@@ -485,7 +485,7 @@ class AuthController extends Controller
         $email = trim($_SESSION['temp_email'] ?? '');
         if ($email) {
             $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $expiry = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+            $expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
             
             error_log("[OTP_DEBUG] Resend OTP requested for '{$email}'. Generated new OTP: {$otp}");
 

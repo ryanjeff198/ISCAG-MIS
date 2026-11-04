@@ -148,8 +148,8 @@ class User
         if (!empty($user['otp_expiry'])) {
             $expiry = strtotime($user['otp_expiry']);
             $now = time();
-            // Allow a 5-minute (300s) grace period for server clock drift or network lag
-            if ($expiry && ($expiry + 300) < $now) {
+            // Allow a 1-minute (60s) grace period for server clock drift or network lag
+            if ($expiry && ($expiry + 60) < $now) {
                 error_log("[OTP_DEBUG] Verify failed: Code expired for '{$email}'. Expiry: {$user['otp_expiry']} (" . ($expiry) . "), Current: {$now}");
                 return false;
             }
