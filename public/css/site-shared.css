@@ -69,6 +69,7 @@ nav {
 .nav-links {
   display: flex; align-items: center; gap: 2px;
   flex: 1; justify-content: center;
+  margin: 0; padding: 0; list-style: none;
 }
 
 .nav-item { position: relative; }
@@ -468,11 +469,54 @@ html, body {
 
 @media (min-width: 992px) {
   .nav-menu-wrapper {
-    display: contents;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+    overflow: visible !important;
   }
   .nav-hamburger,
   .nav-backdrop {
     display: none !important;
+  }
+  .nav-links {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+  }
+  .nav-right {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 0 0 auto !important;
+    flex-shrink: 0 !important;
+    height: 100% !important;
+    padding: 0 !important;
+    border-top: none !important;
+    width: auto !important;
+  }
+  .btn-login,
+  .btn-register {
+    width: auto !important;
+    padding: 10px 20px !important;
+    font-size: 0.875rem !important;
   }
 }
 
