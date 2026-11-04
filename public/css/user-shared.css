@@ -1829,3 +1829,60 @@ textarea.form-control { resize: vertical; }
     box-sizing: border-box !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   GLOBAL PRINT MEDIA OVERRIDES
+   Ensures window.print() expands fully and never truncates at 100vh
+   ───────────────────────────────────────────────────────────── */
+@media print {
+  html, body {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #111827 !important;
+  }
+
+  .app-wrapper {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .main-content {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .sidebar,
+  .sidebar-overlay,
+  .sidebar-collapse-btn,
+  .mobile-portal-bar,
+  .top-bar,
+  .breadcrumb-nav,
+  .toast-notify,
+  .app-header-actions,
+  .app-footer,
+  .btn-request-form,
+  .guidelines-notice {
+    display: none !important;
+  }
+}
+

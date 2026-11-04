@@ -824,42 +824,418 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             .details-container { padding: 16px 16px 40px; }
         }
 
+        /* ── Claiming Slip Modal Styles ── */
+        .slip-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        .slip-modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 1;
+        }
+        .slip-modal-dialog {
+            position: relative;
+            z-index: 2;
+            background: #ffffff;
+            border-radius: 16px;
+            max-width: 780px;
+            width: 100%;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            animation: slipModalFadeIn 0.22s ease-out;
+        }
+        @keyframes slipModalFadeIn {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .slip-modal-header {
+            padding: 14px 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .slip-modal-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .slip-modal-badge {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .slip-modal-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .slip-modal-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-slip-print {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #059669;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .btn-slip-print:hover {
+            background: #047857;
+        }
+        .btn-slip-close {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            padding: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s, background 0.15s;
+        }
+        .btn-slip-close:hover {
+            color: #0f172a;
+            background: #e2e8f0;
+        }
+        .slip-modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            background: #f1f5f9;
+        }
+        /* Claiming slip card styles */
+        .slip-wrapper {
+            background: #ffffff;
+            border: 2px solid #059669;
+            border-radius: 12px;
+            padding: 24px 26px;
+            position: relative;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+            color: #1e293b;
+        }
+        .slip-top-border {
+            height: 5px;
+            background: linear-gradient(90deg, #059669 0%, #d97706 100%);
+            margin: -24px -26px 18px -26px;
+            border-radius: 10px 10px 0 0;
+        }
+        .slip-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+        .slip-brand-col {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .slip-brand-col img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+        .slip-org-title {
+            font-family: 'Lora', Georgia, serif;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #065f46;
+            line-height: 1.25;
+        }
+        .slip-dept-subtitle {
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .slip-ref-badge {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .slip-ref-num {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #065f46;
+            font-family: monospace;
+            letter-spacing: 0.04em;
+        }
+        .slip-ref-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #64748b;
+        }
+        .slip-title-banner {
+            background: #f0fdf4;
+            border: 1.5px solid #a7f3d0;
+            border-radius: 8px;
+            padding: 9px 14px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .slip-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #064e3b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0;
+        }
+        .slip-subtitle {
+            font-size: 0.74rem;
+            color: #047857;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+        .slip-section-heading {
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #065f46;
+            margin: 14px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .slip-section-heading::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        .slip-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+            font-size: 0.82rem;
+        }
+        .slip-data-table td {
+            padding: 6px 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .slip-data-table td.label-cell {
+            width: 35%;
+            background: #f8fafc;
+            font-weight: 700;
+            color: #475569;
+        }
+        .slip-data-table td.val-cell {
+            color: #0f172a;
+        }
+        .slip-sched-box {
+            background: #ecfdf5;
+            border: 1.5px solid #6ee7b7;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+        }
+        .slip-sched-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .slip-sched-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .slip-sched-item-lbl {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #047857;
+        }
+        .slip-sched-item-val {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #064e3b;
+            margin-top: 2px;
+        }
+        .slip-inst-note {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #a7f3d0;
+            font-size: 0.76rem;
+            color: #065f46;
+            line-height: 1.45;
+        }
+        .slip-sig-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 24px;
+            padding-top: 12px;
+            gap: 20px;
+        }
+        .slip-sig-box {
+            width: 48%;
+            text-align: center;
+        }
+        .slip-sig-line {
+            border-top: 1.5px solid #334155;
+            margin-top: 36px;
+            padding-top: 5px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .slip-sig-caption {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 2px;
+            line-height: 1.35;
+        }
+        .slip-footer-note {
+            margin-top: 18px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.7rem;
+            color: #64748b;
+            text-align: center;
+            line-height: 1.4;
+        }
+
         /* ── Print Media Styles ── */
         @media print {
-            .top-bar, .sidebar, .breadcrumb-nav, .app-header-actions, .app-footer, 
-            .guidelines-notice, #burial-form-container, .toast-notify, button, .btn-outline,
-            .btn-request-form {
-                display: none !important;
+            html, body {
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+                background: white !important;
+                color: #0f172a !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
-            body, .app-wrapper, .main-content, .details-container {
+            .app-wrapper, .main-content, .details-container {
+                display: block !important;
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+                position: static !important;
                 background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 width: 100% !important;
+                max-width: 100% !important;
+            }
+            .top-bar, .sidebar, .sidebar-overlay, .mobile-portal-bar, .sidebar-collapse-btn,
+            .breadcrumb-nav, .app-header-actions, .app-footer, .guidelines-notice, 
+            #burial-form-container, .toast-notify, button, .btn-outline,
+            .btn-request-form, .back-to-dash-row, .btn-topbar {
+                display: none !important;
+            }
+            .print-official-header {
+                display: flex !important;
+                align-items: center;
+                justify-content: space-between;
+                border-bottom: 2px solid #059669;
+                padding-bottom: 12px;
+                margin-bottom: 18px;
             }
             .app-card {
                 box-shadow: none !important;
-                border: 1px solid #cbd5e1 !important;
+                border: 1.5px solid #cbd5e1 !important;
                 margin: 0 !important;
                 border-radius: 8px !important;
+                page-break-inside: auto;
             }
             .app-header {
-                padding: 20px 24px !important;
+                padding: 18px 22px !important;
                 background: white !important;
                 border-bottom: 2px solid #059669 !important;
             }
             .app-body {
-                padding: 20px 24px !important;
+                padding: 18px 22px !important;
             }
             .track-box {
                 border: 1px solid #cbd5e1 !important;
                 background: white !important;
-                padding: 18px !important;
+                padding: 16px !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
             }
-            .appointment-history-container {
-                border: 1px solid #cbd5e1 !important;
+
+            /* When printing Claiming Slip directly via modal */
+            body.slip-modal-active .app-wrapper,
+            body.printing-slip .app-wrapper {
+                display: none !important;
+            }
+            body.slip-modal-active #claiming-slip-modal,
+            body.printing-slip #claiming-slip-modal {
+                display: block !important;
+                position: static !important;
+                background: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+            body.slip-modal-active .slip-modal-backdrop,
+            body.printing-slip .slip-modal-backdrop,
+            body.slip-modal-active .slip-modal-header,
+            body.printing-slip .slip-modal-header {
+                display: none !important;
+            }
+            body.slip-modal-active .slip-modal-dialog,
+            body.printing-slip .slip-modal-dialog {
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
                 box-shadow: none !important;
-                margin-top: 14px !important;
+                border: none !important;
+            }
+            body.slip-modal-active .slip-wrapper,
+            body.printing-slip .slip-wrapper {
+                border: 1.5px solid #059669 !important;
+                margin: 0 auto !important;
+                padding: 20px 24px !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
             }
         }
     </style>
@@ -900,6 +1276,21 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             <!-- CARD 1: ACTIVE REQUEST STATUS & TRACKING                        -->
             <!-- ═══════════════════════════════════════════════════════════════ -->
             <div class="app-card">
+                <!-- Printable Official Header (Visible ONLY on printout) -->
+                <div class="print-official-header" style="display: none;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <img src="<?= url('/assets/logo.jpg') ?>" style="width:48px; height:48px; object-fit:contain;" alt="ISCAG" onerror="this.src='<?= url('/assets/favicon_io/favicon.ico') ?>'" />
+                        <div>
+                            <div style="font-family:'Lora',serif; font-size:1.15rem; font-weight:800; color:#065f46;">ISLAMIC STUDIES, CALL AND GUIDANCE OF THE PHILIPPINES</div>
+                            <div style="font-size:0.8rem; font-weight:600; color:#475569;">Social Welfare &amp; Damayan Department • Civil Registry Services</div>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.72rem; text-transform:uppercase; font-weight:700; color:#64748b;">Official Service Details</div>
+                        <div style="font-size:1.15rem; font-weight:800; color:#065f46;">Case #<?= htmlspecialchars($appId) ?></div>
+                        <div style="font-size:0.72rem; color:#64748b;">Printed: <?= date('F d, Y \a\t g:i A') ?></div>
+                    </div>
+                </div>
                 <!-- Header -->
                 <header class="app-header">
                     <div class="app-header-left">
@@ -1347,7 +1738,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         Need a new request? Click <strong>Submit New Request</strong> to fill up the form.
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                        <button type="button" class="btn-outline" onclick="window.print()">
+                        <button type="button" class="btn-outline" onclick="printServiceDetails()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                             Print Details
                         </button>
@@ -2544,203 +2935,129 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }
     }
 
-    function printClaimingSlip() {
-        const slipData = {
-            refId: <?= json_encode($appId) ?>,
-            status: <?= json_encode($dcStatus) ?>,
-            deceasedName: <?= json_encode($deceasedName) ?>,
-            dateOfDeath: <?= json_encode($dateOfDeath) ?>,
-            placeOfDeath: <?= json_encode($placeOfDeath) ?>,
-            requesterName: <?= json_encode($requesterName) ?>,
-            relationship: <?= json_encode($relationship) ?>,
-            contact: <?= json_encode($activeBurial['informant_contact'] ?? ($userPhone ?: 'On File')) ?>,
-            scheduledDate: <?= json_encode(!empty($activeBurial['scheduled_release_date']) ? date('F d, Y', strtotime($activeBurial['scheduled_release_date'])) : 'To Be Scheduled') ?>,
-            scheduledTime: <?= json_encode(!empty($activeBurial['scheduled_release_time']) ? date('g:i A', strtotime($activeBurial['scheduled_release_time'])) : 'Regular Office Hours (8:00 AM - 5:00 PM)') ?>,
-            releaseLocation: <?= json_encode(($activeBurial['release_location'] ?? '') ?: 'Damayan Department, ISCAG Office') ?>,
-            scheduledBy: <?= json_encode(($activeBurial['release_scheduled_by_name'] ?? '') ?: 'Damayan Admin') ?>,
-            instructions: <?= json_encode(($activeBurial['release_instructions'] ?? '') ?: 'Please bring this official claiming slip, a valid government-issued ID of the authorized recipient, and any official receipts upon claiming at the Damayan Department counter.') ?>,
-            registryNo: <?= json_encode(($activeBurial['death_cert_registry_no'] ?? '') ?: 'Under Department Processing') ?>,
-            registeredDate: <?= json_encode(!empty($activeBurial['death_cert_registered_date']) ? date('F d, Y', strtotime($activeBurial['death_cert_registered_date'])) : 'Pending Registration') ?>,
-            certifiedRef: <?= json_encode(($activeBurial['death_cert_certified_copy_ref'] ?? '') ?: 'N/A') ?>,
-            printDate: <?= json_encode(date('F d, Y \a\t g:i A')) ?>
-        };
-
-        const logoUrl = window.location.origin + '/assets/favicon_io/favicon.ico';
-        const printHtml = `
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <title>ISCAG Claiming Slip - ${slipData.refId}</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
-            <style>
-              * { box-sizing: border-box; }
-              body { font-family: 'Inter', -apple-system, sans-serif; color: #1e293b; margin: 0; padding: 24px; background: #fff; font-size: 13px; }
-              .slip-wrapper { max-width: 720px; margin: 0 auto; border: 2px solid #059669; border-radius: 12px; padding: 28px 30px; position: relative; }
-              .slip-top-border { height: 5px; background: linear-gradient(90deg, #059669 0%, #d97706 100%); margin: -28px -30px 22px -30px; border-radius: 10px 10px 0 0; }
-              .header-row { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; }
-              .brand-col { display: flex; align-items: center; gap: 12px; }
-              .brand-col img { width: 48px; height: 48px; object-fit: contain; }
-              .org-title { font-family: 'Lora', serif; font-size: 1.15rem; font-weight: 800; color: #065f46; line-height: 1.2; }
-              .dept-subtitle { font-size: 0.8rem; font-weight: 600; color: #64748b; margin-top: 2px; }
-              .ref-badge { text-align: right; }
-              .ref-num { font-size: 1.25rem; font-weight: 800; color: #065f46; font-family: monospace; letter-spacing: 0.04em; }
-              .ref-label { font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: #64748b; }
-              .slip-title-banner { background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 8px; padding: 10px 16px; text-align: center; margin-bottom: 20px; }
-              .slip-title { font-size: 1.05rem; font-weight: 800; color: #064e3b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
-              .slip-subtitle { font-size: 0.75rem; color: #047857; margin-top: 3px; font-weight: 500; }
-              .section-heading { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #065f46; margin: 16px 0 8px; display: flex; align-items: center; gap: 6px; }
-              .section-heading::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
-              .data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 0.82rem; }
-              .data-table td { padding: 7px 10px; border: 1px solid #e2e8f0; }
-              .data-table td.label-cell { width: 34%; background: #f8fafc; font-weight: 700; color: #475569; }
-              .data-table td.val-cell { color: #0f172a; }
-              .sched-box { background: #ecfdf5; border: 1.5px solid #6ee7b7; border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; }
-              .sched-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-              .sched-item { display: flex; flex-direction: column; }
-              .sched-item-lbl { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #047857; }
-              .sched-item-val { font-size: 0.95rem; font-weight: 800; color: #064e3b; margin-top: 2px; }
-              .inst-note { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #a7f3d0; font-size: 0.78rem; color: #065f46; line-height: 1.45; }
-              .sig-row { display: flex; justify-content: space-between; margin-top: 28px; padding-top: 16px; }
-              .sig-box { width: 45%; text-align: center; }
-              .sig-line { border-top: 1.5px solid #334155; margin-top: 42px; padding-top: 6px; font-size: 0.8rem; font-weight: 700; color: #1e293b; }
-              .sig-caption { font-size: 0.72rem; color: #64748b; margin-top: 2px; }
-              .footer-note { margin-top: 22px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 0.72rem; color: #64748b; text-align: center; line-height: 1.4; }
-              @media print {
-                body { padding: 0; }
-                .slip-wrapper { border: 1.5px solid #059669; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="slip-wrapper">
-              <div class="slip-top-border"></div>
-              
-              <div class="header-row">
-                <div class="brand-col">
-                  <img src="${logoUrl}" alt="ISCAG Logo" onerror="this.style.display='none'" />
-                  <div>
-                    <div class="org-title">Islamic Studies, Call and Guidance of the Philippines</div>
-                    <div class="dept-subtitle">Social Welfare &amp; Damayan Department • Civil Registry Services</div>
-                  </div>
-                </div>
-                <div class="ref-badge">
-                  <div class="ref-label">Claiming Reference</div>
-                  <div class="ref-num">#${slipData.refId}</div>
-                </div>
-              </div>
-
-              <div class="slip-title-banner">
-                <h2 class="slip-title">Official Death Certificate Claiming Slip</h2>
-                <div class="slip-subtitle">Present this slip along with one (1) valid government ID at the Damayan counter</div>
-              </div>
-
-              <div class="sched-box">
-                <div class="sched-grid">
-                  <div class="sched-item">
-                    <span class="sched-item-lbl">Scheduled Claiming Date:</span>
-                    <span class="sched-item-val">${slipData.scheduledDate}</span>
-                  </div>
-                  <div class="sched-item">
-                    <span class="sched-item-lbl">Scheduled Claiming Time:</span>
-                    <span class="sched-item-val">${slipData.scheduledTime}</span>
-                  </div>
-                  <div class="sched-item">
-                    <span class="sched-item-lbl">Claiming Counter / Location:</span>
-                    <span class="sched-item-val">${slipData.releaseLocation}</span>
-                  </div>
-                  <div class="sched-item">
-                    <span class="sched-item-lbl">Authorized Coordinator:</span>
-                    <span class="sched-item-val">${slipData.scheduledBy}</span>
-                  </div>
-                </div>
-                ${slipData.instructions ? `
-                  <div class="inst-note">
-                    <strong>Claiming Instructions:</strong> ${slipData.instructions}
-                  </div>
-                ` : ''}
-              </div>
-
-              <div class="section-heading">Deceased &amp; Certificate Record</div>
-              <table class="data-table">
-                <tr>
-                  <td class="label-cell">Deceased Full Name</td>
-                  <td class="val-cell"><strong>${slipData.deceasedName}</strong></td>
-                </tr>
-                <tr>
-                  <td class="label-cell">Date of Death</td>
-                  <td class="val-cell">${slipData.dateOfDeath}</td>
-                </tr>
-                <tr>
-                  <td class="label-cell">Place of Death</td>
-                  <td class="val-cell">${slipData.placeOfDeath}</td>
-                </tr>
-                <tr>
-                  <td class="label-cell">LCRO Registry Number</td>
-                  <td class="val-cell"><strong>${slipData.registryNo}</strong></td>
-                </tr>
-                <tr>
-                  <td class="label-cell">Registration Date</td>
-                  <td class="val-cell">${slipData.registeredDate}</td>
-                </tr>
-                <tr>
-                  <td class="label-cell">Current Processing Status</td>
-                  <td class="val-cell"><strong>${slipData.status}</strong></td>
-                </tr>
-              </table>
-
-              <div class="section-heading">Authorized Claimant Details</div>
-              <table class="data-table">
-                <tr>
-                  <td class="label-cell">Authorized Claimant / Representative</td>
-                  <td class="val-cell"><strong>${slipData.requesterName}</strong></td>
-                </tr>
-                <tr>
-                  <td class="label-cell">Relationship to Deceased</td>
-                  <td class="val-cell">${slipData.relationship}</td>
-                </tr>
-                <tr>
-                  <td class="label-cell">Contact Number</td>
-                  <td class="val-cell">${slipData.contact}</td>
-                </tr>
-              </table>
-
-              <div class="sig-row">
-                <div class="sig-box">
-                  <div class="sig-line">${slipData.requesterName}</div>
-                  <div class="sig-caption">Signature of Claimant over Printed Name<br>(Sign upon physical receipt)</div>
-                </div>
-                <div class="sig-box">
-                  <div class="sig-line">${slipData.scheduledBy}</div>
-                  <div class="sig-caption">Damayan Releasing Officer / Coordinator<br>Islamic Studies, Call and Guidance</div>
-                </div>
-              </div>
-
-              <div class="footer-note">
-                Printed on ${slipData.printDate} • Generated via ISCAG Management Information System (MIS)<br>
-                For inquiries, please visit or contact the Damayan Department directly.
-              </div>
-            </div>
-
-            <script>
-              window.onload = function() {
-                setTimeout(function() {
-                  window.print();
-                }, 350);
-              };
-            <\/script>
-          </body>
-          </html>
-        `;
-
-        const printWin = window.open('', '_blank', 'width=800,height=900');
-        if (printWin) {
-            printWin.document.open();
-            printWin.document.write(printHtml);
-            printWin.document.close();
-        } else {
-            window.print();
+    function openClaimingSlipModal() {
+        const modal = document.getElementById('claiming-slip-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.classList.add('slip-modal-active');
         }
+    }
+
+    function closeClaimingSlipModal() {
+        const modal = document.getElementById('claiming-slip-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.classList.remove('slip-modal-active', 'printing-slip');
+        }
+    }
+
+    function generateClaimingSlipHtml() {
+        const sheet = document.getElementById('claiming-slip-sheet');
+        const sheetHtml = sheet ? sheet.outerHTML : '';
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ISCAG Claiming Slip - #<?= htmlspecialchars($appId) ?></title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; margin: 0; padding: 20px; background: #fff; font-size: 13px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .slip-wrapper { max-width: 720px; margin: 0 auto; border: 2px solid #059669; border-radius: 12px; padding: 24px 26px; position: relative; background: #fff; }
+    .slip-top-border { height: 5px; background: linear-gradient(90deg, #059669 0%, #d97706 100%); margin: -24px -26px 18px -26px; border-radius: 10px 10px 0 0; }
+    .slip-header-row { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 16px; gap: 12px; }
+    .slip-brand-col { display: flex; align-items: center; gap: 12px; }
+    .slip-brand-col img { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; }
+    .slip-org-title { font-family: 'Lora', Georgia, serif; font-size: 1.05rem; font-weight: 800; color: #065f46; line-height: 1.25; }
+    .slip-dept-subtitle { font-size: 0.76rem; font-weight: 600; color: #64748b; margin-top: 2px; }
+    .slip-ref-badge { text-align: right; flex-shrink: 0; }
+    .slip-ref-num { font-size: 1.2rem; font-weight: 800; color: #065f46; font-family: monospace; letter-spacing: 0.04em; }
+    .slip-ref-label { font-size: 0.68rem; text-transform: uppercase; font-weight: 700; color: #64748b; }
+    .slip-title-banner { background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 8px; padding: 9px 14px; text-align: center; margin-bottom: 16px; }
+    .slip-title { font-size: 1rem; font-weight: 800; color: #064e3b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+    .slip-subtitle { font-size: 0.74rem; color: #047857; margin-top: 2px; font-weight: 500; }
+    .slip-section-heading { font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #065f46; margin: 14px 0 8px; display: flex; align-items: center; gap: 6px; }
+    .slip-section-heading::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+    .slip-data-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 0.82rem; }
+    .slip-data-table td { padding: 6px 10px; border: 1px solid #e2e8f0; }
+    .slip-data-table td.label-cell { width: 35%; background: #f8fafc; font-weight: 700; color: #475569; }
+    .slip-data-table td.val-cell { color: #0f172a; }
+    .slip-sched-box { background: #ecfdf5; border: 1.5px solid #6ee7b7; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
+    .slip-sched-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .slip-sched-item { display: flex; flex-direction: column; }
+    .slip-sched-item-lbl { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #047857; }
+    .slip-sched-item-val { font-size: 0.92rem; font-weight: 800; color: #064e3b; margin-top: 2px; }
+    .slip-inst-note { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #a7f3d0; font-size: 0.76rem; color: #065f46; line-height: 1.45; }
+    .slip-sig-row { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 12px; gap: 20px; }
+    .slip-sig-box { width: 48%; text-align: center; }
+    .slip-sig-line { border-top: 1.5px solid #334155; margin-top: 36px; padding-top: 5px; font-size: 0.78rem; font-weight: 700; color: #1e293b; }
+    .slip-sig-caption { font-size: 0.7rem; color: #64748b; margin-top: 2px; line-height: 1.35; }
+    .slip-footer-note { margin-top: 18px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 0.7rem; color: #64748b; text-align: center; line-height: 1.4; }
+    @media print {
+      body { padding: 0; }
+      .slip-wrapper { border: 1.5px solid #059669; }
+    }
+  </style>
+</head>
+<body>
+  ${sheetHtml}
+</body>
+</html>`;
+    }
+
+    function triggerClaimingSlipPrint() {
+        const slipHtml = generateClaimingSlipHtml();
+        let iframe = document.getElementById('claiming-slip-iframe');
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'claiming-slip-iframe';
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            iframe.style.opacity = '0';
+            iframe.style.pointerEvents = 'none';
+            document.body.appendChild(iframe);
+        }
+
+        try {
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(slipHtml);
+            doc.close();
+
+            setTimeout(function() {
+                try {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                } catch (e) {
+                    console.warn('Iframe print error, falling back to page modal print:', e);
+                    document.body.classList.add('printing-slip');
+                    window.print();
+                    setTimeout(() => { document.body.classList.remove('printing-slip'); }, 1000);
+                }
+            }, 300);
+        } catch (err) {
+            console.warn('Iframe write error, falling back to page modal print:', err);
+            document.body.classList.add('printing-slip');
+            window.print();
+            setTimeout(() => { document.body.classList.remove('printing-slip'); }, 1000);
+        }
+    }
+
+    function printClaimingSlip() {
+        openClaimingSlipModal();
+        setTimeout(function() {
+            triggerClaimingSlipPrint();
+        }, 150);
+    }
+
+    function printServiceDetails() {
+        closeClaimingSlipModal();
+        document.body.classList.remove('printing-slip', 'slip-modal-active');
+        window.print();
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -2766,6 +3083,142 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }
     });
 </script>
+
+<!-- CLAIMING SLIP PREVIEW & PRINT MODAL -->
+<div id="claiming-slip-modal" class="slip-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="slip-modal-title-text">
+    <div class="slip-modal-backdrop" onclick="closeClaimingSlipModal()"></div>
+    <div class="slip-modal-dialog">
+        <div class="slip-modal-header">
+            <div class="slip-modal-header-left">
+                <div class="slip-modal-badge">Official Document</div>
+                <h3 class="slip-modal-title" id="slip-modal-title-text">Death Certificate Claiming Slip</h3>
+            </div>
+            <div class="slip-modal-header-actions">
+                <button type="button" class="btn-slip-print" onclick="triggerClaimingSlipPrint()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    Print / Save PDF
+                </button>
+                <button type="button" class="btn-slip-close" onclick="closeClaimingSlipModal()" aria-label="Close dialog">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+        </div>
+        <div class="slip-modal-body">
+            <div class="slip-wrapper" id="claiming-slip-sheet">
+                <div class="slip-top-border"></div>
+                
+                <div class="slip-header-row">
+                    <div class="slip-brand-col">
+                        <img src="<?= url('/assets/logo.jpg') ?>" alt="ISCAG Logo" onerror="this.src='<?= url('/assets/favicon_io/favicon.ico') ?>'" />
+                        <div>
+                            <div class="slip-org-title">Islamic Studies, Call and Guidance of the Philippines</div>
+                            <div class="slip-dept-subtitle">Social Welfare &amp; Damayan Department • Civil Registry Services</div>
+                        </div>
+                    </div>
+                    <div class="slip-ref-badge">
+                        <div class="slip-ref-label">Claiming Reference</div>
+                        <div class="slip-ref-num">#<?= htmlspecialchars($appId) ?></div>
+                    </div>
+                </div>
+
+                <div class="slip-title-banner">
+                    <h2 class="slip-title">Official Death Certificate Claiming Slip</h2>
+                    <div class="slip-subtitle">Present this slip along with one (1) valid government ID at the Damayan counter</div>
+                </div>
+
+                <div class="slip-sched-box">
+                    <div class="slip-sched-grid">
+                        <div class="slip-sched-item">
+                            <span class="slip-sched-item-lbl">Scheduled Claiming Date:</span>
+                            <span class="slip-sched-item-val"><?= !empty($activeBurial['scheduled_release_date']) ? date('F d, Y', strtotime($activeBurial['scheduled_release_date'])) : 'To Be Scheduled' ?></span>
+                        </div>
+                        <div class="slip-sched-item">
+                            <span class="slip-sched-item-lbl">Scheduled Claiming Time:</span>
+                            <span class="slip-sched-item-val"><?= !empty($activeBurial['scheduled_release_time']) ? date('g:i A', strtotime($activeBurial['scheduled_release_time'])) : 'Regular Office Hours (8:00 AM - 5:00 PM)' ?></span>
+                        </div>
+                        <div class="slip-sched-item">
+                            <span class="slip-sched-item-lbl">Claiming Counter / Location:</span>
+                            <span class="slip-sched-item-val"><?= htmlspecialchars(($activeBurial['release_location'] ?? '') ?: 'Damayan Department, ISCAG Office') ?></span>
+                        </div>
+                        <div class="slip-sched-item">
+                            <span class="slip-sched-item-lbl">Authorized Coordinator:</span>
+                            <span class="slip-sched-item-val"><?= htmlspecialchars(($activeBurial['release_scheduled_by_name'] ?? '') ?: 'Damayan Admin') ?></span>
+                        </div>
+                    </div>
+                    <?php if (!empty($activeBurial['release_instructions'])): ?>
+                    <div class="slip-inst-note">
+                        <strong>Claiming Instructions:</strong> <?= nl2br(htmlspecialchars($activeBurial['release_instructions'])) ?>
+                    </div>
+                    <?php else: ?>
+                    <div class="slip-inst-note">
+                        <strong>Claiming Instructions:</strong> Please bring this official claiming slip, a valid government-issued ID of the authorized recipient, and any official receipts upon claiming at the Damayan Department counter.
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="slip-section-heading">Deceased &amp; Certificate Record</div>
+                <table class="slip-data-table">
+                    <tr>
+                        <td class="label-cell">Deceased Full Name</td>
+                        <td class="val-cell"><strong><?= htmlspecialchars($deceasedName) ?></strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Date of Death</td>
+                        <td class="val-cell"><?= htmlspecialchars($dateOfDeath) ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Place of Death</td>
+                        <td class="val-cell"><?= htmlspecialchars($placeOfDeath) ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">LCRO Registry Number</td>
+                        <td class="val-cell"><strong><?= htmlspecialchars(($activeBurial['death_cert_registry_no'] ?? '') ?: 'Under Department Processing') ?></strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Registration Date</td>
+                        <td class="val-cell"><?= !empty($activeBurial['death_cert_registered_date']) ? date('F d, Y', strtotime($activeBurial['death_cert_registered_date'])) : 'Pending Registration' ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Current Processing Status</td>
+                        <td class="val-cell"><strong><?= htmlspecialchars($dcStatus) ?></strong></td>
+                    </tr>
+                </table>
+
+                <div class="slip-section-heading">Authorized Claimant Details</div>
+                <table class="slip-data-table">
+                    <tr>
+                        <td class="label-cell">Authorized Claimant / Representative</td>
+                        <td class="val-cell"><strong><?= htmlspecialchars($requesterName) ?></strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Relationship to Deceased</td>
+                        <td class="val-cell"><?= htmlspecialchars($relationship) ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Contact Number</td>
+                        <td class="val-cell"><?= htmlspecialchars($activeBurial['informant_contact'] ?? ($userPhone ?: 'On File')) ?></td>
+                    </tr>
+                </table>
+
+                <div class="slip-sig-row">
+                    <div class="slip-sig-box">
+                        <div class="slip-sig-line"><?= htmlspecialchars($requesterName) ?></div>
+                        <div class="slip-sig-caption">Signature of Claimant over Printed Name<br>(Sign upon physical receipt)</div>
+                    </div>
+                    <div class="slip-sig-box">
+                        <div class="slip-sig-line"><?= htmlspecialchars(($activeBurial['release_scheduled_by_name'] ?? '') ?: 'Damayan Admin') ?></div>
+                        <div class="slip-sig-caption">Damayan Releasing Officer / Coordinator<br>Islamic Studies, Call and Guidance</div>
+                    </div>
+                </div>
+
+                <div class="slip-footer-note">
+                    Printed on <?= date('F d, Y \a\t g:i A') ?> • Generated via ISCAG Management Information System (MIS)<br>
+                    For inquiries, please visit or contact the Damayan Department directly.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
