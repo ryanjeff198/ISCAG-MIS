@@ -817,6 +817,25 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             to { transform: translateY(0); opacity: 1; }
         }
 
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
+        .spinner-border {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            vertical-align: -0.125em;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
+        }
+        .spinner-border-sm {
+            width: 0.875rem;
+            height: 0.875rem;
+            border-width: 0.15em;
+        }
+
         @media (max-width: 900px) {
             .app-header { padding: 24px; }
             .app-body { padding: 24px; }
@@ -2090,6 +2109,15 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 
 <script src="<?= asset('js/phone-validator.js') ?>"></script>
 <script>
+    // Global State Variables
+    let isCertVerifiedInDept = false;
+    let isRegNumberAlreadyRegistered = false;
+    let registeredDeceasedName = '';
+    let certLookupTimeout = null;
+    let regCertLookupTimeout = null;
+    let isSubmittingBurial = false;
+    let isSubmittingResp = false;
+
     function escapeHtml(str) {
         if (!str) return '';
         return String(str)
@@ -2303,10 +2331,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }
     }
 
-    let isCertVerifiedInDept = false;
-    let isRegNumberAlreadyRegistered = false;
-    let registeredDeceasedName = '';
-    let certLookupTimeout = null;
+    // certLookupTimeout and verification flags declared at top of script
 
     function debouncedCheckCert(val) {
         clearTimeout(certLookupTimeout);
@@ -2624,7 +2649,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
     }
 
     // ── Submit Request via AJAX ──
-    let isSubmittingBurial = false;
     async function submitBurialRequest(event) {
         event.preventDefault();
         
@@ -2777,7 +2801,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             formData.append('cemetery_plot_requested', '0');
             formData.append('deceased_name', decName);
             formData.append('copy_reason', reason);
-            formData.append('existing_cert_no', existingCertNo || regCertNo);
+            formData.append('existing_cert_no', regCertNo);
             formData.append('encoded_cert_id', linkedEncId);
             formData.append('num_copies', document.getElementById('num-copies')?.value || '1');
             formData.append('dod', document.getElementById('copy-deceased-dod')?.value || '');
@@ -2831,7 +2855,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 
         isSubmittingBurial = true;
         btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting Request...';
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display:inline-block;width:1rem;height:1rem;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spinner-border .75s linear infinite;vertical-align:-0.125em;"></span>Submitting Request...';
 
         try {
             const response = await fetch('<?= url("/user/services/burial/submit") ?>', {
@@ -2866,7 +2890,12 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 
                 setTimeout(() => {
                     window.location.href = '<?= url("/user/services/burial-details") ?>?id=' + encodeURIComponent(ref);
-                }, 1500);
+                    setTimeout(() => {
+                        isSubmittingBurial = false;
+                        btnSubmit.disabled = false;
+                        btnSubmit.innerHTML = originalText;
+                    }, 6000);
+                }, 1400);
             } else {
                 throw new Error(data.message || 'Failed to submit request.');
             }
@@ -2899,7 +2928,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
 
         isSubmittingResp = true;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display:inline-block;width:1rem;height:1rem;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spinner-border .75s linear infinite;vertical-align:-0.125em;"></span>Submitting...';
 
         const formData = new FormData();
         formData.append('ref_id', refId);

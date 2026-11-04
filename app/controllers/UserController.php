@@ -1338,6 +1338,9 @@ class UserController extends Controller
         $dbRole = $user['role'] ?? 'Guest';
         if ($dbRole !== ($_SESSION['role'] ?? '')) {
             $_SESSION['role'] = $dbRole;
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_write_close();
+            }
         }
         
         $unreadCount = $notifModel->getUnreadCount($userId);
