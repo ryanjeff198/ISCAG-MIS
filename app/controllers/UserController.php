@@ -1241,8 +1241,8 @@ class UserController extends Controller
             }
         }
 
-        if ($age !== null && $age <= 10) {
-            echo json_encode(['success' => false, 'message' => 'You cannot proceed because the age is 10 or below. Minimum age is 11 years old.']);
+        if ($age !== null && $age < 5) {
+            echo json_encode(['success' => false, 'message' => 'You cannot proceed because the age is below 5. Minimum age is 5 years old.']);
             return;
         }
 
