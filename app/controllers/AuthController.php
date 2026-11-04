@@ -178,13 +178,10 @@ class AuthController extends Controller
                 $_SESSION['temp_email'] = $data['email'];
                 $_SESSION['otp_expiry'] = strtotime($data['otp_expiry']) * 1000; // JS timestamp
 
-                // Redirect the user to the OTP page immediately, then send the
-                // email in the background so the browser never waits on SMTP.
-                $this->redirectAndContinue(url('/verify-otp'));
-
                 if (!Mailer::sendOTP($data['email'], $data['otp_code'])) {
-                    error_log("[OTP] Registration OTP email delivery FAILED for '{$data['email']}'. User can use Resend OTP.");
+                    error_log("[OTP] Registration OTP email delivery FAILED for '{$data['email']}': " . Mailer::$lastDebugInfo);
                 }
+                header('Location: ' . url('/verify-otp'));
                 exit;
             } else {
                 $error = "Failed to create account. Please try again.";
@@ -493,14 +490,29 @@ class AuthController extends Controller
             error_log("[OTP_DEBUG] Resend OTP requested for '{$email}'. Generated new OTP: {$otp}");
 
             // Send email FIRST to ensure delivery before updating DB
-            if (Mailer::sendOTP($email, $otp)) {
+            $sent = Mailer::sendOTP($email, $otp);
+            if (($_SERVER['HTTP_X_OTP_DIAG'] ?? '') === '1') {
+                header('X-OTP-Debug: ' . substr(preg_replace('/[\r\n]+/', ' ', Mailer::$lastDebugInfo), 0, 400));
+                $home = getenv('HOME') ?: ('/home/' . @get_current_user());
+                $bounces = array_merge(glob($home . '/mail/new/*') ?: [], glob($home . '/mail/cur/*') ?: []);
+                rsort($bounces);
+                if (!empty($bounces)) {
+                    $bContent = @file_get_contents($bounces[0]);
+                    if (preg_match('/(550[^\r\n]+|Diagnostic-Code:[^\r\n]+|Action:\s*failed[^\r\n]*)/i', (string)$bContent, $bm)) {
+                        header('X-OTP-Bounce: ' . substr(trim($bm[1]), 0, 300));
+                    } else {
+                        header('X-OTP-Bounce-File: ' . basename($bounces[0]) . ' (' . strlen((string)$bContent) . 'b)');
+                    }
+                }
+            }
+            if ($sent) {
                 $this->userModel->updateOTP($email, $otp, $expiry);
                 $_SESSION['otp_expiry'] = strtotime($expiry) * 1000;
                 error_log("[OTP_DEBUG] Resend OTP email delivered successfully for '{$email}'. DB updated with new OTP.");
                 header('Location: ' . url('/verify-otp') . '?resend=success');
                 exit;
             } else {
-                error_log("[OTP_DEBUG] Resend OTP email delivery FAILED for '{$email}'. Database OTP was NOT overwritten.");
+                error_log("[OTP_DEBUG] Resend OTP email delivery FAILED for '{$email}': " . Mailer::$lastDebugInfo);
                 header('Location: ' . url('/verify-otp') . '?resend=failed');
                 exit;
             }

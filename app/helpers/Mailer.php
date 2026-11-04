@@ -68,39 +68,80 @@ class Mailer
         }
     }
 
+    public static string $lastDebugInfo = '';
+
+    /**
+     * Check whether the current server is GoDaddy shared cPanel hosting
+     * (*.secureserver.net), where outbound connections to external SMTP
+     * servers (ports 25, 465, 587) are firewalled.
+     */
+    private static function isGoDaddySharedHost(): bool
+    {
+        $serverHost = strtolower(trim((string)@gethostname()));
+        return $serverHost !== '' && stripos($serverHost, 'secureserver.net') !== false;
+    }
+
+    /**
+     * Check whether a domain publishes an SPF (v=spf1) TXT record in DNS.
+     */
+    private static function domainHasSpf(string $domain): bool
+    {
+        if ($domain === '' || !function_exists('dns_get_record')) {
+            return false;
+        }
+        $records = @dns_get_record($domain, DNS_TXT);
+        if (!is_array($records)) {
+            return false;
+        }
+        foreach ($records as $rec) {
+            $txt = strtolower((string)($rec['txt'] ?? ''));
+            if (strpos($txt, 'v=spf1') !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Deliver a message, trying each transport in turn:
-     *   1. Configured SMTP (Gmail, port 587 / STARTTLS)
-     *   2. Gmail SMTPS on port 465
-     *   3. Hosting provider's local relay (localhost:25, no auth). GoDaddy
-     *      shared hosting blocks outbound SMTP to external servers and
-     *      requires this relay instead.
-     *   4. PHP mail() via the server's sendmail
+     *   1. Configured SMTP (Gmail, port 587 / STARTTLS) - skipped on GoDaddy
+     *      shared hosting where external SMTP ports are firewalled.
+     *   2. Gmail SMTPS on port 465 - skipped on GoDaddy shared hosting.
+     *   3. Hosting provider's local relay (localhost:25, no auth).
+     *   4. PHP mail() via the server's sendmail.
      */
     private static function sendWithFallback(PHPMailer $mail): bool
     {
         $errors = [];
+        self::$lastDebugInfo = '';
 
-        try {
-            $mail->send();
-            return true;
-        } catch (\Throwable $e) {
-            $errors[] = "SMTP {$mail->Host}:{$mail->Port} -> " . $mail->ErrorInfo;
+        if (!self::isGoDaddySharedHost()) {
+            try {
+                $mail->Timeout = 5;
+                $mail->send();
+                self::$lastDebugInfo = "Delivered via SMTP {$mail->Host}:{$mail->Port}";
+                return true;
+            } catch (\Throwable $e) {
+                $errors[] = "SMTP {$mail->Host}:{$mail->Port} -> " . $mail->ErrorInfo;
+            }
+
+            try {
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                $mail->Port = 465;
+                $mail->Timeout = 5;
+                $mail->send();
+                self::$lastDebugInfo = "Delivered via SMTPS {$mail->Host}:465";
+                return true;
+            } catch (\Throwable $e) {
+                $errors[] = "SMTPS {$mail->Host}:465 -> " . $mail->ErrorInfo;
+            }
+        } else {
+            $errors[] = "Skipped external SMTP on GoDaddy host (" . @gethostname() . ")";
         }
 
-        try {
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-            $mail->Port = 465;
-            $mail->send();
-            return true;
-        } catch (\Throwable $e) {
-            $errors[] = "SMTPS {$mail->Host}:465 -> " . $mail->ErrorInfo;
-        }
-
-        // Local relay / mail(): the server can only send as its own domain,
-        // so use a no-reply address on the site's domain and keep the Gmail
-        // address as Reply-To.
-        self::useLocalSender($mail);
+        // Local relay / mail(): configure an authenticated local sender address
+        // that passes SPF when relayed to Gmail.
+        $senderUsed = self::useLocalSender($mail);
 
         try {
             $mail->isSMTP();
@@ -111,42 +152,70 @@ class Mailer
             $mail->SMTPAutoTLS = false;
             $mail->Timeout     = 8;
             $mail->send();
-            error_log("Mailer: delivered via local relay after: " . implode(' | ', $errors));
+            self::$lastDebugInfo = "Delivered via localhost:25 (From={$senderUsed}) after: " . implode(' | ', $errors);
+            error_log("Mailer: " . self::$lastDebugInfo);
             return true;
         } catch (\Throwable $e) {
-            $errors[] = "Local relay localhost:25 -> " . $mail->ErrorInfo;
+            $errors[] = "Local relay localhost:25 (From={$senderUsed}) -> " . $mail->ErrorInfo;
         }
 
         try {
             $mail->isMail();
             $mail->send();
-            error_log("Mailer: delivered via mail() after: " . implode(' | ', $errors));
+            self::$lastDebugInfo = "Delivered via mail() (From={$senderUsed}) after: " . implode(' | ', $errors);
+            error_log("Mailer: " . self::$lastDebugInfo);
             return true;
         } catch (\Throwable $e) {
-            $errors[] = "mail() -> " . $mail->ErrorInfo;
+            $errors[] = "mail() (From={$senderUsed}) -> " . $mail->ErrorInfo;
         }
 
+        self::$lastDebugInfo = "ALL failed: " . implode(' | ', $errors);
         error_log("Mailer: ALL transports failed: " . implode(' | ', $errors));
         return false;
     }
 
     /**
-     * Switch the From address to noreply@<site-domain> for server-side delivery.
+     * Switch the From/Sender address for local server delivery.
+     * If the site domain (e.g. iscagph.com) does not have an SPF TXT record in
+     * DNS, Gmail rejects messages from @iscagph.com with 550-5.7.26. In that
+     * case, use the cPanel system user on the server's authenticated hostname
+     * (e.g. <cpanel_user>@sg2plzcpnl509465.prod.sin2.secureserver.net), which
+     * has valid GoDaddy SPF (v=spf1 include:secureserver.net -all) and A records.
      */
-    private static function useLocalSender(PHPMailer $mail): void
+    private static function useLocalSender(PHPMailer $mail): string
     {
         $host = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
         $host = preg_replace('/^www\./', '', $host);
-        if ($host === '' || $host === 'localhost' || filter_var($host, FILTER_VALIDATE_IP)) {
-            return;
+
+        $serverHost = strtolower(trim((string)@gethostname()));
+        $sysUser = '';
+        if (function_exists('posix_geteuid') && function_exists('posix_getpwuid')) {
+            $pw = @posix_getpwuid(@posix_geteuid());
+            $sysUser = trim((string)($pw['name'] ?? ''));
         }
+        if ($sysUser === '') {
+            $sysUser = trim((string)@get_current_user());
+        }
+        $sysUser = preg_replace('/[^a-zA-Z0-9._-]/', '', $sysUser) ?: 'noreply';
+
+        if ($host !== '' && $host !== 'localhost' && !filter_var($host, FILTER_VALIDATE_IP) && self::domainHasSpf($host)) {
+            $senderEmail = 'noreply@' . $host;
+        } elseif ($serverHost !== '' && strpos($serverHost, '.') !== false) {
+            $senderEmail = $sysUser . '@' . $serverHost;
+        } elseif ($host !== '' && $host !== 'localhost' && !filter_var($host, FILTER_VALIDATE_IP)) {
+            $senderEmail = 'noreply@' . $host;
+        } else {
+            return $mail->From;
+        }
+
         try {
             $fromName = $mail->FromName ?: 'ISCAG Philippines';
-            $mail->setFrom('noreply@' . $host, $fromName, false);
-            $mail->Sender = 'noreply@' . $host;
+            $mail->setFrom($senderEmail, $fromName, false);
+            $mail->Sender = $senderEmail;
         } catch (\Throwable $e) {
             // keep the original sender
         }
+        return $mail->From;
     }
 
     /**
