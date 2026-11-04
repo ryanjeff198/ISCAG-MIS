@@ -2951,62 +2951,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }
     }
 
-    function generateClaimingSlipHtml() {
-        const sheet = document.getElementById('claiming-slip-sheet');
-        const sheetHtml = sheet ? sheet.outerHTML : '';
-        return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>ISCAG Claiming Slip - #<?= htmlspecialchars($appId) ?></title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; margin: 0; padding: 20px; background: #fff; font-size: 13px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .slip-wrapper { max-width: 720px; margin: 0 auto; border: 2px solid #059669; border-radius: 12px; padding: 24px 26px; position: relative; background: #fff; }
-    .slip-top-border { height: 5px; background: linear-gradient(90deg, #059669 0%, #d97706 100%); margin: -24px -26px 18px -26px; border-radius: 10px 10px 0 0; }
-    .slip-header-row { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 16px; gap: 12px; }
-    .slip-brand-col { display: flex; align-items: center; gap: 12px; }
-    .slip-brand-col img { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; }
-    .slip-org-title { font-family: 'Lora', Georgia, serif; font-size: 1.05rem; font-weight: 800; color: #065f46; line-height: 1.25; }
-    .slip-dept-subtitle { font-size: 0.76rem; font-weight: 600; color: #64748b; margin-top: 2px; }
-    .slip-ref-badge { text-align: right; flex-shrink: 0; }
-    .slip-ref-num { font-size: 1.2rem; font-weight: 800; color: #065f46; font-family: monospace; letter-spacing: 0.04em; }
-    .slip-ref-label { font-size: 0.68rem; text-transform: uppercase; font-weight: 700; color: #64748b; }
-    .slip-title-banner { background: #f0fdf4; border: 1.5px solid #a7f3d0; border-radius: 8px; padding: 9px 14px; text-align: center; margin-bottom: 16px; }
-    .slip-title { font-size: 1rem; font-weight: 800; color: #064e3b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
-    .slip-subtitle { font-size: 0.74rem; color: #047857; margin-top: 2px; font-weight: 500; }
-    .slip-section-heading { font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #065f46; margin: 14px 0 8px; display: flex; align-items: center; gap: 6px; }
-    .slip-section-heading::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
-    .slip-data-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 0.82rem; }
-    .slip-data-table td { padding: 6px 10px; border: 1px solid #e2e8f0; }
-    .slip-data-table td.label-cell { width: 35%; background: #f8fafc; font-weight: 700; color: #475569; }
-    .slip-data-table td.val-cell { color: #0f172a; }
-    .slip-sched-box { background: #ecfdf5; border: 1.5px solid #6ee7b7; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; }
-    .slip-sched-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .slip-sched-item { display: flex; flex-direction: column; }
-    .slip-sched-item-lbl { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #047857; }
-    .slip-sched-item-val { font-size: 0.92rem; font-weight: 800; color: #064e3b; margin-top: 2px; }
-    .slip-inst-note { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #a7f3d0; font-size: 0.76rem; color: #065f46; line-height: 1.45; }
-    .slip-sig-row { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 12px; gap: 20px; }
-    .slip-sig-box { width: 48%; text-align: center; }
-    .slip-sig-line { border-top: 1.5px solid #334155; margin-top: 36px; padding-top: 5px; font-size: 0.78rem; font-weight: 700; color: #1e293b; }
-    .slip-sig-caption { font-size: 0.7rem; color: #64748b; margin-top: 2px; line-height: 1.35; }
-    .slip-footer-note { margin-top: 18px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 0.7rem; color: #64748b; text-align: center; line-height: 1.4; }
-    @media print {
-      body { padding: 0; }
-      .slip-wrapper { border: 1.5px solid #059669; }
-    }
-  </style>
-</head>
-<body>
-  ${sheetHtml}
-</body>
-</html>`;
-    }
-
-    function triggerClaimingSlipPrint() {
-        const slipHtml = generateClaimingSlipHtml();
+function triggerClaimingSlipPrint() {
         let iframe = document.getElementById('claiming-slip-iframe');
         if (!iframe) {
             iframe = document.createElement('iframe');
@@ -3023,9 +2968,18 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         }
 
         try {
+            const sheet = document.getElementById('claiming-slip-sheet');
+            const sheetHtml = sheet ? sheet.outerHTML : '';
             const doc = iframe.contentWindow.document;
             doc.open();
-            doc.write(slipHtml);
+            doc.write('<!DOCTYPE html><html><head><title>ISCAG Claiming Slip</title>');
+            document.querySelectorAll('link[rel="stylesheet"], style').forEach(function(el) {
+                doc.write(el.outerHTML);
+            });
+            doc.write('<style>body{background:#fff;margin:0;padding:20px;-webkit-print-color-adjust:exact;print-color-adjust:exact;} .slip-wrapper{border:1.5px solid #059669;box-shadow:none;margin:0 auto;max-width:720px;}</style>');
+            doc.write('<' + '/head><body>');
+            doc.write(sheetHtml);
+            doc.write('<' + '/body><' + '/html>');
             doc.close();
 
             setTimeout(function() {
@@ -3033,14 +2987,14 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                     iframe.contentWindow.focus();
                     iframe.contentWindow.print();
                 } catch (e) {
-                    console.warn('Iframe print error, falling back to page modal print:', e);
+                    console.warn('Iframe print error, falling back to modal print:', e);
                     document.body.classList.add('printing-slip');
                     window.print();
                     setTimeout(() => { document.body.classList.remove('printing-slip'); }, 1000);
                 }
             }, 300);
         } catch (err) {
-            console.warn('Iframe write error, falling back to page modal print:', err);
+            console.warn('Iframe write error, falling back to modal print:', err);
             document.body.classList.add('printing-slip');
             window.print();
             setTimeout(() => { document.body.classList.remove('printing-slip'); }, 1000);
@@ -3060,7 +3014,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         window.print();
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const purposeParam = urlParams.get('purpose') || urlParams.get('action');
         if (purposeParam === 'copy') {
