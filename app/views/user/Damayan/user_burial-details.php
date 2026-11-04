@@ -1329,75 +1329,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         <?php endif; ?>
 
                     </div>
-
-                    <!-- Appointment History Table at the Bottom of Tracking -->
-                    <?php if (!empty($scheduleHistory)): ?>
-                    <div class="appointment-history-container" style="margin-top:22px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px 20px; box-shadow:var(--shadow-sm);">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <div style="width:28px; height:28px; border-radius:6px; background:#ecfdf5; color:var(--primary); display:flex; align-items:center; justify-content:center;">
-                                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-                                </div>
-                                <h4 style="margin:0; font-size:0.92rem; font-weight:800; color:var(--text-dark);">Claiming Appointment History</h4>
-                            </div>
-                            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); background:var(--bg); border:1px solid var(--border); padding:3px 10px; border-radius:100px;">
-                                <?= count($scheduleHistory) ?> <?= count($scheduleHistory) === 1 ? 'Record' : 'Records' ?>
-                            </span>
-                        </div>
-                        <div style="overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px;">
-                            <table style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:left;">
-                                <thead>
-                                    <tr style="background:#f8fafc; border-bottom:1.5px solid #e2e8f0; color:#475569; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.03em;">
-                                        <th style="padding:10px 12px; font-weight:700;">Action</th>
-                                        <th style="padding:10px 12px; font-weight:700;">Scheduled Appointment</th>
-                                        <th style="padding:10px 12px; font-weight:700;">Location</th>
-                                        <th style="padding:10px 12px; font-weight:700;">Reason / Instructions</th>
-                                        <th style="padding:10px 12px; font-weight:700;">Processed By</th>
-                                        <th style="padding:10px 12px; font-weight:700;">Date Recorded</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach($scheduleHistory as $sh): 
-                                        $badgeBg = ($sh['action_type'] === 'SCHEDULED' ? '#ecfdf5' : ($sh['action_type'] === 'RESCHEDULED' ? '#fffbeb' : ($sh['action_type'] === 'CANCELLED' ? '#fef2f2' : '#f0fdf4')));
-                                        $badgeCol = ($sh['action_type'] === 'SCHEDULED' ? '#065f46' : ($sh['action_type'] === 'RESCHEDULED' ? '#92400e' : ($sh['action_type'] === 'CANCELLED' ? '#991b1b' : '#047857')));
-                                    ?>
-                                    <tr style="border-bottom:1px solid #f1f5f9;">
-                                        <td style="padding:10px 12px; vertical-align:middle;">
-                                            <span style="font-weight:700; padding:3px 8px; border-radius:4px; font-size:0.7rem; background:<?= $badgeBg ?>; color:<?= $badgeCol ?>; display:inline-block;">
-                                                <?= htmlspecialchars($sh['action_type']) ?>
-                                            </span>
-                                        </td>
-                                        <td style="padding:10px 12px; vertical-align:middle; color:var(--text-dark);">
-                                            <?php if (!empty($sh['scheduled_date'])): ?>
-                                                <strong><?= date('M d, Y', strtotime($sh['scheduled_date'])) ?></strong>
-                                                <?php if (!empty($sh['scheduled_time'])): ?>
-                                                    at <?= date('g:i A', strtotime($sh['scheduled_time'])) ?>
-                                                <?php endif; ?>
-                                            <?php else: ?>
-                                                <span style="color:var(--text-muted);">—</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td style="padding:10px 12px; vertical-align:middle; color:var(--text-muted);">
-                                            <?= htmlspecialchars(($sh['release_location'] ?? $sh['location'] ?? '') ?: 'Damayan Department') ?>
-                                        </td>
-                                        <td style="padding:10px 12px; vertical-align:middle; color:var(--text-dark); max-width:220px;">
-                                            <?= !empty($sh['reason']) ? htmlspecialchars($sh['reason']) : (!empty($sh['change_reason']) ? htmlspecialchars($sh['change_reason']) : '<span style="color:var(--text-muted); font-style:italic;">None</span>') ?>
-                                        </td>
-                                        <td style="padding:10px 12px; vertical-align:middle; color:var(--text-dark); font-weight:600;">
-                                            <?= htmlspecialchars(($sh['action_by_name'] ?? $sh['admin_name'] ?? '') ?: 'Damayan Staff') ?>
-                                        </td>
-                                        <td style="padding:10px 12px; vertical-align:middle; color:var(--text-muted); font-size:0.75rem; white-space:nowrap;">
-                                            <?= !empty($sh['created_at']) ? date('M d, Y g:i A', strtotime($sh['created_at'])) : '—' ?>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-
-                    <!-- Notice / Coordination Guidelines -->
+<!-- Notice / Coordination Guidelines -->
                     <div class="guidelines-notice">
                         <div class="guidelines-icon">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>

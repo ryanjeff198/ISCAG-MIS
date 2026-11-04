@@ -428,41 +428,7 @@
               </div>
 
             </div>
-
-            <!-- SECTION E: APPOINTMENT HISTORY & AUDIT LOGS (BOTTOM TABLE) -->
-            <div class="panel-section" id="schedule-history-container" style="display:none; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <div style="width:28px; height:28px; border-radius:6px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center;">
-                    <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-                  </div>
-                  <div style="font-size:0.8rem; font-weight:800; color:#1e293b; text-transform:uppercase; letter-spacing:0.04em;">
-                    Claiming Appointment History
-                  </div>
-                </div>
-                <span id="sched-history-count" style="font-size:0.72rem; color:#475569; font-weight:700; background:#f1f5f9; border:1px solid #e2e8f0; padding:2px 8px; border-radius:100px;">0 records</span>
-              </div>
-              
-              <div style="overflow-x:auto; border:1px solid #e2e8f0; border-radius:8px;">
-                <table style="width:100%; border-collapse:collapse; font-size:0.76rem; text-align:left;">
-                  <thead>
-                    <tr style="background:#f8fafc; border-bottom:1.5px solid #e2e8f0; color:#475569; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.03em;">
-                      <th style="padding:9px 12px; font-weight:700;">Action</th>
-                      <th style="padding:9px 12px; font-weight:700;">Scheduled Appointment</th>
-                      <th style="padding:9px 12px; font-weight:700;">Location</th>
-                      <th style="padding:9px 12px; font-weight:700;">Reason / Notes</th>
-                      <th style="padding:9px 12px; font-weight:700;">Action By</th>
-                      <th style="padding:9px 12px; font-weight:700;">Date Recorded</th>
-                    </tr>
-                  </thead>
-                  <tbody id="sched-history-table-body">
-                    <!-- Populated dynamically by renderScheduleHistory() -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
+</div>
 
       </div>
 
