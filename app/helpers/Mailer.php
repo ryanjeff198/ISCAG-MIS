@@ -69,16 +69,23 @@ class Mailer
     }
 
     /**
-     * Try the configured SMTP transport, then SMTPS on port 465,
-     * then the server's local mail() as a last resort.
+     * Deliver a message, trying each transport in turn:
+     *   1. Configured SMTP (Gmail, port 587 / STARTTLS)
+     *   2. Gmail SMTPS on port 465
+     *   3. Hosting provider's local relay (localhost:25, no auth). GoDaddy
+     *      shared hosting blocks outbound SMTP to external servers and
+     *      requires this relay instead.
+     *   4. PHP mail() via the server's sendmail
      */
     private static function sendWithFallback(PHPMailer $mail): bool
     {
+        $errors = [];
+
         try {
             $mail->send();
             return true;
         } catch (\Throwable $e) {
-            error_log("Mailer: primary SMTP failed (" . $mail->ErrorInfo . "). Trying SMTPS:465.");
+            $errors[] = "SMTP {$mail->Host}:{$mail->Port} -> " . $mail->ErrorInfo;
         }
 
         try {
@@ -87,18 +94,59 @@ class Mailer
             $mail->send();
             return true;
         } catch (\Throwable $e) {
-            error_log("Mailer: SMTPS:465 failed (" . $mail->ErrorInfo . "). Trying local mail().");
+            $errors[] = "SMTPS {$mail->Host}:465 -> " . $mail->ErrorInfo;
+        }
+
+        // Local relay / mail(): the server can only send as its own domain,
+        // so use a no-reply address on the site's domain and keep the Gmail
+        // address as Reply-To.
+        self::useLocalSender($mail);
+
+        try {
+            $mail->isSMTP();
+            $mail->Host        = 'localhost';
+            $mail->Port        = 25;
+            $mail->SMTPAuth    = false;
+            $mail->SMTPSecure  = '';
+            $mail->SMTPAutoTLS = false;
+            $mail->Timeout     = 8;
+            $mail->send();
+            error_log("Mailer: delivered via local relay after: " . implode(' | ', $errors));
+            return true;
+        } catch (\Throwable $e) {
+            $errors[] = "Local relay localhost:25 -> " . $mail->ErrorInfo;
         }
 
         try {
             $mail->isMail();
             $mail->send();
+            error_log("Mailer: delivered via mail() after: " . implode(' | ', $errors));
             return true;
         } catch (\Throwable $e) {
-            error_log("Mailer: local mail() failed (" . $mail->ErrorInfo . ").");
+            $errors[] = "mail() -> " . $mail->ErrorInfo;
         }
 
+        error_log("Mailer: ALL transports failed: " . implode(' | ', $errors));
         return false;
+    }
+
+    /**
+     * Switch the From address to noreply@<site-domain> for server-side delivery.
+     */
+    private static function useLocalSender(PHPMailer $mail): void
+    {
+        $host = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+        $host = preg_replace('/^www\./', '', $host);
+        if ($host === '' || $host === 'localhost' || filter_var($host, FILTER_VALIDATE_IP)) {
+            return;
+        }
+        try {
+            $fromName = $mail->FromName ?: 'ISCAG Philippines';
+            $mail->setFrom('noreply@' . $host, $fromName, false);
+            $mail->Sender = 'noreply@' . $host;
+        } catch (\Throwable $e) {
+            // keep the original sender
+        }
     }
 
     /**
@@ -320,8 +368,7 @@ class Mailer
                 "Thank you,\n" .
                 "ISCAG Pilipinas Management";
 
-            $mail->send();
-            return true;
+            return self::sendWithFallback($mail);
         } catch (\Throwable $e) {
             error_log("Mailer Error (Billing Reminder): " . $e->getMessage() . ($mail->ErrorInfo ? " | PHPMailer Info: " . $mail->ErrorInfo : ""));
             return false;
@@ -503,8 +550,7 @@ class Mailer
                 ($reason ? "Reason:         {$reason}\n" : "") .
                 "\nISCAG Damayan Department";
 
-            $mail->send();
-            return true;
+            return self::sendWithFallback($mail);
         } catch (\Throwable $e) {
             error_log("Mailer Error (Death Cert Schedule): " . $e->getMessage() . ($mail->ErrorInfo ? " | PHPMailer Info: " . $mail->ErrorInfo : ""));
             return false;
