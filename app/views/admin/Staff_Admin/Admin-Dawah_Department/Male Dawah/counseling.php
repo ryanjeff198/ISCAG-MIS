@@ -488,7 +488,7 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
           <input type="hidden" id="sched-type" value="In-Person" />
           <div class="c-field">
             <label>Appointment Date <span style="color:red;">*</span></label>
-            <input type="date" id="sched-date" min="<?= date('Y-m-d') ?>" onchange="runLiveConflictCheck()" />
+            <input type="date" id="sched-date" onchange="runLiveConflictCheck()" />
           </div>
 
           <div class="info-grid-2">
@@ -559,7 +559,10 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       </div>
 
       <div class="counseling-modal-footer">
-        <div id="modal-actions-left">
+        <div id="modal-actions-left" style="display:flex; gap:10px; align-items:center;">
+          <button type="button" class="btn-topbar" id="btn-modal-delete" style="color:var(--danger); border-color:var(--danger);" onclick="deleteCounselingRecord(currentSelectedRecord)">
+            Delete Record
+          </button>
           <button type="button" class="btn-topbar" id="btn-print-slip" onclick="openPrintPassModal(currentSelectedRecord)" style="display:none;">
             🖨️ View Appointment Pass
           </button>
@@ -943,7 +946,12 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       }
 
       // Prepopulate accept/scheduling inputs
-      if (r.preferred_date) document.getElementById('sched-date').value = r.preferred_date;
+      if (r.preferred_date) {
+        document.getElementById('sched-date').value = r.preferred_date;
+      } else {
+        const today = new Date();
+        document.getElementById('sched-date').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      }
       if (r.session_type) {
         document.getElementById('sched-type').value = r.session_type;
         toggleLocationFields();
@@ -1030,10 +1038,10 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
 
     // Live conflict checking before submission
     async function runLiveConflictCheck() {
-      const cid = document.getElementById('sched-counselor-id').value;
-      const date = document.getElementById('sched-date').value;
-      const start = document.getElementById('sched-start-time').value;
-      const end = document.getElementById('sched-end-time').value;
+      const cid = document.getElementById('sched-counselor-id')?.value;
+      const date = document.getElementById('sched-date')?.value;
+      const start = document.getElementById('sched-start-time')?.value;
+      const end = document.getElementById('sched-end-time')?.value || '';
       const warnBox = document.getElementById('conflict-warning');
       const submitBtn = document.getElementById('btn-submit-schedule');
 
@@ -1073,15 +1081,15 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
     // Submit accept & finalize schedule
     async function submitFinalSchedule() {
       if (!currentSelectedRecord) return;
-      const cid = document.getElementById('sched-counselor-id').value;
-      const date = document.getElementById('sched-date').value;
-      const start = document.getElementById('sched-start-time').value;
-      const end = document.getElementById('sched-end-time').value;
-      const type = document.getElementById('sched-type').value;
-      const loc = document.getElementById('sched-location').value;
-      const link = document.getElementById('sched-link').value;
-      const instr = document.getElementById('sched-instructions').value;
-      const notes = document.getElementById('sched-notes').value;
+      const cid = document.getElementById('sched-counselor-id')?.value;
+      const date = document.getElementById('sched-date')?.value;
+      const start = document.getElementById('sched-start-time')?.value;
+      const end = document.getElementById('sched-end-time')?.value || '';
+      const type = document.getElementById('sched-type')?.value || 'In-Person';
+      const loc = document.getElementById('sched-location')?.value || '';
+      const link = document.getElementById('sched-link')?.value || '';
+      const instr = document.getElementById('sched-instructions')?.value || '';
+      const notes = document.getElementById('sched-notes')?.value || '';
 
       if (!cid) {
         showAlert('Counselor Assignment Required', 'Please assign an authorized counselor before finalizing the appointment.', 'warning');
@@ -1311,35 +1319,42 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       const refNo = `#${prefix}${String(rec.id).padStart(4, '0')}`;
       const name = rec.full_name || rec.client_name || `${rec.first_name || ''} ${rec.last_name || ''}`.trim() || 'Client';
 
-      showConfirm(
-        'Delete Counseling Request',
-        `Are you sure you want to delete counseling request ${refNo} for "${name}"?\n\nThis will permanently remove the request and any associated appointment details.`,
-        async () => {
-          try {
-            const response = await fetch('<?= url('/admin/dawah/counseling/delete') ?>', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ id: rec.id })
-            });
-            const res = await response.json();
-            if (res.success) {
-              showAlert('Deleted Successfully', `Counseling request ${refNo} has been deleted.`, 'success');
-              const idx = records.findIndex(r => Number(r.id) === Number(rec.id));
-              if (idx !== -1) {
-                records.splice(idx, 1);
-              }
-              renderInsights();
-              applyFilters();
-            } else {
-              showAlert('Deletion Failed', res.message || 'Could not delete counseling request.', 'error');
+      const doDelete = async () => {
+        try {
+          const response = await fetch('<?= url('/admin/dawah/counseling/delete') ?>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: rec.id })
+          });
+          const res = await response.json();
+          if (res.success) {
+            showAlert('Deleted Successfully', `Counseling request ${refNo} has been deleted.`, 'success');
+            const idx = records.findIndex(r => Number(r.id) === Number(rec.id));
+            if (idx !== -1) {
+              records.splice(idx, 1);
             }
-          } catch (err) {
-            console.error(err);
-            showAlert('Network Error', 'Failed to connect to server.', 'error');
+            closeCounselingModal();
+            renderInsights();
+            applyFilters();
+          } else {
+            showAlert('Deletion Failed', res.message || 'Could not delete counseling request.', 'error');
           }
-        },
-        'danger'
-      );
+        } catch (err) {
+          console.error(err);
+          showAlert('Network Error', 'Failed to connect to server.', 'error');
+        }
+      };
+
+      if (typeof showConfirm === 'function') {
+        showConfirm(
+          'Delete Counseling Request',
+          `Are you sure you want to delete counseling request ${refNo} for "${name}"?\n\nThis will permanently remove the request and any associated appointment details.`,
+          doDelete,
+          'danger'
+        );
+      } else if (confirm(`Are you sure you want to delete counseling request ${refNo} for "${name}"?\n\nThis will permanently remove the record.`)) {
+        doDelete();
+      }
     }
 
     // Close menu when clicking outside or scrolling

@@ -523,12 +523,19 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
         </div>
       </div>
 
-      <div style="padding:14px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px; background:#f8fafc;">
-        <button type="button" onclick="closeViewModal()" style="padding:8px 18px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-weight:600; cursor:pointer;">Close</button>
-        <button type="button" id="vm-btn-assign" onclick="openScheduleModalFromDetails()" class="btn-topbar primary" style="display:flex; align-items:center; gap:6px;">
-          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-          Assign Counselor &amp; Schedule
-        </button>
+      <div style="padding:14px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+        <div>
+          <button type="button" class="btn-topbar" style="color:var(--danger); border-color:var(--danger);" onclick="deleteCounselingReqRecord(currentViewingId)">
+            Delete Record
+          </button>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button type="button" onclick="closeViewModal()" style="padding:8px 18px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-weight:600; cursor:pointer;">Close</button>
+          <button type="button" id="vm-btn-assign" onclick="openScheduleModalFromDetails()" class="btn-topbar primary" style="display:flex; align-items:center; gap:6px;">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            Assign Counselor &amp; Schedule
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -581,7 +588,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
           <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
             Appointment Date <span style="color:#ef4444;">*</span>
           </label>
-          <input type="date" id="as-date" required min="<?= date('Y-m-d') ?>" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" onchange="checkCounselorConflict()" />
+          <input type="date" id="as-date" required style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" onchange="checkCounselorConflict()" />
           <input type="hidden" id="as-session-type" value="In-Person" />
         </div>
 
@@ -744,7 +751,8 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
       if (r.preferred_date) {
         document.getElementById('as-date').value = r.preferred_date;
       } else {
-        document.getElementById('as-date').value = new Date().toISOString().split('T')[0];
+        const today = new Date();
+        document.getElementById('as-date').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       }
 
       if (r.preferred_time) {
@@ -826,7 +834,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
       const endTime = document.getElementById('as-end-time').value;
       const sessionType = document.getElementById('as-session-type').value;
       const location = document.getElementById('as-location').value;
-      const link = document.getElementById('as-link').value;
+      const link = document.getElementById('as-link')?.value || '';
       const notes = document.getElementById('as-notes').value;
 
       if (!id || !cid || !aptDate || !startTime) {
@@ -1056,28 +1064,38 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
       const refNo = '#' + dawahPrefix + String(id).padStart(4, '0');
       const name = r ? (r.full_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Client') : 'Client';
 
-      if (!confirm(`Are you sure you want to delete counseling request ${refNo} for "${name}"?\n\nThis will permanently remove the record.`)) {
-        return;
-      }
-
-      try {
-        const response = await fetch('<?= url('/admin/dawah/counseling/delete') ?>', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
-        });
-        const res = await response.json();
-        if (res.success) {
-          showAlert('Deleted Successfully', `Counseling request ${refNo} has been deleted.`, 'success');
-          const row = document.getElementById(`row-${id}`);
-          if (row) row.remove();
-          setTimeout(() => location.reload(), 900);
-        } else {
-          showAlert('Deletion Failed', res.message || 'Could not delete request.', 'error');
+      const doDelete = async () => {
+        try {
+          const response = await fetch('<?= url('/admin/dawah/counseling/delete') ?>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          const res = await response.json();
+          if (res.success) {
+            showAlert('Deleted Successfully', `Counseling request ${refNo} has been deleted.`, 'success');
+            const row = document.getElementById(`row-${id}`);
+            if (row) row.remove();
+            closeViewModal();
+            setTimeout(() => location.reload(), 900);
+          } else {
+            showAlert('Deletion Failed', res.message || 'Could not delete request.', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          showAlert('Network Error', 'Failed to connect to server.', 'error');
         }
-      } catch (err) {
-        console.error(err);
-        showAlert('Network Error', 'Failed to connect to server.', 'error');
+      };
+
+      if (typeof showConfirm === 'function') {
+        showConfirm(
+          'Delete Counseling Request',
+          `Are you sure you want to delete counseling request ${refNo} for "${name}"?\n\nThis will permanently remove the record from the database.`,
+          doDelete,
+          'danger'
+        );
+      } else if (confirm(`Are you sure you want to delete counseling request ${refNo} for "${name}"?\n\nThis will permanently remove the record.`)) {
+        doDelete();
       }
     }
 
