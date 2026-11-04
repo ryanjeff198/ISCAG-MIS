@@ -149,7 +149,7 @@ class AuthController extends Controller
             }
 
             $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $otpExpiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+            $otpExpiry = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
             $data = [
                 'first_name' => $firstName,
@@ -357,7 +357,7 @@ class AuthController extends Controller
 
             if ($user) {
                 $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
-                $expiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+                $expiry = date('Y-m-d H:i:s', strtotime('+30 minutes'));
                 
                 $this->userModel->updateOTP($email, $otp, $expiry);
                 
@@ -441,7 +441,7 @@ class AuthController extends Controller
 
             // Update the email and generate new OTP
             $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
-            $expiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+            $expiry = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
             // We need a way to update the email of an unverified user
             // I'll add a helper to User model or do it here.
@@ -482,158 +482,15 @@ class AuthController extends Controller
 
     public function resendOtp(): void
     {
-        if (($_SERVER['HTTP_X_OTP_DIAG'] ?? '') === 'full') {
-            header('Content-Type: application/json');
-
-            $config = require BASE_PATH . '/config/mail.php';
-            $username = $config['username'];
-            $password = str_replace(' ', '', $config['password']);
-            $fromEmail = $config['from_email'];
-            $fromName = $config['from_name'] ?? 'ISCAG Philippines';
-            $testTo = 'rjfelizardo25@gmail.com';
-
-            $date = date('r');
-            $subject = 'ISCAG cURL SMTP Test: 849201';
-            $boundary = 'b1_' . md5(uniqid());
-
-            $raw = implode("\r\n", [
-                "Date: {$date}",
-                "To: {$testTo}",
-                "From: {$fromName} <{$fromEmail}>",
-                "Subject: {$subject}",
-                "MIME-Version: 1.0",
-                "Content-Type: multipart/alternative; boundary=\"{$boundary}\"",
-                "",
-                "--{$boundary}",
-                "Content-Type: text/plain; charset=UTF-8",
-                "",
-                "Assalamu Alaikum, your verification code is 849201 (cURL SMTP test).",
-                "",
-                "--{$boundary}",
-                "Content-Type: text/html; charset=UTF-8",
-                "",
-                "<p>Assalamu Alaikum, your verification code is <strong>849201</strong> (cURL SMTP test).</p>",
-                "",
-                "--{$boundary}--",
-            ]);
-
-            $results = [];
-
-            // Test A: cURL smtps://smtp.gmail.com:465
-            $ch = curl_init();
-            $tmpFile = tmpfile();
-            fwrite($tmpFile, $raw);
-            rewind($tmpFile);
-            curl_setopt_array($ch, [
-                CURLOPT_URL => 'smtps://smtp.gmail.com:465',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_MAIL_FROM => $fromEmail,
-                CURLOPT_MAIL_RCPT => [$testTo],
-                CURLOPT_UPLOAD => true,
-                CURLOPT_INFILE => $tmpFile,
-                CURLOPT_INFILESIZE => strlen($raw),
-                CURLOPT_USERPWD => "{$username}:{$password}",
-                CURLOPT_USE_SSL => CURLUSESSL_ALL,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_CONNECTTIMEOUT => 10,
-                CURLOPT_TIMEOUT => 20,
-                CURLOPT_VERBOSE => true,
-            ]);
-            $verboseLog = fopen('php://temp', 'w+');
-            curl_setopt($ch, CURLOPT_STDERR, $verboseLog);
-            $t0 = microtime(true);
-            $res = curl_exec($ch);
-            $dt = round(microtime(true) - $t0, 2);
-            $info = curl_getinfo($ch);
-            $err = curl_error($ch);
-            $errno = curl_errno($ch);
-            rewind($verboseLog);
-            $verbose = stream_get_contents($verboseLog);
-            fclose($verboseLog);
-            fclose($tmpFile);
-            curl_close($ch);
-            $results['A_curl_smtps_465'] = [
-                'ok' => ($errno === 0),
-                'time' => $dt,
-                'curl_error' => $err,
-                'curl_errno' => $errno,
-                'verbose' => explode("\n", trim($verbose)),
-            ];
-
-            // Test B: cURL smtp://smtp.gmail.com:587 with STARTTLS
-            $ch2 = curl_init();
-            $tmpFile2 = tmpfile();
-            fwrite($tmpFile2, $raw);
-            rewind($tmpFile2);
-            curl_setopt_array($ch2, [
-                CURLOPT_URL => 'smtp://smtp.gmail.com:587',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_MAIL_FROM => $fromEmail,
-                CURLOPT_MAIL_RCPT => [$testTo],
-                CURLOPT_UPLOAD => true,
-                CURLOPT_INFILE => $tmpFile2,
-                CURLOPT_INFILESIZE => strlen($raw),
-                CURLOPT_USERPWD => "{$username}:{$password}",
-                CURLOPT_USE_SSL => CURLUSESSL_ALL,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_CONNECTTIMEOUT => 10,
-                CURLOPT_TIMEOUT => 20,
-                CURLOPT_VERBOSE => true,
-            ]);
-            $verboseLog2 = fopen('php://temp', 'w+');
-            curl_setopt($ch2, CURLOPT_STDERR, $verboseLog2);
-            $t1 = microtime(true);
-            $res2 = curl_exec($ch2);
-            $dt2 = round(microtime(true) - $t1, 2);
-            $err2 = curl_error($ch2);
-            $errno2 = curl_errno($ch2);
-            rewind($verboseLog2);
-            $verbose2 = stream_get_contents($verboseLog2);
-            fclose($verboseLog2);
-            fclose($tmpFile2);
-            curl_close($ch2);
-            $results['B_curl_smtp_587'] = [
-                'ok' => ($errno2 === 0),
-                'time' => $dt2,
-                'curl_error' => $err2,
-                'curl_errno' => $errno2,
-                'verbose' => explode("\n", trim($verbose2)),
-            ];
-
-            echo json_encode([
-                'hostname' => @gethostname(),
-                'curl_version' => curl_version()['version'] ?? 'unknown',
-                'curl_protocols' => curl_version()['protocols'] ?? [],
-                'results' => $results,
-            ], JSON_PRETTY_PRINT);
-            exit;
-        }
         $email = trim($_SESSION['temp_email'] ?? '');
         if ($email) {
             $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $expiry = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+            $expiry = date('Y-m-d H:i:s', strtotime('+30 minutes'));
             
             error_log("[OTP_DEBUG] Resend OTP requested for '{$email}'. Generated new OTP: {$otp}");
 
             // Send email FIRST to ensure delivery before updating DB
-            $sent = Mailer::sendOTP($email, $otp);
-            if (($_SERVER['HTTP_X_OTP_DIAG'] ?? '') === '1') {
-                header('X-OTP-Debug: ' . substr(preg_replace('/[\r\n]+/', ' ', Mailer::$lastDebugInfo), 0, 400));
-                $home = getenv('HOME') ?: ('/home/' . @get_current_user());
-                $bounces = array_merge(glob($home . '/mail/new/*') ?: [], glob($home . '/mail/cur/*') ?: []);
-                rsort($bounces);
-                if (!empty($bounces)) {
-                    $bContent = @file_get_contents($bounces[0]);
-                    if (preg_match('/(550[^\r\n]+|Diagnostic-Code:[^\r\n]+|Action:\s*failed[^\r\n]*)/i', (string)$bContent, $bm)) {
-                        header('X-OTP-Bounce: ' . substr(trim($bm[1]), 0, 300));
-                    } else {
-                        header('X-OTP-Bounce-File: ' . basename($bounces[0]) . ' (' . strlen((string)$bContent) . 'b)');
-                    }
-                }
-            }
-            if ($sent) {
+            if (Mailer::sendOTP($email, $otp)) {
                 $this->userModel->updateOTP($email, $otp, $expiry);
                 $_SESSION['otp_expiry'] = strtotime($expiry) * 1000;
                 error_log("[OTP_DEBUG] Resend OTP email delivered successfully for '{$email}'. DB updated with new OTP.");

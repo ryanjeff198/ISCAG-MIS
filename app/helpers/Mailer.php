@@ -248,12 +248,12 @@ class Mailer
                     <div style='background: #f5f5f5; padding: 14px; text-align: center; letter-spacing: 6px; color: #1c6b3a; font-size: 28px; font-weight: bold; border-radius: 4px; margin-bottom: 20px;'>
                         $otp
                     </div>
-                    <p style='color: #222222; font-size: 13px; margin-bottom: 10px; line-height: 1.5;'>Mag-e-expire ang code na ito sa loob ng 10 minuto.</p>
+                    <p style='color: #222222; font-size: 13px; margin-bottom: 10px; line-height: 1.5;'>Mag-e-expire ang code na ito sa loob ng 30 minuto.</p>
                     <p style='color: #222222; font-size: 13px; margin: 0; line-height: 1.5;'>Kung hindi mo ito hiniling, mangyaring balewalain ang email na ito.</p>
                 </div>
             ";
 
-            $mail->AltBody = "Assalamu Alaikum,\n\nAng iyong verification code para sa paggawa ng account ay:\n$otp\n\nMag-e-expire ang code na ito sa loob ng 10 minuto.\nKung hindi mo ito hiniling, mangyaring balewalain ang email na ito.";
+            $mail->AltBody = "Assalamu Alaikum,\n\nAng iyong verification code para sa paggawa ng account ay:\n$otp\n\nMag-e-expire ang code na ito sa loob ng 30 minuto.\nKung hindi mo ito hiniling, mangyaring balewalain ang email na ito.";
 
             return self::sendWithFallback($mail);
         } catch (\Throwable $e) {
