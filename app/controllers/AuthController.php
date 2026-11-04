@@ -175,17 +175,17 @@ class AuthController extends Controller
             }
 
             if ($success) {
-                // Send OTP
-                if (Mailer::sendOTP($data['email'], $data['otp_code'])) {
-                    $_SESSION['temp_email'] = $data['email'];
-                    $_SESSION['otp_expiry'] = strtotime($data['otp_expiry']) * 1000; // JS timestamp
-                    header('Location: ' . url('/verify-otp'));
-                    exit;
-                } else {
-                    $error = "Account created but failed to send verification email. Please check your email or try again.";
-                    $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
-                    return;
+                $_SESSION['temp_email'] = $data['email'];
+                $_SESSION['otp_expiry'] = strtotime($data['otp_expiry']) * 1000; // JS timestamp
+
+                // Redirect the user to the OTP page immediately, then send the
+                // email in the background so the browser never waits on SMTP.
+                $this->redirectAndContinue(url('/verify-otp'));
+
+                if (!Mailer::sendOTP($data['email'], $data['otp_code'])) {
+                    error_log("[OTP] Registration OTP email delivery FAILED for '{$data['email']}'. User can use Resend OTP.");
                 }
+                exit;
             } else {
                 $error = "Failed to create account. Please try again.";
                 $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
@@ -194,6 +194,33 @@ class AuthController extends Controller
         }
         $data = $_SESSION['temp_reg_data'] ?? [];
         $this->view('auth/register', ['data' => $data]);
+    }
+
+    /**
+     * Send a redirect to the browser and close the connection immediately,
+     * while letting the PHP script keep running (e.g. to send emails).
+     */
+    private function redirectAndContinue(string $location): void
+    {
+        session_write_close();
+        ignore_user_abort(true);
+        @set_time_limit(120);
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        header('Location: ' . $location, true, 302);
+        header('Connection: close');
+        header('Content-Length: 0');
+
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        } elseif (function_exists('litespeed_finish_request')) {
+            litespeed_finish_request();
+        } else {
+            flush();
+        }
     }
 
     /**

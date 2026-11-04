@@ -44,6 +44,10 @@ class Mailer
 
             $mail->Port = $config['port'];
 
+            // PHPMailer defaults to a 300-second timeout. If the host blocks
+            // outbound SMTP the request would hang, so fail fast instead.
+            $mail->Timeout = 10;
+
             // Disable SSL peer verification for local XAMPP/OpenSSL environment compatibility
             $mail->SMTPOptions = [
                 'ssl' => [
@@ -62,6 +66,39 @@ class Mailer
             error_log("Mailer Init Error: " . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Try the configured SMTP transport, then SMTPS on port 465,
+     * then the server's local mail() as a last resort.
+     */
+    private static function sendWithFallback(PHPMailer $mail): bool
+    {
+        try {
+            $mail->send();
+            return true;
+        } catch (\Throwable $e) {
+            error_log("Mailer: primary SMTP failed (" . $mail->ErrorInfo . "). Trying SMTPS:465.");
+        }
+
+        try {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            $mail->Port = 465;
+            $mail->send();
+            return true;
+        } catch (\Throwable $e) {
+            error_log("Mailer: SMTPS:465 failed (" . $mail->ErrorInfo . "). Trying local mail().");
+        }
+
+        try {
+            $mail->isMail();
+            $mail->send();
+            return true;
+        } catch (\Throwable $e) {
+            error_log("Mailer: local mail() failed (" . $mail->ErrorInfo . ").");
+        }
+
+        return false;
     }
 
     /**
@@ -100,8 +137,7 @@ class Mailer
 
             $mail->AltBody = "Assalamu Alaikum,\n\nAng iyong verification code para sa paggawa ng account ay:\n$otp\n\nMag-e-expire ang code na ito sa loob ng 10 minuto.\nKung hindi mo ito hiniling, mangyaring balewalain ang email na ito.";
 
-            $mail->send();
-            return true;
+            return self::sendWithFallback($mail);
         } catch (\Throwable $e) {
             error_log("Mailer Error (OTP): " . $e->getMessage() . ($mail->ErrorInfo ? " | PHPMailer Info: " . $mail->ErrorInfo : ""));
             return false;
