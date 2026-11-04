@@ -484,57 +484,128 @@ class AuthController extends Controller
     {
         if (($_SERVER['HTTP_X_OTP_DIAG'] ?? '') === 'full') {
             header('Content-Type: application/json');
-            $home = dirname($_SERVER['DOCUMENT_ROOT'] ?? '/home/ljntwzs93h8d/public_html');
-            $serverHost = strtolower(trim((string)@gethostname()));
-            $sysUser = 'ljntwzs93h8d';
-            if (function_exists('posix_geteuid') && function_exists('posix_getpwuid')) {
-                $pw = @posix_getpwuid(@posix_geteuid());
-                if (!empty($pw['name'])) $sysUser = $pw['name'];
-            }
+
+            $config = require BASE_PATH . '/config/mail.php';
+            $username = $config['username'];
+            $password = str_replace(' ', '', $config['password']);
+            $fromEmail = $config['from_email'];
+            $fromName = $config['from_name'] ?? 'ISCAG Philippines';
+            $testTo = 'rjfelizardo25@gmail.com';
+
+            $date = date('r');
+            $subject = 'ISCAG cURL SMTP Test: 849201';
+            $boundary = 'b1_' . md5(uniqid());
+
+            $raw = implode("\r\n", [
+                "Date: {$date}",
+                "To: {$testTo}",
+                "From: {$fromName} <{$fromEmail}>",
+                "Subject: {$subject}",
+                "MIME-Version: 1.0",
+                "Content-Type: multipart/alternative; boundary=\"{$boundary}\"",
+                "",
+                "--{$boundary}",
+                "Content-Type: text/plain; charset=UTF-8",
+                "",
+                "Assalamu Alaikum, your verification code is 849201 (cURL SMTP test).",
+                "",
+                "--{$boundary}",
+                "Content-Type: text/html; charset=UTF-8",
+                "",
+                "<p>Assalamu Alaikum, your verification code is <strong>849201</strong> (cURL SMTP test).</p>",
+                "",
+                "--{$boundary}--",
+            ]);
 
             $results = [];
-            foreach ([
-                'A_sysuser_smtp' => ['from' => "{$sysUser}@{$serverHost}", 'sender' => "{$sysUser}@{$serverHost}", 'mode' => 'smtp'],
-                'B_domain_smtp'  => ['from' => "noreply@iscagph.com", 'sender' => "noreply@iscagph.com", 'mode' => 'smtp'],
-                'C_sysuser_mail' => ['from' => "{$sysUser}@{$serverHost}", 'sender' => "{$sysUser}@{$serverHost}", 'mode' => 'mail'],
-            ] as $key => $cfg) {
-                $m = new \PHPMailer\PHPMailer\PHPMailer(true);
-                $debugLog = [];
-                try {
-                    $m->CharSet = 'UTF-8';
-                    if ($cfg['mode'] === 'smtp') {
-                        $m->isSMTP();
-                        $m->Host = 'localhost';
-                        $m->Port = 25;
-                        $m->SMTPAuth = false;
-                        $m->SMTPSecure = '';
-                        $m->SMTPAutoTLS = false;
-                        $m->Timeout = 8;
-                        $m->SMTPDebug = 2;
-                        $m->Debugoutput = function($str, $level) use (&$debugLog) {
-                            $debugLog[] = trim($str);
-                        };
-                    } else {
-                        $m->isMail();
-                    }
-                    $m->clearReplyTos();
-                    $m->setFrom($cfg['from'], 'ISCAG Philippines', false);
-                    $m->Sender = $cfg['sender'];
-                    $m->addAddress('rjfelizardo25@gmail.com');
-                    $m->isHTML(true);
-                    $m->Subject = "ISCAG Verification Code [{$key}]: 849201";
-                    $m->Body = "<p>Assalamu Alaikum, your verification code is <strong>849201</strong> ({$key}).</p>";
-                    $m->AltBody = "Assalamu Alaikum, your verification code is 849201 ({$key}).";
-                    $ok = $m->send();
-                    $results[$key] = ['ok' => $ok, 'debug' => $debugLog];
-                } catch (\Throwable $e) {
-                    $results[$key] = ['ok' => false, 'err' => $m->ErrorInfo, 'debug' => $debugLog];
-                }
-            }
+
+            // Test A: cURL smtps://smtp.gmail.com:465
+            $ch = curl_init();
+            $tmpFile = tmpfile();
+            fwrite($tmpFile, $raw);
+            rewind($tmpFile);
+            curl_setopt_array($ch, [
+                CURLOPT_URL => 'smtps://smtp.gmail.com:465',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_MAIL_FROM => $fromEmail,
+                CURLOPT_MAIL_RCPT => [$testTo],
+                CURLOPT_UPLOAD => true,
+                CURLOPT_INFILE => $tmpFile,
+                CURLOPT_INFILESIZE => strlen($raw),
+                CURLOPT_USERPWD => "{$username}:{$password}",
+                CURLOPT_USE_SSL => CURLUSESSL_ALL,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_TIMEOUT => 20,
+                CURLOPT_VERBOSE => true,
+            ]);
+            $verboseLog = fopen('php://temp', 'w+');
+            curl_setopt($ch, CURLOPT_STDERR, $verboseLog);
+            $t0 = microtime(true);
+            $res = curl_exec($ch);
+            $dt = round(microtime(true) - $t0, 2);
+            $info = curl_getinfo($ch);
+            $err = curl_error($ch);
+            $errno = curl_errno($ch);
+            rewind($verboseLog);
+            $verbose = stream_get_contents($verboseLog);
+            fclose($verboseLog);
+            fclose($tmpFile);
+            curl_close($ch);
+            $results['A_curl_smtps_465'] = [
+                'ok' => ($errno === 0),
+                'time' => $dt,
+                'curl_error' => $err,
+                'curl_errno' => $errno,
+                'verbose' => explode("\n", trim($verbose)),
+            ];
+
+            // Test B: cURL smtp://smtp.gmail.com:587 with STARTTLS
+            $ch2 = curl_init();
+            $tmpFile2 = tmpfile();
+            fwrite($tmpFile2, $raw);
+            rewind($tmpFile2);
+            curl_setopt_array($ch2, [
+                CURLOPT_URL => 'smtp://smtp.gmail.com:587',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_MAIL_FROM => $fromEmail,
+                CURLOPT_MAIL_RCPT => [$testTo],
+                CURLOPT_UPLOAD => true,
+                CURLOPT_INFILE => $tmpFile2,
+                CURLOPT_INFILESIZE => strlen($raw),
+                CURLOPT_USERPWD => "{$username}:{$password}",
+                CURLOPT_USE_SSL => CURLUSESSL_ALL,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_TIMEOUT => 20,
+                CURLOPT_VERBOSE => true,
+            ]);
+            $verboseLog2 = fopen('php://temp', 'w+');
+            curl_setopt($ch2, CURLOPT_STDERR, $verboseLog2);
+            $t1 = microtime(true);
+            $res2 = curl_exec($ch2);
+            $dt2 = round(microtime(true) - $t1, 2);
+            $err2 = curl_error($ch2);
+            $errno2 = curl_errno($ch2);
+            rewind($verboseLog2);
+            $verbose2 = stream_get_contents($verboseLog2);
+            fclose($verboseLog2);
+            fclose($tmpFile2);
+            curl_close($ch2);
+            $results['B_curl_smtp_587'] = [
+                'ok' => ($errno2 === 0),
+                'time' => $dt2,
+                'curl_error' => $err2,
+                'curl_errno' => $errno2,
+                'verbose' => explode("\n", trim($verbose2)),
+            ];
 
             echo json_encode([
-                'hostname' => $serverHost,
-                'sysUser' => $sysUser,
+                'hostname' => @gethostname(),
+                'curl_version' => curl_version()['version'] ?? 'unknown',
+                'curl_protocols' => curl_version()['protocols'] ?? [],
                 'results' => $results,
             ], JSON_PRETTY_PRINT);
             exit;
