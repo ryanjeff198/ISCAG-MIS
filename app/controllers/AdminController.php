@@ -2322,7 +2322,7 @@ class AdminController extends Controller
     }
 
     public function dawahCounseling(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         require_once BASE_PATH . '/app/models/User.php';
         require_once BASE_PATH . '/app/models/CounselingRequest.php';
 
@@ -2352,7 +2352,7 @@ class AdminController extends Controller
     }
 
     public function counselingRequests(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         require_once BASE_PATH . '/app/models/User.php';
         require_once BASE_PATH . '/app/models/CounselingRequest.php';
 
@@ -2380,7 +2380,7 @@ class AdminController extends Controller
     }
 
     public function acceptCounselingRequest(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -2425,7 +2425,7 @@ class AdminController extends Controller
     }
 
     public function rejectCounselingRequest(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -2470,7 +2470,7 @@ class AdminController extends Controller
     }
 
     public function deleteCounselingRequest(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -3303,7 +3303,7 @@ class AdminController extends Controller
     }
 
     public function acceptAndScheduleCounseling(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -3395,7 +3395,7 @@ class AdminController extends Controller
     }
 
     public function checkCounselorConflict(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
@@ -3417,7 +3417,7 @@ class AdminController extends Controller
     }
 
     public function reviewCounselingRequest(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
@@ -3432,7 +3432,7 @@ class AdminController extends Controller
     }
 
     public function rejectCounseling(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -3474,7 +3474,7 @@ class AdminController extends Controller
     }
 
     public function completeCounseling(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
@@ -3523,7 +3523,7 @@ class AdminController extends Controller
     }
 
     public function getCounselorsList(): void {
-        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female']);
+        Auth::protectRole(['Admin', 'Staff_Male', 'Staff_Female', 'Staff_Damayan', 'Staff_Tenant']);
         header('Content-Type: application/json');
 
         $role = $_SESSION['role'] ?? '';

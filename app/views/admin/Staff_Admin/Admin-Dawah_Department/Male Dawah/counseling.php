@@ -560,7 +560,7 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
 
       <div class="counseling-modal-footer">
         <div id="modal-actions-left" style="display:flex; gap:10px; align-items:center;">
-          <button type="button" class="btn-topbar" id="btn-modal-delete" style="color:var(--danger); border-color:var(--danger);" onclick="deleteCounselingRecord(currentSelectedRecord)">
+          <button type="button" class="btn-topbar" id="btn-modal-delete" style="color:var(--danger); border-color:var(--danger);" onclick="closeCounselingModal(); deleteCounselingRecord(currentSelectedRecord ? currentSelectedRecord.id : null);">
             Delete Record
           </button>
           <button type="button" class="btn-topbar" id="btn-print-slip" onclick="openPrintPassModal(currentSelectedRecord)" style="display:none;">
@@ -575,7 +575,99 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
   </div>
 
   <!-- 3-Dots Action Dropdown Menu -->
-  <div id="counseling-action-menu" class="counseling-action-menu">
+  
+  <!-- ═══ Dedicated Assign Counselor & Schedule Modal ═══ -->
+  <div id="schedule-assign-modal" style="position:fixed; inset:0; background:rgba(15,30,22,0.68); backdrop-filter:blur(6px); z-index:999999; display:none; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:white; border-radius:18px; width:100%; max-width:620px; box-shadow:0 30px 80px rgba(0,0,0,0.35); overflow:hidden; border:1px solid rgba(0,0,0,0.08);">
+      <div style="height:4px; background:linear-gradient(90deg, #14532D, #7c3aed);"></div>
+      <div style="padding:18px 24px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#fafafa;">
+        <h5 style="margin:0; font-family:'Lora',serif; color:#14532D; font-size:1.18rem; font-weight:800; display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#7c3aed;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+          Assign Counselor &amp; Schedule Appointment
+        </h5>
+        <button type="button" onclick="closeScheduleModal()" style="background:none; border:none; font-size:24px; line-height:1; color:#9ca3af; cursor:pointer;" title="Close">&times;</button>
+      </div>
+
+      <form id="form-assign-sched" onsubmit="submitScheduleAssignModal(event)" style="padding:22px 24px; max-height:calc(85vh - 120px); overflow-y:auto;">
+        <input type="hidden" id="as-request-id" name="id" value="" />
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#166534;">Applicant</span>
+            <div id="as-client-name" style="font-weight:800; font-size:1.02rem; color:#14532D; margin-top:2px;">—</div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:#166534;">Request ID</span>
+            <div id="as-ref-no" style="font-weight:800; font-size:0.95rem; color:#14532D; margin-top:2px;">#MC-0000</div>
+          </div>
+        </div>
+
+        <div id="as-conflict-alert" style="display:none; background:#fef2f2; border:1px solid #f87171; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:0.84rem; color:#b91c1c;">
+          <strong>⚠️ Schedule Conflict Alert:</strong> <span id="as-conflict-msg"></span>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Assigned Counselor <span style="color:#ef4444;">*</span>
+          </label>
+          <select id="as-counselor-id" required style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600; background:#fff;" onchange="checkCounselorConflictModal()">
+            <option value="">-- Select Qualified Counselor --</option>
+            <?php foreach ($counselors ?? [] as $c): ?>
+              <option value="<?= $c['id'] ?>">
+                <?= htmlspecialchars($c['name'] ?? $c['full_name'] ?? '') ?> (<?= htmlspecialchars($c['designation'] ?? 'Counselor') ?>)
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Appointment Date <span style="color:#ef4444;">*</span>
+          </label>
+          <input type="date" id="as-date" required style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" onchange="checkCounselorConflictModal()" />
+          <input type="hidden" id="as-session-type" value="In-Person" />
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+              Start Time <span style="color:#ef4444;">*</span>
+            </label>
+            <input type="time" id="as-start-time" required value="10:00" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" onchange="checkCounselorConflictModal()" />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+              End Time
+            </label>
+            <input type="time" id="as-end-time" value="11:00" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem; font-weight:600;" onchange="checkCounselorConflictModal()" />
+          </div>
+        </div>
+
+        <div id="as-wrap-location" style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Venue / Consultation Room
+          </label>
+          <input type="text" id="as-location" value="ISCAG Center, 2nd Floor Da'wah Counseling Office Room 204" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9rem;" />
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:800; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em;">
+            Counselor Notes / Guidance to Client
+          </label>
+          <textarea id="as-notes" rows="2" placeholder="Please bring any relevant questions or notes. May Allah grant you ease." style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.88rem; font-family:inherit;"></textarea>
+        </div>
+
+        <div style="padding:14px 0 0; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" onclick="closeScheduleModal()" style="padding:9px 18px; border-radius:8px; border:1px solid #cbd5e1; background:white; color:#475569; font-weight:600; cursor:pointer;">Cancel</button>
+          <button type="submit" id="as-submit-btn" class="btn-topbar primary" style="padding:9px 22px; font-weight:700;">
+            Confirm Assignment &amp; Schedule
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<div id="counseling-action-menu" class="counseling-action-menu">
     <button type="button" class="action-dropdown-item schedule" onclick="triggerMenuAction('schedule')">
       <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
       <span>Set Schedule</span>
@@ -651,8 +743,10 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
     standardizePage('staff');
 
     const prefix = '<?= $prefix ?>';
-    const records = <?= json_encode($records ?? []) ?>;
-    const counselors = <?= json_encode($counselors ?? []) ?>;
+    const records = <?= json_encode($records ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    const recordsMap = {};
+    records.forEach(r => { if (r && r.id) recordsMap[r.id] = r; });
+    const counselors = <?= json_encode($counselors ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     
     let activeStatusFilter = 'all';
     let activeCategoryFilter = 'All Concerns';
@@ -967,7 +1061,7 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
           <button type="button" class="btn-topbar" onclick="markUnderReview(${r.id})">
             Begin Review
           </button>
-          <button type="button" class="btn-topbar primary" onclick="showActionPanel('panel-accept-schedule')">
+          <button type="button" class="btn-topbar primary" onclick="closeCounselingModal(); openScheduleModal(currentSelectedRecord.id);">
             <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
             Assign Counselor &amp; Schedule
           </button>
@@ -977,7 +1071,7 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
         `;
       } else if (st === 'under_review') {
         actGroup.innerHTML = `
-          <button type="button" class="btn-topbar primary" onclick="showActionPanel('panel-accept-schedule')">
+          <button type="button" class="btn-topbar primary" onclick="closeCounselingModal(); openScheduleModal(currentSelectedRecord.id);">
             <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
             Assign Counselor &amp; Schedule
           </button>
@@ -990,7 +1084,7 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
           <button type="button" class="btn-topbar primary" onclick="showActionPanel('panel-complete')">
             ✓ Mark as Completed
           </button>
-          <button type="button" class="btn-topbar" onclick="showActionPanel('panel-accept-schedule')">
+          <button type="button" class="btn-topbar" onclick="closeCounselingModal(); openScheduleModal(currentSelectedRecord.id);">
             <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
             Reassign Counselor / Schedule
           </button>
@@ -1004,7 +1098,7 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
         `;
       } else if (st === 'rejected') {
         actGroup.innerHTML = `
-          <button type="button" class="btn-topbar primary" onclick="showActionPanel('panel-accept-schedule')">
+          <button type="button" class="btn-topbar primary" onclick="closeCounselingModal(); openScheduleModal(currentSelectedRecord.id);">
             <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
             Assign Counselor &amp; Schedule
           </button>
@@ -1232,7 +1326,7 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
     }
 
     /* ── 3-Dots Action Menu Handlers ── */
-    let activeMenuRecord = null;
+    let activeMenuId = null;
     let activeMenuButton = null;
 
     function toggleRowMenu(e, id) {
@@ -1240,15 +1334,15 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
       const menu = document.getElementById('counseling-action-menu');
       const btn = e.currentTarget;
 
-      if (menu.style.display === 'block' && activeMenuRecord && activeMenuRecord.id === id) {
+      if (menu.style.display === 'block' && activeMenuId === id) {
         closeRowMenu();
         return;
       }
 
-      const rec = records.find(r => Number(r.id) === Number(id));
+      const rec = records.find(r => Number(r.id) === Number(id)) || recordsMap[id];
       if (!rec) return;
 
-      activeMenuRecord = rec;
+      activeMenuId = Number(id);
       if (activeMenuButton) activeMenuButton.classList.remove('active');
       activeMenuButton = btn;
       activeMenuButton.classList.add('active');
@@ -1295,29 +1389,189 @@ $prefix = $isFemale ? 'FC-' : 'MC-';
         activeMenuButton.classList.remove('active');
         activeMenuButton = null;
       }
-      activeMenuRecord = null;
+      activeMenuId = null;
     }
 
     function triggerMenuAction(action) {
-      if (!activeMenuRecord) return;
-      const rec = activeMenuRecord;
+      if (!activeMenuId) return;
+      const id = activeMenuId;
       closeRowMenu();
 
       if (action === 'schedule') {
-        openScheduleFromRow(rec);
+        openScheduleModal(id);
       } else if (action === 'view') {
-        viewCounselingDetails(rec);
+        viewCounselingDetailsById(id);
       } else if (action === 'delete') {
-        deleteCounselingRecord(rec);
+        deleteCounselingRecord(id);
       } else if (action === 'print') {
-        openPrintPassModal(rec);
+        const rec = records.find(r => Number(r.id) === Number(id)) || recordsMap[id];
+        if (rec) openPrintPassModal(rec);
       }
     }
 
-    async function deleteCounselingRecord(rec) {
-      if (!rec) return;
-      const refNo = `#${prefix}${String(rec.id).padStart(4, '0')}`;
-      const name = rec.full_name || rec.client_name || `${rec.first_name || ''} ${rec.last_name || ''}`.trim() || 'Client';
+    /* ── Dedicated Schedule Modal Logic ── */
+    function openScheduleModal(id) {
+      const r = records.find(r => Number(r.id) === Number(id)) || recordsMap[id];
+      if (!r) return;
+
+      document.getElementById('as-request-id').value = r.id;
+      const reqId = `#${prefix}${String(r.id).padStart(4, '0')}`;
+      const clientName = r.full_name || r.client_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Anonymous Client';
+      document.getElementById('as-client-name').textContent = clientName;
+      document.getElementById('as-ref-no').textContent = reqId;
+
+      if (r.preferred_date) {
+        document.getElementById('as-date').value = r.preferred_date;
+      } else {
+        const today = new Date();
+        document.getElementById('as-date').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      }
+
+      if (r.preferred_time) {
+        const m = r.preferred_time.match(/(\d{1,2}):(\d{2})/);
+        if (m) {
+          let hrs = parseInt(m[1]);
+          if (r.preferred_time.toLowerCase().includes('pm') && hrs < 12) hrs += 12;
+          if (r.preferred_time.toLowerCase().includes('am') && hrs === 12) hrs = 0;
+          document.getElementById('as-start-time').value = `${String(hrs).padStart(2, '0')}:${m[2]}`;
+        } else {
+          document.getElementById('as-start-time').value = '10:00';
+        }
+      } else {
+        document.getElementById('as-start-time').value = '10:00';
+      }
+
+      document.getElementById('as-end-time').value = '11:00';
+      document.getElementById('as-counselor-id').value = r.counselor_id || '';
+      document.getElementById('as-notes').value = r.counselor_notes || '';
+
+      document.getElementById('as-conflict-alert').style.display = 'none';
+      document.getElementById('schedule-assign-modal').style.display = 'flex';
+      checkCounselorConflictModal();
+    }
+
+    function closeScheduleModal() {
+      const m = document.getElementById('schedule-assign-modal');
+      if (m) m.style.display = 'none';
+      const ca = document.getElementById('as-conflict-alert');
+      if (ca) ca.style.display = 'none';
+    }
+
+    document.getElementById('schedule-assign-modal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeScheduleModal();
+    });
+
+    async function checkCounselorConflictModal() {
+      const cid = document.getElementById('as-counselor-id')?.value;
+      const date = document.getElementById('as-date')?.value;
+      const startTime = document.getElementById('as-start-time')?.value;
+      const endTime = document.getElementById('as-end-time')?.value;
+      const reqId = document.getElementById('as-request-id')?.value;
+      const alertBox = document.getElementById('as-conflict-alert');
+      const msgSpan = document.getElementById('as-conflict-msg');
+
+      if (!cid || !date || !startTime) {
+        if (alertBox) alertBox.style.display = 'none';
+        return;
+      }
+
+      try {
+        const res = await fetch('<?= url("/admin/dawah/counseling/check-conflict") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ counselor_id: cid, date: date, appointment_date: date, start_time: startTime, end_time: endTime, exclude_id: reqId })
+        });
+        const data = await res.json();
+        if (data.conflict) {
+          alertBox.style.display = 'block';
+          msgSpan.textContent = data.message || 'Conflict detected for this counselor at the selected time.';
+        } else {
+          alertBox.style.display = 'none';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function submitScheduleAssignModal(e) {
+      e.preventDefault();
+      const id = document.getElementById('as-request-id').value;
+      const cid = document.getElementById('as-counselor-id').value;
+      const aptDate = document.getElementById('as-date').value;
+      const startTime = document.getElementById('as-start-time').value;
+      const endTime = document.getElementById('as-end-time').value;
+      const sessionType = document.getElementById('as-session-type')?.value || 'In-Person';
+      const location = document.getElementById('as-location')?.value || 'ISCAG Center, 2nd Floor Da\'wah Counseling Office Room 204';
+      const notes = document.getElementById('as-notes')?.value || '';
+
+      if (!id || !cid || !aptDate || !startTime) {
+        alert('Please complete all required schedule fields including counselor, appointment date, and time.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('as-submit-btn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving Assignment...';
+      }
+
+      try {
+        const response = await fetch('<?= url("/admin/dawah/counseling/accept-schedule") ?>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: id,
+            counselor_id: cid,
+            appointment_date: aptDate,
+            start_time: startTime,
+            end_time: endTime,
+            final_session_type: sessionType,
+            appointment_location: location,
+            counselor_notes: notes
+          })
+        });
+
+        const res = await response.json();
+        if (res.success) {
+          if (typeof showAlert === 'function') {
+            showAlert('Counselor Assigned', res.message || 'Counseling appointment confirmed and counselor assigned successfully!', 'success');
+          } else {
+            alert(res.message || 'Counseling appointment confirmed and counselor assigned successfully!');
+          }
+          closeScheduleModal();
+          setTimeout(() => location.reload(), 900);
+        } else {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Confirm Assignment & Schedule';
+          }
+          if (typeof showAlert === 'function') {
+            showAlert('Assignment Failed', res.message || 'Could not complete assignment.', 'error');
+          } else {
+            alert(res.message || 'Could not complete assignment.');
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Confirm Assignment & Schedule';
+        }
+        alert('Network error while saving schedule assignment.');
+      }
+    }
+
+    function viewCounselingDetailsById(id) {
+      const rec = records.find(r => Number(r.id) === Number(id)) || recordsMap[id];
+      if (rec) viewCounselingDetails(rec);
+    }
+
+    async function deleteCounselingRecord(recOrId) {
+      if (!recOrId) return;
+      const rec = (typeof recOrId === 'object') ? recOrId : (records.find(r => Number(r.id) === Number(recOrId)) || recordsMap[recOrId]);
+      const id = (typeof recOrId === 'object') ? rec.id : recOrId;
+      const refNo = `#${prefix}${String(id).padStart(4, '0')}`;
+      const name = rec ? (rec.full_name || rec.client_name || `${rec.first_name || ''} ${rec.last_name || ''}`.trim() || 'Client') : 'Client';
 
       const doDelete = async () => {
         try {

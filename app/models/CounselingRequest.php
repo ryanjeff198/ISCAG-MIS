@@ -445,7 +445,12 @@ class CounselingRequest
     {
         $stmt = $this->db->prepare("SELECT * FROM counselors WHERE status = 'active' AND (gender = :gender OR gender IS NULL) ORDER BY name ASC");
         $stmt->execute(['gender' => $gender]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($res)) {
+            $stmtAll = $this->db->query("SELECT * FROM counselors WHERE status = 'active' ORDER BY name ASC");
+            $res = $stmtAll->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+        return $res;
     }
 
     public function getCounselorById(int $id): ?array
