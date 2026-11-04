@@ -7,7 +7,7 @@
       <div class="footer-about">
         <a href="<?= url('/') ?>" class="footer-logo">
           <div class="footer-logo-icon">
-            <img src="<?= asset('assets/logo.jpg') ?>" alt="ISCAG Logo" style="max-width:100%; max-height:100%; object-fit:scale-down;">
+            <img src="<?= asset('assets/logo-nav.png') ?>" srcset="<?= asset('assets/logo-nav.png') ?> 1x, <?= asset('assets/logo.png') ?> 2x" alt="ISCAG Logo" width="48" height="48" style="width:100%; height:100%; object-fit:contain;">
           </div>
           <span class="footer-logo-text">ISCAG<br>PHILIPPINES</span>
         </a>

@@ -3,9 +3,13 @@
   <div class="nav-inner">
 
     <!-- LOGO -->
-    <a href="<?= url('/') ?>" class="logo">
+    <a href="<?= url('/') ?>" class="logo" title="Islamic Studies, Call and Guidance of the Philippines">
       <div class="logo-icon">
-        <img src="<?= asset('assets/logo.jpg') ?>" alt="Logo" style="width: 100%; height: 100%; border-radius: 9px; object-fit: cover;">
+        <img src="<?= asset('assets/logo-nav.png') ?>" 
+             srcset="<?= asset('assets/logo-nav.png') ?> 1x, <?= asset('assets/logo.png') ?> 2x" 
+             alt="ISCAG Philippines Logo" 
+             width="44" 
+             height="44">
       </div>
       <span class="logo-text">Islamic Studies, Call and Guidance of the Philippines</span>
     </a>
