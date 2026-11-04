@@ -2285,7 +2285,7 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
               .receipt-container { border: 1.5px solid #0f5c3a; }
             }
           </style>
-        </head>
+        <` + `/head>
         <body>
           <div class="receipt-container">
             <div class="top-stripe"></div>
@@ -2358,11 +2358,11 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
               </div>
             </div>
           </div>
-          <script>
+          <` + `script>
             window.onload = function() { window.print(); }
-          <\/script>
-        </body>
-        </html>
+          <` + `/script>
+        <` + `/body>
+        <` + `/html>
       `;
 
       const printWin = window.open('', '_blank', 'width=780,height=750');
