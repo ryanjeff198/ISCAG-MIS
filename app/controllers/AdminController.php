@@ -6211,24 +6211,39 @@ class AdminController extends Controller
             header('Content-Type: application/json');
         }
 
-        $userId = $_GET['id'] ?? null;
+        $userId = (int)($_GET['id'] ?? 0);
         if (!$userId) {
             echo json_encode(['success' => false, 'message' => 'User ID required.']);
             return;
         }
 
         $db = getDbConnection();
+        $hasRoleCol = false;
+        try {
+            $check = $db->query("SHOW COLUMNS FROM audit_logs LIKE 'admin_role'")->fetch();
+            $hasRoleCol = (bool)$check;
+        } catch (\Throwable $t) {}
+
+        $roleExpr = $hasRoleCol ? "COALESCE(NULLIF(al.admin_role, ''), ta.role, 'System')" : "COALESCE(ta.role, 'System')";
+
         $stmt = $db->prepare("
-            SELECT al.*, COALESCE(ta.role, 'System') as display_role
+            SELECT al.*, {$roleExpr} as display_role
             FROM audit_logs al
             LEFT JOIN tenant_accounts ta ON al.admin_id = ta.tenant_id
-            WHERE al.details LIKE :idPattern OR al.admin_id = :userId
+            WHERE al.admin_id = :userId 
+               OR al.details LIKE :p1 
+               OR al.details LIKE :p2 
+               OR al.details LIKE :p3 
+               OR al.details LIKE :p4
             ORDER BY al.timestamp DESC
             LIMIT 50
         ");
         $stmt->execute([
-            'idPattern' => "%ID: $userId%",
-            'userId' => $userId
+            'userId' => $userId,
+            'p1' => "%ID: $userId%",
+            'p2' => "%ID $userId%",
+            'p3' => "%(#$userId)%",
+            'p4' => "%Tenant ID: $userId%"
         ]);
         $trails = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -6238,9 +6253,18 @@ class AdminController extends Controller
     public function auditLogs(): void {
         Auth::protectRole(['Admin']);
         $db = getDbConnection();
+
+        $hasRoleCol = false;
+        try {
+            $check = $db->query("SHOW COLUMNS FROM audit_logs LIKE 'admin_role'")->fetch();
+            $hasRoleCol = (bool)$check;
+        } catch (\Throwable $t) {}
+
+        $roleExpr = $hasRoleCol ? "COALESCE(NULLIF(al.admin_role, ''), ta.role, 'System')" : "COALESCE(ta.role, 'System')";
+
         $query = "
             SELECT al.*, 
-                   COALESCE(ta.role, 'System') as display_role
+                   {$roleExpr} as display_role
             FROM audit_logs al
             LEFT JOIN tenant_accounts ta ON al.admin_id = ta.tenant_id
             ORDER BY al.timestamp DESC 
