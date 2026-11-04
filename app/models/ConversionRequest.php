@@ -91,15 +91,17 @@ class ConversionRequest
     {
         $query = "
             SELECT id, status FROM {$this->table}
-            WHERE ((LOWER(TRIM(fname)) = LOWER(:fname) AND LOWER(TRIM(lname)) = LOWER(:lname)" . ($dob ? " AND dob = :dob" : "") . ")
-               OR (tenant_id = :tenant_id AND LOWER(TRIM(fname)) = LOWER(:fname) AND LOWER(TRIM(lname)) = LOWER(:lname)))
+            WHERE ((LOWER(TRIM(fname)) = LOWER(:fname1) AND LOWER(TRIM(lname)) = LOWER(:lname1)" . ($dob ? " AND dob = :dob" : "") . ")
+               OR (tenant_id = :tenant_id AND LOWER(TRIM(fname)) = LOWER(:fname2) AND LOWER(TRIM(lname)) = LOWER(:lname2)))
               AND LOWER(status) NOT IN ('rejected', 'cancelled')
             LIMIT 1
         ";
         $stmt = $this->db->prepare($query);
         $params = [
-            'fname' => trim($fname),
-            'lname' => trim($lname),
+            'fname1' => trim($fname),
+            'lname1' => trim($lname),
+            'fname2' => trim($fname),
+            'lname2' => trim($lname),
             'tenant_id' => $tenantId
         ];
         if ($dob) {
