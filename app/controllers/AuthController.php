@@ -19,7 +19,9 @@ class AuthController extends Controller
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
-                die("CSRF token validation failed.");
+                $error = "Your session expired. Please log in again.";
+                $this->view('auth/login', ['error' => $error, 'email' => $_POST['email'] ?? '']);
+                return;
             }
             $email = $_POST['email'] ?? '';
             $password = $_POST['password'] ?? '';
@@ -82,7 +84,9 @@ class AuthController extends Controller
             $_SESSION['temp_reg_data'] = $postedData; // Store for "Back to Email" flow
 
             if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
-                die("CSRF token validation failed.");
+                $error = "Your session expired. Please submit the form again.";
+                $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
+                return;
             }
 
             // Capture data for sticky form
@@ -136,7 +140,8 @@ class AuthController extends Controller
                 $db = getDbConnection();
                 $namePhoneCheck = $db->prepare("SELECT tenant_id FROM tenant_accounts WHERE LOWER(TRIM(first_name)) = LOWER(:fn) AND LOWER(TRIM(last_name)) = LOWER(:ln) AND contactnum = :phone AND is_verified = 1 LIMIT 1");
                 $namePhoneCheck->execute([':fn' => $firstName, ':ln' => $lastName, ':phone' => $contactnum]);
-                if ($namePhoneCheck->fetch()) {
+                $existingNamePhone = $namePhoneCheck->fetch();
+                if ($existingNamePhone && (!$existingUser || (int)$existingNamePhone['tenant_id'] !== (int)$existingUser['tenant_id'])) {
                     $error = "An account with this name and phone number already exists. Please log in.";
                     $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
                     return;
@@ -163,7 +168,7 @@ class AuthController extends Controller
             $success = false;
             if ($existingUser) {
                 // Update unverified user
-                $success = $this->updateUnverifiedUser($existingUser['email'], $data);
+                $success = $this->updateUnverifiedUser((int)$existingUser['tenant_id'], $data);
             } else {
                 // Create new user
                 $success = $this->userModel->create($data);
@@ -194,19 +199,20 @@ class AuthController extends Controller
     /**
      * Helper to update an existing but unverified user.
      */
-    private function updateUnverifiedUser(string $email, array $data): bool
+    private function updateUnverifiedUser(int $tenantId, array $data): bool
     {
         $sql = "UPDATE tenant_accounts SET 
                 first_name = :first_name, 
                 last_name = :last_name, 
                 sex = :sex, 
+                email = :email,
                 contactnum = :contactnum, 
                 password = :password, 
                 confirmpass = :confirmpass, 
                 role = :role,
                 otp_code = :otp_code, 
                 otp_expiry = :otp_expiry 
-                WHERE email = :email AND is_verified = 0";
+                WHERE tenant_id = :tenant_id AND is_verified = 0";
         
         $db = getDbConnection();
         $stmt = $db->prepare($sql);
@@ -214,13 +220,14 @@ class AuthController extends Controller
             'first_name' => $data['first_name'],
             'last_name' => $data['last_name'],
             'sex' => $data['sex'],
+            'email' => $data['email'],
             'contactnum' => $data['contactnum'],
             'password' => $data['password'],
             'confirmpass' => $data['confirmpass'],
             'role' => $data['role'] ?? 'Guest',
             'otp_code' => $data['otp_code'],
             'otp_expiry' => $data['otp_expiry'],
-            'email' => $email
+            'tenant_id' => $tenantId
         ]);
     }
 
@@ -228,7 +235,9 @@ class AuthController extends Controller
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
-                die("CSRF token validation failed.");
+                $error = "Your session expired. Please try again.";
+                $this->view('auth/verify-otp', ['error' => $error]);
+                return;
             }
             $email = trim($_SESSION['temp_email'] ?? '');
             
@@ -315,7 +324,9 @@ class AuthController extends Controller
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
-                die("CSRF token validation failed.");
+                $error = "Your session expired. Please try again.";
+                $this->view('auth/forgot-password', ['error' => $error]);
+                return;
             }
             $email = $_POST['email'] ?? '';
             $user = $this->userModel->findByEmail($email);
@@ -352,7 +363,9 @@ class AuthController extends Controller
         }
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
-                die("CSRF token validation failed.");
+                $error = "Your session expired. Please try again.";
+                $this->view('auth/change-registration-email', ['error' => $error]);
+                return;
             }
             $password = $_POST['password'] ?? '';
             $confirmpass = $_POST['confirmpass'] ?? '';
@@ -385,7 +398,9 @@ class AuthController extends Controller
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!Security::validateCsrf($_POST['csrf_token'] ?? '')) {
-                die("CSRF token validation failed.");
+                $error = "Your session expired. Please submit the form again.";
+                $this->view('auth/register', ['error' => $error, 'data' => $postedData]);
+                return;
             }
 
             $newEmail = $_POST['email'] ?? '';

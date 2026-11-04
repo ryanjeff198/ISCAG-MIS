@@ -862,6 +862,13 @@ body {
             phoneInput.focus();
             return false;
           }
+          if (confirmInput && passwordInput && confirmInput.value !== passwordInput.value) {
+            e.preventDefault();
+            confirmError.textContent = 'Passwords do not match';
+            confirmInput.style.borderColor = '#dc3545';
+            confirmInput.focus();
+            return false;
+          }
           if (isSubmitting) {
             e.preventDefault();
             return false;
@@ -869,10 +876,23 @@ body {
           isSubmitting = true;
           const submitBtn = document.getElementById('registerBtn');
           if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = '0.7';
-            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.style.pointerEvents = 'none';
+            submitBtn.style.opacity = '0.75';
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="width: 1rem; height: 1rem; vertical-align: -0.125em;"></span>Processing...';
+            setTimeout(function() {
+              submitBtn.disabled = true;
+            }, 100);
+          }
+        });
+
+        window.addEventListener('pageshow', function() {
+          isSubmitting = false;
+          const submitBtn = document.getElementById('registerBtn');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.pointerEvents = '';
+            submitBtn.style.opacity = '';
+            submitBtn.innerHTML = 'Create Account';
           }
         });
       }

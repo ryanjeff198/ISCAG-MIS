@@ -83,7 +83,7 @@ class User
         }
 
         $placeholders = implode(',', array_fill(0, count($equivalents), '?'));
-        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE contactnum IN ($placeholders)";
+        $sql = "SELECT COUNT(*) FROM {$this->table} WHERE contactnum IN ($placeholders) AND is_verified = 1";
         $params = $equivalents;
 
         if ($excludeUserId !== null) {
