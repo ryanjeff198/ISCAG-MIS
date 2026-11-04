@@ -1217,10 +1217,13 @@ class UserController extends Controller
         $fname = trim($input['fname'] ?? '');
         $lname = trim($input['lname'] ?? '');
         $adoptedName = trim($input['adopted_name'] ?? '');
-        $convDate = $input['conversion_date'] ?? date('Y-m-d');
+        if ($adoptedName === '') {
+            $adoptedName = 'To Be Assigned';
+        }
+        $convDate = !empty($input['conversion_date']) ? $input['conversion_date'] : date('Y-m-d');
 
-        if (empty($fname) || empty($lname) || empty($adoptedName)) {
-            echo json_encode(['success' => false, 'message' => 'First name, last name, and adopted Muslim name are required.']);
+        if (empty($fname) || empty($lname)) {
+            echo json_encode(['success' => false, 'message' => 'First name and last name are required.']);
             return;
         }
 

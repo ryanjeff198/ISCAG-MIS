@@ -1050,18 +1050,6 @@ foreach ($history as $req) {
               </div>
             </div>
 
-            <div class="section-divider" data-label="Conversion Details"></div>
-            <div class="form-grid cols-2">
-              <div>
-                <label class="form-label">Adopted Muslim Name <span class="required">*</span></label>
-                <input type="text" name="adopted_name" class="form-control" placeholder="Enter your chosen Muslim name" required />
-              </div>
-              <div>
-                <label class="form-label">Date of Conversion <span class="required">*</span></label>
-                <input type="date" name="conversion_date" class="form-control" value="<?= date('Y-m-d') ?>" required />
-              </div>
-            </div>
-
             <div class="section-divider" data-label="Former Religion"></div>
             <div class="form-grid cols-2">
               <div>
@@ -1504,8 +1492,8 @@ foreach ($history as $req) {
       payload.age = calcedAge;
     }
 
-    if (!payload.fname || !payload.lname || !payload.adopted_name) {
-      showToast('Please complete required fields: Name and Adopted Muslim Name.', '#e67e22');
+    if (!payload.fname || !payload.lname) {
+      showToast('Please complete required fields: First Name and Last Name.', '#e67e22');
       return;
     }
 
