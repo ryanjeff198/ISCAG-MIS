@@ -902,49 +902,6 @@ foreach ($history as $req) {
               </div>
             </div>
 
-            <!-- Documents Required (Bullet points - NO CHECKMARKS or EMOJIS) -->
-            <div class="conversion-checklist-box">
-              <div class="hub-card-title" style="margin-bottom:14px;">
-                <span>
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                  Documents Required on Ceremony
-                </span>
-                <span style="font-size:0.75rem; font-weight:700; color:#6b7280;">Bring on Day</span>
-              </div>
-              
-              <div class="conversion-checklist-item">
-                <div class="conversion-bullet-dot"></div>
-                <div>
-                  <strong>Valid Government-Issued ID</strong>
-                  <p>Present one original government ID (Philippine Passport, Driver's License, or National ID) along with 2 photocopies.</p>
-                </div>
-              </div>
-
-              <div class="conversion-checklist-item">
-                <div class="conversion-bullet-dot"></div>
-                <div>
-                  <strong>Modest Male Islamic Attire</strong>
-                  <p>Clean, modest attire (long pants with sleeved shirt or traditional thobe) suitable for mosque presence and prayer.</p>
-                </div>
-              </div>
-
-              <div class="conversion-checklist-item">
-                <div class="conversion-bullet-dot"></div>
-                <div>
-                  <strong>Two (2) Muslim Male Witnesses</strong>
-                  <p>If you do not have personal witnesses, ISCAG Da'wah officers will be honored to act as official witnesses for you.</p>
-                </div>
-              </div>
-
-              <div class="conversion-checklist-item">
-                <div class="conversion-bullet-dot"></div>
-                <div>
-                  <strong>Certificate Fee Processing</strong>
-                  <p>The Certificate of Conversion to Islam (OCRG Form No. 104) is issued upon completion of testimony verification.</p>
-                </div>
-              </div>
-            </div>
-
             <!-- Male Da'wah Office Assistance Desk -->
             <div class="conversion-office-desk-card">
               <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:#b45309; margin-bottom:4px;">
