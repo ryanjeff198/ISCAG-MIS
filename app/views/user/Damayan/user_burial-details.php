@@ -1825,7 +1825,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                         <div class="type-selector-grid">
                             <div class="type-option-card selected" id="opt-type-register" onclick="selectCertFunction('register')">
                                 <div class="type-option-title">
-                                    <input type="radio" name="cert_function_radio" value="register" checked style="accent-color:var(--primary);" />
+                                    <input type="radio" name="cert_function_radio" value="register" checked onchange="selectCertFunction('register')" style="accent-color:var(--primary); cursor:pointer;" />
                                     Register Certificate
                                 </div>
                                 <div class="type-option-desc">
@@ -1834,7 +1834,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                             </div>
                             <div class="type-option-card" id="opt-type-copy" onclick="selectCertFunction('copy')">
                                 <div class="type-option-title">
-                                    <input type="radio" name="cert_function_radio" value="copy" style="accent-color:var(--primary);" />
+                                    <input type="radio" name="cert_function_radio" value="copy" onchange="selectCertFunction('copy')" style="accent-color:var(--primary); cursor:pointer;" />
                                     Additional Certificate Copy Request
                                 </div>
                                 <div class="type-option-desc">
@@ -2117,6 +2117,7 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
     let regCertLookupTimeout = null;
     let isSubmittingBurial = false;
     let isSubmittingResp = false;
+    let lastSubmittedRefId = null;
 
     function escapeHtml(str) {
         if (!str) return '';
@@ -2155,7 +2156,11 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 const r = copyCard.querySelector('input[type="radio"]');
                 if (r) r.checked = true;
             }
-            if (regCard) regCard.classList.remove('selected');
+            if (regCard) {
+                regCard.classList.remove('selected');
+                const r = regCard.querySelector('input[type="radio"]');
+                if (r) r.checked = false;
+            }
 
             // Show ONLY Existing Certificate Details & Purpose of Request + Requester
             if (copyContainer) copyContainer.style.display = 'block';
@@ -2192,7 +2197,11 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
                 const r = regCard.querySelector('input[type="radio"]');
                 if (r) r.checked = true;
             }
-            if (copyCard) copyCard.classList.remove('selected');
+            if (copyCard) {
+                copyCard.classList.remove('selected');
+                const r = copyCard.querySelector('input[type="radio"]');
+                if (r) r.checked = false;
+            }
 
             // Show Registration Deceased inputs + Requester
             if (copyContainer) copyContainer.style.display = 'none';
@@ -2370,7 +2379,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
         return isBlur ? (alphanumOnly.length >= 5) : false;
     }
 
-    let regCertLookupTimeout = null;
     function debouncedCheckRegCert(val) {
         clearTimeout(regCertLookupTimeout);
         regCertLookupTimeout = setTimeout(() => {
@@ -2958,7 +2966,6 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
     }
 
     // ── Submit Additional Requirements Response via AJAX ──
-    let isSubmittingResp = false;
     async function submitRequirementsResponse(event) {
         event.preventDefault();
         if (isSubmittingResp) {
