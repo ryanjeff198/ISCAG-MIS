@@ -2882,20 +2882,69 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             }
 
             if (data.success) {
-                const toast = document.getElementById('burial-toast');
-                const ref = data.ref_id || 'Submitted';
-                const successTitle = (certAction === 'copy') ? 'Copy Request Submitted!' : 'Death Certificate Registration Submitted!';
-                toast.innerHTML = '<strong>' + successTitle + '</strong><br>Reference ID: <code>#' + ref + '</code><br><span style="font-size:0.8rem;opacity:0.9;">Opening tracking details...</span>';
-                toast.style.display = 'block';
+                const ref = data.ref_id || 'SUBMITTED';
+                lastSubmittedRefId = ref;
 
-                setTimeout(() => {
-                    window.location.href = '<?= url("/user/services/burial-details") ?>?id=' + encodeURIComponent(ref);
-                    setTimeout(() => {
-                        isSubmittingBurial = false;
-                        btnSubmit.disabled = false;
-                        btnSubmit.innerHTML = originalText;
-                    }, 6000);
-                }, 1400);
+                // Re-enable submit button
+                isSubmittingBurial = false;
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = originalText;
+
+                // Extract submitted values to populate official claiming slip
+                const decName = (certAction === 'copy')
+                    ? (document.getElementById('copy-deceased-name')?.value.trim() || 'Record on File')
+                    : ((document.getElementById('deceased-first-name')?.value.trim() || '') + ' ' + (document.getElementById('deceased-last-name')?.value.trim() || '')).trim();
+                const dod = (certAction === 'copy')
+                    ? (document.getElementById('copy-deceased-dod')?.value || 'On File')
+                    : (document.getElementById('deceased-dod')?.value || '—');
+                const pod = (certAction === 'copy')
+                    ? 'On File'
+                    : (document.getElementById('deceased-pod')?.value.trim() || 'ISCAG Area');
+                const reqName = document.getElementById('informant-name')?.value.trim() || 'Applicant';
+                const reqRel = document.getElementById('informant-rel')?.value || 'Relative';
+                const reqPhone = informantPhone || 'On File';
+
+                // Populate Slip Fields
+                const slipRef = document.getElementById('slip-ref-num-val');
+                if (slipRef) slipRef.textContent = '#' + ref;
+                const slipDec = document.getElementById('slip-deceased-name-val');
+                if (slipDec) slipDec.innerHTML = '<strong>' + escapeHtml(decName) + '</strong>';
+                const slipDod = document.getElementById('slip-dod-val');
+                if (slipDod) slipDod.textContent = dod;
+                const slipPod = document.getElementById('slip-pod-val');
+                if (slipPod) slipPod.textContent = pod;
+                const slipReg = document.getElementById('slip-reg-no-val');
+                if (slipReg) slipReg.innerHTML = '<strong>' + escapeHtml(regCertNo || 'Under Department Processing') + '</strong>';
+                const slipRegDate = document.getElementById('slip-reg-date-val');
+                if (slipRegDate) slipRegDate.textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                const slipStatus = document.getElementById('slip-status-val');
+                if (slipStatus) slipStatus.innerHTML = '<strong>Request Received</strong>';
+                const slipClaimant = document.getElementById('slip-claimant-name-val');
+                if (slipClaimant) slipClaimant.innerHTML = '<strong>' + escapeHtml(reqName) + '</strong>';
+                const slipRel = document.getElementById('slip-relationship-val');
+                if (slipRel) slipRel.textContent = reqRel;
+                const slipContact = document.getElementById('slip-contact-val');
+                if (slipContact) slipContact.textContent = reqPhone;
+                const slipSig = document.getElementById('slip-sig-claimant-val');
+                if (slipSig) slipSig.textContent = reqName;
+
+                // Show Success Alert Banner inside Slip Modal
+                const banner = document.getElementById('slip-success-banner');
+                if (banner) banner.style.display = 'block';
+                const successTitle = (certAction === 'copy') ? 'Copy Request Submitted Successfully!' : 'Death Certificate Registration Submitted Successfully!';
+                const bannerTitle = document.getElementById('slip-success-title');
+                if (bannerTitle) bannerTitle.textContent = successTitle;
+
+                // Display Claiming Slip Modal immediately
+                openClaimingSlipModal();
+
+                // Optional Toast Feedback
+                const toast = document.getElementById('burial-toast');
+                if (toast) {
+                    toast.innerHTML = '<strong>' + successTitle + '</strong><br>Reference ID: <code>#' + ref + '</code><br><span style="font-size:0.8rem;opacity:0.9;">Official request slip generated.</span>';
+                    toast.style.display = 'block';
+                    setTimeout(() => { toast.style.display = 'none'; }, 4000);
+                }
             } else {
                 throw new Error(data.message || 'Failed to submit request.');
             }
@@ -2978,6 +3027,14 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             modal.style.display = 'none';
             document.body.classList.remove('slip-modal-active', 'printing-slip');
         }
+        if (lastSubmittedRefId) {
+            window.location.href = '<?= url("/user/services/burial-details") ?>?id=' + encodeURIComponent(lastSubmittedRefId);
+        }
+    }
+
+    function closeClaimingSlipAndGoTracking() {
+        closeClaimingSlipModal();
+    }
     }
 
 function triggerClaimingSlipPrint() {
@@ -3087,6 +3144,29 @@ function triggerClaimingSlipPrint() {
             </div>
         </div>
         <div class="slip-modal-body">
+            <!-- Success Alert Banner on Submission -->
+            <div id="slip-success-banner" style="display:none; background:#ecfdf5; border:1.5px solid #10b981; border-radius:12px; padding:16px 20px; margin-bottom:20px; box-shadow:0 4px 12px rgba(16,185,129,0.15);">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#d1fae5; display:flex; align-items:center; justify-content:center; color:#059669; flex-shrink:0;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                        <div>
+                            <div style="font-weight:800; font-size:1rem; color:#065f46;" id="slip-success-title">Death Certificate Request Submitted!</div>
+                            <div style="font-size:0.83rem; color:#047857;">Your official request slip is ready below. Please print or save this slip for claiming at the Damayan counter.</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button type="button" class="btn-slip-print" onclick="triggerClaimingSlipPrint()" style="background:#059669; color:#fff; border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.82rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                            Print / Save Slip
+                        </button>
+                        <button type="button" onclick="closeClaimingSlipAndGoTracking()" style="background:#1f2937; color:#fff; border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.82rem; cursor:pointer;">
+                            View Case Details →
+                        </button>
+                    </div>
+                </div>
+            </div>
             <div class="slip-wrapper" id="claiming-slip-sheet">
                 <div class="slip-top-border"></div>
                 
@@ -3100,7 +3180,7 @@ function triggerClaimingSlipPrint() {
                     </div>
                     <div class="slip-ref-badge">
                         <div class="slip-ref-label">Claiming Reference</div>
-                        <div class="slip-ref-num">#<?= htmlspecialchars($appId) ?></div>
+                        <div class="slip-ref-num" id="slip-ref-num-val">#<?= htmlspecialchars($appId) ?></div>
                     </div>
                 </div>
 
@@ -3143,27 +3223,27 @@ function triggerClaimingSlipPrint() {
                 <table class="slip-data-table">
                     <tr>
                         <td class="label-cell">Deceased Full Name</td>
-                        <td class="val-cell"><strong><?= htmlspecialchars($deceasedName) ?></strong></td>
+                        <td class="val-cell" id="slip-deceased-name-val"><strong><?= htmlspecialchars($deceasedName) ?></strong></td>
                     </tr>
                     <tr>
                         <td class="label-cell">Date of Death</td>
-                        <td class="val-cell"><?= htmlspecialchars($dateOfDeath) ?></td>
+                        <td class="val-cell" id="slip-dod-val"><?= htmlspecialchars($dateOfDeath) ?></td>
                     </tr>
                     <tr>
                         <td class="label-cell">Place of Death</td>
-                        <td class="val-cell"><?= htmlspecialchars($placeOfDeath) ?></td>
+                        <td class="val-cell" id="slip-pod-val"><?= htmlspecialchars($placeOfDeath) ?></td>
                     </tr>
                     <tr>
                         <td class="label-cell">LCRO Registry Number</td>
-                        <td class="val-cell"><strong><?= htmlspecialchars(($activeBurial['death_cert_registry_no'] ?? '') ?: 'Under Department Processing') ?></strong></td>
+                        <td class="val-cell" id="slip-reg-no-val"><strong><?= htmlspecialchars(($activeBurial['death_cert_registry_no'] ?? '') ?: 'Under Department Processing') ?></strong></td>
                     </tr>
                     <tr>
                         <td class="label-cell">Registration Date</td>
-                        <td class="val-cell"><?= !empty($activeBurial['death_cert_registered_date']) ? date('F d, Y', strtotime($activeBurial['death_cert_registered_date'])) : 'Pending Registration' ?></td>
+                        <td class="val-cell" id="slip-reg-date-val"><?= !empty($activeBurial['death_cert_registered_date']) ? date('F d, Y', strtotime($activeBurial['death_cert_registered_date'])) : 'Pending Registration' ?></td>
                     </tr>
                     <tr>
                         <td class="label-cell">Current Processing Status</td>
-                        <td class="val-cell"><strong><?= htmlspecialchars($dcStatus) ?></strong></td>
+                        <td class="val-cell" id="slip-status-val"><strong><?= htmlspecialchars($dcStatus) ?></strong></td>
                     </tr>
                 </table>
 
@@ -3171,21 +3251,21 @@ function triggerClaimingSlipPrint() {
                 <table class="slip-data-table">
                     <tr>
                         <td class="label-cell">Authorized Claimant / Representative</td>
-                        <td class="val-cell"><strong><?= htmlspecialchars($requesterName) ?></strong></td>
+                        <td class="val-cell" id="slip-claimant-name-val"><strong><?= htmlspecialchars($requesterName) ?></strong></td>
                     </tr>
                     <tr>
                         <td class="label-cell">Relationship to Deceased</td>
-                        <td class="val-cell"><?= htmlspecialchars($relationship) ?></td>
+                        <td class="val-cell" id="slip-relationship-val"><?= htmlspecialchars($relationship) ?></td>
                     </tr>
                     <tr>
                         <td class="label-cell">Contact Number</td>
-                        <td class="val-cell"><?= htmlspecialchars($activeBurial['informant_contact'] ?? ($userPhone ?: 'On File')) ?></td>
+                        <td class="val-cell" id="slip-contact-val"><?= htmlspecialchars($activeBurial['informant_contact'] ?? ($userPhone ?: 'On File')) ?></td>
                     </tr>
                 </table>
 
                 <div class="slip-sig-row">
                     <div class="slip-sig-box">
-                        <div class="slip-sig-line"><?= htmlspecialchars($requesterName) ?></div>
+                        <div class="slip-sig-line" id="slip-sig-claimant-val"><?= htmlspecialchars($requesterName) ?></div>
                         <div class="slip-sig-caption">Signature of Claimant over Printed Name<br>(Sign upon physical receipt)</div>
                     </div>
                     <div class="slip-sig-box">

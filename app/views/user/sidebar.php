@@ -507,15 +507,9 @@ if (!empty($_SESSION['user_id'])) {
                         if (modal) {
                             modal.classList.add('show');
                         }
-                    } else if (data.role === 'Tenant' && sessionUser.role === 'Guest') {
-                        const syncKey = 'mis_role_synced_' + (sessionUser.id || 'default') + '_' + data.role;
-                        if (!sessionStorage.getItem(syncKey)) {
-                            sessionStorage.setItem(syncKey, 'true');
-                            sessionUser.role = data.role;
-                            window.location.reload();
-                        } else {
-                            sessionUser.role = data.role;
-                        }
+                    } else if (data.role && data.role !== sessionUser.role) {
+                        sessionUser.role = data.role;
+                        applySidebarLocks();
                     }
                 })
                 .catch(err => console.warn('Status check failed:', err));

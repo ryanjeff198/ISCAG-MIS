@@ -315,6 +315,24 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
     .burial-wrapper{padding:20px;}
     .card{box-shadow:none;border:1px solid #ccc;}
   }
+  @keyframes spinner-border {
+    to { transform: rotate(360deg); }
+  }
+  .spinner-border {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    vertical-align: -0.125em;
+    border: 0.2em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border .75s linear infinite;
+  }
+  .spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+    border-width: 0.15em;
+  }
 </style>
 </head>
 <body>
@@ -1261,6 +1279,11 @@ async function handleDashPurposeSubmit(event) {
   }
 
   isSubmittingDashPurpose = true;
+  const submitBtn = document.getElementById('dash-btn-submit-purpose');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Proceeding...';
+  }
   form.submit();
   return true;
 }
