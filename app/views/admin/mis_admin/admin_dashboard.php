@@ -335,7 +335,7 @@
                 </div>
                 <div class="dept-stat-row">
                   <span class="dept-stat-label">Maintenance</span>
-                  <span class="dept-stat-val"><?= $pendingMaintenance ?> pending</span>
+                  <span class="dept-stat-val"><?= $deptMetrics['apartments']['maintenance'] ?> total (<?= $pendingMaintenance ?> pending)</span>
                 </div>
                 <div class="dept-stat-row">
                   <span class="dept-stat-label">Collected Revenue</span>
@@ -345,7 +345,8 @@
               <div class="dept-actions">
                 <a href="<?= url('/admin/mis_admin/apartment_confirmation') ?>" class="dept-btn">Applications</a>
                 <a href="<?= url('/admin/mis_admin/apartment_records') ?>" class="dept-btn">Units</a>
-                <a href="<?= url('/admin/mis_admin/maintenance') ?>" class="dept-btn">Maintenance</a>
+                <a href="<?= url('/admin/mis_admin/maintenance') ?>" class="dept-btn">Maint. Requests</a>
+                <a href="<?= url('/admin/mis_admin/reports?dept=Maintenance') ?>" class="dept-btn">Maint. Report</a>
               </div>
             </div>
 
@@ -496,6 +497,61 @@
                     <td>
                       <a href="<?= url($req['action_url']) ?>" class="card-badge" style="text-decoration:none;">Review</a>
                     </td>
+                  </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ═══════ SECTION 3B: MAINTENANCE REQUESTS & REPORTS ═══════ -->
+        <div class="db-section" id="maintenance-overview">
+          <div class="db-section-head">
+            <div>
+              <div class="db-section-title">Maintenance Requests &amp; Reports</div>
+              <div class="db-section-sub">Track facility &amp; unit maintenance tickets, submit new requests, or generate printable reports</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <a href="<?= url('/admin/mis_admin/maintenance?new=1') ?>" class="dept-btn" style="background:var(--primary);color:#fff;border-color:var(--primary);">+ New Request</a>
+              <a href="<?= url('/admin/mis_admin/maintenance') ?>" class="dept-btn">All Maintenance Requests</a>
+              <a href="<?= url('/admin/mis_admin/reports?dept=Maintenance') ?>" class="dept-btn">Maintenance Report →</a>
+            </div>
+          </div>
+          <div class="card" style="padding:0; overflow:hidden;">
+            <table class="mis-table">
+              <thead>
+                <tr>
+                  <th>Ref #</th>
+                  <th>Category</th>
+                  <th>Tenant / Reporter</th>
+                  <th>Description</th>
+                  <th>Date Reported</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($recentMaintenance)): ?>
+                  <tr>
+                    <td colspan="7" style="text-align:center;padding:28px;color:var(--text-muted);">
+                      No pending or active maintenance requests.
+                      <a href="<?= url('/admin/mis_admin/maintenance?new=1') ?>" style="color:var(--primary);font-weight:700;margin-left:6px;text-decoration:none;">Log a Maintenance Request →</a>
+                    </td>
+                  </tr>
+                <?php else: ?>
+                  <?php foreach ($recentMaintenance as $rm):
+                    $rmStatus = $rm['status'] ?? 'Pending';
+                    $rmClass = $rmStatus === 'Pending' ? 'badge-pending' : ($rmStatus === 'Rejected' ? 'badge-overdue' : 'badge-paid');
+                  ?>
+                  <tr>
+                    <td class="td-id">MNT-<?= (int)$rm['id'] ?></td>
+                    <td style="font-weight:700;color:var(--primary);"><?= htmlspecialchars($rm['category'] ?? 'General') ?></td>
+                    <td style="font-weight:600;"><?= htmlspecialchars(trim(($rm['first_name'] ?? '') . ' ' . ($rm['last_name'] ?? '')) ?: 'Facility Admin') ?></td>
+                    <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= htmlspecialchars($rm['description'] ?? '') ?></td>
+                    <td><?= date('M d, Y', strtotime($rm['created_at'] ?? 'now')) ?></td>
+                    <td><span class="badge-status <?= $rmClass ?>"><?= htmlspecialchars($rmStatus) ?></span></td>
+                    <td><a href="<?= url('/admin/mis_admin/maintenance?id=' . (int)$rm['id']) ?>" class="card-badge" style="text-decoration:none;">Review</a></td>
                   </tr>
                   <?php endforeach; ?>
                 <?php endif; ?>

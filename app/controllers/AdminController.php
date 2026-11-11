@@ -65,6 +65,19 @@ class AdminController extends Controller
         } catch (Throwable $e) {}
 
         try {
+            $maintRows = $db->query("
+                SELECT m.id as ref_id, 'Apartments' as department, CONCAT('Maintenance: ', m.category) as request_type,
+                       CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
+                       u.email, m.created_at as submitted_at, m.status,
+                       CONCAT('/admin/mis_admin/maintenance?id=', m.id) as action_url
+                FROM tenant_maintenance m
+                LEFT JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+                ORDER BY m.id DESC LIMIT 4
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $unifiedRequests = array_merge($unifiedRequests, $maintRows);
+        } catch (Throwable $e) {}
+
+        try {
             $counsRows = $db->query("
                 SELECT c.id as ref_id, 'Da\'wah' as department, 'Counseling Consultation' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
@@ -1668,6 +1681,32 @@ class AdminController extends Controller
             $masterReportItems = array_merge($masterReportItems, $fcRows);
         } catch (Throwable $e) {}
 
+        // Maintenance Reports & Requests
+        $maintenanceReports = [];
+        $tenantMaintStatus = [];
+        try {
+            require_once BASE_PATH . '/app/models/Maintenance.php';
+            $maintModel = new Maintenance();
+            $maintenanceReports = $maintModel->getAll();
+            foreach ($maintenanceReports as $mr) {
+                $tid = (int)($mr['tenant_id'] ?? 0);
+                if ($tid > 0 && in_array($mr['status'], ['Pending', 'In Progress'], true) && !isset($tenantMaintStatus[$tid])) {
+                    $tenantMaintStatus[$tid] = $mr['status'];
+                }
+                $unitLabel = !empty($mr['room_number']) ? trim(($mr['building'] ?? '') . '-' . $mr['room_number'], '-') . ' • ' : '';
+                $masterReportItems[] = [
+                    'id' => 'MNT-' . $mr['id'],
+                    'department' => 'Maintenance',
+                    'service_type' => 'Maintenance (' . ($mr['category'] ?? 'General') . ')',
+                    'subject_name' => trim(($mr['first_name'] ?? '') . ' ' . ($mr['last_name'] ?? '')) ?: 'Facility Admin',
+                    'contact' => $mr['email'] ?? ($mr['contactnum'] ?? '—'),
+                    'report_date' => !empty($mr['created_at']) ? date('Y-m-d', strtotime($mr['created_at'])) : date('Y-m-d'),
+                    'status' => $mr['status'] ?? 'Pending',
+                    'detail_info' => $unitLabel . mb_strimwidth((string)($mr['description'] ?? ''), 0, 80, '...')
+                ];
+            }
+        } catch (Throwable $e) {}
+
         // Billing
         try {
             $billRows = $db->query("
@@ -1716,6 +1755,8 @@ class AdminController extends Controller
             'counselingCount' => $counselingCount,
             'marriageCount' => $marriageCount,
             'conversionCount' => $conversionCount,
+            'maintenanceReports' => $maintenanceReports,
+            'tenantMaintStatus' => $tenantMaintStatus,
             'masterReportItems' => $masterReportItems,
             'recentLogs' => $logs,
             'burialLogs' => $burialRequests,
@@ -6790,6 +6831,7 @@ class AdminController extends Controller
         require_once BASE_PATH . '/app/models/Maintenance.php';
         $model = new Maintenance();
         $requests = $model->getAll();
+        $tenants = $model->getTenantsWithUnits();
         
         $view = 'admin/mis_admin/maintenance_requests';
         if ($_SESSION['role'] === 'Staff_Tenant') {
@@ -6798,8 +6840,92 @@ class AdminController extends Controller
         
         $this->view($view, [
             'active_page' => 'maintenance',
-            'requests' => $requests
+            'requests' => $requests,
+            'tenants' => $tenants
         ]);
+    }
+
+    public function createMaintenance() {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        $redirect = ($_SESSION['role'] === 'Staff_Tenant') ? '/admin/apartment/maintenance' : '/admin/mis_admin/maintenance';
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . url($redirect));
+            return;
+        }
+
+        require_once BASE_PATH . '/app/models/Maintenance.php';
+        require_once BASE_PATH . '/app/models/Notification.php';
+        $model = new Maintenance();
+
+        $tenantId = (int)($_POST['tenant_id'] ?? ($_SESSION['user_id'] ?? 0));
+        if ($tenantId <= 0) {
+            $tenantId = (int)($_SESSION['user_id'] ?? 0);
+        }
+
+        $category = trim($_POST['category'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $status = in_array($_POST['status'] ?? 'Pending', ['Pending', 'In Progress'], true) ? $_POST['status'] : 'Pending';
+        $remarks = trim($_POST['admin_remarks'] ?? '');
+        if ($remarks === '' && $status === 'In Progress') {
+            $remarks = 'Logged and scheduled by Administration.';
+        }
+
+        if ($tenantId <= 0 || $category === '' || $description === '') {
+            $_SESSION['maint_flash_error'] = 'Account/resident, category, and description are required to file a maintenance request.';
+            header('Location: ' . url($redirect));
+            return;
+        }
+
+        $db = getDbConnection();
+        $acctStmt = $db->prepare("SELECT tenant_id FROM tenant_accounts WHERE tenant_id = ? LIMIT 1");
+        $acctStmt->execute([$tenantId]);
+        if (!$acctStmt->fetchColumn()) {
+            $_SESSION['maint_flash_error'] = 'Selected resident/reporter account does not exist.';
+            header('Location: ' . url($redirect));
+            return;
+        }
+
+        $attachment = null;
+        if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+            $ext = strtolower(pathinfo($_FILES['attachment']['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            if (in_array($ext, $allowed, true)) {
+                $fileName = "maintenance_{$tenantId}_" . time() . "_" . uniqid() . "." . $ext;
+                $relPath = "uploads/maintenance/" . $fileName;
+                $fullPath = BASE_PATH . "/public/" . $relPath;
+                if (!is_dir(dirname($fullPath))) {
+                    mkdir(dirname($fullPath), 0777, true);
+                }
+                if (move_uploaded_file($_FILES['attachment']['tmp_name'], $fullPath)) {
+                    $attachment = $relPath;
+                }
+            }
+        }
+
+        $newId = $model->create($tenantId, [
+            'category' => $category,
+            'description' => $description,
+            'attachment' => $attachment,
+            'status' => $status,
+            'admin_remarks' => $remarks !== '' ? $remarks : null
+        ]);
+
+        if ($newId) {
+            if ($status === 'In Progress') {
+                $model->setUnitStatus($tenantId, 'Maintenance');
+            }
+            if ($tenantId !== (int)($_SESSION['user_id'] ?? 0)) {
+                $notif = new Notification();
+                $notif->create($tenantId, 'Maintenance Request Logged', "A maintenance request ({$category}) has been logged for your account/unit.", 'info');
+            }
+            $this->logAudit('MAINTENANCE', 'CREATE_MAINTENANCE', "Admin created maintenance request ID: {$newId} (Tenant ID: {$tenantId}, Category: {$category}, Status: {$status})");
+            $_SESSION['maint_flash_success'] = "Maintenance request #{$newId} has been recorded.";
+        } else {
+            $_SESSION['maint_flash_error'] = 'Failed to save maintenance request. Please try again.';
+        }
+
+        header('Location: ' . url($redirect));
     }
 
     public function approveMaintenance() {

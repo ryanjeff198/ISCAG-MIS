@@ -31,20 +31,31 @@ class Maintenance {
     }
 
     public function create($tenantId, $data) {
-        $sql = "INSERT INTO tenant_maintenance (tenant_id, category, description, attachment) VALUES (:tid, :cat, :desc, :att)";
+        $status = $data['status'] ?? 'Pending';
+        $remarks = $data['admin_remarks'] ?? null;
+        $sql = "INSERT INTO tenant_maintenance (tenant_id, category, description, attachment, status, admin_remarks) VALUES (:tid, :cat, :desc, :att, :status, :remarks)";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            'tid'  => $tenantId,
-            'cat'  => $data['category'],
-            'desc' => $data['description'],
-            'att'  => $data['attachment'] ?? null
+        $ok = $stmt->execute([
+            'tid'     => $tenantId,
+            'cat'     => $data['category'],
+            'desc'    => $data['description'],
+            'att'     => $data['attachment'] ?? null,
+            'status'  => $status,
+            'remarks' => $remarks
         ]);
+        return $ok ? (int)$this->db->lastInsertId() : false;
     }
 
     public function getAllPending() {
-        $sql = "SELECT m.*, u.first_name, u.last_name, u.email, u.contactnum 
+        $sql = "SELECT m.*, u.first_name, u.last_name, u.email, u.contactnum,
+                       au.building, au.room_number
                 FROM tenant_maintenance m
                 JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+                LEFT JOIN (
+                    SELECT tenant_id, MAX(building) AS building, MAX(room_number) AS room_number
+                    FROM apartment_units
+                    GROUP BY tenant_id
+                ) au ON m.tenant_id = au.tenant_id
                 WHERE m.status = 'Pending'
                 ORDER BY m.created_at DESC";
         $stmt = $this->db->query($sql);
@@ -52,9 +63,15 @@ class Maintenance {
     }
 
     public function getAll() {
-        $sql = "SELECT m.*, u.first_name, u.last_name, u.email, u.contactnum 
+        $sql = "SELECT m.*, u.first_name, u.last_name, u.email, u.contactnum,
+                       au.building, au.room_number
                 FROM tenant_maintenance m
                 JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+                LEFT JOIN (
+                    SELECT tenant_id, MAX(building) AS building, MAX(room_number) AS room_number
+                    FROM apartment_units
+                    GROUP BY tenant_id
+                ) au ON m.tenant_id = au.tenant_id
                 ORDER BY m.created_at DESC";
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -78,13 +95,37 @@ class Maintenance {
     }
 
     public function getById($id) {
-        $sql = "SELECT m.*, u.first_name, u.last_name, u.email, u.contactnum 
+        $sql = "SELECT m.*, u.first_name, u.last_name, u.email, u.contactnum,
+                       au.building, au.room_number
                 FROM tenant_maintenance m
                 JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+                LEFT JOIN (
+                    SELECT tenant_id, MAX(building) AS building, MAX(room_number) AS room_number
+                    FROM apartment_units
+                    GROUP BY tenant_id
+                ) au ON m.tenant_id = au.tenant_id
                 WHERE m.id = :id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getTenantsWithUnits(): array {
+        $sql = "SELECT u.tenant_id, u.first_name, u.last_name, u.role, u.email,
+                       au.building, au.room_number
+                FROM tenant_accounts u
+                LEFT JOIN (
+                    SELECT tenant_id, MAX(building) AS building, MAX(room_number) AS room_number
+                    FROM apartment_units
+                    GROUP BY tenant_id
+                ) au ON u.tenant_id = au.tenant_id
+                WHERE u.role IN ('Tenant', 'Guest', 'Admin', 'Staff_Tenant')
+                ORDER BY (au.room_number IS NULL) ASC, u.role = 'Tenant' DESC, u.first_name ASC";
+        try {
+            return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            return [];
+        }
     }
 
     /**

@@ -189,6 +189,7 @@
     .badge-dept-education { background: #fef3c7; color: #b45309; }
     .badge-dept-damayan { background: #ede9fe; color: #6d28d9; }
     .badge-dept-finance { background: #dcfce7; color: #15803d; }
+    .badge-dept-maintenance { background: #fef3c7; color: #92400e; }
 
     /* Print Header & Footer (Hidden by default) */
     .print-only {
@@ -348,6 +349,7 @@
               <select class="select-premium" id="filter-dept" onchange="applyReportFilters()">
                 <option value="all">All Departments Combined</option>
                 <option value="Apartments">Apartments Department</option>
+                <option value="Maintenance">Maintenance & Facility Repairs</option>
                 <option value="Islamic Education">Islamic Education Department</option>
                 <option value="Da'wah">Da'wah Department</option>
                 <option value="Damayan">Damayan & Funeral Services</option>
@@ -360,6 +362,7 @@
               <select class="select-premium" id="filter-status" onchange="applyReportFilters()">
                 <option value="all">All Statuses</option>
                 <option value="Pending">Pending Review</option>
+                <option value="In Progress">In Progress</option>
                 <option value="Approved">Approved / Assigned / Accepted</option>
                 <option value="Completed">Completed / Resolved</option>
                 <option value="Paid">Paid / Confirmed</option>
@@ -569,14 +572,69 @@
                 <?php if (empty($aptLeaseLogs)): ?>
                   <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">No apartment lease applications found.</td></tr>
                 <?php else: ?>
-                  <?php foreach ($aptLeaseLogs as $log): ?>
+                  <?php foreach ($aptLeaseLogs as $log):
+                    $mStat = $tenantMaintStatus[(int)($log['tenant_id'] ?? 0)] ?? 'No Active Issue';
+                    $mBadge = $mStat === 'Pending' ? 'badge-pending' : ($mStat === 'In Progress' ? 'badge-approved' : 'badge-paid');
+                  ?>
                   <tr>
                     <td style="font-weight:700;"><?= htmlspecialchars(($log['building'] ?? '') . '-' . ($log['room_number'] ?? 'Unit')) ?></td>
                     <td><?= date('M d, Y', strtotime($log['date'] ?? 'now')) ?></td>
                     <td style="font-weight:600;"><?= htmlspecialchars(($log['first_name'] ?? '') . ' ' . ($log['last_name'] ?? '')) ?></td>
                     <td><span class="badge-status badge-paid">Paid Deposit</span></td>
-                    <td><span class="badge-status badge-paid">Optimal</span></td>
+                    <td><span class="badge-status <?= $mBadge ?>"><?= htmlspecialchars($mStat) ?></span></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars(ucfirst($log['status'] ?? 'Active')) ?></span></td>
+                  </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4. MAINTENANCE REPORTS & REQUESTS -->
+        <div class="section-card" id="maintenance-special-section">
+          <div class="section-card-header">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <h3>Apartments — Maintenance Reports &amp; Requests</h3>
+              <span class="badge-dept badge-dept-maintenance"><?= count($maintenanceReports ?? []) ?> Total Requests</span>
+            </div>
+            <div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;">
+              <a href="<?= url('/admin/mis_admin/maintenance?new=1') ?>" class="btn-action" style="padding:6px 12px;font-size:0.78rem;text-decoration:none;">+ New Request</a>
+              <a href="<?= url('/admin/mis_admin/maintenance') ?>" class="btn-action primary" style="padding:6px 12px;font-size:0.78rem;text-decoration:none;">Manage Requests</a>
+            </div>
+          </div>
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Ref #</th>
+                  <th>Category</th>
+                  <th>Tenant / Reporter</th>
+                  <th>Unit / Room</th>
+                  <th>Description</th>
+                  <th>Date Reported</th>
+                  <th>Admin Remarks</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($maintenanceReports)): ?>
+                  <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No maintenance requests recorded.</td></tr>
+                <?php else: ?>
+                  <?php foreach ($maintenanceReports as $mr):
+                    $mrStatus = $mr['status'] ?? 'Pending';
+                    $mrClass = $mrStatus === 'Pending' ? 'badge-pending' : ($mrStatus === 'Rejected' ? 'badge-overdue' : 'badge-paid');
+                    $mrUnit = !empty($mr['room_number']) ? trim(($mr['building'] ?? '') . '-' . $mr['room_number'], '-') : 'General / Unassigned';
+                  ?>
+                  <tr>
+                    <td class="td-id">MNT-<?= (int)$mr['id'] ?></td>
+                    <td style="font-weight:700;color:var(--primary);"><?= htmlspecialchars($mr['category'] ?? 'General') ?></td>
+                    <td style="font-weight:600;"><?= htmlspecialchars(trim(($mr['first_name'] ?? '') . ' ' . ($mr['last_name'] ?? '')) ?: 'Facility Admin') ?></td>
+                    <td><?= htmlspecialchars($mrUnit) ?></td>
+                    <td style="max-width:260px;"><?= htmlspecialchars($mr['description'] ?? '') ?></td>
+                    <td><?= date('M d, Y', strtotime($mr['created_at'] ?? 'now')) ?></td>
+                    <td style="font-size:0.8rem;color:var(--text-muted);"><?= htmlspecialchars($mr['admin_remarks'] ?: '—') ?></td>
+                    <td><span class="badge-status <?= $mrClass ?>"><?= htmlspecialchars($mrStatus) ?></span></td>
                   </tr>
                   <?php endforeach; ?>
                 <?php endif; ?>
@@ -624,6 +682,7 @@
 
     function getDeptClass(dept) {
       const d = (dept || '').toLowerCase();
+      if (d.includes('maint')) return 'badge-dept-maintenance';
       if (d.includes('apart')) return 'badge-dept-apartments';
       if (d.includes('dawah') || d.includes("da'wah")) return 'badge-dept-dawah';
       if (d.includes('edu')) return 'badge-dept-education';
@@ -655,6 +714,7 @@
         filtered = filtered.filter(item => {
           const s = (item.status || '').toLowerCase();
           const target = status.toLowerCase();
+          if (target === 'in progress') return s.includes('progress');
           if (target === 'approved') return s.includes('approv') || s.includes('accept') || s.includes('assign') || s.includes('confirm');
           if (target === 'pending') return s.includes('pend') || s.includes('submit');
           if (target === 'completed') return s.includes('complet') || s.includes('resolv') || s.includes('releas');
@@ -694,27 +754,38 @@
       const eduSec = document.getElementById('edu-special-section');
       const damSec = document.getElementById('damayan-special-section');
       const aptSec = document.getElementById('apartment-special-section');
+      const maintSec = document.getElementById('maintenance-special-section');
 
       if (dept === 'all') {
         if (eduSec) eduSec.style.display = 'block';
         if (damSec) damSec.style.display = 'block';
         if (aptSec) aptSec.style.display = 'block';
+        if (maintSec) maintSec.style.display = 'block';
       } else if (dept.includes('Education')) {
         if (eduSec) eduSec.style.display = 'block';
         if (damSec) damSec.style.display = 'none';
         if (aptSec) aptSec.style.display = 'none';
+        if (maintSec) maintSec.style.display = 'none';
       } else if (dept.includes('Damayan')) {
         if (eduSec) eduSec.style.display = 'none';
         if (damSec) damSec.style.display = 'block';
         if (aptSec) aptSec.style.display = 'none';
+        if (maintSec) maintSec.style.display = 'none';
       } else if (dept.includes('Apart')) {
         if (eduSec) eduSec.style.display = 'none';
         if (damSec) damSec.style.display = 'none';
         if (aptSec) aptSec.style.display = 'block';
+        if (maintSec) maintSec.style.display = 'block';
+      } else if (dept.includes('Maint')) {
+        if (eduSec) eduSec.style.display = 'none';
+        if (damSec) damSec.style.display = 'none';
+        if (aptSec) aptSec.style.display = 'none';
+        if (maintSec) maintSec.style.display = 'block';
       } else {
         if (eduSec) eduSec.style.display = 'none';
         if (damSec) damSec.style.display = 'none';
         if (aptSec) aptSec.style.display = 'none';
+        if (maintSec) maintSec.style.display = 'none';
       }
     }
 
@@ -799,6 +870,14 @@
     }
 
     // Initialize
+    const initialDeptParam = new URLSearchParams(window.location.search).get('dept');
+    if (initialDeptParam) {
+      const deptSelect = document.getElementById('filter-dept');
+      if (deptSelect) {
+        const matchOpt = Array.from(deptSelect.options).find(o => o.value.toLowerCase() === initialDeptParam.toLowerCase());
+        if (matchOpt) deptSelect.value = matchOpt.value;
+      }
+    }
     applyReportFilters();
   </script>
 </body>

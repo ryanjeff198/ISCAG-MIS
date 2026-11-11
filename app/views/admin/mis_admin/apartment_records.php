@@ -24,6 +24,8 @@
           </div>
         </div>
         <div class="top-bar-actions">
+          <a href="<?= url('/admin/mis_admin/maintenance') ?>" class="btn-topbar">Maintenance Requests</a>
+          <a href="<?= url('/admin/mis_admin/reports?dept=Maintenance') ?>" class="btn-topbar">Maintenance Report</a>
           <a href="<?= url('/admin/mis_admin/apartment_confirmation') ?>" class="btn-topbar primary">Applications for Review</a>
           <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
         </div>
