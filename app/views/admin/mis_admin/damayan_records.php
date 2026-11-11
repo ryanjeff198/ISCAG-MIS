@@ -128,12 +128,34 @@
     </main>
   </div>
 
+  <!-- IN-PAGE MIS ADMIN REVIEW MODAL (stays inside MIS Admin) -->
+  <div id="damayan-review-modal" class="mis-review-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:2000;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this) closeDamayanReviewModal()">
+    <div style="background:var(--bg-card,#fff);border-radius:16px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.22);border:1px solid var(--border-color,#e2e8f0);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border-color,#e2e8f0);">
+        <div>
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--primary,#1a5632);">MIS Admin • Damayan Record Review</div>
+          <h4 id="damayan-mdl-title" style="margin:3px 0 0;font-size:1.08rem;font-weight:800;color:var(--text-main);">Record Details</h4>
+        </div>
+        <button type="button" onclick="closeDamayanReviewModal()" style="background:none;border:none;font-size:1.5rem;line-height:1;cursor:pointer;color:var(--text-muted);padding:4px 8px;" aria-label="Close modal">&times;</button>
+      </div>
+      <div id="damayan-mdl-body" style="padding:20px 22px;font-size:0.88rem;color:var(--text-main);"></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid var(--border-color,#e2e8f0);background:var(--bg-body,#f8fafc);border-radius:0 0 16px 16px;">
+        <a href="<?= url('/admin/mis_admin/reports?dept=Damayan') ?>" class="card-badge" style="text-decoration:none;padding:8px 14px;">Department Report</a>
+        <button type="button" onclick="closeDamayanReviewModal()" style="background:var(--primary,#1a5632);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     standardizePage('admin');
     const dbDamayanReqs = <?= json_encode($damayanRequests ?? [], JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const reqs = (dbDamayanReqs && dbDamayanReqs.length > 0) ? dbDamayanReqs : getRequests().filter(r => r.type === 'burial_service');
     const bills = getBilling().filter(b => b.type.toLowerCase().includes('burial'));
+
+    function escHtml(v) {
+      return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
 
     document.getElementById('s-total').textContent = reqs.length;
     document.getElementById('s-pending').textContent = reqs.filter(r => (r.status || '').toLowerCase().includes('pend') || (r.status || '').toLowerCase().includes('submit')).length;
@@ -146,16 +168,58 @@
     if (!reqs.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No burial or funeral requests found.</td></tr>';
     } else {
-      tbody.innerHTML = reqs.map(r => `<tr>
-        <td class="td-id">#${r.id}</td>
-        <td style="font-weight:600;">${r.name || 'Unknown'}</td>
+      tbody.innerHTML = reqs.map(r => `<tr data-id="${escHtml(r.id)}" data-kind="${escHtml(r.record_kind || 'burial')}">
+        <td class="td-id">${escHtml(r.ref_code || ('#' + r.id))}</td>
+        <td style="font-weight:600;">${escHtml(r.name || 'Unknown')} <div style="font-size:0.72rem;color:var(--text-muted);">${escHtml(r.service_type || 'Burial Service')}</div></td>
         <td>${formatDate(r.date)}</td>
         <td><span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
-        <td style="color:var(--text-muted);font-size:0.8rem;">${r.plot_number || 'Plot: Pending'} (${r.cemetery_pref || 'Local'})</td>
+        <td style="color:var(--text-muted);font-size:0.8rem;">${escHtml(r.plot_number || 'Plot: Pending')} (${escHtml(r.cemetery_pref || 'Local')})</td>
         <td>
-          <a href="<?= url('/admin/damayan/burial') ?>" class="card-badge" style="text-decoration:none;">Review</a>
+          <button type="button" class="card-badge" style="border:none;cursor:pointer;" onclick="openDamayanReviewModal('${escHtml(r.record_kind || 'burial')}', '${escHtml(r.id)}')">Review</button>
         </td>
       </tr>`).join('');
+    }
+
+    function openDamayanReviewModal(kind, id) {
+      const r = reqs.find(x => String(x.id) === String(id) && (!kind || String(x.record_kind || 'burial') === String(kind)))
+             || reqs.find(x => String(x.id) === String(id));
+      if (!r) return;
+
+      const refDisplay = r.ref_code || ('#' + r.id);
+      document.getElementById('damayan-mdl-title').textContent = `${refDisplay} — ${r.service_type || 'Damayan Service'}`;
+      const rows = [
+        ['Deceased / Record Name', r.name || 'Unknown'],
+        ['Service Type', r.service_type || 'Burial Service'],
+        ['Informant / Requestor', r.informant_name || '—'],
+        ['Informant Contact', r.contact || '—'],
+        ['Status', `<span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span>`],
+        ['Submitted / Reported', formatDate(r.date)]
+      ];
+      if (r.request_type) rows.push(['Request / Certificate Type', r.request_type]);
+      if (r.date_of_death) rows.push(['Date of Death', r.date_of_death]);
+      if (r.place_of_death) rows.push(['Place of Death', r.place_of_death]);
+      if (r.requested_services) rows.push(['Requested Services / Location', r.requested_services]);
+      rows.push(['Cemetery & Plot', `${r.plot_number || 'Pending'} (${r.cemetery_pref || 'Local'})`]);
+      if (r.death_cert_status) rows.push(['Certificate Status', r.death_cert_status]);
+      if (r.cemetery_plot_status) rows.push(['Plot Assignment Status', r.cemetery_plot_status]);
+      if (r.scheduled_release_date) rows.push(['Scheduled Burial / Release', r.scheduled_release_date]);
+      if (r.assigned_staff_name) rows.push(['Assigned Staff', r.assigned_staff_name]);
+      if (r.details) rows.push(['Notes / Remarks', r.details]);
+
+      document.getElementById('damayan-mdl-body').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+          ${rows.map(([k, v]) => `
+            <div style="display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px dashed var(--border-color,#e2e8f0);">
+              <span style="color:var(--text-muted);font-weight:600;min-width:155px;">${escHtml(k)}</span>
+              <span style="text-align:right;font-weight:600;word-break:break-word;">${k === 'Status' ? v : escHtml(v)}</span>
+            </div>
+          `).join('')}
+        </div>`;
+      document.getElementById('damayan-review-modal').style.display = 'flex';
+    }
+
+    function closeDamayanReviewModal() {
+      document.getElementById('damayan-review-modal').style.display = 'none';
     }
 
     // Billing
@@ -171,28 +235,15 @@
       </tr>`).join('');
     }
 
-    function approveReq(id) {
-      const all = getRequests(); const r = all.find(x => x.id === id);
-      if (r) {
-        r.status = 'approved';
-        r.updatedAt = new Date().toISOString().split('T')[0];
-        saveRequests(all);
-        addActivityEntry('Burial approved', id + ' approved by MIS Admin', 'MIS Admin', 'approve');
-        showToast('✅ ' + id + ' approved!', 'var(--success)');
-        location.reload();
+    // Auto-open review modal when navigated from MIS Admin Dashboard (?type=...&id=...)
+    (function initDamayanParams() {
+      const params = new URLSearchParams(window.location.search);
+      const qType = params.get('type') || '';
+      const qId = params.get('id');
+      if (qId) {
+        openDamayanReviewModal(qType, qId);
       }
-    }
-    function rejectReq(id) {
-      const all = getRequests(); const r = all.find(x => x.id === id);
-      if (r) {
-        r.status = 'rejected';
-        r.updatedAt = new Date().toISOString().split('T')[0];
-        saveRequests(all);
-        addActivityEntry('Burial rejected', id + ' rejected by MIS Admin', 'MIS Admin', 'reject');
-        showToast('❌ ' + id + ' rejected.', 'var(--danger)');
-        location.reload();
-      }
-    }
+    })();
   </script>
 </body>
 

@@ -378,9 +378,9 @@
                 </div>
               </div>
               <div class="dept-actions">
-                <a href="<?= url('/admin/dawah/counseling') ?>" class="dept-btn">Counseling</a>
-                <a href="<?= url('/admin/dawah/marriage') ?>" class="dept-btn">Marriage</a>
-                <a href="<?= url('/admin/dawah/conversion') ?>" class="dept-btn">Conversions</a>
+                <a href="<?= url('/admin/mis_admin/dawah_records?type=counseling') ?>" class="dept-btn">Counseling</a>
+                <a href="<?= url('/admin/mis_admin/dawah_records?type=marriage_service') ?>" class="dept-btn">Marriage</a>
+                <a href="<?= url('/admin/mis_admin/dawah_records?type=conversion') ?>" class="dept-btn">Conversions</a>
               </div>
             </div>
 
@@ -412,8 +412,8 @@
                 </div>
               </div>
               <div class="dept-actions">
-                <a href="<?= url('/admin/dawah/education') ?>" class="dept-btn">Education Portal</a>
-                <a href="<?= url('/admin/mis_admin/dawah_records') ?>" class="dept-btn">Da'wah Records</a>
+                <a href="<?= url('/admin/mis_admin/dawah_records?type=islamic_education') ?>" class="dept-btn">Enrollments</a>
+                <a href="<?= url('/admin/mis_admin/reports?dept=Islamic%20Education') ?>" class="dept-btn">Education Reports</a>
               </div>
             </div>
 
@@ -584,6 +584,7 @@
                     ['label' => 'Pending Review', 'count' => $grandPendingRequests ?? 0, 'color' => 'var(--warning)'],
                     ['label' => 'Approved / Active', 'count' => $grandApprovedRequests ?? 0, 'color' => 'var(--success)'],
                     ['label' => 'Completed / Released', 'count' => $grandCompletedRequests ?? 0, 'color' => '#6366f1'],
+                    ['label' => 'Rejected / Cancelled', 'count' => $grandRejectedRequests ?? 0, 'color' => 'var(--danger)'],
                   ];
                   $overallSum = array_sum(array_column($overallStatuses, 'count'));
                   foreach ($overallStatuses as $os):
@@ -733,6 +734,12 @@ document.addEventListener("DOMContentLoaded",function(){
     $deptMetrics['education']['completed'] ?? 0,
     $deptMetrics['damayan']['completed'] ?? 0,
   ]) ?>;
+  const deptRejected = <?= json_encode([
+    $deptMetrics['apartments']['rejected'] ?? 0,
+    $deptMetrics['dawah']['rejected'] ?? 0,
+    $deptMetrics['education']['rejected'] ?? 0,
+    $deptMetrics['damayan']['rejected'] ?? 0,
+  ]) ?>;
 
   new Chart(document.getElementById('deptBreakdownChart'), {
     type: 'bar',
@@ -741,7 +748,8 @@ document.addEventListener("DOMContentLoaded",function(){
       datasets: [
         { label: 'Pending', data: deptPending, backgroundColor: W, borderRadius: 4 },
         { label: 'Approved / Active', data: deptApproved, backgroundColor: S, borderRadius: 4 },
-        { label: 'Completed', data: deptCompleted, backgroundColor: C, borderRadius: 4 }
+        { label: 'Completed', data: deptCompleted, backgroundColor: C, borderRadius: 4 },
+        { label: 'Rejected', data: deptRejected, backgroundColor: D, borderRadius: 4 }
       ]
     },
     options: {
@@ -756,10 +764,10 @@ document.addEventListener("DOMContentLoaded",function(){
   new Chart(document.getElementById('overallStatusChart'), {
     type: 'doughnut',
     data: {
-      labels: ['Pending', 'Approved / Active', 'Completed'],
+      labels: ['Pending', 'Approved / Active', 'Completed', 'Rejected'],
       datasets: [{
-        data: [<?= (int)($grandPendingRequests ?? 0) ?>, <?= (int)($grandApprovedRequests ?? 0) ?>, <?= (int)($grandCompletedRequests ?? 0) ?>],
-        backgroundColor: [W, S, C],
+        data: [<?= (int)($grandPendingRequests ?? 0) ?>, <?= (int)($grandApprovedRequests ?? 0) ?>, <?= (int)($grandCompletedRequests ?? 0) ?>, <?= (int)($grandRejectedRequests ?? 0) ?>],
+        backgroundColor: [W, S, C, D],
         borderWidth: 0,
         hoverOffset: 8
       }]
@@ -770,13 +778,14 @@ document.addEventListener("DOMContentLoaded",function(){
   // 3. User Roles Doughnut
   const roleData = <?= json_encode(array_values($userRoleBreakdown ?? [])) ?>;
   const roleLabels = <?= json_encode(array_keys($userRoleBreakdown ?? [])) ?>;
+  const roleColorMap = {'Residents / Tenants': P, 'Guests': W, 'Staff & Admins': I};
   new Chart(document.getElementById('userRolesChart'), {
     type: 'doughnut',
     data: {
       labels: roleLabels,
       datasets: [{
         data: roleData,
-        backgroundColor: [P, W, I],
+        backgroundColor: roleLabels.map(l => roleColorMap[l] || '#94a3b8'),
         borderWidth: 0,
         hoverOffset: 6
       }]

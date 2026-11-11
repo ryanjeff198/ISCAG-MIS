@@ -118,25 +118,25 @@
             <div class="insight-card">
               <div class="insight-label">Apartments Dept.</div>
               <div class="insight-value" style="color:#1e40af"><?= number_format($deptMetrics['apartments']['total'] ?? 0) ?></div>
-              <div class="kpi-trend flat"><?= number_format($deptMetrics['apartments']['occupancy'] ?? 0) ?>/<?= number_format($deptMetrics['apartments']['units'] ?? 0) ?> units · ₱<?= number_format($totalRevenue ?? 0, 0) ?></div>
+              <div class="kpi-trend flat"><?= number_format($deptMetrics['apartments']['occupancy'] ?? 0) ?>/<?= number_format($deptMetrics['apartments']['units'] ?? 0) ?> units · ₱<?= number_format($totalRevenue ?? 0, 0) ?> paid</div>
               <div class="insight-icon-bg" style="color:#1e40af"><svg viewBox="0 0 24 24"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/></svg></div>
             </div>
             <div class="insight-card">
               <div class="insight-label">Da'wah Dept.</div>
               <div class="insight-value" style="color:var(--success)"><?= number_format($deptMetrics['dawah']['total'] ?? 0) ?></div>
-              <div class="kpi-trend up"><?= number_format($deptMetrics['dawah']['pending'] ?? 0) ?> pending · <?= number_format($deptMetrics['dawah']['completed'] ?? 0) ?> completed</div>
+              <div class="kpi-trend up"><?= number_format($deptMetrics['dawah']['pending'] ?? 0) ?> pending · <?= number_format($deptMetrics['dawah']['approved'] ?? 0) ?> active</div>
               <div class="insight-icon-bg" style="color:var(--success)"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div>
             </div>
             <div class="insight-card">
               <div class="insight-label">Islamic Education</div>
               <div class="insight-value" style="color:#065f46"><?= number_format($deptMetrics['education']['students'] ?? 0) ?></div>
-              <div class="kpi-trend up"><?= number_format($deptMetrics['education']['avg_progress'] ?? 0, 1) ?>% avg. progress</div>
+              <div class="kpi-trend up"><?= number_format($deptMetrics['education']['avg_progress'] ?? 0, 1) ?>% avg · <?= number_format($deptMetrics['education']['sessions'] ?? 0) ?>/<?= number_format($deptMetrics['education']['sessions_total'] ?? 0) ?> sessions</div>
               <div class="insight-icon-bg" style="color:#065f46"><svg viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg></div>
             </div>
             <div class="insight-card">
               <div class="insight-label">Damayan Dept.</div>
               <div class="insight-value" style="color:#4338ca"><?= number_format($deptMetrics['damayan']['total'] ?? 0) ?></div>
-              <div class="kpi-trend flat"><?= number_format($deptMetrics['damayan']['pending'] ?? 0) ?> pending · ₱<?= number_format($deptMetrics['damayan']['donations_amount'] ?? 0, 0) ?> charity</div>
+              <div class="kpi-trend flat"><?= number_format($deptMetrics['damayan']['pending'] ?? 0) ?> pending · ₱<?= number_format($deptMetrics['damayan']['donations_amount'] ?? 0, 0) ?> verified charity</div>
               <div class="insight-icon-bg" style="color:#4338ca"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
             </div>
           </div>
@@ -185,14 +185,13 @@
             </div>
 
             <div class="card">
-              <div class="card-head"><div><div class="card-title">Damayan Services</div><div class="card-sub">Burial, funeral & charity support</div></div></div>
+              <div class="card-head"><div><div class="card-title">Damayan Services</div><div class="card-sub">Burial &amp; funeral case volume (<?= number_format($deptMetrics['damayan']['total'] ?? 0) ?> cases)</div></div></div>
               <div style="position:relative;height:150px;display:flex;justify-content:center"><canvas id="damayanSvcChart"></canvas></div>
               <div style="margin-top:16px">
                 <?php
                   $damayanRows = [
                     ['label' => 'Burial Requests', 'count' => $deptMetrics['damayan']['burial'] ?? 0, 'color' => '#6366f1'],
                     ['label' => 'Funeral Cases', 'count' => $deptMetrics['damayan']['funeral'] ?? 0, 'color' => 'var(--warning)'],
-                    ['label' => 'Charity Donations', 'count' => $deptMetrics['damayan']['donations_count'] ?? 0, 'color' => 'var(--success)'],
                   ];
                   $damayanSum = array_sum(array_column($damayanRows, 'count'));
                   foreach ($damayanRows as $dm):
@@ -203,11 +202,15 @@
                   <div style="flex:1;"><div style="display:flex;justify-content:space-between;align-items:center;"><div class="bl-label" style="font-size:0.8rem;"><?= $dm['label'] ?></div><div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?= number_format($dm['count']) ?> (<?= $pct ?>%)</div></div></div>
                 </div>
                 <?php endforeach; ?>
+                <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-muted);">
+                  <span>Verified Charity (<?= (int)($deptMetrics['damayan']['donations_verified_count'] ?? 0) ?>): <strong style="color:var(--success);">₱<?= number_format($deptMetrics['damayan']['donations_amount'] ?? 0, 0) ?></strong></span>
+                  <span>Pending (<?= (int)($deptMetrics['damayan']['donations_pending_count'] ?? 0) ?>): <strong style="color:var(--warning);">₱<?= number_format($deptMetrics['damayan']['donations_pending_amount'] ?? 0, 0) ?></strong></span>
+                </div>
               </div>
             </div>
 
             <div class="card">
-              <div class="card-head"><div><div class="card-title">Apartments Overview</div><div class="card-sub">Applications, maintenance & parking</div></div></div>
+              <div class="card-head"><div><div class="card-title">Apartments Overview</div><div class="card-sub">Applications, maintenance &amp; parking (<?= number_format($deptMetrics['apartments']['total'] ?? 0) ?> records)</div></div></div>
               <div style="position:relative;height:150px"><canvas id="aptSvcChart"></canvas></div>
               <div style="margin-top:16px">
                 <?php
@@ -216,7 +219,7 @@
                     ['label' => 'Maintenance', 'count' => $deptMetrics['apartments']['maintenance'] ?? 0, 'color' => 'var(--warning)'],
                     ['label' => 'Parking Permits', 'count' => $deptMetrics['apartments']['parking'] ?? 0, 'color' => 'var(--info)'],
                   ];
-                  $aptSum = array_sum(array_column($aptRows, 'count'));
+                  $aptSum = max($deptMetrics['apartments']['total'] ?? 0, array_sum(array_column($aptRows, 'count')));
                   foreach ($aptRows as $ar):
                     $pct = $aptSum > 0 ? round(($ar['count'] / $aptSum) * 100, 1) : 0;
                 ?>
@@ -290,35 +293,60 @@
         <!-- ═══ SECTION 3: DATA TABLE ═══ -->
         <div class="an-section">
           <div class="an-section-head">
-            <div><div class="an-section-title">Department & User Breakdown</div><div class="an-section-sub">Sortable summary across all ISCAG departments and users</div></div>
-            <input type="text" class="dt-search" id="dtSearch" placeholder="Search departments or users..." oninput="filterTable()"/>
+            <div><div class="an-section-title">Department Operations Breakdown</div><div class="an-section-sub">Sortable status summary across all 4 ISCAG departments (<?= number_format($grandTotalRequests ?? 0) ?> total records)</div></div>
+            <input type="text" class="dt-search" id="dtSearch" placeholder="Search departments..." oninput="filterTable()"/>
           </div>
           <div class="card" style="padding:0;overflow:hidden;border-radius:12px">
-            <table class="dt" id="dataTable">
-              <thead><tr><th onclick="sortTable(0)">Department / Module ↕</th><th onclick="sortTable(1)">Records ↕</th><th>Share</th><th>Category</th><th>Status</th></tr></thead>
-              <tbody>
-                <?php
-                  $rows = [
-                    ['Apartments Department', $deptMetrics['apartments']['total'] ?? 0, 'Department', 'var(--primary)'],
-                    ["Da'wah Department", $deptMetrics['dawah']['total'] ?? 0, 'Department', 'var(--success)'],
-                    ['Islamic Education', $deptMetrics['education']['total'] ?? 0, 'Department', '#1f6f5a'],
-                    ['Damayan Department', $deptMetrics['damayan']['total'] ?? 0, 'Department', '#6366f1'],
-                    ['Registered Users', $totalUsers ?? 0, 'Users', 'var(--info)'],
-                  ];
-                  $totalAllRecords = array_sum(array_column($rows, 1));
-                  foreach($rows as $r):
-                    $rowPct = $totalAllRecords > 0 ? round(($r[1] / $totalAllRecords) * 100, 1) : 0;
-                ?>
-                <tr>
-                  <td><span class="dt-dot" style="background:<?=$r[3]?>"></span><?=$r[0]?></td>
-                  <td style="font-weight:700;font-family:'Lora',serif;font-size:1rem"><?=number_format($r[1])?></td>
-                  <td style="font-weight:600;color:var(--text-muted)"><?=$rowPct?>%</td>
-                  <td><?=$r[2]?></td>
-                  <td><span class="dt-tag active">Active</span></td>
-                </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
+            <div class="table-wrapper">
+              <table class="dt" id="dataTable">
+                <thead>
+                  <tr>
+                    <th onclick="sortTable(0)">Department ↕</th>
+                    <th onclick="sortTable(1)">Total ↕</th>
+                    <th onclick="sortTable(2)">Pending ↕</th>
+                    <th onclick="sortTable(3)">Approved / Active ↕</th>
+                    <th onclick="sortTable(4)">Completed ↕</th>
+                    <th onclick="sortTable(5)">Rejected ↕</th>
+                    <th onclick="sortTable(6)">Share ↕</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php
+                    $deptSummaryRows = [
+                      [$deptMetrics['apartments']['name'], $deptMetrics['apartments'], 'var(--primary)'],
+                      [$deptMetrics['dawah']['name'], $deptMetrics['dawah'], 'var(--success)'],
+                      [$deptMetrics['education']['name'], $deptMetrics['education'], '#1f6f5a'],
+                      [$deptMetrics['damayan']['name'], $deptMetrics['damayan'], '#6366f1'],
+                    ];
+                    $reqDenom = max((int)($grandTotalRequests ?? 0), 1);
+                    foreach ($deptSummaryRows as [$dLabel, $dmData, $dColor]):
+                      $dTot = (int)($dmData['total'] ?? 0);
+                      $rowPct = ($grandTotalRequests ?? 0) > 0 ? round(($dTot / $reqDenom) * 100, 1) : 0;
+                  ?>
+                  <tr>
+                    <td><span class="dt-dot" style="background:<?= $dColor ?>"></span><?= htmlspecialchars($dLabel) ?></td>
+                    <td style="font-weight:700;font-family:'Lora',serif;font-size:1rem"><?= number_format($dTot) ?></td>
+                    <td style="color:var(--warning);font-weight:600;"><?= number_format($dmData['pending'] ?? 0) ?></td>
+                    <td style="color:var(--success);font-weight:600;"><?= number_format($dmData['approved'] ?? 0) ?></td>
+                    <td style="color:#6366f1;font-weight:600;"><?= number_format($dmData['completed'] ?? 0) ?></td>
+                    <td style="color:var(--danger);font-weight:600;"><?= number_format($dmData['rejected'] ?? 0) ?></td>
+                    <td style="font-weight:600;color:var(--text-muted)"><?= $rowPct ?>%</td>
+                  </tr>
+                  <?php endforeach; ?>
+                </tbody>
+                <tfoot>
+                  <tr style="background:var(--content-bg);font-weight:700;">
+                    <td>All 4 Departments Total</td>
+                    <td style="font-family:'Lora',serif;font-size:1rem"><?= number_format($grandTotalRequests ?? 0) ?></td>
+                    <td style="color:var(--warning);"><?= number_format($grandPendingRequests ?? 0) ?></td>
+                    <td style="color:var(--success);"><?= number_format($grandApprovedRequests ?? 0) ?></td>
+                    <td style="color:#6366f1;"><?= number_format($grandCompletedRequests ?? 0) ?></td>
+                    <td style="color:var(--danger);"><?= number_format($grandRejectedRequests ?? 0) ?></td>
+                    <td><?= ($grandTotalRequests ?? 0) > 0 ? '100.0%' : '0%' ?></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -361,7 +389,13 @@ document.addEventListener("DOMContentLoaded",function(){
           $deptMetrics['dawah']['completed']??0,
           $deptMetrics['education']['completed']??0,
           $deptMetrics['damayan']['completed']??0,
-        ])?>,backgroundColor:C,borderRadius:4}
+        ])?>,backgroundColor:C,borderRadius:4},
+        {label:'Rejected',data:<?=json_encode([
+          $deptMetrics['apartments']['rejected']??0,
+          $deptMetrics['dawah']['rejected']??0,
+          $deptMetrics['education']['rejected']??0,
+          $deptMetrics['damayan']['rejected']??0,
+        ])?>,backgroundColor:D,borderRadius:4}
       ]
     },
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}},scales:{x:cleanX,y:{...cleanY,ticks:{stepSize:1}}}}
@@ -374,8 +408,8 @@ document.addEventListener("DOMContentLoaded",function(){
   // 3. Da'wah Services — Horizontal Bar
   new Chart(document.getElementById('dawahSvcChart'),{type:'bar',data:{labels:['Counseling','Marriage','Conversion'],datasets:[{label:'Requests',data:[<?=(int)($deptMetrics['dawah']['counseling']??0)?>,<?=(int)($deptMetrics['dawah']['marriage']??0)?>,<?=(int)($deptMetrics['dawah']['conversion']??0)?>],backgroundColor:[P,W,S],borderRadius:6,barThickness:22}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend},scales:{x:{...cleanY,ticks:{stepSize:1}},y:cleanX}}});
 
-  // 4. Damayan Services — Doughnut
-  new Chart(document.getElementById('damayanSvcChart'),{type:'doughnut',data:{labels:['Burial','Funeral','Charity'],datasets:[{data:[<?=(int)($deptMetrics['damayan']['burial']??0)?>,<?=(int)($deptMetrics['damayan']['funeral']??0)?>,<?=(int)($deptMetrics['damayan']['donations_count']??0)?>],backgroundColor:[C,W,S],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
+  // 4. Damayan Services — Doughnut (Burial & Funeral Cases)
+  new Chart(document.getElementById('damayanSvcChart'),{type:'doughnut',data:{labels:['Burial Requests','Funeral Cases'],datasets:[{data:[<?=(int)($deptMetrics['damayan']['burial']??0)?>,<?=(int)($deptMetrics['damayan']['funeral']??0)?>],backgroundColor:[C,W],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
 
   // 5. Apartments Overview — Vertical Bar
   new Chart(document.getElementById('aptSvcChart'),{type:'bar',data:{labels:['Applications','Maintenance','Parking'],datasets:[{label:'Records',data:[<?=(int)($deptMetrics['apartments']['applications']??0)?>,<?=(int)($deptMetrics['apartments']['maintenance']??0)?>,<?=(int)($deptMetrics['apartments']['parking']??0)?>],backgroundColor:[P,W,I],borderRadius:6,barThickness:30}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend},scales:{x:cleanX,y:{...cleanY,ticks:{stepSize:1}}}}});
@@ -384,14 +418,16 @@ document.addEventListener("DOMContentLoaded",function(){
   const vrR=<?=json_encode($statusDist??[])?>;
   new Chart(document.getElementById('verifyChart'),{type:'polarArea',data:{labels:vrR.map(d=>d.status),datasets:[{data:vrR.map(d=>+d.count),backgroundColor:vrR.map(d=>sc(d.status)+'bb'),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}},scales:{r:{ticks:{display:false},grid:{color:'#e8ece9'}}}}});
 
-  // 7. User Roles — Pie
+  // 7. User Roles — Pie (color mapped by role name)
   const rlLabels=<?=json_encode(array_keys($userRoleBreakdown??[]))?>;
   const rlData=<?=json_encode(array_values($userRoleBreakdown??[]))?>;
-  new Chart(document.getElementById('rolesChart'),{type:'pie',data:{labels:rlLabels,datasets:[{data:rlData,backgroundColor:[P,W,I],borderWidth:2,borderColor:'#fff',hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
+  const roleColorMap={'Residents / Tenants':P,'Guests':W,'Staff & Admins':I};
+  new Chart(document.getElementById('rolesChart'),{type:'pie',data:{labels:rlLabels,datasets:[{data:rlData,backgroundColor:rlLabels.map(l=>roleColorMap[l]||'#94a3b8'),borderWidth:2,borderColor:'#fff',hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
 
-  // 8. User Gender Demographics — Doughnut
+  // 8. User Gender Demographics — Doughnut (color mapped by gender label)
   const gnR=<?=json_encode($genderDist??[])?>;
-  new Chart(document.getElementById('genderChart'),{type:'doughnut',data:{labels:gnR.map(d=>d.gender||'Unspecified'),datasets:[{data:gnR.map(d=>+d.count),backgroundColor:[I,W,'#94a3b8'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
+  const genderColorMap={'Male':I,'Female':W,'Unspecified':'#94a3b8'};
+  new Chart(document.getElementById('genderChart'),{type:'doughnut',data:{labels:gnR.map(d=>d.gender||'Unspecified'),datasets:[{data:gnR.map(d=>+d.count),backgroundColor:gnR.map(d=>genderColorMap[d.gender||'Unspecified']||'#94a3b8'),borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
 });
 
 // Table sort
@@ -401,7 +437,9 @@ function sortTable(col){
   const rows=[...tb.querySelectorAll('tr')];
   rows.sort((a,b)=>{
     const av=a.cells[col].textContent.trim(),bv=b.cells[col].textContent.trim();
-    return(isNaN(av)?av.localeCompare(bv):+av.replace(/,/g,'')-+bv.replace(/,/g,''))*sortDir;
+    const an=parseFloat(av.replace(/[,%]/g,'')),bn=parseFloat(bv.replace(/[,%]/g,''));
+    const bothNum=!isNaN(an)&&!isNaN(bn)&&/^[\d,.\s%-]+$/.test(av)&&/^[\d,.\s%-]+$/.test(bv);
+    return(bothNum?(an-bn):av.localeCompare(bv))*sortDir;
   });
   sortDir*=-1;
   rows.forEach(r=>tb.appendChild(r));

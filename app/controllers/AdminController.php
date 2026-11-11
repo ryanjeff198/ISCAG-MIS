@@ -33,6 +33,7 @@ class AdminController extends Controller
         $grandPendingRequests = $overview['grandPendingRequests'];
         $grandApprovedRequests = $overview['grandApprovedRequests'];
         $grandCompletedRequests = $overview['grandCompletedRequests'];
+        $grandRejectedRequests = $overview['grandRejectedRequests'];
         $pendingMaintenance = $overview['pendingMaintenance'];
         $recentMaintenance = $overview['recentMaintenance'];
         $totalUsers = $overview['totalUsers'];
@@ -56,7 +57,7 @@ class AdminController extends Controller
                 SELECT a.application_id as ref_id, 'Apartments' as department, 'Apartment Application' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
                        u.email, a.date as submitted_at, a.status,
-                       '/admin/mis_admin/apartment_confirmation' as action_url
+                       CONCAT('/admin/mis_admin/apartment_confirmation?id=', a.application_id) as action_url
                 FROM apartmentsapp a
                 LEFT JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
                 ORDER BY a.application_id DESC LIMIT 4
@@ -82,7 +83,7 @@ class AdminController extends Controller
                 SELECT c.id as ref_id, 'Da\'wah' as department, 'Counseling Consultation' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
                        u.email, c.created_at as submitted_at, c.status,
-                       '/admin/dawah/counseling' as action_url
+                       CONCAT('/admin/mis_admin/dawah_records?type=counseling&id=', c.id) as action_url
                 FROM counseling_requests c
                 LEFT JOIN tenant_accounts u ON c.tenant_id = u.tenant_id
                 ORDER BY c.id DESC LIMIT 3
@@ -95,7 +96,7 @@ class AdminController extends Controller
                 SELECT m.id as ref_id, 'Da\'wah' as department, 'Marriage Reservation' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
                        u.email, m.created_at as submitted_at, m.status,
-                       '/admin/dawah/marriage' as action_url
+                       CONCAT('/admin/mis_admin/dawah_records?type=marriage_service&id=', m.id) as action_url
                 FROM marriage_requests m
                 LEFT JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
                 ORDER BY m.id DESC LIMIT 2
@@ -108,7 +109,7 @@ class AdminController extends Controller
                 SELECT cv.id as ref_id, 'Da\'wah' as department, 'Shahadah Conversion' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
                        u.email, cv.created_at as submitted_at, cv.status,
-                       '/admin/mis_admin/dawah_records' as action_url
+                       CONCAT('/admin/mis_admin/dawah_records?type=conversion&id=', cv.id) as action_url
                 FROM conversion_requests cv
                 LEFT JOIN tenant_accounts u ON cv.tenant_id = u.tenant_id
                 ORDER BY cv.id DESC LIMIT 2
@@ -121,7 +122,7 @@ class AdminController extends Controller
                 SELECT e.id as ref_id, 'Islamic Education' as department, CONCAT('Enrollment: ', COALESCE(e.level,'Course')) as request_type,
                        CONCAT(COALESCE(e.first_name,''), ' ', COALESCE(e.last_name,'')) as applicant,
                        e.contact_number as email, e.created_at as submitted_at, e.status,
-                       '/admin/mis_admin/dawah_records' as action_url
+                       CONCAT('/admin/mis_admin/dawah_records?type=islamic_education&id=', e.id) as action_url
                 FROM islamic_education_enrollments e
                 ORDER BY e.id DESC LIMIT 4
             ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -133,7 +134,7 @@ class AdminController extends Controller
                 SELECT b.id as ref_id, 'Damayan' as department, 'Burial Service' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
                        u.email, b.submitted_at, b.status,
-                       '/admin/mis_admin/damayan_records' as action_url
+                       CONCAT('/admin/mis_admin/damayan_records?type=burial&id=', b.id) as action_url
                 FROM burial_requests b
                 LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
                 ORDER BY b.id DESC LIMIT 3
@@ -146,7 +147,7 @@ class AdminController extends Controller
                 SELECT f.id as ref_id, 'Damayan' as department, 'Funeral Case' as request_type,
                        f.informant_name as applicant,
                        f.informant_email as email, f.reported_at as submitted_at, f.status,
-                       '/admin/mis_admin/damayan_records' as action_url
+                       CONCAT('/admin/mis_admin/damayan_records?type=funeral&id=', f.id) as action_url
                 FROM funeral_cases f
                 ORDER BY f.id DESC LIMIT 3
             ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -243,6 +244,7 @@ class AdminController extends Controller
             'grandPendingRequests' => $grandPendingRequests,
             'grandApprovedRequests' => $grandApprovedRequests,
             'grandCompletedRequests' => $grandCompletedRequests,
+            'grandRejectedRequests' => $grandRejectedRequests,
             'deptMetrics' => $deptMetrics,
             'recentRequests' => $recentRequests,
             'pendingActions' => $pendingActions,
@@ -307,17 +309,34 @@ class AdminController extends Controller
             'grandPendingRequests' => $overview['grandPendingRequests'],
             'grandApprovedRequests' => $overview['grandApprovedRequests'],
             'grandCompletedRequests' => $overview['grandCompletedRequests'],
+            'grandRejectedRequests' => $overview['grandRejectedRequests'],
             'totalUsers' => $overview['totalUsers'],
             'activeUsers' => $overview['activeUsers'],
             'unverifiedUsers' => $overview['unverifiedUsers'],
             'staffUsers' => $overview['staffUsers'],
             'userRoleBreakdown' => $overview['userRoleBreakdown'],
             'totalRevenue' => $overview['totalRevenue'],
+            'pendingPaymentsAmount' => $overview['pendingPaymentsAmount'],
             'pendingMaintenance' => $overview['pendingMaintenance'],
             'moduleDist' => $moduleDist,
             'genderDist' => $genderDist,
             'statusDist' => $statusDist
         ]);
+    }
+
+    private function classifyStatusBucket(string $status): string
+    {
+        $s = strtolower(trim($status));
+        if (str_contains($s, 'reject') || str_contains($s, 'cancel') || str_contains($s, 'declin')) {
+            return 'rejected';
+        }
+        if (str_contains($s, 'pend') || str_contains($s, 'submit')) {
+            return 'pending';
+        }
+        if (str_contains($s, 'complet') || str_contains($s, 'resolv') || str_contains($s, 'releas')) {
+            return 'completed';
+        }
+        return 'approved';
     }
 
     /**
@@ -327,35 +346,38 @@ class AdminController extends Controller
     private function getDepartmentOverviewMetrics(PDO $db): array
     {
         $deptMetrics = [
-            'apartments' => ['name' => 'Apartments Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'applications' => 0, 'maintenance' => 0, 'parking' => 0, 'occupancy' => 0, 'units' => 0],
-            'dawah'      => ['name' => "Da'wah Department", 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'counseling' => 0, 'marriage' => 0, 'conversion' => 0],
-            'education'  => ['name' => 'Islamic Education', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'students' => 0, 'avg_progress' => 0, 'sessions' => 0],
-            'damayan'    => ['name' => 'Damayan Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'burial' => 0, 'funeral' => 0, 'donations_count' => 0, 'donations_amount' => 0],
+            'apartments' => ['name' => 'Apartments Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'rejected' => 0, 'applications' => 0, 'maintenance' => 0, 'parking' => 0, 'renewals' => 0, 'moveouts' => 0, 'occupancy' => 0, 'units' => 0],
+            'dawah'      => ['name' => "Da'wah Department", 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'rejected' => 0, 'counseling' => 0, 'marriage' => 0, 'conversion' => 0],
+            'education'  => ['name' => 'Islamic Education', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'rejected' => 0, 'students' => 0, 'avg_progress' => 0, 'sessions' => 0, 'sessions_total' => 0],
+            'damayan'    => ['name' => 'Damayan Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'rejected' => 0, 'burial' => 0, 'funeral' => 0, 'donations_count' => 0, 'donations_verified_count' => 0, 'donations_pending_count' => 0, 'donations_amount' => 0, 'donations_pending_amount' => 0],
         ];
 
-        // Apartments
-        try {
-            $apps = $db->query("SELECT status, COUNT(*) as c FROM apartmentsapp GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
-            foreach ($apps as $st => $c) {
-                $cnt = (int)$c;
-                $deptMetrics['apartments']['total'] += $cnt;
-                $deptMetrics['apartments']['applications'] += $cnt;
-                if (stripos($st, 'pend') !== false) $deptMetrics['apartments']['pending'] += $cnt;
-                elseif (stripos($st, 'complet') !== false) $deptMetrics['apartments']['completed'] += $cnt;
-                elseif (stripos($st, 'approv') !== false || stripos($st, 'assign') !== false || stripos($st, 'accept') !== false) $deptMetrics['apartments']['approved'] += $cnt;
-            }
-        } catch (Throwable $e) {}
+        // Apartments (Applications, Parking, Renewals, Move-outs, Units)
+        $aptTables = [
+            'applications' => 'apartmentsapp',
+            'parking'      => 'tenant_parking',
+            'renewals'     => 'lease_renewals',
+            'moveouts'     => 'move_out_requests',
+        ];
+        foreach ($aptTables as $key => $tbl) {
+            try {
+                $rows = $db->query("SELECT status, COUNT(*) as c FROM {$tbl} GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+                foreach ($rows as $st => $c) {
+                    $cnt = (int)$c;
+                    $deptMetrics['apartments']['total'] += $cnt;
+                    $deptMetrics['apartments'][$key] += $cnt;
+                    $bucket = $this->classifyStatusBucket((string)$st);
+                    $deptMetrics['apartments'][$bucket] += $cnt;
+                }
+            } catch (Throwable $e) {}
+        }
 
         try {
             $deptMetrics['apartments']['units'] = (int)$db->query("SELECT COUNT(*) FROM apartment_units")->fetchColumn();
             $deptMetrics['apartments']['occupancy'] = (int)$db->query("SELECT COUNT(*) FROM apartment_units WHERE status = 'Occupied'")->fetchColumn();
         } catch (Throwable $e) {}
 
-        try {
-            $deptMetrics['apartments']['parking'] = (int)$db->query("SELECT COUNT(*) FROM tenant_parking")->fetchColumn();
-        } catch (Throwable $e) {}
-
-        // Maintenance Data
+        // Maintenance Data (part of Apartments Operations)
         $pendingMaintenance = 0;
         $recentMaintenance = [];
         try {
@@ -364,13 +386,10 @@ class AdminController extends Controller
                 $cnt = (int)$c;
                 $deptMetrics['apartments']['total'] += $cnt;
                 $deptMetrics['apartments']['maintenance'] += $cnt;
-                if (stripos($st, 'pend') !== false) {
+                $bucket = $this->classifyStatusBucket((string)$st);
+                $deptMetrics['apartments'][$bucket] += $cnt;
+                if ($bucket === 'pending') {
                     $pendingMaintenance += $cnt;
-                    $deptMetrics['apartments']['pending'] += $cnt;
-                } elseif (stripos($st, 'resolv') !== false || stripos($st, 'complet') !== false) {
-                    $deptMetrics['apartments']['completed'] += $cnt;
-                } elseif (stripos($st, 'approv') !== false || stripos($st, 'progress') !== false) {
-                    $deptMetrics['apartments']['approved'] += $cnt;
                 }
             }
             $recentMaintenance = $db->query("
@@ -398,9 +417,8 @@ class AdminController extends Controller
                     $cnt = (int)$c;
                     $deptMetrics['dawah']['total'] += $cnt;
                     $deptMetrics['dawah'][$key] += $cnt;
-                    if (stripos($st, 'pend') !== false) $deptMetrics['dawah']['pending'] += $cnt;
-                    elseif (stripos($st, 'complet') !== false) $deptMetrics['dawah']['completed'] += $cnt;
-                    elseif (stripos($st, 'reject') === false && stripos($st, 'cancel') === false) $deptMetrics['dawah']['approved'] += $cnt;
+                    $bucket = $this->classifyStatusBucket((string)$st);
+                    $deptMetrics['dawah'][$bucket] += $cnt;
                 }
             } catch (Throwable $e) {}
         }
@@ -416,12 +434,13 @@ class AdminController extends Controller
                 $deptMetrics['education']['students'] += $c;
                 $totalP += ($row['avg_p'] * $c);
                 $totalStudents += $c;
-                if (stripos($row['status'], 'pend') !== false) $deptMetrics['education']['pending'] += $c;
-                elseif (stripos($row['status'], 'complet') !== false) $deptMetrics['education']['completed'] += $c;
-                elseif (stripos($row['status'], 'reject') === false) $deptMetrics['education']['approved'] += $c;
+                $bucket = $this->classifyStatusBucket((string)($row['status'] ?? 'pending'));
+                $deptMetrics['education'][$bucket] += $c;
             }
             if ($totalStudents > 0) $deptMetrics['education']['avg_progress'] = round($totalP / $totalStudents, 1);
-            $deptMetrics['education']['sessions'] = (int)$db->query("SELECT COUNT(*) FROM islamic_education_sessions WHERE is_attended = 1 OR is_completed = 1")->fetchColumn();
+            $sessRow = $db->query("SELECT COUNT(*) as tot, SUM(CASE WHEN is_attended = 1 OR is_completed = 1 THEN 1 ELSE 0 END) as att FROM islamic_education_sessions")->fetch(PDO::FETCH_ASSOC);
+            $deptMetrics['education']['sessions'] = (int)($sessRow['att'] ?? 0);
+            $deptMetrics['education']['sessions_total'] = (int)($sessRow['tot'] ?? 0);
         } catch (Throwable $e) {}
 
         // Damayan
@@ -431,22 +450,31 @@ class AdminController extends Controller
                 $cnt = (int)$c;
                 $deptMetrics['damayan']['total'] += $cnt;
                 $deptMetrics['damayan']['burial'] += $cnt;
-                if (stripos($st, 'pend') !== false) $deptMetrics['damayan']['pending'] += $cnt;
-                elseif (stripos($st, 'complet') !== false || stripos($st, 'releas') !== false) $deptMetrics['damayan']['completed'] += $cnt;
-                elseif (stripos($st, 'reject') === false && stripos($st, 'cancel') === false) $deptMetrics['damayan']['approved'] += $cnt;
+                $bucket = $this->classifyStatusBucket((string)$st);
+                $deptMetrics['damayan'][$bucket] += $cnt;
             }
             $fc = $db->query("SELECT status, COUNT(*) as c FROM funeral_cases GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
             foreach ($fc as $st => $c) {
                 $cnt = (int)$c;
                 $deptMetrics['damayan']['total'] += $cnt;
                 $deptMetrics['damayan']['funeral'] += $cnt;
-                if (stripos($st, 'pend') !== false || stripos($st, 'submit') !== false) $deptMetrics['damayan']['pending'] += $cnt;
-                elseif (stripos($st, 'complet') !== false || stripos($st, 'releas') !== false) $deptMetrics['damayan']['completed'] += $cnt;
-                elseif (stripos($st, 'reject') === false && stripos($st, 'cancel') === false) $deptMetrics['damayan']['approved'] += $cnt;
+                $bucket = $this->classifyStatusBucket((string)$st);
+                $deptMetrics['damayan'][$bucket] += $cnt;
             }
-            $donSummary = $db->query("SELECT COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total_amt FROM charity_donations_records WHERE status != 'rejected'")->fetch(PDO::FETCH_ASSOC);
-            $deptMetrics['damayan']['donations_count'] = (int)($donSummary['cnt'] ?? 0);
-            $deptMetrics['damayan']['donations_amount'] = (float)($donSummary['total_amt'] ?? 0);
+            $donRows = $db->query("SELECT status, COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total_amt FROM charity_donations_records WHERE LOWER(COALESCE(status,'')) != 'rejected' GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($donRows as $dr) {
+                $stLow = strtolower(trim((string)($dr['status'] ?? '')));
+                $cnt = (int)($dr['cnt'] ?? 0);
+                $amt = (float)($dr['total_amt'] ?? 0);
+                $deptMetrics['damayan']['donations_count'] += $cnt;
+                if (str_contains($stLow, 'pend')) {
+                    $deptMetrics['damayan']['donations_pending_count'] += $cnt;
+                    $deptMetrics['damayan']['donations_pending_amount'] += $amt;
+                } else {
+                    $deptMetrics['damayan']['donations_verified_count'] += $cnt;
+                    $deptMetrics['damayan']['donations_amount'] += $amt;
+                }
+            }
         } catch (Throwable $e) {}
 
         // Totals Across All 4 Departments
@@ -454,6 +482,7 @@ class AdminController extends Controller
         $grandPendingRequests = $deptMetrics['apartments']['pending'] + $deptMetrics['dawah']['pending'] + $deptMetrics['education']['pending'] + $deptMetrics['damayan']['pending'];
         $grandApprovedRequests = $deptMetrics['apartments']['approved'] + $deptMetrics['dawah']['approved'] + $deptMetrics['education']['approved'] + $deptMetrics['damayan']['approved'];
         $grandCompletedRequests = $deptMetrics['apartments']['completed'] + $deptMetrics['dawah']['completed'] + $deptMetrics['education']['completed'] + $deptMetrics['damayan']['completed'];
+        $grandRejectedRequests = $deptMetrics['apartments']['rejected'] + $deptMetrics['dawah']['rejected'] + $deptMetrics['education']['rejected'] + $deptMetrics['damayan']['rejected'];
 
         // Users Breakdown
         $totalUsers = (int)$db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
@@ -476,12 +505,24 @@ class AdminController extends Controller
         $auditFlags = (int)$db->query("SELECT COUNT(*) FROM admin_notifications WHERE is_read = 0")->fetchColumn();
         $billingKPIs = $this->getBillingAggregateMetrics();
 
+        // Actual collected & pending apartment payments directly from payments table
+        $actualPaidRevenue = 0.0;
+        $pendingPaymentsAmount = 0.0;
+        try {
+            $paySummary = $db->query("SELECT payment_status, COALESCE(SUM(amount), 0) as amt FROM payments GROUP BY payment_status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            $actualPaidRevenue = (float)($paySummary['Paid'] ?? 0);
+            $pendingPaymentsAmount = (float)($paySummary['Pending'] ?? 0);
+        } catch (Throwable $e) {
+            $actualPaidRevenue = (float)$billingKPIs['totalRevenue'];
+        }
+
         return [
             'deptMetrics' => $deptMetrics,
             'grandTotalRequests' => $grandTotalRequests,
             'grandPendingRequests' => $grandPendingRequests,
             'grandApprovedRequests' => $grandApprovedRequests,
             'grandCompletedRequests' => $grandCompletedRequests,
+            'grandRejectedRequests' => $grandRejectedRequests,
             'pendingMaintenance' => $pendingMaintenance,
             'recentMaintenance' => $recentMaintenance,
             'totalUsers' => $totalUsers,
@@ -492,7 +533,8 @@ class AdminController extends Controller
             'auditFlags' => $auditFlags,
             'totalApplications' => $deptMetrics['apartments']['total'],
             'pendingApprovals' => $deptMetrics['apartments']['pending'],
-            'totalRevenue' => $billingKPIs['totalRevenue'],
+            'totalRevenue' => $actualPaidRevenue,
+            'pendingPaymentsAmount' => $pendingPaymentsAmount,
             'revenueGrowth' => $billingKPIs['growth'],
             'pendingBilling' => $billingKPIs['pendingCount'],
             'overdueBilling' => $billingKPIs['overdueCount'],
@@ -1770,8 +1812,11 @@ class AdminController extends Controller
 
         $counseling = $db->query("
             SELECT c.id, 'counseling' as type, CONCAT('Counseling (', COALESCE(c.reason, c.session_type, 'General'), ')') as service_type,
-                   CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as name,
-                   u.email, c.created_at as date, c.status
+                   COALESCE(NULLIF(TRIM(c.full_name), ''), CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as name,
+                   COALESCE(NULLIF(u.email,''), c.contact_number, '') as email, c.created_at as date, c.status,
+                   c.gender, c.reason, c.session_type, COALESCE(c.appointment_date, c.preferred_date) as scheduled_date,
+                   c.preferred_time as scheduled_time, c.appointment_location as location, c.counselor_name as handler_name,
+                   c.description as details
             FROM counseling_requests c
             LEFT JOIN tenant_accounts u ON c.tenant_id = u.tenant_id
             ORDER BY c.id DESC
@@ -1779,8 +1824,11 @@ class AdminController extends Controller
 
         $marriages = $db->query("
             SELECT m.id, 'marriage_service' as type, 'Marriage Solemnization' as service_type,
-                   CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as name,
-                   u.email, m.created_at as date, m.status
+                   COALESCE(NULLIF(TRIM(CONCAT(COALESCE(m.groom_name,''), ' & ', COALESCE(m.bride_name,''))), '&'), CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as name,
+                   COALESCE(u.email, '') as email, m.created_at as date, m.status,
+                   m.groom_name, m.bride_name, m.marriage_date as scheduled_date,
+                   m.marriage_time as scheduled_time, m.marriage_venue as location, '' as handler_name,
+                   CONCAT('Groom: ', COALESCE(m.groom_name,'—'), ' | Bride: ', COALESCE(m.bride_name,'—')) as details
             FROM marriage_requests m
             LEFT JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
             ORDER BY m.id DESC
@@ -1788,17 +1836,22 @@ class AdminController extends Controller
 
         $conversions = $db->query("
             SELECT cv.id, 'conversion' as type, 'Shahadah Conversion' as service_type,
-                   CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as name,
-                   u.email, cv.created_at as date, cv.status
+                   COALESCE(NULLIF(TRIM(CONCAT(COALESCE(cv.fname,''), ' ', COALESCE(cv.lname,''))), ''), CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as name,
+                   COALESCE(u.email, '') as email, cv.created_at as date, cv.status,
+                   cv.adopted_name, cv.former_religion, cv.conversion_date as scheduled_date,
+                   cv.preferred_time as scheduled_time, cv.venue as location, cv.officiant as handler_name,
+                   cv.notes as details
             FROM conversion_requests cv
             LEFT JOIN tenant_accounts u ON cv.tenant_id = u.tenant_id
             ORDER BY cv.id DESC
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $education = $db->query("
-            SELECT e.id, 'islamic_education' as type, CONCAT('Enrollment: ', COALESCE(e.level,'Course')) as service_type,
+            SELECT e.id, 'islamic_education' as type, CONCAT('Enrollment: ', COALESCE(e.program_name, e.level, 'Course')) as service_type,
                    CONCAT(COALESCE(e.first_name,''), ' ', COALESCE(e.last_name,'')) as name,
-                   e.contact_number as email, e.created_at as date, e.status
+                   COALESCE(e.contact_number, '') as email, e.created_at as date, e.status,
+                   e.level, e.program_name, e.batch_no, e.progress_percent, e.sessions_attended, e.total_sessions,
+                   e.payment_status, e.learning_status as details
             FROM islamic_education_enrollments e
             ORDER BY e.id DESC
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -3729,22 +3782,36 @@ class AdminController extends Controller
         $db = getDbConnection();
 
         $burials = $db->query("
-            SELECT b.id, 'Burial Service' as service_type,
-                   COALESCE(b.deceased_name, CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as name,
-                   b.informant_contact as contact, b.submitted_at as date, b.status,
-                   COALESCE(b.cemetery_preference, 'Local') as cemetery_pref,
-                   COALESCE(b.assigned_plot_number, 'Pending') as plot_number
+            SELECT b.id, 'burial' as record_kind, 'Burial Service' as service_type,
+                   COALESCE(NULLIF(b.ref_id,''), CONCAT('#', b.id)) as ref_code,
+                   COALESCE(NULLIF(TRIM(b.deceased_name),''), NULLIF(TRIM(CONCAT(COALESCE(b.deceased_first_name,''), ' ', COALESCE(b.deceased_last_name,''))), ''), CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as name,
+                   COALESCE(NULLIF(b.informant_name,''), CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as informant_name,
+                   COALESCE(NULLIF(b.informant_contact,''), b.informant_email, '') as contact,
+                   b.submitted_at as date, b.status,
+                   COALESCE(b.assigned_cemetery_name, b.cemetery_preference, 'Local') as cemetery_pref,
+                   COALESCE(b.assigned_plot_number, 'Pending') as plot_number,
+                   b.request_type, b.date_of_death, b.place_of_death, b.requested_services,
+                   b.death_cert_status, b.cemetery_plot_status, b.scheduled_release_date,
+                   b.assigned_staff_name, b.additional_notes as details
             FROM burial_requests b
             LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
             ORDER BY b.id DESC
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $funeralCases = $db->query("
-            SELECT f.id, 'Funeral Case' as service_type,
-                   CONCAT(COALESCE(f.deceased_first_name,''), ' ', COALESCE(f.deceased_last_name,'')) as name,
-                   f.informant_contact as contact, f.reported_at as date, f.status,
+            SELECT f.id, 'funeral' as record_kind, 'Funeral Case' as service_type,
+                   COALESCE(NULLIF(f.case_number,''), CONCAT('#', f.id)) as ref_code,
+                   TRIM(CONCAT(COALESCE(f.deceased_first_name,''), ' ', COALESCE(f.deceased_last_name,''))) as name,
+                   f.informant_name,
+                   COALESCE(NULLIF(f.informant_contact,''), f.informant_email, '') as contact,
+                   f.reported_at as date, f.status,
                    COALESCE(f.cemetery, 'Local') as cemetery_pref,
-                   COALESCE(f.grave_reference, 'Pending') as plot_number
+                   COALESCE(f.grave_reference, 'Pending') as plot_number,
+                   f.certificate_type as request_type, f.deceased_dod as date_of_death,
+                   f.deceased_place_of_death as place_of_death, f.burial_location as requested_services,
+                   f.certificate_status as death_cert_status, '' as cemetery_plot_status,
+                   f.burial_date as scheduled_release_date,
+                   f.assigned_staff_name, f.release_notes as details
             FROM funeral_cases f
             ORDER BY f.id DESC
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -6483,6 +6550,43 @@ class AdminController extends Controller
         $role = $_SESSION['role'] ?? 'Admin';
         $notifications = $model->getAllForRole($role, 100);
         $unreadCount = $model->getUnreadCountForRole($role);
+
+        // Keep MIS Admin inside the MIS Admin portal instead of jumping to department staff portals
+        if ($role === 'Admin' && !empty($notifications)) {
+            foreach ($notifications as &$notif) {
+                $src = trim((string)($notif['source_url'] ?? ''));
+                if ($src === '') continue;
+                $notifType = strtolower((string)($notif['type'] ?? ''));
+                if (stripos($src, '/admin/dawah') !== false) {
+                    if (stripos($src, 'counsel') !== false) {
+                        $notif['source_url'] = url('/admin/mis_admin/dawah_records?type=counseling');
+                    } elseif (stripos($src, 'marriage') !== false) {
+                        $notif['source_url'] = url('/admin/mis_admin/dawah_records?type=marriage_service');
+                    } elseif (stripos($src, 'conversion') !== false) {
+                        $notif['source_url'] = url('/admin/mis_admin/dawah_records?type=conversion');
+                    } elseif (stripos($src, 'education') !== false) {
+                        $notif['source_url'] = url('/admin/mis_admin/dawah_records?type=islamic_education');
+                    } elseif (stripos($src, 'death-cert') !== false) {
+                        $notif['source_url'] = url('/admin/mis_admin/damayan_records');
+                    } else {
+                        $notif['source_url'] = url('/admin/mis_admin/dawah_records');
+                    }
+                } elseif (stripos($src, '/admin/damayan') !== false) {
+                    $notif['source_url'] = url('/admin/mis_admin/damayan_records');
+                } elseif (stripos($src, '/admin/apartment/maintenance') !== false) {
+                    $notif['source_url'] = url('/admin/mis_admin/maintenance');
+                } elseif (stripos($src, '/admin/apartment/moveout') !== false) {
+                    $notif['source_url'] = url('/admin/mis_admin/moveout_requests');
+                } elseif (stripos($src, '/admin/apartment') !== false) {
+                    if (strpos($notifType, 'parking') !== false) {
+                        $notif['source_url'] = url('/admin/mis_admin/parking_approval');
+                    } else {
+                        $notif['source_url'] = url('/admin/mis_admin/apartment_confirmation');
+                    }
+                }
+            }
+            unset($notif);
+        }
 
         $this->view('admin/mis_admin/notification_inbox', [
             'active_page'   => 'notification',

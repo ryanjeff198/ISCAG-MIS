@@ -81,6 +81,7 @@
             <option value="counseling">Counseling</option>
             <option value="islamic_education">Islamic Education</option>
             <option value="marriage_service">Marriage</option>
+            <option value="conversion">Shahadah Conversion</option>
           </select>
           <select class="filter-select" id="status-filter" onchange="filterTable()">
             <option value="all">All Status</option>
@@ -122,6 +123,24 @@
     </main>
   </div>
 
+  <!-- IN-PAGE MIS ADMIN REVIEW MODAL (stays inside MIS Admin) -->
+  <div id="dawah-review-modal" class="mis-review-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:2000;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this) closeDawahReviewModal()">
+    <div style="background:var(--bg-card,#fff);border-radius:16px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.22);border:1px solid var(--border-color,#e2e8f0);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border-color,#e2e8f0);">
+        <div>
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--primary,#1a5632);">MIS Admin • Da'wah Record Review</div>
+          <h4 id="dawah-mdl-title" style="margin:3px 0 0;font-size:1.08rem;font-weight:800;color:var(--text-main);">Record Details</h4>
+        </div>
+        <button type="button" onclick="closeDawahReviewModal()" style="background:none;border:none;font-size:1.5rem;line-height:1;cursor:pointer;color:var(--text-muted);padding:4px 8px;" aria-label="Close modal">&times;</button>
+      </div>
+      <div id="dawah-mdl-body" style="padding:20px 22px;font-size:0.88rem;color:var(--text-main);"></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid var(--border-color,#e2e8f0);background:var(--bg-body,#f8fafc);border-radius:0 0 16px 16px;">
+        <a href="<?= url('/admin/mis_admin/reports?dept=Da%27wah') ?>" class="card-badge" style="text-decoration:none;padding:8px 14px;">Department Report</a>
+        <button type="button" onclick="closeDawahReviewModal()" style="background:var(--primary,#1a5632);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
     standardizePage('admin');
@@ -129,20 +148,15 @@
     const DAWAH_TYPES = ['counseling', 'islamic_education', 'marriage_service', 'conversion'];
     let allReqs = (dbDawahReqs && dbDawahReqs.length > 0) ? dbDawahReqs : getRequests().filter(r => DAWAH_TYPES.some(t => (r.type||'').includes(t)));
 
+    function escHtml(v) {
+      return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
     // Stats
     document.getElementById('s-counsel').textContent = allReqs.filter(r => (r.type || '').includes('counseling')).length;
     document.getElementById('s-edu').textContent = allReqs.filter(r => (r.type || '').includes('education')).length;
     document.getElementById('s-mar').textContent = allReqs.filter(r => (r.type || '').includes('marriage')).length;
     document.getElementById('s-pending').textContent = allReqs.filter(r => (r.status || '').toLowerCase().includes('pend')).length;
-
-    function getDawahActionUrl(type) {
-      const t = (type || '').toLowerCase();
-      if (t.includes('counsel')) return '<?= url("/admin/dawah/counseling") ?>';
-      if (t.includes('edu')) return '<?= url("/admin/dawah/education") ?>';
-      if (t.includes('mar')) return '<?= url("/admin/dawah/marriage") ?>';
-      if (t.includes('conv')) return '<?= url("/admin/dawah/conversion") ?>';
-      return '<?= url("/admin/dawah") ?>';
-    }
 
     function renderTable(data) {
       document.getElementById('req-count').textContent = data.length + ' records';
@@ -151,54 +165,90 @@
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No records found.</td></tr>';
         return;
       }
-      tbody.innerHTML = data.map(r => `<tr data-id="${r.id}">
-      <td class="td-id">#${r.id}</td>
-      <td style="font-weight:600;">${r.name || 'Unknown'}</td>
-      <td><span style="font-weight:600;color:var(--text-main);">${r.service_type || typeLabel(r.type)}</span></td>
+      tbody.innerHTML = data.map(r => `<tr data-id="${escHtml(r.id)}" data-type="${escHtml(r.type)}">
+      <td class="td-id">#${escHtml(r.id)}</td>
+      <td style="font-weight:600;">${escHtml(r.name || 'Unknown')}</td>
+      <td><span style="font-weight:600;color:var(--text-main);">${escHtml(r.service_type || typeLabel(r.type))}</span></td>
       <td>${formatDate(r.date)}</td>
       <td><span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
       <td>
-        <a href="${getDawahActionUrl(r.type)}" class="card-badge" style="text-decoration:none;">Review</a>
+        <button type="button" class="card-badge" style="border:none;cursor:pointer;" onclick="openDawahReviewModal('${escHtml(r.type || '')}', '${escHtml(r.id)}')">Review</button>
       </td>
     </tr>`).join('');
     }
-    renderTable(allReqs);
+
+    function openDawahReviewModal(type, id) {
+      const r = allReqs.find(x => String(x.id) === String(id) && (!type || String(x.type) === String(type)))
+             || allReqs.find(x => String(x.id) === String(id));
+      if (!r) return;
+
+      document.getElementById('dawah-mdl-title').textContent = `#${r.id} — ${r.service_type || typeLabel(r.type)}`;
+      const rows = [
+        ['Applicant / Member', r.name || 'Unknown'],
+        ['Contact / Email', r.email || '—'],
+        ['Service Category', r.service_type || typeLabel(r.type)],
+        ['Status', `<span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span>`],
+        ['Submitted On', formatDate(r.date)]
+      ];
+      if (r.gender) rows.push(['Gender Track', r.gender]);
+      if (r.session_type) rows.push(['Session Mode', r.session_type]);
+      if (r.reason) rows.push(['Topic / Reason', r.reason]);
+      if (r.groom_name || r.bride_name) rows.push(['Couple', `${r.groom_name || '—'} & ${r.bride_name || '—'}`]);
+      if (r.adopted_name) rows.push(['Adopted Name', r.adopted_name]);
+      if (r.former_religion) rows.push(['Former Religion', r.former_religion]);
+      if (r.program_name || r.level) rows.push(['Program / Level', [r.program_name, r.level].filter(Boolean).join(' — ')]);
+      if (r.batch_no) rows.push(['Batch', r.batch_no]);
+      if (r.progress_percent !== undefined && r.progress_percent !== null && r.progress_percent !== '') {
+        const sess = (r.total_sessions) ? ` (${r.sessions_attended || 0}/${r.total_sessions} sessions)` : '';
+        rows.push(['Learning Progress', `${r.progress_percent}%${sess}`]);
+      }
+      if (r.payment_status) rows.push(['Payment Status', r.payment_status]);
+      if (r.scheduled_date || r.scheduled_time) rows.push(['Scheduled Date/Time', [r.scheduled_date, r.scheduled_time].filter(Boolean).join(' • ')]);
+      if (r.location) rows.push(['Venue / Location', r.location]);
+      if (r.handler_name) rows.push(['Assigned Personnel', r.handler_name]);
+      if (r.details) rows.push(['Notes / Details', r.details]);
+
+      document.getElementById('dawah-mdl-body').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+          ${rows.map(([k, v]) => `
+            <div style="display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px dashed var(--border-color,#e2e8f0);">
+              <span style="color:var(--text-muted);font-weight:600;min-width:140px;">${escHtml(k)}</span>
+              <span style="text-align:right;font-weight:600;word-break:break-word;">${k === 'Status' ? v : escHtml(v)}</span>
+            </div>
+          `).join('')}
+        </div>`;
+      document.getElementById('dawah-review-modal').style.display = 'flex';
+    }
+
+    function closeDawahReviewModal() {
+      document.getElementById('dawah-review-modal').style.display = 'none';
+    }
 
     function filterTable() {
       const search = document.getElementById('search').value.toLowerCase();
       const type = document.getElementById('type-filter').value;
       const status = document.getElementById('status-filter').value;
       let filtered = allReqs;
-      if (search) filtered = filtered.filter(r => (r.name || '').toLowerCase().includes(search) || r.id.toLowerCase().includes(search));
-      if (type !== 'all') filtered = filtered.filter(r => r.type.includes(type));
-      if (status !== 'all') filtered = filtered.filter(r => r.status === status);
+      if (search) filtered = filtered.filter(r => (r.name || '').toLowerCase().includes(search) || String(r.id || '').toLowerCase().includes(search));
+      if (type !== 'all') filtered = filtered.filter(r => (r.type || '').includes(type));
+      if (status !== 'all') filtered = filtered.filter(r => (r.status || '').toLowerCase().includes(status));
       renderTable(filtered);
     }
 
-    function approveReq(id) {
-      const all = getRequests(); const r = all.find(x => x.id === id);
-      if (r) {
-        r.status = 'approved';
-        r.updatedAt = new Date().toISOString().split('T')[0];
-        saveRequests(all);
-        addActivityEntry('Request approved', id + ' approved by MIS Admin', 'MIS Admin', 'approve');
-        showToast('✅ ' + id + ' approved!', 'var(--success)');
-        allReqs = getRequests().filter(r => DAWAH_TYPES.includes(r.type));
-        filterTable();
+    // Apply URL query filters (?type=...&id=...) so MIS Admin Review opens in-place
+    (function initDawahParams() {
+      const params = new URLSearchParams(window.location.search);
+      const qType = params.get('type');
+      const qId = params.get('id');
+      const typeSel = document.getElementById('type-filter');
+      if (qType && typeSel && Array.from(typeSel.options).some(o => o.value === qType)) {
+        typeSel.value = qType;
       }
-    }
-    function rejectReq(id) {
-      const all = getRequests(); const r = all.find(x => x.id === id);
-      if (r) {
-        r.status = 'rejected';
-        r.updatedAt = new Date().toISOString().split('T')[0];
-        saveRequests(all);
-        addActivityEntry('Request rejected', id + ' rejected by MIS Admin', 'MIS Admin', 'reject');
-        showToast('❌ ' + id + ' rejected.', 'var(--danger)');
-        allReqs = getRequests().filter(r => DAWAH_TYPES.includes(r.type));
-        filterTable();
+      filterTable();
+      if (qId) {
+        openDawahReviewModal(qType || '', qId);
       }
-    }
+    })();
   </script>
 </body>
 

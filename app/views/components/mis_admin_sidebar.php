@@ -52,7 +52,7 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
         <!-- PENDING REQUESTS -->
         <div class="nav-section-label">Operations</div>
         <div class="nav-dropdown-wrap" id="pending-wrap">
-            <button class="nav-dropdown-trigger <?= $is_pending_open ? 'open' : '' ?>" id="pending-trigger" data-href="<?= url('/admin/mis_admin/tenant_confirmation') ?>">
+            <button class="nav-dropdown-trigger <?= $is_pending_open ? 'open' : '' ?>" id="pending-trigger" data-href="<?= url('/admin/mis_admin/apartment_confirmation') ?>">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" /></svg>
                 <span class="nav-item-label">Pending Requests</span>
                 <svg class="nav-dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
