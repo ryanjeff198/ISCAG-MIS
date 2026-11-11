@@ -13,6 +13,7 @@ Auth::protectRole(['Admin', 'Staff_Female']);
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .analytics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px; }
+    @media (max-width: 1180px) { .analytics-grid { grid-template-columns: 1fr; } }
     .chart-container { position: relative; height: 320px; width: 100%; }
     
     .insight-card { cursor: default; }
@@ -125,7 +126,7 @@ Auth::protectRole(['Admin', 'Staff_Female']);
               </h6>
             </div>
             <div class="section-card-body">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:32px; align-items:center;">
+              <div class="analytics-grid" style="gap:32px; align-items:center; margin-bottom:0;">
                 <div class="chart-container" style="height:250px;">
                   <canvas id="concernsChart"></canvas>
                 </div>
@@ -156,7 +157,7 @@ Auth::protectRole(['Admin', 'Staff_Female']);
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+        <div class="analytics-grid" style="margin-bottom:0;">
           <div class="section-card">
             <div class="section-card-header">
               <h6>

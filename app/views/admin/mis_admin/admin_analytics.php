@@ -45,9 +45,10 @@
     
     @media (max-width: 1400px) {
         .chart-row.two { grid-template-columns: 2fr 1fr; }
+        .chart-row.three { grid-template-columns: repeat(2, 1fr); }
     }
     
-    @media (max-width: 1100px) {
+    @media (max-width: 1180px) {
         .chart-row.two, .chart-row.three, .chart-row.equal { grid-template-columns: 1fr; }
     }
 
@@ -76,8 +77,8 @@
     .dt-tag { font-size: 0.7rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
     .dt-tag.active { background: rgba(47, 138, 96, 0.08); color: var(--success); }
 
-    .dt-search { border: 1px solid var(--border); border-radius: 10px; padding: 10px 18px; font-size: 0.9rem; width: 320px; outline: none; font-family: inherit; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-    .dt-search:focus { border-color: var(--primary); box-shadow: 0 4px 12px rgba(23,107,69,0.1); width: 380px; }
+    .dt-search { border: 1px solid var(--border); border-radius: 10px; padding: 10px 18px; font-size: 0.9rem; width: 100%; max-width: 320px; outline: none; font-family: inherit; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+    .dt-search:focus { border-color: var(--primary); box-shadow: 0 4px 12px rgba(23,107,69,0.1); max-width: 380px; }
 
     .btn-export { background: var(--primary-dark); color: #fff; border: none; padding: 10px 22px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(23,107,69,0.2); }
     .btn-export:hover { transform: translateY(-2px); background: var(--primary); box-shadow: 0 6px 20px rgba(23,107,69,0.3); }

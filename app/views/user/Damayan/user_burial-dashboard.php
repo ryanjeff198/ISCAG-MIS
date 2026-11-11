@@ -125,7 +125,7 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
     color: var(--text-main);
     margin: 0;
   }
-  .burial-wrapper{padding:32px 40px;max-width:1200px;margin:0 auto;}
+  .burial-wrapper{padding:32px 40px;max-width:1360px;margin:0 auto;width:100%;}
 
   /* Greeting */
   .greeting{margin-bottom:28px;}
@@ -153,7 +153,7 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
   /* Death Certificate Pipeline Tracker */
   .progress-card{grid-column:span 12;padding:30px;}
   .progress-card h3{margin:0 0 6px;font-size:1.1rem;font-weight:700;}
-  .progress-tracker{display:flex;justify-content:space-between;align-items:flex-start;margin-top:24px;position:relative;padding:0 10px;}
+  .progress-tracker{display:flex;justify-content:space-between;align-items:flex-start;margin-top:24px;position:relative;padding:0 10px;overflow-x:auto;gap:10px;}
   .progress-line{position:absolute;top:14px;left:45px;right:45px;height:2px;background:#e5e7eb;z-index:1;}
   .progress-line-fill{position:absolute;top:14px;left:45px;height:2px;background:var(--primary);z-index:2;transition:width .5s ease;}
   .step{display:flex;flex-direction:column;align-items:center;position:relative;z-index:3;gap:8px;width:110px;}
@@ -304,6 +304,7 @@ $isAuthorizedForRelease = $hasRequest && in_array(strtolower($currentDcStatus), 
     }
   }
 
+  @media(max-width:1180px){.burial-wrapper{padding:24px;}.dual-card,.details-card,.guidelines-card,.services-card{grid-column:span 12;}}
   @media(max-width:900px){
     .summary-row{grid-template-columns:1fr;}
     .dual-card,.details-card,.guidelines-card,.services-card{grid-column:span 12;}

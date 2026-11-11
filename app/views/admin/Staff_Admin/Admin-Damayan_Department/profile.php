@@ -129,7 +129,7 @@
             <h6 style="color: var(--damayan-dark);">Services Managed</h6>
           </div>
           <div class="section-card-body">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+            <div class="form-grid cols-3" style="gap:16px;">
               <div class="service-card">
                 <div class="svc-icon" style="background:var(--damayan-accent);"><svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg></div>
                 <div>
@@ -152,7 +152,7 @@
         <div class="section-card">
           <div class="section-card-header"><h6 style="color: var(--damayan-dark);">Account Settings</h6></div>
           <div class="section-card-body">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-grid cols-2" style="gap:16px;">
               <div><label class="form-label">Staff ID</label><p style="font-weight:600;" id="s-id"><?= $dbUser['tenant_id'] ?? 'DMY-001' ?></p></div>
               <div><label class="form-label">Role</label><p style="font-weight:600;" id="s-role">Damayan Manager</p></div>
               <div><label class="form-label">Department</label><p style="font-weight:600;" id="s-dept">Damayan Social Welfare</p></div>
@@ -182,11 +182,11 @@
       </div>
       <div style="padding:24px;overflow-y:auto;flex:1;">
         <div class="form-section-title">Personal Information</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="form-grid cols-2" style="gap:16px;margin-bottom:16px;">
           <div><label class="form-label">Full Name</label><input type="text" class="form-control" id="f-name" /></div>
           <div><label class="form-label">Email</label><input type="email" class="form-control" id="f-email" /></div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+        <div class="form-grid cols-2" style="gap:16px;margin-bottom:24px;">
           <div><label class="form-label">Phone</label><input type="tel" class="form-control" id="f-phone" /></div>
           <div>
             <label class="form-label">Gender</label>
@@ -195,7 +195,7 @@
           </div>
         </div>
         <div class="form-section-title">Staff Details</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+        <div class="form-grid cols-2" style="gap:16px;margin-bottom:24px;">
           <div><label class="form-label">Muslim Name</label><input type="text" class="form-control" id="f-arabic" /></div>
           <div><label class="form-label">Occupation / Title</label><input type="text" class="form-control" id="f-occupation" /></div>
         </div>

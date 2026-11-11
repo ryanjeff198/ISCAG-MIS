@@ -48,9 +48,10 @@
     
     @media (max-width: 1400px) {
         .chart-row.two { grid-template-columns: 2fr 1fr; }
+        .chart-row.three, .chart-row.four { grid-template-columns: repeat(2, 1fr); }
     }
     
-    @media (max-width: 1100px) {
+    @media (max-width: 1180px) {
         .chart-row.two, .chart-row.three, .chart-row.equal, .chart-row.four { grid-template-columns: 1fr; }
         .kpi-row { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
     }

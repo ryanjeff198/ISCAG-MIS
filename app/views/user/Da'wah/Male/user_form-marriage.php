@@ -692,12 +692,18 @@
       font-size: 0.82rem; color: #166534; line-height: 1.5; margin: 0; font-style: italic;
     }
     
-    @media (max-width: 960px) {
+    @media (max-width: 1200px) {
       .marriage-cal-layout { grid-template-columns: 1fr !important; }
-      .marriage-summary-grid { grid-template-columns: 1fr !important; }
-      .marriage-pending-hub-grid { grid-template-columns: 1fr !important; padding: 20px !important; }
-      .marriage-pending-schedule-strip { grid-template-columns: 1fr 1fr !important; }
+      .marriage-pending-hub-grid, .schedule-hub-grid { grid-template-columns: 1fr !important; padding: 20px !important; }
+      .marriage-pending-schedule-strip, .mhero-schedule-strip { grid-template-columns: 1fr 1fr !important; }
+      .user-analytics { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+    }
+    @media (max-width: 960px) {
+      .marriage-summary-grid, .approved-details-grid { grid-template-columns: 1fr !important; }
       .marriage-pending-hero-banner { padding: 24px 20px !important; }
+    }
+    @media (max-width: 576px) {
+      .marriage-pending-schedule-strip, .mhero-schedule-strip, .user-analytics { grid-template-columns: 1fr !important; }
     }
   </style>
 </head>

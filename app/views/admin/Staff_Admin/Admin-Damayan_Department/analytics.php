@@ -227,7 +227,7 @@
       margin-bottom: 24px;
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 1180px) {
       .analytics-grid-2, .analytics-grid-3 {
         grid-template-columns: 1fr;
       }

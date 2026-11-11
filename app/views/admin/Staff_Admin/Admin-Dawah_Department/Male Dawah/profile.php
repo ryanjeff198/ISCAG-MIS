@@ -276,7 +276,7 @@ $initials = strtoupper(substr($dbUser['first_name'] ?? 'M', 0, 1) . substr($dbUs
 
       <div style="padding:24px;overflow-y:auto;flex:1;">
         <div class="form-section-title">Personal &amp; Contact Information</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="form-grid cols-2" style="gap:16px;margin-bottom:16px;">
           <div>
             <label class="form-label" style="font-size:0.76rem;font-weight:700;color:#374151;text-transform:uppercase;margin-bottom:5px;display:block;">Full Name <span style="color:#dc2626;">*</span></label>
             <input type="text" class="form-control" id="f-name" style="width:100%;box-sizing:border-box;border:1.5px solid #d1d5db;border-radius:8px;padding:9px 12px;font-size:0.88rem;font-family:inherit;" />
@@ -287,7 +287,7 @@ $initials = strtoupper(substr($dbUser['first_name'] ?? 'M', 0, 1) . substr($dbUs
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div class="form-grid cols-2" style="gap:16px;margin-bottom:20px;">
           <div>
             <label class="form-label" style="font-size:0.76rem;font-weight:700;color:#374151;text-transform:uppercase;margin-bottom:5px;display:block;">Contact Number</label>
             <input type="tel" class="form-control" id="f-phone" placeholder="+63 9XX XXX XXXX" style="width:100%;box-sizing:border-box;border:1.5px solid #d1d5db;border-radius:8px;padding:9px 12px;font-size:0.88rem;font-family:inherit;" />
@@ -299,7 +299,7 @@ $initials = strtoupper(substr($dbUser['first_name'] ?? 'M', 0, 1) . substr($dbUs
         </div>
 
         <div class="form-section-title">Department &amp; Da'wah Details</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="form-grid cols-2" style="gap:16px;margin-bottom:16px;">
           <div>
             <label class="form-label" style="font-size:0.76rem;font-weight:700;color:#374151;text-transform:uppercase;margin-bottom:5px;display:block;">Muslim / Arabic Name</label>
             <input type="text" class="form-control" id="f-arabic" placeholder="e.g. Abdullah" style="width:100%;box-sizing:border-box;border:1.5px solid #d1d5db;border-radius:8px;padding:9px 12px;font-size:0.88rem;font-family:inherit;" />

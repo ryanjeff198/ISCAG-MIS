@@ -369,6 +369,18 @@ $uploadedDocs = $uploadedDocs ?? [];
             border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px;
         }
 
+        @media (max-width: 1200px) {
+            .status-summary { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); padding: 16px 20px; }
+            .apt-modal-body { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .status-summary { grid-template-columns: repeat(2, 1fr); padding: 14px 16px; }
+            .info-grid { grid-template-columns: 1fr; }
+            .info-field { border-right: none !important; }
+        }
+        @media (max-width: 480px) {
+            .status-summary { grid-template-columns: 1fr; }
+        }
         /* ── Success Modal ── */
         .success-modal {
             max-width: 400px !important;

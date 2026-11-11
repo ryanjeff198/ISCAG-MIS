@@ -661,7 +661,7 @@ if ($isApproved && !empty($enrolledCourses)) {
 
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    @media(max-width:1200px){.stats{grid-template-columns:repeat(2,1fr);}.sched-grid{grid-template-columns:repeat(4,1fr);}}
+    @media(max-width:1200px){.pw{padding:0 28px 40px;}.stats{grid-template-columns:repeat(2,1fr);}.sched-grid{grid-template-columns:repeat(4,1fr);}.prog-grid,.subj-grid{grid-template-columns:repeat(2,1fr);}}
     @media(max-width:900px){.prog-grid,.subj-grid,.quick-actions{grid-template-columns:1fr;}.sched-grid{grid-template-columns:repeat(2,1fr);}}
     @media(max-width:600px){.stats,.sched-grid,.bottom-row{grid-template-columns:1fr;}.dash-hero{padding:50px 25px 90px;}.pw{padding:0 20px 40px;}.hero-name{font-size:1.6rem;}.stat-val{font-size:1.8rem;}}
 </style>

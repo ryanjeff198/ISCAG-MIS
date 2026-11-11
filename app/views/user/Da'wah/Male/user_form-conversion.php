@@ -553,12 +553,17 @@ foreach ($history as $req) {
       font-size: 0.75rem; font-weight: 800; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;
     }
 
-    @media (max-width: 960px) {
+    @media (max-width: 1200px) {
       .conversion-cal-layout { grid-template-columns: 1fr !important; }
-      .conversion-summary-grid { grid-template-columns: 1fr !important; }
       .conversion-pending-hub-grid { grid-template-columns: 1fr !important; padding: 20px !important; }
       .conversion-pending-schedule-strip { grid-template-columns: 1fr 1fr !important; }
+    }
+    @media (max-width: 960px) {
+      .conversion-summary-grid { grid-template-columns: 1fr !important; }
       .conversion-pending-hero-banner { padding: 24px 20px !important; }
+    }
+    @media (max-width: 576px) {
+      .conversion-pending-schedule-strip { grid-template-columns: 1fr !important; }
     }
   </style>
 </head>
@@ -1466,7 +1471,15 @@ foreach ($history as $req) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    .then(r => r.json())
+    .then(async r => {
+      const text = await r.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        console.error('Non-JSON response:', text);
+        return { success: false, message: 'Server returned an invalid response. Please try again.' };
+      }
+    })
     .then(data => {
       if(data.success) {
         showToast('Conversion registration submitted successfully!', '#166534');

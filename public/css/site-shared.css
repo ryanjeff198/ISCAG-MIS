@@ -476,6 +476,14 @@ html, body {
   overflow-x: hidden;
 }
 
+@media (min-width: 992px) and (max-width: 1220px) {
+  .nav-inner { padding: 0 18px; }
+  .logo { margin-right: 12px; }
+  .logo-text { font-size: .78rem; max-width: 165px; }
+  .nav-link { padding: 8px 10px !important; font-size: .82rem !important; }
+  .btn-login, .btn-register { padding: 8px 14px !important; font-size: .82rem !important; }
+}
+
 @media (min-width: 992px) {
   .nav-menu-wrapper {
     display: flex !important;

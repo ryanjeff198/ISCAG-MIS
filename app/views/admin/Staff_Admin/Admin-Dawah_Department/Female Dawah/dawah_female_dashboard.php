@@ -42,6 +42,8 @@
     .ql-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
 
     .dash-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 1200px) { .dash-kpi-grid { grid-template-columns: repeat(2, 1fr); } .quick-links { grid-template-columns: repeat(2, 1fr); } .dash-grid-2 { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) { .dash-kpi-grid, .quick-links { grid-template-columns: 1fr; } }
     .activity-item {
       display: flex; align-items: center; gap: 14px; padding: 14px 0;
       border-bottom: 1px solid rgba(0,0,0,0.04); transition: background 0.2s;

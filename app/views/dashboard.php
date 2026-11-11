@@ -1392,7 +1392,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                 <p style="font-size:0.95rem;color:var(--text-muted);">Please select the service you wish to access</p>
               </div>
 
-              <div style="display:grid;grid-template-columns:<?= strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') === 'female' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)' ?>;gap:20px;margin-bottom:32px;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(195px, 1fr));gap:20px;margin-bottom:32px;">
                 <?php if (strtolower($_SESSION['sex'] ?? $_SESSION['gender'] ?? '') !== 'female'): ?>
                 <!-- Marriage -->
                 <div class="dawah-opt-card" id="opt-marriage" style="
@@ -1525,7 +1525,7 @@ if (Auth::hasRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staf
                 <p style="font-size:0.95rem;color:var(--text-muted);">How can we assist you today?</p>
               </div>
               
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:20px;margin-bottom:32px;">
                 <!-- Burial Service -->
                 <div class="damayan-opt-card" id="opt-burial" style="
                   border:2px solid var(--primary-light);border-radius:20px;padding:24px 20px;text-align:center;

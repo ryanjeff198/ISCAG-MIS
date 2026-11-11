@@ -118,7 +118,8 @@ $init = strtoupper(substr($d['first_name']??'S',0,1));
         width: 22px; height: 22px; fill: var(--g); flex-shrink: 0;
     }
 
-    @media(max-width:900px){.prog-grid,.subj-grid{grid-template-columns:1fr;}}
+    @media(max-width:1200px){.pw{padding:0 28px 40px;}.prog-grid,.subj-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:900px){.prog-grid,.subj-grid{grid-template-columns:1fr;}}
     @media(max-width:600px){.bottom-row{grid-template-columns:1fr;}.dash-hero{padding:50px 25px 90px;}.pw{padding:0 20px 40px;}.hero-name{font-size:1.6rem;}}
 </style></head><body>
 <div class="app-wrapper">

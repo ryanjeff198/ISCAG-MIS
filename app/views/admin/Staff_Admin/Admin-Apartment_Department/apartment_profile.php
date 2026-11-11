@@ -220,7 +220,7 @@
             </div>
             <div style="border-top:1px solid var(--border);margin-bottom:18px;"></div>
             <!-- Stats -->
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;">
+            <div class="form-grid cols-4" style="gap:12px;margin-bottom:18px;">
               <div style="text-align:center;padding:10px 8px;border-radius:8px;background:rgba(199,154,43,0.06);">
                 <div style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:var(--accent);"
                   id="qs-units">0</div>
@@ -261,7 +261,7 @@
               Only</span>
           </div>
           <div class="section-card-body">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+            <div class="form-grid cols-3" style="gap:16px;">
               <div class="service-card">
                 <div class="svc-icon" style="background:var(--accent);"><svg viewBox="0 0 24 24">
                     <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z" />
@@ -304,7 +304,7 @@
               </svg>Account Settings</h6>
           </div>
           <div class="section-card-body">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-grid cols-2" style="gap:16px;">
               <div><label class="form-label">Staff ID</label>
                 <p style="font-weight:600;font-family:monospace;color:var(--text-muted);" id="s-id">STF-001</p>
               </div>
@@ -338,11 +338,11 @@
       </div>
       <div style="padding:24px;overflow-y:auto;flex:1;">
         <div class="form-section-title">Personal Information</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="form-grid cols-2" style="gap:16px;margin-bottom:16px;">
           <div><label class="form-label">Full Name</label><input type="text" class="form-control" id="f-name" /></div>
           <div><label class="form-label">Email</label><input type="email" class="form-control" id="f-email" /></div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+        <div class="form-grid cols-2" style="gap:16px;margin-bottom:24px;">
           <div><label class="form-label">Phone</label><input type="tel" class="form-control" id="f-phone" /></div>
           <div><label class="form-label">Gender</label><select class="form-control" id="f-gender"
               style="appearance:auto;">
@@ -352,7 +352,7 @@
             </select></div>
         </div>
         <div class="form-section-title">Islamic Information</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+        <div class="form-grid cols-2" style="gap:16px;margin-bottom:24px;">
           <div><label class="form-label">Arabic Name</label><input type="text" class="form-control" id="f-arabic" />
           </div>
           <div><label class="form-label">Occupation</label><input type="text" class="form-control" id="f-occupation" />

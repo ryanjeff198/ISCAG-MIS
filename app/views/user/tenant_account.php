@@ -206,7 +206,7 @@ $phpUser = [
                         <div style="border-top:1px solid var(--border);margin-bottom:18px;"></div>
 
                         <!-- quick stats -->
-                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;">
+                        <div class="form-grid cols-4" style="gap:12px;margin-bottom:18px;">
                             <div
                                 style="text-align:center;padding:10px 8px;border-radius:8px;background:rgba(30,95,139,0.06);">
                                 <div style="font-family:'Lora',serif;font-size:1.3rem;font-weight:700;color:var(--primary-dark);line-height:1;"
@@ -369,7 +369,7 @@ $phpUser = [
             <div style="padding:24px;overflow-y:auto;flex:1;">
                 <div class="form-section-title">Personal Information</div>
 
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;">
+                <div class="form-grid cols-3" style="gap:16px;margin-bottom:16px;">
                     <div><label class="form-label">Full Name *</label><input type="text" class="form-control"
                             id="f-name" placeholder="Full name" value="<?= htmlspecialchars($phpUser['name']) ?>" readonly style="background:var(--bg-light);cursor:not-allowed;" /></div>
                     <div><label class="form-label">Email Address *</label><input type="email" class="form-control"
@@ -383,7 +383,7 @@ $phpUser = [
                     </div>
                 </div>
 
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;">
+                <div class="form-grid cols-3" style="gap:16px;margin-bottom:16px;">
                     <div><label class="form-label">Contact Number *</label><input type="tel" class="form-control"
                             id="f-phone" placeholder="09XX-XXX-XXXX" value="<?= htmlspecialchars($account['contactnum'] ?? '') ?>" /></div>
                     <div>
@@ -406,7 +406,7 @@ $phpUser = [
                     </div>
                 </div>
 
-                <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px;">
+                <div class="form-grid cols-2-1" style="gap:16px;margin-bottom:24px;">
                     <div><label class="form-label">Complete Address *</label><input type="text" class="form-control"
                             id="f-address" placeholder="House No., Street, Barangay, City" value="<?= htmlspecialchars($info['address'] ?? '') ?>" /></div>
                     <div><label class="form-label">Occupation</label><input type="text" class="form-control"
@@ -415,7 +415,7 @@ $phpUser = [
 
                 <div class="form-section-title">Islamic Information</div>
 
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+                <div class="form-grid cols-2" style="gap:16px;margin-bottom:24px;">
                     <div>
                         <label class="form-label">Muslim / Arabic Name</label>
                         <input type="text" class="form-control" id="f-arabic-name" placeholder="e.g., Abdullah, Fatimah" value="<?= htmlspecialchars($info['muslimname'] ?? '') ?>" />

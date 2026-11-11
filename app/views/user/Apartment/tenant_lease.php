@@ -106,12 +106,17 @@
         .confirm-box { background: white; border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); overflow: hidden; transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .confirm-overlay.show .confirm-box { transform: translateY(0); }
 
-        @media (max-width: 640px) {
-            .lease-summary { grid-template-columns: repeat(2, 1fr); }
+        @media (max-width: 1080px) {
+            .lease-summary { grid-template-columns: repeat(2, 1fr); padding: 16px 20px; }
+        }
+        @media (max-width: 820px) {
             .info-grid { grid-template-columns: 1fr; }
             .info-field { border-right: none !important; }
+        }
+        @media (max-width: 640px) {
+            .lease-summary { grid-template-columns: 1fr; }
             .action-bar { flex-direction: column; text-align: center; }
-            .action-bar-btns { width: 100%; justify-content: center; }
+            .action-bar-btns { width: 100%; justify-content: center; flex-wrap: wrap; }
         }
 
         /* ══════════════ FORMAL PRINTABLE CONTRACT STYLES ══════════════ */

@@ -34,6 +34,8 @@ foreach ($history as $req) {
 
     /* ── Analytics Styles ── */
     .user-analytics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+    @media (max-width: 1100px) { .user-analytics { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .user-analytics, .slots-grid { grid-template-columns: 1fr; } }
     .stat-card { 
         background: #fff; padding: 24px; border-radius: 16px; border: 1px solid var(--border);
         display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);

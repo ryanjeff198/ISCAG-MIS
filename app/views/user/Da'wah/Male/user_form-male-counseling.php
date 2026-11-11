@@ -383,6 +383,7 @@
 
     /* ── Analytics Styles ── */
     .user-analytics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+    .user-analytics.cols-4 { grid-template-columns: repeat(4, 1fr); }
     .stat-card { 
       background: #fff; padding: 24px; border-radius: 16px; border: 1px solid var(--border);
       display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
@@ -757,14 +758,19 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes modalPop { 0% { opacity: 0; transform: scale(0.92); } 100% { opacity: 1; transform: scale(1); } }
 
-    @media (max-width: 960px) {
+    @media (max-width: 1200px) {
       .schedule-hub-grid { grid-template-columns: 1fr; padding: 20px; }
       .hero-schedule-strip { grid-template-columns: 1fr 1fr; }
+      .approved-calendar-layout { grid-template-columns: 1fr !important; }
+      .user-analytics, .user-analytics.cols-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 960px) {
       .appointment-hero-banner { padding: 24px 20px; }
       .appointment-toolbar { padding: 16px 20px; }
-      .user-analytics { grid-template-columns: 1fr; }
-      .approved-calendar-layout { grid-template-columns: 1fr !important; }
-      .pending-summary-grid { grid-template-columns: 1fr !important; }
+      .pending-summary-grid, .approved-details-grid { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 576px) {
+      .user-analytics, .user-analytics.cols-4, .hero-schedule-strip { grid-template-columns: 1fr; }
     }
 
     /* ══════════════════════════════════════════════════════════ */
@@ -1109,9 +1115,12 @@
     .amanah-text strong { display: block; font-size: 0.85rem; color: #166534; margin-bottom: 2px; }
     .amanah-text p { font-size: 0.78rem; color: #15803d; margin: 0; line-height: 1.45; }
 
-    @media (max-width: 960px) {
+    @media (max-width: 1200px) {
       .pending-hub-grid { grid-template-columns: 1fr; padding: 20px; }
       .pending-schedule-strip { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 576px) {
+      .pending-schedule-strip { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -1199,7 +1208,7 @@
       <!-- ══════════════════════════════════════════════════════════ -->
       <!--  A. COUNSELING OVERVIEW SUMMARY CARDS                    -->
       <!-- ══════════════════════════════════════════════════════════ -->
-      <div class="user-analytics" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
+      <div class="user-analytics cols-4" style="margin-bottom: 24px;">
         <div class="stat-card">
           <div class="stat-label">Request Status</div>
           <div class="stat-value <?= $isConfirmed ? 'success' : ($isPending ? 'warning' : ($isRejected ? 'danger' : '')) ?>" style="font-size: 1.25rem;">

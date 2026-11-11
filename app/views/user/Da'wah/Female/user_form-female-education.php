@@ -292,6 +292,9 @@ if (!$activeRequest && !empty($history)) {
       margin-bottom: 16px;
     }
 
+    @media (max-width: 1100px) {
+      .form-grid-3 { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 768px) {
       .form-grid-3, .form-grid-2 {
         grid-template-columns: 1fr;
@@ -1347,7 +1350,7 @@ if (!$activeRequest && !empty($history)) {
         </div>
 
         <!-- Summary Strip -->
-        <div style="padding: 18px 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; background: #fafaf9; border-top: 1px solid var(--border-subtle);">
+        <div style="padding: 18px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; background: #fafaf9; border-top: 1px solid var(--border-subtle);">
             <div style="background: white; padding: 12px; border-radius: 12px; border: 1px solid var(--border-subtle); text-align: center;">
                 <div style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Student Name</div>
                 <div style="font-weight: 700; color: #111827; margin-top: 2px;"><?= htmlspecialchars(trim(($activeRequest['first_name'] ?? '') . ' ' . ($activeRequest['last_name'] ?? ''))) ?></div>

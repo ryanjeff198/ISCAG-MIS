@@ -242,7 +242,7 @@ $assignedBldg = $appInfo['building'] ?? 'N/A';
             font-size: 0.85rem; font-weight: 600; color: #000; min-height: 20px;
         }
         .parking-form-doc .pf-addr-grid {
-            display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 14px;
         }
         .parking-form-doc .pf-addr-grid .pf-addr-item { text-align: center; }
         .parking-form-doc .pf-addr-grid .pf-addr-item .pf-value { text-align: center; display: block; }
@@ -604,7 +604,7 @@ $assignedBldg = $appInfo['building'] ?? 'N/A';
                             <div class="align-label" style="margin-top: 10px;">Complete Address:</div>
                             <div class="align-input">
                                 <input type="text" class="form-control" value="ISCAG Apartment, Salitran I, Dasmariñas City" readonly style="margin-bottom: 12px;" />
-                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
                                     <div>
                                         <input type="text" class="form-control" style="text-align: center;" value="<?= htmlspecialchars($assignedRoom) ?>" readonly />
                                         <div style="font-size: 0.75rem; color: #777; text-align: center; margin-top: 4px; font-weight: 600;">Room No.</div>

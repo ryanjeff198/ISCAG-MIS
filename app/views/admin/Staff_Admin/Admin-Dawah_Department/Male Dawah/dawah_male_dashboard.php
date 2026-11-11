@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>?v=<?= time() ?>" />
   <style>
     .dash-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+    .dash-kpi-grid.cols-6 { grid-template-columns: repeat(6, 1fr); }
     .dash-kpi {
       background: white; border-radius: 14px; padding: 22px 24px; border: 1px solid var(--border);
       box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: all 0.3s ease; cursor: pointer; position: relative; overflow: hidden;
@@ -42,6 +43,9 @@
     .ql-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
 
     .dash-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 1366px) { .dash-kpi-grid.cols-6 { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 1180px) { .dash-kpi-grid, .quick-links { grid-template-columns: repeat(2, 1fr); } .dash-grid-2 { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) { .dash-kpi-grid, .dash-kpi-grid.cols-6, .quick-links { grid-template-columns: 1fr; } }
     .activity-item {
       display: flex; align-items: center; gap: 14px; padding: 14px 0;
       border-bottom: 1px solid rgba(0,0,0,0.04); transition: background 0.2s;
@@ -89,7 +93,7 @@
 
         <!-- KPI Cards -->
         <!-- KPI Cards -->
-        <div class="dash-kpi-grid" style="grid-template-columns: repeat(6, 1fr);">
+        <div class="dash-kpi-grid cols-6">
           <div class="dash-kpi" onclick="window.location.href='<?= url('/admin/dawah/counseling') ?>'">
             <div class="kpi-header">
               <span class="kpi-label">Counseling</span>

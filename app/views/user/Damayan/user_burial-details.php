@@ -836,6 +836,10 @@ $headerBadge = getBurialBadgeMeta($status, $isCompleted, $isRejected);
             border-width: 0.15em;
         }
 
+        @media (max-width: 1180px) {
+            .details-container { padding: 24px 20px 56px; }
+            .form-grid { grid-template-columns: repeat(2, 1fr); }
+        }
         @media (max-width: 900px) {
             .app-header { padding: 24px; }
             .app-body { padding: 24px; }

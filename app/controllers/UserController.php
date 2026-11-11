@@ -1198,7 +1198,7 @@ class UserController extends Controller
 
     public function submitConversion(): void
     {
-        Auth::protectRole(['Guest', 'Tenant']);
+        Auth::protect();
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -1310,6 +1310,59 @@ class UserController extends Controller
             'message' => $success ? 'Conversion registration submitted successfully.' : 'Failed to submit registration.'
         ]);
         exit;
+    }
+
+    public function malePrayerDashboard(): void
+    {
+        Auth::protect();
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $userModel = new User();
+        $dbUser = $userId ? $userModel->findById($userId) : [];
+        if ($userId && $dbUser) {
+            $extraInfo = $userModel->getAdditionalInfo($userId) ?: [];
+            $dbUser = array_merge($dbUser, $extraInfo);
+        }
+
+        require_once BASE_PATH . '/app/models/ConversionRequest.php';
+        $conversionModel = new ConversionRequest();
+
+        $approvedStatuses = ['accepted', 'approved', 'confirmed', 'completed'];
+        $pendingStatuses  = ['pending', 'under_review'];
+
+        $allRequests = $conversionModel->getByUser($userId);
+
+        $approvedRequest = null;
+        $pendingRequest  = null;
+        $latestRequest   = $allRequests[0] ?? null;
+
+        foreach ($allRequests as $req) {
+            $st = strtolower(trim($req['status'] ?? ''));
+            if (!$approvedRequest && in_array($st, $approvedStatuses)) {
+                $approvedRequest = $req;
+            }
+            if (!$pendingRequest && in_array($st, $pendingStatuses)) {
+                $pendingRequest = $req;
+            }
+        }
+
+        $isApproved = ($approvedRequest !== null);
+        $hasPending = ($pendingRequest !== null);
+        $isRejected = (!$isApproved && !$hasPending && $latestRequest && in_array(strtolower($latestRequest['status'] ?? ''), ['rejected', 'cancelled', 'disapproved']));
+
+        // Cache approval status in session
+        $_SESSION['male_conversion_approved'] = $isApproved;
+
+        $this->view('user/Da\'wah/Male/user_male-prayer-dashboard', [
+            'dbUser' => $dbUser,
+            'active_page' => 'dawah_male_dashboard',
+            'isApproved' => $isApproved,
+            'hasPending' => $hasPending,
+            'isRejected' => $isRejected,
+            'approvedRequest' => $approvedRequest,
+            'pendingRequest' => $pendingRequest,
+            'latestRequest' => $latestRequest,
+            'allRequests' => $allRequests
+        ]);
     }
 
     public function charity(): void
