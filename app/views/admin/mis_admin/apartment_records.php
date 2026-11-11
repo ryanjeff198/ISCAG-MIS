@@ -30,25 +30,6 @@
       </div>
       <div class="page-body">
         
-        <!-- Admin Insights Ribbon -->
-        <div class="admin-insights">
-          <div class="insight-card">
-            <div class="insight-label">Total Inventory</div>
-            <div class="insight-value" id="stat-units-val">42 Units</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Available Slots</div>
-            <div class="insight-value success" id="stat-avail-val">4</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Occupancy Rate</div>
-            <div class="insight-value info">92.4%</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Collection Rate</div>
-            <div class="insight-value success">98.2%</div>
-          </div>
-        </div>
         <div class="breadcrumb-bar">
           <a href="<?= url('/admin/dashboard') ?>">MIS Admin</a><span class="sep">›</span><span class="current">Apartment
             Records</span>

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="<?= asset('css/site-shared.css') ?>">
+  <link rel="stylesheet" href="<?= asset('css/site-shared.css') ?>?v=<?= @filemtime(BASE_PATH . '/public/css/site-shared.css') ?: '2' ?>">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -35,7 +35,8 @@
 
     /* ─── HERO SECTION ────────────────────────────────────────── */
     .hero-section {
-      padding-top: 68px; /* Offset for fixed navbar */
+      padding: clamp(96px, 9vh, 128px) 0 clamp(40px, 6vh, 72px);
+      min-height: clamp(540px, 78vh, 840px);
       background: linear-gradient(135deg, #f8f7f4 0%, #ffffff 100%);
       position: relative;
       overflow: hidden;
@@ -97,7 +98,7 @@
       display: flex;
       gap: 1.2rem;
       flex-wrap: wrap;
-      margin-bottom: 100px; /* Increased space for better separation */
+      margin-bottom: 12px;
     }
 
     .btn-hero {
@@ -352,6 +353,9 @@
     }
 
     @media (max-width: 991.98px) {
+      .mv-section { padding: 72px 0; }
+      .mv-header { margin-bottom: 44px; text-align: center; }
+      .section-title { margin-left: auto; margin-right: auto; }
       .mv-main-grid { grid-template-columns: 1fr; }
       .objective-bar { 
         grid-column: span 1; 
@@ -362,6 +366,18 @@
       .obj-label { border-right: none; border-bottom: 2px solid rgba(20, 83, 45, 0.1); padding: 0 0 20px; }
       .motto-banner { padding: 30px 40px; border-radius: 40px; width: 100%; }
       .mv-card-premium { padding: 40px; }
+    }
+
+    @media (max-width: 575.98px) {
+      .hero-section { padding: 92px 0 40px !important; min-height: auto; }
+      .hero-title { font-size: 2rem; }
+      .hero-btns { flex-direction: column; align-items: stretch; gap: 12px; }
+      .btn-hero { justify-content: center; width: 100%; padding: 12px 20px; }
+      .mv-section { padding: 52px 0; }
+      .mv-card-premium { padding: 28px 22px; border-radius: 24px; }
+      .objective-bar { padding: 24px 20px; border-radius: 24px; }
+      .motto-banner { padding: 24px 20px; border-radius: 24px; }
+      .motto-banner blockquote { font-size: 1.1rem; }
     }
 
     @media (max-width: 991.98px) {
@@ -407,7 +423,7 @@
 
     .hero-image-wrapper {
       position: relative;
-      margin-top: -50px; /* Increased lift for images */
+      margin-top: 0;
     }
 
     .hero-image-card {
@@ -575,6 +591,14 @@
       0%, 100% { transform: perspective(1200px) rotateY(12deg) rotateX(15deg) translateY(0); }
       50% { transform: perspective(1200px) rotateY(12deg) rotateX(15deg) translateY(-18px); }
     }
+
+    @media (min-width: 992px) and (max-width: 1399.98px) {
+      .hero-title { font-size: clamp(2.15rem, 4.2vw, 3.4rem); }
+      .hero-image-card-secondary { width: 155px; right: -10px; top: -24px; }
+      .hero-image-card-tertiary { width: 145px; left: -14px; bottom: -20px; }
+      .hero-image-card-quaternary { width: 130px; right: 20px; bottom: -32px; }
+      .hero-image-card-quinary { width: 125px; left: 16px; top: -36px; }
+    }
   </style>
 </head>
 <body>
@@ -585,7 +609,7 @@
 ?>
 
 <!-- ══════════════════════ HERO SECTION ══════════════════════ -->
-<section class="hero-section min-vh-100 d-flex align-items-center fade-in">
+<section class="hero-section d-flex align-items-center fade-in">
   <div class="container">
     <div class="row align-items-center">
       

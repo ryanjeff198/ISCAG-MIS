@@ -106,41 +106,38 @@
     <div class="page-body">
       <div class="an">
 
-        <!-- ═══ SECTION 1: KPI OVERVIEW ═══ -->
+        <!-- ═══ SECTION 1: DEPARTMENT & USER KPI OVERVIEW ═══ -->
         <div class="an-section">
           <div class="admin-insights">
             <div class="insight-card">
-              <div class="insight-label">Total Users</div>
-              <div class="insight-value" style="color:var(--primary)"><?=number_format($totalUsers)?></div>
-              <div class="kpi-trend up">↑ Active</div>
+              <div class="insight-label">Registered Users</div>
+              <div class="insight-value" style="color:var(--primary)"><?= number_format($totalUsers ?? 0) ?></div>
+              <div class="kpi-trend up"><?= number_format($activeUsers ?? 0) ?> verified · <?= number_format($staffUsers ?? 0) ?> staff</div>
               <div class="insight-icon-bg" style="color:var(--primary)"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
             </div>
             <div class="insight-card">
-              <div class="insight-label">Apartment Apps</div>
-              <div class="insight-value" style="color:var(--warning)"><?=number_format($totalApps)?></div>
-              <div class="kpi-trend flat">All time</div>
-              <div class="insight-icon-bg" style="color:var(--warning)"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
+              <div class="insight-label">Apartments Dept.</div>
+              <div class="insight-value" style="color:#1e40af"><?= number_format($deptMetrics['apartments']['total'] ?? 0) ?></div>
+              <div class="kpi-trend flat"><?= number_format($deptMetrics['apartments']['occupancy'] ?? 0) ?>/<?= number_format($deptMetrics['apartments']['units'] ?? 0) ?> units · ₱<?= number_format($totalRevenue ?? 0, 0) ?></div>
+              <div class="insight-icon-bg" style="color:#1e40af"><svg viewBox="0 0 24 24"><path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/></svg></div>
             </div>
             <div class="insight-card">
-              <div class="insight-label">Parking Permits</div>
-              <div class="insight-value" style="color:var(--info)"><?=number_format($totalParking)?></div>
-              <div class="kpi-trend flat">All time</div>
-              <div class="insight-icon-bg" style="color:var(--info)"><svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></div>
+              <div class="insight-label">Da'wah Dept.</div>
+              <div class="insight-value" style="color:var(--success)"><?= number_format($deptMetrics['dawah']['total'] ?? 0) ?></div>
+              <div class="kpi-trend up"><?= number_format($deptMetrics['dawah']['pending'] ?? 0) ?> pending · <?= number_format($deptMetrics['dawah']['completed'] ?? 0) ?> completed</div>
+              <div class="insight-icon-bg" style="color:var(--success)"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div>
             </div>
             <div class="insight-card">
-              <div class="insight-label">Notifications</div>
-              <div class="insight-value" style="color:var(--danger)"><?=number_format($totalNotifs)?></div>
-              <div class="kpi-trend up">↑ System</div>
-              <div class="insight-icon-bg" style="color:var(--danger)"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div>
+              <div class="insight-label">Islamic Education</div>
+              <div class="insight-value" style="color:#065f46"><?= number_format($deptMetrics['education']['students'] ?? 0) ?></div>
+              <div class="kpi-trend up"><?= number_format($deptMetrics['education']['avg_progress'] ?? 0, 1) ?>% avg. progress</div>
+              <div class="insight-icon-bg" style="color:#065f46"><svg viewBox="0 0 24 24"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg></div>
             </div>
-            <?php
-              $billingTotal=0; foreach($billingDist as $b) $billingTotal+=$b['total'];
-            ?>
             <div class="insight-card">
-              <div class="insight-label">Total Billing</div>
-              <div class="insight-value" style="color:var(--success)">₱<?=number_format($billingTotal,0)?></div>
-              <div class="kpi-trend up">↑ Revenue</div>
-              <div class="insight-icon-bg" style="color:var(--success)"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></div>
+              <div class="insight-label">Damayan Dept.</div>
+              <div class="insight-value" style="color:#4338ca"><?= number_format($deptMetrics['damayan']['total'] ?? 0) ?></div>
+              <div class="kpi-trend flat"><?= number_format($deptMetrics['damayan']['pending'] ?? 0) ?> pending · ₱<?= number_format($deptMetrics['damayan']['donations_amount'] ?? 0, 0) ?> charity</div>
+              <div class="insight-icon-bg" style="color:#4338ca"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
             </div>
           </div>
         </div>
@@ -148,181 +145,165 @@
         <!-- ═══ SECTION 2: ANALYTICS & TRENDS ═══ -->
         <div class="an-section">
           <div class="an-section-head">
-            <div><div class="an-section-title">Trends & Distributions</div><div class="an-section-sub">Visual breakdown of system activity and user data</div></div>
+            <div><div class="an-section-title">Department & User Trends</div><div class="an-section-sub">Real-time operational distribution across all departments and registered users</div></div>
           </div>
 
-          <!-- Row A: Growth + Activity Timeline -->
+          <!-- Row A: Department Requests Comparison + Module Distribution -->
           <div class="chart-row two" style="margin-bottom:16px">
             <div class="card">
-              <div class="card-head"><div><div class="card-title">User Growth</div><div class="card-sub">Monthly registration trend</div></div><span class="card-badge">Monthly</span></div>
-              <div style="position:relative;height:240px"><canvas id="growthChart"></canvas></div>
+              <div class="card-head"><div><div class="card-title">Requests by Department & Status</div><div class="card-sub">Pending, active/approved, and completed across all 4 departments</div></div><span class="card-badge"><?= number_format($grandTotalRequests ?? 0) ?> Total</span></div>
+              <div style="position:relative;height:250px"><canvas id="deptStatusChart"></canvas></div>
             </div>
             <div class="card">
-              <div class="card-head"><div><div class="card-title">Module Distribution</div><div class="card-sub">Records per service</div></div></div>
-              <div style="position:relative;height:240px;display:flex;justify-content:center"><canvas id="moduleChart"></canvas></div>
-            </div>
-          </div>
-
-          <!-- Row B: 3 columns — App Status, Parking, Billing -->
-          <div class="chart-row three" style="margin-bottom:16px">
-            <div class="card">
-              <div class="card-head"><div><div class="card-title">Application Status</div><div class="card-sub">Apartment requests</div></div></div>
-              <div style="position:relative;height:140px"><canvas id="appChart"></canvas></div>
-              <div style="margin-top:16px">
-                <?php foreach($appStatusDist as $d):
-                  $c = stripos($d['status'],'pend')!==false?'var(--warning)':(stripos($d['status'],'approv')!==false||stripos($d['status'],'assign')!==false?'var(--success)':'var(--danger)');
-                  $pct = $totalApps > 0 ? round(($d['count'] / $totalApps) * 100, 1) : 0;
-                ?>
-                <div class="bl-row" style="margin-bottom:8px;">
-                  <div class="bl-dot" style="background:<?=$c?>"></div>
-                  <div style="flex:1;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div>
-                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
-                    </div>
-                  </div>
-                </div>
-                <?php endforeach; ?>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-head"><div><div class="card-title">Parking Permits</div><div class="card-sub">Allocation breakdown</div></div></div>
-              <div style="position:relative;height:140px;display:flex;justify-content:center"><canvas id="parkChart"></canvas></div>
-              <div style="margin-top:16px">
-                <?php foreach($parkingStatusDist as $d):
-                  $c = stripos($d['status'],'approv')!==false?'var(--success)':(stripos($d['status'],'pend')!==false?'var(--warning)':'var(--danger)');
-                  $pct = $totalParking > 0 ? round(($d['count'] / $totalParking) * 100, 1) : 0;
-                ?>
-                <div class="bl-row" style="margin-bottom:8px;">
-                  <div class="bl-dot" style="background:<?=$c?>"></div>
-                  <div style="flex:1;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div>
-                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
-                    </div>
-                  </div>
-                </div>
-                <?php endforeach; ?>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-head"><div><div class="card-title">Billing Health</div><div class="card-sub">Invoice status</div></div></div>
-              <div style="position:relative;height:140px"><canvas id="billChart"></canvas></div>
-              <div style="margin-top:16px">
-                <?php 
-                  $totalBills = array_sum(array_column($billingDist, 'count'));
-                  foreach($billingDist as $d):
-                    $c = stripos($d['status'],'paid')!==false?'var(--success)':(stripos($d['status'],'overdue')!==false?'var(--danger)':'var(--warning)');
-                    $pct = $totalBills > 0 ? round(($d['count'] / $totalBills) * 100, 1) : 0;
-                ?>
-                <div class="bl-row" style="margin-bottom:8px;">
-                  <div class="bl-dot" style="background:<?=$c?>"></div>
-                  <div style="flex:1;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div>
-                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
-                    </div>
-                  </div>
-                </div>
-                <?php endforeach; ?>
-              </div>
+              <div class="card-head"><div><div class="card-title">Module Distribution</div><div class="card-sub">Share across departments</div></div></div>
+              <div style="position:relative;height:250px;display:flex;justify-content:center"><canvas id="moduleChart"></canvas></div>
             </div>
           </div>
 
-          <!-- Row C: 3 columns — Gender, Occupancy, Verification -->
+          <!-- Row B: Service Breakdown per Department -->
           <div class="chart-row three" style="margin-bottom:16px">
             <div class="card">
-              <div class="card-head"><div><div class="card-title">Demographics</div><div class="card-sub">Gender distribution</div></div></div>
-              <div style="position:relative;height:140px;display:flex;justify-content:center"><canvas id="genderChart"></canvas></div>
+              <div class="card-head"><div><div class="card-title">Da'wah Services</div><div class="card-sub">Counseling, marriage & conversion</div></div></div>
+              <div style="position:relative;height:150px"><canvas id="dawahSvcChart"></canvas></div>
               <div style="margin-top:16px">
-                <?php 
-                  $totalDem = array_sum(array_column($genderDist, 'count'));
-                  foreach($genderDist as $d):
-                    $gc = ($d['gender'] === 'Male') ? 'var(--info)' : (($d['gender'] === 'Female') ? 'var(--warning)' : 'var(--danger)');
-                    $pct = $totalDem > 0 ? round(($d['count'] / $totalDem) * 100, 1) : 0;
+                <?php
+                  $dawahRows = [
+                    ['label' => 'Counseling', 'count' => $deptMetrics['dawah']['counseling'] ?? 0, 'color' => 'var(--primary)'],
+                    ['label' => 'Marriage', 'count' => $deptMetrics['dawah']['marriage'] ?? 0, 'color' => 'var(--warning)'],
+                    ['label' => 'Conversion', 'count' => $deptMetrics['dawah']['conversion'] ?? 0, 'color' => 'var(--success)'],
+                  ];
+                  $dawahSum = array_sum(array_column($dawahRows, 'count'));
+                  foreach ($dawahRows as $dr):
+                    $pct = $dawahSum > 0 ? round(($dr['count'] / $dawahSum) * 100, 1) : 0;
                 ?>
                 <div class="bl-row" style="margin-bottom:8px;">
-                  <div class="bl-dot" style="background:<?=$gc?>"></div>
-                  <div style="flex:1;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['gender'] ?: 'Unknown'?></div>
-                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
-                    </div>
-                  </div>
+                  <div class="bl-dot" style="background:<?= $dr['color'] ?>"></div>
+                  <div style="flex:1;"><div style="display:flex;justify-content:space-between;align-items:center;"><div class="bl-label" style="font-size:0.8rem;"><?= $dr['label'] ?></div><div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?= number_format($dr['count']) ?> (<?= $pct ?>%)</div></div></div>
                 </div>
                 <?php endforeach; ?>
               </div>
             </div>
+
             <div class="card">
-              <div class="card-head"><div><div class="card-title">Unit Occupancy</div><div class="card-sub">Apartment availability</div></div></div>
-              <div style="position:relative;height:140px"><canvas id="occChart"></canvas></div>
+              <div class="card-head"><div><div class="card-title">Damayan Services</div><div class="card-sub">Burial, funeral & charity support</div></div></div>
+              <div style="position:relative;height:150px;display:flex;justify-content:center"><canvas id="damayanSvcChart"></canvas></div>
               <div style="margin-top:16px">
-                <?php 
-                  $totalOcc = array_sum(array_column($occupancyDist, 'count'));
-                  foreach($occupancyDist as $d):
-                    $oc = stripos($d['status'],'avail')!==false?'var(--info)':(stripos($d['status'],'occup')!==false?'var(--primary)':'var(--danger)');
-                    $pct = $totalOcc > 0 ? round(($d['count'] / $totalOcc) * 100, 1) : 0;
+                <?php
+                  $damayanRows = [
+                    ['label' => 'Burial Requests', 'count' => $deptMetrics['damayan']['burial'] ?? 0, 'color' => '#6366f1'],
+                    ['label' => 'Funeral Cases', 'count' => $deptMetrics['damayan']['funeral'] ?? 0, 'color' => 'var(--warning)'],
+                    ['label' => 'Charity Donations', 'count' => $deptMetrics['damayan']['donations_count'] ?? 0, 'color' => 'var(--success)'],
+                  ];
+                  $damayanSum = array_sum(array_column($damayanRows, 'count'));
+                  foreach ($damayanRows as $dm):
+                    $pct = $damayanSum > 0 ? round(($dm['count'] / $damayanSum) * 100, 1) : 0;
                 ?>
                 <div class="bl-row" style="margin-bottom:8px;">
-                  <div class="bl-dot" style="background:<?=$oc?>"></div>
-                  <div style="flex:1;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div>
-                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
-                    </div>
-                  </div>
+                  <div class="bl-dot" style="background:<?= $dm['color'] ?>"></div>
+                  <div style="flex:1;"><div style="display:flex;justify-content:space-between;align-items:center;"><div class="bl-label" style="font-size:0.8rem;"><?= $dm['label'] ?></div><div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?= number_format($dm['count']) ?> (<?= $pct ?>%)</div></div></div>
                 </div>
                 <?php endforeach; ?>
               </div>
             </div>
+
             <div class="card">
-              <div class="card-head"><div><div class="card-title">Account Verification</div><div class="card-sub">Verified vs unverified</div></div></div>
+              <div class="card-head"><div><div class="card-title">Apartments Overview</div><div class="card-sub">Applications, maintenance & parking</div></div></div>
+              <div style="position:relative;height:150px"><canvas id="aptSvcChart"></canvas></div>
+              <div style="margin-top:16px">
+                <?php
+                  $aptRows = [
+                    ['label' => 'Applications', 'count' => $deptMetrics['apartments']['applications'] ?? 0, 'color' => 'var(--primary)'],
+                    ['label' => 'Maintenance', 'count' => $deptMetrics['apartments']['maintenance'] ?? 0, 'color' => 'var(--warning)'],
+                    ['label' => 'Parking Permits', 'count' => $deptMetrics['apartments']['parking'] ?? 0, 'color' => 'var(--info)'],
+                  ];
+                  $aptSum = array_sum(array_column($aptRows, 'count'));
+                  foreach ($aptRows as $ar):
+                    $pct = $aptSum > 0 ? round(($ar['count'] / $aptSum) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:8px;">
+                  <div class="bl-dot" style="background:<?= $ar['color'] ?>"></div>
+                  <div style="flex:1;"><div style="display:flex;justify-content:space-between;align-items:center;"><div class="bl-label" style="font-size:0.8rem;"><?= $ar['label'] ?></div><div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?= number_format($ar['count']) ?> (<?= $pct ?>%)</div></div></div>
+                </div>
+                <?php endforeach; ?>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row C: User Analytics Across the Entire System -->
+          <div class="chart-row three">
+            <div class="card">
+              <div class="card-head"><div><div class="card-title">Account Verification</div><div class="card-sub">Verified vs unverified users</div></div></div>
               <div style="position:relative;height:140px;display:flex;justify-content:center"><canvas id="verifyChart"></canvas></div>
               <div style="margin-top:16px">
                 <?php 
                   $totalVer = array_sum(array_column($statusDist, 'count'));
                   foreach($statusDist as $d):
-                    $vc = stripos($d['status'],'verif')!==false?'var(--success)':'var(--danger)';
+                    $vc = stripos($d['status'],'unverif')===false?'var(--success)':'var(--danger)';
                     $pct = $totalVer > 0 ? round(($d['count'] / $totalVer) * 100, 1) : 0;
                 ?>
                 <div class="bl-row" style="margin-bottom:8px;">
                   <div class="bl-dot" style="background:<?=$vc?>"></div>
-                  <div style="flex:1;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div>
-                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
-                    </div>
-                  </div>
+                  <div style="flex:1;"><div style="display:flex;justify-content:space-between;align-items:center;"><div class="bl-label" style="font-size:0.8rem;"><?=$d['status']?></div><div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$d['count']?> (<?=$pct?>%)</div></div></div>
                 </div>
                 <?php endforeach; ?>
               </div>
             </div>
-          </div>
 
-          <!-- Row D: Full-width timeline -->
-          <div class="card">
-            <div class="card-head"><div><div class="card-title">Activity Timeline</div><div class="card-sub">System events — last 14 days</div></div><span class="card-badge">14 Days</span></div>
-            <div style="position:relative;height:260px"><canvas id="tlChart"></canvas></div>
+            <div class="card">
+              <div class="card-head"><div><div class="card-title">User Role Distribution</div><div class="card-sub">Tenants, guests & staff accounts</div></div></div>
+              <div style="position:relative;height:140px;display:flex;justify-content:center"><canvas id="rolesChart"></canvas></div>
+              <div style="margin-top:16px">
+                <?php
+                  $roleColors = ['Residents / Tenants' => 'var(--primary)', 'Guests' => 'var(--warning)', 'Staff & Admins' => 'var(--info)'];
+                  foreach (($userRoleBreakdown ?? []) as $rName => $rCount):
+                    $rc = $roleColors[$rName] ?? '#94a3b8';
+                    $pct = ($totalUsers ?? 0) > 0 ? round(($rCount / $totalUsers) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:8px;">
+                  <div class="bl-dot" style="background:<?= $rc ?>"></div>
+                  <div style="flex:1;"><div style="display:flex;justify-content:space-between;align-items:center;"><div class="bl-label" style="font-size:0.8rem;"><?= htmlspecialchars($rName) ?></div><div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?= number_format($rCount) ?> (<?= $pct ?>%)</div></div></div>
+                </div>
+                <?php endforeach; ?>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><div><div class="card-title">User Gender Demographics</div><div class="card-sub">Across all registered accounts</div></div></div>
+              <div style="position:relative;height:140px;display:flex;justify-content:center"><canvas id="genderChart"></canvas></div>
+              <div style="margin-top:16px">
+                <?php 
+                  $totalDem = array_sum(array_column($genderDist, 'count'));
+                  foreach($genderDist as $d):
+                    $gc = ($d['gender'] === 'Male') ? 'var(--info)' : (($d['gender'] === 'Female') ? 'var(--warning)' : '#94a3b8');
+                    $pct = $totalDem > 0 ? round(($d['count'] / $totalDem) * 100, 1) : 0;
+                ?>
+                <div class="bl-row" style="margin-bottom:8px;">
+                  <div class="bl-dot" style="background:<?=$gc?>"></div>
+                  <div style="flex:1;"><div style="display:flex;justify-content:space-between;align-items:center;"><div class="bl-label" style="font-size:0.8rem;"><?=$d['gender'] ?: 'Unspecified'?></div><div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$d['count']?> (<?=$pct?>%)</div></div></div>
+                </div>
+                <?php endforeach; ?>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- ═══ SECTION 3: DATA TABLE ═══ -->
         <div class="an-section">
           <div class="an-section-head">
-            <div><div class="an-section-title">Module Breakdown</div><div class="an-section-sub">Sortable summary of all ISCAG modules</div></div>
-            <input type="text" class="dt-search" id="dtSearch" placeholder="Search modules..." oninput="filterTable()"/>
+            <div><div class="an-section-title">Department & User Breakdown</div><div class="an-section-sub">Sortable summary across all ISCAG departments and users</div></div>
+            <input type="text" class="dt-search" id="dtSearch" placeholder="Search departments or users..." oninput="filterTable()"/>
           </div>
           <div class="card" style="padding:0;overflow:hidden;border-radius:12px">
             <table class="dt" id="dataTable">
-              <thead><tr><th onclick="sortTable(0)">Module ↕</th><th onclick="sortTable(1)">Records ↕</th><th>Percentage</th><th>Category</th><th>Status</th></tr></thead>
+              <thead><tr><th onclick="sortTable(0)">Department / Module ↕</th><th onclick="sortTable(1)">Records ↕</th><th>Share</th><th>Category</th><th>Status</th></tr></thead>
               <tbody>
                 <?php
                   $rows = [
-                    ['Apartment Applications', $totalApps, 'Operations', 'var(--primary)'],
-                    ['Parking Permits', $totalParking, 'Operations', 'var(--warning)'],
-                    ['Billing Invoices', array_sum(array_column($billingDist,'count')), 'Finance', 'var(--info)'],
-                    ['System Notifications', $totalNotifs, 'Governance', 'var(--danger)'],
-                    ['Registered Users', $totalUsers, 'Governance', 'var(--success)'],
+                    ['Apartments Department', $deptMetrics['apartments']['total'] ?? 0, 'Department', 'var(--primary)'],
+                    ["Da'wah Department", $deptMetrics['dawah']['total'] ?? 0, 'Department', 'var(--success)'],
+                    ['Islamic Education', $deptMetrics['education']['total'] ?? 0, 'Department', '#1f6f5a'],
+                    ['Damayan Department', $deptMetrics['damayan']['total'] ?? 0, 'Department', '#6366f1'],
+                    ['Registered Users', $totalUsers ?? 0, 'Users', 'var(--info)'],
                   ];
                   $totalAllRecords = array_sum(array_column($rows, 1));
                   foreach($rows as $r):
@@ -351,51 +332,66 @@ standardizePage('admin');
 document.addEventListener("DOMContentLoaded",function(){
   Chart.defaults.font.family="'Source Sans 3',sans-serif";
   Chart.defaults.color='#6f7f78';
-  const P='#176b45',S='#2f8a60',W='#c79a2b',D='#8b2e2e',I='#1f6f5a',A='#e0b84a';
-  const sc=s=>{const l=(s||'').toLowerCase();if(l.includes('pend'))return W;if(l.includes('approv')||l.includes('assign')||l.includes('paid')||l.includes('verif'))return S;if(l.includes('reject')||l.includes('overdue')||l.includes('unverif'))return D;if(l.includes('avail'))return I;if(l.includes('occup'))return P;if(l.includes('reserv'))return A;return'#94a3b8'};
+  const P='#176b45',S='#2f8a60',W='#c79a2b',D='#8b2e2e',I='#1f6f5a',C='#6366f1';
+  const sc=s=>{const l=(s||'').toLowerCase();if(l.includes('unverif'))return D;if(l.includes('verif'))return S;return'#94a3b8'};
   const noLegend={display:false};
   const cleanX={grid:{display:false}};
   const cleanY={beginAtZero:true,grid:{color:'#e8ece9',drawBorder:false}};
 
-  // 1. User Growth — Area Line
-  const gR=<?=json_encode($userGrowth??[])?>;
-  const ctx1=document.getElementById('growthChart').getContext('2d');
-  const g1=ctx1.createLinearGradient(0,0,0,300);g1.addColorStop(0,'rgba(23,107,69,.12)');g1.addColorStop(1,'rgba(23,107,69,0)');
-  new Chart(ctx1,{type:'line',data:{labels:gR.map(d=>d.month),datasets:[{label:'Users',data:gR.map(d=>d.count),borderColor:P,backgroundColor:g1,borderWidth:2.5,pointBackgroundColor:'#fff',pointBorderColor:P,pointBorderWidth:2,pointRadius:4,pointHoverRadius:7,fill:true,tension:.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend},scales:{x:cleanX,y:cleanY}}});
+  // 1. Department Requests Breakdown — Grouped Bar
+  new Chart(document.getElementById('deptStatusChart'),{
+    type:'bar',
+    data:{
+      labels:['Apartments',"Da'wah",'Islamic Education','Damayan'],
+      datasets:[
+        {label:'Pending',data:<?=json_encode([
+          $deptMetrics['apartments']['pending']??0,
+          $deptMetrics['dawah']['pending']??0,
+          $deptMetrics['education']['pending']??0,
+          $deptMetrics['damayan']['pending']??0,
+        ])?>,backgroundColor:W,borderRadius:4},
+        {label:'Approved / Active',data:<?=json_encode([
+          $deptMetrics['apartments']['approved']??0,
+          $deptMetrics['dawah']['approved']??0,
+          $deptMetrics['education']['approved']??0,
+          $deptMetrics['damayan']['approved']??0,
+        ])?>,backgroundColor:S,borderRadius:4},
+        {label:'Completed',data:<?=json_encode([
+          $deptMetrics['apartments']['completed']??0,
+          $deptMetrics['dawah']['completed']??0,
+          $deptMetrics['education']['completed']??0,
+          $deptMetrics['damayan']['completed']??0,
+        ])?>,backgroundColor:C,borderRadius:4}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}},scales:{x:cleanX,y:{...cleanY,ticks:{stepSize:1}}}}
+  });
 
-  // 2. Module — Polar Area
+  // 2. Module Distribution — Polar Area (All 4 Departments)
   const mR=<?=json_encode($moduleDist??[])?>;
-  new Chart(document.getElementById('moduleChart'),{type:'polarArea',data:{labels:mR.map(d=>d.module),datasets:[{data:mR.map(d=>d.count),backgroundColor:[P+'bb',W+'bb',I+'bb',S+'bb'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}},scales:{r:{ticks:{display:false},grid:{color:'#e8ece9'}}}}});
+  new Chart(document.getElementById('moduleChart'),{type:'polarArea',data:{labels:mR.map(d=>d.module),datasets:[{data:mR.map(d=>d.count),backgroundColor:[P+'bb',S+'bb',I+'bb',C+'bb'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}},scales:{r:{ticks:{display:false},grid:{color:'#e8ece9'}}}}});
 
-  // 3. App Status — Horizontal Bar
-  const asR=<?=json_encode($appStatusDist??[])?>;
-  new Chart(document.getElementById('appChart'),{type:'bar',data:{labels:asR.map(d=>d.status),datasets:[{label:'Apps',data:asR.map(d=>+d.count),backgroundColor:asR.map(d=>sc(d.status)),borderRadius:6,barThickness:22}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend},scales:{x:{...cleanY,ticks:{stepSize:1}},y:cleanX}}});
+  // 3. Da'wah Services — Horizontal Bar
+  new Chart(document.getElementById('dawahSvcChart'),{type:'bar',data:{labels:['Counseling','Marriage','Conversion'],datasets:[{label:'Requests',data:[<?=(int)($deptMetrics['dawah']['counseling']??0)?>,<?=(int)($deptMetrics['dawah']['marriage']??0)?>,<?=(int)($deptMetrics['dawah']['conversion']??0)?>],backgroundColor:[P,W,S],borderRadius:6,barThickness:22}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend},scales:{x:{...cleanY,ticks:{stepSize:1}},y:cleanX}}});
 
-  // 4. Parking — Pie
-  const pkR=<?=json_encode($parkingStatusDist??[])?>;
-  new Chart(document.getElementById('parkChart'),{type:'pie',data:{labels:pkR.map(d=>d.status),datasets:[{data:pkR.map(d=>+d.count),backgroundColor:pkR.map(d=>sc(d.status)),borderWidth:2,borderColor:'#fff',hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
+  // 4. Damayan Services — Doughnut
+  new Chart(document.getElementById('damayanSvcChart'),{type:'doughnut',data:{labels:['Burial','Funeral','Charity'],datasets:[{data:[<?=(int)($deptMetrics['damayan']['burial']??0)?>,<?=(int)($deptMetrics['damayan']['funeral']??0)?>,<?=(int)($deptMetrics['damayan']['donations_count']??0)?>],backgroundColor:[C,W,S],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
 
-  // 5. Billing — Vertical Bar
-  const blR=<?=json_encode($billingDist??[])?>;
-  new Chart(document.getElementById('billChart'),{type:'bar',data:{labels:blR.map(d=>d.status),datasets:[{label:'Invoices',data:blR.map(d=>+d.count),backgroundColor:blR.map(d=>sc(d.status)),borderRadius:6,barThickness:32}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend,tooltip:{callbacks:{afterLabel:c=>'₱'+Number(blR[c.dataIndex]?.total||0).toLocaleString()}}},scales:{x:cleanX,y:{...cleanY,ticks:{stepSize:1}}}}});
+  // 5. Apartments Overview — Vertical Bar
+  new Chart(document.getElementById('aptSvcChart'),{type:'bar',data:{labels:['Applications','Maintenance','Parking'],datasets:[{label:'Records',data:[<?=(int)($deptMetrics['apartments']['applications']??0)?>,<?=(int)($deptMetrics['apartments']['maintenance']??0)?>,<?=(int)($deptMetrics['apartments']['parking']??0)?>],backgroundColor:[P,W,I],borderRadius:6,barThickness:30}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend},scales:{x:cleanX,y:{...cleanY,ticks:{stepSize:1}}}}});
 
-  // 6. Gender — Doughnut
-  const gnR=<?=json_encode($genderDist??[])?>;
-  new Chart(document.getElementById('genderChart'),{type:'doughnut',data:{labels:gnR.map(d=>d.gender||'Unknown'),datasets:[{data:gnR.map(d=>+d.count),backgroundColor:[I,W,D,'#94a3b8'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
-
-  // 7. Occupancy — Horizontal Bar
-  const ocR=<?=json_encode($occupancyDist??[])?>;
-  new Chart(document.getElementById('occChart'),{type:'bar',data:{labels:ocR.map(d=>d.status),datasets:[{label:'Units',data:ocR.map(d=>+d.count),backgroundColor:ocR.map(d=>sc(d.status)),borderRadius:4,barThickness:24}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend},scales:{x:cleanY,y:cleanX}}});
-
-  // 8. Verification — Polar Area
+  // 6. Account Verification — Polar Area
   const vrR=<?=json_encode($statusDist??[])?>;
   new Chart(document.getElementById('verifyChart'),{type:'polarArea',data:{labels:vrR.map(d=>d.status),datasets:[{data:vrR.map(d=>+d.count),backgroundColor:vrR.map(d=>sc(d.status)+'bb'),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}},scales:{r:{ticks:{display:false},grid:{color:'#e8ece9'}}}}});
 
-  // 9. Timeline — Bar
-  const tlR=<?=json_encode($activityTimeline??[])?>;
-  const tlL=tlR.length>0?tlR.map(d=>{const dt=new Date(d.date);return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}):['No data'];
-  const tlD=tlR.length>0?tlR.map(d=>+d.count):[0];
-  new Chart(document.getElementById('tlChart'),{type:'bar',data:{labels:tlL,datasets:[{label:'Events',data:tlD,backgroundColor:P+'99',borderRadius:4,barThickness:18}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend},scales:{x:cleanX,y:cleanY}}});
+  // 7. User Roles — Pie
+  const rlLabels=<?=json_encode(array_keys($userRoleBreakdown??[]))?>;
+  const rlData=<?=json_encode(array_values($userRoleBreakdown??[]))?>;
+  new Chart(document.getElementById('rolesChart'),{type:'pie',data:{labels:rlLabels,datasets:[{data:rlData,backgroundColor:[P,W,I],borderWidth:2,borderColor:'#fff',hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
+
+  // 8. User Gender Demographics — Doughnut
+  const gnR=<?=json_encode($genderDist??[])?>;
+  new Chart(document.getElementById('genderChart'),{type:'doughnut',data:{labels:gnR.map(d=>d.gender||'Unspecified'),datasets:[{data:gnR.map(d=>+d.count),backgroundColor:[I,W,'#94a3b8'],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
 });
 
 // Table sort

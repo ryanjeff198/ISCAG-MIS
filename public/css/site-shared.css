@@ -32,13 +32,27 @@ nav {
 }
 
 .nav-inner {
-  max-width: 1280px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 28px;
+  padding: 0 clamp(16px, 3vw, 56px);
   height: 100%;
   display: flex;
   align-items: center;
   gap: 0;
+}
+
+/* Override Bootstrap fixed container caps so public pages expand fluidly without large empty side gaps */
+.container,
+.container-lg,
+.container-xl,
+.container-xxl {
+  width: 100%;
+  max-width: 100%;
+  padding-left: clamp(16px, 3vw, 56px);
+  padding-right: clamp(16px, 3vw, 56px);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .logo {
@@ -476,14 +490,6 @@ html, body {
   overflow-x: hidden;
 }
 
-@media (min-width: 992px) and (max-width: 1220px) {
-  .nav-inner { padding: 0 18px; }
-  .logo { margin-right: 12px; }
-  .logo-text { font-size: .78rem; max-width: 165px; }
-  .nav-link { padding: 8px 10px !important; font-size: .82rem !important; }
-  .btn-login, .btn-register { padding: 8px 14px !important; font-size: .82rem !important; }
-}
-
 @media (min-width: 992px) {
   .nav-menu-wrapper {
     display: flex !important;
@@ -535,6 +541,14 @@ html, body {
     padding: 10px 20px !important;
     font-size: 0.875rem !important;
   }
+}
+
+@media (min-width: 992px) and (max-width: 1220px) {
+  .nav-inner { padding: 0 18px; }
+  .logo { margin-right: 12px; }
+  .logo-text { font-size: .78rem; max-width: 165px; }
+  .nav-link { padding: 8px 10px !important; font-size: .82rem !important; }
+  .btn-login, .btn-register { padding: 8px 14px !important; font-size: .82rem !important; }
 }
 
 @media (max-width: 991.98px) {

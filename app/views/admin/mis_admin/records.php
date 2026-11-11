@@ -89,46 +89,6 @@
           <span class="current">User Role Management</span>
         </div>
 
-        <!-- STATS -->
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-icon teal">
-              <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3z"/></svg>
-            </div>
-            <div>
-              <div class="stat-value" id="stat-total">0</div>
-              <div class="stat-label">Total Accounts</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green">
-              <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            </div>
-            <div>
-              <div class="stat-value" id="stat-active">0</div>
-              <div class="stat-label">Active Accounts</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon gold">
-              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            </div>
-            <div>
-              <div class="stat-value" id="stat-staff-count">0</div>
-              <div class="stat-label">Department Staff</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon red">
-              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-            </div>
-            <div>
-              <div class="stat-value" id="stat-inactive">0</div>
-              <div class="stat-label">Inactive Accounts</div>
-            </div>
-          </div>
-        </div>
-
         <!-- FILTER BAR -->
         <div class="filter-bar">
           <input type="text" class="search-input" id="search-input" placeholder="Search by name, email, or user ID..." />
@@ -327,13 +287,9 @@
       const staff = users.filter(u => !['Guest', 'Tenant', 'User', ''].includes(u.role)).length;
       const inactive = users.filter(u => u.status === 'inactive').length;
 
-      document.getElementById('stat-total').textContent = total;
       document.getElementById('stat-total-val').textContent = total;
-      document.getElementById('stat-active').textContent = active;
       document.getElementById('stat-active-val').textContent = active;
-      document.getElementById('stat-staff-count').textContent = staff;
       document.getElementById('stat-staff-val').textContent = staff;
-      document.getElementById('stat-inactive').textContent = inactive;
       document.getElementById('stat-inactive-val').textContent = inactive;
     }
     updateStats(allUsers);

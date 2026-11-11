@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="<?= asset('css/site-shared.css') ?>">
+  <link rel="stylesheet" href="<?= asset('css/site-shared.css') ?>?v=<?= @filemtime(BASE_PATH . '/public/css/site-shared.css') ?: '2' ?>">
   <style>
     :root {
       --green-900: #064e3b;

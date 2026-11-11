@@ -26,25 +26,6 @@
       </div>
       <div class="page-body">
         
-        <!-- Admin Insights Ribbon -->
-        <div class="admin-insights">
-          <div class="insight-card">
-            <div class="insight-label">Counseling</div>
-            <div class="insight-value info" id="stat-counsel-val">0</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Education</div>
-            <div class="insight-value success" id="stat-edu-val">0</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Marriage</div>
-            <div class="insight-value warning" id="stat-mar-val">0</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Completion Rate</div>
-            <div class="insight-value">88.5%</div>
-          </div>
-        </div>
         <div class="breadcrumb-bar">
           <a href="<?= url('/admin/dashboard') ?>">MIS Admin</a><span class="sep">›</span><span class="current">Da'wah
             Records</span>

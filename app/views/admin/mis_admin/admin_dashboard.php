@@ -283,19 +283,10 @@
                   'label' => 'Registered Users',
                   'val' => number_format($totalUsers ?? 0),
                   'trend' => 'up',
-                  'subtext' => ($activeUsers ?? 0) . ' Active (' . ($staffUsers ?? 0) . ' Staff)',
+                  'subtext' => ($activeUsers ?? 0) . ' Verified (' . ($staffUsers ?? 0) . ' Staff)',
                   'color' => 'var(--info)',
                   'icon' => 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z',
                   'url' => url('/admin/mis_admin/records')
-                ],
-                [
-                  'label' => 'Unread Alerts',
-                  'val' => number_format($auditFlags ?? 0),
-                  'trend' => ($auditFlags > 0 ? 'down' : 'flat'),
-                  'subtext' => ($auditFlags > 0 ? $auditFlags . ' require review' : 'No new notifications'),
-                  'color' => 'var(--danger)',
-                  'icon' => 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z',
-                  'url' => url('/admin/mis_admin/notification')
                 ]
               ];
               foreach($kpis as $k):
@@ -420,7 +411,7 @@
                 </div>
               </div>
               <div class="dept-actions">
-                <a href="<?= url('/admin/mis_admin/dawah_records') ?>" class="dept-btn">Education Logs</a>
+                <a href="<?= url('/admin/dawah/education') ?>" class="dept-btn">Education Portal</a>
                 <a href="<?= url('/admin/mis_admin/dawah_records') ?>" class="dept-btn">Da'wah Records</a>
               </div>
             </div>
@@ -453,8 +444,8 @@
                 </div>
               </div>
               <div class="dept-actions">
-                <a href="<?= url('/admin/mis_admin/damayan_records') ?>" class="dept-btn">Burial Services</a>
                 <a href="<?= url('/admin/mis_admin/damayan_records') ?>" class="dept-btn">Damayan Records</a>
+                <a href="<?= url('/admin/mis_admin/reports') ?>" class="dept-btn">Reports</a>
               </div>
             </div>
 
@@ -513,37 +504,42 @@
           </div>
         </div>
 
-        <!-- ═══════ SECTION 4: ANALYTICS & TRENDS ═══════ -->
+        <!-- ═══════ SECTION 4: DEPARTMENT & USER ANALYTICS ═══════ -->
         <div class="db-section">
           <div class="chart-row two">
-            <!-- System Activity Line Chart -->
+            <!-- Department Requests Comparison -->
             <div class="card">
               <div class="card-head">
-                <div><div class="card-title">System Activity</div><div class="card-sub">Operational events over the last 7 days</div></div>
-                <span class="card-badge">Weekly Trend</span>
+                <div><div class="card-title">Requests by Department</div><div class="card-sub">Pending, active/approved, and completed records across all 4 departments</div></div>
+                <span class="card-badge">All Departments</span>
               </div>
-              <div style="position:relative;height:220px"><canvas id="activityChart"></canvas></div>
+              <div style="position:relative;height:240px"><canvas id="deptBreakdownChart"></canvas></div>
             </div>
-            <!-- Application Status -->
+            <!-- Overall Request Status Across All Departments -->
             <div class="card">
               <div class="card-head">
-                <div><div class="card-title">Application Status</div><div class="card-sub">Current distribution</div></div>
-                <span class="card-badge"><?=number_format($totalApplications)?> total</span>
+                <div><div class="card-title">Overall Request Status</div><div class="card-sub">Combined across all departments</div></div>
+                <span class="card-badge"><?= number_format($grandTotalRequests ?? 0) ?> total</span>
               </div>
-              <div style="position:relative;height:160px;display:flex;justify-content:center"><canvas id="statusChart"></canvas></div>
+              <div style="position:relative;height:160px;display:flex;justify-content:center"><canvas id="overallStatusChart"></canvas></div>
               <div style="margin-top:16px">
-                <?php foreach($distData as $d):
-                  $c = stripos($d['status'],'pend')!==false?'var(--warning)':(stripos($d['status'],'approv')!==false||stripos($d['status'],'assign')!==false?'var(--success)':'var(--danger)');
-                  $pct = $totalApplications > 0 ? round(($d['count'] / $totalApplications) * 100, 1) : 0;
+                <?php
+                  $overallStatuses = [
+                    ['label' => 'Pending Review', 'count' => $grandPendingRequests ?? 0, 'color' => 'var(--warning)'],
+                    ['label' => 'Approved / Active', 'count' => $grandApprovedRequests ?? 0, 'color' => 'var(--success)'],
+                    ['label' => 'Completed / Released', 'count' => $grandCompletedRequests ?? 0, 'color' => '#6366f1'],
+                  ];
+                  $overallSum = array_sum(array_column($overallStatuses, 'count'));
+                  foreach ($overallStatuses as $os):
+                    $pct = $overallSum > 0 ? round(($os['count'] / $overallSum) * 100, 1) : 0;
                 ?>
-                <div class="bl-row" style="margin-bottom:12px;">
-                  <div class="bl-dot" style="background:<?=$c?>"></div>
+                <div class="bl-row" style="margin-bottom:10px;">
+                  <div class="bl-dot" style="background:<?= $os['color'] ?>"></div>
                   <div style="flex:1;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div class="bl-label"><?=$d['status']?></div>
-                      <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);"><?=$pct?>%</div>
+                      <div class="bl-label"><?= $os['label'] ?></div>
+                      <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);"><?= number_format($os['count']) ?> (<?= $pct ?>%)</div>
                     </div>
-                    <div class="bl-sub"><?=$d['count']?> applications</div>
                   </div>
                 </div>
                 <?php endforeach; ?>
@@ -553,63 +549,18 @@
         </div>
 
         <div class="db-section">
-          <div class="chart-row three">
-            <!-- Billing -->
-            <div class="card">
-              <div class="card-head"><div><div class="card-title">Billing & Collections</div><div class="card-sub">Invoice performance</div></div></div>
-              <div style="position:relative;height:150px"><canvas id="billingChart"></canvas></div>
-              <div style="margin-top:10px">
-                <?php 
-                  $totalBills = array_sum(array_column($billingStats, 'count'));
-                  foreach($billingStats as $b):
-                    $bc = stripos($b['status'],'paid')!==false?'var(--success)':(stripos($b['status'],'overdue')!==false?'var(--danger)':'var(--warning)');
-                    $bpct = $totalBills > 0 ? round(($b['count'] / $totalBills) * 100, 1) : 0;
-                ?>
-                <div class="bl-row" style="margin-bottom:8px;">
-                  <div class="bl-dot" style="background:<?=$bc?>"></div>
-                  <div style="flex:1;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div class="bl-label" style="font-size:0.85rem;"><?=$b['status']?></div>
-                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$bpct?>%</div>
-                    </div>
-                  </div>
-                </div>
-                <?php endforeach; ?>
-              </div>
-            </div>
-            <!-- Unit Occupancy -->
-            <div class="card">
-              <div class="card-head"><div><div class="card-title">Unit Occupancy</div><div class="card-sub">Apartment inventory</div></div></div>
-              <div style="position:relative;height:140px;display:flex;justify-content:center"><canvas id="occupancyChart"></canvas></div>
-              <div style="margin-top:16px">
-                <?php 
-                  $totalUnits = array_sum(array_column($occupancyData, 'count'));
-                  foreach($occupancyData as $o):
-                    $oc = stripos($o['status'],'avail')!==false?'var(--info)':(stripos($o['status'],'occup')!==false?'var(--primary)':'var(--danger)');
-                    $opct = $totalUnits > 0 ? round(($o['count'] / $totalUnits) * 100, 1) : 0;
-                ?>
-                <div class="bl-row" style="margin-bottom:10px;">
-                  <div class="bl-dot" style="background:<?=$oc?>"></div>
-                  <div style="flex:1;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                      <div class="bl-label" style="font-size:0.85rem;"><?=$o['status']?></div>
-                      <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted);"><?=$opct?>%</div>
-                    </div>
-                  </div>
-                </div>
-                <?php endforeach; ?>
-              </div>
-            </div>
+          <div class="chart-row equal">
             <!-- Module Performance -->
             <div class="card">
-              <div class="card-head"><div><div class="card-title">Module Distribution</div><div class="card-sub">Central database records</div></div></div>
+              <div class="card-head">
+                <div><div class="card-title">Department Module Share</div><div class="card-sub">Distribution of records across all 4 departments</div></div>
+              </div>
               <?php
-                $maxM = max($totalApplications,$totalParking,$auditFlags,1);
                 $mods = [
-                  ['Apartments',$deptMetrics['apartments']['total'],'var(--primary)'],
-                  ['Da\'wah Services',$deptMetrics['dawah']['total'],'#2f8a60'],
-                  ['Islamic Education',$deptMetrics['education']['total'],'#1f6f5a'],
-                  ['Damayan Burial',$deptMetrics['damayan']['total'],'#6366f1']
+                  ['Apartments', $deptMetrics['apartments']['total'], 'var(--primary)'],
+                  ["Da'wah Services", $deptMetrics['dawah']['total'], '#2f8a60'],
+                  ['Islamic Education', $deptMetrics['education']['total'], '#1f6f5a'],
+                  ['Damayan Services', $deptMetrics['damayan']['total'], '#6366f1']
                 ];
                 $totalModCount = array_sum(array_column($mods, 1));
                 foreach($mods as $m): 
@@ -624,46 +575,39 @@
               </div>
               <?php endforeach; ?>
             </div>
-          </div>
-        </div>
 
-        <!-- ═══════ SECTION 5: PENDING MAINTENANCE REQUESTS ═══════ -->
-        <div class="db-section">
-          <div class="db-section-head">
-             <div><div class="db-section-title">Pending Facility Maintenance</div><div class="db-section-sub">Latest issues reported by apartment residents</div></div>
-             <a href="<?= url('/admin/mis_admin/maintenance') ?>" style="font-size:.75rem;color:var(--primary);font-weight:600;text-decoration:none">View All Maintenance →</a>
-          </div>
-          <div class="card" style="padding:0; overflow:hidden;">
-             <table class="mis-table">
-                <thead>
-                   <tr>
-                      <th>Ref #</th>
-                      <th>Tenant</th>
-                      <th>Category</th>
-                      <th>Description</th>
-                      <th>Submitted</th>
-                      <th>Action</th>
-                   </tr>
-                </thead>
-                <tbody>
-                   <?php if(empty($recentMaintenance)): ?>
-                      <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No pending maintenance requests at this time.</td></tr>
-                   <?php else: ?>
-                      <?php foreach($recentMaintenance as $rm): ?>
-                      <tr>
-                         <td class="td-id"><?= $rm['id'] ?></td>
-                         <td style="font-weight:600;"><?= htmlspecialchars($rm['first_name'] . ' ' . $rm['last_name']) ?></td>
-                         <td><span style="font-weight:700; color:var(--primary);"><?= htmlspecialchars($rm['category']) ?></span></td>
-                         <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($rm['description']) ?></td>
-                         <td><?= date('M d, Y', strtotime($rm['created_at'])) ?></td>
-                         <td>
-                            <a href="<?= url('/admin/mis_admin/maintenance') ?>?id=<?= $rm['id'] ?>" class="card-badge" style="text-decoration:none;">Review</a>
-                         </td>
-                      </tr>
-                      <?php endforeach; ?>
-                   <?php endif; ?>
-                </tbody>
-             </table>
+            <!-- User Account Overview -->
+            <div class="card">
+              <div class="card-head">
+                <div><div class="card-title">User Account Overview</div><div class="card-sub">Registered users by role and verification</div></div>
+                <a href="<?= url('/admin/mis_admin/records') ?>" class="card-badge" style="text-decoration:none;">Manage Users →</a>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:16px;align-items:center;">
+                <div style="position:relative;height:180px;display:flex;justify-content:center"><canvas id="userRolesChart"></canvas></div>
+                <div>
+                  <?php
+                    $roleColors = ['Residents / Tenants' => 'var(--primary)', 'Guests' => 'var(--warning)', 'Staff & Admins' => 'var(--info)'];
+                    foreach (($userRoleBreakdown ?? []) as $roleLbl => $roleCnt):
+                      $rPct = ($totalUsers ?? 0) > 0 ? round(($roleCnt / $totalUsers) * 100, 1) : 0;
+                      $rc = $roleColors[$roleLbl] ?? 'var(--text-muted)';
+                  ?>
+                  <div class="bl-row" style="margin-bottom:12px;">
+                    <div class="bl-dot" style="background:<?= $rc ?>"></div>
+                    <div style="flex:1;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div class="bl-label" style="font-size:0.85rem;"><?= htmlspecialchars($roleLbl) ?></div>
+                        <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);"><?= number_format($roleCnt) ?> (<?= $rPct ?>%)</div>
+                      </div>
+                    </div>
+                  </div>
+                  <?php endforeach; ?>
+                  <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);">
+                    <span>Verified: <strong style="color:var(--success);"><?= number_format($activeUsers ?? 0) ?></strong></span>
+                    <span>Unverified: <strong style="color:var(--danger);"><?= number_format($unverifiedUsers ?? 0) ?></strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -711,28 +655,78 @@ standardizePage('admin');
 document.addEventListener("DOMContentLoaded",function(){
   Chart.defaults.font.family="'Source Sans 3',sans-serif";
   Chart.defaults.color='#6f7f78';
-  const P='#176b45',S='#2f8a60',W='#c79a2b',D='#8b2e2e',I='#1f6f5a';
-  const sc=s=>{const l=(s||'').toLowerCase();if(l.includes('pend'))return W;if(l.includes('approv')||l.includes('assign')||l.includes('paid'))return S;if(l.includes('reject')||l.includes('overdue'))return D;if(l.includes('avail'))return I;if(l.includes('occup'))return P;return'#94a3b8'};
+  const P='#176b45',S='#2f8a60',W='#c79a2b',D='#8b2e2e',I='#1f6f5a',C='#6366f1';
 
-  // 1. Activity Line
-  const aR=<?=json_encode($activityData??[])?>;
-  const aL=aR.length>0?aR.map(d=>{const dt=new Date(d.date);return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}):['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const aD=aR.length>0?aR.map(d=>+d.count):[5,12,8,15,10,20,14];
-  const ctx1=document.getElementById('activityChart').getContext('2d');
-  const g1=ctx1.createLinearGradient(0,0,0,300);g1.addColorStop(0,'rgba(23,107,69,.12)');g1.addColorStop(1,'rgba(23,107,69,0)');
-  new Chart(ctx1,{type:'line',data:{labels:aL,datasets:[{label:'Events',data:aD,borderColor:P,backgroundColor:g1,borderWidth:2.5,pointBackgroundColor:'#fff',pointBorderColor:P,pointBorderWidth:2,pointRadius:4,pointHoverRadius:7,fill:true,tension:.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1f2e2a',padding:12,cornerRadius:8,titleFont:{weight:'700'}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#e8ece9',drawBorder:false}}}}});
+  // 1. Department Requests Breakdown
+  const deptLabels = ['Apartments', "Da'wah", 'Islamic Education', 'Damayan'];
+  const deptPending = <?= json_encode([
+    $deptMetrics['apartments']['pending'] ?? 0,
+    $deptMetrics['dawah']['pending'] ?? 0,
+    $deptMetrics['education']['pending'] ?? 0,
+    $deptMetrics['damayan']['pending'] ?? 0,
+  ]) ?>;
+  const deptApproved = <?= json_encode([
+    $deptMetrics['apartments']['approved'] ?? 0,
+    $deptMetrics['dawah']['approved'] ?? 0,
+    $deptMetrics['education']['approved'] ?? 0,
+    $deptMetrics['damayan']['approved'] ?? 0,
+  ]) ?>;
+  const deptCompleted = <?= json_encode([
+    $deptMetrics['apartments']['completed'] ?? 0,
+    $deptMetrics['dawah']['completed'] ?? 0,
+    $deptMetrics['education']['completed'] ?? 0,
+    $deptMetrics['damayan']['completed'] ?? 0,
+  ]) ?>;
 
-  // 2. Status Doughnut
-  const dR=<?=json_encode($distData??[])?>;
-  new Chart(document.getElementById('statusChart'),{type:'doughnut',data:{labels:dR.map(d=>d.status),datasets:[{data:dR.map(d=>+d.count),backgroundColor:dR.map(d=>sc(d.status)),borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+  new Chart(document.getElementById('deptBreakdownChart'), {
+    type: 'bar',
+    data: {
+      labels: deptLabels,
+      datasets: [
+        { label: 'Pending', data: deptPending, backgroundColor: W, borderRadius: 4 },
+        { label: 'Approved / Active', data: deptApproved, backgroundColor: S, borderRadius: 4 },
+        { label: 'Completed', data: deptCompleted, backgroundColor: C, borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14 } } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#e8ece9', drawBorder: false }, ticks: { stepSize: 1 } } }
+    }
+  });
 
-  // 3. Billing Bar
-  const bR=<?=json_encode($billingStats??[])?>;
-  new Chart(document.getElementById('billingChart'),{type:'bar',data:{labels:bR.map(d=>d.status),datasets:[{label:'Invoices',data:bR.map(d=>+d.count),backgroundColor:bR.map(d=>sc(d.status)),borderRadius:6,barThickness:28}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{afterLabel:c=>'₱'+Number(bR[c.dataIndex]?.total||0).toLocaleString()}}},scales:{x:{beginAtZero:true,grid:{color:'#e8ece9',drawBorder:false},ticks:{stepSize:1}},y:{grid:{display:false}}}}});
+  // 2. Overall Request Status Doughnut (All Departments)
+  new Chart(document.getElementById('overallStatusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pending', 'Approved / Active', 'Completed'],
+      datasets: [{
+        data: [<?= (int)($grandPendingRequests ?? 0) ?>, <?= (int)($grandApprovedRequests ?? 0) ?>, <?= (int)($grandCompletedRequests ?? 0) ?>],
+        backgroundColor: [W, S, C],
+        borderWidth: 0,
+        hoverOffset: 8
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } }
+  });
 
-  // 4. Unit Occupancy
-  const oR=<?=json_encode($occupancyData??[])?>;
-  new Chart(document.getElementById('occupancyChart'),{type:'doughnut',data:{labels:oR.map(d=>d.status),datasets:[{data:oR.map(d=>+d.count),backgroundColor:oR.map(d=>sc(d.status)),borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+  // 3. User Roles Doughnut
+  const roleData = <?= json_encode(array_values($userRoleBreakdown ?? [])) ?>;
+  const roleLabels = <?= json_encode(array_keys($userRoleBreakdown ?? [])) ?>;
+  new Chart(document.getElementById('userRolesChart'), {
+    type: 'doughnut',
+    data: {
+      labels: roleLabels,
+      datasets: [{
+        data: roleData,
+        backgroundColor: [P, W, I],
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '64%', plugins: { legend: { display: false } } }
+  });
 });
 </script>
 </body>

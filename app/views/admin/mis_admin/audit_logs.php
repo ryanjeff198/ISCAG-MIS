@@ -71,14 +71,6 @@ if (!function_exists('url')) {
                         <div class="insight-label">Critical Events</div>
                         <div class="insight-value <?= $criticalCount > 0 ? 'danger' : '' ?>"><?= $criticalCount ?></div>
                     </div>
-                    <div class="insight-card">
-                        <div class="insight-label">System Access</div>
-                        <div class="insight-value success">LIVE</div>
-                    </div>
-                    <div class="insight-card">
-                        <div class="insight-label">Database Health</div>
-                        <div class="insight-value info">Active</div>
-                    </div>
                 </div>
 
                 <div class="filter-bar">

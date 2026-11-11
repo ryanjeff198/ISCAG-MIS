@@ -26,25 +26,6 @@
       </div>
       <div class="page-body">
         
-        <!-- Admin Insights Ribbon -->
-        <div class="admin-insights">
-          <div class="insight-card">
-            <div class="insight-label">Total Requests</div>
-            <div class="insight-value info" id="stat-total-val">0</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Pending Reviews</div>
-            <div class="insight-value warning" id="stat-pending-val">0</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Completed Services</div>
-            <div class="insight-value success" id="stat-completed-val">0</div>
-          </div>
-          <div class="insight-card">
-            <div class="insight-label">Avg. Response</div>
-            <div class="insight-value">1.5h</div>
-          </div>
-        </div>
         <div class="breadcrumb-bar">
           <a href="<?= url('/admin/dashboard') ?>">MIS Admin</a><span class="sep">›</span><span class="current">Damayan
             Records</span>

@@ -25,141 +25,29 @@ class AdminController extends Controller
             exit;
         }
 
-        // Load Real-time Data
+        // Load Real-time Shared Department & User Data
         $db = getDbConnection();
-
-        // ── 1. Department Breakdown & Multi-Department Metrics ──
-        $deptMetrics = [
-            'apartments' => ['name' => 'Apartments Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'occupancy' => 0, 'units' => 0],
-            'dawah'      => ['name' => 'Da\'wah Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'counseling' => 0, 'marriage' => 0, 'conversion' => 0],
-            'education'  => ['name' => 'Islamic Education', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'students' => 0, 'avg_progress' => 0, 'sessions' => 0],
-            'damayan'    => ['name' => 'Damayan Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'burial' => 0, 'funeral' => 0, 'donations_amount' => 0],
-        ];
-
-        // Apartments
-        try {
-            $apps = $db->query("SELECT status, COUNT(*) as c FROM apartmentsapp GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
-            foreach ($apps as $st => $c) {
-                $deptMetrics['apartments']['total'] += (int)$c;
-                if (stripos($st, 'pend') !== false) $deptMetrics['apartments']['pending'] += (int)$c;
-                elseif (stripos($st, 'approv') !== false || stripos($st, 'assign') !== false) $deptMetrics['apartments']['approved'] += (int)$c;
-            }
-        } catch (Throwable $e) {}
-
-        try {
-            $deptMetrics['apartments']['units'] = (int)$db->query("SELECT COUNT(*) FROM apartment_units")->fetchColumn();
-            $deptMetrics['apartments']['occupancy'] = (int)$db->query("SELECT COUNT(*) FROM apartment_units WHERE status = 'Occupied'")->fetchColumn();
-        } catch (Throwable $e) {}
-
-        // Maintenance Data
-        $pendingMaintenance = 0;
-        $recentMaintenance = [];
-        try {
-            $pendingMaintenance = (int) $db->query("SELECT COUNT(*) FROM tenant_maintenance WHERE status = 'Pending'")->fetchColumn();
-            $recentMaintenance = $db->query("
-                SELECT m.*, u.first_name, u.last_name 
-                FROM tenant_maintenance m
-                JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
-                ORDER BY m.created_at DESC 
-                LIMIT 5
-            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            
-            $deptMetrics['apartments']['total'] += (int)$db->query("SELECT COUNT(*) FROM tenant_maintenance")->fetchColumn();
-            $deptMetrics['apartments']['pending'] += $pendingMaintenance;
-        } catch (Throwable $e) {
-            $pendingMaintenance = 0;
-            $recentMaintenance = [];
-        }
-
-        // Da'wah
-        try {
-            $couns = $db->query("SELECT status, COUNT(*) as c FROM counseling_requests GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
-            foreach ($couns as $st => $c) {
-                $deptMetrics['dawah']['total'] += (int)$c;
-                $deptMetrics['dawah']['counseling'] += (int)$c;
-                if (stripos($st, 'pend') !== false) $deptMetrics['dawah']['pending'] += (int)$c;
-                elseif (stripos($st, 'complet') !== false) $deptMetrics['dawah']['completed'] += (int)$c;
-                else $deptMetrics['dawah']['approved'] += (int)$c;
-            }
-            $marr = $db->query("SELECT status, COUNT(*) as c FROM marriage_requests GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
-            foreach ($marr as $st => $c) {
-                $deptMetrics['dawah']['total'] += (int)$c;
-                $deptMetrics['dawah']['marriage'] += (int)$c;
-                if (stripos($st, 'pend') !== false) $deptMetrics['dawah']['pending'] += (int)$c;
-                elseif (stripos($st, 'complet') !== false) $deptMetrics['dawah']['completed'] += (int)$c;
-                else $deptMetrics['dawah']['approved'] += (int)$c;
-            }
-            $conv = $db->query("SELECT status, COUNT(*) as c FROM conversion_requests GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
-            foreach ($conv as $st => $c) {
-                $deptMetrics['dawah']['total'] += (int)$c;
-                $deptMetrics['dawah']['conversion'] += (int)$c;
-                if (stripos($st, 'pend') !== false) $deptMetrics['dawah']['pending'] += (int)$c;
-                elseif (stripos($st, 'complet') !== false) $deptMetrics['dawah']['completed'] += (int)$c;
-                else $deptMetrics['dawah']['approved'] += (int)$c;
-            }
-        } catch (Throwable $e) {}
-
-        // Islamic Education
-        try {
-            $edu = $db->query("SELECT status, COUNT(*) as c, AVG(COALESCE(progress_percent,0)) as avg_p FROM islamic_education_enrollments GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            $totalP = 0; $totalStudents = 0;
-            foreach ($edu as $row) {
-                $c = (int)$row['c'];
-                $deptMetrics['education']['total'] += $c;
-                $deptMetrics['education']['students'] += $c;
-                $totalP += ($row['avg_p'] * $c);
-                $totalStudents += $c;
-                if (stripos($row['status'], 'pend') !== false) $deptMetrics['education']['pending'] += $c;
-                elseif (stripos($row['status'], 'complet') !== false) $deptMetrics['education']['completed'] += $c;
-                else $deptMetrics['education']['approved'] += $c;
-            }
-            if ($totalStudents > 0) $deptMetrics['education']['avg_progress'] = round($totalP / $totalStudents, 1);
-            $deptMetrics['education']['sessions'] = (int)$db->query("SELECT COUNT(*) FROM islamic_education_sessions WHERE is_attended = 1 OR is_completed = 1")->fetchColumn();
-        } catch (Throwable $e) {}
-
-        // Damayan
-        try {
-            $bur = $db->query("SELECT status, COUNT(*) as c FROM burial_requests GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
-            foreach ($bur as $st => $c) {
-                $deptMetrics['damayan']['total'] += (int)$c;
-                $deptMetrics['damayan']['burial'] += (int)$c;
-                if (stripos($st, 'pend') !== false) $deptMetrics['damayan']['pending'] += (int)$c;
-                elseif (stripos($st, 'complet') !== false) $deptMetrics['damayan']['completed'] += (int)$c;
-                else $deptMetrics['damayan']['approved'] += (int)$c;
-            }
-            $fc = $db->query("SELECT status, COUNT(*) as c FROM funeral_cases GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
-            foreach ($fc as $st => $c) {
-                $deptMetrics['damayan']['total'] += (int)$c;
-                $deptMetrics['damayan']['funeral'] += (int)$c;
-                if (stripos($st, 'pend') !== false || stripos($st, 'submit') !== false) $deptMetrics['damayan']['pending'] += (int)$c;
-                elseif (stripos($st, 'complet') !== false || stripos($st, 'releas') !== false) $deptMetrics['damayan']['completed'] += (int)$c;
-                else $deptMetrics['damayan']['approved'] += (int)$c;
-            }
-            $deptMetrics['damayan']['donations_amount'] = (float)$db->query("SELECT COALESCE(SUM(amount), 0) FROM charity_donations_records WHERE status != 'rejected'")->fetchColumn();
-        } catch (Throwable $e) {}
-
-        // ── 2. Grand Totals Across All 4 Departments ──
-        $grandTotalRequests = $deptMetrics['apartments']['total'] + $deptMetrics['dawah']['total'] + $deptMetrics['education']['total'] + $deptMetrics['damayan']['total'];
-        $grandPendingRequests = $deptMetrics['apartments']['pending'] + $deptMetrics['dawah']['pending'] + $deptMetrics['education']['pending'] + $deptMetrics['damayan']['pending'];
-        $grandApprovedRequests = $deptMetrics['apartments']['approved'] + $deptMetrics['dawah']['approved'] + $deptMetrics['education']['approved'] + $deptMetrics['damayan']['approved'];
-        $grandCompletedRequests = $deptMetrics['apartments']['completed'] + $deptMetrics['dawah']['completed'] + $deptMetrics['education']['completed'] + $deptMetrics['damayan']['completed'];
-
-        // Users & Notifications
-        $totalUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
-        $activeUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts WHERE is_verified = 1")->fetchColumn();
-        $staffUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts WHERE role != 'Tenant'")->fetchColumn();
-        $auditFlags = (int) $db->query("SELECT COUNT(*) FROM admin_notifications WHERE is_read = 0")->fetchColumn();
-        $totalApplications = $deptMetrics['apartments']['total'];
-        $pendingApprovals = $deptMetrics['apartments']['pending'];
-        $totalParking = (int) $db->query("SELECT COUNT(*) FROM tenant_parking")->fetchColumn();
-
-        // ── Billing KPI Data (Real-Time Synchronized) ──
-        $billingKPIs = $this->getBillingAggregateMetrics();
-        $totalRevenue = $billingKPIs['totalRevenue'];
-        $pendingBilling = $billingKPIs['pendingCount'];
-        $overdueBilling = $billingKPIs['overdueCount'];
-        $paidThisMonth = $billingKPIs['paidThisMonthCount'];
-        $revenueGrowth = $billingKPIs['growth'];
+        $overview = $this->getDepartmentOverviewMetrics($db);
+        $deptMetrics = $overview['deptMetrics'];
+        $grandTotalRequests = $overview['grandTotalRequests'];
+        $grandPendingRequests = $overview['grandPendingRequests'];
+        $grandApprovedRequests = $overview['grandApprovedRequests'];
+        $grandCompletedRequests = $overview['grandCompletedRequests'];
+        $pendingMaintenance = $overview['pendingMaintenance'];
+        $recentMaintenance = $overview['recentMaintenance'];
+        $totalUsers = $overview['totalUsers'];
+        $activeUsers = $overview['activeUsers'];
+        $unverifiedUsers = $overview['unverifiedUsers'];
+        $staffUsers = $overview['staffUsers'];
+        $userRoleBreakdown = $overview['userRoleBreakdown'];
+        $auditFlags = $overview['auditFlags'];
+        $totalApplications = $overview['totalApplications'];
+        $pendingApprovals = $overview['pendingApprovals'];
+        $totalRevenue = $overview['totalRevenue'];
+        $revenueGrowth = $overview['revenueGrowth'];
+        $pendingBilling = $overview['pendingBilling'];
+        $overdueBilling = $overview['overdueBilling'];
+        $paidThisMonth = $overview['paidThisMonth'];
 
         // ── 3. Unified Multi-Department Recent Requests ──
         $unifiedRequests = [];
@@ -314,26 +202,6 @@ class AdminController extends Controller
             ];
         }
 
-        // ── Chart: System Activity (last 7 days) ──
-        $stmtActivity = $db->query("
-            SELECT DATE(created_at) as date, COUNT(*) as count 
-            FROM admin_notifications 
-            GROUP BY DATE(created_at) 
-            ORDER BY date DESC 
-            LIMIT 7
-        ");
-        $actualActivity = $stmtActivity->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $activityData = array_reverse($actualActivity);
-
-        // ── Chart: Application Status Distribution ──
-        $distData = $db->query("SELECT status, COUNT(*) as count FROM apartmentsapp GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // ── Unit Occupancy ──
-        $occupancyData = $db->query("SELECT status, COUNT(*) as count FROM apartment_units GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // ── Gender Distribution ──
-        $genderData = $db->query("SELECT COALESCE(sex,'Unknown') as gender, COUNT(*) as count FROM tenant_addinfo GROUP BY sex")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
         // ── Recent Activity / Audit Trail Snippet ──
         $recentLogs = [];
         try {
@@ -367,11 +235,12 @@ class AdminController extends Controller
             'pendingActions' => $pendingActions,
             'totalUsers' => $totalUsers,
             'activeUsers' => $activeUsers,
+            'unverifiedUsers' => $unverifiedUsers,
             'staffUsers' => $staffUsers,
+            'userRoleBreakdown' => $userRoleBreakdown,
             'pendingApprovals' => $pendingApprovals,
             'auditFlags' => $auditFlags,
             'totalApplications' => $totalApplications,
-            'totalParking' => $totalParking,
             'totalRevenue' => $totalRevenue,
             'revenueGrowth' => $revenueGrowth,
             'pendingBilling' => $pendingBilling,
@@ -379,15 +248,6 @@ class AdminController extends Controller
             'paidThisMonth' => $paidThisMonth,
             'pendingMaintenance' => $pendingMaintenance,
             'recentMaintenance' => $recentMaintenance,
-            'billingStats' => [
-                ['status' => 'Paid', 'count' => $paidThisMonth, 'total' => $totalRevenue],
-                ['status' => 'Pending', 'count' => $pendingBilling, 'total' => 0],
-                ['status' => 'Overdue', 'count' => $overdueBilling, 'total' => 0]
-            ],
-            'activityData' => $activityData,
-            'distData' => $distData,
-            'occupancyData' => $occupancyData,
-            'genderData' => $genderData,
             'recentLogs' => $recentLogs
         ]);
     }
@@ -396,75 +256,235 @@ class AdminController extends Controller
     {
         Auth::protectRole(['Admin', 'Staff_Damayan', 'Staff_Male', 'Staff_Female', 'Staff_Tenant']);
         $db = getDbConnection();
+        $overview = $this->getDepartmentOverviewMetrics($db);
+        $deptMetrics = $overview['deptMetrics'];
 
-        // ── KPI Totals ──
-        $totalUsers = (int) $db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
-        $totalApps = (int) $db->query("SELECT COUNT(*) FROM apartmentsapp")->fetchColumn();
-        $totalParking = (int) $db->query("SELECT COUNT(*) FROM tenant_parking")->fetchColumn();
-        $totalNotifs = (int) $db->query("SELECT COUNT(*) FROM admin_notifications")->fetchColumn();
-
-        // ── User Growth (simulated monthly distribution) ──
-        $userGrowth = [];
-        $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        for ($i = 0; $i < min(date('n'), 12); $i++) {
-            $userGrowth[] = ['month' => $months[$i], 'count' => floor(($totalUsers / max(date('n'),1)) * (0.5 + ($i * 0.15)))];
-        }
-
-        // ── Module Distribution ──
+        // ── Module Distribution (All 4 Departments) ──
         $moduleDist = [
-            ['module' => 'Apartment', 'count' => $totalApps],
-            ['module' => 'Parking', 'count' => $totalParking],
-            ['module' => 'Notifications', 'count' => $totalNotifs],
-            ['module' => 'Users', 'count' => $totalUsers]
+            ['module' => 'Apartments', 'count' => $deptMetrics['apartments']['total']],
+            ['module' => "Da'wah Services", 'count' => $deptMetrics['dawah']['total']],
+            ['module' => 'Islamic Education', 'count' => $deptMetrics['education']['total']],
+            ['module' => 'Damayan Services', 'count' => $deptMetrics['damayan']['total']]
         ];
 
-        // ── Application Status ──
-        $appStatusDist = $db->query("SELECT status, COUNT(*) as count FROM apartmentsapp GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // ── User Gender Demographics (All Registered Users) ──
+        $genderDist = $db->query("
+            SELECT CASE
+                WHEN LOWER(TRIM(COALESCE(sex, ''))) = 'male' THEN 'Male'
+                WHEN LOWER(TRIM(COALESCE(sex, ''))) = 'female' THEN 'Female'
+                ELSE 'Unspecified'
+            END AS gender,
+            COUNT(*) AS count
+            FROM tenant_accounts
+            GROUP BY gender
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // ── Parking Status ──
-        $parkingStatusDist = $db->query("SELECT status, COUNT(*) as count FROM tenant_parking GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // ── Gender Demographics ──
-        $genderDist = $db->query("SELECT COALESCE(sex,'Unknown') as gender, COUNT(*) as count FROM tenant_addinfo GROUP BY sex")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // ── Account Verification ──
-        $statusDist = $db->query("SELECT IF(is_verified=1,'Verified','Unverified') as status, COUNT(*) as count FROM tenant_accounts GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // ── Apartment Occupancy ──
-        $occupancyDist = $db->query("SELECT status, COUNT(*) as count FROM apartment_units GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // ── Billing KPI Data (Real-Time Synchronized) ──
-        $billingKPIs = $this->getBillingAggregateMetrics();
-        $totalRevenue = $billingKPIs['totalRevenue'];
-        $pendingBilling = $billingKPIs['pendingCount'];
-        $overdueBilling = $billingKPIs['overdueCount'];
-        $paidThisMonth = $billingKPIs['paidThisMonthCount'];
-        $billingDist = [
-            ['status' => 'Paid', 'count' => $paidThisMonth, 'total' => $totalRevenue],
-            ['status' => 'Pending', 'count' => $pendingBilling, 'total' => 0],
-            ['status' => 'Overdue', 'count' => $overdueBilling, 'total' => 0]
-        ];
-
-        // ── Activity Timeline ──
-        $activityTimeline = $db->query("SELECT DATE(created_at) as date, COUNT(*) as count FROM admin_notifications GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 14")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $activityTimeline = array_reverse($activityTimeline);
+        // ── User Account Verification ──
+        $statusDist = $db->query("
+            SELECT IF(is_verified = 1, 'Verified', 'Unverified') AS status,
+            COUNT(*) AS count
+            FROM tenant_accounts
+            GROUP BY status
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $this->view('admin/mis_admin/admin_analytics', [
             'active_page' => 'analytics',
-            'totalUsers' => $totalUsers,
-            'totalApps' => $totalApps,
-            'totalParking' => $totalParking,
-            'totalNotifs' => $totalNotifs,
-            'userGrowth' => $userGrowth,
+            'deptMetrics' => $deptMetrics,
+            'grandTotalRequests' => $overview['grandTotalRequests'],
+            'grandPendingRequests' => $overview['grandPendingRequests'],
+            'grandApprovedRequests' => $overview['grandApprovedRequests'],
+            'grandCompletedRequests' => $overview['grandCompletedRequests'],
+            'totalUsers' => $overview['totalUsers'],
+            'activeUsers' => $overview['activeUsers'],
+            'unverifiedUsers' => $overview['unverifiedUsers'],
+            'staffUsers' => $overview['staffUsers'],
+            'userRoleBreakdown' => $overview['userRoleBreakdown'],
+            'totalRevenue' => $overview['totalRevenue'],
+            'pendingMaintenance' => $overview['pendingMaintenance'],
             'moduleDist' => $moduleDist,
-            'appStatusDist' => $appStatusDist,
-            'parkingStatusDist' => $parkingStatusDist,
             'genderDist' => $genderDist,
-            'statusDist' => $statusDist,
-            'occupancyDist' => $occupancyDist,
-            'billingDist' => $billingDist,
-            'activityTimeline' => $activityTimeline
+            'statusDist' => $statusDist
         ]);
+    }
+
+    /**
+     * Collect real-time metrics across all 4 departments and registered users
+     * so MIS Dashboard and Analytics share a single source of truth.
+     */
+    private function getDepartmentOverviewMetrics(PDO $db): array
+    {
+        $deptMetrics = [
+            'apartments' => ['name' => 'Apartments Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'applications' => 0, 'maintenance' => 0, 'parking' => 0, 'occupancy' => 0, 'units' => 0],
+            'dawah'      => ['name' => "Da'wah Department", 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'counseling' => 0, 'marriage' => 0, 'conversion' => 0],
+            'education'  => ['name' => 'Islamic Education', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'students' => 0, 'avg_progress' => 0, 'sessions' => 0],
+            'damayan'    => ['name' => 'Damayan Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'burial' => 0, 'funeral' => 0, 'donations_count' => 0, 'donations_amount' => 0],
+        ];
+
+        // Apartments
+        try {
+            $apps = $db->query("SELECT status, COUNT(*) as c FROM apartmentsapp GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            foreach ($apps as $st => $c) {
+                $cnt = (int)$c;
+                $deptMetrics['apartments']['total'] += $cnt;
+                $deptMetrics['apartments']['applications'] += $cnt;
+                if (stripos($st, 'pend') !== false) $deptMetrics['apartments']['pending'] += $cnt;
+                elseif (stripos($st, 'complet') !== false) $deptMetrics['apartments']['completed'] += $cnt;
+                elseif (stripos($st, 'approv') !== false || stripos($st, 'assign') !== false || stripos($st, 'accept') !== false) $deptMetrics['apartments']['approved'] += $cnt;
+            }
+        } catch (Throwable $e) {}
+
+        try {
+            $deptMetrics['apartments']['units'] = (int)$db->query("SELECT COUNT(*) FROM apartment_units")->fetchColumn();
+            $deptMetrics['apartments']['occupancy'] = (int)$db->query("SELECT COUNT(*) FROM apartment_units WHERE status = 'Occupied'")->fetchColumn();
+        } catch (Throwable $e) {}
+
+        try {
+            $deptMetrics['apartments']['parking'] = (int)$db->query("SELECT COUNT(*) FROM tenant_parking")->fetchColumn();
+        } catch (Throwable $e) {}
+
+        // Maintenance Data
+        $pendingMaintenance = 0;
+        $recentMaintenance = [];
+        try {
+            $maintRows = $db->query("SELECT status, COUNT(*) as c FROM tenant_maintenance GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            foreach ($maintRows as $st => $c) {
+                $cnt = (int)$c;
+                $deptMetrics['apartments']['total'] += $cnt;
+                $deptMetrics['apartments']['maintenance'] += $cnt;
+                if (stripos($st, 'pend') !== false) {
+                    $pendingMaintenance += $cnt;
+                    $deptMetrics['apartments']['pending'] += $cnt;
+                } elseif (stripos($st, 'resolv') !== false || stripos($st, 'complet') !== false) {
+                    $deptMetrics['apartments']['completed'] += $cnt;
+                } elseif (stripos($st, 'approv') !== false || stripos($st, 'progress') !== false) {
+                    $deptMetrics['apartments']['approved'] += $cnt;
+                }
+            }
+            $recentMaintenance = $db->query("
+                SELECT m.*, u.first_name, u.last_name
+                FROM tenant_maintenance m
+                JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
+                ORDER BY m.created_at DESC
+                LIMIT 5
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            $pendingMaintenance = 0;
+            $recentMaintenance = [];
+        }
+
+        // Da'wah
+        $dawahTables = [
+            'counseling' => 'counseling_requests',
+            'marriage'   => 'marriage_requests',
+            'conversion' => 'conversion_requests',
+        ];
+        foreach ($dawahTables as $key => $tbl) {
+            try {
+                $rows = $db->query("SELECT status, COUNT(*) as c FROM {$tbl} GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+                foreach ($rows as $st => $c) {
+                    $cnt = (int)$c;
+                    $deptMetrics['dawah']['total'] += $cnt;
+                    $deptMetrics['dawah'][$key] += $cnt;
+                    if (stripos($st, 'pend') !== false) $deptMetrics['dawah']['pending'] += $cnt;
+                    elseif (stripos($st, 'complet') !== false) $deptMetrics['dawah']['completed'] += $cnt;
+                    elseif (stripos($st, 'reject') === false && stripos($st, 'cancel') === false) $deptMetrics['dawah']['approved'] += $cnt;
+                }
+            } catch (Throwable $e) {}
+        }
+
+        // Islamic Education
+        try {
+            $edu = $db->query("SELECT status, COUNT(*) as c, AVG(COALESCE(progress_percent,0)) as avg_p FROM islamic_education_enrollments GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $totalP = 0;
+            $totalStudents = 0;
+            foreach ($edu as $row) {
+                $c = (int)$row['c'];
+                $deptMetrics['education']['total'] += $c;
+                $deptMetrics['education']['students'] += $c;
+                $totalP += ($row['avg_p'] * $c);
+                $totalStudents += $c;
+                if (stripos($row['status'], 'pend') !== false) $deptMetrics['education']['pending'] += $c;
+                elseif (stripos($row['status'], 'complet') !== false) $deptMetrics['education']['completed'] += $c;
+                elseif (stripos($row['status'], 'reject') === false) $deptMetrics['education']['approved'] += $c;
+            }
+            if ($totalStudents > 0) $deptMetrics['education']['avg_progress'] = round($totalP / $totalStudents, 1);
+            $deptMetrics['education']['sessions'] = (int)$db->query("SELECT COUNT(*) FROM islamic_education_sessions WHERE is_attended = 1 OR is_completed = 1")->fetchColumn();
+        } catch (Throwable $e) {}
+
+        // Damayan
+        try {
+            $bur = $db->query("SELECT status, COUNT(*) as c FROM burial_requests GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            foreach ($bur as $st => $c) {
+                $cnt = (int)$c;
+                $deptMetrics['damayan']['total'] += $cnt;
+                $deptMetrics['damayan']['burial'] += $cnt;
+                if (stripos($st, 'pend') !== false) $deptMetrics['damayan']['pending'] += $cnt;
+                elseif (stripos($st, 'complet') !== false || stripos($st, 'releas') !== false) $deptMetrics['damayan']['completed'] += $cnt;
+                elseif (stripos($st, 'reject') === false && stripos($st, 'cancel') === false) $deptMetrics['damayan']['approved'] += $cnt;
+            }
+            $fc = $db->query("SELECT status, COUNT(*) as c FROM funeral_cases GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+            foreach ($fc as $st => $c) {
+                $cnt = (int)$c;
+                $deptMetrics['damayan']['total'] += $cnt;
+                $deptMetrics['damayan']['funeral'] += $cnt;
+                if (stripos($st, 'pend') !== false || stripos($st, 'submit') !== false) $deptMetrics['damayan']['pending'] += $cnt;
+                elseif (stripos($st, 'complet') !== false || stripos($st, 'releas') !== false) $deptMetrics['damayan']['completed'] += $cnt;
+                elseif (stripos($st, 'reject') === false && stripos($st, 'cancel') === false) $deptMetrics['damayan']['approved'] += $cnt;
+            }
+            $donSummary = $db->query("SELECT COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total_amt FROM charity_donations_records WHERE status != 'rejected'")->fetch(PDO::FETCH_ASSOC);
+            $deptMetrics['damayan']['donations_count'] = (int)($donSummary['cnt'] ?? 0);
+            $deptMetrics['damayan']['donations_amount'] = (float)($donSummary['total_amt'] ?? 0);
+        } catch (Throwable $e) {}
+
+        // Totals Across All 4 Departments
+        $grandTotalRequests = $deptMetrics['apartments']['total'] + $deptMetrics['dawah']['total'] + $deptMetrics['education']['total'] + $deptMetrics['damayan']['total'];
+        $grandPendingRequests = $deptMetrics['apartments']['pending'] + $deptMetrics['dawah']['pending'] + $deptMetrics['education']['pending'] + $deptMetrics['damayan']['pending'];
+        $grandApprovedRequests = $deptMetrics['apartments']['approved'] + $deptMetrics['dawah']['approved'] + $deptMetrics['education']['approved'] + $deptMetrics['damayan']['approved'];
+        $grandCompletedRequests = $deptMetrics['apartments']['completed'] + $deptMetrics['dawah']['completed'] + $deptMetrics['education']['completed'] + $deptMetrics['damayan']['completed'];
+
+        // Users Breakdown
+        $totalUsers = (int)$db->query("SELECT COUNT(*) FROM tenant_accounts")->fetchColumn();
+        $activeUsers = (int)$db->query("SELECT COUNT(*) FROM tenant_accounts WHERE is_verified = 1")->fetchColumn();
+        $unverifiedUsers = max(0, $totalUsers - $activeUsers);
+        $userRoleBreakdown = ['Residents / Tenants' => 0, 'Guests' => 0, 'Staff & Admins' => 0];
+        $roleRows = $db->query("SELECT COALESCE(NULLIF(TRIM(role),''), 'Guest') as role_name, COUNT(*) as c FROM tenant_accounts GROUP BY role_name")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+        foreach ($roleRows as $roleName => $c) {
+            $cnt = (int)$c;
+            if ($roleName === 'Tenant') {
+                $userRoleBreakdown['Residents / Tenants'] += $cnt;
+            } elseif (in_array($roleName, ['Guest', 'User'], true)) {
+                $userRoleBreakdown['Guests'] += $cnt;
+            } else {
+                $userRoleBreakdown['Staff & Admins'] += $cnt;
+            }
+        }
+        $staffUsers = $userRoleBreakdown['Staff & Admins'];
+
+        $auditFlags = (int)$db->query("SELECT COUNT(*) FROM admin_notifications WHERE is_read = 0")->fetchColumn();
+        $billingKPIs = $this->getBillingAggregateMetrics();
+
+        return [
+            'deptMetrics' => $deptMetrics,
+            'grandTotalRequests' => $grandTotalRequests,
+            'grandPendingRequests' => $grandPendingRequests,
+            'grandApprovedRequests' => $grandApprovedRequests,
+            'grandCompletedRequests' => $grandCompletedRequests,
+            'pendingMaintenance' => $pendingMaintenance,
+            'recentMaintenance' => $recentMaintenance,
+            'totalUsers' => $totalUsers,
+            'activeUsers' => $activeUsers,
+            'unverifiedUsers' => $unverifiedUsers,
+            'staffUsers' => $staffUsers,
+            'userRoleBreakdown' => $userRoleBreakdown,
+            'auditFlags' => $auditFlags,
+            'totalApplications' => $deptMetrics['apartments']['total'],
+            'pendingApprovals' => $deptMetrics['apartments']['pending'],
+            'totalRevenue' => $billingKPIs['totalRevenue'],
+            'revenueGrowth' => $billingKPIs['growth'],
+            'pendingBilling' => $billingKPIs['pendingCount'],
+            'overdueBilling' => $billingKPIs['overdueCount'],
+            'paidThisMonth' => $billingKPIs['paidThisMonthCount'],
+        ];
     }
 
     public function apartment(): void
