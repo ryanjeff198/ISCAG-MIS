@@ -174,19 +174,37 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
     .reject-select {
-      padding: 6px 12px;
-      border: none;
+      padding: 7px 12px;
+      border: 1.5px solid var(--border);
       border-radius: 6px;
-      font-size: 0.8rem;
-      background: var(--danger);
-      color: white;
-      font-weight: 700;
+      font-size: 0.82rem;
+      background: white;
+      color: var(--text-main);
+      font-weight: 600;
       outline: none;
       cursor: pointer;
+      transition: all 0.2s;
     }
-    .reject-select:focus { border-color: var(--danger); }
+    .reject-select:focus { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15); }
+    .reject-other-input {
+      padding: 7px 12px;
+      border: 1.5px solid var(--danger);
+      border-radius: 6px;
+      font-size: 0.82rem;
+      color: var(--text-main);
+      background: white;
+      outline: none;
+      min-width: 220px;
+      box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1);
+      transition: all 0.2s;
+    }
+    .reject-other-input:focus {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+    }
 
     /* ── Hover Overrides for Apartment Staff ── */
     .tab-btn:hover { color: var(--accent) !important; }
@@ -359,7 +377,7 @@
                                    <button class="btn-circle check" onclick="approveApp(<?= $r['id'] ?>)" title="Approve">
                                       <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                                    </button>
-                                   <button class="btn-circle reject" onclick="rejectApp(<?= $r['id'] ?>)" title="Reject">
+                                   <button class="btn-circle reject" onclick="openRejectModal(<?= $r['id'] ?>, '<?= addslashes(htmlspecialchars(trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?: 'Applicant')) ?>')" title="Reject">
                                       <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                                    </button>
                                 </div>
@@ -504,6 +522,41 @@
         <!-- Overhauled Paper Layout will be injected here -->
       </div>
       <div class="modal-footer" id="modal-footer" style="background: white; border-top: 1px solid var(--border);"></div>
+    </div>
+  </div>
+
+  <!-- REJECT APPLICATION MODAL -->
+  <div class="modal-backdrop" id="reject-modal" style="display:none;">
+    <div class="modal-content" style="max-width:520px;">
+      <div class="modal-header" style="border-bottom:1px solid var(--border); padding:16px 22px;">
+        <h5 style="color:var(--danger); display:flex; align-items:center; gap:8px; margin:0; font-size:1.1rem; font-weight:700;">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--danger);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          Reject Application
+        </h5>
+        <button class="modal-close" onclick="closeModal('reject-modal')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:22px;">
+        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:16px;">
+          Select the reason for rejecting application <strong id="reject-modal-ref" style="color:var(--text-main);"></strong> (<span id="reject-modal-name"></span>):
+        </p>
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px; letter-spacing:0.04em;">Rejection Reason</label>
+          <select class="form-control" id="modal-reject-select" style="width:100%; padding:9px 12px; border-radius:8px; border:1.5px solid var(--border); font-size:0.88rem; background:white; font-family:inherit;" onchange="handleModalRejectReasonChange(this)">
+            <option value="Incomplete Documents">Incomplete Documents</option>
+            <option value="Unmatched Information">Unmatched Information</option>
+            <option value="Invalid Identification">Invalid Identification</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div id="modal-reject-other-wrap" style="display:none; margin-bottom:14px;">
+          <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--danger); text-transform:uppercase; margin-bottom:6px; letter-spacing:0.04em;">Specify Other Reason <span style="color:var(--danger);">*</span></label>
+          <input type="text" id="modal-reject-other-input" class="form-control" placeholder="Please type the specific rejection reason..." style="width:100%; padding:9px 12px; border-radius:8px; border:1.5px solid var(--danger); font-size:0.88rem; font-family:inherit; outline:none; box-shadow:0 0 0 2px rgba(220,53,69,0.1);" />
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:14px 22px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border); background:#fcfdfd;">
+        <button class="btn-topbar" onclick="closeModal('reject-modal')">Cancel</button>
+        <button class="btn-topbar" style="color:white; background:var(--danger); border-color:var(--danger);" onclick="confirmModalReject()">Confirm Rejection</button>
+      </div>
     </div>
   </div>
 
@@ -775,16 +828,79 @@
       openModal('review-modal');
     }
 
+    let currentRejectId = null;
+
+    function openRejectModal(id, applicantName) {
+      currentRejectId = id;
+      document.getElementById('reject-modal-ref').textContent = '#' + id;
+      document.getElementById('reject-modal-name').textContent = applicantName || 'Applicant';
+      const sel = document.getElementById('modal-reject-select');
+      if (sel) sel.value = 'Incomplete Documents';
+      const otherWrap = document.getElementById('modal-reject-other-wrap');
+      if (otherWrap) otherWrap.style.display = 'none';
+      const otherInput = document.getElementById('modal-reject-other-input');
+      if (otherInput) otherInput.value = '';
+      openModal('reject-modal');
+    }
+
+    function handleModalRejectReasonChange(sel) {
+      const otherWrap = document.getElementById('modal-reject-other-wrap');
+      const otherInput = document.getElementById('modal-reject-other-input');
+      if (!otherWrap) return;
+      if (sel.value === 'Other') {
+        otherWrap.style.display = 'block';
+        if (otherInput) otherInput.focus();
+      } else {
+        otherWrap.style.display = 'none';
+        if (otherInput) otherInput.value = '';
+      }
+    }
+
+    function confirmModalReject() {
+      if (!currentRejectId) return;
+      const sel = document.getElementById('modal-reject-select');
+      const otherInput = document.getElementById('modal-reject-other-input');
+      let reason = sel ? sel.value : 'Other';
+
+      if (reason === 'Other') {
+        const custom = otherInput ? otherInput.value.trim() : '';
+        if (!custom) {
+          alert('Please enter the specific rejection reason in the input field.');
+          if (otherInput) otherInput.focus();
+          return;
+        }
+        reason = custom;
+      }
+
+      if (confirm(`Reject application #${currentRejectId} for: "${reason}"?`)) {
+        pushAuditLog('REJECT_APP', 'Rejected apartment application ID: ' + currentRejectId + ' — Reason: ' + reason);
+        window.location.href = `<?= url('/admin/apartment/confirmation/reject') ?>?id=${currentRejectId}&reason=${encodeURIComponent(reason)}`;
+      }
+    }
+
+    function handleFooterRejectReasonChange(sel) {
+      const otherInput = document.getElementById('reject-reason-other');
+      if (!otherInput) return;
+      if (sel.value === 'Other') {
+        otherInput.style.display = 'inline-block';
+        otherInput.focus();
+      } else {
+        otherInput.style.display = 'none';
+        otherInput.value = '';
+      }
+    }
+
     function showRejectReason(id) {
       document.getElementById('footer-actions').innerHTML = `
         <div class="reject-reason-wrap">
           <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Select Reason:</span>
-          <select class="reject-select" id="reject-reason">
+          <select class="reject-select" id="reject-reason" onchange="handleFooterRejectReasonChange(this)">
             <option value="Incomplete Documents">Incomplete Documents</option>
             <option value="Unmatched Information">Unmatched Information</option>
             <option value="Invalid Identification">Invalid Identification</option>
             <option value="Other">Other</option>
           </select>
+          <input type="text" id="reject-reason-other" class="reject-other-input" placeholder="Please specify reason..." style="display:none;" />
           <button class="btn-topbar" style="color:var(--danger); border-color:var(--danger);" onclick="rejectApp(${id})">Confirm Rejection</button>
           <button class="btn-topbar" onclick="resetFooterActions(${id})">Cancel</button>
         </div>
@@ -832,9 +948,22 @@
         window.location.href = '<?= url('/admin/apartment/confirmation/approve') ?>?id=' + id;
       }
     }
+
     function rejectApp(id) {
       const reasonEl = document.getElementById('reject-reason');
-      const reason = reasonEl ? reasonEl.value : 'Other';
+      const otherEl = document.getElementById('reject-reason-other');
+      let reason = reasonEl ? reasonEl.value : 'Other';
+
+      if (reason === 'Other') {
+        const custom = otherEl ? otherEl.value.trim() : '';
+        if (!custom) {
+          alert('Please enter the specific rejection reason in the input field.');
+          if (otherEl) otherEl.focus();
+          return;
+        }
+        reason = custom;
+      }
+
       if (confirm(`Reject this application for: "${reason}"?`)) {
         pushAuditLog('REJECT_APP', 'Rejected apartment application ID: ' + id + ' — Reason: ' + reason);
         window.location.href = `<?= url('/admin/apartment/confirmation/reject') ?>?id=${id}&reason=${encodeURIComponent(reason)}`;
@@ -842,6 +971,7 @@
     }
 
     setupModalClose('review-modal');
+    setupModalClose('reject-modal');
   </script>
 </body>
 </html>

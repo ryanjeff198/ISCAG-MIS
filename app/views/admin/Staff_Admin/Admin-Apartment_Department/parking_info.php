@@ -523,19 +523,32 @@
 
     function showRejectReason(id) {
       document.getElementById('footer-actions').innerHTML = `
-        <div class="reject-reason-wrap">
+        <div class="reject-reason-wrap" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <span style="font-size:0.75rem; color:var(--text-muted); margin-right:2px;">Select Reason:</span>
-          <select class="reject-select" id="reject-reason">
+          <select class="reject-select" id="reject-reason" onchange="handleParkingRejectChange(this)">
             <option value="Incomplete vehicle information">Incomplete vehicle information</option>
             <option value="Invalid plate number">Invalid plate number</option>
             <option value="Owner name mismatch">Owner name mismatch</option>
             <option value="Vehicle type not allowed">Vehicle type not allowed</option>
             <option value="Other">Other</option>
           </select>
+          <input type="text" id="parking-reject-reason-other" placeholder="Please specify reason..." style="display:none; height:34px; padding:0 12px; border:1.5px solid var(--danger); border-radius:4px; font-size:0.8rem; min-width:200px; outline:none; box-shadow:0 0 0 2px rgba(220,53,69,0.1);" />
           <button class="btn-footer-action confirm-reject" onclick="rejectApp('${id}')">Confirm Reject</button>
           <button class="btn-footer-action cancel-reject" onclick="resetFooterActions('${id}')">Cancel</button>
         </div>
       `;
+    }
+
+    function handleParkingRejectChange(sel) {
+      const otherInput = document.getElementById('parking-reject-reason-other');
+      if (!otherInput) return;
+      if (sel.value === 'Other') {
+        otherInput.style.display = 'inline-block';
+        otherInput.focus();
+      } else {
+        otherInput.style.display = 'none';
+        otherInput.value = '';
+      }
     }
 
     function resetFooterActions(id) {
@@ -555,7 +568,17 @@
     // ══ REJECT ══
     function rejectApp(id) {
       const reasonEl = document.getElementById('reject-reason');
-      const reason = reasonEl ? reasonEl.value : 'Other';
+      const otherEl = document.getElementById('parking-reject-reason-other');
+      let reason = reasonEl ? reasonEl.value : 'Other';
+      if (reason === 'Other') {
+        const custom = otherEl ? otherEl.value.trim() : '';
+        if (!custom) {
+          alert('Please enter the specific rejection reason in the input field.');
+          if (otherEl) otherEl.focus();
+          return;
+        }
+        reason = custom;
+      }
       if (confirm(`Reject this parking application for: "${reason}"?`)) {
         window.location.href = `<?= url('/admin/apartment/parking/reject') ?>?id=${id}&reason=${encodeURIComponent(reason)}`;
       }
