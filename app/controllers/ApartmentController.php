@@ -146,7 +146,54 @@ class ApartmentController extends Controller {
 
         // Save path to DB, and set binaryData to NULL to save space
         if ($model->saveInfoImage($infoId, $type, null, $mime, $relPath)) {
-            echo json_encode(['success' => true, 'type' => $type, 'path' => $relPath]);
+            // Check if this resolved a follow-up requirement
+            $currentFollowups = $model->getFollowupDocs($userId);
+            $typeToSlot = [
+                'proofofincome' => 'doc-income',
+                'valididfront'   => 'doc-id-front',
+                'valididback'    => 'doc-id-back',
+                'birthcert'       => 'doc-birth',
+                'nbi'             => 'doc-nbi',
+                'picture'         => 'doc-photo'
+            ];
+            $matchedKey = $typeToSlot[$type] ?? $type;
+            $wasFollowup = in_array($matchedKey, $currentFollowups) || in_array($type, $currentFollowups);
+            
+            if ($wasFollowup) {
+                $updatedFollowups = array_values(array_filter($currentFollowups, function($k) use ($matchedKey, $type) {
+                    return $k !== $matchedKey && $k !== $type;
+                }));
+                $model->updateFollowupDocs($userId, $updatedFollowups);
+
+                // Notify admin of follow-up document submission
+                require_once BASE_PATH . '/app/models/AdminNotification.php';
+                $adminNotif = new AdminNotification();
+                $tenantName = $_SESSION['name'] ?? 'A tenant';
+                $labels = [
+                    'birthcert' => 'Birth Certificate',
+                    'nbi' => 'NBI / Police Clearance',
+                    'proofofincome' => 'Proof of Income',
+                    'valididfront' => 'Valid ID (Front)',
+                    'valididback' => 'Valid ID (Back)',
+                    'picture' => '2x2 Photo'
+                ];
+                $docName = $labels[$type] ?? ucfirst($type);
+                $adminNotif->create(
+                    'Follow-Up Requirement Uploaded',
+                    $tenantName . ' has submitted their pending follow-up requirement: ' . $docName . '.',
+                    'request',
+                    $tenantName,
+                    $userId,
+                    null
+                );
+            }
+
+            echo json_encode([
+                'success' => true, 
+                'type' => $type, 
+                'path' => $relPath,
+                'resolvedFollowup' => $wasFollowup
+            ]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to update database record']);
         }
@@ -332,6 +379,17 @@ class ApartmentController extends Controller {
             return;
         }
 
+        // Process follow-up requirements if any
+        $body = json_decode(file_get_contents('php://input'), true);
+        $followupDocs = $body['followup_docs'] ?? ($_POST['followup_docs'] ?? []);
+        if (is_string($followupDocs)) {
+            $decoded = json_decode($followupDocs, true);
+            $followupDocs = is_array($decoded) ? $decoded : [$followupDocs];
+        }
+        if (is_array($followupDocs)) {
+            $model->updateFollowupDocs($userId, $followupDocs);
+        }
+
         $ok = $model->updateStatusByTenant($userId, 'Pending');
         
         if ($ok) {
@@ -339,9 +397,12 @@ class ApartmentController extends Controller {
             require_once BASE_PATH . '/app/models/AdminNotification.php';
             $adminNotif = new AdminNotification();
             $tenantName = $_SESSION['name'] ?? 'A user';
+            $hasFollowups = !empty($followupDocs) && count($followupDocs) > 0;
+            $followupNote = $hasFollowups ? ' (with ' . count($followupDocs) . ' requirement(s) marked to follow up)' : '';
+
             $adminNotif->create(
                 'New Application Received',
-                $tenantName . ' has submitted a new apartment application.',
+                $tenantName . ' has submitted a new apartment application' . $followupNote . '.',
                 'request',
                 $tenantName,
                 $userId,
@@ -351,10 +412,13 @@ class ApartmentController extends Controller {
             // Notify the tenant
             require_once BASE_PATH . '/app/models/Notification.php';
             $tenantNotif = new Notification();
+            $tenantMsg = $hasFollowups
+                ? 'Your apartment application has been submitted successfully with follow-up requirement(s). You can upload pending requirements from your Tenant Status dashboard once ready.'
+                : 'Your apartment application has been submitted successfully and is currently undergoing administrative review.';
             $tenantNotif->create(
                 $userId,
                 'Application Under Review',
-                'Your apartment application has been submitted successfully and is currently undergoing administrative review.',
+                $tenantMsg,
                 'system'
             );
         }

@@ -1445,6 +1445,135 @@ if ($userId) {
       background: var(--success);
     }
 
+    /* ── Follow-Up Styling ── */
+    .doc-card.followup {
+      border-color: rgba(199, 154, 43, 0.45);
+      background: linear-gradient(to bottom, #fffdfa, #ffffff);
+    }
+
+    .doc-card.followup .doc-card-icon {
+      background: linear-gradient(135deg, var(--accent), #d4a83a);
+    }
+
+    .doc-card-status.followup {
+      background: rgba(199, 154, 43, 0.16);
+      color: #946800;
+      border: 1px solid rgba(199, 154, 43, 0.35);
+    }
+
+    .doc-card-status.followup .doc-card-status-dot {
+      background: #c79a2b;
+      animation: pulse 1.5s infinite;
+    }
+
+    .doc-followup-bar {
+      margin: 12px 18px 0;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #fefcf6;
+      border: 1px dashed rgba(199, 154, 43, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .doc-followup-bar:hover {
+      background: #fdf6e6;
+      border-color: rgba(199, 154, 43, 0.65);
+    }
+
+    .doc-followup-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      width: 100%;
+      margin: 0;
+    }
+
+    .doc-followup-checkbox {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .doc-followup-text strong {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    .doc-followup-text small {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+      line-height: 1.3;
+    }
+
+    .doc-followup-notice {
+      margin-top: 6px;
+      padding: 14px 16px;
+      background: #fff8eb;
+      border: 1px solid rgba(199, 154, 43, 0.35);
+      border-radius: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: left;
+    }
+
+    .doc-followup-notice svg {
+      width: 22px;
+      height: 22px;
+      fill: #b5851b;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .doc-followup-notice strong {
+      display: block;
+      font-size: 0.82rem;
+      color: #92400e;
+      margin-bottom: 3px;
+    }
+
+    .doc-followup-notice p {
+      font-size: 0.75rem;
+      color: #78350f;
+      margin: 0 0 10px;
+      line-height: 1.45;
+    }
+
+    .btn-upload-alt {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      background: white;
+      border: 1px solid rgba(199, 154, 43, 0.5);
+      color: #92400e;
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-upload-alt:hover {
+      background: #fef3c7;
+      border-color: #d97706;
+      color: #78350f;
+    }
+
     /* Upload Zone */
     .doc-upload-zone {
       padding: 20px;
@@ -3282,7 +3411,8 @@ if ($userId) {
         name: 'Proof of Income',
         note: 'Submit payslip, certificate of employment, or business permit',
         icon: '<path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>',
-        type: 'single'
+        type: 'single',
+        allowFollowup: true
       },
       {
         id: 'doc-id',
@@ -3290,6 +3420,7 @@ if ($userId) {
         note: 'Upload front and back of any government-issued ID',
         icon: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 18V6h16v12H4zm6-4c1.38 0 2.5-1.12 2.5-2.5S11.38 9 10 9s-2.5 1.12-2.5 2.5S8.62 14 10 14zm0 1c-1.63 0-5 .97-5 2.5V18h10v-.5C15 15.97 11.63 15 10 15zm6.5-6H20v1h-3.5v-1zm0 2H20v1h-3.5v-1zm0 2H20v1h-3.5v-1z"/>',
         type: 'dual',
+        allowFollowup: false,
         slots: [{
             key: 'doc-id-front',
             label: 'Front Side'
@@ -3305,14 +3436,16 @@ if ($userId) {
         name: 'Birth Certificate (Photocopy)',
         note: 'PSA or local civil registrar copy',
         icon: '<path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>',
-        type: 'single'
+        type: 'single',
+        allowFollowup: true
       },
       {
         id: 'doc-nbi',
         name: 'NBI / Police Clearance',
         note: 'Must be issued within the last 6 months',
         icon: '<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>',
-        type: 'single'
+        type: 'single',
+        allowFollowup: true
       }
     ];
 
@@ -3329,12 +3462,46 @@ if ($userId) {
     }
 
     const DOC_STORAGE_KEY = 'mis_req_doc_uploads';
+    const FOLLOWUP_STORAGE_KEY = 'mis_req_doc_followup';
     const inMemoryPreviews = {};
 
     function getUploadedDocs() {
       const raw = localStorage.getItem(DOC_STORAGE_KEY);
       return raw ? JSON.parse(raw) : {};
     }
+
+    function getFollowupDocs() {
+      const raw = localStorage.getItem(FOLLOWUP_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }
+
+    function isFollowupDoc(docId) {
+      const followups = getFollowupDocs();
+      return !!followups[docId];
+    }
+
+    function setFollowupDoc(docId, isFollowup) {
+      const followups = getFollowupDocs();
+      if (isFollowup) {
+        followups[docId] = {
+          markedAt: new Date().toISOString(),
+          status: 'followup'
+        };
+      } else {
+        delete followups[docId];
+      }
+      localStorage.setItem(FOLLOWUP_STORAGE_KEY, JSON.stringify(followups));
+    }
+
+    window.toggleFollowup = function(docId, checked) {
+      setFollowupDoc(docId, checked);
+      renderCards();
+      if (checked) {
+        showToast('Requirement marked to follow up. You may submit it later.', '#c79a2b');
+      } else {
+        showToast('Follow-up requirement unchecked. Please upload the document.', '#475569');
+      }
+    };
 
     function saveUploadedDoc(docId, dataUrl, fileType) {
       const docs = getUploadedDocs();
@@ -3500,7 +3667,18 @@ if ($userId) {
 
         } else {
           const isUploaded = !!currentUploads[doc.id];
-          card.className = 'doc-card' + (isUploaded ? ' uploaded' : '');
+          const isFollowup = !isUploaded && isFollowupDoc(doc.id);
+          card.className = 'doc-card' + (isUploaded ? ' uploaded' : (isFollowup ? ' followup' : ''));
+
+          let statusClass = 'pending';
+          let statusText = 'Pending';
+          if (isUploaded) {
+            statusClass = 'uploaded';
+            statusText = 'Uploaded';
+          } else if (isFollowup) {
+            statusClass = 'followup';
+            statusText = 'To Follow Up';
+          }
 
           card.innerHTML = `
             <div class="doc-card-header">
@@ -3513,20 +3691,46 @@ if ($userId) {
                   <p class="doc-card-note">${doc.note}</p>
                 </div>
               </div>
-              <div class="doc-card-status ${isUploaded ? 'uploaded' : 'pending'}">
+              <div class="doc-card-status ${statusClass}">
                 <span class="doc-card-status-dot"></span>
-                ${isUploaded ? 'Uploaded' : 'Pending'}
+                ${statusText}
               </div>
             </div>
-            <div class="doc-upload-zone">
-              <div class="doc-upload-dropzone" id="dropzone-${doc.id}" style="${isUploaded ? 'display:none;' : ''}">
-                <svg class="upload-icon" viewBox="0 0 24 24">
-                  <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
-                </svg>
-                <div class="upload-text"><strong>Click to upload</strong> or drag and drop</div>
-                <div class="upload-hint">JPG, PNG, or PDF — Max 5MB</div>
-                <input type="file" accept="image/*,.pdf" id="input-${doc.id}" />
+            ${doc.allowFollowup ? `
+              <div class="doc-followup-bar">
+                <label class="doc-followup-checkbox-label" for="followup-${doc.id}">
+                  <input type="checkbox" class="doc-followup-checkbox" id="followup-${doc.id}" ${isFollowup ? 'checked' : ''} ${isUploaded ? 'disabled' : ''} onchange="toggleFollowup('${doc.id}', this.checked)">
+                  <div class="doc-followup-text">
+                    <strong>Follow up requirement</strong>
+                    <small>Don't have this document yet? Check to submit this requirement after initial application.</small>
+                  </div>
+                </label>
               </div>
+            ` : ''}
+            <div class="doc-upload-zone">
+              ${isFollowup ? `
+                <div class="doc-followup-notice">
+                  <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-4.18-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                  <div>
+                    <strong>Marked as Follow-Up Requirement</strong>
+                    <p>You can proceed with your application. You can upload your ${doc.name} via your <strong>Tenant Status</strong> dashboard once acquired.</p>
+                    <button type="button" class="btn-upload-alt" onclick="document.getElementById('input-${doc.id}').click()">
+                      <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                      Upload Now Instead
+                    </button>
+                    <input type="file" accept="image/*,.pdf" id="input-${doc.id}" style="display:none;" />
+                  </div>
+                </div>
+              ` : `
+                <div class="doc-upload-dropzone" id="dropzone-${doc.id}" style="${isUploaded ? 'display:none;' : ''}">
+                  <svg class="upload-icon" viewBox="0 0 24 24">
+                    <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                  </svg>
+                  <div class="upload-text"><strong>Click to upload</strong> or drag and drop</div>
+                  <div class="upload-hint">JPG, PNG, or PDF — Max 5MB</div>
+                  <input type="file" accept="image/*,.pdf" id="input-${doc.id}" />
+                </div>
+              `}
               <div class="doc-preview-wrap ${isUploaded ? 'visible' : ''}" id="preview-${doc.id}">
                 ${isUploaded ? (function() {
                   const src = getPreviewSrc(doc.id, currentUploads[doc.id]);
@@ -3596,6 +3800,7 @@ if ($userId) {
       const reader = new FileReader();
       reader.onload = function(e) {
         saveUploadedDoc(docId, e.target.result, file.type);
+        setFollowupDoc(docId, false);
         renderCards();
         showToast('Document uploaded successfully!', '#2f8a60');
       };
@@ -3685,33 +3890,95 @@ if ($userId) {
 
     function updateProgress() {
       const docs = getUploadedDocs();
+      const followups = getFollowupDocs();
       const allKeys = getAllSlotKeys();
       const total = allKeys.length;
-      const completed = allKeys.filter(k => !!docs[k]).length;
-      const percent = Math.round((completed / total) * 100);
+
+      let completed = 0;
+      let followupCount = 0;
+
+      REQUIRED_DOCS.forEach(doc => {
+        if (doc.type === 'dual') {
+          if (docs[doc.slots[0].key]) completed++;
+          if (docs[doc.slots[1].key]) completed++;
+        } else {
+          if (docs[doc.id]) {
+            completed++;
+          } else if (followups[doc.id]) {
+            followupCount++;
+          }
+        }
+      });
+
+      const totalSatisfied = completed + followupCount;
+      const percent = Math.min(100, Math.round((totalSatisfied / total) * 100));
 
       document.getElementById('progress-fill').style.width = percent + '%';
       document.getElementById('progress-percent').textContent = percent + '%';
       document.getElementById('completed-count').textContent = completed;
       document.getElementById('total-count').textContent = total;
 
+      const countParent = document.getElementById('completed-count').parentElement;
+      if (followupCount > 0) {
+        countParent.innerHTML = `<span id="completed-count">${completed}</span> / <span id="total-count">${total}</span> <span style="font-size:0.85rem;font-weight:600;color:var(--text-muted);">Uploaded</span> <span style="font-size:0.75rem;padding:2px 8px;border-radius:12px;background:#fff1d6;color:#946800;font-weight:700;margin-left:6px;">${followupCount} to follow up</span>`;
+      } else {
+        countParent.innerHTML = `<span id="completed-count">${completed}</span> / <span id="total-count">${total}</span> <span style="font-size:0.85rem;font-weight:600;color:var(--text-muted);">Uploaded</span>`;
+      }
+
+      // Valid ID front and back required upfront
+      const hasValidId = !!docs['doc-id-front'] && !!docs['doc-id-back'];
+      const canSubmit = totalSatisfied >= total && hasValidId;
+
       const submitBtn = document.getElementById('submit-docs-btn');
-      submitBtn.disabled = completed < total;
+      submitBtn.disabled = !canSubmit;
+
+      if (canSubmit && followupCount > 0) {
+        submitBtn.innerHTML = `
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          Submit Application (${followupCount} to follow up)
+        `;
+      } else {
+        submitBtn.innerHTML = `
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          Submit Application
+        `;
+      }
     }
 
     // ── Submit Documents ──
     document.getElementById('submit-docs-btn').addEventListener('click', () => {
       const docs = getUploadedDocs();
-      const allKeys = getAllSlotKeys();
-      const allUploaded = allKeys.every(k => !!docs[k]);
+      const followups = getFollowupDocs();
 
-      if (!allUploaded) {
-        showToast('Please upload all required documents before submitting.', '#8b2e2e');
+      const hasValidId = !!docs['doc-id-front'] && !!docs['doc-id-back'];
+      if (!hasValidId) {
+        showToast('Valid ID (Front and Back) is required before submitting.', '#8b2e2e');
         return;
       }
 
-      // Finalize on Server
-      fetch('<?= url("/user/apartment/submit") ?>', { method: 'POST' })
+      // Verify all requirements are satisfied (uploaded or marked follow-up)
+      for (const doc of REQUIRED_DOCS) {
+        if (doc.type === 'dual') {
+          if (!docs[doc.slots[0].key] || !docs[doc.slots[1].key]) {
+            showToast('Please upload both front and back of your Valid ID.', '#8b2e2e');
+            return;
+          }
+        } else {
+          if (!docs[doc.id] && !followups[doc.id]) {
+            showToast(`Please upload or mark "${doc.name}" as follow up.`, '#8b2e2e');
+            return;
+          }
+        }
+      }
+
+      const followupList = Object.keys(followups).filter(k => !!followups[k]);
+
+      // Finalize on Server with followup_docs
+      fetch('<?= url("/user/apartment/submit") ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ followup_docs: followupList })
+      })
         .then(r => r.json())
         .then(res => {
           if (res.success) {
@@ -3722,35 +3989,36 @@ if ($userId) {
             });
 
       // Save required documents status
+      const isFollowup = (k) => followupList.includes(k);
       const reqDocs = [{
           id: 'doc-income',
           name: 'Proof of Income',
-          status: 'completed',
-          completedNote: 'Document uploaded and submitted'
+          status: docs['doc-income'] ? 'completed' : (isFollowup('doc-income') ? 'followup' : 'pending'),
+          completedNote: docs['doc-income'] ? 'Document uploaded and submitted' : (isFollowup('doc-income') ? 'To follow up after initial application' : 'Pending upload')
         },
         {
           id: 'doc-id',
           name: 'Valid ID (Photocopy)',
-          status: 'completed',
-          completedNote: 'Document uploaded and submitted'
+          status: (docs['doc-id-front'] && docs['doc-id-back']) ? 'completed' : 'pending',
+          completedNote: (docs['doc-id-front'] && docs['doc-id-back']) ? 'Document uploaded and submitted' : 'Pending upload'
         },
         {
           id: 'doc-birth',
           name: 'Birth Certificate (Photocopy)',
-          status: 'completed',
-          completedNote: 'Document uploaded and submitted'
+          status: docs['doc-birth'] ? 'completed' : (isFollowup('doc-birth') ? 'followup' : 'pending'),
+          completedNote: docs['doc-birth'] ? 'Document uploaded and submitted' : (isFollowup('doc-birth') ? 'To follow up after initial application' : 'Pending upload')
         },
         {
           id: 'doc-nbi',
           name: 'NBI / Police Clearance',
-          status: 'completed',
-          completedNote: 'Document uploaded and submitted'
+          status: docs['doc-nbi'] ? 'completed' : (isFollowup('doc-nbi') ? 'followup' : 'pending'),
+          completedNote: docs['doc-nbi'] ? 'Document uploaded and submitted' : (isFollowup('doc-nbi') ? 'To follow up after initial application' : 'Pending upload')
         },
         {
           id: 'doc-photo',
           name: '2x2 Picture (2pcs)',
-          status: 'completed',
-          completedNote: 'Document uploaded and submitted'
+          status: docs['doc-photo'] ? 'completed' : 'pending',
+          completedNote: docs['doc-photo'] ? 'Document uploaded and submitted' : 'Pending upload'
         }
       ];
       localStorage.setItem('mis_apt_docs_' + newReq.id, JSON.stringify(reqDocs));
@@ -3813,10 +4081,11 @@ if ($userId) {
         });
         localStorage.setItem('mis_notifications', JSON.stringify(notifs));
       }
-      // Clear the temporary uploaded documents from local storage
+      // Clear temporary storage
       localStorage.removeItem(DOC_STORAGE_KEY);
+      localStorage.removeItem(FOLLOWUP_STORAGE_KEY);
 
-            showSuccessView();
+            showSuccessView(followupList);
           } else {
             showToast('Submission failed: ' + (res.message || 'Unknown error'), '#8b2e2e');
           }
@@ -3827,7 +4096,15 @@ if ($userId) {
         });
     });
 
-    function showSuccessView() {
+    function showSuccessView(followupList = []) {
+      const hasFollowup = followupList && followupList.length > 0;
+      const docNameMap = {
+        'doc-birth': 'Birth Certificate',
+        'doc-nbi': 'NBI / Police Clearance',
+        'doc-income': 'Proof of Income'
+      };
+      const followupNames = followupList.map(k => docNameMap[k] || k).join(', ');
+
       const pageBody = document.querySelector('.page-body');
       pageBody.innerHTML = `
         <div style="max-width:560px;margin:40px auto;text-align:center;">
@@ -3860,7 +4137,7 @@ if ($userId) {
                 color:white;margin:0 0 8px;
               ">Application Submitted Successfully!</h3>
               <p style="font-size:0.88rem;color:rgba(255,255,255,0.75);margin:0;line-height:1.6;">
-                Your tenant application and all required documents have been submitted for review.
+                \${hasFollowup ? 'Your tenant application has been submitted with follow-up requirement(s).' : 'Your tenant application and all required documents have been submitted for review.'}
               </p>
             </div>
             <div style="padding:28px 32px;">
@@ -3871,12 +4148,25 @@ if ($userId) {
                 margin-bottom:20px;
               ">
                 <div style="display:flex;align-items:center;gap:10px;justify-content:center;">
-                  <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--success);">
+                  <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:\${hasFollowup ? '#d97706' : 'var(--success)'};">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                   </svg>
-                  <span style="font-size:0.88rem;font-weight:700;color:var(--success);">All Steps Completed</span>
+                  <span style="font-size:0.88rem;font-weight:700;color:\${hasFollowup ? '#b45309' : 'var(--success)'};">
+                    \${hasFollowup ? 'Application Submitted with Follow-Up Requirements' : 'All Steps Completed'}
+                  </span>
                 </div>
               </div>
+              \${hasFollowup ? `
+                <div style=\"margin-bottom:20px;padding:14px 16px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;text-align:left;\">
+                  <div style=\"display:flex;align-items:center;gap:8px;font-weight:700;font-size:0.82rem;color:#92400e;margin-bottom:4px;\">
+                    <svg viewBox=\"0 0 24 24\" style=\"width:16px;height:16px;fill:#d97706;\"><path d=\"M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-4.18-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z\"/></svg>
+                    Pending Follow-Up Documents (\${followupList.length}): \${followupNames}
+                  </div>
+                  <p style=\"font-size:0.75rem;color:#78350f;margin:0;line-height:1.4;\">
+                    You can upload these documents directly from your <strong>Tenant Status</strong> dashboard at any time once you have obtained them.
+                  </p>
+                </div>
+              ` : ''}
               <p style="font-size:0.83rem;color:var(--text-muted);line-height:1.7;margin:0 0 24px;">
                 The management team will verify your documents and update your application status.
                 You will receive a notification once the review is complete.

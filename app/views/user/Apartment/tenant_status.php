@@ -686,6 +686,53 @@ if ($userId) {
             color: var(--accent);
         }
 
+        .doc-status-item.followup {
+            border-color: rgba(199, 154, 43, 0.45);
+            background: rgba(199, 154, 43, 0.05);
+        }
+
+        .doc-status-item.followup .doc-status-icon {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+        }
+
+        .doc-status-item.followup .doc-status-badge {
+            color: #b45309;
+            background: #fffbeb;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid #fde68a;
+            display: inline-block;
+            font-size: 0.62rem;
+            font-weight: 700;
+        }
+
+        .btn-followup-upload {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: #176b45;
+            color: white;
+            border: none;
+            font-size: 0.68rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-followup-upload:hover {
+            background: #0f5c3a;
+            transform: translateY(-1px);
+        }
+
+        .btn-followup-upload svg {
+            width: 12px;
+            height: 12px;
+            fill: white;
+        }
+
         /* ── Action Bar ── */
         .action-bar {
             display: flex;
@@ -1388,15 +1435,35 @@ if ($userId) {
             // Photo
             const userPhoto = hasServerPhoto ? '<?= url("/user/apartment/serve-image") ?>?type=picture' : null;
 
+            // Parse follow-up requirements
+            let followupDocsList = [];
+            try {
+                if (dbTenantInfo && dbTenantInfo.followup_docs) {
+                    const raw = typeof dbTenantInfo.followup_docs === 'string' ? JSON.parse(dbTenantInfo.followup_docs) : dbTenantInfo.followup_docs;
+                    followupDocsList = Array.isArray(raw) ? raw : Object.keys(raw);
+                }
+            } catch (e) {}
+
+            try {
+                const localReqs = JSON.parse(localStorage.getItem('mis_requests') || '[]');
+                const myAptReq = localReqs.find(r => r.type === 'apartment_application' && r.user === user.id);
+                if (myAptReq && myAptReq.followupDocs && Array.isArray(myAptReq.followupDocs)) {
+                    myAptReq.followupDocs.forEach(k => {
+                        if (!followupDocsList.includes(k)) followupDocsList.push(k);
+                    });
+                }
+            } catch (e) {}
+
             // Docs status
             const docItems = [
-                { name: 'Proof of Income', key: 'doc-income', icon: '<path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>' },
-                { name: 'Valid ID (Front)', key: 'doc-id-front', icon: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 18V6h16v12H4z"/>' },
-                { name: 'Valid ID (Back)', key: 'doc-id-back', icon: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 18V6h16v12H4z"/>' },
-                { name: 'Birth Certificate', key: 'doc-birth', icon: '<path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>' },
-                { name: 'NBI / Police Clearance', key: 'doc-nbi', icon: '<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>' }
+                { name: 'Proof of Income', key: 'doc-income', serverType: 'proofofincome', icon: '<path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>' },
+                { name: 'Valid ID (Front)', key: 'doc-id-front', serverType: 'valididfront', icon: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 18V6h16v12H4z"/>' },
+                { name: 'Valid ID (Back)', key: 'doc-id-back', serverType: 'valididback', icon: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 18V6h16v12H4z"/>' },
+                { name: 'Birth Certificate', key: 'doc-birth', serverType: 'birthcert', icon: '<path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>' },
+                { name: 'NBI / Police Clearance', key: 'doc-nbi', serverType: 'nbi', icon: '<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>' }
             ];
             const docsUploaded = docItems.filter(d => !!docUploads[d.key]).length;
+            const followupsCount = docItems.filter(d => !docUploads[d.key] && (followupDocsList.includes(d.key) || followupDocsList.includes(d.serverType))).length;
             const docsTotal = docItems.length;
 
             // Timeline stages
@@ -1429,17 +1496,35 @@ if ($userId) {
 
             const docsStatusHtml = docItems.map(d => {
                 const uploaded = !!docUploads[d.key];
+                const isFollowup = !uploaded && (followupDocsList.includes(d.key) || followupDocsList.includes(d.serverType));
+                
+                let itemCls = uploaded ? 'completed' : (isFollowup ? 'followup' : 'incomplete');
+                let iconPath = uploaded 
+                    ? '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>'
+                    : (isFollowup 
+                        ? '<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-4.18-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>'
+                        : '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>');
+                
+                let badgeArea = uploaded 
+                    ? `<div class="doc-status-badge">Uploaded</div>`
+                    : (isFollowup 
+                        ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;">
+                             <span class="doc-status-badge followup">⏳ To Follow Up</span>
+                             <button type="button" class="btn-followup-upload" onclick="triggerFollowupUpload('${d.serverType}', '${d.name}', '${d.key}')">
+                               <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                               Upload Now
+                             </button>
+                           </div>`
+                        : `<div class="doc-status-badge">Pending</div>`);
+
                 return `
-          <div class="doc-status-item ${uploaded ? 'completed' : 'incomplete'}">
+          <div class="doc-status-item ${itemCls}">
             <div class="doc-status-icon">
-              <svg viewBox="0 0 24 24">${uploaded
-                        ? '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>'
-                        : '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>'
-                    }</svg>
+              <svg viewBox="0 0 24 24">${iconPath}</svg>
             </div>
-            <div>
+            <div style="flex:1;">
               <div class="doc-status-name">${d.name}</div>
-              <div class="doc-status-badge">${uploaded ? 'Uploaded' : 'Pending'}</div>
+              ${badgeArea}
             </div>
           </div>
         `;
@@ -1792,7 +1877,59 @@ if ($userId) {
         `;
             }
         }
-    </script>
+      // Follow-up uploader helper
+    let currentFollowupTarget = null;
+    window.triggerFollowupUpload = function(serverType, docName, docKey) {
+        currentFollowupTarget = { serverType, docName, docKey };
+        let input = document.getElementById('followup-file-input');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'file';
+            input.id = 'followup-file-input';
+            input.accept = 'image/*,.pdf';
+            input.style.display = 'none';
+            input.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) handleFollowupUploadAction(file);
+            });
+            document.body.appendChild(input);
+        }
+        input.value = '';
+        input.click();
+    };
+
+    function handleFollowupUploadAction(file) {
+        if (!file || !currentFollowupTarget) return;
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('File is too large. Maximum size is 5MB.', '#8b2e2e');
+            return;
+        }
+
+        showToast('Uploading ' + currentFollowupTarget.docName + '...', '#176b45');
+
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('type', currentFollowupTarget.serverType);
+
+        fetch('<?= url("/user/apartment/upload") ?>', {
+            method: 'POST',
+            body: fd
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                showToast(currentFollowupTarget.docName + ' uploaded successfully!', '#2f8a60');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showToast('Upload failed: ' + (res.message || 'Error'), '#8b2e2e');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Upload failed. Please try again.', '#8b2e2e');
+        });
+    }
+  </script>
 </body>
 
 </html>

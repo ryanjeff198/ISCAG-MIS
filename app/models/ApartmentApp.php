@@ -22,7 +22,7 @@ class ApartmentApp {
             'tribalaffliation','numofmuslim','occupation','monthly_income',
             'companyname','companyadd','companyphone',
             'dateofshahadah','ref_name','ref_contact',
-            'iscag_students','iscag_student_names','is_iscag_employee','iscag_job_role','date_applied','family_data'
+            'iscag_students','iscag_student_names','is_iscag_employee','iscag_job_role','date_applied','family_data','followup_docs'
         ];
         $safe = [];
         foreach ($allowed as $col) {
@@ -578,6 +578,46 @@ class ApartmentApp {
             $_SESSION['role'] = 'Tenant';
         }
         return $ok;
+    }
+
+    /**
+     * Get pending follow-up document requirement keys for a tenant
+     *
+     * @param int|string $userId
+     * @return array
+     */
+    public function getFollowupDocs($userId): array
+    {
+        $stmt = $this->db->prepare("SELECT followup_docs FROM tenant_addinfo WHERE tenant_id = :uid LIMIT 1");
+        $stmt->execute(['uid' => $userId]);
+        $val = $stmt->fetchColumn();
+        if (!$val) {
+            $stmt2 = $this->db->prepare("SELECT followup_docs FROM apartmentsapp WHERE tenant_id = :uid ORDER BY application_id DESC LIMIT 1");
+            $stmt2->execute(['uid' => $userId]);
+            $val = $stmt2->fetchColumn();
+        }
+        if (!$val) return [];
+        if (is_array($val)) return $val;
+        $decoded = json_decode($val, true);
+        return is_array($decoded) ? $decoded : array_filter(array_map('trim', explode(',', $val)));
+    }
+
+    /**
+     * Update follow-up document requirement keys across tenant_addinfo and apartmentsapp
+     *
+     * @param int|string $userId
+     * @param array|string $followupDocs
+     * @return bool
+     */
+    public function updateFollowupDocs($userId, $followupDocs): bool
+    {
+        $json = is_string($followupDocs) ? $followupDocs : json_encode(array_values((array)$followupDocs));
+        $stmt1 = $this->db->prepare("UPDATE tenant_addinfo SET followup_docs = :fdocs WHERE tenant_id = :uid");
+        $stmt1->execute(['fdocs' => $json, 'uid' => $userId]);
+
+        $stmt2 = $this->db->prepare("UPDATE apartmentsapp SET followup_docs = :fdocs WHERE tenant_id = :uid");
+        $stmt2->execute(['fdocs' => $json, 'uid' => $userId]);
+        return true;
     }
 
 }

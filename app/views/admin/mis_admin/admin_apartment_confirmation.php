@@ -275,7 +275,17 @@
                              <td style="font-weight:600;"><?= $r['tenant_id'] ?></td>
                              <td><?= htmlspecialchars($r['first_name'] ?? '—') ?></td>
                              <td><?= htmlspecialchars($r['last_name'] ?? '—') ?></td>
-                             <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
+                             <td>
+  <div style="color:var(--primary);font-weight:700;"><?= htmlspecialchars($r['roomtype']) ?></div>
+  <?php 
+    $fDocs = !empty($r['followup_docs']) ? (is_string($r['followup_docs']) ? json_decode($r['followup_docs'], true) : $r['followup_docs']) : [];
+    if (!empty($fDocs)):
+  ?>
+    <span style="display:inline-block;margin-top:2px;font-size:0.65rem;font-weight:700;background:#fffbeb;color:#b45309;padding:1px 6px;border-radius:8px;border:1px solid #fde68a;">
+      ⏳ Follow-Up (<?= count($fDocs) ?>)
+    </span>
+  <?php endif; ?>
+</td>
                              <td><?= format_datetime_html($r['submitted_at']) ?></td>
                              <td><span class="badge-status badge-pending"><?= $r['status'] ?></span></td>
                              <td>
@@ -323,7 +333,17 @@
                              <td class="td-id"><?= $r['id'] ?></td>
                              <td style="font-weight:600;"><?= $r['tenant_id'] ?></td>
                              <td><?= htmlspecialchars(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?></td>
-                             <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
+                             <td>
+  <div style="color:var(--primary);font-weight:700;"><?= htmlspecialchars($r['roomtype']) ?></div>
+  <?php 
+    $fDocs = !empty($r['followup_docs']) ? (is_string($r['followup_docs']) ? json_decode($r['followup_docs'], true) : $r['followup_docs']) : [];
+    if (!empty($fDocs)):
+  ?>
+    <span style="display:inline-block;margin-top:2px;font-size:0.65rem;font-weight:700;background:#fffbeb;color:#b45309;padding:1px 6px;border-radius:8px;border:1px solid #fde68a;">
+      ⏳ Follow-Up (<?= count($fDocs) ?>)
+    </span>
+  <?php endif; ?>
+</td>
                              <td><?= format_datetime_html($r['submitted_at']) ?></td>
                              <td><?= !empty($r['updated_at']) ? format_datetime_html($r['updated_at']) : '—' ?></td>
                              <td><span class="badge-status badge-approved"><?= $r['status'] ?></span></td>
@@ -372,7 +392,17 @@
                              <td class="td-id"><?= $r['id'] ?></td>
                              <td style="font-weight:600;"><?= $r['tenant_id'] ?></td>
                              <td><?= htmlspecialchars(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?></td>
-                             <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
+                             <td>
+  <div style="color:var(--primary);font-weight:700;"><?= htmlspecialchars($r['roomtype']) ?></div>
+  <?php 
+    $fDocs = !empty($r['followup_docs']) ? (is_string($r['followup_docs']) ? json_decode($r['followup_docs'], true) : $r['followup_docs']) : [];
+    if (!empty($fDocs)):
+  ?>
+    <span style="display:inline-block;margin-top:2px;font-size:0.65rem;font-weight:700;background:#fffbeb;color:#b45309;padding:1px 6px;border-radius:8px;border:1px solid #fde68a;">
+      ⏳ Follow-Up (<?= count($fDocs) ?>)
+    </span>
+  <?php endif; ?>
+</td>
                              <td><?= format_datetime_html($r['submitted_at']) ?></td>
                              <td style="font-size:0.82rem;color:var(--danger);font-weight:600;"><?= htmlspecialchars($r['reject_reason'] ?? '—') ?></td>
                              <td><span class="badge-status badge-rejected"><?= $r['status'] ?></span></td>
@@ -583,15 +613,35 @@
               </tr>
             </table>
 
+            // Parse follow-up list
+            let followups = [];
+            try {
+              if (r.followup_docs) {
+                const raw = typeof r.followup_docs === 'string' ? JSON.parse(r.followup_docs) : r.followup_docs;
+                followups = Array.isArray(raw) ? raw : Object.keys(raw);
+              }
+            } catch(e) {}
+            const isBirthFollowup = followups.includes('doc-birth') || followups.includes('birthcert');
+            const isNbiFollowup = followups.includes('doc-nbi') || followups.includes('nbi');
+            const isIncomeFollowup = followups.includes('doc-income') || followups.includes('proofofincome');
+
             <div class="doc-section-title">
               <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z" /></svg>
               Uploaded Documents Verification
             </div>
+            ${followups.length > 0 ? `
+              <div style="margin-bottom:14px;padding:10px 14px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;display:flex;align-items:center;gap:10px;">
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#d97706;flex-shrink:0;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-4.18-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                <div style="font-size:0.75rem;color:#92400e;line-height:1.4;">
+                  <strong>Follow-Up Requirements:</strong> The applicant indicated they will submit <strong>${followups.length}</strong> document(s) later (marked below).
+                </div>
+              </div>
+            ` : ''}
             <div class="verification-grid">
                <div class="verify-card">
-                  <div class="verify-card-title">Proof of Income</div>
+                  <div class="verify-card-title">Proof of Income ${isIncomeFollowup ? '<span style="color:#b45309;font-size:0.62rem;background:#fffbeb;padding:1px 6px;border-radius:6px;border:1px solid #fde68a;margin-left:4px;">To Follow Up</span>' : ''}</div>
                   <div class="verify-img-wrap" onclick="viewFullImage('${baseUrl}?uid=${tenantId}&type=proofofincome')">
-                     <img src="${baseUrl}?uid=${tenantId}&type=proofofincome" onerror="this.parentElement.innerHTML='<div style=\'font-size:0.65rem;color:#999;text-align:center;padding:30px 5px;\'>Not Uploaded</div>'" />
+                     <img src="${baseUrl}?uid=${tenantId}&type=proofofincome" onerror="this.parentElement.innerHTML='${isIncomeFollowup ? '<div style=\'font-size:0.7rem;color:#b45309;background:#fffbeb;border:1px dashed #fde68a;border-radius:8px;text-align:center;padding:24px 8px;margin:4px;\'><div style=\'font-size:1.1rem;margin-bottom:3px;\'>⏳</div><strong>To Follow Up</strong><div style=\'font-size:0.65rem;color:#78350f;margin-top:2px;\'>Applicant will submit later</div></div>' : '<div style=\'font-size:0.65rem;color:#999;text-align:center;padding:30px 5px;\'>Not Uploaded</div>'}'" />
                   </div>
                </div>
                <div class="verify-card">
@@ -607,15 +657,15 @@
                   </div>
                </div>
                <div class="verify-card">
-                  <div class="verify-card-title">Birth Certificate</div>
+                  <div class="verify-card-title">Birth Certificate ${isBirthFollowup ? '<span style="color:#b45309;font-size:0.62rem;background:#fffbeb;padding:1px 6px;border-radius:6px;border:1px solid #fde68a;margin-left:4px;">To Follow Up</span>' : ''}</div>
                   <div class="verify-img-wrap" onclick="viewFullImage('${baseUrl}?uid=${tenantId}&type=birthcert')">
-                     <img src="${baseUrl}?uid=${tenantId}&type=birthcert" onerror="this.parentElement.innerHTML='<div style=\'font-size:0.65rem;color:#999;text-align:center;padding:30px 5px;\'>Not Uploaded</div>'" />
+                     <img src="${baseUrl}?uid=${tenantId}&type=birthcert" onerror="this.parentElement.innerHTML='${isBirthFollowup ? '<div style=\'font-size:0.7rem;color:#b45309;background:#fffbeb;border:1px dashed #fde68a;border-radius:8px;text-align:center;padding:24px 8px;margin:4px;\'><div style=\'font-size:1.1rem;margin-bottom:3px;\'>⏳</div><strong>To Follow Up</strong><div style=\'font-size:0.65rem;color:#78350f;margin-top:2px;\'>Applicant will submit later</div></div>' : '<div style=\'font-size:0.65rem;color:#999;text-align:center;padding:30px 5px;\'>Not Uploaded</div>'}'" />
                   </div>
                </div>
                <div class="verify-card">
-                  <div class="verify-card-title">NBI Clearance</div>
+                  <div class="verify-card-title">NBI / Police Clearance ${isNbiFollowup ? '<span style="color:#b45309;font-size:0.62rem;background:#fffbeb;padding:1px 6px;border-radius:6px;border:1px solid #fde68a;margin-left:4px;">To Follow Up</span>' : ''}</div>
                   <div class="verify-img-wrap" onclick="viewFullImage('${baseUrl}?uid=${tenantId}&type=nbi')">
-                     <img src="${baseUrl}?uid=${tenantId}&type=nbi" onerror="this.parentElement.innerHTML='<div style=\'font-size:0.65rem;color:#999;text-align:center;padding:30px 5px;\'>Not Uploaded</div>'" />
+                     <img src="${baseUrl}?uid=${tenantId}&type=nbi" onerror="this.parentElement.innerHTML='${isNbiFollowup ? '<div style=\'font-size:0.7rem;color:#b45309;background:#fffbeb;border:1px dashed #fde68a;border-radius:8px;text-align:center;padding:24px 8px;margin:4px;\'><div style=\'font-size:1.1rem;margin-bottom:3px;\'>⏳</div><strong>To Follow Up</strong><div style=\'font-size:0.65rem;color:#78350f;margin-top:2px;\'>Applicant will submit later</div></div>' : '<div style=\'font-size:0.65rem;color:#999;text-align:center;padding:30px 5px;\'>Not Uploaded</div>'}'" />
                   </div>
                </div>
                <div class="verify-card">
