@@ -270,9 +270,9 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         $reqId = '#' . $prefix . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
                         $clientName = $r['full_name'] ?? ($r['client_name'] ?? trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')));
                         if (empty($clientName)) $clientName = ($dawah_type === 'female' ? 'Anonymous Sister' : 'Anonymous Brother');
-                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $dateSubmitted = !empty($r['created_at']) ? format_datetime_html($r['created_at']) : '—';
                         $prefSchedule = !empty($r['preferred_date']) 
-                            ? date('M d, Y', strtotime($r['preferred_date'])) . (!empty($r['preferred_time']) ? ' (' . htmlspecialchars($r['preferred_time']) . ')' : '') 
+                            ? format_date($r['preferred_date']) . (!empty($r['preferred_time']) ? ' (' . htmlspecialchars($r['preferred_time']) . ')' : '') 
                             : 'Flexible Schedule';
                         $reason = $r['reason'] ?? ($r['concern_category'] ?? '');
                       ?>
@@ -342,9 +342,9 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         $reqId = '#' . $prefix . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
                         $clientName = $r['full_name'] ?? ($r['client_name'] ?? trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')));
                         if (empty($clientName)) $clientName = ($dawah_type === 'female' ? 'Anonymous Sister' : 'Anonymous Brother');
-                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $dateSubmitted = !empty($r['created_at']) ? format_datetime_html($r['created_at']) : '—';
                         $prefSchedule = !empty($r['preferred_date']) 
-                            ? date('M d, Y', strtotime($r['preferred_date'])) . (!empty($r['preferred_time']) ? ' (' . htmlspecialchars($r['preferred_time']) . ')' : '') 
+                            ? format_date($r['preferred_date']) . (!empty($r['preferred_time']) ? ' (' . htmlspecialchars($r['preferred_time']) . ')' : '') 
                             : 'Flexible Schedule';
                         $reason = $r['reason'] ?? ($r['concern_category'] ?? '');
                       ?>
@@ -414,9 +414,9 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         $reqId = '#' . $prefix . str_pad((string)$id, 4, '0', STR_PAD_LEFT);
                         $clientName = $r['full_name'] ?? ($r['client_name'] ?? trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')));
                         if (empty($clientName)) $clientName = ($dawah_type === 'female' ? 'Anonymous Sister' : 'Anonymous Brother');
-                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $dateSubmitted = !empty($r['created_at']) ? format_datetime_html($r['created_at']) : '—';
                         $prefSchedule = !empty($r['preferred_date']) 
-                            ? date('M d, Y', strtotime($r['preferred_date'])) . (!empty($r['preferred_time']) ? ' (' . htmlspecialchars($r['preferred_time']) . ')' : '') 
+                            ? format_date($r['preferred_date']) . (!empty($r['preferred_time']) ? ' (' . htmlspecialchars($r['preferred_time']) . ')' : '') 
                             : 'Flexible Schedule';
                         $reason = $r['reason'] ?? ($r['concern_category'] ?? '');
                       ?>
@@ -687,7 +687,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
       const ageCivil = [r.age ? `${r.age} yrs old` : '', r.civil_status || ''].filter(Boolean).join(' • ') || 'Not specified';
       const address = r.address || r.current_address || 'None provided';
       const schedule = r.preferred_schedule || [r.preferred_date || '', r.preferred_time || ''].filter(Boolean).join(' ') || 'Open Schedule';
-      const dateSub = (r.created_at || '').substring(0, 10) || 'N/A';
+      const dateSub = r.created_at ? formatDateTime(r.created_at) : '—';
       const reason = r.reason || r.concern_category || 'General Counseling';
       const desc = r.description || r.message || 'No additional details provided.';
       const status = r.status || 'Pending';
@@ -926,8 +926,8 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
 
             const reqId = '#' + dawahPrefix + String(id).padStart(4, '0');
             const clientName = r ? (r.full_name || `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Anonymous') : 'User';
-            const dateSub = r && r.created_at ? r.created_at.substring(0, 10) : '—';
-            const prefSchedule = r && r.preferred_date ? `${r.preferred_date} ${r.preferred_time || ''}` : 'Flexible';
+            const dateSub = r && r.created_at ? formatDateTimeHtml(r.created_at) : '—';
+            const prefSchedule = r && r.preferred_date ? `${formatDate(r.preferred_date)} ${r.preferred_time || ''}` : 'Flexible';
             const statusBadge = action === 'accept'
               ? `<span class="badge-status approved"><span class="status-dot"></span> Accepted</span>`
               : `<span class="badge-status rejected"><span class="status-dot"></span> Rejected</span>`;

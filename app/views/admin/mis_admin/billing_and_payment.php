@@ -307,7 +307,7 @@
                 <td style="font-weight:600;">${r.tenantName}</td>
                 <td>${r.unit}</td>
                 <td style="font-weight:700;">₱${r.amount.toLocaleString()}</td>
-                <td>${r.dueDate}</td>
+                <td>${formatDate(r.dueDate)}</td>
                 <td>${statusBadge(r.status)}</td>
               </tr>
             `).join('');

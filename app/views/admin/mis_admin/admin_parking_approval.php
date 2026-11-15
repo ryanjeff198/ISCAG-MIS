@@ -111,7 +111,7 @@
                           <td style="font-weight:600;"><?= htmlspecialchars(($a['first_name'] ?? '') . ' ' . ($a['last_name'] ?? '') ?: ($a['ownername'] ?? '—')) ?></td>
                           <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
                           <td style="font-weight:700;letter-spacing:0.04em;"><?= htmlspecialchars($a['plateno'] ?? '—') ?></td>
-                          <td><?= date('M d, Y', strtotime($a['submitted_at'])) ?></td>
+                          <td><?= format_datetime_html($a['submitted_at']) ?></td>
                           <td>
                             <div class="action-menu">
                               <button class="action-menu-btn" onclick="toggleActionMenu(this, event)" title="Actions">
@@ -171,8 +171,8 @@
                           <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
                           <td style="font-weight:700;letter-spacing:0.04em;"><?= htmlspecialchars($a['plateno'] ?? '—') ?></td>
                           <td><?= htmlspecialchars($a['typeofvehicle'] ?? '—') ?></td>
-                          <td><?= date('M d, Y', strtotime($a['datestarted'] ?? '')) ?></td>
-                          <td><?= !empty($a['updated_at']) ? date('M d, Y', strtotime($a['updated_at'])) : '—' ?></td>
+                          <td><?= format_date($a['datestarted'] ?? '') ?></td>
+                          <td><?= !empty($a['updated_at']) ? format_datetime_html($a['updated_at']) : '—' ?></td>
                           <td><span class="badge-status badge-approved"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;"></span> Approved</span></td>
                         </tr>
                       <?php endforeach; ?>
@@ -218,7 +218,7 @@
                           <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
                           <td style="font-weight:700;letter-spacing:0.04em;"><?= htmlspecialchars($a['plateno'] ?? '—') ?></td>
                           <td style="font-size:0.82rem;color:var(--danger);max-width:220px;"><?= htmlspecialchars($a['remarks'] ?? '—') ?></td>
-                          <td><?= !empty($a['updated_at']) ? date('M d, Y', strtotime($a['updated_at'])) : '—' ?></td>
+                          <td><?= !empty($a['updated_at']) ? format_datetime_html($a['updated_at']) : '—' ?></td>
                         </tr>
                       <?php endforeach; ?>
                   <?php endif; ?>
@@ -344,8 +344,8 @@
           Rental Period
         </div>
         <div class="detail-grid">
-          <div class="detail-item"><label>Date Started</label><p>${a.datestarted ? new Date(a.datestarted).toLocaleDateString() : '—'}</p></div>
-          <div class="detail-item"><label>Submitted At</label><p>${new Date(a.submitted_at).toLocaleDateString()}</p></div>
+          <div class="detail-item"><label>Date Started</label><p>${a.datestarted ? formatDate(a.datestarted) : '—'}</p></div>
+          <div class="detail-item"><label>Submitted At</label><p>${formatDateTime(a.submitted_at)}</p></div>
         </div>
       `;
 

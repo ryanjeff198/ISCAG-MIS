@@ -187,7 +187,7 @@
                 <?php foreach ($donations as $d): ?>
                   <tr>
                     <td><strong style="font-family:monospace;"><?= htmlspecialchars($d['donation_ref']) ?></strong></td>
-                    <td><?= date('M d, Y', strtotime($d['date_received'])) ?></td>
+                    <td><?= format_date($d['date_received']) ?></td>
                     <td><strong><?= htmlspecialchars($d['donor_name']) ?></strong></td>
                     <td><?= ucfirst($d['donation_type']) ?></td>
                     <td>
@@ -231,7 +231,7 @@
                 <?php foreach ($allocations as $a): ?>
                   <tr>
                     <td><strong style="font-family:monospace;"><?= htmlspecialchars($a['allocation_ref']) ?></strong></td>
-                    <td><?= date('M d, Y', strtotime($a['allocation_date'])) ?></td>
+                    <td><?= format_date($a['allocation_date']) ?></td>
                     <td><span class="dept-tag <?= $a['receiving_department'] === 'Damayan' ? 'dept-damayan' : 'dept-dawah' ?>"><?= htmlspecialchars($a['receiving_department']) ?></span></td>
                     <td><?= $a['allocation_type'] === 'monetary' ? '₱' . number_format($a['allocated_amount'], 2) : $a['allocated_quantity'] . ' Units' ?></td>
                     <td><?= $a['allocation_type'] === 'monetary' ? '₱' . number_format($a['distributed_amount'], 2) : $a['distributed_quantity'] . ' Units' ?></td>
@@ -267,7 +267,7 @@
                 <?php foreach ($distributions as $dist): ?>
                   <tr>
                     <td><strong style="font-family:monospace;"><?= htmlspecialchars($dist['distribution_ref']) ?></strong></td>
-                    <td><?= date('M d, Y', strtotime($dist['distribution_date'])) ?></td>
+                    <td><?= format_date($dist['distribution_date']) ?></td>
                     <td><span class="dept-tag <?= $dist['receiving_department'] === 'Damayan' ? 'dept-damayan' : 'dept-dawah' ?>"><?= htmlspecialchars($dist['receiving_department']) ?></span></td>
                     <td><strong><?= htmlspecialchars($dist['items_summary']) ?></strong></td>
                     <td><strong><?= htmlspecialchars($dist['received_by']) ?></strong></td>

@@ -345,7 +345,7 @@
                           $roomNumber = $bDigit . $floorDigit . $roomPart;
                       }
                       
-                      $dateApplied = $app ? date('M d, Y', strtotime($app['submitted_at'])) : '—';
+                      $dateApplied = $app ? format_datetime_html($app['submitted_at']) : '—';
                       $role = $t['role'] ?? 'Guest';
                       $fullName = trim(($t['first_name'] ?? '') . ' ' . ($t['last_name'] ?? ''));
                       if (!$fullName) $fullName = 'Unknown';

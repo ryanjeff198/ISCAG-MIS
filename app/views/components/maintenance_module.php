@@ -216,7 +216,7 @@
                         <td><?= htmlspecialchars($unitStr) ?></td>
                         <td><span style="font-weight:700; color:var(--primary);"><?= htmlspecialchars($r['category']) ?></span></td>
                         <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($r['description']) ?></td>
-                        <td><?= date('M d, Y', strtotime($r['created_at'])) ?></td>
+                        <td><?= format_datetime_html($r['created_at']) ?></td>
                         <td><span class="badge-status badge-pending"><?= htmlspecialchars($r['status']) ?></span></td>
                         <td>
                           <div class="actions-cell">
@@ -276,7 +276,7 @@
                         <td><?= htmlspecialchars($unitStr) ?></td>
                         <td><span style="font-weight:700; color:var(--primary);"><?= htmlspecialchars($r['category']) ?></span></td>
                         <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($r['description']) ?></td>
-                        <td><?= date('M d, Y', strtotime($r['updated_at'] ?? $r['created_at'])) ?></td>
+                        <td><?= format_datetime_html($r['updated_at'] ?? $r['created_at']) ?></td>
                         <td><span class="badge-status badge-approved"><?= htmlspecialchars($r['status']) ?></span></td>
                         <td>
                           <div class="actions-cell">
@@ -333,7 +333,7 @@
                         <td><?= htmlspecialchars($unitStr) ?></td>
                         <td><?= htmlspecialchars($r['category']) ?></td>
                         <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= htmlspecialchars($r['description']) ?></td>
-                        <td><?= date('M d, Y', strtotime($r['updated_at'] ?? $r['created_at'])) ?></td>
+                        <td><?= format_datetime_html($r['updated_at'] ?? $r['created_at']) ?></td>
                         <td>
                           <span class="badge-status <?= $r['status'] === 'Completed' ? 'badge-approved' : 'badge-rejected' ?>">
                             <?= htmlspecialchars($r['status']) ?>
@@ -392,7 +392,7 @@
                     <td><?= htmlspecialchars(trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''))) ?></td>
                     <td><?= htmlspecialchars($unitStr) ?></td>
                     <td><?= htmlspecialchars($r['description'] ?? '') ?></td>
-                    <td><?= date('M d, Y', strtotime($r['created_at'] ?? 'now')) ?></td>
+                    <td><?= format_datetime_html($r['created_at']) ?></td>
                     <td><?= htmlspecialchars($r['admin_remarks'] ?: '—') ?></td>
                     <td><?= htmlspecialchars($r['status'] ?? 'Pending') ?></td>
                   </tr>
@@ -552,7 +552,7 @@
       document.getElementById('d-tenant').textContent = `${r.first_name || ''} ${r.last_name || ''} (${r.email || 'N/A'})`.trim();
       document.getElementById('d-unit').textContent = r.room_number ? ((r.building ? r.building + '-' : '') + r.room_number) : 'General / Unassigned';
       document.getElementById('d-category').textContent = r.category || 'General';
-      document.getElementById('d-date').textContent = r.created_at ? new Date(r.created_at).toLocaleDateString() : '—';
+      document.getElementById('d-date').textContent = formatDateTime(r.created_at);
       document.getElementById('d-status').textContent = r.status || 'Pending';
       document.getElementById('d-remarks').textContent = r.admin_remarks || '—';
       document.getElementById('d-desc').textContent = r.description || '';

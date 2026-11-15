@@ -273,7 +273,7 @@
             'phone' => $u['contactnum'] ?? '',
             'role' => $u['role'] ?? 'Guest',
             'status' => $isActive ? 'active' : 'inactive',
-            'joined' => $u['date_applied'] ?? date('Y-m-d'),
+            'joined' => $u['date_applied'] ?? null,
             'profilePct' => $profilePct
         ];
     }

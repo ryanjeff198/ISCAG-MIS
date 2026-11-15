@@ -186,7 +186,7 @@
               ${r.death_cert_registry_no ? `<div style="font-size:0.7rem; font-weight:700; color:#15803d; margin-top:2px;">Reg: ${escapeHtml(r.death_cert_registry_no)}</div>` : ''}
             ` : '<span style="color:var(--text-muted); font-size:0.8rem; font-style:italic;">Not Requested</span>'}
           </td>
-          <td style="color:var(--text-muted); font-size:0.82rem;">${r.date}</td>
+          <td>${formatDateTimeHtml(r.date)}</td>
           <td>
             <button class="btn-action" style="color:var(--damayan-accent);font-weight:700; border:1px solid var(--damayan-accent); border-radius:8px; padding:5px 12px; background:var(--damayan-light);" onclick="openCaseModal('${r.id}')">Manage Case</button>
           </td>

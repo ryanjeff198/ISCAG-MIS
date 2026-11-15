@@ -714,7 +714,7 @@
                           </div>
                         </td>
 
-                        <td><?= date('M d, Y', strtotime($r['created_at'])) ?></td>
+                        <td><?= format_datetime_html($r['created_at']) ?></td>
 
                         <td>
                           <span class="badge-status <?= $sc ?>">

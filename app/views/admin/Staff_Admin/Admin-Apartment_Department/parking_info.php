@@ -292,7 +292,7 @@
                           <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
                           <td style="font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase;"><?= htmlspecialchars($a['typeofvehicle'] ?? '—') ?></td>
                           <td><span class="td-plate"><?= htmlspecialchars($a['plateno'] ?? '—') ?></span></td>
-                          <td><?= date('M d, Y', strtotime($a['submitted_at'])) ?></td>
+                          <td><?= format_datetime_html($a['submitted_at']) ?></td>
                           <td>
                             <div class="actions-cell">
                                <button class="btn-circle eye" onclick="openReview(<?= htmlspecialchars(json_encode($a)) ?>)" title="View Details">
@@ -352,8 +352,8 @@
                           <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
                           <td><span class="td-plate"><?= htmlspecialchars($a['plateno'] ?? '—') ?></span></td>
                           <td><?= htmlspecialchars($a['typeofvehicle'] ?? '—') ?></td>
-                          <td><?= date('M d, Y', strtotime($a['datestarted'] ?? '')) ?></td>
-                          <td><?= !empty($a['updated_at']) ? date('M d, Y', strtotime($a['updated_at'])) : '—' ?></td>
+                          <td><?= format_date($a['datestarted'] ?? '') ?></td>
+                          <td><?= !empty($a['updated_at']) ? format_datetime_html($a['updated_at']) : '—' ?></td>
                           <td><span class="badge-status approved"><span class="status-dot"></span> Approved</span></td>
                         </tr>
                       <?php endforeach; ?>
@@ -399,7 +399,7 @@
                           <td><?= htmlspecialchars($a['vehiclename'] ?? '—') ?></td>
                           <td style="font-weight:700;letter-spacing:0.04em;"><?= htmlspecialchars($a['plateno'] ?? '—') ?></td>
                           <td style="font-size:0.82rem;color:var(--danger);max-width:220px;"><?= htmlspecialchars($a['remarks'] ?? '—') ?></td>
-                          <td><?= !empty($a['updated_at']) ? date('M d, Y', strtotime($a['updated_at'])) : '—' ?></td>
+                          <td><?= !empty($a['updated_at']) ? format_datetime_html($a['updated_at']) : '—' ?></td>
                         </tr>
                       <?php endforeach; ?>
                   <?php endif; ?>
@@ -469,7 +469,7 @@
           </div>
           <div class="vehicle-info">
             <h4>${a.vehiclename || '—'}</h4>
-            <p>${a.typeofvehicle || 'Vehicle'} · Submitted ${new Date(a.submitted_at).toLocaleDateString()}</p>
+            <p>${a.typeofvehicle || 'Vehicle'} · Submitted ${formatDateTime(a.submitted_at)}</p>
           </div>
           <div class="vehicle-plate">${a.plateno || '—'}</div>
         </div>
@@ -493,7 +493,7 @@
             Rental Details
           </div>
           <div class="detail-grid">
-            <div class="detail-item"><label>Rental Start Date</label><p>${a.datestarted ? new Date(a.datestarted).toLocaleDateString() : '—'}</p></div>
+            <div class="detail-item"><label>Rental Start Date</label><p>${a.datestarted ? formatDate(a.datestarted) : '—'}</p></div>
             <div class="detail-item"><label>Owner Name</label><p>${a.ownername || '—'}</p></div>
             <div class="detail-item full"><label>Status</label><p style="color:var(--warning); font-weight:700;">${(a.status || 'Pending Review').toUpperCase()}</p></div>
           </div>

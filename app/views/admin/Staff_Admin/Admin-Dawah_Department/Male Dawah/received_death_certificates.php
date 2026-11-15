@@ -342,7 +342,7 @@
                         </td>
                         <td>
                           <div style="font-weight:700; color:#b91c1c; font-size:0.86rem;">
-                            <?= date('M d, Y', strtotime($r['date_of_death'])) ?>
+                            <?= format_date($r['date_of_death']) ?>
                           </div>
                           <div style="font-size:0.72rem; color:var(--text-muted);">
                             <?= !empty($r['time_of_death']) ? date('g:i A', strtotime($r['time_of_death'])) : 'Time unrecorded' ?>
@@ -350,10 +350,10 @@
                         </td>
                         <td>
                           <div style="font-size:0.83rem; font-weight:700; color:var(--text-main);">
-                            <?= !empty($r['death_cert_date']) ? date('M d, Y', strtotime($r['death_cert_date'])) : '—' ?>
+                            <?= !empty($r['death_cert_date']) ? format_date($r['death_cert_date']) : '—' ?>
                           </div>
                           <div style="font-size:0.72rem; color:var(--text-muted);">
-                            Sent: <?= date('M d, Y', strtotime($r['sent_at'])) ?>
+                            Sent: <?= format_datetime($r['sent_at']) ?>
                           </div>
                         </td>
                         <td>

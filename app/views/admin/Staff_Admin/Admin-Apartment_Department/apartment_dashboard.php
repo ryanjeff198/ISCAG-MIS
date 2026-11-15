@@ -844,7 +844,7 @@
         return `<tr>
         <td class="td-id">#${a.id}</td>
         <td style="font-weight:600;">${applicantName}</td>
-        <td>${formatDateTime(a.submitted_at || new Date())}</td>
+        <td>${formatDateTimeHtml(a.submitted_at)}</td>
         <td><span style="font-size:0.82rem;font-weight:600;color:var(--success);">Verified</span></td>
         <td>
           <div class="actions-cell">
@@ -940,7 +940,7 @@
           return `<tr>
           <td class="td-id">#${req.id}</td>
           <td style="font-weight:600;">${applicantName}</td>
-          <td>${formatDateTime(req.submitted_at || new Date())}</td>
+          <td>${formatDateTimeHtml(req.submitted_at)}</td>
           <td><span class="badge-status ${bc}">${status}</span></td>
         </tr>`;
         }).join('');

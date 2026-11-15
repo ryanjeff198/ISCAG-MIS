@@ -233,7 +233,7 @@
                             <?= htmlspecialchars($r['deceased_sex'] ?? 'Male') ?>
                           </span>
                         </td>
-                        <td style="font-size:0.82rem;"><?= htmlspecialchars($r['date']) ?></td>
+                        <td><?= format_datetime_html($r['date']) ?></td>
                         <td>
                           <?php if (($r['cert_action_type'] ?? '') === 'copy'): ?>
                             <span class="mini-badge <?= !empty($r['copy_received_confirmed']) ? 'done' : (!empty($r['copy_issued_at']) ? 'active' : 'pending') ?>">

@@ -244,7 +244,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         $studentName = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
                         if (empty($studentName)) $studentName = 'Student #' . $id;
                         $program = $r['program_name'] ?? 'Islamic Studies';
-                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $dateSubmitted = !empty($r['created_at']) ? format_datetime_html($r['created_at']) : '—';
                         $pm = trim($r['payment_method'] ?? 'Cash');
                         $pc = trim($r['payment_channel'] ?? '');
                         $isOnline = (stripos($pm, 'online') !== false || stripos($pm, 'gcash') !== false || stripos($pm, 'maya') !== false);
@@ -338,7 +338,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         $studentName = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
                         if (empty($studentName)) $studentName = 'Student #' . $id;
                         $program = $r['program_name'] ?? 'Islamic Studies';
-                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $dateSubmitted = !empty($r['created_at']) ? format_datetime_html($r['created_at']) : '—';
                         $pm = trim($r['payment_method'] ?? 'Cash');
                         $pc = trim($r['payment_channel'] ?? '');
                         $isOnline = (stripos($pm, 'online') !== false || stripos($pm, 'gcash') !== false || stripos($pm, 'maya') !== false);
@@ -426,7 +426,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         $studentName = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
                         if (empty($studentName)) $studentName = 'Student #' . $id;
                         $program = $r['program_name'] ?? 'Islamic Studies';
-                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $dateSubmitted = !empty($r['created_at']) ? format_datetime_html($r['created_at']) : '—';
                         $pm = trim($r['payment_method'] ?? 'Cash');
                         $pc = trim($r['payment_channel'] ?? '');
                         $isOnline = (stripos($pm, 'online') !== false || stripos($pm, 'gcash') !== false || stripos($pm, 'maya') !== false);
@@ -653,8 +653,8 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
       const studentName = `${r.first_name || ''} ${r.last_name || ''}`.trim() || ('Student #' + r.id);
       const program = r.program_name || 'Islamic Studies';
       const ageGender = [r.age ? `${r.age} yrs old` : '', r.gender || ''].filter(Boolean).join(' • ') || 'Not specified';
-      const bdate = r.birthdate ? r.birthdate.substring(0, 10) : 'Not provided';
-      const dateSub = (r.created_at || '').substring(0, 10) || 'N/A';
+      const bdate = r.birthdate ? formatDate(r.birthdate) : 'Not provided';
+      const dateSub = r.created_at ? formatDateTime(r.created_at) : '—';
       const status = r.status || 'Pending';
 
       document.getElementById('vm-id').textContent = reqId;
@@ -860,7 +860,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
           const reqId = '#ER-' + String(id).padStart(4, '0');
           const studentName = r ? (`${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Student #' + id) : 'Student #' + id;
           const program = r && r.program_name ? r.program_name : 'Islamic Studies';
-          const dateSub = r && r.created_at ? r.created_at.substring(0, 10) : '—';
+          const dateSub = r && r.created_at ? formatDateTimeHtml(r.created_at) : '—';
           const pm = r && r.payment_method ? r.payment_method : 'Cash';
           const isOnline = (pm.toLowerCase().includes('online') || pm.toLowerCase().includes('gcash') || pm.toLowerCase().includes('maya'));
           const pmDisplay = isOnline ? 'Online Payment' : 'Cash';
@@ -1026,7 +1026,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
             const targetTbody = document.getElementById('tbody-approved');
             const studentName = r ? (`${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Student #' + id) : 'Student #' + id;
             const program = r && r.program_name ? r.program_name : 'Islamic Studies';
-            const dateSub = r && r.created_at ? r.created_at.substring(0, 10) : '—';
+            const dateSub = r && r.created_at ? formatDateTimeHtml(r.created_at) : '—';
             const pm = r && r.payment_method ? r.payment_method : 'Cash';
             const isOnline = (pm.toLowerCase().includes('online') || pm.toLowerCase().includes('gcash') || pm.toLowerCase().includes('maya'));
             const pmDisplay = isOnline ? 'Online Payment' : 'Cash';

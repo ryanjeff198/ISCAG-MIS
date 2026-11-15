@@ -169,7 +169,7 @@
       <td class="td-id">#${escHtml(r.id)}</td>
       <td style="font-weight:600;">${escHtml(r.name || 'Unknown')}</td>
       <td><span style="font-weight:600;color:var(--text-main);">${escHtml(r.service_type || typeLabel(r.type))}</span></td>
-      <td>${formatDate(r.date)}</td>
+      <td>${formatDateTimeHtml(r.date)}</td>
       <td><span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
       <td>
         <button type="button" class="card-badge" style="border:none;cursor:pointer;" onclick="openDawahReviewModal('${escHtml(r.type || '')}', '${escHtml(r.id)}')">Review</button>
@@ -188,7 +188,7 @@
         ['Contact / Email', r.email || '—'],
         ['Service Category', r.service_type || typeLabel(r.type)],
         ['Status', `<span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span>`],
-        ['Submitted On', formatDate(r.date)]
+        ['Submitted On', formatDateTime(r.date)]
       ];
       if (r.gender) rows.push(['Gender Track', r.gender]);
       if (r.session_type) rows.push(['Session Mode', r.session_type]);

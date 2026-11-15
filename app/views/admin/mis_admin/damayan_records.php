@@ -171,7 +171,7 @@
       tbody.innerHTML = reqs.map(r => `<tr data-id="${escHtml(r.id)}" data-kind="${escHtml(r.record_kind || 'burial')}">
         <td class="td-id">${escHtml(r.ref_code || ('#' + r.id))}</td>
         <td style="font-weight:600;">${escHtml(r.name || 'Unknown')} <div style="font-size:0.72rem;color:var(--text-muted);">${escHtml(r.service_type || 'Burial Service')}</div></td>
-        <td>${formatDate(r.date)}</td>
+        <td>${formatDateTimeHtml(r.date)}</td>
         <td><span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
         <td style="color:var(--text-muted);font-size:0.8rem;">${escHtml(r.plot_number || 'Plot: Pending')} (${escHtml(r.cemetery_pref || 'Local')})</td>
         <td>
@@ -193,7 +193,7 @@
         ['Informant / Requestor', r.informant_name || '—'],
         ['Informant Contact', r.contact || '—'],
         ['Status', `<span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span>`],
-        ['Submitted / Reported', formatDate(r.date)]
+        ['Submitted / Reported', formatDateTime(r.date)]
       ];
       if (r.request_type) rows.push(['Request / Certificate Type', r.request_type]);
       if (r.date_of_death) rows.push(['Date of Death', r.date_of_death]);

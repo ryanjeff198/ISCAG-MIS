@@ -121,7 +121,7 @@
           <td>${formatDate(r.end_date)}</td>
           <td><strong>+${r.requested_term_months} Mo</strong></td>
           <td><span class="renewal-status status-${r.status.toLowerCase()}">${r.status}</span></td>
-          <td style="color:var(--text-muted); font-size:0.75rem;">${formatDate(r.created_at)}</td>
+          <td>${formatDateTimeHtml(r.created_at)}</td>
         </tr>
       `).join('');
     }

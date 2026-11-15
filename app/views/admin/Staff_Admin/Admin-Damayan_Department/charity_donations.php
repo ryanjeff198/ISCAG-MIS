@@ -1162,7 +1162,7 @@
                 <td><span class="dept-tag ${a.receiving_department === 'Damayan' ? 'dept-damayan' : 'dept-dawah'}">${a.receiving_department}</span></td>
                 <td><strong>${aVal}</strong></td>
                 <td>${a.purpose}</td>
-                <td>${a.allocation_date}</td>
+                <td>${formatDate(a.allocation_date)}</td>
                 <td><span class="badge-status badge-allocated">${a.status}</span></td>
               </tr>`;
             });
@@ -1177,7 +1177,7 @@
                 <td><strong style="color:var(--primary); font-family:monospace;">${dist.distribution_ref}</strong></td>
                 <td>${dist.items_summary}</td>
                 <td><strong>${dist.received_by}</strong></td>
-                <td>${dist.distribution_date}</td>
+                <td>${formatDate(dist.distribution_date)}</td>
                 <td>${dist.distributed_by}</td>
               </tr>`;
             });

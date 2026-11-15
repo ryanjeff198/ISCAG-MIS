@@ -216,7 +216,7 @@ class ApartmentApp {
                 u.last_name,
                 u.contactnum as contactnum,
                 a.roomtype,
-                a.date as submitted_at,
+                COALESCE(a.updated_at, a.date) as submitted_at,
                 a.status,
                 a.reject_reason,
                 a.updated_at,
@@ -297,7 +297,7 @@ class ApartmentApp {
                 p.plateno,
                 p.typeofvehicle,
                 p.datestarted,
-                p.date as submitted_at,
+                COALESCE(p.updated_at, p.date) as submitted_at,
                 p.status,
                 p.remarks
             FROM tenant_parking p

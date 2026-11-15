@@ -552,7 +552,7 @@
                   $totalPayments += $t['payment'];
                 ?>
                 <tr class="<?= $t['payment'] > 0 ? 'row-payment' : 'row-charge' ?>">
-                  <td><?= date('Y-m-d', strtotime($t['date'])) ?></td>
+                  <td><?= format_date($t['date']) ?></td>
                   <td><span class="type-badge <?= getBadgeClass($t['type']) ?>"><?= $t['type'] ?></span></td>
                   <td><?= htmlspecialchars($t['description']) ?></td>
                   <td style="font-family:monospace; font-size:0.8rem;"><?= htmlspecialchars($t['ref']) ?></td>
@@ -727,7 +727,7 @@
 
         return `
         <tr>
-          <td>${new Date(h.upload_date).toLocaleDateString()}</td>
+          <td>${formatDateTimeHtml(h.upload_date)}</td>
           <td style="font-weight:600; color:var(--primary-dark);">${CURRENT_TARGET.room}</td>
           <td style="font-size:0.8rem;">${h.app_id || CURRENT_TARGET.app_id || 'N/A'}</td>
           <td style="font-weight:700;">₱${parseFloat(h.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>

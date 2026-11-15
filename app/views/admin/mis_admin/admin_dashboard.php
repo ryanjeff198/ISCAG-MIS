@@ -492,7 +492,7 @@
                       <div style="font-weight:600;"><?= htmlspecialchars($req['applicant'] ?: 'N/A') ?></div>
                       <div style="font-size:0.75rem;color:var(--text-muted);"><?= htmlspecialchars($req['email'] ?: '') ?></div>
                     </td>
-                    <td><?= date('M d, Y', strtotime($req['submitted_at'] ?? 'now')) ?></td>
+                    <td><?= format_datetime_html($req['submitted_at'] ?? '') ?></td>
                     <td><span class="badge-status <?= $statusClass ?>"><?= htmlspecialchars(ucfirst($req['status'])) ?></span></td>
                     <td>
                       <a href="<?= url($req['action_url']) ?>" class="card-badge" style="text-decoration:none;">Review</a>
@@ -549,7 +549,7 @@
                     <td style="font-weight:700;color:var(--primary);"><?= htmlspecialchars($rm['category'] ?? 'General') ?></td>
                     <td style="font-weight:600;"><?= htmlspecialchars(trim(($rm['first_name'] ?? '') . ' ' . ($rm['last_name'] ?? '')) ?: 'Facility Admin') ?></td>
                     <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= htmlspecialchars($rm['description'] ?? '') ?></td>
-                    <td><?= date('M d, Y', strtotime($rm['created_at'] ?? 'now')) ?></td>
+                    <td><?= format_datetime_html($rm['created_at'] ?? '') ?></td>
                     <td><span class="badge-status <?= $rmClass ?>"><?= htmlspecialchars($rmStatus) ?></span></td>
                     <td><a href="<?= url('/admin/mis_admin/maintenance?id=' . (int)$rm['id']) ?>" class="card-badge" style="text-decoration:none;">Review</a></td>
                   </tr>

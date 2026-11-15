@@ -847,7 +847,7 @@
     
     const verifiedMeta = document.getElementById('v-verified-meta');
     if (c.verified_by && c.verified_at) {
-      verifiedMeta.textContent = 'Last recorded by ' + c.verified_by + ' on ' + new Date(c.verified_at).toLocaleDateString();
+      verifiedMeta.textContent = 'Last recorded by ' + c.verified_by + ' on ' + (typeof formatDateTime === 'function' ? formatDateTime(c.verified_at) : formatDate(c.verified_at));
     } else {
       verifiedMeta.textContent = 'Not yet verified.';
     }

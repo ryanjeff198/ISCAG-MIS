@@ -216,7 +216,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         $userName = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
                         if (empty($userName)) $userName = trim(($r['groom_name'] ?? '') . ' & ' . ($r['bride_name'] ?? ''));
                         if (empty($userName)) $userName = 'User #' . ($r['tenant_id'] ?? $id);
-                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $dateSubmitted = !empty($r['created_at']) ? format_datetime_html($r['created_at']) : '—';
                       ?>
                       <tr id="row-<?= $id ?>">
                         <td class="td-id"><?= $reqId ?></td>
@@ -288,7 +288,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         $userName = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
                         if (empty($userName)) $userName = trim(($r['groom_name'] ?? '') . ' & ' . ($r['bride_name'] ?? ''));
                         if (empty($userName)) $userName = 'User #' . ($r['tenant_id'] ?? $id);
-                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $dateSubmitted = !empty($r['created_at']) ? format_datetime_html($r['created_at']) : '—';
                       ?>
                       <tr id="row-<?= $id ?>">
                         <td class="td-id"><?= $reqId ?></td>
@@ -354,7 +354,7 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
                         $userName = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
                         if (empty($userName)) $userName = trim(($r['groom_name'] ?? '') . ' & ' . ($r['bride_name'] ?? ''));
                         if (empty($userName)) $userName = 'User #' . ($r['tenant_id'] ?? $id);
-                        $dateSubmitted = !empty($r['created_at']) ? date('M d, Y', strtotime($r['created_at'])) : '—';
+                        $dateSubmitted = !empty($r['created_at']) ? format_datetime_html($r['created_at']) : '—';
                       ?>
                       <tr id="row-<?= $id ?>">
                         <td class="td-id"><?= $reqId ?></td>
@@ -488,10 +488,10 @@ $rejected_reports = array_values(array_filter($reqList, fn($r) => in_array(strto
 
       const reqId = '#MR-' + String(r.id).padStart(4, '0');
       const accountUserName = `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'User #' + (r.tenant_id || r.id);
-      const dateSub = (r.created_at || '').substring(0, 10) || '—';
+      const dateSub = r && r.created_at ? formatDateTime(r.created_at) : '—';
       const groom = r.groom_name || '—';
       const bride = r.bride_name || '—';
-      const ceremonyDate = r.marriage_date ? new Date(r.marriage_date).toLocaleDateString('en-US', { weekday:'short', month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+      const ceremonyDate = r.marriage_date ? formatDate(r.marriage_date) : '—';
       const ceremonyTime = r.marriage_time || '—';
       const venue = r.marriage_venue || 'ISCAG Mosque';
       const status = r.status || 'Pending';

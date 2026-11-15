@@ -234,7 +234,7 @@
                           </span>
                         </td>
                         <td style="font-size:0.82rem;">
-                          <?= !empty($r['submitted_at']) ? date('M d, Y', strtotime($r['submitted_at'])) : (!empty($r['date']) ? date('M d, Y', strtotime($r['date'])) : '—') ?>
+                          <?= format_datetime_html(!empty($r['submitted_at']) ? $r['submitted_at'] : ($r['date'] ?? '')) ?>
                         </td>
                         <td style="font-size:0.82rem;" id="cert-date-cell-<?= htmlspecialchars($r['id']) ?>">
                           <?php if(!empty($r['cert_date'])): ?>
@@ -340,7 +340,7 @@
                           </span>
                         </td>
                         <td style="font-size:0.82rem;">
-                          <?= !empty($a['submitted_at']) ? date('M d, Y', strtotime($a['submitted_at'])) : (!empty($a['date']) ? date('M d, Y', strtotime($a['date'])) : '—') ?>
+                          <?= format_datetime_html(!empty($a['submitted_at']) ? $a['submitted_at'] : ($a['date'] ?? '')) ?>
                         </td>
                         <td style="font-size:0.82rem;">
                           <?php if(!empty($a['cert_date'])): ?>
@@ -351,7 +351,7 @@
                           <?php endif; ?>
                         </td>
                         <td style="font-size:0.82rem; color:var(--text-muted);">
-                          <?= !empty($a['archived_at']) ? date('M d, Y', strtotime($a['archived_at'])) : '—' ?>
+                          <?= !empty($a['archived_at']) ? format_datetime_html($a['archived_at']) : '—' ?>
                           <?php if(!empty($a['archived_by'])): ?>
                             <div style="font-size:0.7rem; color:var(--text-muted);">by <?= htmlspecialchars($a['archived_by']) ?></div>
                           <?php endif; ?>

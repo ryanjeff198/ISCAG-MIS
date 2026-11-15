@@ -662,11 +662,10 @@
         return '';
     }
     function fmtDate(dateStr) {
-        const d = new Date(dateStr);
-        const y = d.getFullYear();
-        const m = String(d.getMonth()+1).padStart(2,'0');
-        const day = String(d.getDate()).padStart(2,'0');
-        return y+'-'+m+'-'+day;
+        if (!dateStr) return '—';
+        const d = new Date(String(dateStr).replace(' ', 'T'));
+        if (isNaN(d.getTime())) return String(dateStr);
+        return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     }
     function fmtPeso(n) { return '₱' + n.toLocaleString(undefined, {minimumFractionDigits:2}); }
 

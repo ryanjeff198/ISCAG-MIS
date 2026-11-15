@@ -724,7 +724,7 @@
                 <td><strong style="color:var(--primary); font-family:monospace;">${dist.distribution_ref}</strong></td>
                 <td><strong>${dist.items_summary}</strong></td>
                 <td>${dist.received_by}</td>
-                <td>${dist.distribution_date}</td>
+                <td>${formatDate(dist.distribution_date)}</td>
                 <td>${dist.distributed_by}</td>
               </tr>`;
             });

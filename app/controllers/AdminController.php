@@ -56,7 +56,7 @@ class AdminController extends Controller
             $aptRows = $db->query("
                 SELECT a.application_id as ref_id, 'Apartments' as department, 'Apartment Application' as request_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as applicant,
-                       u.email, a.date as submitted_at, a.status,
+                       u.email, COALESCE(a.updated_at, a.date) as submitted_at, a.status,
                        CONCAT('/admin/mis_admin/apartment_confirmation?id=', a.application_id) as action_url
                 FROM apartmentsapp a
                 LEFT JOIN tenant_accounts u ON a.tenant_id = u.tenant_id
@@ -1668,7 +1668,7 @@ class AdminController extends Controller
             $counsRows = $db->query("
                 SELECT c.id, 'Da\'wah' as department, CONCAT('Counseling (', COALESCE(c.reason, c.session_type, 'General'), ')') as service_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as subject_name,
-                       u.email as contact, DATE(c.created_at) as report_date, c.status,
+                       u.email as contact, c.created_at as report_date, c.status,
                        COALESCE(c.scheduled_at, 'Appointment') as detail_info
                 FROM counseling_requests c
                 LEFT JOIN tenant_accounts u ON c.tenant_id = u.tenant_id
@@ -1679,7 +1679,7 @@ class AdminController extends Controller
             $marrRows = $db->query("
                 SELECT m.id, 'Da\'wah' as department, 'Marriage Solemnization' as service_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as subject_name,
-                       u.email as contact, DATE(m.created_at) as report_date, m.status,
+                       u.email as contact, m.created_at as report_date, m.status,
                        CONCAT('Date: ', COALESCE(m.marriage_date,'TBD')) as detail_info
                 FROM marriage_requests m
                 LEFT JOIN tenant_accounts u ON m.tenant_id = u.tenant_id
@@ -1690,7 +1690,7 @@ class AdminController extends Controller
             $convRows = $db->query("
                 SELECT cv.id, 'Da\'wah' as department, 'Shahadah Conversion' as service_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as subject_name,
-                       u.email as contact, DATE(cv.created_at) as report_date, cv.status,
+                       u.email as contact, cv.created_at as report_date, cv.status,
                        'Certificate Process' as detail_info
                 FROM conversion_requests cv
                 LEFT JOIN tenant_accounts u ON cv.tenant_id = u.tenant_id
@@ -1704,7 +1704,7 @@ class AdminController extends Controller
             $burRows = $db->query("
                 SELECT b.id, 'Damayan' as department, 'Burial Service' as service_type,
                        COALESCE(b.deceased_name, CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as subject_name,
-                       b.informant_contact as contact, DATE(b.submitted_at) as report_date, b.status,
+                       b.informant_contact as contact, b.submitted_at as report_date, b.status,
                        CONCAT('Plot: ', COALESCE(b.assigned_plot_number,'Pending'), ' (', COALESCE(b.cemetery_preference,'Local'), ')') as detail_info
                 FROM burial_requests b
                 LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
@@ -1715,7 +1715,7 @@ class AdminController extends Controller
             $fcRows = $db->query("
                 SELECT f.id, 'Damayan' as department, 'Funeral Case Management' as service_type,
                        CONCAT(COALESCE(f.deceased_first_name,''), ' ', COALESCE(f.deceased_last_name,'')) as subject_name,
-                       f.informant_contact as contact, DATE(f.reported_at) as report_date, f.status,
+                       f.informant_contact as contact, f.reported_at as report_date, f.status,
                        CONCAT('Cert: ', COALESCE(f.certificate_status,'Pending')) as detail_info
                 FROM funeral_cases f
                 ORDER BY f.id DESC LIMIT 20
@@ -1742,7 +1742,7 @@ class AdminController extends Controller
                     'service_type' => 'Maintenance (' . ($mr['category'] ?? 'General') . ')',
                     'subject_name' => trim(($mr['first_name'] ?? '') . ' ' . ($mr['last_name'] ?? '')) ?: 'Facility Admin',
                     'contact' => $mr['email'] ?? ($mr['contactnum'] ?? '—'),
-                    'report_date' => !empty($mr['created_at']) ? date('Y-m-d', strtotime($mr['created_at'])) : date('Y-m-d'),
+                    'report_date' => !empty($mr['created_at']) ? $mr['created_at'] : null,
                     'status' => $mr['status'] ?? 'Pending',
                     'detail_info' => $unitLabel . mb_strimwidth((string)($mr['description'] ?? ''), 0, 80, '...')
                 ];
@@ -1754,7 +1754,7 @@ class AdminController extends Controller
             $billRows = $db->query("
                 SELECT b.billing_id as id, 'Finance' as department, 'Billing Invoice' as service_type,
                        CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as subject_name,
-                       u.email as contact, DATE(b.created_at) as report_date, b.status,
+                       u.email as contact, b.created_at as report_date, b.status,
                        CONCAT('₱', FORMAT(b.amount, 2)) as detail_info
                 FROM billing b
                 LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
@@ -1924,7 +1924,7 @@ class AdminController extends Controller
                 'name'          => trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?: 'Applicant',
                 'type'          => 'counseling',
                 'service_label' => 'Counseling — ' . ($r['reason'] ?? 'General'),
-                'date'          => date('M d, Y', strtotime($r['created_at'])),
+                'date'          => $r['created_at'],
                 'status'        => $s['label'],
                 'status_class'  => $s['class'],
                 'raw'           => $r
@@ -1944,7 +1944,7 @@ class AdminController extends Controller
                 'name'          => ($m['groom_name'] ?? 'Groom') . ' & ' . ($m['bride_name'] ?? 'Bride'),
                 'type'          => 'marriage',
                 'service_label' => 'Marriage Ceremony',
-                'date'          => date('M d, Y', strtotime($m['created_at'] ?? $m['marriage_date'])),
+                'date'          => $m['created_at'] ?? $m['marriage_date'],
                 'status'        => $s['label'],
                 'status_class'  => $s['class'],
                 'raw'           => $m
@@ -1969,7 +1969,7 @@ class AdminController extends Controller
                 'name'          => trim(($c['fname'] ?? '') . ' ' . ($c['lname'] ?? '')) . $adopted,
                 'type'          => 'conversion',
                 'service_label' => 'Conversion / Shahadah',
-                'date'          => date('M d, Y', strtotime($c['created_at'] ?? $c['conversion_date'])),
+                'date'          => $c['created_at'] ?? $c['conversion_date'],
                 'status'        => $s['label'],
                 'status_class'  => $s['class'],
                 'raw'           => $c
@@ -3763,7 +3763,7 @@ class AdminController extends Controller
                 'assigned_plot_number' => $b['assigned_plot_number'] ?? '',
                 'assigned_section' => $b['assigned_section'] ?? '',
                 'service_label' => ($b['request_type'] === 'both') ? 'Death Cert & Cemetery Plot' : (($b['request_type'] === 'death_certificate') ? 'Death Certificate' : 'Cemetery Plot'),
-                'date' => date('Y-m-d', strtotime($b['submitted_at'])),
+                'date' => $b['submitted_at'],
                 'status' => $b['status'],
                 'status_class' => $this->getBurialStatusClass($b['status'])
             ];
@@ -3882,7 +3882,7 @@ class AdminController extends Controller
                 'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
                 'deceased' => $b['deceased_name'] ?? 'N/A',
                 'deceased_sex' => $b['deceased_sex'] ?? 'Male',
-                'date' => date('Y-m-d', strtotime($b['submitted_at'])),
+                'date' => $b['submitted_at'],
                 'submitted_at' => $b['submitted_at'],
                 'cert_date' => $certDateRaw ? date('Y-m-d', strtotime($certDateRaw)) : null,
                 'status' => $displayStatus,
@@ -3940,7 +3940,7 @@ class AdminController extends Controller
                 'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
                 'deceased' => $b['deceased_name'] ?? 'N/A',
                 'deceased_sex' => $b['deceased_sex'] ?? 'Male',
-                'date' => date('Y-m-d', strtotime($b['submitted_at'])),
+                'date' => $b['submitted_at'],
                 'submitted_at' => $b['submitted_at'],
                 'cert_date' => $certDateRaw ? date('Y-m-d', strtotime($certDateRaw)) : null,
                 'archived_at' => $b['archived_at'] ?? null,
@@ -4003,7 +4003,7 @@ class AdminController extends Controller
                 'name' => trim(($b['first_name'] ?? 'Guest') . ' ' . ($b['last_name'] ?? '')),
                 'deceased' => $b['deceased_name'] ?? 'N/A',
                 'deceased_sex' => $b['deceased_sex'] ?? 'Male',
-                'date' => date('Y-m-d', strtotime($b['submitted_at'])),
+                'date' => $b['submitted_at'],
                 'status' => $displayStatus,
                 'status_class' => $this->getBurialStatusClass($displayStatus),
                 'request_type' => $b['request_type'] ?? 'both',

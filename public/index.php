@@ -48,6 +48,50 @@ function asset(string $path): string
     return BASE_URL . '/public/' . ltrim($path, '/');
 }
 
+/**
+ * Format date consistently (e.g. "Nov 05, 2026")
+ */
+function format_date($val, string $fallback = '—'): string
+{
+    if (empty($val) || $val === '0000-00-00' || $val === '0000-00-00 00:00:00') return $fallback;
+    $ts = is_numeric($val) ? (int)$val : strtotime((string)$val);
+    if (!$ts || $ts <= 0) return $fallback;
+    return date('M d, Y', $ts);
+}
+
+/**
+ * Format datetime consistently for submitted/received timestamps (e.g. "Nov 05, 2026 • 5:59 AM")
+ */
+function format_datetime($val, string $fallback = '—'): string
+{
+    if (empty($val) || $val === '0000-00-00' || $val === '0000-00-00 00:00:00') return $fallback;
+    $str = trim((string)$val);
+    $ts = is_numeric($val) ? (int)$val : strtotime($str);
+    if (!$ts || $ts <= 0) return $fallback;
+    if (strlen($str) <= 10) {
+        return date('M d, Y', $ts);
+    }
+    return date('M d, Y • h:i A', $ts);
+}
+
+/**
+ * Format date & time as stacked HTML for admin tables
+ */
+function format_datetime_html($val, string $fallback = '—'): string
+{
+    if (empty($val) || $val === '0000-00-00' || $val === '0000-00-00 00:00:00') return $fallback;
+    $str = trim((string)$val);
+    $ts = is_numeric($val) ? (int)$val : strtotime($str);
+    if (!$ts || $ts <= 0) return $fallback;
+    
+    $d = date('M d, Y', $ts);
+    if (strlen($str) <= 10) {
+        return '<span style="font-weight:600;color:var(--text-main);">' . $d . '</span>';
+    }
+    $t = date('h:i A', $ts);
+    return '<span style="font-weight:600;color:var(--text-main);">' . $d . '</span><span style="display:block;font-size:0.75rem;color:var(--text-muted);margin-top:1px;">' . $t . '</span>';
+}
+
 // Start session with security settings
 ini_set('session.cookie_httponly', 1);
 ini_set('session.cookie_path', '/');

@@ -564,7 +564,7 @@
                         <td class="td-id">#<?= $c['id'] ?></td>
                         <td style="font-weight:600;"><?= trim(($c['first_name'] ?? '') . ' ' . ($c['last_name'] ?? '')) ?></td>
                         <td><?= htmlspecialchars($c['reason'] ?? 'General') ?></td>
-                        <td><?= !empty($c['preferred_date']) ? date('M d, Y', strtotime($c['preferred_date'])) : '—' ?></td>
+                        <td><?= !empty($c['preferred_date']) ? format_date($c['preferred_date']) : '—' ?></td>
                         <td><?= !empty($c['preferred_time']) ? date('h:i A', strtotime($c['preferred_time'])) : '—' ?></td>
                         <td><span class="badge-status <?= $csc ?>"><?= ucfirst($c['status']) ?></span></td>
                       </tr>

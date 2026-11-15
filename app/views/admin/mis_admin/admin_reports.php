@@ -528,7 +528,7 @@
                     <td style="font-weight:600;">Burial Assistance</td>
                     <td><?= htmlspecialchars($b['deceased_name'] ?: ($b['tenant_name'] ?: 'N/A')) ?></td>
                     <td><?= htmlspecialchars($b['assigned_plot_number'] ?: 'Plot: Pending') ?> (<?= htmlspecialchars($b['cemetery_preference'] ?: 'Local') ?>)</td>
-                    <td><?= date('M d, Y', strtotime($b['submitted_at'] ?? 'now')) ?></td>
+                    <td><?= format_datetime_html($b['submitted_at'] ?? '') ?></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars($b['death_cert_status'] ?: 'Certified') ?></span></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars(ucfirst($b['status'])) ?></span></td>
                   </tr>
@@ -539,7 +539,7 @@
                     <td style="font-weight:600;">Funeral Case Management</td>
                     <td><?= htmlspecialchars(($fc['deceased_first_name'] ?? '') . ' ' . ($fc['deceased_last_name'] ?? '')) ?></td>
                     <td><?= htmlspecialchars($fc['grave_reference'] ?: 'Plot: Pending') ?></td>
-                    <td><?= date('M d, Y', strtotime($fc['reported_at'] ?? 'now')) ?></td>
+                    <td><?= format_datetime_html($fc['reported_at'] ?? '') ?></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars($fc['certificate_status'] ?: 'Submitted') ?></span></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars(ucfirst($fc['status'])) ?></span></td>
                   </tr>
@@ -578,7 +578,7 @@
                   ?>
                   <tr>
                     <td style="font-weight:700;"><?= htmlspecialchars(($log['building'] ?? '') . '-' . ($log['room_number'] ?? 'Unit')) ?></td>
-                    <td><?= date('M d, Y', strtotime($log['date'] ?? 'now')) ?></td>
+                    <td><?= format_date($log['date'] ?? '') ?></td>
                     <td style="font-weight:600;"><?= htmlspecialchars(($log['first_name'] ?? '') . ' ' . ($log['last_name'] ?? '')) ?></td>
                     <td><span class="badge-status badge-paid">Paid Deposit</span></td>
                     <td><span class="badge-status <?= $mBadge ?>"><?= htmlspecialchars($mStat) ?></span></td>
@@ -632,7 +632,7 @@
                     <td style="font-weight:600;"><?= htmlspecialchars(trim(($mr['first_name'] ?? '') . ' ' . ($mr['last_name'] ?? '')) ?: 'Facility Admin') ?></td>
                     <td><?= htmlspecialchars($mrUnit) ?></td>
                     <td style="max-width:260px;"><?= htmlspecialchars($mr['description'] ?? '') ?></td>
-                    <td><?= date('M d, Y', strtotime($mr['created_at'] ?? 'now')) ?></td>
+                    <td><?= format_datetime_html($mr['created_at'] ?? '') ?></td>
                     <td style="font-size:0.8rem;color:var(--text-muted);"><?= htmlspecialchars($mr['admin_remarks'] ?: '—') ?></td>
                     <td><span class="badge-status <?= $mrClass ?>"><?= htmlspecialchars($mrStatus) ?></span></td>
                   </tr>
@@ -830,7 +830,7 @@
             <td style="font-weight:600;">${it.service_type || '—'}</td>
             <td style="font-weight:600;">${it.subject_name || 'N/A'}</td>
             <td style="font-size:0.8rem;color:var(--text-muted);">${it.contact || '—'}</td>
-            <td>${it.report_date ? formatDate(it.report_date) : '—'}</td>
+            <td>${it.report_date ? formatDateTimeHtml(it.report_date) : '—'}</td>
             <td style="font-size:0.8rem;">${it.detail_info || '—'}</td>
             <td><span class="badge-status ${sClass}">${statusLabel(it.status || 'Active')}</span></td>
           </tr>

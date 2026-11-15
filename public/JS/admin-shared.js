@@ -412,16 +412,54 @@ function showConfirm(title, message, onConfirm, type = 'warning') {
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  if (!dateStr || dateStr === '0000-00-00' || dateStr === '0000-00-00 00:00:00') return '—';
+  if (typeof dateStr === 'string' && /^[A-Za-z]{3}\s+\d{1,2},\s+\d{4}/.test(dateStr.trim())) return dateStr.trim();
+  const raw = String(dateStr).trim();
+  const s = raw.includes(' ') && !raw.includes('T') ? raw.replace(' ', 'T') : raw;
+  const d = new Date(s.includes('T') ? s : s + 'T00:00:00');
+  if (isNaN(d.getTime())) {
+    const d2 = new Date(dateStr);
+    if (isNaN(d2.getTime())) return '—';
+    return d2.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  }
+  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 }
 
 function formatDateTime(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
-    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  if (!dateStr || dateStr === '0000-00-00' || dateStr === '0000-00-00 00:00:00') return '—';
+  if (typeof dateStr === 'string' && /^[A-Za-z]{3}\s+\d{1,2},\s+\d{4}\s+[•|,]/.test(dateStr.trim())) return dateStr.trim();
+  const raw = String(dateStr).trim();
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(raw);
+  const s = raw.includes(' ') && !raw.includes('T') ? raw.replace(' ', 'T') : raw;
+  const d = new Date(s.includes('T') ? s : s + 'T00:00:00');
+  if (isNaN(d.getTime())) {
+    const d2 = new Date(dateStr);
+    if (isNaN(d2.getTime())) return '—';
+    return d2.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  }
+  const datePart = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  if (isDateOnly) return datePart;
+  const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${datePart} • ${timePart}`;
+}
+
+function formatDateTimeHtml(dateStr) {
+  if (!dateStr || dateStr === '0000-00-00' || dateStr === '0000-00-00 00:00:00') return '—';
+  const raw = String(dateStr).trim();
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(raw);
+  const s = raw.includes(' ') && !raw.includes('T') ? raw.replace(' ', 'T') : raw;
+  const d = new Date(s.includes('T') ? s : s + 'T00:00:00');
+  if (isNaN(d.getTime())) {
+    const d2 = new Date(dateStr);
+    if (isNaN(d2.getTime())) return '—';
+    return `<span style="font-weight:600;color:var(--text-main);">${d2.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</span>`;
+  }
+  const datePart = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  if (isDateOnly) {
+    return `<span style="font-weight:600;color:var(--text-main);">${datePart}</span>`;
+  }
+  const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `<span style="font-weight:600;color:var(--text-main);">${datePart}</span><span style="display:block;font-size:0.75rem;color:var(--text-muted);margin-top:1px;">${timePart}</span>`;
 }
 
 function timeAgo(dateStr) {

@@ -416,7 +416,7 @@
                                         </div>
                                     </td>
                                     <td><span style="font-weight:600; color:var(--primary-dark);"><?= htmlspecialchars($req['unit_type'] ?? '—') ?></span></td>
-                                    <td><?= date('M d, Y', strtotime($req['end_date'])) ?></td>
+                                    <td><?= format_date($req['end_date']) ?></td>
                                     <td>
                                         <?php if ($req['requested_term_months'] > 0): ?>
                                             <span style="color:var(--accent); font-weight:700;">+<?= (int)$req['requested_term_months'] ?> Mo</span>

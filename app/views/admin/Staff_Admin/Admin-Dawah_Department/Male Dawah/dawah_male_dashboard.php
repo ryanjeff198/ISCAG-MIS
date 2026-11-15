@@ -416,7 +416,7 @@
               <td class="td-id">#${r.id}</td>
               <td style="font-weight:600;">${r.name}</td>
               <td>${r.service_label}</td>
-              <td>${r.date}</td>
+              <td>${formatDateTimeHtml(r.date)}</td>
               <td><span class="badge-status ${sc}">${r.status}</span></td>
               <td>
                 <div class="actions-cell">

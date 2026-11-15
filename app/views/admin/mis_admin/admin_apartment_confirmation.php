@@ -276,7 +276,7 @@
                              <td><?= htmlspecialchars($r['first_name'] ?? '—') ?></td>
                              <td><?= htmlspecialchars($r['last_name'] ?? '—') ?></td>
                              <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
-                             <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
+                             <td><?= format_datetime_html($r['submitted_at']) ?></td>
                              <td><span class="badge-status badge-pending"><?= $r['status'] ?></span></td>
                              <td>
                                 <button class="btn-circle eye" onclick="openReview(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
@@ -324,8 +324,8 @@
                              <td style="font-weight:600;"><?= $r['tenant_id'] ?></td>
                              <td><?= htmlspecialchars(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?></td>
                              <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
-                             <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
-                             <td><?= !empty($r['updated_at']) ? date('M d, Y', strtotime($r['updated_at'])) : '—' ?></td>
+                             <td><?= format_datetime_html($r['submitted_at']) ?></td>
+                             <td><?= !empty($r['updated_at']) ? format_datetime_html($r['updated_at']) : '—' ?></td>
                              <td><span class="badge-status badge-approved"><?= $r['status'] ?></span></td>
                              <td>
                                 <button class="btn-circle eye" onclick="openReview(<?= htmlspecialchars(json_encode($r)) ?>)" title="View Details">
@@ -373,7 +373,7 @@
                              <td style="font-weight:600;"><?= $r['tenant_id'] ?></td>
                              <td><?= htmlspecialchars(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?></td>
                              <td style="color:var(--primary);font-weight:700;"><?= $r['roomtype'] ?></td>
-                             <td><?= date('M d, Y', strtotime($r['submitted_at'])) ?></td>
+                             <td><?= format_datetime_html($r['submitted_at']) ?></td>
                              <td style="font-size:0.82rem;color:var(--danger);font-weight:600;"><?= htmlspecialchars($r['reject_reason'] ?? '—') ?></td>
                              <td><span class="badge-status badge-rejected"><?= $r['status'] ?></span></td>
                              <td>

@@ -97,7 +97,7 @@
                             <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;"><?= htmlspecialchars($pc) ?></div>
                           <?php endif; ?>
                         </td>
-                        <td><?= date('M d, Y', strtotime($r['created_at'])) ?></td>
+                        <td><?= format_datetime_html($r['created_at']) ?></td>
                         <td><span class="badge-status <?= $sc ?>"><?= ucfirst($r['status']) ?></span></td>
                         <td>
                           <button class="btn-action">Manage</button>

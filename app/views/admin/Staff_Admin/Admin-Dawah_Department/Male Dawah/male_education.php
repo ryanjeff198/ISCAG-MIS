@@ -100,7 +100,7 @@
                           <?php endif; ?>
                         </td>
                         <td class="td-program"><?= $r['program_name'] ?></td>
-                        <td><?= date('M d, Y', strtotime($r['created_at'])) ?></td>
+                        <td><?= format_datetime_html($r['created_at']) ?></td>
                         <td><span class="badge-status <?= $sc ?>"><?= ucfirst($r['status']) ?></span></td>
                         <td>
                           <div class="actions-cell">

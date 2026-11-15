@@ -546,7 +546,7 @@
                 <td class="field-label">Assigned Unit</td>
                 <td class="field-value">${r.room_number}</td>
                 <td class="field-label">Notice Date</td>
-                <td class="field-value">${new Date(r.created_at).toLocaleDateString()}</td>
+                <td class="field-value">${formatDateTime(r.created_at)}</td>
               </tr>
             </table>
 
