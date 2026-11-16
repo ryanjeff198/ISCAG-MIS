@@ -611,6 +611,20 @@
         console.error("Family parsing error:", e);
       }
 
+      // Parse follow-up list
+      let followups = [];
+      try {
+        if (r.followup_docs) {
+          const raw = typeof r.followup_docs === 'string' ? JSON.parse(r.followup_docs) : r.followup_docs;
+          followups = Array.isArray(raw) ? raw : Object.keys(raw);
+        }
+      } catch(e) {
+        console.error("Followup parsing error:", e);
+      }
+      const isBirthFollowup = followups.includes('doc-birth') || followups.includes('birthcert');
+      const isNbiFollowup = followups.includes('doc-nbi') || followups.includes('nbi');
+      const isIncomeFollowup = followups.includes('doc-income') || followups.includes('proofofincome');
+
       document.getElementById('modal-body').innerHTML = `
         <div class="form-document">
           <div class="form-doc-header">
@@ -746,18 +760,6 @@
                 <td class="field-value">${r.ref_contact || '—'}</td>
               </tr>
             </table>
-
-            // Parse follow-up list
-            let followups = [];
-            try {
-              if (r.followup_docs) {
-                const raw = typeof r.followup_docs === 'string' ? JSON.parse(r.followup_docs) : r.followup_docs;
-                followups = Array.isArray(raw) ? raw : Object.keys(raw);
-              }
-            } catch(e) {}
-            const isBirthFollowup = followups.includes('doc-birth') || followups.includes('birthcert');
-            const isNbiFollowup = followups.includes('doc-nbi') || followups.includes('nbi');
-            const isIncomeFollowup = followups.includes('doc-income') || followups.includes('proofofincome');
 
             <div class="doc-section-title">
               <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z" /></svg>

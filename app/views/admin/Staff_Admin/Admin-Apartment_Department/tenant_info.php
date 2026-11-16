@@ -363,7 +363,7 @@
                       <td><span class="badge <?= $roleBadge ?>"><?= htmlspecialchars($role) ?></span></td>
                       <td style="font-size:0.82rem; color:var(--text-muted);"><?= $dateApplied ?></td>
                       <td>
-                        <button class="btn-view" onclick='viewTenant(<?= json_encode([
+                        <button class="btn-view" onclick="viewTenant(<?= htmlspecialchars(json_encode([
                           "tenant_id" => $t["tenant_id"],
                           "first_name" => $t["first_name"] ?? "",
                           "last_name" => $t["last_name"] ?? "",
@@ -372,7 +372,7 @@
                           "role" => $role,
                           "app_status" => $appStatusLabel,
                           "roomtype" => $roomtype,
-                          "date_applied" => $dateApplied,
+                          "date_applied" => !empty($app['submitted_at']) ? format_datetime($app['submitted_at']) : '—',
                           "app_id" => $app["id"] ?? "",
                           "familyname" => $app["familyname"] ?? "",
                           "givenname" => $app["givenname"] ?? "",
@@ -385,7 +385,7 @@
                           "occupation" => $app["occupation"] ?? "",
                           "monthly_income" => $app["monthly_income"] ?? "",
                           "reject_reason" => $app["reject_reason"] ?? "",
-                        ], JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
+                        ])) ?>)">
                           <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                           View
                         </button>
