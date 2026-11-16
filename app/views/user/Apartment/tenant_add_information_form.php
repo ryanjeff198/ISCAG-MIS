@@ -834,6 +834,62 @@ if ($userId) {
       border-color: var(--primary);
     }
 
+    .privacy-link {
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.18s ease;
+    }
+
+    .privacy-link:hover {
+      color: var(--primary-dark);
+      background: rgba(23, 107, 69, 0.08);
+      border-radius: 4px;
+      padding: 0 4px;
+    }
+
+    .privacy-modal-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px 24px 0;
+      background: #f8faf9;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .privacy-tab-btn {
+      padding: 10px 16px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      margin-bottom: -1px;
+    }
+
+    .privacy-tab-btn:hover {
+      color: var(--primary);
+    }
+
+    .privacy-tab-btn.active {
+      color: var(--primary);
+      border-bottom: 2px solid var(--primary);
+      font-weight: 700;
+      background: white;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+
     /* ── IMAGE PREVIEW MODAL ── */
     .photo-preview-overlay,
     .img-preview-overlay {
@@ -2565,9 +2621,9 @@ if ($userId) {
                   </svg>
                   Declaration and Consent
                 </div>
-                <button type="button" id="btn-open-privacy-notice" class="btn-privacy-pill" title="Read ISCAG Data Privacy Policy">
+                <button type="button" id="btn-open-privacy-notice" class="btn-privacy-pill privacy-modal-trigger" data-tab="privacy" title="Read ISCAG Data Privacy Policy & Regulations">
                   <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                  View Data Privacy Notice
+                  View Data Privacy &amp; Rules
                 </button>
               </div>
               <div class="form-check">
@@ -2577,17 +2633,10 @@ if ($userId) {
                   best of my knowledge.
                 </label>
               </div>
-              <div class="form-check">
+              <div class="form-check" style="margin-bottom:16px;">
                 <input class="form-check-input" type="checkbox" id="decl2" />
                 <label class="form-check-label" for="decl2">
-                  I understand that submitting false information may result in immediate disqualification. I agree to
-                  comply with all ISCAG apartment rules and regulations.
-                </label>
-              </div>
-              <div class="form-check" style="margin-bottom:16px;">
-                <input class="form-check-input" type="checkbox" id="decl3" />
-                <label class="form-check-label" for="decl3">
-                  I have read and consent to the collection, processing, and storage of my personal and sensitive data in accordance with the <a href="javascript:void(0)" id="link-open-privacy-notice" style="color:var(--primary);font-weight:600;text-decoration:underline;">ISCAG Data Privacy Notice</a> (Republic Act No. 10173 - Data Privacy Act of 2012).
+                  I understand that submitting false information may result in immediate disqualification. I agree to comply with all <a href="javascript:void(0)" class="privacy-modal-trigger privacy-link" data-tab="rules" style="color:var(--primary);font-weight:700;text-decoration:underline;cursor:pointer;">ISCAG apartment rules and regulations</a> and consent to the collection and processing of my personal data under the <a href="javascript:void(0)" class="privacy-modal-trigger privacy-link" data-tab="privacy" style="color:var(--primary);font-weight:700;text-decoration:underline;cursor:pointer;">Data Privacy Policy <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;display:inline-block;vertical-align:-1px;"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></a>.
                 </label>
               </div>
             </div>
@@ -2714,7 +2763,7 @@ if ($userId) {
     </div><!-- /.main-content -->
   </div><!-- /.app-wrapper -->
 
-  <!-- ══ DATA PRIVACY MODAL ══ -->
+  <!-- ══ DATA PRIVACY & RULES MODAL ══ -->
   <div id="data-privacy-modal" class="privacy-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="privacy-modal-title">
     <div class="privacy-modal-card">
       <!-- Header -->
@@ -2724,7 +2773,7 @@ if ($userId) {
             <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:white;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v6h-2V7zm0 8h2v2h-2v-2z"/></svg>
           </div>
           <div>
-            <h3 id="privacy-modal-title" style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:white;margin:0 0 2px;">Data Privacy Notice &amp; Consent</h3>
+            <h3 id="privacy-modal-title" style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:white;margin:0 0 2px;">Data Privacy Notice &amp; Apartment Rules</h3>
             <p style="font-size:0.76rem;color:rgba(255,255,255,0.85);margin:0;">Islamic Studies, Call and Guidance of the Philippines (ISCAG)</p>
           </div>
         </div>
@@ -2733,88 +2782,155 @@ if ($userId) {
         </button>
       </div>
 
+      <!-- Navigation Tabs -->
+      <div class="privacy-modal-tabs">
+        <button type="button" class="privacy-tab-btn active" id="tab-btn-privacy">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v6h-2V7zm0 8h2v2h-2v-2z"/></svg>
+          Data Privacy Notice
+        </button>
+        <button type="button" class="privacy-tab-btn" id="tab-btn-rules">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:currentColor;"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+          Apartment Rules &amp; Regulations
+        </button>
+      </div>
+
       <!-- Scrollable Body -->
       <div class="privacy-modal-body">
-        <div class="privacy-callout">
-          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-          <span>
-            In compliance with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong>, ISCAG Philippines is committed to protecting your personal data, sensitive personal information, and privacy throughout your apartment application, residency, and tenancy records.
-          </span>
+        <!-- TAB 1: DATA PRIVACY -->
+        <div id="tab-privacy-content" class="modal-tab-pane">
+          <div class="privacy-callout">
+            <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>
+              In compliance with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong>, ISCAG Philippines is committed to protecting your personal data, sensitive personal information, and privacy throughout your apartment application, residency, and tenancy records.
+            </span>
+          </div>
+
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">1. Scope and Applicability</h5>
+            <p>This Data Privacy Notice applies to all applicants, prospective tenants, co-occupants, and declared household members applying for residential units managed by ISCAG Philippines.</p>
+          </div>
+
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">2. Personal and Sensitive Information We Collect</h5>
+            <p>To evaluate your application, verify identity, and manage apartment tenancy, we collect the following information:</p>
+            <ul>
+              <li><strong>Personal Details:</strong> Full legal name, Muslim/Arabic name, date of birth, age, sex, civil status, nationality, and tribal affiliation.</li>
+              <li><strong>Contact Information:</strong> Permanent and current residential address, active mobile number, and email address.</li>
+              <li><strong>Employment &amp; Financial Information:</strong> Occupation, monthly income, employer/business details, and supporting financial documentation (e.g. payslips, Certificate of Employment, remittance slips).</li>
+              <li><strong>Household &amp; Family Members:</strong> Names, ages, relationships, and occupations of individuals residing with you.</li>
+              <li><strong>Verification &amp; Clearance Documents:</strong> 2x2 identification photograph, government ID, NBI or Police Clearance, and Birth Certificate (or Certificate of Follow-Up).</li>
+              <li><strong>Emergency Reference Contact:</strong> Name, address, and verified phone number of an emergency contact person.</li>
+            </ul>
+          </div>
+
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">3. Purpose and Legal Basis of Processing</h5>
+            <p>Your personal data is collected and processed with your voluntary consent, for pre-contractual assessment, and for legitimate organizational management, specifically to:</p>
+            <ul>
+              <li>Assess and verify your eligibility for apartment tenancy and unit allocation.</li>
+              <li>Conduct standard administrative verification and safety checks.</li>
+              <li>Prepare, execute, and enforce tenancy agreements, house rules, and community guidelines.</li>
+              <li>Process utility billing, rental invoices, payments, security deposits, and maintenance requests.</li>
+              <li>Maintain verified resident rosters for building security, fire safety, and emergency response.</li>
+            </ul>
+          </div>
+
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">4. Data Protection and Security Controls</h5>
+            <p>ISCAG implements organizational, physical, and technical safeguards to secure your personal data:</p>
+            <ul>
+              <li>Encrypted databases and secure cloud infrastructure restrict access to authorized personnel only.</li>
+              <li>Strict role-based access controls limit data visibility exclusively to Apartment Department staff and designated MIS administrators.</li>
+              <li>All administrative interactions are recorded in system audit logs to ensure transparency and accountability.</li>
+            </ul>
+          </div>
+
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">5. Data Sharing and Third-Party Disclosure</h5>
+            <p>ISCAG maintains strict confidentiality and <strong>does not sell, trade, or share</strong> your personal data with unauthorized third parties. Information may only be disclosed in the following circumstances:</p>
+            <ul>
+              <li>When strictly required by Philippine laws, competent government agencies, or court orders.</li>
+              <li>To emergency services, first responders, or medical personnel during health or safety emergencies.</li>
+            </ul>
+          </div>
+
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">6. Retention and Disposal</h5>
+            <p>Your personal data and uploaded documents will be retained throughout your tenancy and for the legally required audit period thereafter. Discarded records are permanently and securely deleted from our databases.</p>
+          </div>
+
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">7. Your Rights as a Data Subject</h5>
+            <p>Under the Data Privacy Act of 2012 (RA 10173), you are entitled to:</p>
+            <ul>
+              <li><strong>Right to be Informed:</strong> Understand how your personal information is processed.</li>
+              <li><strong>Right to Access:</strong> Request reasonable access to your personal data records held by ISCAG.</li>
+              <li><strong>Right to Rectification:</strong> Request correction of any inaccurate or outdated information.</li>
+              <li><strong>Right to Object or Erasure:</strong> Object to processing or request deletion subject to contractual and legal obligations.</li>
+            </ul>
+          </div>
+
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">8. Contact Information and Data Inquiries</h5>
+            <p>For any privacy inquiries or to exercise your data subject rights, please contact:</p>
+            <p style="margin:4px 0 0;font-size:0.8rem;color:var(--text-muted);">
+              <strong>Islamic Studies, Call and Guidance of the Philippines (ISCAG)</strong><br/>
+              Jose Abad Santos Street, Salitran I, City of Dasmariñas, Cavite, 4114<br/>
+              Email: <a href="mailto:iscagphilippines@gmail.com" style="color:var(--primary);text-decoration:underline;">iscagphilippines@gmail.com</a>
+            </p>
+          </div>
         </div>
 
-        <div class="privacy-section">
-          <h5 class="privacy-section-heading">1. Scope and Applicability</h5>
-          <p>This Data Privacy Notice applies to all applicants, prospective tenants, co-occupants, and declared household members applying for residential units managed by ISCAG Philippines.</p>
-        </div>
+        <!-- TAB 2: APARTMENT RULES & REGULATIONS -->
+        <div id="tab-rules-content" class="modal-tab-pane" style="display:none;">
+          <div class="privacy-callout" style="background:rgba(201,168,76,0.1);border-color:rgba(201,168,76,0.3);color:#854d0e;">
+            <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#b45309;flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            <span>
+              All accepted tenants and occupants are required to adhere strictly to the following <strong>ISCAG Apartment Rules and Regulations</strong> to preserve peace, cleanliness, security, and Islamic community values.
+            </span>
+          </div>
 
-        <div class="privacy-section">
-          <h5 class="privacy-section-heading">2. Personal and Sensitive Information We Collect</h5>
-          <p>To evaluate your application, verify identity, and manage apartment tenancy, we collect the following information:</p>
-          <ul>
-            <li><strong>Personal Details:</strong> Full legal name, Muslim/Arabic name, date of birth, age, sex, civil status, nationality, and tribal affiliation.</li>
-            <li><strong>Contact Information:</strong> Permanent and current residential address, active mobile number, and email address.</li>
-            <li><strong>Employment &amp; Financial Information:</strong> Occupation, monthly income, employer/business details, and supporting financial documentation (e.g. payslips, Certificate of Employment, remittance slips).</li>
-            <li><strong>Household &amp; Family Members:</strong> Names, ages, relationships, and occupations of individuals residing with you.</li>
-            <li><strong>Verification &amp; Clearance Documents:</strong> 2x2 identification photograph, government ID, NBI or Police Clearance, and Birth Certificate (or Certificate of Follow-Up).</li>
-            <li><strong>Emergency Reference Contact:</strong> Name, address, and verified phone number of an emergency contact person.</li>
-          </ul>
-        </div>
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">1. Occupancy and Authorized Residents</h5>
+            <p>Only the principal tenant and declared occupants listed in the approved application are authorized to reside permanently in the unit. Subletting, bedspace arrangements, or transferring the tenancy without written management consent is strictly prohibited.</p>
+          </div>
 
-        <div class="privacy-section">
-          <h5 class="privacy-section-heading">3. Purpose and Legal Basis of Processing</h5>
-          <p>Your personal data is collected and processed with your voluntary consent, for pre-contractual assessment, and for legitimate organizational management, specifically to:</p>
-          <ul>
-            <li>Assess and verify your eligibility for apartment tenancy and unit allocation.</li>
-            <li>Conduct standard administrative verification and safety checks.</li>
-            <li>Prepare, execute, and enforce tenancy agreements, house rules, and community guidelines.</li>
-            <li>Process utility billing, rental invoices, payments, security deposits, and maintenance requests.</li>
-            <li>Maintain verified resident rosters for building security, fire safety, and emergency response.</li>
-          </ul>
-        </div>
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">2. Payment and Due Dates</h5>
+            <p>Monthly rent and utility charges (water, electricity) must be settled on or before the 5th day of each billing cycle. Late payments are subject to standard administrative processing fees.</p>
+          </div>
 
-        <div class="privacy-section">
-          <h5 class="privacy-section-heading">4. Data Protection and Security Controls</h5>
-          <p>ISCAG implements organizational, physical, and technical safeguards to secure your personal data:</p>
-          <ul>
-            <li>Encrypted databases and secure cloud infrastructure restrict access to authorized personnel only.</li>
-            <li>Strict role-based access controls limit data visibility exclusively to Apartment Department staff and designated MIS administrators.</li>
-            <li>All administrative interactions are recorded in system audit logs to ensure transparency and accountability.</li>
-          </ul>
-        </div>
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">3. Peace, Quiet Hours &amp; Community Respect</h5>
+            <p>Tenants must preserve a peaceful environment conducive to study and worship. Strict quiet hours are observed from <strong>10:00 PM to 6:00 AM</strong> daily. Loud music, shouting, or disturbances during these hours are strictly prohibited.</p>
+          </div>
 
-        <div class="privacy-section">
-          <h5 class="privacy-section-heading">5. Data Sharing and Third-Party Disclosure</h5>
-          <p>ISCAG maintains strict confidentiality and <strong>does not sell, trade, or share</strong> your personal data with unauthorized third parties. Information may only be disclosed in the following circumstances:</p>
-          <ul>
-            <li>When strictly required by Philippine laws, competent government agencies, or court orders.</li>
-            <li>To emergency services, first responders, or medical personnel during health or safety emergencies.</li>
-          </ul>
-        </div>
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">4. Safety, Prohibited Items &amp; Conduct</h5>
+            <p>The following are strictly banned within all apartment premises and grounds:</p>
+            <ul>
+              <li>Possession or consumption of alcoholic beverages or prohibited drugs.</li>
+              <li>Gambling or betting activities of any kind.</li>
+              <li>Unauthorized firearms, deadly weapons, fireworks, or hazardous chemicals.</li>
+              <li>Smoking, vaping, or burning open fires within hallways or units.</li>
+            </ul>
+            <p style="font-size:0.8rem;color:#b45309;margin-top:4px;">Violation of these safety guidelines constitutes grounds for immediate lease termination and eviction.</p>
+          </div>
 
-        <div class="privacy-section">
-          <h5 class="privacy-section-heading">6. Retention and Disposal</h5>
-          <p>Your personal data and uploaded documents will be retained throughout your tenancy and for the legally required audit period thereafter. Discarded records are permanently and securely deleted from our databases.</p>
-        </div>
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">5. Cleanliness, Waste Disposal &amp; Common Areas</h5>
+            <p>Tenants must maintain their units in clean and sanitary condition. Garbage must be tied securely in trash bags and disposed of only in designated building bins. Corridors and fire escape routes must be kept free of personal belongings, shoes, and obstacles at all times.</p>
+          </div>
 
-        <div class="privacy-section">
-          <h5 class="privacy-section-heading">7. Your Rights as a Data Subject</h5>
-          <p>Under the Data Privacy Act of 2012 (RA 10173), you are entitled to:</p>
-          <ul>
-            <li><strong>Right to be Informed:</strong> Understand how your personal information is processed.</li>
-            <li><strong>Right to Access:</strong> Request reasonable access to your personal data records held by ISCAG.</li>
-            <li><strong>Right to Rectification:</strong> Request correction of any inaccurate or outdated information.</li>
-            <li><strong>Right to Object or Erasure:</strong> Object to processing or request deletion subject to contractual and legal obligations.</li>
-          </ul>
-        </div>
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">6. Visitor Policies &amp; Curfew</h5>
+            <p>All visitors must log in with building security upon arrival. Non-resident visitors must leave the premises by <strong>10:00 PM</strong> unless prior overnight permission has been granted in writing by apartment administration.</p>
+          </div>
 
-        <div class="privacy-section">
-          <h5 class="privacy-section-heading">8. Contact Information and Data Inquiries</h5>
-          <p>For any privacy inquiries or to exercise your data subject rights, please contact:</p>
-          <p style="margin:4px 0 0;font-size:0.8rem;color:var(--text-muted);">
-            <strong>Islamic Studies, Call and Guidance of the Philippines (ISCAG)</strong><br/>
-            Jose Abad Santos Street, Salitran I, City of Dasmariñas, Cavite, 4114<br/>
-            Email: <a href="mailto:iscagphilippines@gmail.com" style="color:var(--primary);text-decoration:underline;">iscagphilippines@gmail.com</a>
-          </p>
+          <div class="privacy-section">
+            <h5 class="privacy-section-heading">7. Property Care &amp; Alterations</h5>
+            <p>Tenants may not make major structural alterations, drill holes in load-bearing walls, repaint, or modify electrical circuits without written authorization. Tenants are responsible for the repair or replacement of damages caused by negligence.</p>
+          </div>
         </div>
       </div>
 
@@ -3170,9 +3286,8 @@ if ($userId) {
         // 2. Validate declaration checkboxes
         const d1 = document.getElementById('decl1')?.checked;
         const d2 = document.getElementById('decl2')?.checked;
-        const d3 = document.getElementById('decl3')?.checked;
-        if (!d1 || !d2 || !d3) {
-          showToast('Please check all declaration and data privacy consent boxes before proceeding.', '#8b2e2e');
+        if (!d1 || !d2) {
+          showToast('Please check both declaration and consent boxes before proceeding.', '#8b2e2e');
           return;
         }
         // Save Step 1 data to server before transitioning
@@ -3245,16 +3360,33 @@ if ($userId) {
       goToStep(1);
     });
 
-    // ── Data Privacy Modal Logic ──
+    // ── Data Privacy & Apartment Rules Modal Logic ──
     const privacyModal = document.getElementById('data-privacy-modal');
-    const openPrivacyBtn = document.getElementById('btn-open-privacy-notice');
-    const openPrivacyLink = document.getElementById('link-open-privacy-notice');
     const closePrivacyBtn = document.getElementById('privacy-modal-close');
     const dismissPrivacyBtn = document.getElementById('privacy-modal-dismiss-btn');
     const acceptPrivacyBtn = document.getElementById('privacy-modal-accept-btn');
+    const tabBtnPrivacy = document.getElementById('tab-btn-privacy');
+    const tabBtnRules = document.getElementById('tab-btn-rules');
+    const tabPanePrivacy = document.getElementById('tab-privacy-content');
+    const tabPaneRules = document.getElementById('tab-rules-content');
 
-    function openPrivacyModal() {
+    function switchPrivacyTab(tabKey) {
+      if (tabKey === 'rules') {
+        if (tabBtnRules) tabBtnRules.classList.add('active');
+        if (tabBtnPrivacy) tabBtnPrivacy.classList.remove('active');
+        if (tabPaneRules) tabPaneRules.style.display = 'block';
+        if (tabPanePrivacy) tabPanePrivacy.style.display = 'none';
+      } else {
+        if (tabBtnPrivacy) tabBtnPrivacy.classList.add('active');
+        if (tabBtnRules) tabBtnRules.classList.remove('active');
+        if (tabPanePrivacy) tabPanePrivacy.style.display = 'block';
+        if (tabPaneRules) tabPaneRules.style.display = 'none';
+      }
+    }
+
+    function openPrivacyModal(targetTab = 'privacy') {
       if (privacyModal) {
+        switchPrivacyTab(targetTab);
         privacyModal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
       }
@@ -3267,20 +3399,30 @@ if ($userId) {
       }
     }
 
-    if (openPrivacyBtn) openPrivacyBtn.addEventListener('click', openPrivacyModal);
-    if (openPrivacyLink) openPrivacyLink.addEventListener('click', openPrivacyModal);
+    // Attach click to all triggers (buttons and inline text links in checkbox labels)
+    document.querySelectorAll('.privacy-modal-trigger').forEach(trigger => {
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation(); // Prevent label click from toggling checkbox
+        const tab = trigger.getAttribute('data-tab') || 'privacy';
+        openPrivacyModal(tab);
+      });
+    });
+
+    if (tabBtnPrivacy) tabBtnPrivacy.addEventListener('click', () => switchPrivacyTab('privacy'));
+    if (tabBtnRules) tabBtnRules.addEventListener('click', () => switchPrivacyTab('rules'));
     if (closePrivacyBtn) closePrivacyBtn.addEventListener('click', closePrivacyModal);
     if (dismissPrivacyBtn) dismissPrivacyBtn.addEventListener('click', closePrivacyModal);
 
     if (acceptPrivacyBtn) {
       acceptPrivacyBtn.addEventListener('click', () => {
-        const decl3 = document.getElementById('decl3');
-        if (decl3) {
-          decl3.checked = true;
-          decl3.dispatchEvent(new Event('change', { bubbles: true }));
+        const decl2 = document.getElementById('decl2');
+        if (decl2) {
+          decl2.checked = true;
+          decl2.dispatchEvent(new Event('change', { bubbles: true }));
         }
         closePrivacyModal();
-        showToast('Data Privacy Consent acknowledged.', '#2f8a60');
+        showToast('Apartment rules and data privacy consent accepted.', '#2f8a60');
       });
     }
 
