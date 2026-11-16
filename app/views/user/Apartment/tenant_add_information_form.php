@@ -646,6 +646,194 @@ if ($userId) {
       box-shadow: 0 0 0 3px rgba(23, 107, 69, 0.1);
     }
 
+    /* ── DATA PRIVACY MODAL ── */
+    .privacy-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: rgba(15, 30, 22, 0.65);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .privacy-modal-card {
+      background: white;
+      width: 100%;
+      max-width: 680px;
+      max-height: 88vh;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.3s ease;
+      border: 1px solid rgba(15, 92, 58, 0.15);
+    }
+
+    .privacy-modal-header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: white;
+      border-bottom: 3px solid var(--secondary);
+      position: relative;
+    }
+
+    .privacy-icon-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .privacy-modal-close-btn {
+      background: rgba(255, 255, 255, 0.12);
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.18s;
+    }
+
+    .privacy-modal-close-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.08);
+    }
+
+    .privacy-modal-body {
+      padding: 22px 26px;
+      overflow-y: auto;
+      font-size: 0.84rem;
+      color: #374151;
+      line-height: 1.65;
+    }
+
+    .privacy-callout {
+      display: flex;
+      gap: 12px;
+      background: rgba(47, 138, 96, 0.08);
+      border: 1px solid rgba(47, 138, 96, 0.2);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 18px;
+      font-size: 0.82rem;
+      color: var(--primary-dark);
+      line-height: 1.55;
+    }
+
+    .privacy-section {
+      margin-bottom: 16px;
+    }
+
+    .privacy-section-heading {
+      font-family: 'Lora', serif;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin: 0 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .privacy-section p {
+      margin: 0 0 6px;
+      color: #4b5563;
+    }
+
+    .privacy-section ul {
+      margin: 0;
+      padding-left: 20px;
+      color: #4b5563;
+    }
+
+    .privacy-section ul li {
+      margin-bottom: 4px;
+    }
+
+    .privacy-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 14px 22px;
+      background: #f8faf9;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-privacy-dismiss {
+      padding: 9px 20px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: white;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .btn-privacy-dismiss:hover {
+      background: #f3f4f6;
+      color: var(--text-dark);
+    }
+
+    .btn-privacy-accept {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 22px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(23, 107, 69, 0.25);
+      transition: all 0.18s;
+    }
+
+    .btn-privacy-accept:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(23, 107, 69, 0.35);
+    }
+
+    .btn-privacy-pill {
+      background: rgba(23, 107, 69, 0.08);
+      border: 1px solid rgba(23, 107, 69, 0.22);
+      color: var(--primary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-privacy-pill:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
     /* ── IMAGE PREVIEW MODAL ── */
     .photo-preview-overlay,
     .img-preview-overlay {
@@ -2369,26 +2557,37 @@ if ($userId) {
 
             <!-- ══ DECLARATION ══ -->
             <div style="padding: 0 32px;">
-              <div class="doc-section-title">
-                <svg viewBox="0 0 24 24">
-                  <path
-                    d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v6h-2V7zm0 8h2v2h-2v-2z" />
-                </svg>
-                Declaration and Consent
+              <div class="doc-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v6h-2V7zm0 8h2v2h-2v-2z" />
+                  </svg>
+                  Declaration and Consent
+                </div>
+                <button type="button" id="btn-open-privacy-notice" class="btn-privacy-pill" title="Read ISCAG Data Privacy Policy">
+                  <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                  View Data Privacy Notice
+                </button>
               </div>
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="decl1" />
                 <label class="form-check-label" for="decl1">
                   I certify that all information provided in this application is true, accurate, and complete to the
-                  best
-                  of my knowledge.
+                  best of my knowledge.
                 </label>
               </div>
-              <div class="form-check" style="margin-bottom:16px;">
+              <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="decl2" />
                 <label class="form-check-label" for="decl2">
                   I understand that submitting false information may result in immediate disqualification. I agree to
                   comply with all ISCAG apartment rules and regulations.
+                </label>
+              </div>
+              <div class="form-check" style="margin-bottom:16px;">
+                <input class="form-check-input" type="checkbox" id="decl3" />
+                <label class="form-check-label" for="decl3">
+                  I have read and consent to the collection, processing, and storage of my personal and sensitive data in accordance with the <a href="javascript:void(0)" id="link-open-privacy-notice" style="color:var(--primary);font-weight:600;text-decoration:underline;">ISCAG Data Privacy Notice</a> (Republic Act No. 10173 - Data Privacy Act of 2012).
                 </label>
               </div>
             </div>
@@ -2514,6 +2713,121 @@ if ($userId) {
       </div><!-- /.page-body -->
     </div><!-- /.main-content -->
   </div><!-- /.app-wrapper -->
+
+  <!-- ══ DATA PRIVACY MODAL ══ -->
+  <div id="data-privacy-modal" class="privacy-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="privacy-modal-title">
+    <div class="privacy-modal-card">
+      <!-- Header -->
+      <div class="privacy-modal-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="privacy-icon-badge">
+            <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:white;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v6h-2V7zm0 8h2v2h-2v-2z"/></svg>
+          </div>
+          <div>
+            <h3 id="privacy-modal-title" style="font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:white;margin:0 0 2px;">Data Privacy Notice &amp; Consent</h3>
+            <p style="font-size:0.76rem;color:rgba(255,255,255,0.85);margin:0;">Islamic Studies, Call and Guidance of the Philippines (ISCAG)</p>
+          </div>
+        </div>
+        <button type="button" class="privacy-modal-close-btn" id="privacy-modal-close" aria-label="Close modal">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:white;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="privacy-modal-body">
+        <div class="privacy-callout">
+          <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:var(--primary);flex-shrink:0;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <span>
+            In compliance with the <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong>, ISCAG Philippines is committed to protecting your personal data, sensitive personal information, and privacy throughout your apartment application, residency, and tenancy records.
+          </span>
+        </div>
+
+        <div class="privacy-section">
+          <h5 class="privacy-section-heading">1. Scope and Applicability</h5>
+          <p>This Data Privacy Notice applies to all applicants, prospective tenants, co-occupants, and declared household members applying for residential units managed by ISCAG Philippines.</p>
+        </div>
+
+        <div class="privacy-section">
+          <h5 class="privacy-section-heading">2. Personal and Sensitive Information We Collect</h5>
+          <p>To evaluate your application, verify identity, and manage apartment tenancy, we collect the following information:</p>
+          <ul>
+            <li><strong>Personal Details:</strong> Full legal name, Muslim/Arabic name, date of birth, age, sex, civil status, nationality, and tribal affiliation.</li>
+            <li><strong>Contact Information:</strong> Permanent and current residential address, active mobile number, and email address.</li>
+            <li><strong>Employment &amp; Financial Information:</strong> Occupation, monthly income, employer/business details, and supporting financial documentation (e.g. payslips, Certificate of Employment, remittance slips).</li>
+            <li><strong>Household &amp; Family Members:</strong> Names, ages, relationships, and occupations of individuals residing with you.</li>
+            <li><strong>Verification &amp; Clearance Documents:</strong> 2x2 identification photograph, government ID, NBI or Police Clearance, and Birth Certificate (or Certificate of Follow-Up).</li>
+            <li><strong>Emergency Reference Contact:</strong> Name, address, and verified phone number of an emergency contact person.</li>
+          </ul>
+        </div>
+
+        <div class="privacy-section">
+          <h5 class="privacy-section-heading">3. Purpose and Legal Basis of Processing</h5>
+          <p>Your personal data is collected and processed with your voluntary consent, for pre-contractual assessment, and for legitimate organizational management, specifically to:</p>
+          <ul>
+            <li>Assess and verify your eligibility for apartment tenancy and unit allocation.</li>
+            <li>Conduct standard administrative verification and safety checks.</li>
+            <li>Prepare, execute, and enforce tenancy agreements, house rules, and community guidelines.</li>
+            <li>Process utility billing, rental invoices, payments, security deposits, and maintenance requests.</li>
+            <li>Maintain verified resident rosters for building security, fire safety, and emergency response.</li>
+          </ul>
+        </div>
+
+        <div class="privacy-section">
+          <h5 class="privacy-section-heading">4. Data Protection and Security Controls</h5>
+          <p>ISCAG implements organizational, physical, and technical safeguards to secure your personal data:</p>
+          <ul>
+            <li>Encrypted databases and secure cloud infrastructure restrict access to authorized personnel only.</li>
+            <li>Strict role-based access controls limit data visibility exclusively to Apartment Department staff and designated MIS administrators.</li>
+            <li>All administrative interactions are recorded in system audit logs to ensure transparency and accountability.</li>
+          </ul>
+        </div>
+
+        <div class="privacy-section">
+          <h5 class="privacy-section-heading">5. Data Sharing and Third-Party Disclosure</h5>
+          <p>ISCAG maintains strict confidentiality and <strong>does not sell, trade, or share</strong> your personal data with unauthorized third parties. Information may only be disclosed in the following circumstances:</p>
+          <ul>
+            <li>When strictly required by Philippine laws, competent government agencies, or court orders.</li>
+            <li>To emergency services, first responders, or medical personnel during health or safety emergencies.</li>
+          </ul>
+        </div>
+
+        <div class="privacy-section">
+          <h5 class="privacy-section-heading">6. Retention and Disposal</h5>
+          <p>Your personal data and uploaded documents will be retained throughout your tenancy and for the legally required audit period thereafter. Discarded records are permanently and securely deleted from our databases.</p>
+        </div>
+
+        <div class="privacy-section">
+          <h5 class="privacy-section-heading">7. Your Rights as a Data Subject</h5>
+          <p>Under the Data Privacy Act of 2012 (RA 10173), you are entitled to:</p>
+          <ul>
+            <li><strong>Right to be Informed:</strong> Understand how your personal information is processed.</li>
+            <li><strong>Right to Access:</strong> Request reasonable access to your personal data records held by ISCAG.</li>
+            <li><strong>Right to Rectification:</strong> Request correction of any inaccurate or outdated information.</li>
+            <li><strong>Right to Object or Erasure:</strong> Object to processing or request deletion subject to contractual and legal obligations.</li>
+          </ul>
+        </div>
+
+        <div class="privacy-section">
+          <h5 class="privacy-section-heading">8. Contact Information and Data Inquiries</h5>
+          <p>For any privacy inquiries or to exercise your data subject rights, please contact:</p>
+          <p style="margin:4px 0 0;font-size:0.8rem;color:var(--text-muted);">
+            <strong>Islamic Studies, Call and Guidance of the Philippines (ISCAG)</strong><br/>
+            Jose Abad Santos Street, Salitran I, City of Dasmariñas, Cavite, 4114<br/>
+            Email: <a href="mailto:iscagphilippines@gmail.com" style="color:var(--primary);text-decoration:underline;">iscagphilippines@gmail.com</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="privacy-modal-footer">
+        <button type="button" class="btn-privacy-dismiss" id="privacy-modal-dismiss-btn">Close</button>
+        <button type="button" class="btn-privacy-accept" id="privacy-modal-accept-btn">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          I Understand &amp; Agree
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script src="<?= asset('JS/room-preview.js') ?>?v=<?= time() ?>"></script>
   <script src="<?= asset('js/phone-validator.js') ?>"></script>
@@ -2854,10 +3168,11 @@ if ($userId) {
         }
 
         // 2. Validate declaration checkboxes
-        const d1 = document.getElementById('decl1').checked;
-        const d2 = document.getElementById('decl2').checked;
-        if (!d1 || !d2) {
-          showToast('Please check both declaration boxes before proceeding.', '#8b2e2e');
+        const d1 = document.getElementById('decl1')?.checked;
+        const d2 = document.getElementById('decl2')?.checked;
+        const d3 = document.getElementById('decl3')?.checked;
+        if (!d1 || !d2 || !d3) {
+          showToast('Please check all declaration and data privacy consent boxes before proceeding.', '#8b2e2e');
           return;
         }
         // Save Step 1 data to server before transitioning
@@ -2928,6 +3243,59 @@ if ($userId) {
     // Back to step 1 button
     document.getElementById('back-to-step1-btn').addEventListener('click', () => {
       goToStep(1);
+    });
+
+    // ── Data Privacy Modal Logic ──
+    const privacyModal = document.getElementById('data-privacy-modal');
+    const openPrivacyBtn = document.getElementById('btn-open-privacy-notice');
+    const openPrivacyLink = document.getElementById('link-open-privacy-notice');
+    const closePrivacyBtn = document.getElementById('privacy-modal-close');
+    const dismissPrivacyBtn = document.getElementById('privacy-modal-dismiss-btn');
+    const acceptPrivacyBtn = document.getElementById('privacy-modal-accept-btn');
+
+    function openPrivacyModal() {
+      if (privacyModal) {
+        privacyModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closePrivacyModal() {
+      if (privacyModal) {
+        privacyModal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+
+    if (openPrivacyBtn) openPrivacyBtn.addEventListener('click', openPrivacyModal);
+    if (openPrivacyLink) openPrivacyLink.addEventListener('click', openPrivacyModal);
+    if (closePrivacyBtn) closePrivacyBtn.addEventListener('click', closePrivacyModal);
+    if (dismissPrivacyBtn) dismissPrivacyBtn.addEventListener('click', closePrivacyModal);
+
+    if (acceptPrivacyBtn) {
+      acceptPrivacyBtn.addEventListener('click', () => {
+        const decl3 = document.getElementById('decl3');
+        if (decl3) {
+          decl3.checked = true;
+          decl3.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        closePrivacyModal();
+        showToast('Data Privacy Consent acknowledged.', '#2f8a60');
+      });
+    }
+
+    if (privacyModal) {
+      privacyModal.addEventListener('click', (e) => {
+        if (e.target === privacyModal) {
+          closePrivacyModal();
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && privacyModal && privacyModal.style.display === 'flex') {
+        closePrivacyModal();
+      }
     });
 
     const familyBody = document.getElementById('family-members-body');
