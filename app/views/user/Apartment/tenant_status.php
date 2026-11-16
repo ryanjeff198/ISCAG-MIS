@@ -1456,7 +1456,7 @@ if ($userId) {
 
             // Docs status
             const docItems = [
-                { name: 'Proof of Income', key: 'doc-income', serverType: 'proofofincome', icon: '<path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>' },
+                { name: 'Proof of Income', key: 'doc-income', serverType: 'proofofincome', icon: '<path d="M6 2h7.5C16.54 2 19 4.46 19 7.5S16.54 13 13.5 13H8.5v8H6V2zm2.5 9H13.5c1.93 0 3.5-1.57 3.5-3.5S15.43 4 13.5 4H8.5v7z"/><path d="M3 6h15v2H3z"/><path d="M3 9.5h14v2H3z"/>' },
                 { name: 'Valid ID (Front)', key: 'doc-id-front', serverType: 'valididfront', icon: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 18V6h16v12H4z"/>' },
                 { name: 'Valid ID (Back)', key: 'doc-id-back', serverType: 'valididback', icon: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM4 18V6h16v12H4z"/>' },
                 { name: 'Birth Certificate', key: 'doc-birth', serverType: 'birthcert', icon: '<path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>' },

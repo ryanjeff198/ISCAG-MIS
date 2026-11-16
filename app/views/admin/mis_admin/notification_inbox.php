@@ -47,10 +47,6 @@ $unreadCount = $unreadCount ?? 0;
             <div class="insight-value info"><?= count($notifications) ?></div>
           </div>
           <div class="insight-card">
-            <div class="insight-label">System Health</div>
-            <div class="insight-value success">EXCELLENT</div>
-          </div>
-          <div class="insight-card">
             <div class="insight-label">Last Activity</div>
             <div class="insight-value info"><?= !empty($notifications) ? date('M j, g:ia', strtotime($notifications[0]['created_at'])) : 'N/A' ?></div>
           </div>

@@ -457,7 +457,7 @@ $uploadedDocs = $uploadedDocs ?? [];
                 </div>
                 <div class="apt-side-col">
                     <div class="apt-card" style="background:var(--primary-dark); color:white; border:none;">
-                        <h4 class="apt-card-title" style="color:white; border-bottom-color:rgba(255,255,255,0.1);"><svg viewBox="0 0 24 24" style="fill:white;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg> Payment & Terms</h4>
+                        <h4 class="apt-card-title" style="color:white; border-bottom-color:rgba(255,255,255,0.1);"><svg viewBox="0 0 24 24" style="fill:white;"><path d="M6 2h7.5C16.54 2 19 4.46 19 7.5S16.54 13 13.5 13H8.5v8H6V2zm2.5 9H13.5c1.93 0 3.5-1.57 3.5-3.5S15.43 4 13.5 4H8.5v7z"/><path d="M3 6h15v2H3z"/><path d="M3 9.5h14v2H3z"/></svg> Payment & Terms</h4>
                         <div style="font-size:1.5rem; font-weight:800; margin-bottom:20px;" id="m-rent">₱0.00</div>
                         <ul class="apt-list" id="m-list-payment" style="gap:10px;"></ul>
                     </div>
