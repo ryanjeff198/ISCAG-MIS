@@ -1241,6 +1241,201 @@ function initTableSearch() {
 }
 
 // ══════════════════════════════════════
+//  GLOBAL MIS TABLE PAGINATION (10 / PAGE)
+// ══════════════════════════════════════
+function initTablePagination(perPage = 10) {
+  const selector = '.mis-table, .audit-table, .report-table, .donations-table, .soa-summary-table, .dt';
+
+  const getDataRows = (tbody) => {
+    return Array.from(tbody.querySelectorAll('tr')).filter(row => {
+      if (row.querySelector('th')) return false;
+      if (row.classList.contains('table-search-empty-row')) return false;
+      if (row.classList.contains('row-empty')) return false;
+      if (row.id === 'master-no-match') return false;
+      if (row.cells.length === 1 && row.cells[0].colSpan > 1) return false;
+      return true;
+    });
+  };
+
+  const attachPagination = (table) => {
+    if (!table || table.dataset.paginatedInit === '1') return;
+    if (table.getAttribute('data-paginate') === 'false') return;
+    if (table.closest('.modal, .modal-overlay, .modal-card')) return;
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+
+    table.dataset.paginatedInit = '1';
+
+    let currentPage = 1;
+    let lastVisibleCount = -1;
+
+    const bar = document.createElement('div');
+    bar.className = 'mis-pagination-bar';
+
+    // Place pagination bar outside scrollable wrappers so it stays pinned
+    const scrollWrap = table.closest('.table-wrapper, .table-responsive, .table-container, .report-table-wrapper, .audit-table-wrap');
+    if (scrollWrap && scrollWrap.parentNode) {
+      scrollWrap.parentNode.insertBefore(bar, scrollWrap.nextSibling);
+    } else if (table.parentNode) {
+      table.parentNode.insertBefore(bar, table.nextSibling);
+    }
+
+    const buildPageList = (page, totalPages) => {
+      if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+      }
+      const pages = [1];
+      if (page > 3) pages.push('...');
+      const start = Math.max(2, page - 1);
+      const end = Math.min(totalPages - 1, page + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (page < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+      return pages;
+    };
+
+    const renderPage = (resetIfFiltered = false) => {
+      const allRows = getDataRows(tbody);
+      const visibleRows = allRows.filter(r => r.style.display !== 'none');
+      const total = visibleRows.length;
+
+      if (resetIfFiltered && lastVisibleCount !== -1 && total !== lastVisibleCount) {
+        currentPage = 1;
+      }
+      lastVisibleCount = total;
+
+      if (total === 0) {
+        allRows.forEach(r => r.classList.remove('mis-page-hidden'));
+        bar.style.display = 'none';
+        return;
+      }
+
+      bar.style.display = 'flex';
+      const totalPages = Math.max(1, Math.ceil(total / perPage));
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      const startIdx = (currentPage - 1) * perPage;
+      const endIdx = Math.min(startIdx + perPage, total);
+
+      allRows.forEach(r => r.classList.remove('mis-page-hidden'));
+      visibleRows.forEach((r, idx) => {
+        if (idx < startIdx || idx >= endIdx) {
+          r.classList.add('mis-page-hidden');
+        }
+      });
+
+      bar.innerHTML = '';
+      const info = document.createElement('div');
+      info.className = 'mis-pagination-info';
+      info.textContent = `Showing ${startIdx + 1}–${endIdx} of ${total} entries`;
+      bar.appendChild(info);
+
+      const controls = document.createElement('div');
+      controls.className = 'mis-pagination-controls';
+
+      const prevBtn = document.createElement('button');
+      prevBtn.type = 'button';
+      prevBtn.className = 'mis-page-btn';
+      prevBtn.textContent = '‹ Prev';
+      prevBtn.disabled = currentPage <= 1;
+      prevBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderPage(false);
+        }
+      });
+      controls.appendChild(prevBtn);
+
+      buildPageList(currentPage, totalPages).forEach(p => {
+        if (p === '...') {
+          const span = document.createElement('span');
+          span.className = 'mis-page-ellipsis';
+          span.textContent = '…';
+          controls.appendChild(span);
+        } else {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'mis-page-btn' + (p === currentPage ? ' active' : '');
+          btn.textContent = String(p);
+          btn.addEventListener('click', () => {
+            if (currentPage !== p) {
+              currentPage = p;
+              renderPage(false);
+            }
+          });
+          controls.appendChild(btn);
+        }
+      });
+
+      const nextBtn = document.createElement('button');
+      nextBtn.type = 'button';
+      nextBtn.className = 'mis-page-btn';
+      nextBtn.textContent = 'Next ›';
+      nextBtn.disabled = currentPage >= totalPages;
+      nextBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderPage(false);
+        }
+      });
+      controls.appendChild(nextBtn);
+
+      bar.appendChild(controls);
+    };
+
+    // Initial render
+    renderPage(false);
+
+    // Re-paginate automatically when rows are added/removed or filtered via style.display
+    let scheduled = false;
+    const scheduleRender = (reset) => {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        renderPage(reset);
+      });
+    };
+
+    const rowObserver = new MutationObserver((mutations) => {
+      let hasChildChange = false;
+      let hasStyleChange = false;
+      for (const m of mutations) {
+        if (m.type === 'childList') hasChildChange = true;
+        else if (m.type === 'attributes' && m.attributeName === 'style') hasStyleChange = true;
+      }
+      if (hasChildChange || hasStyleChange) {
+        scheduleRender(true);
+      }
+    });
+
+    rowObserver.observe(tbody, {
+      childList: true,
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['style']
+    });
+  };
+
+  document.querySelectorAll(selector).forEach(attachPagination);
+
+  const bodyObserver = new MutationObserver((mutations) => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          if (node.matches && node.matches(selector)) attachPagination(node);
+          if (node.querySelectorAll) node.querySelectorAll(selector).forEach(attachPagination);
+        }
+      });
+    });
+  });
+
+  bodyObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+// ══════════════════════════════════════
 //  PAGE BOOTSTRAP
 // ══════════════════════════════════════
 function standardizePage(role) {
@@ -1255,6 +1450,9 @@ function standardizePage(role) {
   initNotifBadge(role);
   initLogoutModal();
   initTableSearch();
+  if (role === 'admin') {
+    initTablePagination(10);
+  }
 }
 
 function closeAllActionMenus() {

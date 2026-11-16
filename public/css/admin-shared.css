@@ -2411,3 +2411,84 @@ textarea.form-control { resize: vertical; }
     box-sizing: border-box !important;
   }
 }
+
+/* ═══════════════════════════════════════
+   MIS TABLE PAGINATION (10 PER PAGE)
+   ═══════════════════════════════════════ */
+.mis-page-hidden {
+  display: none !important;
+}
+
+.mis-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 18px;
+  background: #fbfcfb;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.mis-pagination-info {
+  font-weight: 500;
+}
+
+.mis-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.mis-page-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.mis-page-btn:hover:not(:disabled):not(.active) {
+  background: #f1f5f3;
+  border-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.mis-page-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.mis-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.mis-page-ellipsis {
+  padding: 0 4px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+@media print {
+  .mis-page-hidden {
+    display: table-row !important;
+  }
+  .mis-pagination-bar {
+    display: none !important;
+  }
+}
