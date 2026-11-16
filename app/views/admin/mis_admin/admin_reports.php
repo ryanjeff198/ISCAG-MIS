@@ -353,6 +353,7 @@
                 <option value="Islamic Education">Islamic Education Department</option>
                 <option value="Da'wah">Da'wah Department</option>
                 <option value="Damayan">Damayan & Funeral Services</option>
+                <option value="Charity & Donations">Charity & Received Donations</option>
                 <option value="Finance">Financial & Invoices</option>
               </select>
             </div>
@@ -542,6 +543,89 @@
                     <td><?= format_datetime_html($fc['reported_at'] ?? '') ?></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars($fc['certificate_status'] ?: 'Submitted') ?></span></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars(ucfirst($fc['status'])) ?></span></td>
+                  </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2b. CHARITY & RECEIVED DONATIONS LOG -->
+        <div class="section-card" id="charity-special-section">
+          <div class="section-card-header">
+            <div>
+              <h3>Damayan — Charity Program &amp; Received Donations</h3>
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">
+                Verified funds, in-kind contributions, donor details, and SHA-256 data integrity status.
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span class="badge-dept badge-dept-damayan"><?= count($charityDonationsList ?? []) ?> Donations Logged</span>
+              <a href="<?= url('/admin/mis_admin/donations') ?>" class="btn-action no-print" style="padding:4px 10px;font-size:0.75rem;background:var(--primary);color:#fff;border-color:var(--primary);text-decoration:none;">
+                Open Donations Portal &rarr;
+              </a>
+            </div>
+          </div>
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Donation Ref</th>
+                  <th>Donor Name</th>
+                  <th>Type &amp; Category</th>
+                  <th>Target Program</th>
+                  <th>Amount / Quantity</th>
+                  <th>Payment / Method</th>
+                  <th>Date Received</th>
+                  <th>Integrity Seal</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($charityDonationsList)): ?>
+                  <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">No donation records found in database.</td></tr>
+                <?php else: ?>
+                  <?php foreach ($charityDonationsList as $cd): 
+                    $isMonetary = ($cd['donation_type'] ?? '') === 'monetary';
+                    $stLow = strtolower(trim((string)($cd['status'] ?? '')));
+                    $badgeClass = str_contains($stLow, 'pend') ? 'badge-pending' : (str_contains($stLow, 'reject') ? 'badge-cancelled' : 'badge-paid');
+                  ?>
+                  <tr>
+                    <td class="td-id"><?= htmlspecialchars($cd['donation_ref'] ?? '') ?></td>
+                    <td>
+                      <strong><?= htmlspecialchars($cd['donor_name'] ?? 'Anonymous') ?></strong>
+                      <?php if (!empty($cd['donor_address'])): ?>
+                        <div style="font-size:0.72rem;color:var(--text-muted);"><?= htmlspecialchars($cd['donor_address']) ?></div>
+                      <?php endif; ?>
+                    </td>
+                    <td>
+                      <span style="font-weight:600;font-size:0.8rem;text-transform:capitalize;"><?= htmlspecialchars($cd['donation_category'] ?? $cd['donation_type'] ?? '') ?></span>
+                      <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;"><?= htmlspecialchars($cd['donation_type'] ?? '') ?></div>
+                    </td>
+                    <td><?= htmlspecialchars($cd['target_program'] ?? 'General Welfare') ?></td>
+                    <td>
+                      <?php if ($isMonetary): ?>
+                        <strong style="color:var(--primary);">₱<?= number_format((float)($cd['amount'] ?? 0), 2) ?></strong>
+                      <?php else: ?>
+                        <strong><?= (int)($cd['quantity'] ?? 0) ?> <?= htmlspecialchars($cd['unit'] ?? 'items') ?></strong>
+                        <div style="font-size:0.72rem;color:var(--text-muted);"><?= htmlspecialchars($cd['item_description'] ?? '') ?></div>
+                      <?php endif; ?>
+                    </td>
+                    <td>
+                      <div><?= htmlspecialchars($cd['payment_method'] ?? '—') ?></div>
+                      <?php if (!empty($cd['payment_reference'])): ?>
+                        <div style="font-size:0.72rem;font-family:monospace;color:var(--text-muted);"><?= htmlspecialchars($cd['payment_reference']) ?></div>
+                      <?php endif; ?>
+                    </td>
+                    <td><?= format_datetime_html($cd['date_received'] ?? '') ?></td>
+                    <td>
+                      <span style="display:inline-flex;align-items:center;gap:4px;font-family:monospace;font-size:0.72rem;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;padding:2px 6px;border-radius:4px;" title="Cryptographically verified SHA-256 seal">
+                        <svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:currentColor;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                        <?= htmlspecialchars($cd['integrity_seal'] ?? 'SEAL-OK') ?>
+                      </span>
+                    </td>
+                    <td><span class="badge-status <?= $badgeClass ?>"><?= htmlspecialchars($cd['status'] ?? 'Recorded') ?></span></td>
                   </tr>
                   <?php endforeach; ?>
                 <?php endif; ?>
@@ -753,37 +837,50 @@
       // Section visibility based on department
       const eduSec = document.getElementById('edu-special-section');
       const damSec = document.getElementById('damayan-special-section');
+      const charitySec = document.getElementById('charity-special-section');
       const aptSec = document.getElementById('apartment-special-section');
       const maintSec = document.getElementById('maintenance-special-section');
 
       if (dept === 'all') {
         if (eduSec) eduSec.style.display = 'block';
         if (damSec) damSec.style.display = 'block';
+        if (charitySec) charitySec.style.display = 'block';
         if (aptSec) aptSec.style.display = 'block';
         if (maintSec) maintSec.style.display = 'block';
       } else if (dept.includes('Education')) {
         if (eduSec) eduSec.style.display = 'block';
         if (damSec) damSec.style.display = 'none';
+        if (charitySec) charitySec.style.display = 'none';
         if (aptSec) aptSec.style.display = 'none';
         if (maintSec) maintSec.style.display = 'none';
       } else if (dept.includes('Damayan')) {
         if (eduSec) eduSec.style.display = 'none';
         if (damSec) damSec.style.display = 'block';
+        if (charitySec) charitySec.style.display = 'block';
+        if (aptSec) aptSec.style.display = 'none';
+        if (maintSec) maintSec.style.display = 'none';
+      } else if (dept.includes('Charity')) {
+        if (eduSec) eduSec.style.display = 'none';
+        if (damSec) damSec.style.display = 'none';
+        if (charitySec) charitySec.style.display = 'block';
         if (aptSec) aptSec.style.display = 'none';
         if (maintSec) maintSec.style.display = 'none';
       } else if (dept.includes('Apart')) {
         if (eduSec) eduSec.style.display = 'none';
         if (damSec) damSec.style.display = 'none';
+        if (charitySec) charitySec.style.display = 'none';
         if (aptSec) aptSec.style.display = 'block';
         if (maintSec) maintSec.style.display = 'block';
       } else if (dept.includes('Maint')) {
         if (eduSec) eduSec.style.display = 'none';
         if (damSec) damSec.style.display = 'none';
+        if (charitySec) charitySec.style.display = 'none';
         if (aptSec) aptSec.style.display = 'none';
         if (maintSec) maintSec.style.display = 'block';
       } else {
         if (eduSec) eduSec.style.display = 'none';
         if (damSec) damSec.style.display = 'none';
+        if (charitySec) charitySec.style.display = 'none';
         if (aptSec) aptSec.style.display = 'none';
         if (maintSec) maintSec.style.display = 'none';
       }

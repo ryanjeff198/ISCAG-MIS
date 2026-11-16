@@ -185,13 +185,14 @@
             </div>
 
             <div class="card">
-              <div class="card-head"><div><div class="card-title">Damayan Services</div><div class="card-sub">Burial &amp; funeral case volume (<?= number_format($deptMetrics['damayan']['total'] ?? 0) ?> cases)</div></div></div>
+              <div class="card-head"><div><div class="card-title">Damayan Services</div><div class="card-sub">Burial, funeral &amp; charity records (<?= number_format($deptMetrics['damayan']['total'] ?? 0) ?> records)</div></div></div>
               <div style="position:relative;height:150px;display:flex;justify-content:center"><canvas id="damayanSvcChart"></canvas></div>
               <div style="margin-top:16px">
                 <?php
                   $damayanRows = [
                     ['label' => 'Burial Requests', 'count' => $deptMetrics['damayan']['burial'] ?? 0, 'color' => '#6366f1'],
                     ['label' => 'Funeral Cases', 'count' => $deptMetrics['damayan']['funeral'] ?? 0, 'color' => 'var(--warning)'],
+                    ['label' => 'Received Donations', 'count' => $deptMetrics['damayan']['donations_count'] ?? 0, 'color' => 'var(--success)'],
                   ];
                   $damayanSum = array_sum(array_column($damayanRows, 'count'));
                   foreach ($damayanRows as $dm):
@@ -409,7 +410,7 @@ document.addEventListener("DOMContentLoaded",function(){
   new Chart(document.getElementById('dawahSvcChart'),{type:'bar',data:{labels:['Counseling','Marriage','Conversion'],datasets:[{label:'Requests',data:[<?=(int)($deptMetrics['dawah']['counseling']??0)?>,<?=(int)($deptMetrics['dawah']['marriage']??0)?>,<?=(int)($deptMetrics['dawah']['conversion']??0)?>],backgroundColor:[P,W,S],borderRadius:6,barThickness:22}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend},scales:{x:{...cleanY,ticks:{stepSize:1}},y:cleanX}}});
 
   // 4. Damayan Services — Doughnut (Burial & Funeral Cases)
-  new Chart(document.getElementById('damayanSvcChart'),{type:'doughnut',data:{labels:['Burial Requests','Funeral Cases'],datasets:[{data:[<?=(int)($deptMetrics['damayan']['burial']??0)?>,<?=(int)($deptMetrics['damayan']['funeral']??0)?>],backgroundColor:[C,W],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
+  new Chart(document.getElementById('damayanSvcChart'),{type:'doughnut',data:{labels:['Burial Requests','Funeral Cases','Donations'],datasets:[{data:[<?=(int)($deptMetrics['damayan']['burial']??0)?>,<?=(int)($deptMetrics['damayan']['funeral']??0)?>,<?=(int)($deptMetrics['damayan']['donations_count']??0)?>],backgroundColor:[C,W,S],borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
 
   // 5. Apartments Overview — Vertical Bar
   new Chart(document.getElementById('aptSvcChart'),{type:'bar',data:{labels:['Applications','Maintenance','Parking'],datasets:[{label:'Records',data:[<?=(int)($deptMetrics['apartments']['applications']??0)?>,<?=(int)($deptMetrics['apartments']['maintenance']??0)?>,<?=(int)($deptMetrics['apartments']['parking']??0)?>],backgroundColor:[P,W,I],borderRadius:6,barThickness:30}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:noLegend},scales:{x:cleanX,y:{...cleanY,ticks:{stepSize:1}}}}});

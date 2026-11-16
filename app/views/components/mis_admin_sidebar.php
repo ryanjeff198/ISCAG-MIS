@@ -11,7 +11,7 @@ $active_page = $active_page ?? 'admin_dashboard';
 $deptQuery = $_GET['dept'] ?? '';
 $is_maint_report = ($active_page === 'reports' && strcasecmp($deptQuery, 'Maintenance') === 0);
 $is_pending_open = in_array($active_page, ['apartment_confirmation', 'parking_approval', 'maintenance']) || $is_maint_report;
-$is_finance_open = in_array($active_page, ['billing', 'soa']) || ($active_page === 'reports' && !$is_maint_report);
+$is_finance_open = in_array($active_page, ['billing', 'soa', 'donations']) || ($active_page === 'reports' && !$is_maint_report);
 $is_comm_open = in_array($active_page, ['apartment_records', 'renewal_records', 'dawah_records', 'damayan_records', 'notifications']);
 $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification']);
 ?>
@@ -75,6 +75,7 @@ $is_gov_open = in_array($active_page, ['records', 'audit_logs', 'notification'])
             <div class="nav-dropdown <?= $is_finance_open ? 'open' : '' ?>" id="finance-menu">
                 <a href="<?= url('/admin/mis_admin/billing') ?>" class="<?= $active_page === 'billing' ? 'active-submenu' : '' ?>">Billing & Payments</a>
                 <a href="<?= url('/admin/mis_admin/statement_of_account') ?>" class="<?= $active_page === 'soa' ? 'active-submenu' : '' ?>">SOA Records</a>
+                <a href="<?= url('/admin/mis_admin/donations') ?>" class="<?= $active_page === 'donations' ? 'active-submenu' : '' ?>">Received Donations</a>
                 <a href="<?= url('/admin/mis_admin/reports') ?>" class="<?= ($active_page === 'reports' && !$is_maint_report) ? 'active-submenu' : '' ?>">Department Reports</a>
             </div>
         </div>

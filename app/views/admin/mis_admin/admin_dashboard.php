@@ -327,7 +327,7 @@
                 </div>
                 <div class="dept-stat-row">
                   <span class="dept-stat-label">Applications</span>
-                  <span class="dept-stat-val"><?= $deptMetrics['apartments']['total'] ?> total (<?= $deptMetrics['apartments']['pending'] ?> pending)</span>
+                  <span class="dept-stat-val"><?= $deptMetrics['apartments']['applications_count'] ?? $deptMetrics['apartments']['applications'] ?> total (<?= $deptMetrics['apartments']['applications_pending'] ?? 0 ?> pending)</span>
                 </div>
                 <div class="dept-stat-row">
                   <span class="dept-stat-label">Unit Occupancy</span>
@@ -436,17 +436,22 @@
                   <span class="dept-stat-val"><?= $deptMetrics['damayan']['funeral'] ?> tracking</span>
                 </div>
                 <div class="dept-stat-row">
+                  <span class="dept-stat-label">Received Donations</span>
+                  <span class="dept-stat-val"><?= $deptMetrics['damayan']['donations_count'] ?> records (₱<?= number_format($deptMetrics['damayan']['donations_amount'] ?? 0, 2) ?>)</span>
+                </div>
+                <div class="dept-stat-row">
                   <span class="dept-stat-label">Pending Reviews</span>
                   <span class="dept-stat-val" style="color:<?= $deptMetrics['damayan']['pending'] > 0 ? 'var(--danger)' : 'var(--text-muted)' ?>;"><?= $deptMetrics['damayan']['pending'] ?> pending</span>
                 </div>
                 <div class="dept-stat-row">
-                  <span class="dept-stat-label">Charity Fund</span>
-                  <span class="dept-stat-val">₱<?= number_format($deptMetrics['damayan']['donations_amount'] ?? 0, 2) ?></span>
+                  <span class="dept-stat-label">Charity Fund (Verified)</span>
+                  <span class="dept-stat-val" style="color:var(--success);font-weight:700;">₱<?= number_format($deptMetrics['damayan']['donations_amount'] ?? 0, 2) ?></span>
                 </div>
               </div>
               <div class="dept-actions">
                 <a href="<?= url('/admin/mis_admin/damayan_records') ?>" class="dept-btn">Damayan Records</a>
-                <a href="<?= url('/admin/mis_admin/reports') ?>" class="dept-btn">Reports</a>
+                <a href="<?= url('/admin/mis_admin/donations') ?>" class="dept-btn">Received Donations</a>
+                <a href="<?= url('/admin/mis_admin/reports?dept=Damayan') ?>" class="dept-btn">Reports</a>
               </div>
             </div>
 

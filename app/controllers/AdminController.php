@@ -346,7 +346,7 @@ class AdminController extends Controller
     private function getDepartmentOverviewMetrics(PDO $db): array
     {
         $deptMetrics = [
-            'apartments' => ['name' => 'Apartments Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'rejected' => 0, 'applications' => 0, 'maintenance' => 0, 'parking' => 0, 'renewals' => 0, 'moveouts' => 0, 'occupancy' => 0, 'units' => 0],
+            'apartments' => ['name' => 'Apartments Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'rejected' => 0, 'applications' => 0, 'applications_count' => 0, 'applications_pending' => 0, 'maintenance' => 0, 'parking' => 0, 'renewals' => 0, 'moveouts' => 0, 'occupancy' => 0, 'units' => 0],
             'dawah'      => ['name' => "Da'wah Department", 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'rejected' => 0, 'counseling' => 0, 'marriage' => 0, 'conversion' => 0],
             'education'  => ['name' => 'Islamic Education', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'rejected' => 0, 'students' => 0, 'avg_progress' => 0, 'sessions' => 0, 'sessions_total' => 0],
             'damayan'    => ['name' => 'Damayan Department', 'total' => 0, 'pending' => 0, 'approved' => 0, 'completed' => 0, 'rejected' => 0, 'burial' => 0, 'funeral' => 0, 'donations_count' => 0, 'donations_verified_count' => 0, 'donations_pending_count' => 0, 'donations_amount' => 0, 'donations_pending_amount' => 0],
@@ -368,6 +368,12 @@ class AdminController extends Controller
                     $deptMetrics['apartments'][$key] += $cnt;
                     $bucket = $this->classifyStatusBucket((string)$st);
                     $deptMetrics['apartments'][$bucket] += $cnt;
+                    if ($key === 'applications') {
+                        $deptMetrics['apartments']['applications_count'] += $cnt;
+                        if ($bucket === 'pending') {
+                            $deptMetrics['apartments']['applications_pending'] += $cnt;
+                        }
+                    }
                 }
             } catch (Throwable $e) {}
         }
@@ -461,16 +467,20 @@ class AdminController extends Controller
                 $bucket = $this->classifyStatusBucket((string)$st);
                 $deptMetrics['damayan'][$bucket] += $cnt;
             }
-            $donRows = $db->query("SELECT status, COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total_amt FROM charity_donations_records WHERE LOWER(COALESCE(status,'')) != 'rejected' GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $donRows = $db->query("SELECT status, COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total_amt FROM charity_donations_records GROUP BY status")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             foreach ($donRows as $dr) {
-                $stLow = strtolower(trim((string)($dr['status'] ?? '')));
+                $stRaw = (string)($dr['status'] ?? '');
+                $stLow = strtolower(trim($stRaw));
                 $cnt = (int)($dr['cnt'] ?? 0);
                 $amt = (float)($dr['total_amt'] ?? 0);
+                $deptMetrics['damayan']['total'] += $cnt;
                 $deptMetrics['damayan']['donations_count'] += $cnt;
+                $bucket = $this->classifyStatusBucket($stRaw);
+                $deptMetrics['damayan'][$bucket] += $cnt;
                 if (str_contains($stLow, 'pend')) {
                     $deptMetrics['damayan']['donations_pending_count'] += $cnt;
                     $deptMetrics['damayan']['donations_pending_amount'] += $amt;
-                } else {
+                } elseif (!in_array($stLow, ['rejected', 'cancelled'])) {
                     $deptMetrics['damayan']['donations_verified_count'] += $cnt;
                     $deptMetrics['damayan']['donations_amount'] += $amt;
                 }
@@ -1625,7 +1635,33 @@ class AdminController extends Controller
             ORDER BY f.id DESC
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $charityDonations = (float)$db->query("SELECT COALESCE(SUM(amount), 0) FROM charity_donations_records WHERE status != 'rejected'")->fetchColumn();
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charityModel = new CharityProgram();
+        $charityDonationsList = $charityModel->getAllDonations();
+        $charityDonations = 0.0;
+        $charityStats = [
+            'total_count'    => count($charityDonationsList),
+            'monetary_total' => 0.0,
+            'inkind_count'   => 0,
+            'pending_count'  => 0,
+            'verified_count' => 0
+        ];
+        foreach ($charityDonationsList as $cd) {
+            $stLow = strtolower(trim((string)($cd['status'] ?? '')));
+            if (($cd['donation_type'] ?? '') === 'monetary') {
+                if (!in_array($stLow, ['rejected', 'cancelled'])) {
+                    $charityStats['monetary_total'] += (float)($cd['amount'] ?? 0);
+                    $charityDonations += (float)($cd['amount'] ?? 0);
+                }
+            } else {
+                $charityStats['inkind_count']++;
+            }
+            if (str_contains($stLow, 'pend')) {
+                $charityStats['pending_count']++;
+            } elseif (!in_array($stLow, ['rejected', 'cancelled'])) {
+                $charityStats['verified_count']++;
+            }
+        }
 
         // Da'wah Stats
         $counselingCount = (int)$db->query("SELECT COUNT(*) FROM counseling_requests")->fetchColumn();
@@ -1721,6 +1757,21 @@ class AdminController extends Controller
                 ORDER BY f.id DESC LIMIT 20
             ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $masterReportItems = array_merge($masterReportItems, $fcRows);
+
+            $charityRows = $db->query("
+                SELECT c.id, 'Charity & Donations' as department,
+                       CONCAT('Donation (', CASE WHEN c.donation_type = 'monetary' THEN 'Monetary' ELSE 'In-Kind' END, ')') as service_type,
+                       COALESCE(NULLIF(TRIM(c.donor_name),''), 'Anonymous Donor') as subject_name,
+                       COALESCE(NULLIF(TRIM(c.payment_reference),''), c.donor_address, '—') as contact,
+                       c.date_received as report_date, c.status,
+                       CONCAT(
+                           CASE WHEN c.donation_type = 'monetary' THEN CONCAT('₱', FORMAT(c.amount, 2)) ELSE CONCAT(c.quantity, ' ', c.unit, ' - ', c.item_description) END,
+                           ' [', COALESCE(c.target_program, 'General Welfare'), ']'
+                       ) as detail_info
+                FROM charity_donations_records c
+                ORDER BY c.id DESC LIMIT 50
+            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $masterReportItems = array_merge($masterReportItems, $charityRows);
         } catch (Throwable $e) {}
 
         // Maintenance Reports & Requests
@@ -1794,6 +1845,8 @@ class AdminController extends Controller
             'burialRequests' => $burialRequests,
             'funeralCases' => $funeralCases,
             'charityDonations' => $charityDonations,
+            'charityDonationsList' => $charityDonationsList,
+            'charityStats' => $charityStats,
             'counselingCount' => $counselingCount,
             'marriageCount' => $marriageCount,
             'conversionCount' => $conversionCount,
@@ -1804,6 +1857,188 @@ class AdminController extends Controller
             'burialLogs' => $burialRequests,
             'aptLeaseLogs' => $aptLeaseLogs
         ]);
+    }
+
+    /**
+     * MIS Admin: Received Donations Portal
+     * Displays all donations across categories (Monetary & In-Kind) with live cryptographic
+     * verification seals (SHA-256), search, filtering, and export capabilities.
+     */
+    public function donations(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $filters = [
+            'search'        => trim($_GET['search'] ?? ''),
+            'donation_type' => trim($_GET['type'] ?? ''),
+            'category'      => trim($_GET['category'] ?? ''),
+            'status'        => trim($_GET['status'] ?? ''),
+            'date_from'     => trim($_GET['date_from'] ?? ''),
+            'date_to'       => trim($_GET['date_to'] ?? '')
+        ];
+
+        $donations = $charity->getAllDonations($filters);
+        $stats = $charity->getDashboardStats();
+
+        // Calculate detailed metrics for MIS Admin summary cards
+        $summary = [
+            'total_count'          => count($donations),
+            'monetary_count'       => 0,
+            'monetary_total'       => 0.0,
+            'monetary_available'   => 0.0,
+            'inkind_count'         => 0,
+            'inkind_items_total'   => 0,
+            'pending_count'        => 0,
+            'verified_count'       => 0,
+            'integrity_pass_count' => 0
+        ];
+
+        foreach ($donations as &$d) {
+            $isMonetary = ($d['donation_type'] ?? '') === 'monetary';
+            $stLow = strtolower(trim((string)($d['status'] ?? '')));
+            $amt = (float)($d['amount'] ?? 0);
+            $qty = (int)($d['quantity'] ?? 0);
+
+            if ($isMonetary) {
+                $summary['monetary_count']++;
+                if (!in_array($stLow, ['rejected', 'cancelled'])) {
+                    $summary['monetary_total'] += $amt;
+                    $summary['monetary_available'] += (float)($d['available_amount'] ?? 0);
+                }
+            } else {
+                $summary['inkind_count']++;
+                if (!in_array($stLow, ['rejected', 'cancelled'])) {
+                    $summary['inkind_items_total'] += $qty;
+                }
+            }
+
+            if (str_contains($stLow, 'pend')) {
+                $summary['pending_count']++;
+            } elseif (!in_array($stLow, ['rejected', 'cancelled'])) {
+                $summary['verified_count']++;
+            }
+
+            // Cryptographic Integrity Verification
+            $integrity = $charity->verifyRecordIntegrity($d);
+            $d['integrity_check'] = $integrity;
+            if ($integrity['is_valid']) {
+                $summary['integrity_pass_count']++;
+            }
+        }
+        unset($d);
+
+        $this->view('admin/mis_admin/donations', [
+            'active_page' => 'donations',
+            'donations'   => $donations,
+            'filters'     => $filters,
+            'stats'       => $stats,
+            'summary'     => $summary
+        ]);
+    }
+
+    /**
+     * MIS Admin: Verify or Update Received Donation Status
+     */
+    public function verifyDonation(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'error' => 'Invalid request method.']);
+            exit;
+        }
+
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $status = trim($_POST['status'] ?? 'Available');
+        $adminNotes = trim($_POST['admin_notes'] ?? '');
+        $staffName = trim($_SESSION['name'] ?? 'MIS Administrator');
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+
+        $res = $charity->verifyDonation($id, $status, $adminNotes, $staffName, $userId);
+
+        if ($res['success']) {
+            require_once BASE_PATH . '/app/helpers/AuditLogger.php';
+            AuditLogger::log('CHARITY', 'DONATION_VERIFY', "MIS Admin {$staffName} updated donation #{$id} ({$res['donation_ref']}) status to {$status}. Notes: {$adminNotes}");
+        }
+
+        echo json_encode($res);
+        exit;
+    }
+
+    /**
+     * MIS Admin: Export Received Donations to CSV
+     */
+    public function exportDonationsCsv(): void {
+        Auth::protectRole(['Admin', 'Staff_Tenant']);
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        $charity = new CharityProgram();
+
+        $filters = [
+            'search'        => trim($_GET['search'] ?? ''),
+            'donation_type' => trim($_GET['type'] ?? ''),
+            'category'      => trim($_GET['category'] ?? ''),
+            'status'        => trim($_GET['status'] ?? ''),
+            'date_from'     => trim($_GET['date_from'] ?? ''),
+            'date_to'       => trim($_GET['date_to'] ?? '')
+        ];
+
+        $donations = $charity->getAllDonations($filters);
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="ISCAG_Received_Donations_' . date('Ymd_His') . '.csv"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        fputs($out, "\xEF\xBB\xBF");
+
+        fputcsv($out, [
+            'Donation Ref',
+            'Donor Name',
+            'Contact / Address',
+            'Donation Type',
+            'Category',
+            'Target Program',
+            'Amount (PHP)',
+            'In-Kind Quantity',
+            'Item Description',
+            'Date Received',
+            'Payment Method',
+            'Payment Reference',
+            'Received By',
+            'Status',
+            'Cryptographic Seal (SHA-256)',
+            'Admin Notes'
+        ]);
+
+        foreach ($donations as $d) {
+            $integrity = $charity->verifyRecordIntegrity($d);
+            fputcsv($out, [
+                $d['donation_ref'] ?? '',
+                $d['donor_name'] ?? '',
+                $d['donor_address'] ?? '',
+                ucfirst($d['donation_type'] ?? ''),
+                ucfirst($d['donation_category'] ?? ''),
+                $d['target_program'] ?? '',
+                ($d['donation_type'] ?? '') === 'monetary' ? number_format((float)($d['amount'] ?? 0), 2, '.', '') : '0.00',
+                ($d['donation_type'] ?? '') === 'in-kind' ? ($d['quantity'] ?? '0') . ' ' . ($d['unit'] ?? '') : 'N/A',
+                $d['item_description'] ?? '—',
+                $d['date_received'] ?? '',
+                $d['payment_method'] ?? '—',
+                $d['payment_reference'] ?? '—',
+                $d['received_by'] ?? '—',
+                $d['status'] ?? '',
+                $integrity['seal'] . ' (SHA-256)',
+                $d['admin_notes'] ?? ''
+            ]);
+        }
+
+        fclose($out);
+        exit;
     }
 
     public function dawahRecords(): void {

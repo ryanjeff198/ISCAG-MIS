@@ -2389,7 +2389,7 @@ class UserController extends Controller
 
                 // Prevent duplicate record creation on refresh
                 $db = getDbConnection();
-                $dupCheck = $db->prepare("SELECT id, donation_ref FROM charitydonations WHERE (payment_ref = :ref OR donation_ref = :ref) AND :ref != '' LIMIT 1");
+                $dupCheck = $db->prepare("SELECT id, donation_ref FROM charity_donations_records WHERE (payment_reference = :ref OR donation_ref = :ref) AND :ref != '' LIMIT 1");
                 $dupCheck->execute(['ref' => $refNo]);
                 $alreadyDonated = $dupCheck->fetch(PDO::FETCH_ASSOC);
                 if ($alreadyDonated) {
