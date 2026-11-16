@@ -254,13 +254,18 @@
         border-radius: 4px; text-transform: uppercase; display: none;
     }
 
+    .row-empty td { text-align:center; padding:28px; color: var(--text-muted); }
+
     @media print {
       body * { visibility: hidden; }
-      .soa-container, .soa-container * { visibility: visible; }
-      .soa-container {
+      body.print-detail .soa-container, body.print-detail .soa-container * { visibility: visible; }
+      body.print-detail .soa-container {
         position: absolute; left: 0; top: 0; width: 100%;
         box-shadow: none; border: none; padding: 0;
       }
+      body.print-list #soa-list-view, body.print-list #soa-list-view * { visibility: visible; }
+      body.print-list #soa-list-view { position: absolute; left: 0; top: 0; width: 100%; }
+      body.print-list .btn-view-soa { display: none; }
       .controls-panel, .top-bar, .sidebar, .admin-insights { display: none !important; }
     }
   </style>
@@ -283,7 +288,7 @@
         </div>
         <div class="top-bar-actions">
           <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
-          <button class="btn-topbar primary" onclick="window.print()">
+          <button class="btn-topbar primary" onclick="printCurrentView()">
             <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;margin-right:6px;">
               <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
             </svg>
@@ -296,28 +301,24 @@
         
         <!-- Admin Insights Ribbon -->
         <div class="admin-insights">
+          <?php $summary = $summary ?? ['tenant_count'=>count($tenants),'total_charges'=>0,'total_payments'=>0,'outstanding'=>0,'credits'=>0,'unpaid_tenants'=>0]; ?>
           <div class="insight-card">
-            <div class="insight-label">Active Tenants</div>
-            <div class="insight-value"><?= count($tenants) ?></div>
+            <div class="insight-label">Tenants with Lease</div>
+            <div class="insight-value" id="ribbon-tenant-count"><?= (int)$summary['tenant_count'] ?></div>
           </div>
           <div class="insight-card">
-            <div class="insight-label">Total Line Items</div>
-            <div class="insight-value"><?= count($transactions) ?></div>
+            <div class="insight-label">Total Billed</div>
+            <div class="insight-value" id="ribbon-charges">₱<?= number_format($summary['total_charges'], 2) ?></div>
           </div>
           <div class="insight-card">
-            <div class="insight-label">Last Generated</div>
-            <div class="insight-value success"><?= date('M d') ?></div>
+            <div class="insight-label">Total Collected</div>
+            <div class="insight-value success" id="ribbon-payments">₱<?= number_format($summary['total_payments'], 2) ?></div>
           </div>
-          <div class="insight-card clickable" id="outstanding-filter-card" onclick="setMasterFilter(masterFilter === 'unpaid' ? 'all' : 'unpaid')">
+          <div class="insight-card clickable" id="outstanding-filter-card" onclick="setMasterFilter(masterFilter === 'unpaid' ? 'all' : 'unpaid')" title="Click to show only tenants with unpaid balances">
             <div class="filter-active-badge" id="master-filter-badge">Filter On</div>
-            <?php
-              $totalOutstanding = 0;
-              foreach($transactions as $t) {
-                $totalOutstanding += ($t['charge'] ?? 0) - ($t['payment'] ?? 0);
-              }
-            ?>
-            <div class="insight-label">Net Outstanding</div>
-            <div class="insight-value <?= $totalOutstanding > 0 ? 'danger' : 'success' ?>" id="ribbon-net-standing">₱<?= number_format(abs($totalOutstanding), 2) ?></div>
+            <div class="insight-label">Outstanding Receivables</div>
+            <div class="insight-value <?= $summary['outstanding'] > 0 ? 'danger' : 'success' ?>" id="ribbon-net-standing">₱<?= number_format($summary['outstanding'], 2) ?></div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;" id="ribbon-unpaid-sub"><?= (int)$summary['unpaid_tenants'] ?> tenant(s) with balance<?= $summary['credits'] > 0 ? ' · ₱' . number_format($summary['credits'], 2) . ' in credits' : '' ?></div>
           </div>
         </div>
         
@@ -327,7 +328,8 @@
             <div style="display: flex; gap: 12px; align-items: center; height: 42px;">
               <button class="btn-topbar" id="btn-show-all" onclick="setMasterFilter('all')" style="border-radius: 8px; border-color: var(--border); height: 42px;">All Tenants</button>
               <button class="btn-topbar" id="btn-show-unpaid" onclick="setMasterFilter('unpaid')" style="border-radius: 8px; border-color: var(--border); height: 42px;">Show Only Unpaid</button>
-              <button class="btn-topbar" id="btn-show-paid" onclick="setMasterFilter('paid')" style="border-radius: 8px; border-color: var(--border); height: 42px;">Show Only Paid</button>
+              <button class="btn-topbar" id="btn-show-paid" onclick="setMasterFilter('paid')" style="border-radius: 8px; border-color: var(--border); height: 42px;">Show Only Settled</button>
+              <button class="btn-topbar" id="btn-export-csv" onclick="exportOverviewCsv()" style="border-radius: 8px; border-color: var(--border); height: 42px;">Export CSV</button>
             </div>
           </div>
           <div id="month-filter-container" style="flex: 1; display: flex; justify-content: center; padding-top: 1px;">
@@ -353,6 +355,7 @@
               <thead>
                 <tr>
                   <th>Tenant & Unit</th>
+                  <th>Lease</th>
                   <th>Total Charges</th>
                   <th>Total Payments</th>
                   <th>Net Outstanding</th>
@@ -404,6 +407,8 @@
                 <p><strong id="soa-period">All Time</strong></p>
                 <p style="margin-top:8px;">Occupants: <strong id="soa-occupants">--</strong></p>
                 <p>Room Type: <strong id="soa-roomtype">--</strong></p>
+                <p>Lease: <strong id="soa-lease">--</strong></p>
+                <p>Monthly Rent: <strong id="soa-rent">--</strong></p>
               </div>
             </div>
 
@@ -459,124 +464,144 @@
   <script>
     standardizePage('admin');
 
-    // === DATA SOURCE ===
-    const transactions = <?= json_encode($transactions) ?>;
-    const tenants = <?= json_encode($tenants) ?>;
-    const memberMap = <?= json_encode($memberMap ?? []) ?>;
-    
-    // === STATE MANAGEMENT ===
-    let currentTenantId = null;
-    let masterFilter = 'all'; 
-    const tenantBalances = {};
-    const tenantTotals = {}; 
+    // === DATA SOURCE (built server-side by SoaHelper — same ledger the tenant sees) ===
+    const transactions = <?= json_encode($transactions, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    const tenants = <?= json_encode($tenants, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
-    // === GLOBAL FILTER INITIALIZATION ===
-    const allMonths = [...new Set(transactions.map(t => t.date.substring(0, 7)))].sort();
-    const globalFilter = document.getElementById('month-filter');
-    globalFilter.innerHTML = '';
-    allMonths.forEach(m => {
-        const date = new Date(m + '-01');
-        const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-        globalFilter.innerHTML += `<option value="${m}">${label}</option>`;
+    // === STATE ===
+    let currentTenantId = null;
+    let masterFilter = 'all';
+    const tenantStats = {}; // tid => { charges, payments, forwarded, balance }
+
+    // Index transactions per tenant (keep SoaHelper's chronological order)
+    const txByTenant = {};
+    transactions.forEach(t => {
+        (txByTenant[t.tenant_id] = txByTenant[t.tenant_id] || []).push(t);
     });
-    globalFilter.innerHTML += '<option value="all">All Time History</option>';
-    if (allMonths.length > 0) {
-        globalFilter.value = allMonths[0]; // default to first month
+
+    // === HELPERS ===
+    const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+    const round2 = n => Math.round(n * 100) / 100;
+    function fmtPeso(n) {
+        n = round2(n);
+        const s = Math.abs(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return (n < 0 ? '-₱' : '₱') + s;
+    }
+    function esc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function monthLabel(ym) {
+        const [y, m] = ym.split('-').map(Number);
+        return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+    function fmtDate(dateStr) {
+        if (!dateStr) return '—';
+        const p = String(dateStr).substring(0, 10).split('-').map(Number);
+        if (p.length !== 3 || !p[0]) return String(dateStr);
+        return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    }
+    function tenantName(t) { return ((t.first_name || '') + ' ' + (t.last_name || '')).trim() || 'Unknown'; }
+    function tenantUnit(t) { return t.room_number ? ((t.building ? t.building + '-' : '') + t.room_number) : 'Unassigned'; }
+    function getBadgeClass(type) {
+        const t = String(type || '').toLowerCase();
+        if (t.includes('payment') || t.includes('advance)')) return 'payment';
+        if (t.includes('deposit')) return 'deposit';
+        if (t.includes('advance')) return 'advance';
+        if (t.includes('rent')) return 'rent';
+        if (t.includes('parking')) return 'parking';
+        if (t.includes('water')) return 'water';
+        if (t.includes('contribution')) return 'contribution';
+        return '';
     }
 
-    // === INITIALIZATION ===
+    // === MONTH FILTER (defaults to All Time so totals match the tenant ledger) ===
+    const allMonths = [...new Set(transactions.map(t => (t.date || '').substring(0, 7)).filter(m => /^\d{4}-\d{2}$/.test(m)))].sort();
+    const globalFilter = document.getElementById('month-filter');
+    globalFilter.innerHTML = '<option value="all">All Time History</option>' +
+        allMonths.slice().reverse().map(m => `<option value="${m}">${monthLabel(m)}</option>`).join('');
+    globalFilter.value = 'all';
+
+    // === CALCULATIONS ===
     function calculateData() {
-        const selectedMonth = globalFilter.value;
-
+        const sel = globalFilter.value;
         tenants.forEach(t => {
-            const tid = t.tenant_id || t.id;
-            tenantBalances[tid] = 0;
-            tenantTotals[tid] = { charges: 0, payments: 0 };
+            const s = { charges: 0, payments: 0, forwarded: 0, balance: 0 };
+            (txByTenant[t.tenant_id] || []).forEach(tx => {
+                const c = num(tx.charge), p = num(tx.payment);
+                const m = (tx.date || '').substring(0, 7);
+                if (sel === 'all' || m === sel) { s.charges += c; s.payments += p; }
+                else if (m < sel) { s.forwarded += (c - p); }
+            });
+            // Balance as of the end of the selected month (or overall)
+            s.balance = round2(s.forwarded + s.charges - s.payments);
+            tenantStats[t.tenant_id] = s;
         });
+    }
 
-        transactions.forEach(t => {
-            const tid = t.tenant_id;
-            if (tenantBalances[tid] === undefined) return;
-            
-            if (selectedMonth !== 'all' && !t.date.startsWith(selectedMonth)) return;
-
-            tenantBalances[tid] += (parseFloat(t.charge) - parseFloat(t.payment));
-            tenantTotals[tid].charges += parseFloat(t.charge);
-            tenantTotals[tid].payments += parseFloat(t.payment);
+    function updateRibbon() {
+        let charges = 0, payments = 0, outstanding = 0, credits = 0, unpaid = 0;
+        tenants.forEach(t => {
+            const s = tenantStats[t.tenant_id];
+            charges += s.charges; payments += s.payments;
+            if (s.balance > 0.004) { outstanding += s.balance; unpaid++; }
+            else if (s.balance < -0.004) credits += Math.abs(s.balance);
         });
+        document.getElementById('ribbon-charges').textContent = fmtPeso(charges);
+        document.getElementById('ribbon-payments').textContent = fmtPeso(payments);
+        const r = document.getElementById('ribbon-net-standing');
+        r.className = 'insight-value ' + (outstanding > 0 ? 'danger' : 'success');
+        r.textContent = fmtPeso(outstanding);
+        document.getElementById('ribbon-unpaid-sub').textContent =
+            unpaid + ' tenant(s) with balance' + (credits > 0 ? ' · ' + fmtPeso(credits) + ' in credits' : '') +
+            (globalFilter.value !== 'all' ? ' · as of end of ' + monthLabel(globalFilter.value) : '');
     }
 
     function onMonthFilterChange() {
         calculateData();
         initMasterTable();
-        
-        let newNet = 0;
-        transactions.forEach(t => {
-            // IGNORE ghost admin leases: only calculate for visible tenants in the array
-            if (tenantBalances[t.tenant_id] === undefined) return;
-            
-            if (globalFilter.value !== 'all' && !t.date.startsWith(globalFilter.value)) return;
-            newNet += (parseFloat(t.charge || 0) - parseFloat(t.payment || 0));
-        });
-        
-        const ribbon = document.getElementById('ribbon-net-standing');
-        if (ribbon) {
-            ribbon.className = 'insight-value ' + (newNet > 0 ? 'danger' : 'success');
-            ribbon.textContent = '₱' + Math.abs(newNet).toLocaleString(undefined, {minimumFractionDigits:2});
-        }
-
-        if (currentTenantId) {
-            generateSOA();
-        }
+        updateRibbon();
+        if (currentTenantId) generateSOA();
     }
-    
-    // Kickstart the filter to build the initial ribbon properly
-    onMonthFilterChange();
 
+    // === MASTER TABLE ===
     function initMasterTable() {
         const body = document.getElementById('master-tenant-body');
-        if (!body) return;
         body.innerHTML = '';
-        
+        if (!tenants.length) {
+            body.innerHTML = '<tr class="row-empty"><td colspan="7">No tenants with an active or past lease were found.</td></tr>';
+            return;
+        }
         tenants.forEach(t => {
-            const tid = t.tenant_id || t.id;
-            const fullName = (t.first_name || '') + ' ' + (t.last_name || t.name || 'Unknown');
-            const roomNum = t.room_number ? (t.building + '-' + t.room_number) : (t.room_id || 'N/A');
-            
-            const bal = tenantBalances[tid] || 0;
-            const totals = tenantTotals[tid] || { charges: 0, payments: 0 };
-            
-            const initials = fullName.trim().split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
-            
+            const tid = t.tenant_id;
+            const s = tenantStats[tid];
+            const name = tenantName(t), unit = tenantUnit(t);
+            const initials = name.split(/\s+/).map(n => n[0] || '').join('').substring(0, 2).toUpperCase();
+            const bal = s.balance;
+            let statusLabel = 'Settled', statusBg = 'rgba(24,128,56,0.1)', statusColor = '#188038';
+            if (bal > 0.004) { statusLabel = 'Unpaid'; statusBg = 'rgba(217,48,37,0.1)'; statusColor = '#d93025'; }
+            else if (bal < -0.004) { statusLabel = 'Credit'; statusBg = 'rgba(37,99,235,0.1)'; statusColor = '#2563eb'; }
+
             const tr = document.createElement('tr');
-            tr.setAttribute('data-name', fullName.toLowerCase());
-            tr.setAttribute('data-room', roomNum.toLowerCase());
-            tr.setAttribute('data-bal', bal);
-            
+            tr.dataset.name = name.toLowerCase();
+            tr.dataset.room = unit.toLowerCase();
+            tr.dataset.bal = bal;
             tr.innerHTML = `
                 <td>
                     <div class="tenant-info-cell">
-                        <div class="tenant-avatar">${initials || '?'}</div>
+                        <div class="tenant-avatar">${esc(initials || '?')}</div>
                         <div class="tenant-meta">
-                            <span class="tenant-name">${fullName}</span>
-                            <span class="tenant-room">${roomNum}</span>
+                            <span class="tenant-name">${esc(name)}</span>
+                            <span class="tenant-room">${esc(unit)}${t.roomtype ? ' · ' + esc(t.roomtype) : ''}</span>
                         </div>
                     </div>
                 </td>
-                <td>₱${totals.charges.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td>₱${totals.payments.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td class="${bal > 0 ? 'balance-positive' : 'balance-zero'}">
-                    ₱${bal.toLocaleString(undefined, {minimumFractionDigits: 2})}
-                </td>
-                <td>
-                    <span class="type-badge ${bal > 0 ? 'rent' : 'water'}" style="background:${bal > 0 ? 'rgba(217, 48, 37, 0.1)' : 'rgba(24, 128, 56, 0.1)'}; color:${bal > 0 ? '#d93025' : '#188038'}">
-                        ${bal > 0 ? 'Unpaid' : 'Settled'}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn-view-soa" onclick="showDetailView('${tid}')">View Details</button>
-                </td>
-            `;
+                <td><span style="font-size:0.8rem;font-weight:600;">${esc(t.lease_status || '—')}</span>
+                    <div style="font-size:0.72rem;color:var(--text-muted);">${fmtDate(t.lease_start)} – ${t.lease_end ? fmtDate(t.lease_end) : 'Open'}</div></td>
+                <td>${fmtPeso(s.charges)}</td>
+                <td style="color:var(--success);">${fmtPeso(s.payments)}</td>
+                <td class="${bal > 0.004 ? 'balance-positive' : 'balance-zero'}">${fmtPeso(bal)}</td>
+                <td><span class="type-badge" style="background:${statusBg};color:${statusColor}">${statusLabel}</span></td>
+                <td><button class="btn-view-soa" onclick="showDetailView(${Number(tid)})">View Details</button></td>`;
             body.appendChild(tr);
         });
         applyFilters();
@@ -587,197 +612,193 @@
         currentTenantId = tid;
         document.getElementById('soa-list-view').style.display = 'none';
         document.getElementById('soa-detail-view').style.display = 'block';
-        // Hide master filtering buttons, keep month filter
         document.getElementById('filter-buttons-group').style.display = 'none';
         document.getElementById('search-container').style.display = 'none';
         generateSOA();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-
     function showListView() {
         document.getElementById('soa-list-view').style.display = 'block';
         document.getElementById('soa-detail-view').style.display = 'none';
-        // Show master filtering buttons
         document.getElementById('filter-buttons-group').style.display = 'flex';
         document.getElementById('search-container').style.display = 'block';
         currentTenantId = null;
     }
+    function printCurrentView() {
+        document.body.classList.remove('print-list', 'print-detail');
+        document.body.classList.add(currentTenantId ? 'print-detail' : 'print-list');
+        window.print();
+    }
 
-    // === FILTERING LOGIC ===
+    // === FILTERING ===
     function setMasterFilter(type) {
         masterFilter = type;
         document.getElementById('btn-show-all').style.background = type === 'all' ? 'var(--primary-light)' : 'white';
         document.getElementById('btn-show-unpaid').style.background = type === 'unpaid' ? 'rgba(217, 48, 37, 0.1)' : 'white';
         document.getElementById('btn-show-paid').style.background = type === 'paid' ? 'rgba(24, 128, 56, 0.1)' : 'white';
-        
         document.getElementById('btn-show-unpaid').style.borderColor = type === 'unpaid' ? 'var(--danger)' : 'var(--border)';
         document.getElementById('btn-show-paid').style.borderColor = type === 'paid' ? 'var(--success)' : 'var(--border)';
-        
         document.getElementById('master-filter-badge').style.display = type === 'unpaid' ? 'block' : 'none';
         document.getElementById('outstanding-filter-card').style.borderColor = type === 'unpaid' ? 'var(--danger)' : 'var(--border)';
         applyFilters();
     }
-
     function applyFilters() {
-        const searchInput = document.getElementById('tenant-search');
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const rows = document.querySelectorAll('#master-tenant-body tr');
-        
-        rows.forEach(row => {
-            const name = row.getAttribute('data-name');
-            const room = row.getAttribute('data-room');
-            const bal = parseFloat(row.getAttribute('data-bal'));
-            
+        const q = (document.getElementById('tenant-search').value || '').toLowerCase().trim();
+        let shown = 0;
+        document.querySelectorAll('#master-tenant-body tr').forEach(row => {
+            if (row.classList.contains('row-empty')) return;
+            const bal = parseFloat(row.dataset.bal);
             let visible = true;
-            if (query && !name.includes(query) && !room.includes(query)) visible = false;
-            if (masterFilter === 'unpaid' && bal <= 0) visible = false;
-            if (masterFilter === 'paid' && bal > 0) visible = false;
-            
+            if (q && !row.dataset.name.includes(q) && !row.dataset.room.includes(q)) visible = false;
+            if (masterFilter === 'unpaid' && !(bal > 0.004)) visible = false;
+            if (masterFilter === 'paid' && bal > 0.004) visible = false;
             row.style.display = visible ? '' : 'none';
+            if (visible) shown++;
         });
+        let empty = document.getElementById('master-no-match');
+        if (!shown && tenants.length) {
+            if (!empty) {
+                empty = document.createElement('tr');
+                empty.id = 'master-no-match';
+                empty.className = 'row-empty';
+                empty.innerHTML = '<td colspan="7">No tenants match the current filter.</td>';
+                document.getElementById('master-tenant-body').appendChild(empty);
+            }
+            empty.style.display = '';
+        } else if (empty) {
+            empty.style.display = 'none';
+        }
     }
 
-    // === SOA DOCUMENT LOGIC ===
+    // === CSV EXPORT (overview, respects month filter) ===
+    function exportOverviewCsv() {
+        const sel = globalFilter.value;
+        const rows = [['Tenant', 'Unit', 'Room Type', 'Lease Status', 'Lease Start', 'Lease End',
+                       'Balance Forwarded', 'Charges', 'Payments', 'Balance', 'Status']];
+        tenants.forEach(t => {
+            const s = tenantStats[t.tenant_id];
+            const status = s.balance > 0.004 ? 'Unpaid' : (s.balance < -0.004 ? 'Credit' : 'Settled');
+            rows.push([tenantName(t), tenantUnit(t), t.roomtype || '', t.lease_status || '', t.lease_start || '', t.lease_end || '',
+                       s.forwarded.toFixed(2), s.charges.toFixed(2), s.payments.toFixed(2), s.balance.toFixed(2), status]);
+        });
+        const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'ISCAG_SOA_Overview_' + (sel === 'all' ? 'AllTime' : sel) + '.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+    }
 
-    // === HELPER FUNCTIONS (Matching tenant_soa.php exactly) ===
-    function getCategoryLabel(type) {
-        const t = type.toLowerCase();
-        if (t.includes('rent') && !t.includes('payment')) return 'Apartment Rent';
-        if (t.includes('deposit') || t.includes('advance')) return 'Initial Payments';
-        if (t.includes('parking')) return 'Parking';
-        if (t.includes('water')) return 'Water Consumption';
-        if (t.includes('contribution')) return 'Contribution';
-        if (t.includes('payment')) return 'Payment Records';
-        return 'Other';
-    }
-    function getBadgeClass(type) {
-        const t = type.toLowerCase();
-        if (t.includes('rent')) return 'rent';
-        if (t.includes('deposit')) return 'deposit';
-        if (t.includes('advance')) return 'advance';
-        if (t.includes('parking')) return 'parking';
-        if (t.includes('water')) return 'water';
-        if (t.includes('contribution')) return 'contribution';
-        if (t.includes('payment')) return 'payment';
-        return '';
-    }
-    function fmtDate(dateStr) {
-        if (!dateStr) return '—';
-        const d = new Date(String(dateStr).replace(' ', 'T'));
-        if (isNaN(d.getTime())) return String(dateStr);
-        return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-    }
-    function fmtPeso(n) { return '₱' + n.toLocaleString(undefined, {minimumFractionDigits:2}); }
-
+    // === SOA DOCUMENT ===
     function generateSOA() {
         if (!currentTenantId) return;
-        const tenant = tenants.find(t => (t.tenant_id || t.id) == currentTenantId);
+        const tenant = tenants.find(t => t.tenant_id == currentTenantId);
         if (!tenant) return;
 
-        const selectedMonth = document.getElementById('month-filter').value;
-        const memberCount = memberMap[currentTenantId] || 0;
-        const totalOccupants = parseInt(memberCount) + 1;
-        
-        let filtered = transactions.filter(t => t.tenant_id == currentTenantId).sort((a,b) => new Date(a.date) - new Date(b.date));
+        const sel = globalFilter.value;
+        const all = txByTenant[currentTenantId] || [];
         let balForwarded = 0;
-
-        if (selectedMonth !== 'all') {
-            balForwarded = transactions
-                .filter(t => t.tenant_id == currentTenantId && t.date < selectedMonth + '-01')
-                .reduce((sum, t) => sum + (parseFloat(t.charge) - parseFloat(t.payment)), 0);
-            filtered = filtered.filter(t => t.date.startsWith(selectedMonth));
+        let rows = all;
+        if (sel !== 'all') {
+            balForwarded = all.filter(t => (t.date || '').substring(0, 7) < sel)
+                              .reduce((sum, t) => sum + num(t.charge) - num(t.payment), 0);
+            rows = all.filter(t => (t.date || '').substring(0, 7) === sel);
         }
+        balForwarded = round2(balForwarded);
 
-        // Header info
-        document.getElementById('soa-tenant-name').textContent = (tenant.first_name || '') + ' ' + (tenant.last_name || tenant.name || '');
-        document.getElementById('soa-room-id').textContent = tenant.room_number ? (tenant.building + '-' + tenant.room_number) : (tenant.room_id || 'Unassigned');
-        document.getElementById('soa-tenant-email').textContent = tenant.email || '';
-        document.getElementById('soa-occupants').textContent = totalOccupants + ' person(s)';
+        // Header
+        document.getElementById('soa-tenant-name').textContent = tenantName(tenant);
+        document.getElementById('soa-room-id').textContent = tenantUnit(tenant);
+        document.getElementById('soa-tenant-email').textContent = tenant.email || '—';
+        document.getElementById('soa-occupants').textContent = (tenant.occupants || 1) + ' person(s)';
         document.getElementById('soa-roomtype').textContent = tenant.roomtype || 'Apartment';
-        document.getElementById('soa-period').textContent = selectedMonth === 'all' ? 'All Time' : new Date(selectedMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-        
-        // Breakdown Calculation
-        let rentTotal = 0, waterTotal = 0, depTotal = 0, parkTotal = 0, contribTotal = 0;
-        filtered.forEach(t => {
-            const charge = parseFloat(t.charge) || 0;
-            if (charge > 0) {
-                const type = t.type.toLowerCase();
-                if (type.includes('rent')) rentTotal += charge;
-                else if (type.includes('deposit')) depTotal += charge;
-                else if (type.includes('parking')) parkTotal += charge;
-                else if (type.includes('water')) waterTotal += charge;
-                else if (type.includes('contribution')) contribTotal += charge;
+        document.getElementById('soa-lease').textContent = (tenant.lease_status || '—') + ' · ' + fmtDate(tenant.lease_start) + ' – ' + (tenant.lease_end ? fmtDate(tenant.lease_end) : 'Open');
+        document.getElementById('soa-rent').textContent = fmtPeso(num(tenant.monthly_rent));
+        document.getElementById('soa-period').textContent = sel === 'all' ? 'All Time' : monthLabel(sel);
+
+        // Breakdown of charges in period
+        const bk = { rent: 0, deposit: 0, advance: 0, parking: 0, water: 0, contribution: 0, other: 0 };
+        let advApplied = 0;
+        rows.forEach(t => {
+            const c = num(t.charge), ty = String(t.type || '').toLowerCase();
+            if (c > 0) {
+                if (ty.includes('deposit')) bk.deposit += c;
+                else if (ty.includes('advance')) bk.advance += c;
+                else if (ty.includes('rent')) bk.rent += c;
+                else if (ty.includes('parking')) bk.parking += c;
+                else if (ty.includes('water')) bk.water += c;
+                else if (ty.includes('contribution')) bk.contribution += c;
+                else bk.other += c;
             }
+            if (num(t.payment) > 0 && (String(t.description || '').toLowerCase().includes('advance') || ty.includes('advance'))) advApplied += num(t.payment);
         });
+        const card = (label, val, sub) => val > 0 ? `<div class="breakdown-card"><div class="bk-label">${label}</div><div class="bk-value">${fmtPeso(val)}</div>${sub ? `<div class="bk-sub">${sub}</div>` : ''}</div>` : '';
+        document.getElementById('soa-breakdown').innerHTML =
+            card('Monthly Rent', bk.rent, esc(tenant.roomtype || 'Unit Fee')) +
+            card('Security Deposit', bk.deposit) +
+            card('Advance Rent', bk.advance) +
+            card('Parking Fee', bk.parking) +
+            card('Water Bill', bk.water, (tenant.occupants || 1) + ' person(s) × ₱100') +
+            card('Monthly Contribution', bk.contribution, 'Security &amp; Garbage') +
+            card('Other Charges', bk.other) +
+            card('Paid via Advance Credits', advApplied, 'Applied from prepaid advances');
 
-        let breakdownHtml = '';
-        if (rentTotal > 0) breakdownHtml += `<div class="breakdown-card"><div class="bk-label">Monthly Rent</div><div class="bk-value">${fmtPeso(rentTotal)}</div><div class="bk-sub">${tenant.roomtype || 'Unit Fee'}</div></div>`;
-        if (depTotal > 0) breakdownHtml += `<div class="breakdown-card"><div class="bk-label">Security Deposit</div><div class="bk-value">${fmtPeso(depTotal)}</div></div>`;
-        if (parkTotal > 0) breakdownHtml += `<div class="breakdown-card"><div class="bk-label">Parking Fee</div><div class="bk-value">${fmtPeso(parkTotal)}</div></div>`;
-        if (waterTotal > 0) breakdownHtml += `<div class="breakdown-card"><div class="bk-label">Water Bill</div><div class="bk-value">${fmtPeso(waterTotal)}</div><div class="bk-sub">${totalOccupants} person(s)</div></div>`;
-        if (contribTotal > 0) breakdownHtml += `<div class="breakdown-card"><div class="bk-label">Monthly Contribution</div><div class="bk-value">${fmtPeso(contribTotal)}</div><div class="bk-sub">Security &amp; Garbage</div></div>`;
-        document.getElementById('soa-breakdown').innerHTML = breakdownHtml;
-
-        // Table body
+        // Ledger
         const tbody = document.getElementById('soa-table-body');
         tbody.innerHTML = '';
+        let running = balForwarded, totalCharges = 0, totalPayments = 0, lastPeriod = null;
 
-        let runningBalance = balForwarded;
-        let totalCharges = 0;
-        let totalPayments = 0;
-        let lastCat = '';
-
-        // Balance forwarded row
-        if (selectedMonth !== 'all' && balForwarded !== 0) {
-            const bfRow = document.createElement('tr');
-            const label = balForwarded < 0 ? 'Overpayment Credit' : 'Unpaid Balance';
+        if (sel !== 'all') {
+            const label = balForwarded < 0 ? 'Overpayment Credit' : (balForwarded > 0 ? 'Unpaid Balance' : 'No Carry-over');
             const color = balForwarded > 0 ? 'var(--danger)' : 'var(--success)';
-            bfRow.innerHTML = `<td colspan="6"><strong>Balance Forwarded from Previous Months (${label})</strong></td><td style="text-align:right; font-weight:700; color:${color}">${balForwarded < 0 ? '-' : ''}${fmtPeso(Math.abs(balForwarded))}</td>`;
-            tbody.appendChild(bfRow);
+            const bf = document.createElement('tr');
+            bf.innerHTML = `<td colspan="6"><strong>Balance Forwarded from Previous Months (${label})</strong></td><td style="text-align:right;font-weight:700;color:${color}">${fmtPeso(balForwarded)}</td>`;
+            tbody.appendChild(bf);
         }
 
-        // Transaction rows with section grouping
-        filtered.forEach(t => {
-            const cat = getCategoryLabel(t.type);
-            if (cat !== lastCat) {
-                const secRow = document.createElement('tr');
-                secRow.innerHTML = `<td colspan="7" class="soa-section-title">${cat}</td>`;
-                tbody.appendChild(secRow);
-                lastCat = cat;
+        if (!rows.length) {
+            const er = document.createElement('tr');
+            er.className = 'row-empty';
+            er.innerHTML = '<td colspan="7">No transactions recorded for this period.</td>';
+            tbody.appendChild(er);
+        }
+
+        rows.forEach(t => {
+            const period = t.period || monthLabel((t.date || '').substring(0, 7));
+            if (period !== lastPeriod) {
+                const sec = document.createElement('tr');
+                sec.innerHTML = `<td colspan="7" class="soa-section-title">${esc(period)}</td>`;
+                tbody.appendChild(sec);
+                lastPeriod = period;
             }
-
-            const charge = parseFloat(t.charge) || 0;
-            const payment = parseFloat(t.payment) || 0;
-            runningBalance += (charge - payment);
-            totalCharges += charge;
-            totalPayments += payment;
-
-            const row = document.createElement('tr');
-            row.className = payment > 0 ? 'row-payment' : 'row-charge';
-            const balColor = runningBalance > 0 ? 'var(--danger)' : 'var(--success)';
-            row.innerHTML = `
+            const c = num(t.charge), p = num(t.payment);
+            running = round2(running + c - p);
+            totalCharges += c; totalPayments += p;
+            const tr = document.createElement('tr');
+            tr.className = p > 0 ? 'row-payment' : 'row-charge';
+            tr.innerHTML = `
                 <td>${fmtDate(t.date)}</td>
-                <td><span class="type-badge ${getBadgeClass(t.type)}">${t.type}</span></td>
-                <td>${t.description || ''}</td>
-                <td style="font-family:monospace; font-size:0.8rem;">${t.ref || ''}</td>
-                <td style="text-align:right;">${charge > 0 ? fmtPeso(charge) : '-'}</td>
-                <td style="text-align:right; color:var(--success);">${payment > 0 ? fmtPeso(payment) : '-'}</td>
-                <td style="text-align:right; font-weight:700; color:${balColor}">${fmtPeso(runningBalance)}</td>
-            `;
-            tbody.appendChild(row);
+                <td><span class="type-badge ${getBadgeClass(t.type)}">${esc(t.type)}</span></td>
+                <td>${esc(t.description)}</td>
+                <td style="font-family:monospace;font-size:0.8rem;">${esc(t.ref)}</td>
+                <td style="text-align:right;">${c > 0 ? fmtPeso(c) : '-'}</td>
+                <td style="text-align:right;color:var(--success);">${p > 0 ? fmtPeso(p) : '-'}</td>
+                <td style="text-align:right;font-weight:700;color:${running > 0.004 ? 'var(--danger)' : 'var(--success)'}">${fmtPeso(running)}</td>`;
+            tbody.appendChild(tr);
         });
 
-        const netStanding = runningBalance;
         document.getElementById('soa-total-charges').textContent = fmtPeso(totalCharges);
         document.getElementById('soa-total-payments').textContent = fmtPeso(totalPayments);
         const netEl = document.getElementById('soa-net-standing');
-        netEl.textContent = fmtPeso(netStanding);
-        netEl.style.color = netStanding > 0 ? 'var(--danger)' : 'var(--success)';
+        netEl.textContent = fmtPeso(running);
+        netEl.style.color = running > 0.004 ? 'var(--danger)' : 'var(--success)';
+        const netLabel = netEl.previousElementSibling;
+        if (netLabel) netLabel.textContent = running < -0.004 ? 'Credit Balance:' : 'Outstanding Balance:';
     }
 
-    calculateData();
-    initMasterTable();
-
+    // === BOOT ===
+    setMasterFilter('all');
+    onMonthFilterChange();
   </script>
 </body>
 </html>
