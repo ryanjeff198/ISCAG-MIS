@@ -45,7 +45,15 @@ function full_url(string $path = ''): string
  */
 function asset(string $path): string
 {
-    return BASE_URL . '/public/' . ltrim($path, '/');
+    $clean = ltrim($path, '/');
+    $url = BASE_URL . '/public/' . $clean;
+    if (strpos($clean, '?') === false) {
+        $fullPath = BASE_PATH . '/public/' . $clean;
+        if (is_file($fullPath)) {
+            $url .= '?v=' . filemtime($fullPath);
+        }
+    }
+    return $url;
 }
 
 /**

@@ -1244,7 +1244,7 @@ function initTableSearch() {
 //  GLOBAL MIS TABLE PAGINATION (10 / PAGE)
 // ══════════════════════════════════════
 function initTablePagination(perPage = 10) {
-  const selector = '.mis-table, .audit-table, .report-table, .donations-table, .soa-summary-table, .dt';
+  const selector = 'table';
 
   const getDataRows = (tbody) => {
     return Array.from(tbody.querySelectorAll('tr')).filter(row => {
@@ -1260,6 +1260,7 @@ function initTablePagination(perPage = 10) {
   const attachPagination = (table) => {
     if (!table || table.dataset.paginatedInit === '1') return;
     if (table.getAttribute('data-paginate') === 'false') return;
+    if (table.classList.contains('info-table') || table.classList.contains('family-doc-table') || table.classList.contains('print-report-table')) return;
     if (table.closest('.modal, .modal-overlay, .modal-card')) return;
 
     const tbody = table.querySelector('tbody');
