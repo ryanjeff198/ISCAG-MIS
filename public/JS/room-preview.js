@@ -8,7 +8,7 @@
    Room Data (Legacy Fallbacks)
    ══════════════════════════════════════════ */
 
-const ROOM_DATA = {
+var ROOM_DATA = window.ROOM_DATA || {
   studio: {
     type: 'studio', label: 'Studio Unit', price: '₱3,500 / month', capacity: '1–2 persons',
     description: 'A compact and efficient living space perfect for individuals or couples. Features an open-plan layout with a separate bathroom and kitchenette.',

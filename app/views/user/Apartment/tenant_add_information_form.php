@@ -76,7 +76,6 @@ if ($userId) {
   <title>ISCAG MIS — Tenant Application</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link rel="stylesheet" href="<?= asset('css/user-shared.css') ?>" />
-  <script src="<?= asset('JS/room-preview.js') ?>" defer></script>
   <style>
     /* ═══════════════════════════════════════════
        HIDE NUMBER INPUT SCROLL ARROWS
@@ -2100,7 +2099,7 @@ if ($userId) {
                   </svg>
                   Guest's Information
                 </div>
-                <button type="button" onclick="useMyDetails()" class="btn-topbar" style="font-size: 0.72rem; padding: 6px 14px; background: rgba(15, 92, 58, 0.05); color: #0f5c3a; border: 1.5px solid rgba(15, 92, 58, 0.15); border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                <button type="button" onclick="useMyDetails(event)" class="btn-topbar" style="font-size: 0.72rem; padding: 6px 14px; background: rgba(15, 92, 58, 0.05); color: #0f5c3a; border: 1.5px solid rgba(15, 92, 58, 0.15); border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
                     <svg viewBox="0 0 24 24" style="width:14px; fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/></svg>
                     Use my Details
                 </button>
@@ -2684,108 +2683,11 @@ if ($userId) {
     }
 
 
-    // ── Profile access gate ──
+    // ── Profile Completion Info (Non-blocking: form provides its own validation) ──
     const {
       percentage,
       missingFields
     } = getProfileCompletion();
-    if (percentage < 100) {
-      if (!document.getElementById('acm-keyframes')) {
-        const styleEl = document.createElement('style');
-        styleEl.id = 'acm-keyframes';
-        styleEl.textContent = `
-        @keyframes acmFadeIn { from { opacity:0; } to { opacity:1; } }
-        @keyframes acmSlideUp { from { opacity:0;transform:translateY(24px) scale(0.96); } to { opacity:1;transform:translateY(0) scale(1); } }
-        @keyframes acmShake { 0%,100%{transform:translateX(0)} 10%,30%,50%,70%,90%{transform:translateX(-6px)} 20%,40%,60%,80%{transform:translateX(6px)} }
-      `;
-        document.head.appendChild(styleEl);
-      }
-
-      const missingHtml = missingFields.length > 0 ?
-        `<div style="margin-top:16px;text-align:left;">
-           <p style="font-size:0.78rem;color:#6f7f78;margin:0 0 8px;font-weight:600;">The following information is still required:</p>
-           <ul style="margin:0;padding:0 0 0 18px;font-size:0.8rem;color:#1f2e2a;line-height:1.8;">
-             ${missingFields.map(f => '<li>' + f + '</li>').join('')}
-           </ul>
-         </div>` : '';
-
-      const modalHtml = `
-      <div id="access-control-modal" style="
-        position:fixed;inset:0;z-index:99999;
-        display:flex;align-items:center;justify-content:center;
-        background:rgba(15,30,22,0.55);backdrop-filter:blur(6px);
-        padding:24px;
-        animation:acmFadeIn 0.3s ease;
-      ">
-        <div style="
-          background:white;border-radius:16px;
-          width:100%;max-width:440px;
-          box-shadow:0 20px 60px rgba(0,0,0,0.25);
-          overflow:hidden;
-          animation:acmSlideUp 0.35s ease;
-        ">
-          <div style="height:4px;background:linear-gradient(90deg,#0f5c3a,#c79a2b);"></div>
-          <div style="padding:32px 28px 24px;text-align:center;">
-            <div style="margin-bottom:8px;">
-              <svg viewBox="0 0 24 24" style="width:48px;height:48px;fill:#c79a2b;">
-                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 6h2v6h-2V7zm0 8h2v2h-2v-2z"/>
-              </svg>
-            </div>
-            <div style="position:relative;width:80px;height:80px;margin:0 auto 16px;">
-              <svg viewBox="0 0 36 36" style="width:80px;height:80px;transform:rotate(-90deg);">
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e8ece9" stroke-width="3"/>
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="${percentage >= 40 ? '#c79a2b' : '#8b2e2e'}" stroke-width="3"
-                  stroke-dasharray="${percentage} ${100 - percentage}" stroke-linecap="round"
-                  style="transition:stroke-dasharray 0.8s ease;"/>
-              </svg>
-              <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;font-size:1.1rem;font-weight:700;color:#0f5c3a;">${percentage}%</span>
-            </div>
-            <h4 style="font-family:'Lora',serif;font-size:1.15rem;font-weight:700;color:#0f5c3a;margin:0 0 10px;">Profile Incomplete</h4>
-            <p style="font-size:0.87rem;color:#6f7f78;line-height:1.6;margin:0;">Access to this section is restricted until your profile is fully completed. Please update the required information to continue.</p>
-            ${missingHtml}
-          </div>
-          <div style="display:flex;gap:10px;padding:0 28px 24px;justify-content:center;">
-            <button id="acm-cancel-btn" style="
-              padding:10px 22px;border-radius:8px;
-              border:1.5px solid #d9e3de;background:white;
-              color:#6f7f78;font-size:0.85rem;font-weight:600;
-              cursor:pointer;transition:all 0.18s;
-            ">Go to Dashboard</button>
-            <button id="acm-primary-btn" style="
-              padding:10px 22px;border-radius:8px;
-              border:none;
-              background:linear-gradient(135deg,#0f5c3a,#2f8a60);
-              color:white;font-size:0.85rem;font-weight:700;
-              cursor:pointer;transition:all 0.18s;
-              box-shadow:0 4px 12px rgba(15,92,58,0.3);
-            ">Go to Profile</button>
-          </div>
-        </div>
-      </div>
-    `;
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-      const modal = document.getElementById('access-control-modal');
-      const modalBox = modal.querySelector('div > div');
-
-      function shakeModal() {
-        modalBox.style.animation = 'none';
-        modalBox.offsetHeight;
-        modalBox.style.animation = 'acmShake 0.5s ease';
-      }
-
-      document.getElementById('acm-primary-btn').addEventListener('click', () => {
-        window.location.href = '<?= url('/user/profile') ?>';
-      });
-      document.getElementById('acm-cancel-btn').addEventListener('click', () => {
-        window.location.href = '<?= url('/user/dashboard') ?>';
-      });
-      modal.addEventListener('click', e => {
-        if (e.target === modal) {
-          shakeModal();
-        }
-      });
-    }
 
     // ═══ STEPPER NAVIGATION ═══
     let currentStep = 1;
@@ -3340,22 +3242,26 @@ if ($userId) {
       });
     }
 
-    function useMyDetails() {
+    function useMyDetails(e) {
         const u = DB_USER;
         if (!u) return;
 
         // Auto-fill fields
         const setVal = (id, val) => {
             const el = document.getElementById(id);
-            if (el) el.value = val || '';
+            if (el) {
+                el.value = val || '';
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         };
 
-        setVal('family-name', u.lastName);
-        setVal('given-name', u.firstName);
+        if (u.lastName) setVal('family-name', u.lastName);
+        if (u.firstName) setVal('given-name', u.firstName);
         
         // Muslim Name Logic
         const muslimNameEl = document.getElementById('muslim-name');
-        if (muslimNameEl) {
+        if (muslimNameEl && u.arabicName) {
             const isNA = (u.arabicName === 'N/A');
             muslimNameEl.value = isNA ? '' : (u.arabicName || '');
             muslimNameEl.disabled = isNA;
@@ -3363,16 +3269,16 @@ if ($userId) {
             muslimNameEl.style.backgroundColor = isNA ? 'rgba(0,0,0,0.02)' : 'white';
         }
 
-        setVal('dob', u.dob);
-        setVal('sex', u.sex);
-        setVal('address', u.address);
-        setVal('phone', u.phone);
-        setVal('civil-status', u.civil);
-        setVal('occupation', u.occupation);
+        if (u.dob && u.dob !== '0000-00-00') setVal('dob', u.dob);
+        if (u.sex) setVal('sex', u.sex);
+        if (u.address) setVal('address', u.address);
+        if (u.phone) setVal('phone', u.phone);
+        if (u.civil) setVal('civil-status', u.civil);
+        if (u.occupation) setVal('occupation', u.occupation);
 
         // Date of Shahadah Logic
         const shahadahDateEl = document.getElementById('shahadah-date');
-        if (shahadahDateEl) {
+        if (shahadahDateEl && u.revertYear) {
             const isNA = (u.revertYear === 'N/A' || u.revertYear === '0000-00-00');
             shahadahDateEl.value = isNA ? '' : (u.revertYear || '');
             shahadahDateEl.disabled = isNA;
@@ -3380,26 +3286,38 @@ if ($userId) {
             shahadahDateEl.style.backgroundColor = isNA ? 'rgba(0,0,0,0.02)' : 'white';
         }
 
-        setVal('tribal', u.tribal);
-        setVal('pob', u.pob);
+        if (u.tribal) setVal('tribal', u.tribal);
+        if (u.pob) setVal('pob', u.pob);
 
         // Trigger age calculation
-        if (u.dob) {
-            const dobEl = document.getElementById('dob');
-            if (dobEl) dobEl.dispatchEvent(new Event('change'));
+        const dobVal = document.getElementById('dob')?.value;
+        if (dobVal && dobVal !== '0000-00-00') {
+            const parts = dobVal.split('-');
+            if (parts.length === 3) {
+                const birth = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                const today = new Date();
+                let calcAge = today.getFullYear() - birth.getFullYear();
+                const m = today.getMonth() - birth.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) calcAge--;
+                if (calcAge >= 0) {
+                    const ageEl = document.getElementById('age');
+                    if (ageEl) ageEl.value = calcAge;
+                }
+            }
         }
 
         showToast('Application form populated with your account details!', '#2f8a60');
         triggerAutosave();
         
         // Visual feedback on the button
-        const btn = event.currentTarget;
+        const btn = (e && e.currentTarget) ? e.currentTarget : document.querySelector('button[onclick*="useMyDetails"]');
         if (btn) {
             const originalText = btn.innerHTML;
             btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px; fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Details Applied';
             setTimeout(() => { btn.innerHTML = originalText; }, 2000);
         }
     }
+    window.useMyDetails = useMyDetails;
 
 
 
@@ -3763,24 +3681,28 @@ if ($userId) {
           grid.appendChild(card);
           const dropzone = card.querySelector(`#dropzone-${doc.id}`);
           const fileInput = card.querySelector(`#input-${doc.id}`);
-          dropzone.addEventListener('click', () => fileInput.click());
-          dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.classList.add('dragover');
-          });
-          dropzone.addEventListener('dragleave', () => {
-            dropzone.classList.remove('dragover');
-          });
-          dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file) handleFileUpload(doc.id, file);
-          });
-          fileInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) handleFileUpload(doc.id, file);
-          });
+          if (dropzone && fileInput) {
+            dropzone.addEventListener('click', () => fileInput.click());
+            dropzone.addEventListener('dragover', (e) => {
+              e.preventDefault();
+              dropzone.classList.add('dragover');
+            });
+            dropzone.addEventListener('dragleave', () => {
+              dropzone.classList.remove('dragover');
+            });
+            dropzone.addEventListener('drop', (e) => {
+              e.preventDefault();
+              dropzone.classList.remove('dragover');
+              const file = e.dataTransfer.files[0];
+              if (file) handleFileUpload(doc.id, file);
+            });
+          }
+          if (fileInput) {
+            fileInput.addEventListener('change', function() {
+              const file = this.files[0];
+              if (file) handleFileUpload(doc.id, file);
+            });
+          }
         }
       });
 
@@ -4105,6 +4027,29 @@ if ($userId) {
       };
       const followupNames = followupList.map(k => docNameMap[k] || k).join(', ');
 
+      let followupBanner = '';
+      if (hasFollowup) {
+        followupBanner = `
+          <div style="margin-bottom:20px;padding:14px 16px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;text-align:left;">
+            <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:0.82rem;color:#92400e;margin-bottom:4px;">
+              <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#d97706;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-4.18-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+              Pending Follow-Up Documents (${followupList.length}): ${followupNames}
+            </div>
+            <p style="font-size:0.75rem;color:#78350f;margin:0;line-height:1.4;">
+              You can upload these documents directly from your <strong>Tenant Status</strong> dashboard at any time once you have obtained them.
+            </p>
+          </div>
+        `;
+      }
+
+      const statusMsg = hasFollowup 
+        ? 'Your tenant application has been submitted with follow-up requirement(s).' 
+        : 'Your tenant application and all required documents have been submitted for review.';
+
+      const badgeColor = hasFollowup ? '#b45309' : 'var(--success)';
+      const iconFill = hasFollowup ? '#d97706' : 'var(--success)';
+      const badgeText = hasFollowup ? 'Application Submitted with Follow-Up Requirements' : 'All Steps Completed';
+
       const pageBody = document.querySelector('.page-body');
       pageBody.innerHTML = `
         <div style="max-width:560px;margin:40px auto;text-align:center;">
@@ -4137,7 +4082,7 @@ if ($userId) {
                 color:white;margin:0 0 8px;
               ">Application Submitted Successfully!</h3>
               <p style="font-size:0.88rem;color:rgba(255,255,255,0.75);margin:0;line-height:1.6;">
-                \${hasFollowup ? 'Your tenant application has been submitted with follow-up requirement(s).' : 'Your tenant application and all required documents have been submitted for review.'}
+                ${statusMsg}
               </p>
             </div>
             <div style="padding:28px 32px;">
@@ -4148,25 +4093,15 @@ if ($userId) {
                 margin-bottom:20px;
               ">
                 <div style="display:flex;align-items:center;gap:10px;justify-content:center;">
-                  <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:\${hasFollowup ? '#d97706' : 'var(--success)'};">
+                  <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:${iconFill};">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                   </svg>
-                  <span style="font-size:0.88rem;font-weight:700;color:\${hasFollowup ? '#b45309' : 'var(--success)'};">
-                    \${hasFollowup ? 'Application Submitted with Follow-Up Requirements' : 'All Steps Completed'}
+                  <span style="font-size:0.88rem;font-weight:700;color:${badgeColor};">
+                    ${badgeText}
                   </span>
                 </div>
               </div>
-              \${hasFollowup ? `
-                <div style=\"margin-bottom:20px;padding:14px 16px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;text-align:left;\">
-                  <div style=\"display:flex;align-items:center;gap:8px;font-weight:700;font-size:0.82rem;color:#92400e;margin-bottom:4px;\">
-                    <svg viewBox=\"0 0 24 24\" style=\"width:16px;height:16px;fill:#d97706;\"><path d=\"M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-4.18-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z\"/></svg>
-                    Pending Follow-Up Documents (\${followupList.length}): \${followupNames}
-                  </div>
-                  <p style=\"font-size:0.75rem;color:#78350f;margin:0;line-height:1.4;\">
-                    You can upload these documents directly from your <strong>Tenant Status</strong> dashboard at any time once you have obtained them.
-                  </p>
-                </div>
-              ` : ''}
+              ${followupBanner}
               <p style="font-size:0.83rem;color:var(--text-muted);line-height:1.7;margin:0 0 24px;">
                 The management team will verify your documents and update your application status.
                 You will receive a notification once the review is complete.
