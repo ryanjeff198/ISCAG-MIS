@@ -950,7 +950,7 @@
       tableRows.forEach(tr => {
         const cells = tr.querySelectorAll('td');
         if (cells.length >= 8) {
-          const rowData = Array.from(cells).map(td => `"${td.innerText.replace(/"/g, '""').trim()}"`);
+          const rowData = Array.from(cells).map(td => `"${td.textContent.replace(/"/g, '""').replace(/\s+/g, ' ').trim()}"`);
           rows.push(rowData);
         }
       });

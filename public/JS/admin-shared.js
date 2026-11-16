@@ -1386,8 +1386,9 @@ function initTablePagination(perPage = 10) {
       bar.appendChild(controls);
     };
 
-    // Initial render
+    // Initial render (and delayed safety pass for synchronous post-bootstrap table renders)
     renderPage(false);
+    setTimeout(() => renderPage(false), 50);
 
     // Re-paginate automatically when rows are added/removed or filtered via style.display
     let scheduled = false;
@@ -1440,6 +1441,9 @@ function initTablePagination(perPage = 10) {
 //  PAGE BOOTSTRAP
 // ══════════════════════════════════════
 function standardizePage(role) {
+  if (role === 'admin') {
+    try { initTablePagination(10); } catch (e) { console.error('Pagination init error:', e); }
+  }
   initAdminData();
   initReportsData();
   initSidebar();
@@ -1451,10 +1455,13 @@ function standardizePage(role) {
   initNotifBadge(role);
   initLogoutModal();
   initTableSearch();
-  if (role === 'admin') {
-    initTablePagination(10);
-  }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.location.pathname.includes('/admin')) {
+    try { initTablePagination(10); } catch (e) {}
+  }
+});
 
 function closeAllActionMenus() {
   document.querySelectorAll('.action-menu-dropdown.show').forEach(d => {
