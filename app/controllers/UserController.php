@@ -2222,6 +2222,11 @@ class UserController extends Controller
                 exit;
             }
 
+            if (empty($paymentRef)) {
+                echo json_encode(['success' => false, 'error' => 'Payment reference number / transaction hash is strictly required for digital donations.']);
+                exit;
+            }
+
             $targetBank = trim($input['target_bank_name'] ?? '');
             $targetAccNum = trim($input['target_account_number'] ?? '');
             $targetAccName = trim($input['target_account_name'] ?? '');
@@ -2251,6 +2256,60 @@ class UserController extends Controller
         $res = $charity->recordDonation($data, $tenantName, (int)$_SESSION['user_id']);
         echo json_encode($res);
         exit;
+    }
+
+    /**
+     * User/Donor: View and Print Official Donation Receipt for Verified Donations
+     * Enforces strict IDOR protection and verified-status requirements.
+     */
+    public function charityReceipt(): void {
+        Auth::protect();
+        require_once BASE_PATH . '/app/models/CharityProgram.php';
+        require_once BASE_PATH . '/app/models/User.php';
+
+        $id = (int)($_GET['id'] ?? 0);
+        $charity = new CharityProgram();
+        $donation = $charity->getDonationById($id);
+
+        if (!$donation) {
+            header('Location: ' . url('/user/services/charity'));
+            exit;
+        }
+
+        // Strict IDOR Protection: only the owner or staff/admin can access
+        $currentUserId = (int)($_SESSION['user_id'] ?? 0);
+        $currentUserRole = $_SESSION['role'] ?? 'User';
+        $isOwner = ((int)$donation['tenant_id'] === $currentUserId);
+        $isStaffOrAdmin = in_array($currentUserRole, ['Admin', 'Staff_Damayan', 'Staff_Tenant']);
+
+        if (!$isOwner && !$isStaffOrAdmin) {
+            http_response_code(403);
+            die("<h1>403 Forbidden</h1><p>Access Denied: You do not have permission to view this donation receipt.</p>");
+        }
+
+        // Strict Status Integrity: Only successfully VERIFIED donations may generate an official receipt
+        $verifiedStatuses = ['Available', 'Partially Allocated', 'Fully Allocated'];
+        $isVerified = in_array($donation['status'], $verifiedStatuses);
+
+        if (!$isVerified) {
+            http_response_code(400);
+            $this->view('user/Damayan/user_donation_unverified', [
+                'donation' => $donation
+            ]);
+            return;
+        }
+
+        // Generate verification integrity seal for receipt validation
+        $integrity = $charity->verifyRecordIntegrity($donation);
+
+        $userModel = new User();
+        $dbUser = $userModel->findById($currentUserId);
+
+        $this->view('user/Damayan/user_donation_receipt', [
+            'donation' => $donation,
+            'dbUser' => $dbUser,
+            'integrity' => $integrity
+        ]);
     }
 
     /**

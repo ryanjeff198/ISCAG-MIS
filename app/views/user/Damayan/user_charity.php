@@ -1692,9 +1692,22 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
                       $cat = $don['donation_category'] ?? ($don['donation_type'] === 'in-kind' ? 'food' : 'digital');
                       $st = $don['status'];
                       $badgeClass = 'st-available';
-                      if ($st === 'Pending Verification') $badgeClass = 'st-pending-verif';
-                      elseif ($st === 'Pending Receipt' || $st === 'Pending Coordination') $badgeClass = 'st-pending-rcpt';
-                      elseif ($st === 'Rejected' || $st === 'Cancelled') $badgeClass = 'st-rejected';
+                      $displayStatus = 'Verified';
+                      $isVerified = in_array($st, ['Available', 'Partially Allocated', 'Fully Allocated']);
+
+                      if ($st === 'Pending Verification') {
+                          $badgeClass = 'st-pending-verif';
+                          $displayStatus = 'Pending Verification';
+                      } elseif ($st === 'Pending Receipt' || $st === 'Pending Coordination') {
+                          $badgeClass = 'st-pending-rcpt';
+                          $displayStatus = $st === 'Pending Receipt' ? 'Pending Handover' : 'Pending Coordination';
+                      } elseif ($st === 'Rejected') {
+                          $badgeClass = 'st-rejected';
+                          $displayStatus = 'Rejected';
+                      } elseif ($st === 'Cancelled') {
+                          $badgeClass = 'st-rejected';
+                          $displayStatus = 'Cancelled';
+                      }
                     ?>
                     <tr>
                       <td>
@@ -1715,18 +1728,37 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
                           <strong><?= (int)$don['quantity'] ?> <?= htmlspecialchars($don['unit'] ?? 'Units') ?></strong>
                         <?php endif; ?>
                       </td>
-                      <td><?= htmlspecialchars($don['payment_method'] ?: 'Direct') ?></td>
+                      <td>
+                        <div><?= htmlspecialchars($don['payment_method'] ?: 'Direct') ?></div>
+                        <?php if (!empty($don['payment_reference'])): ?>
+                          <div style="font-size:0.72rem; color:var(--text-muted); font-family:monospace;">Ref: <?= htmlspecialchars($don['payment_reference']) ?></div>
+                        <?php endif; ?>
+                      </td>
                       <td style="color:var(--text-muted); font-size:0.8rem;"><?= date('M d, Y', strtotime($don['date_received'])) ?></td>
                       <td>
-                        <span class="status-badge <?= $badgeClass ?>"><?= htmlspecialchars($st) ?></span>
+                        <span class="status-badge <?= $badgeClass ?>"><?= htmlspecialchars($displayStatus) ?></span>
+                        <?php if ($st === 'Rejected' && !empty($don['admin_notes'])): ?>
+                          <div style="font-size:0.7rem; color:#b91c1c; margin-top:2px;" title="<?= htmlspecialchars($don['admin_notes']) ?>">
+                            <?= htmlspecialchars(mb_strimwidth($don['admin_notes'], 0, 30, '...')) ?>
+                          </div>
+                        <?php endif; ?>
                       </td>
                       <td style="text-align:right;">
-                        <?php if (!empty($don['ack_issued'])): ?>
-                          <a href="<?= url('/admin/damayan/charity/donations/print-ack?id=' . $don['id']) ?>" target="_blank" style="font-size:0.75rem; font-weight:700; color:var(--primary-green); text-decoration:underline;">
-                            Print Ack
+                        <?php if ($isVerified): ?>
+                          <a href="<?= url('/user/services/charity/receipt?id=' . $don['id']) ?>" target="_blank" style="display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; font-weight:700; color:#0f5c3a; background:#e8f5ef; padding:5px 10px; border-radius:6px; text-decoration:none; border:1px solid #c2e2d2;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            Official Receipt
                           </a>
+                        <?php elseif ($st === 'Pending Receipt'): ?>
+                          <span style="display:inline-block; font-size:0.72rem; color:#b45309; background:#fef3c7; padding:4px 8px; border-radius:6px; font-weight:600;">
+                            Awaiting Cashier
+                          </span>
+                        <?php elseif ($st === 'Pending Verification' || $st === 'Pending Coordination'): ?>
+                          <span style="display:inline-block; font-size:0.72rem; color:#2563eb; background:#eff6ff; padding:4px 8px; border-radius:6px; font-weight:600;">
+                            Under Verification
+                          </span>
                         <?php else: ?>
-                          <span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">Processing</span>
+                          <span style="font-size:0.72rem; color:var(--text-muted); font-style:italic;">No Receipt</span>
                         <?php endif; ?>
                       </td>
                     </tr>
@@ -2305,8 +2337,11 @@ $donorContact = $dbUser['contactnum'] ?? ($dbUser['email'] ?? '');
             </div>
 
             <div class="doc-heading">
-              <div class="doc-title">OFFICIAL DONATION ACKNOWLEDGMENT SLIP</div>
-              <div class="doc-tag">Damayan Charity Assistance Program</div>
+              <div class="doc-title">${currentMethod === 'direct' ? 'WALK-IN DEPOSIT INTENT SLIP (PENDING VERIFICATION)' : 'DONATION SUBMISSION SLIP (AWAITING VERIFICATION)'}</div>
+              <div class="doc-tag">Damayan Charity Assistance Program • Unverified Intent</div>
+              <div style="margin-top:6px; font-size:0.75rem; color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:6px 10px; border-radius:6px; font-weight:600;">
+                Notice: This submission slip is NOT an official verified donation receipt. Official receipts are issued once actual funds/items are verified and accepted by Damayan staff.
+              </div>
             </div>
 
             <div class="receipt-grid">

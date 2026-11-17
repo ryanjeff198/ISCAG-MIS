@@ -730,6 +730,15 @@
             <label>Remarks / Donor Notes</label>
             <textarea name="remarks" id="form-remarks" rows="2" class="form-control" placeholder="Any specific wishes, designated intent, or special instructions..."></textarea>
           </div>
+
+          <!-- Mandatory Correction Reason for Edits -->
+          <div class="form-group" id="correction-reason-group" style="display:none; margin-top:14px; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px;">
+            <label style="color:#92400e; font-weight:700;">Mandatory Correction Reason (Audit Trail) <span style="color:#b91c1c;">*</span></label>
+            <textarea name="correction_reason" id="form-correction-reason" rows="2" class="form-control" placeholder="Document the exact operational reason and authorization for modifying this donation record..."></textarea>
+            <div style="font-size:0.72rem; color:#b45309; margin-top:4px;">
+              All modifications are cryptographically sealed in the immutable donation audit log with pre/post snapshots.
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer">
@@ -822,6 +831,8 @@
       document.getElementById('form-donation-category').value = 'digital';
       handleCategoryChange('digital');
       document.getElementById('form-donation-category').disabled = false;
+      document.getElementById('correction-reason-group').style.display = 'none';
+      document.getElementById('form-correction-reason').value = '';
       document.getElementById('form-error').style.display = 'none';
       document.getElementById('donation-form-modal').style.display = 'flex';
     }
@@ -867,6 +878,10 @@
           document.getElementById('form-status').value = d.status;
           document.getElementById('form-remarks').value = d.remarks || '';
 
+          // Show mandatory correction reason field for audit integrity
+          document.getElementById('correction-reason-group').style.display = 'block';
+          document.getElementById('form-correction-reason').value = '';
+
           document.getElementById('form-error').style.display = 'none';
           document.getElementById('donation-form-modal').style.display = 'flex';
         })
@@ -881,6 +896,17 @@
       const formData = new FormData(form);
       const btn = document.getElementById('btn-save-donation');
       const errBox = document.getElementById('form-error');
+
+      // Verify mandatory correction reason when editing existing transaction
+      const action = document.getElementById('form-action').value;
+      if (action === 'edit') {
+        const corReason = (document.getElementById('form-correction-reason').value || '').trim();
+        if (corReason.length < 5) {
+          errBox.textContent = 'Accountability Policy: A clear documented correction reason (minimum 5 characters) is required to modify this transaction.';
+          errBox.style.display = 'block';
+          return;
+        }
+      }
 
       btn.disabled = true;
       btn.textContent = 'Saving...';
@@ -992,6 +1018,9 @@
                     <img src="${proofUrl}" alt="Proof Receipt" class="proof-preview-img" onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'40\'><text y=\'25\' font-size=\'12\'>View Receipt</text></svg>';" />
                   </a>
                   <div style="font-size:0.73rem; color:var(--text-muted); margin-top:4px;">Click image to view or download full receipt</div>
+                  <div style="font-size:0.74rem; color:#92400e; background:#fffbeb; border:1px solid #fde68a; padding:6px 10px; border-radius:6px; margin-top:8px; line-height:1.4;">
+                    <strong>Verification Security Rule:</strong> Uploaded screenshots must not automatically confirm a donation. Damayan staff must independently verify crediting in ISCAG official accounts before approving.
+                  </div>
                 </div>
               `;
             } else {
@@ -1084,6 +1113,14 @@
     function submitVerifyForm(e) {
       e.preventDefault();
       if (isSubmittingVerify) return;
+
+      const statusVal = document.getElementById('verify-status').value;
+      const notesVal = (document.getElementById('verify-notes').value || '').trim();
+      if ((statusVal === 'Rejected' || statusVal === 'Cancelled') && notesVal.length < 5) {
+        alert('Accountability Policy: A clear, documented rejection reason (minimum 5 characters) is required when rejecting or cancelling a donation.');
+        return;
+      }
+
       isSubmittingVerify = true;
 
       const form = document.getElementById('verify-form');

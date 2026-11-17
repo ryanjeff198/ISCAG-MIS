@@ -1845,6 +1845,12 @@ class AdminController extends Controller
 
         $donations = $charity->getAllDonations($filters);
         $stats = $charity->getDashboardStats();
+        $statusBreakdown = $charity->getDonationStatusBreakdown();
+        $integrityScan = $charity->checkSystemIntegrity();
+        $auditLogs = $charity->getDonationAuditLogs([
+            'search' => trim($_GET['audit_search'] ?? ''),
+            'action' => trim($_GET['audit_action'] ?? '')
+        ]);
 
         // Calculate detailed metrics for MIS Admin summary cards
         $summary = [
@@ -1886,16 +1892,20 @@ class AdminController extends Controller
         unset($d);
 
         $this->view('admin/mis_admin/donations', [
-            'active_page' => 'donations',
-            'donations'   => $donations,
-            'filters'     => $filters,
-            'stats'       => $stats,
-            'summary'     => $summary
+            'active_page'     => 'donations',
+            'donations'       => $donations,
+            'filters'         => $filters,
+            'stats'           => $stats,
+            'summary'         => $summary,
+            'statusBreakdown' => $statusBreakdown,
+            'integrityScan'   => $integrityScan,
+            'auditLogs'       => $auditLogs
         ]);
     }
 
     /**
      * MIS Admin: Verify or Update Received Donation Status
+     * Enforces Separation of Duties: MIS Admin interventions require mandatory justification.
      */
     public function verifyDonation(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
@@ -1914,8 +1924,20 @@ class AdminController extends Controller
         $adminNotes = trim($_POST['admin_notes'] ?? '');
         $staffName = trim($_SESSION['name'] ?? 'MIS Administrator');
         $userId = (int)($_SESSION['user_id'] ?? 0);
+        $staffRole = $_SESSION['role'] ?? 'Admin';
 
-        $res = $charity->verifyDonation($id, $status, $adminNotes, $staffName, $userId);
+        // Separation of Duties Policy: MIS Admin direct intervention requires documented justification
+        if ($staffRole === 'Admin') {
+            if (empty($adminNotes) || strlen($adminNotes) < 10) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Separation of Duties Policy: MIS Administrators must provide a detailed justification (minimum 10 characters) for any direct donation status intervention.'
+                ]);
+                exit;
+            }
+        }
+
+        $res = $charity->verifyDonation($id, $status, $adminNotes, $staffName, $userId, $staffRole);
 
         if ($res['success']) {
             require_once BASE_PATH . '/app/helpers/AuditLogger.php';
@@ -4386,9 +4408,11 @@ class AdminController extends Controller
 
         $action = $_POST['action'] ?? 'create';
 
+        $staffRole = $_SESSION['role'] ?? 'Staff_Damayan';
+
         if ($action === 'edit') {
             $id = (int)($_POST['id'] ?? 0);
-            $res = $charity->updateDonation($id, $_POST, $staffName, $userId);
+            $res = $charity->updateDonation($id, $_POST, $staffName, $userId, $staffRole);
         } else {
             $res = $charity->recordDonation($_POST, $staffName, $userId);
         }
@@ -4453,8 +4477,9 @@ class AdminController extends Controller
         $adminNotes = trim($_POST['admin_notes'] ?? '');
         $staffName = trim($_SESSION['name'] ?? 'Damayan Staff');
         $userId = (int)($_SESSION['user_id'] ?? 0);
+        $staffRole = $_SESSION['role'] ?? 'Staff_Damayan';
 
-        $res = $charity->verifyDonation($id, $status, $adminNotes, $staffName, $userId);
+        $res = $charity->verifyDonation($id, $status, $adminNotes, $staffName, $userId, $staffRole);
         echo json_encode($res);
         exit;
     }
@@ -4736,15 +4761,33 @@ class AdminController extends Controller
         $allocations = $charity->getAllocations($filters);
         $distributions = $charity->getDistributions($filters);
         $stats = $charity->getDashboardStats();
+        $statusBreakdown = $charity->getDonationStatusBreakdown();
+
+        // Audit Trail: Record administrative report generation activity
+        $staffName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: ($_SESSION['name'] ?? 'Damayan Staff');
+        $charity->recordAuditLog(
+            0,
+            'REPORT',
+            'REPORT_GENERATED',
+            null,
+            null,
+            null,
+            ['filters' => $filters],
+            'Generated Damayan charity summary report for period ' . ($filters['date_from'] ?? 'ALL') . ' to ' . ($filters['date_to'] ?? 'ALL'),
+            $staffName,
+            $_SESSION['role'] ?? 'Staff_Damayan',
+            (int)($_SESSION['user_id'] ?? 0)
+        );
 
         $this->view('admin/Staff_Admin/Admin-Damayan_Department/charity_reports', [
-            'active_page' => 'charity_reports',
-            'dbUser' => $dbUser,
-            'filters' => $filters,
-            'donations' => $donations,
-            'allocations' => $allocations,
-            'distributions' => $distributions,
-            'stats' => $stats
+            'active_page'     => 'charity_reports',
+            'dbUser'          => $dbUser,
+            'filters'         => $filters,
+            'donations'       => $donations,
+            'allocations'     => $allocations,
+            'distributions'   => $distributions,
+            'stats'           => $stats,
+            'statusBreakdown' => $statusBreakdown
         ]);
     }
 

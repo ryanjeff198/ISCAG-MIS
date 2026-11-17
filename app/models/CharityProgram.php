@@ -132,7 +132,15 @@ class CharityProgram
         $year = date('Y');
         $stmt = $this->db->query("SELECT MAX(id) FROM charity_donations_records");
         $next = ((int)$stmt->fetchColumn()) + 1;
-        return sprintf("DON-%s-%04d", $year, $next);
+        $candidate = sprintf("DON-%s-%04d", $year, $next);
+
+        // Ensure collision resilience under concurrent submissions
+        $chk = $this->db->prepare("SELECT COUNT(*) FROM charity_donations_records WHERE donation_ref = ?");
+        $chk->execute([$candidate]);
+        if ((int)$chk->fetchColumn() > 0) {
+            $candidate = sprintf("DON-%s-%04d-%02d", $year, $next, rand(10, 99));
+        }
+        return $candidate;
     }
 
     public function generateAllocationRef(): string
@@ -149,6 +157,191 @@ class CharityProgram
         $stmt = $this->db->query("SELECT MAX(id) FROM charity_distributions");
         $next = ((int)$stmt->fetchColumn()) + 1;
         return sprintf("DST-%s-%04d", $year, $next);
+    }
+
+    /**
+     * Record an immutable audit log entry in donation_audit_logs
+     */
+    public function recordAuditLog(
+        int $donationId,
+        string $donationRef,
+        string $action,
+        ?string $prevStatus,
+        ?string $newStatus,
+        ?array $prevValues = null,
+        ?array $newValues = null,
+        ?string $reason = null,
+        ?string $actorName = null,
+        ?string $actorRole = null,
+        ?int $actorId = null
+    ): bool {
+        try {
+            $actorId   = $actorId ?? ($_SESSION['user_id'] ?? null);
+            $actorName = $actorName ?? ($_SESSION['name'] ?? 'System');
+            $actorRole = $actorRole ?? ($_SESSION['role'] ?? 'System');
+            $ip        = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+            $ua        = substr($_SERVER['HTTP_USER_AGENT'] ?? 'CLI/System', 0, 255);
+            $prevJson  = $prevValues ? json_encode($prevValues, JSON_UNESCAPED_UNICODE) : null;
+            $newJson   = $newValues ? json_encode($newValues, JSON_UNESCAPED_UNICODE) : null;
+
+            // Generate SHA-256 seal of the audit entry for cryptographic verification
+            $sealPayload = implode('|', [
+                $donationId,
+                $donationRef,
+                $action,
+                $actorId ?? '0',
+                $actorRole,
+                $prevStatus ?? '',
+                $newStatus ?? '',
+                $reason ?? '',
+                $ip,
+                'ISCAG_DONATION_AUDIT_SALT_v1'
+            ]);
+            $integrityHash = hash('sha256', $sealPayload);
+
+            $stmt = $this->db->prepare("
+                INSERT INTO donation_audit_logs (
+                    donation_id, donation_ref, action, actor_id, actor_name, actor_role,
+                    previous_status, new_status, previous_values, new_values, reason,
+                    ip_address, user_agent, integrity_hash, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ");
+            return $stmt->execute([
+                $donationId, $donationRef, $action, $actorId, $actorName, $actorRole,
+                $prevStatus, $newStatus, $prevJson, $newJson, $reason,
+                $ip, $ua, $integrityHash
+            ]);
+        } catch (\PDOException $e) {
+            error_log("CharityProgram::recordAuditLog error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Retrieve audit logs with filtering for MIS Admin and Staff
+     */
+    public function getDonationAuditLogs(array $filters = []): array
+    {
+        $sql = "SELECT l.*, d.donor_name, d.amount, d.donation_type, d.target_program 
+                FROM donation_audit_logs l
+                LEFT JOIN charity_donations_records d ON l.donation_id = d.id
+                WHERE 1=1";
+        $params = [];
+
+        if (!empty($filters['donation_id'])) {
+            $sql .= " AND l.donation_id = ?";
+            $params[] = (int)$filters['donation_id'];
+        }
+        if (!empty($filters['donation_ref'])) {
+            $sql .= " AND l.donation_ref LIKE ?";
+            $params[] = '%' . trim($filters['donation_ref']) . '%';
+        }
+        if (!empty($filters['action'])) {
+            $sql .= " AND l.action = ?";
+            $params[] = $filters['action'];
+        }
+        if (!empty($filters['actor_role'])) {
+            $sql .= " AND l.actor_role = ?";
+            $params[] = $filters['actor_role'];
+        }
+        if (!empty($filters['search'])) {
+            $s = '%' . trim($filters['search']) . '%';
+            $sql .= " AND (l.donation_ref LIKE ? OR l.actor_name LIKE ? OR l.reason LIKE ? OR d.donor_name LIKE ?)";
+            $params[] = $s;
+            $params[] = $s;
+            $params[] = $s;
+            $params[] = $s;
+        }
+
+        $sql .= " ORDER BY l.id DESC LIMIT 200";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Automated Data Integrity and Discrepancy Scanner
+     */
+    public function checkSystemIntegrity(): array
+    {
+        $issues = [];
+
+        // Check 1: Duplicate payment references across non-rejected transactions
+        $stmtDup = $this->db->query("
+            SELECT payment_reference, COUNT(*) as count, GROUP_CONCAT(donation_ref SEPARATOR ', ') as refs, GROUP_CONCAT(status SEPARATOR ', ') as statuses
+            FROM charity_donations_records
+            WHERE payment_reference IS NOT NULL AND TRIM(payment_reference) != ''
+            GROUP BY payment_reference
+            HAVING count > 1
+        ");
+        $dups = $stmtDup->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($dups as $d) {
+            $issues[] = [
+                'type' => 'DUPLICATE_PAYMENT_REF',
+                'severity' => 'HIGH',
+                'title' => 'Duplicate Payment Reference Detected',
+                'description' => "Payment reference '{$d['payment_reference']}' is duplicated across transactions: {$d['refs']} ({$d['statuses']}).",
+                'item_ref' => $d['payment_reference']
+            ];
+        }
+
+        // Check 2: Invalid/Zero/Negative amounts in monetary transactions
+        $stmtInvalidAmt = $this->db->query("
+            SELECT donation_ref, donor_name, amount, status 
+            FROM charity_donations_records 
+            WHERE donation_type = 'monetary' AND amount <= 0
+        ");
+        $invalidAmts = $stmtInvalidAmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($invalidAmts as $inv) {
+            $issues[] = [
+                'type' => 'INVALID_AMOUNT',
+                'severity' => 'HIGH',
+                'title' => 'Invalid Non-Positive Monetary Amount',
+                'description' => "Donation {$inv['donation_ref']} from {$inv['donor_name']} has invalid amount ₱" . number_format($inv['amount'], 2) . ".",
+                'item_ref' => $inv['donation_ref']
+            ];
+        }
+
+        // Check 3: Digital monetary donations missing payment reference
+        $stmtMissingRef = $this->db->query("
+            SELECT donation_ref, donor_name, payment_method, status 
+            FROM charity_donations_records 
+            WHERE donation_category = 'digital' AND (payment_reference IS NULL OR TRIM(payment_reference) = '') AND status IN ('Available', 'Partially Allocated', 'Fully Allocated')
+        ");
+        $missingRefs = $stmtMissingRef->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($missingRefs as $mr) {
+            $issues[] = [
+                'type' => 'MISSING_PAYMENT_REFERENCE',
+                'severity' => 'MEDIUM',
+                'title' => 'Verified Digital Donation Missing Reference',
+                'description' => "Verified digital donation {$mr['donation_ref']} via {$mr['payment_method']} is missing an external gateway/bank reference number.",
+                'item_ref' => $mr['donation_ref']
+            ];
+        }
+
+        // Check 4: Over-allocated donations
+        $stmtOverAlloc = $this->db->query("
+            SELECT donation_ref, donor_name, amount, allocated_amount 
+            FROM charity_donations_records 
+            WHERE donation_type = 'monetary' AND allocated_amount > amount
+        ");
+        $overAllocs = $stmtOverAlloc->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($overAllocs as $oa) {
+            $issues[] = [
+                'type' => 'OVER_ALLOCATION',
+                'severity' => 'CRITICAL',
+                'title' => 'Donation Allocation Exceeds Total Principal',
+                'description' => "Donation {$oa['donation_ref']} has allocated ₱" . number_format($oa['allocated_amount'], 2) . " which exceeds the total received amount of ₱" . number_format($oa['amount'], 2) . ".",
+                'item_ref' => $oa['donation_ref']
+            ];
+        }
+
+        return [
+            'total_issues' => count($issues),
+            'issues' => $issues,
+            'checked_at' => date('Y-m-d H:i:s'),
+            'status' => count($issues) === 0 ? 'HEALTHY' : (count(array_filter($issues, fn($i) => in_array($i['severity'], ['HIGH', 'CRITICAL']))) > 0 ? 'WARNING' : 'INFO')
+        ];
     }
 
     /**
@@ -282,6 +475,21 @@ class CharityProgram
         $tenantId = !empty($data['tenant_id']) ? (int)$data['tenant_id'] : null;
         $donationRef = $this->generateDonationRef();
 
+        // ── Security & Data Integrity: Check for duplicate payment reference ──
+        if ($donationType === 'monetary' && !empty($paymentRef)) {
+            $dupStmt = $this->db->prepare("SELECT id, donation_ref, donor_name, status FROM charity_donations_records WHERE payment_reference = ? AND status != 'Rejected' LIMIT 1");
+            $dupStmt->execute([$paymentRef]);
+            $existingDup = $dupStmt->fetch(PDO::FETCH_ASSOC);
+            if ($existingDup) {
+                return [
+                    'success' => false,
+                    'error' => "Duplicate transaction detected: Payment reference '{$paymentRef}' was already submitted under record {$existingDup['donation_ref']} (Status: {$existingDup['status']})."
+                ];
+            }
+        }
+
+        // Database transaction for atomic consistency
+        $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("INSERT INTO charity_donations_records (
                 tenant_id, donation_ref, donor_name, donor_address, donation_type, donation_category,
@@ -293,7 +501,7 @@ class CharityProgram
             $stmt->execute([
                 $tenantId, $donationRef, $donorName, $donorAddress, $donationType, $category,
                 $amount, $itemDesc, $targetProgram, $quantity, $unit,
-                $dateReceived, $preferredDate, $dropoffLocation, $paymentMethod, $paymentRef,
+                $dateReceived, $preferredDate, $dropoffLocation, $paymentMethod, $paymentRef ?: null,
                 $receivedBy, $remarks, $receiptPath, $status, $userId
             ]);
 
@@ -308,6 +516,32 @@ class CharityProgram
                 $status
             );
             $this->logActivity('DONATION_RECORDED', $donationRef, $logDesc, $performedBy, $userId);
+
+            // Record in comprehensive immutable audit trail
+            $this->recordAuditLog(
+                $id,
+                $donationRef,
+                'SUBMISSION',
+                null,
+                $status,
+                null,
+                [
+                    'donor_name' => $donorName,
+                    'donation_type' => $donationType,
+                    'category' => $category,
+                    'amount' => $amount,
+                    'quantity' => $quantity,
+                    'target_program' => $targetProgram,
+                    'payment_method' => $paymentMethod,
+                    'payment_reference' => $paymentRef
+                ],
+                'Initial donation transaction submitted',
+                $performedBy,
+                $_SESSION['role'] ?? ($userId ? 'User/Donor' : 'Staff_Damayan'),
+                $userId
+            );
+
+            $this->db->commit();
 
             // Forward alert to Charity Admin notifications
             try {
@@ -330,15 +564,25 @@ class CharityProgram
 
             return ['success' => true, 'id' => $id, 'donation_ref' => $donationRef, 'status' => $status];
         } catch (PDOException $e) {
-            return ['success' => false, 'error' => 'Database error: ' . $e->getMessage()];
+            $this->db->rollBack();
+            return ['success' => false, 'error' => 'Database error during submission: ' . $e->getMessage()];
         }
     }
 
-    public function updateDonation(int $id, array $data, string $performedBy, ?int $userId = null): array
+    public function updateDonation(int $id, array $data, string $performedBy, ?int $userId = null, ?string $actorRole = null): array
     {
         $existing = $this->getDonationById($id);
         if (!$existing) {
             return ['success' => false, 'error' => 'Donation record not found.'];
+        }
+
+        // Strict accountability: require a documented correction reason
+        $reason = trim($data['correction_reason'] ?? ($data['reason'] ?? ''));
+        if (empty($reason) || strlen($reason) < 5) {
+            return [
+                'success' => false,
+                'error' => 'A clear, documented correction reason is strictly required to modify an existing donation record.'
+            ];
         }
 
         $donorName = trim($data['donor_name'] ?? $existing['donor_name']);
@@ -356,6 +600,9 @@ class CharityProgram
 
         if (isset($data['amount']) && $existing['donation_type'] === 'monetary') {
             $newAmt = (float)$data['amount'];
+            if ($newAmt <= 0) {
+                return ['success' => false, 'error' => 'Donation amount must be greater than ₱0.00.'];
+            }
             if ($newAmt < (float)$existing['allocated_amount']) {
                 return ['success' => false, 'error' => 'Cannot reduce amount below already allocated ₱' . number_format($existing['allocated_amount'], 2) . '.'];
             }
@@ -364,6 +611,9 @@ class CharityProgram
 
         if (isset($data['quantity']) && $existing['donation_type'] === 'in-kind') {
             $newQty = (int)$data['quantity'];
+            if ($newQty <= 0) {
+                return ['success' => false, 'error' => 'Item quantity must be greater than 0.'];
+            }
             if ($newQty < (int)$existing['allocated_quantity']) {
                 return ['success' => false, 'error' => 'Cannot reduce quantity below already allocated ' . $existing['allocated_quantity'] . ' units.'];
             }
@@ -373,22 +623,62 @@ class CharityProgram
             }
         }
 
-        // Recalculate status
-        $status = 'Available';
-        if ($existing['donation_type'] === 'monetary') {
-            if ($existing['allocated_amount'] >= $amount) {
-                $status = 'Fully Allocated';
-            } elseif ($existing['allocated_amount'] > 0) {
-                $status = 'Partially Allocated';
-            }
-        } else {
-            if ($existing['allocated_quantity'] >= $quantity) {
-                $status = 'Fully Allocated';
-            } elseif ($existing['allocated_quantity'] > 0) {
-                $status = 'Partially Allocated';
+        // Duplicate payment reference validation upon modification
+        if (!empty($paymentRef) && $paymentRef !== $existing['payment_reference']) {
+            $dupStmt = $this->db->prepare("SELECT id, donation_ref FROM charity_donations_records WHERE payment_reference = ? AND id != ? AND status != 'Rejected' LIMIT 1");
+            $dupStmt->execute([$paymentRef, $id]);
+            $dupFound = $dupStmt->fetch(PDO::FETCH_ASSOC);
+            if ($dupFound) {
+                return ['success' => false, 'error' => "Duplicate payment reference '{$paymentRef}'. Already recorded on {$dupFound['donation_ref']}."];
             }
         }
 
+        // Recalculate status
+        $status = $existing['status'];
+        if (in_array($existing['status'], ['Available', 'Partially Allocated', 'Fully Allocated'])) {
+            if ($existing['donation_type'] === 'monetary') {
+                if ($existing['allocated_amount'] >= $amount) {
+                    $status = 'Fully Allocated';
+                } elseif ($existing['allocated_amount'] > 0) {
+                    $status = 'Partially Allocated';
+                } else {
+                    $status = 'Available';
+                }
+            } else {
+                if ($existing['allocated_quantity'] >= $quantity) {
+                    $status = 'Fully Allocated';
+                } elseif ($existing['allocated_quantity'] > 0) {
+                    $status = 'Partially Allocated';
+                } else {
+                    $status = 'Available';
+                }
+            }
+        }
+
+        $prevValues = [
+            'donor_name' => $existing['donor_name'],
+            'donor_address' => $existing['donor_address'],
+            'amount' => $existing['amount'],
+            'quantity' => $existing['quantity'],
+            'item_description' => $existing['item_description'],
+            'payment_method' => $existing['payment_method'],
+            'payment_reference' => $existing['payment_reference'],
+            'remarks' => $existing['remarks'],
+            'status' => $existing['status']
+        ];
+        $newValues = [
+            'donor_name' => $donorName,
+            'donor_address' => $donorAddress,
+            'amount' => $amount,
+            'quantity' => $quantity,
+            'item_description' => $itemDesc,
+            'payment_method' => $paymentMethod,
+            'payment_reference' => $paymentRef,
+            'remarks' => $remarks,
+            'status' => $status
+        ];
+
+        $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("UPDATE charity_donations_records SET
                 donor_name = ?, donor_address = ?, date_received = ?, received_by = ?,
@@ -397,15 +687,31 @@ class CharityProgram
                 WHERE id = ?");
             $stmt->execute([
                 $donorName, $donorAddress, $dateReceived, $receivedBy,
-                $paymentMethod, $paymentRef, $remarks,
+                $paymentMethod, $paymentRef ?: null, $remarks,
                 $amount, $quantity, $itemDesc, $status,
                 $id
             ]);
 
-            $this->logActivity('DONATION_EDITED', $existing['donation_ref'], "Updated donation details for {$donorName}", $performedBy, $userId);
+            $this->recordAuditLog(
+                $id,
+                $existing['donation_ref'],
+                'CORRECTION',
+                $existing['status'],
+                $status,
+                $prevValues,
+                $newValues,
+                $reason,
+                $performedBy,
+                $actorRole ?? ($_SESSION['role'] ?? 'Staff_Damayan'),
+                $userId
+            );
 
+            $this->logActivity('DONATION_EDITED', $existing['donation_ref'], "Corrected donation details. Reason: {$reason}", $performedBy, $userId);
+
+            $this->db->commit();
             return ['success' => true];
         } catch (PDOException $e) {
+            $this->db->rollBack();
             return ['success' => false, 'error' => 'Failed to update donation: ' . $e->getMessage()];
         }
     }
@@ -413,26 +719,52 @@ class CharityProgram
     /**
      * Toggle or issue acknowledgment receipt
      */
-    public function issueAcknowledgment(int $id, string $staffName, ?int $userId = null): array
+    public function issueAcknowledgment(int $id, string $staffName, ?int $userId = null, ?string $staffRole = null): array
     {
         $donation = $this->getDonationById($id);
         if (!$donation) {
             return ['success' => false, 'error' => 'Donation record not found.'];
         }
 
+        // Enforce: only verified donations can have acknowledgment issued
+        if (!in_array($donation['status'], ['Available', 'Partially Allocated', 'Fully Allocated'])) {
+            return [
+                'success' => false,
+                'error' => 'Acknowledgment receipts can only be issued for verified donations.'
+            ];
+        }
+
         $newIssued = $donation['ack_issued'] ? 0 : 1;
         $issuedAt = $newIssued ? date('Y-m-d H:i:s') : null;
         $issuedBy = $newIssued ? $staffName : null;
 
+        $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("UPDATE charity_donations_records SET ack_issued = ?, ack_issued_at = ?, ack_issued_by = ? WHERE id = ?");
             $stmt->execute([$newIssued, $issuedAt, $issuedBy, $id]);
 
-            $action = $newIssued ? "Issued donation acknowledgment receipt" : "Revoked donation acknowledgment status";
-            $this->logActivity('ACK_ISSUED', $donation['donation_ref'], $action, $staffName, $userId);
+            $action = $newIssued ? 'RECEIPT_ISSUED' : 'RECEIPT_REVOKED';
+            $this->recordAuditLog(
+                $id,
+                $donation['donation_ref'],
+                $action,
+                $donation['status'],
+                $donation['status'],
+                ['ack_issued' => $donation['ack_issued']],
+                ['ack_issued' => $newIssued, 'ack_issued_at' => $issuedAt, 'ack_issued_by' => $issuedBy],
+                $newIssued ? 'Issued official acknowledgment receipt' : 'Revoked acknowledgment receipt',
+                $staffName,
+                $staffRole ?? ($_SESSION['role'] ?? 'Staff_Damayan'),
+                $userId
+            );
 
+            $logDesc = $newIssued ? "Issued donation acknowledgment receipt" : "Revoked donation acknowledgment status";
+            $this->logActivity('ACK_ISSUED', $donation['donation_ref'], $logDesc, $staffName, $userId);
+
+            $this->db->commit();
             return ['success' => true, 'ack_issued' => $newIssued, 'ack_issued_at' => $issuedAt, 'ack_issued_by' => $issuedBy];
         } catch (PDOException $e) {
+            $this->db->rollBack();
             return ['success' => false, 'error' => 'Failed to update acknowledgment: ' . $e->getMessage()];
         }
     }
@@ -476,14 +808,17 @@ class CharityProgram
     }
 
     /**
-     * Get all donations with filtering
-     */
-
-    /**
      * Verify or update status of submitted donation (Digital, Cash, or Food)
+     * Enforces strict accountability, duplicate checks, transaction rollback, and immutable audit logging.
      */
-    public function verifyDonation(int $id, string $newStatus, ?string $adminNotes, string $staffName, ?int $userId = null): array
-    {
+    public function verifyDonation(
+        int $id,
+        string $newStatus,
+        ?string $adminNotes,
+        string $staffName,
+        ?int $userId = null,
+        ?string $staffRole = null
+    ): array {
         $donation = $this->getDonationById($id);
         if (!$donation) {
             return ['success' => false, 'error' => 'Donation record not found.'];
@@ -494,12 +829,87 @@ class CharityProgram
             return ['success' => false, 'error' => 'Invalid donation status specified.'];
         }
 
+        // Security & Accountability Rule 1: Rejections and cancellations require a documented reason (min 5 chars)
+        if (in_array($newStatus, ['Rejected', 'Cancelled'])) {
+            $notesTrimmed = trim((string)$adminNotes);
+            if (empty($notesTrimmed) || strlen($notesTrimmed) < 5) {
+                return [
+                    'success' => false,
+                    'error' => 'A clear documented reason (at least 5 characters) is required when rejecting or cancelling a donation.'
+                ];
+            }
+        }
+
+        // Security & Data Integrity Rule 2: Duplicate reference check when verifying
+        if ($newStatus === 'Available' && !empty($donation['payment_reference'])) {
+            $dupStmt = $this->db->prepare("
+                SELECT id, donation_ref, donor_name, status 
+                FROM charity_donations_records 
+                WHERE payment_reference = ? AND id != ? AND status != 'Rejected'
+                LIMIT 1
+            ");
+            $dupStmt->execute([$donation['payment_reference'], $id]);
+            $existingDup = $dupStmt->fetch(PDO::FETCH_ASSOC);
+            if ($existingDup) {
+                return [
+                    'success' => false,
+                    'error' => "Cannot verify donation: Payment reference '{$donation['payment_reference']}' is already used by transaction {$existingDup['donation_ref']} (Status: {$existingDup['status']})."
+                ];
+            }
+        }
+
+        // Security & Data Integrity Rule 3: Protected completed/allocated donations
+        if ($donation['status'] === 'Fully Allocated' && in_array($newStatus, ['Rejected', 'Cancelled'])) {
+            return [
+                'success' => false,
+                'error' => 'Cannot reject or cancel a donation that has already been fully allocated to relief distributions.'
+            ];
+        }
+
+        $prevValues = [
+            'status' => $donation['status'],
+            'admin_notes' => $donation['admin_notes'],
+            'received_by' => $donation['received_by']
+        ];
+        $newValues = [
+            'status' => $newStatus,
+            'admin_notes' => $adminNotes,
+            'received_by' => $staffName
+        ];
+
+        $action = match ($newStatus) {
+            'Available' => 'VERIFICATION',
+            'Rejected'  => 'REJECTION',
+            'Cancelled' => 'CANCELLATION',
+            default     => 'STATUS_UPDATE'
+        };
+
+        $role = $staffRole ?? ($_SESSION['role'] ?? 'Staff_Damayan');
+
+        $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("UPDATE charity_donations_records SET status = ?, admin_notes = ?, received_by = ? WHERE id = ?");
             $stmt->execute([$newStatus, $adminNotes, $staffName, $id]);
 
+            // Record in dedicated immutable audit log
+            $this->recordAuditLog(
+                $id,
+                $donation['donation_ref'],
+                $action,
+                $donation['status'],
+                $newStatus,
+                $prevValues,
+                $newValues,
+                $adminNotes ?: "Donation status marked as {$newStatus}",
+                $staffName,
+                $role,
+                $userId
+            );
+
             $logDesc = "Updated donation {$donation['donation_ref']} status to {$newStatus}. Admin notes: {$adminNotes}";
             $this->logActivity('DONATION_VERIFIED', $donation['donation_ref'], $logDesc, $staffName, $userId);
+
+            $this->db->commit();
 
             // Send notification to donor if linked to tenant
             if (!empty($donation['tenant_id'])) {
@@ -509,7 +919,7 @@ class CharityProgram
                     if ($newStatus === 'Available') {
                         $uMsg = "Your {$donation['donation_category']} donation ({$donation['donation_ref']}) has been officially verified and confirmed by ISCAG Damayan staff. Jazakumullahu Khayran!";
                     } elseif ($newStatus === 'Rejected') {
-                        $uMsg = "Your donation submission ({$donation['donation_ref']}) was reviewed. Staff note: " . ($adminNotes ?: 'Please review submission details.');
+                        $uMsg = "Your donation submission ({$donation['donation_ref']}) was rejected. Reason: " . ($adminNotes ?: 'Please contact Damayan office.');
                     } else {
                         $uMsg = "Your donation ({$donation['donation_ref']}) status was updated to {$newStatus}." . ($adminNotes ? " Note: {$adminNotes}" : "");
                     }
@@ -521,8 +931,64 @@ class CharityProgram
 
             return ['success' => true, 'status' => $newStatus, 'donation_ref' => $donation['donation_ref']];
         } catch (PDOException $e) {
+            $this->db->rollBack();
             return ['success' => false, 'error' => 'Failed to update donation verification: ' . $e->getMessage()];
         }
+    }
+
+    /**
+     * Get accurate status breakdown metrics: Pending, Verified, Rejected, Failed
+     * Enforces data integrity: only verified donations count towards confirmed totals.
+     */
+    public function getDonationStatusBreakdown(): array
+    {
+        $stmt = $this->db->query("
+            SELECT 
+                status,
+                donation_type,
+                COUNT(*) as count,
+                SUM(amount) as total_amount,
+                SUM(quantity) as total_quantity
+            FROM charity_donations_records
+            GROUP BY status, donation_type
+        ");
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $breakdown = [
+            'pending' => ['count' => 0, 'amount' => 0.00, 'quantity' => 0, 'items' => []],
+            'verified' => ['count' => 0, 'amount' => 0.00, 'quantity' => 0, 'items' => []],
+            'rejected' => ['count' => 0, 'amount' => 0.00, 'quantity' => 0, 'items' => []],
+            'failed' => ['count' => 0, 'amount' => 0.00, 'quantity' => 0, 'items' => []],
+            'total_submitted' => 0,
+            'total_submitted_amount' => 0.00
+        ];
+
+        foreach ($rows as $r) {
+            $st = $r['status'];
+            $amt = (float)$r['total_amount'];
+            $qty = (int)$r['total_quantity'];
+            $cnt = (int)$r['count'];
+
+            $breakdown['total_submitted'] += $cnt;
+            $breakdown['total_submitted_amount'] += $amt;
+
+            if (in_array($st, ['Pending Verification', 'Pending Coordination', 'Pending Receipt'])) {
+                $bucket = 'pending';
+            } elseif (in_array($st, ['Available', 'Partially Allocated', 'Fully Allocated'])) {
+                $bucket = 'verified';
+            } elseif ($st === 'Rejected') {
+                $bucket = 'rejected';
+            } else {
+                $bucket = 'failed';
+            }
+
+            $breakdown[$bucket]['count'] += $cnt;
+            $breakdown[$bucket]['amount'] += $amt;
+            $breakdown[$bucket]['quantity'] += $qty;
+            $breakdown[$bucket]['items'][$st] = ($breakdown[$bucket]['items'][$st] ?? 0) + $cnt;
+        }
+
+        return $breakdown;
     }
 
     public function getAllDonations(array $filters = []): array

@@ -460,42 +460,16 @@
 
         <!-- ═══════ KPI SUMMARY RIBBON ═══════ -->
         <div class="kpi-grid-4">
-          <!-- Total Verified Revenue -->
+          <!-- Confirmed Verified Donations -->
           <div class="kpi-card">
             <div class="kpi-icon-wrap" style="background:#ecfdf5;color:#059669;">
-              <svg viewBox="0 0 24 24">
-                <path d="M6 3h7.5c2.76 0 5 2.24 5 5 0 1.25-.46 2.39-1.22 3.27l3.72.73-.38 1.96-3.83-.75c-.95.84-2.18 1.43-3.56 1.63L14.4 18h-2.1l-.8-3H9v6H6v-6H4v-2h2v-2H4V9h2V7H4V5h2V3zm3 4v2h3.5c.83 0 1.5-.67 1.5-1.5S13.33 7 12.5 7H9zm0 4v2h2.8c.87-.22 1.55-.86 1.83-1.7-.17-.18-.38-.3-.63-.3H9z"/>
-              </svg>
-            </div>
-            <div>
-              <div class="kpi-val" style="color:#059669;">₱<?= number_format($summary['monetary_total'] ?? 0, 2) ?></div>
-              <div class="kpi-sub">Total Monetary Donations</div>
-            </div>
-          </div>
-
-          <!-- Unallocated Available Funds -->
-          <div class="kpi-card">
-            <div class="kpi-icon-wrap" style="background:#eff6ff;color:#2563eb;">
               <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h9zm-9-2h10V7H12v9zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
               </svg>
             </div>
             <div>
-              <div class="kpi-val" style="color:#2563eb;">₱<?= number_format($summary['monetary_available'] ?? 0, 2) ?></div>
-              <div class="kpi-sub">Available for Relief</div>
-            </div>
-          </div>
-
-          <!-- In-Kind Items -->
-          <div class="kpi-card">
-            <div class="kpi-icon-wrap" style="background:#fef3c7;color:#d97706;">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/>
-              </svg>
-            </div>
-            <div>
-              <div class="kpi-val" style="color:#d97706;"><?= number_format($summary['inkind_items_total'] ?? 0) ?></div>
-              <div class="kpi-sub">Food &amp; Relief Packs</div>
+              <div class="kpi-val" style="color:#059669;">₱<?= number_format($statusBreakdown['verified']['amount'] ?? 0, 2) ?></div>
+              <div class="kpi-sub">Verified Donations (<?= $statusBreakdown['verified']['count'] ?? 0 ?>)</div>
             </div>
           </div>
 
@@ -507,9 +481,62 @@
               </svg>
             </div>
             <div>
-              <div class="kpi-val" style="color:#ea580c;"><?= number_format($summary['pending_count'] ?? 0) ?></div>
-              <div class="kpi-sub">Awaiting Review</div>
+              <div class="kpi-val" style="color:#ea580c;">₱<?= number_format($statusBreakdown['pending']['amount'] ?? 0, 2) ?></div>
+              <div class="kpi-sub">Pending Review (<?= $statusBreakdown['pending']['count'] ?? 0 ?>)</div>
             </div>
+          </div>
+
+          <!-- Rejected Submissions -->
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap" style="background:#fef2f2;color:#dc2626;">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="kpi-val" style="color:#dc2626;">₱<?= number_format($statusBreakdown['rejected']['amount'] ?? 0, 2) ?></div>
+              <div class="kpi-sub">Rejected Records (<?= $statusBreakdown['rejected']['count'] ?? 0 ?>)</div>
+            </div>
+          </div>
+
+          <!-- Security & Integrity Scanner -->
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap" style="background:<?= ($integrityScan['total_issues'] ?? 0) === 0 ? '#ecfdf5' : '#fef2f2' ?>;color:<?= ($integrityScan['total_issues'] ?? 0) === 0 ? '#059669' : '#dc2626' ?>;">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="kpi-val" style="color:<?= ($integrityScan['total_issues'] ?? 0) === 0 ? '#059669' : '#dc2626' ?>;"><?= ($integrityScan['total_issues'] ?? 0) === 0 ? 'HEALTHY' : ($integrityScan['total_issues'] . ' ISSUES') ?></div>
+              <div class="kpi-sub">DB Security &amp; Integrity</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- View Mode Navigation -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-row-action primary" id="btnViewRegistry" onclick="switchMainView('registry')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+              Donation Registry
+            </button>
+            <button type="button" class="btn-row-action" id="btnViewAudit" onclick="switchMainView('audit')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+              Immutable Audit Trail (<?= count($auditLogs ?? []) ?>)
+            </button>
+            <button type="button" class="btn-row-action" id="btnViewIntegrity" onclick="switchMainView('integrity')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+              Data Integrity Scanner
+              <?php if (($integrityScan['total_issues'] ?? 0) > 0): ?>
+                <span style="background:#dc2626; color:white; padding:1px 6px; border-radius:10px; font-size:0.7rem; margin-left:4px;"><?= $integrityScan['total_issues'] ?></span>
+              <?php else: ?>
+                <span style="background:#15803d; color:white; padding:1px 6px; border-radius:10px; font-size:0.7rem; margin-left:4px;">0</span>
+              <?php endif; ?>
+            </button>
+          </div>
+          <div style="font-size:0.78rem; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span>
+            <span>MariaDB Triggers Active: Immutability Enforced</span>
           </div>
         </div>
 
@@ -673,6 +700,160 @@
           <div id="donations-pagination" class="mis-pagination-bar"></div>
         </div>
 
+        <!-- ═══════ AUDIT TRAIL CONTAINER ═══════ -->
+        <div class="donations-card" id="auditTrailContainer" style="display:none;">
+          <div style="padding:16px 20px; background:#f8faf9; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h4 style="margin:0; font-size:1rem; font-weight:700; color:var(--text-main);">Cryptographic Donation Audit Trail</h4>
+              <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
+                Protected by database engine triggers. All actions cryptographically sealed via SHA-256 digest with pre/post JSON snapshots.
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="text" id="auditSearchInput" class="select-sm" placeholder="Filter audit logs..." oninput="filterAuditTable()" style="min-width:220px;" />
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="donations-table" id="auditLogsTable">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action</th>
+                  <th>Donation Ref</th>
+                  <th>Actor / Administrator</th>
+                  <th>Status Transition</th>
+                  <th>Documented Justification</th>
+                  <th>IP Address</th>
+                  <th>Integrity Seal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($auditLogs)): ?>
+                  <tr>
+                    <td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted);">
+                      No audit log entries recorded yet. All administrative actions are permanently logged here.
+                    </td>
+                  </tr>
+                <?php else: ?>
+                  <?php foreach ($auditLogs as $log): ?>
+                    <?php
+                      $actionBadge = match($log['action']) {
+                        'SUBMISSION' => 'background:#e0f2fe;color:#0369a1;',
+                        'VERIFICATION' => 'background:#dcfce7;color:#15803d;',
+                        'REJECTION' => 'background:#fee2e2;color:#b91c1c;',
+                        'CORRECTION' => 'background:#fef3c7;color:#b45309;',
+                        'RECEIPT_ISSUED' => 'background:#f3e8ff;color:#7e22ce;',
+                        'RECEIPT_REVOKED' => 'background:#f1f5f9;color:#475569;',
+                        'REPORT_GENERATED' => 'background:#ecfeff;color:#0e7490;',
+                        default => 'background:#f1f5f9;color:#334155;'
+                      };
+                    ?>
+                    <tr class="audit-row">
+                      <td style="white-space:nowrap; font-family:monospace; font-size:0.78rem; color:var(--text-muted);">
+                        <?= htmlspecialchars($log['created_at']) ?>
+                      </td>
+                      <td>
+                        <span style="font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:4px; <?= $actionBadge ?>">
+                          <?= htmlspecialchars($log['action']) ?>
+                        </span>
+                      </td>
+                      <td>
+                        <strong style="font-family:monospace; color:var(--primary);"><?= htmlspecialchars($log['donation_ref'] ?: 'N/A') ?></strong>
+                        <?php if (!empty($log['donor_name'])): ?>
+                          <div style="font-size:0.73rem; color:var(--text-muted);"><?= htmlspecialchars($log['donor_name']) ?></div>
+                        <?php endif; ?>
+                      </td>
+                      <td>
+                        <strong><?= htmlspecialchars($log['actor_name']) ?></strong>
+                        <div style="font-size:0.73rem; color:var(--text-muted);"><?= htmlspecialchars($log['actor_role']) ?> (ID: <?= htmlspecialchars($log['actor_id'] ?? 'N/A') ?>)</div>
+                      </td>
+                      <td style="font-size:0.78rem;">
+                        <?php if ($log['previous_status'] || $log['new_status']): ?>
+                          <span style="color:#64748b;"><?= htmlspecialchars($log['previous_status'] ?: 'None') ?></span>
+                          <span style="color:var(--text-muted); font-weight:700;"> &rarr; </span>
+                          <span style="font-weight:700; color:#0f5c3a;"><?= htmlspecialchars($log['new_status'] ?: 'Same') ?></span>
+                        <?php else: ?>
+                          <span style="color:var(--text-muted); font-style:italic;">N/A</span>
+                        <?php endif; ?>
+                      </td>
+                      <td style="font-size:0.8rem; max-width:240px;">
+                        <?= htmlspecialchars($log['reason'] ?: 'None documented') ?>
+                      </td>
+                      <td style="font-family:monospace; font-size:0.75rem; color:var(--text-muted);">
+                        <?= htmlspecialchars($log['ip_address']) ?>
+                      </td>
+                      <td>
+                        <span style="font-family:monospace; font-size:0.72rem; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:4px; color:#475569;" title="<?= htmlspecialchars($log['integrity_hash']) ?>">
+                          SEAL-<?= htmlspecialchars(strtoupper(substr($log['integrity_hash'], 0, 8))) ?>
+                        </span>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ═══════ INTEGRITY SCANNER CONTAINER ═══════ -->
+        <div class="donations-card" id="integrityScannerContainer" style="display:none; padding:24px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:16px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h4 style="margin:0; font-size:1.1rem; font-weight:700; color:var(--text-main);">Automated Database Integrity &amp; Security Scanner</h4>
+              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:3px;">
+                Active MariaDB triggers and constraint verification against duplicate references, invalid amounts, and over-allocations.
+              </div>
+            </div>
+            <div>
+              <span style="font-size:0.8rem; font-weight:800; padding:6px 14px; border-radius:20px; <?= ($integrityScan['total_issues'] ?? 0) === 0 ? 'background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;' : 'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;' ?>">
+                <?= ($integrityScan['total_issues'] ?? 0) === 0 ? '✓ SYSTEM HEALTHY: 0 ANOMALIES' : '⚠ WARNING: ' . $integrityScan['total_issues'] . ' ISSUES FOUND' ?>
+              </span>
+            </div>
+          </div>
+
+          <!-- Active Security Mechanisms -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-bottom:24px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+              <div style="font-size:0.75rem; font-weight:700; color:#0369a1; text-transform:uppercase;">Audit Immutability Trigger</div>
+              <div style="font-weight:700; color:#0f172a; margin-top:2px;">trg_donation_audit_no_update</div>
+              <div style="font-size:0.74rem; color:var(--text-muted); margin-top:4px;">Blocks UPDATE statements on donation_audit_logs via SIGNAL SQLSTATE 45000.</div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+              <div style="font-size:0.75rem; font-weight:700; color:#0369a1; text-transform:uppercase;">Audit Anti-Tamper Delete Trigger</div>
+              <div style="font-weight:700; color:#0f172a; margin-top:2px;">trg_donation_audit_no_delete</div>
+              <div style="font-size:0.74rem; color:var(--text-muted); margin-top:4px;">Blocks DELETE operations on donation_audit_logs at the MySQL/MariaDB engine level.</div>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+              <div style="font-size:0.75rem; font-weight:700; color:#0369a1; text-transform:uppercase;">Verified Record Protection</div>
+              <div style="font-weight:700; color:#0f172a; margin-top:2px;">trg_prevent_verified_donation_delete</div>
+              <div style="font-size:0.74rem; color:var(--text-muted); margin-top:4px;">Blocks deletion of any confirmed/allocated donation record in charity_donations_records.</div>
+            </div>
+          </div>
+
+          <!-- Issues List -->
+          <?php if (empty($integrityScan['issues'])): ?>
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:24px; text-align:center;">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="#16a34a" style="margin-bottom:8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              <h5 style="color:#15803d; font-weight:700; margin-bottom:4px;">No Discrepancies or Inconsistencies Detected</h5>
+              <p style="color:#166534; font-size:0.85rem; margin:0;">
+                All monetary donations have positive balances, zero duplicate payment references across non-rejected transactions, and all allocations strictly conform to total principal.
+              </p>
+            </div>
+          <?php else: ?>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <?php foreach ($integrityScan['issues'] as $iss): ?>
+                <div style="background:#fff5f5; border:1px solid #fed7d7; border-left:4px solid #e53e3e; border-radius:8px; padding:14px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color:#c53030; font-size:0.9rem;"><?= htmlspecialchars($iss['title']) ?></strong>
+                    <span style="font-size:0.72rem; font-weight:800; background:#e53e3e; color:white; padding:2px 8px; border-radius:10px;"><?= htmlspecialchars($iss['severity']) ?></span>
+                  </div>
+                  <div style="font-size:0.83rem; color:#4a5568; margin-top:4px;"><?= htmlspecialchars($iss['description']) ?></div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
+
       </div>
     </main>
   </div>
@@ -773,10 +954,13 @@
           </div>
 
           <div>
-            <label style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:6px;">
-              Administrative Review Notes &amp; Audit Trail
+            <label style="font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#92400e;display:block;margin-bottom:6px;">
+              Administrative Justification &amp; Audit Reason <span style="color:#b91c1c;">*</span>
             </label>
-            <textarea id="reviewNotes" name="admin_notes" rows="3" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:0.85rem;outline:none;" placeholder="Optional notes (e.g. Official receipt number, bank slip verified, drop-off confirmed)..."></textarea>
+            <textarea id="reviewNotes" name="admin_notes" rows="3" required style="width:100%;border:1px solid #fde68a;background:#fffbeb;border-radius:8px;padding:10px;font-size:0.85rem;outline:none;" placeholder="Separation of Duties Policy: Document the specific administrative reason and operational justification for this direct MIS Admin status intervention (minimum 10 characters)..."></textarea>
+            <div style="font-size:0.72rem; color:#b45309; margin-top:4px;">
+              Direct status interventions by MIS Admin are strictly logged in the immutable audit trail as administrative overrides.
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -1027,9 +1211,57 @@
       openModal('reviewModal');
     }
 
+    // ── Main View Switching (Registry vs Audit Trail vs Integrity Scanner) ──
+    function switchMainView(view) {
+      const reg = document.getElementById('donationsTable').closest('.donations-card');
+      const filterBar = document.querySelector('.filter-card');
+      const audit = document.getElementById('auditTrailContainer');
+      const integ = document.getElementById('integrityScannerContainer');
+      const btnReg = document.getElementById('btnViewRegistry');
+      const btnAud = document.getElementById('btnViewAudit');
+      const btnInt = document.getElementById('btnViewIntegrity');
+
+      [btnReg, btnAud, btnInt].forEach(b => { if (b) b.classList.remove('primary'); });
+
+      if (view === 'registry') {
+        if (reg) reg.style.display = 'block';
+        if (filterBar) filterBar.style.display = 'flex';
+        if (audit) audit.style.display = 'none';
+        if (integ) integ.style.display = 'none';
+        if (btnReg) btnReg.classList.add('primary');
+      } else if (view === 'audit') {
+        if (reg) reg.style.display = 'none';
+        if (filterBar) filterBar.style.display = 'none';
+        if (audit) audit.style.display = 'block';
+        if (integ) integ.style.display = 'none';
+        if (btnAud) btnAud.classList.add('primary');
+      } else if (view === 'integrity') {
+        if (reg) reg.style.display = 'none';
+        if (filterBar) filterBar.style.display = 'none';
+        if (audit) audit.style.display = 'none';
+        if (integ) integ.style.display = 'block';
+        if (btnInt) btnInt.classList.add('primary');
+      }
+    }
+
+    function filterAuditTable() {
+      const q = (document.getElementById('auditSearchInput').value || '').toLowerCase().trim();
+      document.querySelectorAll('#auditLogsTable tbody .audit-row').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = (!q || text.includes(q)) ? '' : 'none';
+      });
+    }
+
     // ── Submit Review via AJAX ──
     function submitReview(e) {
       e.preventDefault();
+
+      const notes = (document.getElementById('reviewNotes').value || '').trim();
+      if (notes.length < 10) {
+        alert('Separation of Duties Policy: Direct operational status intervention by MIS Admin requires a detailed administrative justification (minimum 10 characters).');
+        return;
+      }
+
       const btn = document.getElementById('btnSubmitReview');
       btn.disabled = true;
       btn.textContent = 'Saving...';

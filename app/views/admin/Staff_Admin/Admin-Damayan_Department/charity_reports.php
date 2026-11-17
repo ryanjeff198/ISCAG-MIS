@@ -135,12 +135,12 @@
         <!-- Financial & In-Kind Summary Table -->
         <div class="report-card">
           <div class="report-card-header">
-            <h6>1. Executive Summary & Balances</h6>
+            <h6>1. Executive Summary &amp; Balances</h6>
           </div>
           <div style="padding:20px;">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
               <div style="background:#f9fafb; padding:16px; border-radius:10px; border:1px solid var(--border);">
-                <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total Donations Received</div>
+                <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Confirmed Verified Donations</div>
                 <div style="font-size:1.4rem; font-weight:800; color:var(--primary); margin-top:4px;">₱<?= number_format($stats['received']['monetary'], 2) ?></div>
                 <div style="font-size:0.8rem; color:var(--text-muted);"><?= $stats['received']['in_kind'] ?> physical in-kind units</div>
               </div>
@@ -158,6 +158,57 @@
                 <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Current Available Inventory</div>
                 <div style="font-size:1.4rem; font-weight:800; color:var(--success); margin-top:4px;">₱<?= number_format($stats['available']['monetary'], 2) ?></div>
                 <div style="font-size:0.8rem; color:var(--text-muted);"><?= $stats['available']['in_kind'] ?> unallocated physical units</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Integrity: Separate Status Breakdown Table -->
+        <div class="report-card">
+          <div class="report-card-header" style="background:#f8fafc;">
+            <h6>2. Data Integrity: Donation Status Separation</h6>
+            <span style="font-size:0.75rem; font-weight:700; color:#0f5c3a; background:#e8f5ef; padding:3px 8px; border-radius:4px; border:1px solid #c2e2d2;">Audit Rule: Confirmed totals strictly reflect Verified donations only</span>
+          </div>
+          <div style="padding:20px;">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:16px;">
+              <!-- Verified -->
+              <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:10px; padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.75rem; font-weight:800; color:#065f46; text-transform:uppercase;">Verified / Confirmed</span>
+                  <span style="font-size:0.75rem; font-weight:700; background:#059669; color:white; padding:1px 6px; border-radius:10px;"><?= $statusBreakdown['verified']['count'] ?? 0 ?> tx</span>
+                </div>
+                <div style="font-size:1.3rem; font-weight:800; color:#065f46; margin:6px 0;">₱<?= number_format($statusBreakdown['verified']['amount'] ?? 0, 2) ?></div>
+                <div style="font-size:0.75rem; color:#047857;"><?= number_format($statusBreakdown['verified']['quantity'] ?? 0) ?> in-kind units • Included in active balance</div>
+              </div>
+
+              <!-- Pending -->
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.75rem; font-weight:800; color:#1e40af; text-transform:uppercase;">Pending Verification</span>
+                  <span style="font-size:0.75rem; font-weight:700; background:#2563eb; color:white; padding:1px 6px; border-radius:10px;"><?= $statusBreakdown['pending']['count'] ?? 0 ?> tx</span>
+                </div>
+                <div style="font-size:1.3rem; font-weight:800; color:#1e40af; margin:6px 0;">₱<?= number_format($statusBreakdown['pending']['amount'] ?? 0, 2) ?></div>
+                <div style="font-size:0.75rem; color:#1d4ed8;"><?= number_format($statusBreakdown['pending']['quantity'] ?? 0) ?> in-kind units • Awaiting staff verification</div>
+              </div>
+
+              <!-- Rejected -->
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.75rem; font-weight:800; color:#991b1b; text-transform:uppercase;">Rejected</span>
+                  <span style="font-size:0.75rem; font-weight:700; background:#dc2626; color:white; padding:1px 6px; border-radius:10px;"><?= $statusBreakdown['rejected']['count'] ?? 0 ?> tx</span>
+                </div>
+                <div style="font-size:1.3rem; font-weight:800; color:#991b1b; margin:6px 0;">₱<?= number_format($statusBreakdown['rejected']['amount'] ?? 0, 2) ?></div>
+                <div style="font-size:0.75rem; color:#b91c1c;">Excluded from active balances • Documented reasons on record</div>
+              </div>
+
+              <!-- Failed / Cancelled -->
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.75rem; font-weight:800; color:#475569; text-transform:uppercase;">Failed / Cancelled</span>
+                  <span style="font-size:0.75rem; font-weight:700; background:#64748b; color:white; padding:1px 6px; border-radius:10px;"><?= $statusBreakdown['failed']['count'] ?? 0 ?> tx</span>
+                </div>
+                <div style="font-size:1.3rem; font-weight:800; color:#475569; margin:6px 0;">₱<?= number_format($statusBreakdown['failed']['amount'] ?? 0, 2) ?></div>
+                <div style="font-size:0.75rem; color:#64748b;">Voided / cancelled submissions</div>
               </div>
             </div>
           </div>
