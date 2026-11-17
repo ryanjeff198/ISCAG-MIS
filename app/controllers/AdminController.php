@@ -1836,12 +1836,10 @@ class AdminController extends Controller
             'Payment Reference',
             'Received By',
             'Status',
-            'Cryptographic Seal (SHA-256)',
             'Admin Notes'
         ]);
 
         foreach ($donations as $d) {
-            $integrity = $charity->verifyRecordIntegrity($d);
             fputcsv($out, [
                 $d['donation_ref'] ?? '',
                 $d['donor_name'] ?? '',
@@ -1857,7 +1855,6 @@ class AdminController extends Controller
                 $d['payment_reference'] ?? '—',
                 $d['received_by'] ?? '—',
                 $d['status'] ?? '',
-                $integrity['seal'] . ' (SHA-256)',
                 $d['admin_notes'] ?? ''
             ]);
         }

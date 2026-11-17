@@ -487,7 +487,7 @@
         <div class="top-bar-left">
           <div>
             <div class="top-bar-title">Received Donations &amp; Charity Funds</div>
-            <div class="top-bar-subtitle">Damayan &amp; Baitul-Mal charity contributions with cryptographic data integrity seals</div>
+            <div class="top-bar-subtitle">Damayan &amp; Baitul-Mal charity contributions</div>
           </div>
         </div>
         <div class="top-bar-actions">
@@ -571,7 +571,7 @@
             </div>
             <div>
               <div class="kpi-val" style="color:#16a34a;">100%</div>
-              <div class="kpi-sub">SHA-256 Integrity Seal</div>
+              <div class="kpi-sub">Verified Records</div>
             </div>
           </div>
         </div>
@@ -632,7 +632,6 @@
                   <th>Target Program</th>
                   <th>Contribution Value</th>
                   <th>Payment Reference</th>
-                  <th>Security Seal</th>
                   <th>Status</th>
                   <th style="text-align:right;">Actions</th>
                 </tr>
@@ -640,7 +639,7 @@
               <tbody id="donationsTbody">
                 <?php if (empty($donations)): ?>
                   <tr>
-                    <td colspan="9" style="text-align:center;padding:36px;color:var(--text-muted);">
+                    <td colspan="8" style="text-align:center;padding:36px;color:var(--text-muted);">
                       No donation records match the selected filters.
                     </td>
                   </tr>
@@ -663,9 +662,6 @@
                     $catClass = 'category-digital';
                     if ($cat === 'cash') $catClass = 'category-cash';
                     if ($cat === 'food' || !$isMonetary) $catClass = 'category-food';
-
-                    $seal = $d['integrity_check']['seal'] ?? strtoupper(substr(hash('sha256', ($d['donation_ref'] ?? '') . 'SALT'), 0, 12));
-                    $fullHash = $d['integrity_check']['full_hash'] ?? '';
                   ?>
                   <tr data-type="<?= $isMonetary ? 'monetary' : 'inkind' ?>"
                       data-status="<?= htmlspecialchars($stLow) ?>"
@@ -717,12 +713,6 @@
                       <?php else: ?>
                         <span style="color:var(--text-muted);font-style:italic;">Direct ISCAG</span>
                       <?php endif; ?>
-                    </td>
-                    <td>
-                      <span class="seal-badge" title="Cryptographically sealed via SHA-256 integrity hash">
-                        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-                        <?= htmlspecialchars($seal) ?>
-                      </span>
                     </td>
                     <td>
                       <span class="status-tag <?= $statusClass ?>"><?= htmlspecialchars($d['status'] ?? 'Recorded') ?></span>
@@ -804,16 +794,6 @@
           <label>Admin Verification Notes</label>
           <div class="val" id="dAdminNotes" style="background:#f9fafb;padding:8px 12px;border-radius:6px;">—</div>
         </div>
-
-        <!-- SHA-256 Data Integrity Seal -->
-        <div class="integrity-box">
-          <div class="integrity-box-title">
-            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-            Cryptographic Integrity Seal (SHA-256)
-          </div>
-          <div>All transaction fields (donor, amount, reference, timestamp) match the tamper-proof ledger:</div>
-          <div class="integrity-hash-code" id="dSealHash">—</div>
-        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-row-action" onclick="closeModal('detailModal')">Close</button>
@@ -864,7 +844,7 @@
         <div class="modal-footer">
           <button type="button" class="btn-row-action" onclick="closeModal('reviewModal')">Cancel</button>
           <button type="submit" class="btn-row-action primary" id="btnSubmitReview">
-            Save Verification &amp; Seal
+            Save Verification
           </button>
         </div>
       </form>
@@ -970,9 +950,6 @@
       document.getElementById('dPayRef').textContent = d.payment_reference || 'N/A';
       document.getElementById('dRemarks').textContent = d.remarks || 'No remarks provided.';
       document.getElementById('dAdminNotes').textContent = d.admin_notes || 'No administrative notes logged.';
-      
-      const fullHash = d.integrity_check ? d.integrity_check.full_hash : (d.donation_ref ? d.donation_ref + '-SHA256' : '—');
-      document.getElementById('dSealHash').textContent = fullHash;
 
       openModal('detailModal');
     }
@@ -1018,7 +995,7 @@
       .then(r => r.json())
       .then(data => {
         btn.disabled = false;
-        btn.textContent = 'Save Verification & Seal';
+        btn.textContent = 'Save Verification';
         if (data.success) {
           closeModal('reviewModal');
           if (typeof showToast === 'function') {
@@ -1026,7 +1003,7 @@
           } else {
             alert('Donation successfully updated!');
           }
-          // Reload page to refresh all KPI counts and cryptographic seals
+          // Reload page to refresh all KPI counts
           setTimeout(() => { window.location.reload(); }, 600);
         } else {
           alert(data.error || 'Failed to update donation verification.');
@@ -1034,7 +1011,7 @@
       })
       .catch(err => {
         btn.disabled = false;
-        btn.textContent = 'Save Verification & Seal';
+        btn.textContent = 'Save Verification';
         console.error(err);
         alert('An unexpected error occurred. Please try again.');
       });

@@ -643,7 +643,7 @@
             <div>
               <h3>Damayan — Charity Program &amp; Received Donations</h3>
               <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">
-                Verified funds, in-kind contributions, donor details, and SHA-256 data integrity status.
+                Verified funds, in-kind contributions, and donor details.
               </div>
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -664,13 +664,12 @@
                   <th>Amount / Quantity</th>
                   <th>Payment / Method</th>
                   <th>Date Received</th>
-                  <th>Integrity Seal</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 <?php if (empty($charityDonationsList)): ?>
-                  <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">No donation records found in database.</td></tr>
+                  <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No donation records found in database.</td></tr>
                 <?php else: ?>
                   <?php foreach ($charityDonationsList as $cd): 
                     $isMonetary = ($cd['donation_type'] ?? '') === 'monetary';
@@ -705,12 +704,6 @@
                       <?php endif; ?>
                     </td>
                     <td><?= format_datetime_html($cd['date_received'] ?? '') ?></td>
-                    <td>
-                      <span style="display:inline-flex;align-items:center;gap:4px;font-family:monospace;font-size:0.72rem;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;padding:2px 6px;border-radius:4px;" title="Cryptographically verified SHA-256 seal">
-                        <svg viewBox="0 0 24 24" style="width:10px;height:10px;fill:currentColor;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-                        <?= htmlspecialchars($cd['integrity_seal'] ?? 'SEAL-OK') ?>
-                      </span>
-                    </td>
                     <td><span class="badge-status <?= $badgeClass ?>"><?= htmlspecialchars($cd['status'] ?? 'Recorded') ?></span></td>
                   </tr>
                   <?php endforeach; ?>
