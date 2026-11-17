@@ -465,7 +465,12 @@ function formatDateTimeHtml(dateStr) {
 function timeAgo(dateStr) {
   if (!dateStr) return '—';
   const now = new Date();
-  const then = new Date(dateStr);
+  const safeStr = typeof dateStr === 'string' && !dateStr.includes('T') ? dateStr.replace(' ', 'T') : dateStr;
+  let then = new Date(safeStr);
+  if (isNaN(then.getTime())) {
+    then = new Date(dateStr);
+  }
+  if (isNaN(then.getTime())) return dateStr;
   const diffMs = now - then;
   const seconds = Math.floor(diffMs / 1000);
   if (seconds < 60) return 'Just now';

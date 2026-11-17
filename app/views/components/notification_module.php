@@ -36,9 +36,20 @@ foreach ($rawNotifs as $n) {
         $computedUnread++;
     }
 
-    // Relative time calculation
-    $ts = strtotime($createdAt);
-    $diff = time() - $ts;
+    // Relative & Philippine Standard Time (PST, UTC+8) calculation
+    $tzManila = new \DateTimeZone('Asia/Manila');
+    try {
+        $dt = new \DateTime($createdAt, $tzManila);
+    } catch (\Throwable $e) {
+        $dt = new \DateTime('now', $tzManila);
+    }
+    $ts = $dt->getTimestamp();
+    $nowTs = (new \DateTime('now', $tzManila))->getTimestamp();
+    $diff = $nowTs - $ts;
+    if ($diff < 0) {
+        $diff = 0; // Guard against minor sub-second/clock skew
+    }
+
     if ($diff < 60) {
         $timeAgo = 'Just now';
     } elseif ($diff < 3600) {
@@ -50,9 +61,9 @@ foreach ($rawNotifs as $n) {
     } elseif ($diff < 172800) {
         $timeAgo = 'Yesterday';
     } else {
-        $timeAgo = date('M j, Y', $ts);
+        $timeAgo = $dt->format('M j, Y');
     }
-    $fullDate = date('M j, Y — g:i A', $ts);
+    $fullDate = $dt->format('M j, Y • g:i A');
 
     $normalizedNotifs[] = [
         'id' => $id,
@@ -186,9 +197,10 @@ if (!function_exists('getNotifModuleIconSvg')) {
                                 <?php endif; ?>
                                 <?= htmlspecialchars($notif['title']) ?>
                             </h4>
-                            <span class="notif-timestamp" title="<?= htmlspecialchars($notif['full_date']) ?>">
+                            <span class="notif-timestamp" title="<?= htmlspecialchars($notif['full_date']) ?> (Philippine Standard Time)">
                                 <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
-                                <?= htmlspecialchars($notif['time_ago']) ?>
+                                <span><?= htmlspecialchars($notif['time_ago']) ?></span>
+                                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:500; margin-left:6px;">• <?= htmlspecialchars($notif['full_date']) ?></span>
                             </span>
                         </div>
 
@@ -336,7 +348,7 @@ if (!function_exists('getNotifModuleIconSvg')) {
     window.handleNotifClick = function(event, notif) {
         // Populate modal data
         document.getElementById('mdl-notif-title').textContent = notif.title;
-        document.getElementById('mdl-notif-time').textContent = notif.full_date || notif.time_ago;
+        document.getElementById('mdl-notif-time').textContent = (notif.full_date ? notif.full_date + ' (' + notif.time_ago + ')' : notif.time_ago) + ' • Philippine Standard Time (PST)';
         document.getElementById('mdl-notif-body').textContent = notif.message;
 
         // Type tag

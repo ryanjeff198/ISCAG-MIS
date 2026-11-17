@@ -30,13 +30,15 @@ class Notification
 
     public function create(int $tenantId, string $title, string $message, string $type = 'system'): bool
     {
-        $sql = "INSERT INTO {$this->table} (tenant_id, title, message, type) VALUES (:tenant_id, :title, :message, :type)";
+        $now = (new \DateTime('now', new \DateTimeZone('Asia/Manila')))->format('Y-m-d H:i:s');
+        $sql = "INSERT INTO {$this->table} (tenant_id, title, message, type, created_at) VALUES (:tenant_id, :title, :message, :type, :created_at)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
-            'tenant_id' => $tenantId,
-            'title' => $title,
-            'message' => $message,
-            'type' => $type
+            'tenant_id'  => $tenantId,
+            'title'      => $title,
+            'message'    => $message,
+            'type'       => $type,
+            'created_at' => $now
         ]);
     }
 

@@ -240,7 +240,7 @@ if (!function_exists('url')) {
 
                 list.innerHTML = '';
                 broadcasts.forEach(b => {
-                    let d = new Date(b.created_at).toLocaleString('en-US', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+                    let d = new Date(b.created_at ? (b.created_at.includes('T') ? b.created_at : b.created_at.replace(' ', 'T')) : Date.now()).toLocaleString('en-US', {timeZone: 'Asia/Manila', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12: true});
                     const div = document.createElement('div');
                     div.className = 'sent-item';
                     div.innerHTML = `

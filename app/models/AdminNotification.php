@@ -34,7 +34,8 @@ class AdminNotification
      */
     public function create(string $title, string $message, string $type = 'system', string $actorName = 'System', ?int $actorId = null, ?string $sourceUrl = null): bool
     {
-        $sql = "INSERT INTO {$this->table} (title, message, type, actor_name, actor_id, source_url) VALUES (:title, :message, :type, :actor_name, :actor_id, :source_url)";
+        $now = (new \DateTime('now', new \DateTimeZone('Asia/Manila')))->format('Y-m-d H:i:s');
+        $sql = "INSERT INTO {$this->table} (title, message, type, actor_name, actor_id, source_url, created_at) VALUES (:title, :message, :type, :actor_name, :actor_id, :source_url, :created_at)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             'title'      => $title,
@@ -42,7 +43,8 @@ class AdminNotification
             'type'       => $type,
             'actor_name' => $actorName,
             'actor_id'   => $actorId,
-            'source_url' => $sourceUrl
+            'source_url' => $sourceUrl,
+            'created_at' => $now
         ]);
     }
 

@@ -1,5 +1,10 @@
 <?php
 
+// Ensure Philippine Standard Time across entire application
+if (function_exists('date_default_timezone_set')) {
+    date_default_timezone_set('Asia/Manila');
+}
+
 /**
  * Database Configuration
  *
@@ -47,9 +52,13 @@ function getDbConnection(): PDO
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone = '+08:00'",
         ];
 
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+        try {
+            $pdo->exec("SET time_zone = '+08:00'");
+        } catch (\Throwable $ignored) {}
     }
 
     return $pdo;
