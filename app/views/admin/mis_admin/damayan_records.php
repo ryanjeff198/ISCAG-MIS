@@ -2,12 +2,10 @@
 $active_page = 'damayan_records';
 $damayanRequests = $damayanRequests ?? [];
 $burials = $burials ?? [];
-$funeralCases = $funeralCases ?? [];
 $stats = $stats ?? [
     'totalRequests' => count($damayanRequests),
-    'burialsCount' => count($burials),
-    'funeralCasesCount' => count($funeralCases),
     'pendingCount' => 0,
+    'acceptedCount' => 0,
     'completedCount' => 0
 ];
 ?>
@@ -117,7 +115,7 @@ $stats = $stats ?? [
         <div class="top-bar-left">
           <div>
             <div class="top-bar-title">Damayan & Burial Service Records</div>
-            <div class="top-bar-subtitle">Civil registration, Islamic burial assistance, and funeral case coordination</div>
+            <div class="top-bar-subtitle">Civil registration and Islamic burial services assistance</div>
           </div>
         </div>
         <div class="top-bar-actions">
@@ -161,18 +159,18 @@ $stats = $stats ?? [
           <div class="stat-card">
             <div class="stat-icon blue">
               <svg viewBox="0 0 24 24">
-                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
               </svg>
             </div>
             <div>
-              <div class="stat-value" id="s-burials"><?= (int)($stats['burialsCount'] ?? count($burials)) ?></div>
-              <div class="stat-label">Burial Requests</div>
+              <div class="stat-value" id="s-accepted"><?= (int)($stats['acceptedCount'] ?? 0) ?></div>
+              <div class="stat-label">Accepted / In-Progress</div>
             </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon green">
               <svg viewBox="0 0 24 24">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
               </svg>
             </div>
             <div>
@@ -189,31 +187,32 @@ $stats = $stats ?? [
               <svg viewBox="0 0 24 24">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
               </svg>
-              Damayan Records & Cases
+              Damayan Burial Requests
             </h6>
             <div class="pill-tabs" id="damayanViewSwitch">
-              <button type="button" class="pill-tab active" data-view="all">All Cases (<?= count($damayanRequests) ?>)</button>
-              <button type="button" class="pill-tab" data-view="burial">Burial Requests (<?= count($burials) ?>)</button>
-              <button type="button" class="pill-tab" data-view="funeral">Funeral Cases (<?= count($funeralCases) ?>)</button>
+              <button type="button" class="pill-tab active" data-view="all">All Requests (<?= count($damayanRequests) ?>)</button>
+              <button type="button" class="pill-tab" data-view="pending">Pending (<?= (int)$stats['pendingCount'] ?>)</button>
+              <button type="button" class="pill-tab" data-view="accepted">Accepted (<?= (int)($stats['acceptedCount'] ?? 0) ?>)</button>
+              <button type="button" class="pill-tab" data-view="completed">Completed (<?= (int)$stats['completedCount'] ?>)</button>
             </div>
           </div>
 
           <div class="damayan-toolbar">
             <div class="damayan-toolbar-left">
               <div class="toolbar-search">
-                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                 <input type="text" id="damayan-search" placeholder="Search ref, deceased, informant..." />
               </div>
               <select class="toolbar-select" id="damayan-status-filter">
                 <option value="">All Statuses</option>
                 <option value="Pending">Pending / Under Review</option>
-                <option value="Completed">Completed / Released</option>
                 <option value="Accepted">Accepted</option>
+                <option value="Completed">Completed / Released</option>
                 <option value="Rejected">Rejected</option>
               </select>
             </div>
             <div class="damayan-toolbar-right" id="damayan-view-counter" style="font-size:0.8rem;color:var(--text-muted);">
-              Total: <?= count($damayanRequests) ?> verified records
+              Total: <?= count($damayanRequests) ?> real records
             </div>
           </div>
 
@@ -263,7 +262,7 @@ $stats = $stats ?? [
     const RAW_REQUESTS = <?= json_encode($damayanRequests, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
     const PAGE_SIZE = 10;
-    let currentView = 'all'; // 'all', 'burial', 'funeral'
+    let currentView = 'all'; // 'all', 'pending', 'accepted', 'completed'
     let currentPage = 1;
 
     function escHtml(v) {
@@ -287,13 +286,13 @@ $stats = $stats ?? [
 
     function getBadgeHtml(status) {
       const s = (status || '').toLowerCase();
-      if (s.includes('complet') || s.includes('releas') || s === 'registered' || s === 'available') {
+      if (s.includes('complet') || s.includes('releas') || s === 'registered') {
         return `<span class="badge-status badge-approved">${escHtml(status)}</span>`;
       }
-      if (s.includes('accept') || s.includes('verified') || s === 'ready for registration') {
+      if (s.includes('accept') || s.includes('verified')) {
         return `<span class="badge-status badge-approved" style="background:#e0f2fe;color:#0369a1;border-color:#bae6fd;">${escHtml(status)}</span>`;
       }
-      if (s.includes('reject') || s.includes('returned') || s === 'occupied') {
+      if (s.includes('reject') || s.includes('returned')) {
         return `<span class="badge-status badge-rejected">${escHtml(status)}</span>`;
       }
       return `<span class="badge-status badge-pending">${escHtml(status || 'Pending')}</span>`;
@@ -372,11 +371,11 @@ $stats = $stats ?? [
 
       thead.innerHTML = `
         <tr>
-          <th>Ref / Case #</th>
+          <th>Ref / Request #</th>
           <th>Service Type</th>
           <th>Deceased Full Name</th>
           <th>Informant / Contact</th>
-          <th>Submitted / Reported</th>
+          <th>Submitted Date</th>
           <th>Civil Cert Status</th>
           <th>Status</th>
           <th style="text-align:center;">Action</th>
@@ -384,8 +383,14 @@ $stats = $stats ?? [
       `;
 
       const filtered = RAW_REQUESTS.filter(r => {
-        if (currentView === 'burial' && r.record_kind !== 'burial') return false;
-        if (currentView === 'funeral' && r.record_kind !== 'funeral') return false;
+        const st = (r.status || '').toLowerCase();
+        if (currentView === 'pending') {
+          if (!st.includes('pend') && !st.includes('submit') && !st.includes('request') && !st.includes('review')) return false;
+        } else if (currentView === 'accepted') {
+          if (!st.includes('accept') && !st.includes('verified')) return false;
+        } else if (currentView === 'completed') {
+          if (!st.includes('complet') && !st.includes('releas') && st !== 'registered') return false;
+        }
 
         const matchSearch = !searchTerm ||
           (r.ref_code && r.ref_code.toLowerCase().includes(searchTerm)) ||
@@ -395,7 +400,6 @@ $stats = $stats ?? [
 
         let matchStatus = true;
         if (statusFilter) {
-          const st = (r.status || '').toLowerCase();
           if (statusFilter === 'pending') matchStatus = st.includes('pend') || st.includes('submit') || st.includes('request') || st.includes('review');
           else if (statusFilter === 'completed') matchStatus = st.includes('complet') || st.includes('releas') || st === 'registered';
           else if (statusFilter === 'accepted') matchStatus = st.includes('accept') || st.includes('verified');
@@ -412,7 +416,7 @@ $stats = $stats ?? [
       const endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
       const pageItems = filtered.slice(startIdx, endIdx);
 
-      counterLabel.textContent = `Showing: ${totalItems} case records`;
+      counterLabel.textContent = `Showing: ${totalItems} real records`;
 
       if (totalItems === 0) {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-muted);">No records found matching the filter criteria.</td></tr>`;
@@ -446,7 +450,7 @@ $stats = $stats ?? [
             <td>${certStatusDisplay}</td>
             <td>${getBadgeHtml(r.status)}</td>
             <td style="text-align:center;">
-              <button type="button" class="btn-sm" onclick="openDamayanReviewModal('${escHtml(r.record_kind || 'burial')}', '${escHtml(r.id)}')" style="padding:4px 10px;font-size:0.78rem;border-radius:4px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:600;">
+              <button type="button" class="btn-sm" onclick="openDamayanReviewModal('${escHtml(r.id)}')" style="padding:4px 10px;font-size:0.78rem;border-radius:4px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:600;">
                 Review
               </button>
             </td>
@@ -459,13 +463,12 @@ $stats = $stats ?? [
     }
 
     // ── Review Modal ──
-    function openDamayanReviewModal(kind, id) {
-      const r = RAW_REQUESTS.find(x => String(x.id) === String(id) && (!kind || String(x.record_kind || 'burial') === String(kind)))
-             || RAW_REQUESTS.find(x => String(x.id) === String(id));
+    function openDamayanReviewModal(id) {
+      const r = RAW_REQUESTS.find(x => String(x.id) === String(id));
       if (!r) return;
 
       const refDisplay = r.ref_code || ('#' + r.id);
-      document.getElementById('damayan-mdl-title').textContent = `${refDisplay} — ${r.service_type || 'Damayan Case'}`;
+      document.getElementById('damayan-mdl-title').textContent = `${refDisplay} — ${r.service_type || 'Burial Request'}`;
 
       const rows = [
         ['Record / Case Reference', refDisplay],
@@ -474,7 +477,7 @@ $stats = $stats ?? [
         ['Informant / Applicant', r.informant_name || '—'],
         ['Contact Details', r.contact || '—'],
         ['Overall Case Status', getBadgeHtml(r.status)],
-        ['Submitted / Reported Date', formatDisplayDateTime(r.date)]
+        ['Submitted Date', formatDisplayDateTime(r.date)]
       ];
 
       if (r.date_of_death) rows.push(['Date of Death', formatDisplayDate(r.date_of_death)]);
@@ -482,8 +485,8 @@ $stats = $stats ?? [
       if (r.death_cert_status) rows.push(['Civil Death Certificate Status', r.death_cert_status]);
       if (r.scheduled_release_date) rows.push(['Scheduled Burial / Release', formatDisplayDate(r.scheduled_release_date)]);
       if (r.assigned_staff_name) rows.push(['Assigned Handling Staff', r.assigned_staff_name]);
-      if (r.requested_services) rows.push(['Services Requested / Location', r.requested_services]);
-      if (r.details) rows.push(['Remarks / Case Notes', r.details]);
+      if (r.requested_services) rows.push(['Services Requested', r.requested_services]);
+      if (r.details) rows.push(['Remarks / Notes', r.details]);
 
       document.getElementById('damayan-mdl-body').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr;gap:10px;">
@@ -516,13 +519,12 @@ $stats = $stats ?? [
     document.getElementById('damayan-search').addEventListener('input', () => renderTable(true));
     document.getElementById('damayan-status-filter').addEventListener('change', () => renderTable(true));
 
-    // ── Handle URL parameters (e.g. ?type=...&id=...) ──
+    // ── Handle URL parameters (e.g. ?id=...) ──
     (function initUrlParams() {
       const params = new URLSearchParams(window.location.search);
-      const qType = params.get('type') || '';
       const qId = params.get('id');
       if (qId) {
-        openDamayanReviewModal(qType, qId);
+        openDamayanReviewModal(qId);
       }
     })();
 

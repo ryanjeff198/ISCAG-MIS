@@ -637,8 +637,8 @@
         <!-- 2. DAMAYAN BURIAL & FUNERAL LOGS -->
         <div class="section-card" id="damayan-special-section">
           <div class="section-card-header">
-            <h3>Damayan — Burial Services & Funeral Documentation</h3>
-            <span class="badge-dept badge-dept-damayan"><?= count($burialRequests ?? []) ?> Burial Services Recorded</span>
+            <h3>Damayan — Burial Assistance Records</h3>
+            <span class="badge-dept badge-dept-damayan"><?= count($burialRequests ?? []) ?> Burial Requests Recorded</span>
           </div>
           <div class="report-table-wrapper">
             <table class="report-table" id="damayan-report-table" data-paginate="false">
@@ -654,8 +654,8 @@
                 </tr>
               </thead>
               <tbody>
-                <?php if (empty($burialRequests) && empty($funeralCases)): ?>
-                  <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">No burial or funeral cases recorded.</td></tr>
+                <?php if (empty($burialRequests)): ?>
+                  <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">No burial requests recorded.</td></tr>
                 <?php else: ?>
                   <?php foreach ($burialRequests as $b): ?>
                   <tr>
@@ -666,17 +666,6 @@
                     <td><?= format_datetime_html($b['submitted_at'] ?? '') ?></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars($b['death_cert_status'] ?: 'Certified') ?></span></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars(ucfirst($b['status'])) ?></span></td>
-                  </tr>
-                  <?php endforeach; ?>
-                  <?php foreach ($funeralCases as $fc): ?>
-                  <tr>
-                    <td class="td-id">FNC-<?= $fc['id'] ?></td>
-                    <td style="font-weight:600;">Funeral Case Management</td>
-                    <td><?= htmlspecialchars(($fc['deceased_first_name'] ?? '') . ' ' . ($fc['deceased_last_name'] ?? '')) ?></td>
-                    <td><?= htmlspecialchars($fc['requested_services'] ?: 'Burial Facility / Local Cemetery') ?></td>
-                    <td><?= format_datetime_html($fc['reported_at'] ?? '') ?></td>
-                    <td><span class="badge-status badge-paid"><?= htmlspecialchars($fc['certificate_status'] ?: 'Submitted') ?></span></td>
-                    <td><span class="badge-status badge-paid"><?= htmlspecialchars(ucfirst($fc['status'])) ?></span></td>
                   </tr>
                   <?php endforeach; ?>
                 <?php endif; ?>

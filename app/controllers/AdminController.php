@@ -1594,11 +1594,7 @@ class AdminController extends Controller
             ORDER BY b.id DESC
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        $funeralCases = $db->query("
-            SELECT f.* 
-            FROM funeral_cases f 
-            ORDER BY f.id DESC
-        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $funeralCases = [];
 
         require_once BASE_PATH . '/app/models/CharityProgram.php';
         $charityModel = new CharityProgram();
@@ -1712,16 +1708,6 @@ class AdminController extends Controller
                 ORDER BY b.id DESC LIMIT 20
             ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
             $masterReportItems = array_merge($masterReportItems, $burRows);
-
-            $fcRows = $db->query("
-                SELECT f.id, 'Damayan' as department, 'Funeral Case Management' as service_type,
-                       CONCAT(COALESCE(f.deceased_first_name,''), ' ', COALESCE(f.deceased_last_name,'')) as subject_name,
-                       f.informant_contact as contact, f.reported_at as report_date, f.status,
-                       CONCAT('Cert: ', COALESCE(f.certificate_status,'Pending')) as detail_info
-                FROM funeral_cases f
-                ORDER BY f.id DESC LIMIT 20
-            ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            $masterReportItems = array_merge($masterReportItems, $fcRows);
 
             $charityRows = $db->query("
                 SELECT c.id, 'Charity & Donations' as department,
@@ -3995,7 +3981,7 @@ class AdminController extends Controller
         Auth::protectRole(['Admin', 'Staff_Damayan']);
         $db = getDbConnection();
 
-        // 1. Burial requests from database
+        // Burial requests from database (Real tenant/user submissions only)
         $burials = $db->query("
             SELECT b.id, 'burial' as record_kind, 'Burial Service' as service_type,
                    COALESCE(NULLIF(b.ref_id,''), CONCAT('#', b.id)) as ref_code,
@@ -4003,46 +3989,27 @@ class AdminController extends Controller
                    COALESCE(NULLIF(b.informant_name,''), CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as informant_name,
                    COALESCE(NULLIF(b.informant_contact,''), b.informant_email, '') as contact,
                    b.submitted_at as date, b.updated_at, b.status,
-                   COALESCE(b.assigned_cemetery_name, b.cemetery_preference, 'ISCAG Designated Muslim Cemetery') as cemetery_pref,
-                   COALESCE(b.assigned_plot_number, 'Pending') as plot_number,
                    b.request_type, b.date_of_death, b.place_of_death, b.requested_services,
-                   b.death_cert_status, b.cemetery_plot_status, b.scheduled_release_date,
+                   b.death_cert_status, b.scheduled_release_date,
                    b.assigned_staff_name, b.additional_notes as details
             FROM burial_requests b
             LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
+            WHERE b.deceased_name NOT LIKE '%Test%' 
+              AND b.deceased_name NOT LIKE '%NonExistent%'
             ORDER BY b.id DESC
         ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // 2. Funeral cases from database
-        $funeralCases = $db->query("
-            SELECT f.id, 'funeral' as record_kind, 'Funeral Case' as service_type,
-                   COALESCE(NULLIF(f.case_number,''), CONCAT('#', f.id)) as ref_code,
-                   TRIM(CONCAT(COALESCE(f.deceased_first_name,''), ' ', COALESCE(f.deceased_last_name,''))) as name,
-                   f.informant_name,
-                   COALESCE(NULLIF(f.informant_contact,''), f.informant_email, '') as contact,
-                   f.reported_at as date, f.status,
-                   COALESCE(f.cemetery, 'ISCAG Designated Muslim Cemetery') as cemetery_pref,
-                   COALESCE(f.grave_reference, 'Pending') as plot_number,
-                   f.certificate_type as request_type, f.deceased_dod as date_of_death,
-                   f.deceased_place_of_death as place_of_death, f.burial_location as requested_services,
-                   f.certificate_status as death_cert_status, '' as cemetery_plot_status,
-                   f.burial_date as scheduled_release_date,
-                   f.assigned_staff_name, f.release_notes as details
-            FROM funeral_cases f
-            ORDER BY f.id DESC
-        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        $damayanRequests = array_merge($burials, $funeralCases);
-        usort($damayanRequests, function($a, $b) {
-            return strtotime($b['date'] ?? '1970-01-01') - strtotime($a['date'] ?? '1970-01-01');
-        });
+        $damayanRequests = $burials;
 
         $pendingCount = 0;
         $completedCount = 0;
+        $acceptedCount = 0;
         foreach ($damayanRequests as $dr) {
             $st = strtolower($dr['status'] ?? '');
-            if (strpos($st, 'complet') !== false || strpos($st, 'releas') !== false || strpos($st, 'accept') !== false) {
+            if (strpos($st, 'complet') !== false || strpos($st, 'releas') !== false) {
                 $completedCount++;
+            } elseif (strpos($st, 'accept') !== false || strpos($st, 'verified') !== false) {
+                $acceptedCount++;
             } else {
                 $pendingCount++;
             }
@@ -4052,12 +4019,10 @@ class AdminController extends Controller
             'active_page' => 'damayan_records',
             'damayanRequests' => $damayanRequests,
             'burials' => $burials,
-            'funeralCases' => $funeralCases,
             'stats' => [
                 'totalRequests' => count($damayanRequests),
-                'burialsCount' => count($burials),
-                'funeralCasesCount' => count($funeralCases),
                 'pendingCount' => $pendingCount,
+                'acceptedCount' => $acceptedCount,
                 'completedCount' => $completedCount
             ]
         ]);
