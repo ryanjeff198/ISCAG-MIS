@@ -366,12 +366,20 @@ class ApartmentController extends Controller {
         Auth::protectRole(['Guest', 'Tenant']);
         header('Content-Type: application/json');
         $userId = $_SESSION['user_id'];
-        
+
+        try {
         require_once BASE_PATH . '/app/models/ApartmentApp.php';
         $model = new ApartmentApp();
 
         $app = $model->getApplication($userId);
-        if ($app && in_array(strtolower($app['status'] ?? ''), ['pending', 'approved'])) {
+        if (!$app) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'No application record found. Please complete and save the application form first.'
+            ]);
+            return;
+        }
+        if (in_array(strtolower($app['status'] ?? ''), ['pending', 'approved'])) {
             echo json_encode([
                 'success' => false,
                 'message' => 'Your application has already been submitted and is currently ' . ucfirst($app['status']) . '.'
@@ -386,13 +394,19 @@ class ApartmentController extends Controller {
             $decoded = json_decode($followupDocs, true);
             $followupDocs = is_array($decoded) ? $decoded : [$followupDocs];
         }
-        if (is_array($followupDocs)) {
-            $model->updateFollowupDocs($userId, $followupDocs);
-        }
+        if (!is_array($followupDocs)) $followupDocs = [];
+        $model->updateFollowupDocs($userId, $followupDocs);
 
         $ok = $model->updateStatusByTenant($userId, 'Pending');
+        } catch (\Throwable $e) {
+            error_log('finalizeSubmission failed: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Server error while submitting: ' . $e->getMessage()]);
+            return;
+        }
         
         if ($ok) {
+          // Notifications/audit are non-critical: never fail the submission because of them
+          try {
             AuditLogger::log('APARTMENT', 'SUBMIT_APP', "Finalized and submitted apartment application");
             require_once BASE_PATH . '/app/models/AdminNotification.php';
             $adminNotif = new AdminNotification();
@@ -421,9 +435,12 @@ class ApartmentController extends Controller {
                 $tenantMsg,
                 'system'
             );
+          } catch (\Throwable $e) {
+            error_log('finalizeSubmission notification error: ' . $e->getMessage());
+          }
         }
         
-        echo json_encode(['success' => $ok]);
+        echo json_encode(['success' => (bool)$ok, 'message' => $ok ? 'Application submitted.' : 'Unable to update application status.']);
     }
 
     // ═══ LEASE CONTRACT MODULE ═══════════════════════════

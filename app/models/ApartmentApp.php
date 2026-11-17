@@ -4,8 +4,41 @@ require_once BASE_PATH . '/config/database.php';
 class ApartmentApp {
     private $db;
 
+    private static $schemaChecked = false;
+
     public function __construct() {
         $this->db = getDbConnection();
+        $this->ensureSchema();
+    }
+
+    /**
+     * Self-healing schema: make sure columns used by the application
+     * submission flow exist (they may be missing on older/live databases).
+     */
+    private function ensureSchema(): void {
+        if (self::$schemaChecked) return;
+        self::$schemaChecked = true;
+
+        $required = [
+            'tenant_addinfo' => ['followup_docs' => 'TEXT NULL'],
+            'apartmentsapp'  => ['followup_docs' => 'TEXT NULL'],
+        ];
+        try {
+            $check = $this->db->prepare(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c"
+            );
+            foreach ($required as $table => $cols) {
+                foreach ($cols as $col => $def) {
+                    $check->execute(['t' => $table, 'c' => $col]);
+                    if ((int)$check->fetchColumn() === 0) {
+                        $this->db->exec("ALTER TABLE `$table` ADD COLUMN `$col` $def");
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('ApartmentApp::ensureSchema failed: ' . $e->getMessage());
+        }
     }
 
     // ─── tenant_addinfo ───────────────────────────────────
@@ -333,7 +366,11 @@ class ApartmentApp {
 
     // ─── TENANT SUBMISSION ──────────────────────────
     public function updateStatusByTenant($userId, $status) {
-        $sql = "UPDATE apartmentsapp SET status = :status WHERE tenant_id = :uid";
+        // Only update the tenant's latest application (never resurrect archived/rejected history rows)
+        $sql = "UPDATE apartmentsapp SET status = :status
+                WHERE application_id = (
+                    SELECT max_id FROM (SELECT MAX(application_id) AS max_id FROM apartmentsapp WHERE tenant_id = :uid) t
+                )";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['status' => $status, 'uid' => $userId]);
     }

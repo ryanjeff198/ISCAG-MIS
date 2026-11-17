@@ -4406,14 +4406,32 @@ if ($userId) {
       const followupList = Object.keys(followups).filter(k => !!followups[k]);
 
       // Finalize on Server with followup_docs
+      const submitBtnEl = document.getElementById('submit-docs-btn');
+      const submitBtnHtml = submitBtnEl.innerHTML;
+      submitBtnEl.disabled = true;
+      submitBtnEl.textContent = 'Submitting...';
+
       fetch('<?= url("/user/apartment/submit") ?>', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
         body: JSON.stringify({ followup_docs: followupList })
       })
-        .then(r => r.json())
+        .then(async r => {
+          const text = await r.text();
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            console.error('Non-JSON response from server:', text);
+            if (r.redirected || /<form[^>]*login|name="password"/i.test(text)) {
+              throw new Error('Your session has expired. Please log in again and resubmit.');
+            }
+            throw new Error('Server returned an unexpected response (HTTP ' + r.status + ').');
+          }
+        })
         .then(res => {
           if (res.success) {
+           try {
             // Save locally for UI consistency (User Dashboard)
             const newReq = addRequest({
               type: 'apartment_application',
@@ -4516,15 +4534,24 @@ if ($userId) {
       // Clear temporary storage
       localStorage.removeItem(DOC_STORAGE_KEY);
       localStorage.removeItem(FOLLOWUP_STORAGE_KEY);
+           } catch (localErr) {
+             // Local UI bookkeeping must never block a successful server submission
+             console.warn('Local storage sync skipped:', localErr);
+             try { localStorage.removeItem(DOC_STORAGE_KEY); localStorage.removeItem(FOLLOWUP_STORAGE_KEY); } catch (_) {}
+           }
 
             showSuccessView(followupList);
           } else {
+            submitBtnEl.disabled = false;
+            submitBtnEl.innerHTML = submitBtnHtml;
             showToast('Submission failed: ' + (res.message || 'Unknown error'), '#8b2e2e');
           }
         })
         .catch(err => {
           console.error(err);
-          showToast('An error occurred during submission.', '#8b2e2e');
+          submitBtnEl.disabled = false;
+          submitBtnEl.innerHTML = submitBtnHtml;
+          showToast(err && err.message ? err.message : 'An error occurred during submission.', '#8b2e2e');
         });
     });
 
