@@ -4291,7 +4291,7 @@ class AdminController extends Controller
         $staffName = trim(($dbUser['first_name'] ?? '') . ' ' . ($dbUser['last_name'] ?? '')) ?: ($_SESSION['name'] ?? 'Damayan Staff');
 
         $charity = new CharityProgram();
-        $charity->seedInitialDataIfEmpty($staffName);
+        // Do not auto-seed fake or generated demo records
 
         $stats = $charity->getDashboardStats();
         $recentDonations = array_slice($charity->getAllDonations(), 0, 6);
