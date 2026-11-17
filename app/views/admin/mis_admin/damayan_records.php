@@ -117,7 +117,7 @@ $stats = $stats ?? [
         <div class="top-bar-left">
           <div>
             <div class="top-bar-title">Damayan & Burial Service Records</div>
-            <div class="top-bar-subtitle">Civil registration, Islamic burial services coordination, and cemetery plot allocations</div>
+            <div class="top-bar-subtitle">Civil registration, Islamic burial assistance, and funeral case coordination</div>
           </div>
         </div>
         <div class="top-bar-actions">
@@ -159,6 +159,17 @@ $stats = $stats ?? [
             </div>
           </div>
           <div class="stat-card">
+            <div class="stat-icon blue">
+              <svg viewBox="0 0 24 24">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
+              </svg>
+            </div>
+            <div>
+              <div class="stat-value" id="s-burials"><?= (int)($stats['burialsCount'] ?? count($burials)) ?></div>
+              <div class="stat-label">Burial Requests</div>
+            </div>
+          </div>
+          <div class="stat-card">
             <div class="stat-icon green">
               <svg viewBox="0 0 24 24">
                 <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
@@ -167,17 +178,6 @@ $stats = $stats ?? [
             <div>
               <div class="stat-value" id="s-completed"><?= (int)$stats['completedCount'] ?></div>
               <div class="stat-label">Completed & Released</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon blue">
-              <svg viewBox="0 0 24 24">
-                <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z" />
-              </svg>
-            </div>
-            <div>
-              <div class="stat-value" id="s-plots"><?= (int)$stats['availablePlots'] ?> / <?= (int)$stats['totalPlots'] ?></div>
-              <div class="stat-label">Plots Available</div>
             </div>
           </div>
         </div>
@@ -195,15 +195,14 @@ $stats = $stats ?? [
               <button type="button" class="pill-tab active" data-view="all">All Cases (<?= count($damayanRequests) ?>)</button>
               <button type="button" class="pill-tab" data-view="burial">Burial Requests (<?= count($burials) ?>)</button>
               <button type="button" class="pill-tab" data-view="funeral">Funeral Cases (<?= count($funeralCases) ?>)</button>
-              <button type="button" class="pill-tab" data-view="plots">Cemetery Plots (<?= count($cemeteryPlots) ?>)</button>
             </div>
           </div>
 
           <div class="damayan-toolbar">
             <div class="damayan-toolbar-left">
               <div class="toolbar-search">
-                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input type="text" id="damayan-search" placeholder="Search ref, deceased, informant, plot..." />
+                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 14z"/></svg>
+                <input type="text" id="damayan-search" placeholder="Search ref, deceased, informant..." />
               </div>
               <select class="toolbar-select" id="damayan-status-filter">
                 <option value="">All Statuses</option>
@@ -262,10 +261,9 @@ $stats = $stats ?? [
     // REAL DATABASE RECORDS (Accurate data, zero mock)
     // ══════════════════════════════════════════════════════════
     const RAW_REQUESTS = <?= json_encode($damayanRequests, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-    const RAW_PLOTS = <?= json_encode($cemeteryPlots, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
     const PAGE_SIZE = 10;
-    let currentView = 'all'; // 'all', 'burial', 'funeral', 'plots'
+    let currentView = 'all'; // 'all', 'burial', 'funeral'
     let currentPage = 1;
 
     function escHtml(v) {
@@ -372,179 +370,92 @@ $stats = $stats ?? [
       const paginationBar = document.getElementById('damayan-pagination');
       const counterLabel = document.getElementById('damayan-view-counter');
 
-      if (currentView === 'plots') {
-        // Cemetery plots view
-        thead.innerHTML = `
-          <tr>
-            <th>Plot No.</th>
-            <th>Section</th>
-            <th>Cemetery Facility</th>
-            <th>Orientation / Details</th>
-            <th>Assigned Deceased</th>
-            <th>Assignment Date</th>
-            <th>Status</th>
-          </tr>
-        `;
+      thead.innerHTML = `
+        <tr>
+          <th>Ref / Case #</th>
+          <th>Service Type</th>
+          <th>Deceased Full Name</th>
+          <th>Informant / Contact</th>
+          <th>Submitted / Reported</th>
+          <th>Civil Cert Status</th>
+          <th>Status</th>
+          <th style="text-align:center;">Action</th>
+        </tr>
+      `;
 
-        const filtered = RAW_PLOTS.filter(p => {
-          const matchSearch = !searchTerm ||
-            (p.plot_number && p.plot_number.toLowerCase().includes(searchTerm)) ||
-            (p.section && p.section.toLowerCase().includes(searchTerm)) ||
-            (p.cemetery_name && p.cemetery_name.toLowerCase().includes(searchTerm)) ||
-            (p.occupant_name && p.occupant_name.toLowerCase().includes(searchTerm));
+      const filtered = RAW_REQUESTS.filter(r => {
+        if (currentView === 'burial' && r.record_kind !== 'burial') return false;
+        if (currentView === 'funeral' && r.record_kind !== 'funeral') return false;
 
-          let matchStatus = true;
-          if (statusFilter) {
-            const isOcc = (p.status || '').toLowerCase() === 'occupied' || (p.occupant_name && p.occupant_name !== 'Vacant');
-            if (statusFilter === 'completed' || statusFilter === 'accepted') matchStatus = isOcc;
-            else if (statusFilter === 'pending') matchStatus = !isOcc;
-          }
-          return matchSearch && matchStatus;
-        });
+        const matchSearch = !searchTerm ||
+          (r.ref_code && r.ref_code.toLowerCase().includes(searchTerm)) ||
+          (r.name && r.name.toLowerCase().includes(searchTerm)) ||
+          (r.informant_name && r.informant_name.toLowerCase().includes(searchTerm)) ||
+          (r.service_type && r.service_type.toLowerCase().includes(searchTerm));
 
-        const totalItems = filtered.length;
-        const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
-        if (currentPage > totalPages) currentPage = totalPages;
-
-        const startIdx = (currentPage - 1) * PAGE_SIZE;
-        const endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
-        const pageItems = filtered.slice(startIdx, endIdx);
-
-        counterLabel.textContent = `Showing: ${totalItems} cemetery plots`;
-
-        if (totalItems === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--text-muted);">No cemetery plots match the specified criteria.</td></tr>`;
-          paginationBar.innerHTML = `<div class="mis-pagination-info">Showing 0 of 0 plots</div>`;
-          return;
+        let matchStatus = true;
+        if (statusFilter) {
+          const st = (r.status || '').toLowerCase();
+          if (statusFilter === 'pending') matchStatus = st.includes('pend') || st.includes('submit') || st.includes('request') || st.includes('review');
+          else if (statusFilter === 'completed') matchStatus = st.includes('complet') || st.includes('releas') || st === 'registered';
+          else if (statusFilter === 'accepted') matchStatus = st.includes('accept') || st.includes('verified');
+          else if (statusFilter === 'rejected') matchStatus = st.includes('reject') || st.includes('returned');
         }
+        return matchSearch && matchStatus;
+      });
 
-        tbody.innerHTML = pageItems.map(p => {
-          const isOcc = (p.status || '').toLowerCase() === 'occupied' || (p.occupant_name && p.occupant_name !== 'Vacant');
-          const plotBadge = isOcc
-            ? '<span class="badge-status badge-rejected">Occupied</span>'
-            : '<span class="badge-status badge-approved">Available</span>';
+      const totalItems = filtered.length;
+      const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
 
-          const deceasedDisplay = isOcc
-            ? `<span style="font-weight:600;color:var(--primary);">${escHtml(p.occupant_name)}</span>`
-            : `<span style="color:var(--text-muted);font-style:italic;">Vacant</span>`;
+      const startIdx = (currentPage - 1) * PAGE_SIZE;
+      const endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
+      const pageItems = filtered.slice(startIdx, endIdx);
 
-          return `
-            <tr>
-              <td class="td-id" style="font-weight:700;">${escHtml(p.plot_number)}</td>
-              <td style="font-weight:600;">${escHtml(p.section || 'General')}</td>
-              <td>${escHtml(p.cemetery_name || 'ISCAG Cemetery')}</td>
-              <td style="font-size:0.8rem;color:var(--text-muted);">${escHtml(p.notes || 'Sunnah orientation')}</td>
-              <td>${deceasedDisplay}</td>
-              <td style="color:var(--text-muted);font-size:0.82rem;">${formatDisplayDateTime(p.assigned_date)}</td>
-              <td>${plotBadge}</td>
-            </tr>
-          `;
-        }).join('');
+      counterLabel.textContent = `Showing: ${totalItems} case records`;
 
-        paginationBar.innerHTML = `<div class="mis-pagination-info">Showing ${startIdx + 1}–${endIdx} of ${totalItems} plots</div>`;
-        buildPaginationControls(currentPage, totalPages);
-
-      } else {
-        // Case Records View (all, burial, or funeral)
-        thead.innerHTML = `
-          <tr>
-            <th>Ref / Case #</th>
-            <th>Service Type</th>
-            <th>Deceased Full Name</th>
-            <th>Informant / Contact</th>
-            <th>Submitted / Reported</th>
-            <th>Cemetery & Plot</th>
-            <th>Civil Cert Status</th>
-            <th>Status</th>
-            <th style="text-align:center;">Action</th>
-          </tr>
-        `;
-
-        const filtered = RAW_REQUESTS.filter(r => {
-          if (currentView === 'burial' && r.record_kind !== 'burial') return false;
-          if (currentView === 'funeral' && r.record_kind !== 'funeral') return false;
-
-          const matchSearch = !searchTerm ||
-            (r.ref_code && r.ref_code.toLowerCase().includes(searchTerm)) ||
-            (r.name && r.name.toLowerCase().includes(searchTerm)) ||
-            (r.informant_name && r.informant_name.toLowerCase().includes(searchTerm)) ||
-            (r.plot_number && r.plot_number.toLowerCase().includes(searchTerm)) ||
-            (r.service_type && r.service_type.toLowerCase().includes(searchTerm));
-
-          let matchStatus = true;
-          if (statusFilter) {
-            const st = (r.status || '').toLowerCase();
-            if (statusFilter === 'pending') matchStatus = st.includes('pend') || st.includes('submit') || st.includes('request') || st.includes('review');
-            else if (statusFilter === 'completed') matchStatus = st.includes('complet') || st.includes('releas') || st === 'registered';
-            else if (statusFilter === 'accepted') matchStatus = st.includes('accept') || st.includes('verified');
-            else if (statusFilter === 'rejected') matchStatus = st.includes('reject') || st.includes('returned');
-          }
-          return matchSearch && matchStatus;
-        });
-
-        const totalItems = filtered.length;
-        const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
-        if (currentPage > totalPages) currentPage = totalPages;
-
-        const startIdx = (currentPage - 1) * PAGE_SIZE;
-        const endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
-        const pageItems = filtered.slice(startIdx, endIdx);
-
-        counterLabel.textContent = `Showing: ${totalItems} case records`;
-
-        if (totalItems === 0) {
-          tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-muted);">No records found matching the filter criteria.</td></tr>`;
-          paginationBar.innerHTML = `<div class="mis-pagination-info">Showing 0 of 0 records</div>`;
-          return;
-        }
-
-        tbody.innerHTML = pageItems.map(r => {
-          const refDisplay = r.ref_code || ('#' + r.id);
-          const contactDisplay = r.contact ? `<div class="td-sub">${escHtml(r.contact)}</div>` : '';
-          const plotDisplay = r.plot_number && r.plot_number !== 'Pending'
-            ? `<span style="font-weight:600;color:var(--primary);">Plot ${escHtml(r.plot_number)}</span>`
-            : `<span style="color:var(--text-muted);font-style:italic;">Pending Assignment</span>`;
-
-          const certStatusDisplay = r.death_cert_status
-            ? `<span style="font-size:0.78rem;font-weight:600;">${escHtml(r.death_cert_status)}</span>`
-            : `<span style="color:var(--text-muted);font-size:0.78rem;">—</span>`;
-
-          return `
-            <tr>
-              <td class="td-id" style="font-weight:700;">${escHtml(refDisplay)}</td>
-              <td>
-                <span class="card-badge" style="font-size:0.75rem;padding:3px 8px;border-radius:4px;">
-                  ${escHtml(r.service_type || 'Burial Service')}
-                </span>
-              </td>
-              <td style="font-weight:600;">${escHtml(r.name || 'Unknown')}</td>
-              <td>
-                <div class="td-stacked">
-                  <span style="font-weight:600;">${escHtml(r.informant_name || '—')}</span>
-                  ${contactDisplay}
-                </div>
-              </td>
-              <td style="color:var(--text-muted);font-size:0.82rem;">${formatDisplayDateTime(r.date)}</td>
-              <td>
-                <div class="td-stacked">
-                  ${plotDisplay}
-                  <span class="td-sub">${escHtml(r.cemetery_pref || 'Local')}</span>
-                </div>
-              </td>
-              <td>${certStatusDisplay}</td>
-              <td>${getBadgeHtml(r.status)}</td>
-              <td style="text-align:center;">
-                <button type="button" class="btn-sm" onclick="openDamayanReviewModal('${escHtml(r.record_kind || 'burial')}', '${escHtml(r.id)}')" style="padding:4px 10px;font-size:0.78rem;border-radius:4px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:600;">
-                  Review
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-        paginationBar.innerHTML = `<div class="mis-pagination-info">Showing ${startIdx + 1}–${endIdx} of ${totalItems} records</div>`;
-        buildPaginationControls(currentPage, totalPages);
+      if (totalItems === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-muted);">No records found matching the filter criteria.</td></tr>`;
+        paginationBar.innerHTML = `<div class="mis-pagination-info">Showing 0 of 0 records</div>`;
+        return;
       }
+
+      tbody.innerHTML = pageItems.map(r => {
+        const refDisplay = r.ref_code || ('#' + r.id);
+        const contactDisplay = r.contact ? `<div class="td-sub">${escHtml(r.contact)}</div>` : '';
+        const certStatusDisplay = r.death_cert_status
+          ? `<span style="font-size:0.78rem;font-weight:600;">${escHtml(r.death_cert_status)}</span>`
+          : `<span style="color:var(--text-muted);font-size:0.78rem;">—</span>`;
+
+        return `
+          <tr>
+            <td class="td-id" style="font-weight:700;">${escHtml(refDisplay)}</td>
+            <td>
+              <span class="card-badge" style="font-size:0.75rem;padding:3px 8px;border-radius:4px;">
+                ${escHtml(r.service_type || 'Burial Service')}
+              </span>
+            </td>
+            <td style="font-weight:600;">${escHtml(r.name || 'Unknown')}</td>
+            <td>
+              <div class="td-stacked">
+                <span style="font-weight:600;">${escHtml(r.informant_name || '—')}</span>
+                ${contactDisplay}
+              </div>
+            </td>
+            <td style="color:var(--text-muted);font-size:0.82rem;">${formatDisplayDateTime(r.date)}</td>
+            <td>${certStatusDisplay}</td>
+            <td>${getBadgeHtml(r.status)}</td>
+            <td style="text-align:center;">
+              <button type="button" class="btn-sm" onclick="openDamayanReviewModal('${escHtml(r.record_kind || 'burial')}', '${escHtml(r.id)}')" style="padding:4px 10px;font-size:0.78rem;border-radius:4px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:600;">
+                Review
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      paginationBar.innerHTML = `<div class="mis-pagination-info">Showing ${startIdx + 1}–${endIdx} of ${totalItems} records</div>`;
+      buildPaginationControls(currentPage, totalPages);
     }
 
     // ── Review Modal ──
@@ -568,7 +479,6 @@ $stats = $stats ?? [
 
       if (r.date_of_death) rows.push(['Date of Death', formatDisplayDate(r.date_of_death)]);
       if (r.place_of_death) rows.push(['Place of Death', r.place_of_death]);
-      if (r.cemetery_pref || r.plot_number) rows.push(['Cemetery & Plot Reference', `${r.plot_number || 'Pending'} (${r.cemetery_pref || 'ISCAG Cemetery'})`]);
       if (r.death_cert_status) rows.push(['Civil Death Certificate Status', r.death_cert_status]);
       if (r.scheduled_release_date) rows.push(['Scheduled Burial / Release', formatDisplayDate(r.scheduled_release_date)]);
       if (r.assigned_staff_name) rows.push(['Assigned Handling Staff', r.assigned_staff_name]);
