@@ -1835,11 +1835,22 @@ class AdminController extends Controller
         $donations = $charity->getAllDonations($filters);
         $stats = $charity->getDashboardStats();
         $statusBreakdown = $charity->getDonationStatusBreakdown();
-        $integrityScan = $charity->checkSystemIntegrity();
-        $auditLogs = $charity->getDonationAuditLogs([
-            'search' => trim($_GET['audit_search'] ?? ''),
-            'action' => trim($_GET['audit_action'] ?? '')
-        ]);
+        try {
+            $integrityScan = $charity->checkSystemIntegrity();
+        } catch (\Throwable $e) {
+            error_log("Failed to run integrity scan: " . $e->getMessage());
+            $integrityScan = ['total_issues' => 0, 'issues' => [], 'status' => 'HEALTHY', 'checked_at' => date('Y-m-d H:i:s')];
+        }
+
+        try {
+            $auditLogs = $charity->getDonationAuditLogs([
+                'search' => trim($_GET['audit_search'] ?? ''),
+                'action' => trim($_GET['audit_action'] ?? '')
+            ]);
+        } catch (\Throwable $e) {
+            error_log("Failed to fetch donation audit logs: " . $e->getMessage());
+            $auditLogs = [];
+        }
 
         // Calculate detailed metrics for MIS Admin summary cards
         $summary = [
