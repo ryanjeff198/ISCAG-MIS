@@ -112,6 +112,30 @@ class CharityProgram
                 INDEX idx_act_ref (`reference_no`),
                 INDEX idx_act_type (`action_type`),
                 INDEX idx_act_created (`created_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
+
+            "CREATE TABLE IF NOT EXISTS `donation_audit_logs` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `donation_id` INT NOT NULL,
+                `donation_ref` VARCHAR(50) NOT NULL,
+                `action` VARCHAR(50) NOT NULL,
+                `actor_id` INT NULL,
+                `actor_name` VARCHAR(255) NOT NULL,
+                `actor_role` VARCHAR(50) NOT NULL,
+                `previous_status` VARCHAR(50) NULL,
+                `new_status` VARCHAR(50) NULL,
+                `previous_values` LONGTEXT NULL,
+                `new_values` LONGTEXT NULL,
+                `reason` TEXT NULL,
+                `ip_address` VARCHAR(45) NULL,
+                `user_agent` TEXT NULL,
+                `integrity_hash` VARCHAR(64) NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_don_log_id` (`donation_id`),
+                INDEX `idx_don_log_ref` (`donation_ref`),
+                INDEX `idx_don_log_action` (`action`),
+                INDEX `idx_don_log_actor` (`actor_id`, `actor_role`),
+                INDEX `idx_don_log_created` (`created_at`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;"
         ];
 
@@ -121,6 +145,30 @@ class CharityProgram
             } catch (PDOException $e) {
                 // Table already exists or foreign key already exists
             }
+        }
+
+        // Dynamically ensure extended donation columns exist on charity_donations_records
+        $colsToAdd = [
+            "target_program VARCHAR(100) DEFAULT 'General Fund'",
+            "donation_category VARCHAR(50) DEFAULT 'manual'",
+            "payment_screenshot VARCHAR(255) NULL",
+            "donor_contact VARCHAR(50) NULL",
+            "donor_email VARCHAR(200) NULL",
+            "tenant_id INT NULL",
+            "verified_by VARCHAR(255) NULL",
+            "verified_at DATETIME NULL",
+            "rejected_by VARCHAR(255) NULL",
+            "rejected_at DATETIME NULL",
+            "rejection_reason TEXT NULL",
+            "correction_by VARCHAR(255) NULL",
+            "correction_at DATETIME NULL",
+            "correction_reason TEXT NULL",
+            "original_values LONGTEXT NULL"
+        ];
+        foreach ($colsToAdd as $colDef) {
+            try {
+                $this->db->exec("ALTER TABLE `charity_donations_records` ADD COLUMN $colDef");
+            } catch (\Throwable $e) {}
         }
     }
 
@@ -211,9 +259,26 @@ class CharityProgram
                 $prevStatus, $newStatus, $prevJson, $newJson, $reason,
                 $ip, $ua, $integrityHash
             ]);
-        } catch (\PDOException $e) {
-            error_log("CharityProgram::recordAuditLog error: " . $e->getMessage());
-            return false;
+        } catch (\Throwable $e) {
+            // Attempt self-healing by ensuring table exists and retry
+            try {
+                $this->initTables();
+                $stmt = $this->db->prepare("
+                    INSERT INTO donation_audit_logs (
+                        donation_id, donation_ref, action, actor_id, actor_name, actor_role,
+                        previous_status, new_status, previous_values, new_values, reason,
+                        ip_address, user_agent, integrity_hash, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                ");
+                return $stmt->execute([
+                    $donationId, $donationRef, $action, $actorId, $actorName, $actorRole,
+                    $prevStatus, $newStatus, $prevJson, $newJson, $reason,
+                    $ip, $ua, $integrityHash
+                ]);
+            } catch (\Throwable $e2) {
+                error_log("CharityProgram::recordAuditLog error: " . $e2->getMessage());
+                return false;
+            }
         }
     }
 
@@ -222,41 +287,54 @@ class CharityProgram
      */
     public function getDonationAuditLogs(array $filters = []): array
     {
-        $sql = "SELECT l.*, d.donor_name, d.amount, d.donation_type, d.target_program 
-                FROM donation_audit_logs l
-                LEFT JOIN charity_donations_records d ON l.donation_id = d.id
-                WHERE 1=1";
-        $params = [];
+        try {
+            $sql = "SELECT l.*, d.donor_name, d.amount, d.donation_type, d.target_program 
+                    FROM donation_audit_logs l
+                    LEFT JOIN charity_donations_records d ON l.donation_id = d.id
+                    WHERE 1=1";
+            $params = [];
 
-        if (!empty($filters['donation_id'])) {
-            $sql .= " AND l.donation_id = ?";
-            $params[] = (int)$filters['donation_id'];
-        }
-        if (!empty($filters['donation_ref'])) {
-            $sql .= " AND l.donation_ref LIKE ?";
-            $params[] = '%' . trim($filters['donation_ref']) . '%';
-        }
-        if (!empty($filters['action'])) {
-            $sql .= " AND l.action = ?";
-            $params[] = $filters['action'];
-        }
-        if (!empty($filters['actor_role'])) {
-            $sql .= " AND l.actor_role = ?";
-            $params[] = $filters['actor_role'];
-        }
-        if (!empty($filters['search'])) {
-            $s = '%' . trim($filters['search']) . '%';
-            $sql .= " AND (l.donation_ref LIKE ? OR l.actor_name LIKE ? OR l.reason LIKE ? OR d.donor_name LIKE ?)";
-            $params[] = $s;
-            $params[] = $s;
-            $params[] = $s;
-            $params[] = $s;
-        }
+            if (!empty($filters['donation_id'])) {
+                $sql .= " AND l.donation_id = ?";
+                $params[] = (int)$filters['donation_id'];
+            }
+            if (!empty($filters['donation_ref'])) {
+                $sql .= " AND l.donation_ref LIKE ?";
+                $params[] = '%' . trim($filters['donation_ref']) . '%';
+            }
+            if (!empty($filters['action'])) {
+                $sql .= " AND l.action = ?";
+                $params[] = $filters['action'];
+            }
+            if (!empty($filters['actor_role'])) {
+                $sql .= " AND l.actor_role = ?";
+                $params[] = $filters['actor_role'];
+            }
+            if (!empty($filters['search'])) {
+                $s = '%' . trim($filters['search']) . '%';
+                $sql .= " AND (l.donation_ref LIKE ? OR l.actor_name LIKE ? OR l.reason LIKE ? OR d.donor_name LIKE ?)";
+                $params[] = $s;
+                $params[] = $s;
+                $params[] = $s;
+                $params[] = $s;
+            }
 
-        $sql .= " ORDER BY l.id DESC LIMIT 200";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $sql .= " ORDER BY l.id DESC LIMIT 200";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            // Table may not exist yet on remote host; auto-initialize and retry once
+            try {
+                $this->initTables();
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute($params);
+                return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (\Throwable $e2) {
+                error_log("CharityProgram::getDonationAuditLogs error: " . $e2->getMessage());
+                return [];
+            }
+        }
     }
 
     /**
@@ -267,74 +345,84 @@ class CharityProgram
         $issues = [];
 
         // Check 1: Duplicate payment references across non-rejected transactions
-        $stmtDup = $this->db->query("
-            SELECT payment_reference, COUNT(*) as count, GROUP_CONCAT(donation_ref SEPARATOR ', ') as refs, GROUP_CONCAT(status SEPARATOR ', ') as statuses
-            FROM charity_donations_records
-            WHERE payment_reference IS NOT NULL AND TRIM(payment_reference) != ''
-            GROUP BY payment_reference
-            HAVING count > 1
-        ");
-        $dups = $stmtDup->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        foreach ($dups as $d) {
-            $issues[] = [
-                'type' => 'DUPLICATE_PAYMENT_REF',
-                'severity' => 'HIGH',
-                'title' => 'Duplicate Payment Reference Detected',
-                'description' => "Payment reference '{$d['payment_reference']}' is duplicated across transactions: {$d['refs']} ({$d['statuses']}).",
-                'item_ref' => $d['payment_reference']
-            ];
-        }
+        try {
+            $stmtDup = $this->db->query("
+                SELECT payment_reference, COUNT(*) as count, GROUP_CONCAT(donation_ref SEPARATOR ', ') as refs, GROUP_CONCAT(status SEPARATOR ', ') as statuses
+                FROM charity_donations_records
+                WHERE payment_reference IS NOT NULL AND TRIM(payment_reference) != ''
+                GROUP BY payment_reference
+                HAVING count > 1
+            ");
+            $dups = $stmtDup->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($dups as $d) {
+                $issues[] = [
+                    'type' => 'DUPLICATE_PAYMENT_REF',
+                    'severity' => 'HIGH',
+                    'title' => 'Duplicate Payment Reference Detected',
+                    'description' => "Payment reference '{$d['payment_reference']}' is duplicated across transactions: {$d['refs']} ({$d['statuses']}).",
+                    'item_ref' => $d['payment_reference']
+                ];
+            }
+        } catch (\Throwable $e) {}
 
         // Check 2: Invalid/Zero/Negative amounts in monetary transactions
-        $stmtInvalidAmt = $this->db->query("
-            SELECT donation_ref, donor_name, amount, status 
-            FROM charity_donations_records 
-            WHERE donation_type = 'monetary' AND amount <= 0
-        ");
-        $invalidAmts = $stmtInvalidAmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        foreach ($invalidAmts as $inv) {
-            $issues[] = [
-                'type' => 'INVALID_AMOUNT',
-                'severity' => 'HIGH',
-                'title' => 'Invalid Non-Positive Monetary Amount',
-                'description' => "Donation {$inv['donation_ref']} from {$inv['donor_name']} has invalid amount ₱" . number_format($inv['amount'], 2) . ".",
-                'item_ref' => $inv['donation_ref']
-            ];
-        }
+        try {
+            $stmtInvalidAmt = $this->db->query("
+                SELECT donation_ref, donor_name, amount, status 
+                FROM charity_donations_records 
+                WHERE donation_type = 'monetary' AND amount <= 0
+            ");
+            $invalidAmts = $stmtInvalidAmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($invalidAmts as $inv) {
+                $issues[] = [
+                    'type' => 'INVALID_AMOUNT',
+                    'severity' => 'HIGH',
+                    'title' => 'Invalid Non-Positive Monetary Amount',
+                    'description' => "Donation {$inv['donation_ref']} from {$inv['donor_name']} has invalid amount ₱" . number_format($inv['amount'], 2) . ".",
+                    'item_ref' => $inv['donation_ref']
+                ];
+            }
+        } catch (\Throwable $e) {}
 
         // Check 3: Digital monetary donations missing payment reference
-        $stmtMissingRef = $this->db->query("
-            SELECT donation_ref, donor_name, payment_method, status 
-            FROM charity_donations_records 
-            WHERE donation_category = 'digital' AND (payment_reference IS NULL OR TRIM(payment_reference) = '') AND status IN ('Available', 'Partially Allocated', 'Fully Allocated')
-        ");
-        $missingRefs = $stmtMissingRef->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        foreach ($missingRefs as $mr) {
-            $issues[] = [
-                'type' => 'MISSING_PAYMENT_REFERENCE',
-                'severity' => 'MEDIUM',
-                'title' => 'Verified Digital Donation Missing Reference',
-                'description' => "Verified digital donation {$mr['donation_ref']} via {$mr['payment_method']} is missing an external gateway/bank reference number.",
-                'item_ref' => $mr['donation_ref']
-            ];
-        }
+        try {
+            $stmtMissingRef = $this->db->query("
+                SELECT donation_ref, donor_name, payment_method, status 
+                FROM charity_donations_records 
+                WHERE (donation_category = 'digital' OR payment_method IN ('GCash', 'Maya', 'Bank Transfer', 'Online Banking'))
+                  AND (payment_reference IS NULL OR TRIM(payment_reference) = '') 
+                  AND status IN ('Available', 'Partially Allocated', 'Fully Allocated', 'Verified')
+            ");
+            $missingRefs = $stmtMissingRef->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($missingRefs as $mr) {
+                $issues[] = [
+                    'type' => 'MISSING_PAYMENT_REFERENCE',
+                    'severity' => 'MEDIUM',
+                    'title' => 'Verified Digital Donation Missing Reference',
+                    'description' => "Verified digital donation {$mr['donation_ref']} via " . ($mr['payment_method'] ?? 'Online') . " is missing an external gateway/bank reference number.",
+                    'item_ref' => $mr['donation_ref']
+                ];
+            }
+        } catch (\Throwable $e) {}
 
         // Check 4: Over-allocated donations
-        $stmtOverAlloc = $this->db->query("
-            SELECT donation_ref, donor_name, amount, allocated_amount 
-            FROM charity_donations_records 
-            WHERE donation_type = 'monetary' AND allocated_amount > amount
-        ");
-        $overAllocs = $stmtOverAlloc->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        foreach ($overAllocs as $oa) {
-            $issues[] = [
-                'type' => 'OVER_ALLOCATION',
-                'severity' => 'CRITICAL',
-                'title' => 'Donation Allocation Exceeds Total Principal',
-                'description' => "Donation {$oa['donation_ref']} has allocated ₱" . number_format($oa['allocated_amount'], 2) . " which exceeds the total received amount of ₱" . number_format($oa['amount'], 2) . ".",
-                'item_ref' => $oa['donation_ref']
-            ];
-        }
+        try {
+            $stmtOverAlloc = $this->db->query("
+                SELECT donation_ref, donor_name, amount, allocated_amount 
+                FROM charity_donations_records 
+                WHERE donation_type = 'monetary' AND allocated_amount > amount
+            ");
+            $overAllocs = $stmtOverAlloc->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($overAllocs as $oa) {
+                $issues[] = [
+                    'type' => 'OVER_ALLOCATION',
+                    'severity' => 'CRITICAL',
+                    'title' => 'Donation Allocation Exceeds Total Principal',
+                    'description' => "Donation {$oa['donation_ref']} has allocated ₱" . number_format($oa['allocated_amount'], 2) . " which exceeds the total received amount of ₱" . number_format($oa['amount'], 2) . ".",
+                    'item_ref' => $oa['donation_ref']
+                ];
+            }
+        } catch (\Throwable $e) {}
 
         return [
             'total_issues' => count($issues),
