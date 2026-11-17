@@ -268,6 +268,43 @@
       line-height: 32px;
     }
 
+    .insight-card.clickable-card {
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+      position: relative;
+    }
+    .insight-card.clickable-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(23, 107, 69, 0.12);
+      border-color: var(--primary);
+    }
+    .insight-card.clickable-card:active {
+      transform: translateY(-1px);
+    }
+    .insight-sub-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-top: 4px;
+      transition: color 0.15s ease;
+    }
+    .insight-card.clickable-card:hover .insight-sub-action {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+    .insight-sub-action .nav-arr {
+      font-size: 0.82rem;
+      display: inline-block;
+      transition: transform 0.2s ease;
+    }
+    .insight-card.clickable-card:hover .insight-sub-action .nav-arr {
+      transform: translateX(3px);
+    }
+
     /* Print Header & Footer (Hidden by default) */
     .print-only {
       display: none;
@@ -483,38 +520,34 @@
           </div>
         </div>
 
-        <!-- ═══════ KPI SUMMARY RIBBON (Accurate & Connected) ═══════ -->
+        <!-- ═══════ KPI SUMMARY RIBBON (Interactive & Direct Navigation) ═══════ -->
         <div class="admin-insights">
-          <div class="insight-card">
-            <div class="insight-label">Filtered Records</div>
+          <div class="insight-card clickable-card" id="kpi-card-records" onclick="handleKpiCardClick('records')" title="Click to view department records">
+            <div class="insight-label" id="kpi-records-label">Filtered Records</div>
             <div class="insight-value info" id="kpi-records-count">0</div>
-            <div class="insight-sub" id="kpi-records-sub" style="font-size:0.7rem;color:var(--text-muted);font-weight:500;margin-top:4px;display:flex;align-items:center;gap:4px;">
-              <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-              Connected to: Unified Central Registry
+            <div class="insight-sub-action" id="kpi-records-sub">
+              <span>View all records</span> <span class="nav-arr">↓</span>
             </div>
           </div>
-          <div class="insight-card">
+          <div class="insight-card clickable-card" id="kpi-card-approved" onclick="handleKpiCardClick('approved')" title="Click to filter approved & active records">
             <div class="insight-label">Approved / Confirmed</div>
             <div class="insight-value success" id="kpi-approved-count">0</div>
-            <div class="insight-sub" id="kpi-approved-sub" style="font-size:0.7rem;color:var(--text-muted);font-weight:500;margin-top:4px;display:flex;align-items:center;gap:4px;">
-              <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              Status: Approved, Completed, or Active
+            <div class="insight-sub-action" id="kpi-approved-sub">
+              <span>Filter approved cases</span> <span class="nav-arr">→</span>
             </div>
           </div>
-          <div class="insight-card">
+          <div class="insight-card clickable-card" id="kpi-card-pending" onclick="handleKpiCardClick('pending')" title="Click to filter pending reviews">
             <div class="insight-label">Pending Review</div>
             <div class="insight-value warning" id="kpi-pending-count">0</div>
-            <div class="insight-sub" id="kpi-pending-sub" style="font-size:0.7rem;color:var(--text-muted);font-weight:500;margin-top:4px;display:flex;align-items:center;gap:4px;">
-              <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-              Status: Pending or Submitted
+            <div class="insight-sub-action" id="kpi-pending-sub">
+              <span>Filter pending requests</span> <span class="nav-arr">→</span>
             </div>
           </div>
-          <div class="insight-card">
-            <div class="insight-label" id="kpi-card4-label">Revenue Collected</div>
+          <div class="insight-card clickable-card" id="kpi-card-detail" onclick="handleKpiCardClick('detail')" title="Click to open financial / operational ledger">
+            <div class="insight-label" id="kpi-card4-label">Total Verified Revenue</div>
             <div class="insight-value" id="kpi-card4-val" style="color:var(--primary);">₱<?= number_format($actualPaidRevenue ?? $totalRevenue ?? 0, 2) ?></div>
-            <div class="insight-sub" id="kpi-card4-sub" style="font-size:0.7rem;color:var(--text-muted);font-weight:500;margin-top:4px;display:flex;align-items:center;gap:4px;">
-              <svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
-              Connected to: payments table (Verified Paid)
+            <div class="insight-sub-action" id="kpi-card4-sub">
+              <span>View verified billing ledger</span> <span class="nav-arr">→</span>
             </div>
           </div>
         </div>
@@ -1032,6 +1065,60 @@
       return html;
     }
 
+    function handleKpiCardClick(type) {
+      const dept = (document.getElementById('filter-dept')?.value || 'all');
+      const statusSel = document.getElementById('filter-status');
+
+      if (type === 'records') {
+        if (dept === 'Maintenance') {
+          window.location.href = '<?= url('/admin/mis_admin/maintenance') ?>';
+        } else if (dept === 'Apartments') {
+          window.location.href = '<?= url('/admin/mis_admin/apartment_confirmation') ?>';
+        } else if (dept.includes('Education')) {
+          window.location.href = '<?= url('/admin/mis_admin/dawah_records?type=islamic_education') ?>';
+        } else if (dept.includes("Da'wah")) {
+          window.location.href = '<?= url('/admin/mis_admin/dawah_records') ?>';
+        } else if (dept === 'Damayan') {
+          window.location.href = '<?= url('/admin/mis_admin/damayan_records') ?>';
+        } else if (dept.includes('Charity')) {
+          window.location.href = '<?= url('/admin/mis_admin/donations') ?>';
+        } else {
+          const tbl = document.getElementById('master-report-table');
+          if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } else if (type === 'approved') {
+        if (statusSel) {
+          statusSel.value = 'Approved';
+          applyReportFilters();
+          const tbl = document.getElementById('master-report-table');
+          if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } else if (type === 'pending') {
+        if (statusSel) {
+          statusSel.value = 'Pending';
+          applyReportFilters();
+          const tbl = document.getElementById('master-report-table');
+          if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } else if (type === 'detail') {
+        if (dept === 'Maintenance') {
+          window.location.href = '<?= url('/admin/mis_admin/maintenance') ?>';
+        } else if (dept === 'Apartments' || dept === 'Finance') {
+          window.location.href = '<?= url('/admin/mis_admin/apartment_records?tab=billing') ?>';
+        } else if (dept.includes('Education')) {
+          window.location.href = '<?= url('/admin/mis_admin/dawah_records?type=islamic_education') ?>';
+        } else if (dept.includes("Da'wah")) {
+          window.location.href = '<?= url('/admin/mis_admin/dawah_records') ?>';
+        } else if (dept === 'Damayan') {
+          window.location.href = '<?= url('/admin/mis_admin/damayan_records') ?>';
+        } else if (dept.includes('Charity')) {
+          window.location.href = '<?= url('/admin/mis_admin/donations') ?>';
+        } else {
+          window.location.href = '<?= url('/admin/mis_admin/apartment_records?tab=billing') ?>';
+        }
+      }
+    }
+
     function renderMasterReport(items) {
       currentMasterItems = items || [];
       currentMasterPage = 1;
@@ -1066,56 +1153,64 @@
       kpiApp.textContent = approvedCount;
       kpiPen.textContent = pendingCount;
 
-      // Dynamic Contextual KPI Card 4 & Connection Subtext
+      // Dynamic Contextual KPI Cards
       const card4Label = document.getElementById('kpi-card4-label');
       const card4Val = document.getElementById('kpi-card4-val');
       const card4Sub = document.getElementById('kpi-card4-sub');
       const recSub = document.getElementById('kpi-records-sub');
+      const recLabel = document.getElementById('kpi-records-label');
       const dept = (document.getElementById('filter-dept')?.value || 'all');
 
       if (card4Label && card4Val && card4Sub) {
         if (dept === 'Maintenance') {
-          if (recSub) recSub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Connected to: tenant_maintenance table';
+          if (recLabel) recLabel.textContent = 'Maintenance Work Orders';
+          if (recSub) recSub.innerHTML = '<span>Manage Work Orders</span> <span class="nav-arr">→</span>';
           card4Label.textContent = 'Service Fee / Billing';
           card4Val.textContent = '₱0.00';
           card4Val.style.color = 'var(--success)';
-          card4Sub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Connected to: tenant_maintenance • Free Facility Upkeep';
+          card4Sub.innerHTML = '<span>Complimentary Facility Upkeep</span> <span class="nav-arr">→</span>';
         } else if (dept === 'Apartments') {
-          if (recSub) recSub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Connected to: apartmentsapp table';
+          if (recLabel) recLabel.textContent = 'Apartment Applications';
+          if (recSub) recSub.innerHTML = '<span>Manage Applications</span> <span class="nav-arr">→</span>';
           card4Label.textContent = 'Rent & Utility Collections';
           card4Val.textContent = '₱' + Number(REAL_FINANCE.actualPaidRevenue || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
           card4Val.style.color = 'var(--primary)';
-          card4Sub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg> Connected to: payments table (Actual Rent & Utilities)';
+          card4Sub.innerHTML = '<span>View Apartment Billing Ledger</span> <span class="nav-arr">→</span>';
         } else if (dept.includes('Education')) {
-          if (recSub) recSub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Connected to: islamic_education_enrollments table';
+          if (recLabel) recLabel.textContent = 'Registered Students';
+          if (recSub) recSub.innerHTML = '<span>View Student Roster</span> <span class="nav-arr">→</span>';
           card4Label.textContent = 'Avg Student Progress';
           card4Val.textContent = (REAL_FINANCE.avgEduProgress || 0) + '%';
           card4Val.style.color = 'var(--info)';
-          card4Sub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Connected to: islamic_education_enrollments (Attendance)';
+          card4Sub.innerHTML = '<span>View Attendance & Curriculum</span> <span class="nav-arr">→</span>';
         } else if (dept.includes("Da'wah")) {
-          if (recSub) recSub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Connected to: Da\'wah Service Registries';
+          if (recLabel) recLabel.textContent = "Da'wah Requests";
+          if (recSub) recSub.innerHTML = '<span>View Da\'wah Services</span> <span class="nav-arr">→</span>';
           card4Label.textContent = 'Active Consultations & Rites';
-          card4Val.textContent = (REAL_FINANCE.totalDawahServices || 0);
+          card4Val.textContent = (REAL_FINANCE.totalDawahServices || 0) + ' Services';
           card4Val.style.color = '#6366f1';
-          card4Sub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Connected to: counseling, marriage & conversion tables';
+          card4Sub.innerHTML = '<span>View Counseling & Rites</span> <span class="nav-arr">→</span>';
         } else if (dept === 'Damayan') {
-          if (recSub) recSub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Connected to: burial_requests & funeral_cases';
+          if (recLabel) recLabel.textContent = 'Burial & Funeral Cases';
+          if (recSub) recSub.innerHTML = '<span>View Damayan Cases</span> <span class="nav-arr">→</span>';
           card4Label.textContent = 'Cemetery Plots Available';
-          card4Val.textContent = (REAL_FINANCE.availCemeteryPlots || 0) + ' / ' + (REAL_FINANCE.totalCemeteryPlots || 0);
+          card4Val.textContent = (REAL_FINANCE.availCemeteryPlots || 0) + ' / ' + (REAL_FINANCE.totalCemeteryPlots || 0) + ' Available';
           card4Val.style.color = 'var(--primary)';
-          card4Sub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Connected to: cemetery_plots table';
+          card4Sub.innerHTML = '<span>View Cemetery Plot Allotments</span> <span class="nav-arr">→</span>';
         } else if (dept.includes('Charity')) {
-          if (recSub) recSub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Connected to: charity_donations_records';
+          if (recLabel) recLabel.textContent = 'Donation Records';
+          if (recSub) recSub.innerHTML = '<span>View Received Donations</span> <span class="nav-arr">→</span>';
           card4Label.textContent = 'Verified Monetary Funds';
           card4Val.textContent = '₱' + Number(REAL_FINANCE.verifiedDonationsAmount || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
           card4Val.style.color = 'var(--success)';
-          card4Sub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg> Connected to: charity_donations_records (Allocated/Available)';
+          card4Sub.innerHTML = '<span>View Donations & Allocations</span> <span class="nav-arr">→</span>';
         } else {
-          if (recSub) recSub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Connected to: Unified Multi-Department Registry';
+          if (recLabel) recLabel.textContent = 'Filtered Records';
+          if (recSub) recSub.innerHTML = '<span>Scroll to Central Records</span> <span class="nav-arr">↓</span>';
           card4Label.textContent = 'Total Verified Revenue';
           card4Val.textContent = '₱' + Number(REAL_FINANCE.actualPaidRevenue || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
           card4Val.style.color = 'var(--primary)';
-          card4Sub.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:currentColor;"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg> Connected to: payments table (Verified Collections)';
+          card4Sub.innerHTML = '<span>View Verified Billing Ledger</span> <span class="nav-arr">→</span>';
         }
       }
 
