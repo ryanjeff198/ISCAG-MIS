@@ -191,6 +191,83 @@
     .badge-dept-finance { background: #dcfce7; color: #15803d; }
     .badge-dept-maintenance { background: #fef3c7; color: #92400e; }
 
+    /* ═══════ PAGINATION CONTROLS ═══════ */
+    .mis-page-hidden {
+      display: none !important;
+    }
+
+    .mis-pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 12px 18px;
+      background: #fbfcfb;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .mis-pagination-info {
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .mis-pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .mis-page-btn {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .mis-page-btn:hover:not(:disabled):not(.active) {
+      background: #f3f4f6;
+      border-color: #cbd5e1;
+      color: var(--primary);
+    }
+
+    .mis-page-btn.active {
+      background: var(--primary) !important;
+      color: #ffffff !important;
+      border-color: var(--primary) !important;
+      cursor: default;
+      box-shadow: 0 2px 6px rgba(23, 107, 69, 0.25);
+    }
+
+    .mis-page-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: #f8fafc;
+      border-color: var(--border);
+    }
+
+    .mis-page-ellipsis {
+      padding: 0 6px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      line-height: 32px;
+    }
+
     /* Print Header & Footer (Hidden by default) */
     .print-only {
       display: none;
@@ -198,6 +275,12 @@
 
     /* ═══════ PRINT STYLES (Letter Bond Paper Optimized) ═══════ */
     @media print {
+      .mis-pagination-bar {
+        display: none !important;
+      }
+      .mis-page-hidden {
+        display: table-row !important;
+      }
       @page {
         size: letter portrait;
         margin: 0.5in;
@@ -427,7 +510,7 @@
             <span style="font-size:0.75rem;color:var(--text-muted);" id="report-counter">0 records</span>
           </div>
           <div class="report-table-wrapper">
-            <table class="report-table" id="master-report-table">
+            <table class="report-table" id="master-report-table" data-paginate="false">
               <thead>
                 <tr>
                   <th>Ref #</th>
@@ -443,6 +526,7 @@
               <tbody id="master-report-tbody"></tbody>
             </table>
           </div>
+          <div id="master-report-pagination" class="mis-pagination-bar"></div>
         </div>
 
         <!-- ═══════ SPECIALIZED DEPARTMENT DATA LOGS ═══════ -->
@@ -458,7 +542,7 @@
             <span class="badge-dept badge-dept-education"><?= $totalEduStudents ?? 0 ?> Students Registered</span>
           </div>
           <div class="report-table-wrapper">
-            <table class="report-table">
+            <table class="report-table" id="edu-report-table" data-paginate="false">
               <thead>
                 <tr>
                   <th>Student ID</th>
@@ -498,6 +582,7 @@
               </tbody>
             </table>
           </div>
+          <div id="edu-report-pagination" class="mis-pagination-bar"></div>
         </div>
 
         <!-- 2. DAMAYAN BURIAL & FUNERAL LOGS -->
@@ -507,7 +592,7 @@
             <span class="badge-dept badge-dept-damayan"><?= count($burialRequests ?? []) ?> Burial Services Recorded</span>
           </div>
           <div class="report-table-wrapper">
-            <table class="report-table">
+            <table class="report-table" id="damayan-report-table" data-paginate="false">
               <thead>
                 <tr>
                   <th>Case Ref</th>
@@ -549,6 +634,7 @@
               </tbody>
             </table>
           </div>
+          <div id="damayan-report-pagination" class="mis-pagination-bar"></div>
         </div>
 
         <!-- 2b. CHARITY & RECEIVED DONATIONS LOG -->
@@ -568,7 +654,7 @@
             </div>
           </div>
           <div class="report-table-wrapper">
-            <table class="report-table">
+            <table class="report-table" id="charity-report-table" data-paginate="false">
               <thead>
                 <tr>
                   <th>Donation Ref</th>
@@ -632,6 +718,7 @@
               </tbody>
             </table>
           </div>
+          <div id="charity-report-pagination" class="mis-pagination-bar"></div>
         </div>
 
         <!-- 3. APARTMENT OCCUPANCY & LEASE LOG -->
@@ -641,7 +728,7 @@
             <span class="badge-dept badge-dept-apartments"><?= count($aptLeaseLogs ?? []) ?> Recent Applications</span>
           </div>
           <div class="report-table-wrapper">
-            <table class="report-table">
+            <table class="report-table" id="apartment-report-table" data-paginate="false">
               <thead>
                 <tr>
                   <th>Unit ID</th>
@@ -673,6 +760,7 @@
               </tbody>
             </table>
           </div>
+          <div id="apartment-report-pagination" class="mis-pagination-bar"></div>
         </div>
 
         <!-- 4. MAINTENANCE REPORTS & REQUESTS -->
@@ -688,7 +776,7 @@
             </div>
           </div>
           <div class="report-table-wrapper">
-            <table class="report-table">
+            <table class="report-table" id="maintenance-report-table" data-paginate="false">
               <thead>
                 <tr>
                   <th>Ref #</th>
@@ -725,6 +813,7 @@
               </tbody>
             </table>
           </div>
+          <div id="maintenance-report-pagination" class="mis-pagination-bar"></div>
         </div>
 
         <!-- ═══════ OFFICIAL PRINT SIGN-OFF (Letter Bond Paper Bottom) ═══════ -->
@@ -886,13 +975,59 @@
       }
     }
 
+    let currentMasterItems = [];
+    let currentMasterPage = 1;
+    const masterPerPage = 10;
+
+    function buildPaginationButtons(currentPage, totalPages, onPageChange) {
+      if (totalPages <= 1) {
+        return `
+          <button type="button" class="mis-page-btn" disabled>‹ Prev</button>
+          <button type="button" class="mis-page-btn active">1</button>
+          <button type="button" class="mis-page-btn" disabled>Next ›</button>
+        `;
+      }
+
+      let pages = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        if (currentPage > 3) pages.push('...');
+        const start = Math.max(2, currentPage - 1);
+        const end = Math.min(totalPages - 1, currentPage + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (currentPage < totalPages - 2) pages.push('...');
+        pages.push(totalPages);
+      }
+
+      let html = `<button type="button" class="mis-page-btn" ${currentPage <= 1 ? 'disabled' : ''} data-dir="prev">‹ Prev</button>`;
+      pages.forEach(p => {
+        if (p === '...') {
+          html += `<span class="mis-page-ellipsis">…</span>`;
+        } else {
+          html += `<button type="button" class="mis-page-btn ${p === currentPage ? 'active' : ''}" data-p="${p}">${p}</button>`;
+        }
+      });
+      html += `<button type="button" class="mis-page-btn" ${currentPage >= totalPages ? 'disabled' : ''} data-dir="next">Next ›</button>`;
+      return html;
+    }
+
     function renderMasterReport(items) {
+      currentMasterItems = items || [];
+      currentMasterPage = 1;
+      renderMasterPage();
+    }
+
+    function renderMasterPage() {
       const tbody = document.getElementById('master-report-tbody');
       const counter = document.getElementById('report-counter');
       const kpiRec = document.getElementById('kpi-records-count');
       const kpiApp = document.getElementById('kpi-approved-count');
       const kpiPen = document.getElementById('kpi-pending-count');
+      const pagBar = document.getElementById('master-report-pagination');
 
+      const items = currentMasterItems;
       counter.textContent = items.length + ' record' + (items.length !== 1 ? 's' : '');
       kpiRec.textContent = items.length;
 
@@ -914,10 +1049,20 @@
 
       if (items.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted);">No records found matching the selected report filters.</td></tr>';
+        if (pagBar) pagBar.style.display = 'none';
         return;
       }
 
-      tbody.innerHTML = items.map(it => {
+      const total = items.length;
+      const totalPages = Math.max(1, Math.ceil(total / masterPerPage));
+      if (currentMasterPage > totalPages) currentMasterPage = totalPages;
+      if (currentMasterPage < 1) currentMasterPage = 1;
+
+      const startIdx = (currentMasterPage - 1) * masterPerPage;
+      const endIdx = Math.min(startIdx + masterPerPage, total);
+      const pageSlice = items.slice(startIdx, endIdx);
+
+      tbody.innerHTML = pageSlice.map(it => {
         const s = (it.status || '').toLowerCase();
         const sClass = s.includes('pend') ? 'badge-pending' : (s.includes('reject') ? 'badge-overdue' : 'badge-paid');
         return `
@@ -933,26 +1078,180 @@
           </tr>
         `;
       }).join('');
+
+      if (pagBar) {
+        pagBar.style.display = 'flex';
+        pagBar.innerHTML = `
+          <div class="mis-pagination-info">Showing ${startIdx + 1}–${endIdx} of ${total} entries</div>
+          <div class="mis-pagination-controls">
+            ${buildPaginationButtons(currentMasterPage, totalPages)}
+          </div>
+        `;
+
+        pagBar.querySelectorAll('.mis-page-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (btn.disabled) return;
+            const p = btn.getAttribute('data-p');
+            const dir = btn.getAttribute('data-dir');
+            if (p) {
+              const target = parseInt(p, 10);
+              if (target !== currentMasterPage) {
+                currentMasterPage = target;
+                renderMasterPage();
+              }
+            } else if (dir === 'prev' && currentMasterPage > 1) {
+              currentMasterPage--;
+              renderMasterPage();
+            } else if (dir === 'next' && currentMasterPage < totalPages) {
+              currentMasterPage++;
+              renderMasterPage();
+            }
+          });
+        });
+      }
     }
 
-    // Print Report
+    // Specialized Static Department Tables Paginator (10 per page)
+    function paginateSpecializedTable(tableId, barId, perPage = 10) {
+      const table = document.getElementById(tableId);
+      const bar = document.getElementById(barId);
+      if (!table || !bar) return;
+
+      const tbody = table.querySelector('tbody');
+      if (!tbody) return;
+
+      const allRows = Array.from(tbody.querySelectorAll('tr')).filter(r => {
+        if (r.querySelector('th')) return false;
+        if (r.cells.length === 1 && r.cells[0].colSpan > 1) return false;
+        return true;
+      });
+
+      const total = allRows.length;
+      if (total === 0) {
+        bar.style.display = 'none';
+        return;
+      }
+
+      const totalPages = Math.max(1, Math.ceil(total / perPage));
+      let currentPage = 1;
+
+      function renderSpecPage() {
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIdx = (currentPage - 1) * perPage;
+        const endIdx = Math.min(startIdx + perPage, total);
+
+        allRows.forEach((r, idx) => {
+          if (idx >= startIdx && idx < endIdx) {
+            r.style.display = '';
+            r.classList.remove('mis-page-hidden');
+          } else {
+            r.style.display = 'none';
+            r.classList.add('mis-page-hidden');
+          }
+        });
+
+        bar.style.display = 'flex';
+        bar.innerHTML = `
+          <div class="mis-pagination-info">Showing ${startIdx + 1}–${endIdx} of ${total} entries</div>
+          <div class="mis-pagination-controls">
+            ${buildPaginationButtons(currentPage, totalPages)}
+          </div>
+        `;
+
+        bar.querySelectorAll('.mis-page-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (btn.disabled) return;
+            const p = btn.getAttribute('data-p');
+            const dir = btn.getAttribute('data-dir');
+            if (p) {
+              const target = parseInt(p, 10);
+              if (target !== currentPage) {
+                currentPage = target;
+                renderSpecPage();
+              }
+            } else if (dir === 'prev' && currentPage > 1) {
+              currentPage--;
+              renderSpecPage();
+            } else if (dir === 'next' && currentPage < totalPages) {
+              currentPage++;
+              renderSpecPage();
+            }
+          });
+        });
+      }
+
+      renderSpecPage();
+    }
+
+    function paginateAllSpecializedTables() {
+      paginateSpecializedTable('edu-report-table', 'edu-report-pagination', 10);
+      paginateSpecializedTable('damayan-report-table', 'damayan-report-pagination', 10);
+      paginateSpecializedTable('charity-report-table', 'charity-report-pagination', 10);
+      paginateSpecializedTable('apartment-report-table', 'apartment-report-pagination', 10);
+      paginateSpecializedTable('maintenance-report-table', 'maintenance-report-pagination', 10);
+    }
+
+    // Print Report (Prints 100% of records)
     function printReport() {
+      const tbody = document.getElementById('master-report-tbody');
+      const pagBar = document.getElementById('master-report-pagination');
+      if (pagBar) pagBar.style.display = 'none';
+
+      // Temporarily render all master rows for full printout
+      if (tbody && currentMasterItems.length) {
+        tbody.innerHTML = currentMasterItems.map(it => {
+          const s = (it.status || '').toLowerCase();
+          const sClass = s.includes('pend') ? 'badge-pending' : (s.includes('reject') ? 'badge-overdue' : 'badge-paid');
+          return `
+            <tr>
+              <td class="td-id">#${it.id || '—'}</td>
+              <td><span class="badge-dept ${getDeptClass(it.department)}">${it.department}</span></td>
+              <td style="font-weight:600;">${it.service_type || '—'}</td>
+              <td style="font-weight:600;">${it.subject_name || 'N/A'}</td>
+              <td style="font-size:0.8rem;color:var(--text-muted);">${it.contact || '—'}</td>
+              <td>${it.report_date ? formatDateTimeHtml(it.report_date) : '—'}</td>
+              <td style="font-size:0.8rem;">${it.detail_info || '—'}</td>
+              <td><span class="badge-status ${sClass}">${statusLabel(it.status || 'Active')}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Show all specialized table rows
+      document.querySelectorAll('.mis-page-hidden').forEach(r => {
+        r.style.display = '';
+      });
+
       window.print();
+
+      // Restore paginated view
+      setTimeout(() => {
+        renderMasterPage();
+        paginateAllSpecializedTables();
+      }, 500);
     }
 
-    // Export to CSV
+    // Export to CSV (Exports 100% of filtered records)
     function exportReportCSV() {
       const dept = document.getElementById('filter-dept').value;
       const rows = [];
       rows.push(['Ref ID', 'Department', 'Service Type', 'Subject / Applicant', 'Contact', 'Date', 'Details', 'Status']);
 
-      const tableRows = document.querySelectorAll('#master-report-tbody tr');
-      tableRows.forEach(tr => {
-        const cells = tr.querySelectorAll('td');
-        if (cells.length >= 8) {
-          const rowData = Array.from(cells).map(td => `"${td.textContent.replace(/"/g, '""').replace(/\s+/g, ' ').trim()}"`);
-          rows.push(rowData);
-        }
+      currentMasterItems.forEach(it => {
+        rows.push([
+          `"#${it.id || ''}"`,
+          `"${(it.department || '').replace(/"/g, '""')}"`,
+          `"${(it.service_type || '').replace(/"/g, '""')}"`,
+          `"${(it.subject_name || '').replace(/"/g, '""')}"`,
+          `"${(it.contact || '').replace(/"/g, '""')}"`,
+          `"${(it.report_date || '').replace(/"/g, '""')}"`,
+          `"${(it.detail_info || '').replace(/"/g, '""')}"`,
+          `"${(it.status || '').replace(/"/g, '""')}"`
+        ]);
       });
 
       const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
@@ -976,6 +1275,7 @@
       }
     }
     applyReportFilters();
+    paginateAllSpecializedTables();
   </script>
 </body>
 </html>

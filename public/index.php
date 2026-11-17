@@ -101,11 +101,13 @@ function format_datetime_html($val, string $fallback = '—'): string
 }
 
 // Start session with security settings
-ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_path', '/');
-ini_set('session.cookie_samesite', 'Lax');
-// ini_set('session.cookie_secure', 1); // Enable if using HTTPS
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_path', '/');
+    ini_set('session.cookie_samesite', 'Lax');
+    // ini_set('session.cookie_secure', 1); // Enable if using HTTPS
+    session_start();
+}
 
 // Require Core Files
 require_once BASE_PATH . '/app/helpers/Security.php';

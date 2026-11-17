@@ -1199,10 +1199,10 @@ function initTableSearch() {
         dataRows++;
         const text = row.textContent.toLowerCase();
         if (text.includes(term)) {
-          row.style.display = '';
+          delete row.dataset.searchHidden;
           visibleCount++;
         } else {
-          row.style.display = 'none';
+          row.dataset.searchHidden = '1';
         }
       });
       
@@ -1220,6 +1220,15 @@ function initTableSearch() {
         }
       } else if (emptyRow) {
         emptyRow.style.display = 'none';
+      }
+
+      if (typeof table._misPaginateRender === 'function') {
+        table._misPaginateRender(true);
+      } else {
+        rows.forEach(r => {
+          if (r.querySelector('th') || r.classList.contains('table-search-empty-row')) return;
+          r.style.display = r.dataset.searchHidden ? 'none' : '';
+        });
       }
     });
   };
@@ -1258,28 +1267,40 @@ function initTablePagination(perPage = 10) {
   };
 
   const attachPagination = (table) => {
-    if (!table || table.dataset.paginatedInit === '1') return;
+    if (!table) return;
     if (table.getAttribute('data-paginate') === 'false') return;
     if (table.classList.contains('info-table') || table.classList.contains('family-doc-table') || table.classList.contains('print-report-table')) return;
     if (table.closest('.modal, .modal-overlay, .modal-card')) return;
 
-    const tbody = table.querySelector('tbody');
+    const tbody = table.querySelector('tbody') || table;
     if (!tbody) return;
+
+    if (table.dataset.paginatedInit === '1') {
+      if (typeof table._misPaginateRender === 'function') {
+        table._misPaginateRender(false);
+      }
+      return;
+    }
 
     table.dataset.paginatedInit = '1';
 
     let currentPage = 1;
     let lastVisibleCount = -1;
 
-    const bar = document.createElement('div');
-    bar.className = 'mis-pagination-bar';
-
-    // Place pagination bar outside scrollable wrappers so it stays pinned
-    const scrollWrap = table.closest('.table-wrapper, .table-responsive, .table-container, .report-table-wrapper, .audit-table-wrap');
-    if (scrollWrap && scrollWrap.parentNode) {
-      scrollWrap.parentNode.insertBefore(bar, scrollWrap.nextSibling);
-    } else if (table.parentNode) {
-      table.parentNode.insertBefore(bar, table.nextSibling);
+    let bar = null;
+    const scrollWrap = table.closest('.table-wrapper, .table-responsive, .table-container, .report-table-wrapper, .audit-table-wrap') || table.parentElement;
+    if (scrollWrap && scrollWrap.parentElement) {
+      bar = scrollWrap.parentElement.querySelector(':scope > .mis-pagination-bar[data-for="' + (table.id || '') + '"]');
+    }
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'mis-pagination-bar';
+      if (table.id) bar.dataset.for = table.id;
+      if (scrollWrap && scrollWrap.parentNode) {
+        scrollWrap.parentNode.insertBefore(bar, scrollWrap.nextSibling);
+      } else if (table.parentNode) {
+        table.parentNode.insertBefore(bar, table.nextSibling);
+      }
     }
 
     const buildPageList = (page, totalPages) => {
@@ -1298,7 +1319,7 @@ function initTablePagination(perPage = 10) {
 
     const renderPage = (resetIfFiltered = false) => {
       const allRows = getDataRows(tbody);
-      const visibleRows = allRows.filter(r => r.style.display !== 'none');
+      const visibleRows = allRows.filter(r => !r.dataset.searchHidden);
       const total = visibleRows.length;
 
       if (resetIfFiltered && lastVisibleCount !== -1 && total !== lastVisibleCount) {
@@ -1307,7 +1328,14 @@ function initTablePagination(perPage = 10) {
       lastVisibleCount = total;
 
       if (total === 0) {
-        allRows.forEach(r => r.classList.remove('mis-page-hidden'));
+        allRows.forEach(r => {
+          if (r.dataset.searchHidden) {
+            r.style.display = 'none';
+          } else {
+            r.style.display = '';
+            r.classList.remove('mis-page-hidden');
+          }
+        });
         bar.style.display = 'none';
         return;
       }
@@ -1320,10 +1348,21 @@ function initTablePagination(perPage = 10) {
       const startIdx = (currentPage - 1) * perPage;
       const endIdx = Math.min(startIdx + perPage, total);
 
-      allRows.forEach(r => r.classList.remove('mis-page-hidden'));
+      allRows.forEach(r => {
+        if (r.dataset.searchHidden) {
+          r.style.display = 'none';
+        }
+      });
+
       visibleRows.forEach((r, idx) => {
-        if (idx < startIdx || idx >= endIdx) {
+        if (idx >= startIdx && idx < endIdx) {
+          r.style.display = '';
+          r.classList.remove('mis-page-hidden');
+          delete r.dataset.pageHidden;
+        } else {
+          r.style.display = 'none';
           r.classList.add('mis-page-hidden');
+          r.dataset.pageHidden = '1';
         }
       });
 
@@ -1386,11 +1425,12 @@ function initTablePagination(perPage = 10) {
       bar.appendChild(controls);
     };
 
-    // Initial render (and delayed safety pass for synchronous post-bootstrap table renders)
-    renderPage(false);
-    setTimeout(() => renderPage(false), 50);
+    table._misPaginateRender = renderPage;
 
-    // Re-paginate automatically when rows are added/removed or filtered via style.display
+    // Initial render
+    renderPage(false);
+
+    // Re-paginate automatically when rows are added/removed
     let scheduled = false;
     const scheduleRender = (reset) => {
       if (scheduled) return;
@@ -1403,23 +1443,19 @@ function initTablePagination(perPage = 10) {
 
     const rowObserver = new MutationObserver((mutations) => {
       let hasChildChange = false;
-      let hasStyleChange = false;
       for (const m of mutations) {
         if (m.type === 'childList') hasChildChange = true;
-        else if (m.type === 'attributes' && m.attributeName === 'style') hasStyleChange = true;
       }
-      if (hasChildChange || hasStyleChange) {
+      if (hasChildChange) {
         scheduleRender(true);
       }
     });
 
-    rowObserver.observe(tbody, {
-      childList: true,
-      attributes: true,
-      subtree: true,
-      attributeFilter: ['style']
-    });
+    rowObserver.observe(tbody, { childList: true });
   };
+
+  window.paginateTable = attachPagination;
+  window.initTablePagination = initTablePagination;
 
   document.querySelectorAll(selector).forEach(attachPagination);
 
@@ -1573,6 +1609,7 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
   initLogoutModal();
   initTableSearch();
   initNotifBadge();
+  try { initTablePagination(10); } catch (e) {}
 } else {
   document.addEventListener('DOMContentLoaded', () => {
     initAdminData();
@@ -1581,5 +1618,6 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
     initLogoutModal();
     initTableSearch();
     initNotifBadge();
+    try { initTablePagination(10); } catch (e) {}
   });
 }
