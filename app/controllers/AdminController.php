@@ -982,7 +982,137 @@ class AdminController extends Controller
 
     public function apartmentRecords(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
-        $this->view('admin/mis_admin/apartment_records', ['active_page' => 'apartment_records']);
+        $db = getDbConnection();
+        require_once BASE_PATH . '/app/helpers/SoaHelper.php';
+
+        // 1. KPI Stats directly from database
+        $totalUnits = (int)$db->query("SELECT COUNT(*) FROM apartment_units")->fetchColumn();
+        $availableUnits = (int)$db->query("SELECT COUNT(*) FROM apartment_units WHERE status = 'Available'")->fetchColumn();
+        $occupiedUnits = (int)$db->query("SELECT COUNT(*) FROM apartment_units WHERE status = 'Occupied'")->fetchColumn();
+
+        // 2. Unit Categories / Types
+        $unitCategories = $db->query("
+            SELECT t.type_id, t.label, t.type_key, t.price,
+                   COUNT(u.unit_id) as total_units,
+                   SUM(CASE WHEN u.status = 'Available' THEN 1 ELSE 0 END) as available_units,
+                   SUM(CASE WHEN u.status = 'Occupied' THEN 1 ELSE 0 END) as occupied_units,
+                   SUM(CASE WHEN u.status = 'Reserved' THEN 1 ELSE 0 END) as reserved_units
+            FROM apartment_types t
+            LEFT JOIN apartment_units u ON t.type_id = u.type_id
+            WHERE t.is_active = 1
+            GROUP BY t.type_id
+            ORDER BY t.sort_order, t.type_id
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 3. All individual units with accurate created/updated timestamps
+        $allUnits = $db->query("
+            SELECT u.unit_id, u.room_number, u.building, u.status, u.description,
+                   u.created_at, u.updated_at,
+                   t.label as type_label, t.type_key, t.price,
+                   ta.tenant_id, ta.first_name, ta.last_name
+            FROM apartment_units u
+            JOIN apartment_types t ON u.type_id = t.type_id
+            LEFT JOIN tenant_accounts ta ON u.tenant_id = ta.tenant_id
+            ORDER BY u.building, u.room_number
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 4. Accurate apartment billing based on real leases and payments
+        $allLeases = $db->query("
+            SELECT l.lease_id, l.tenant_id, l.monthly_rent, l.deposit_amount, l.advance_amount,
+                   l.start_date, l.end_date, l.lease_status,
+                   u.first_name, u.last_name, u.email,
+                   au.room_number, au.building, t.label as room_type
+            FROM leases l
+            JOIN tenant_accounts u ON l.tenant_id = u.tenant_id
+            LEFT JOIN apartmentsapp a ON l.application_id = a.application_id
+            LEFT JOIN apartment_units au ON a.unit_id = au.unit_id
+            LEFT JOIN apartment_types t ON au.type_id = t.type_id
+            WHERE l.lease_status NOT IN ('Archived', '')
+            ORDER BY l.start_date ASC
+        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $bills = [];
+        $today = date('Y-m-d');
+
+        foreach ($allLeases as $l) {
+            $tid = (int)$l['tenant_id'];
+            $soa = SoaHelper::buildTransactions($tid, (int)$l['lease_id']);
+            $txs = $soa['transactions'] ?? [];
+            
+            $periods = [];
+            foreach ($txs as $tx) {
+                $p = $tx['period'] ?? 'General';
+                if (!isset($periods[$p])) {
+                    $periods[$p] = [
+                        'period' => $p,
+                        'due_date' => $tx['date'],
+                        'charges' => 0.0,
+                        'payments' => 0.0,
+                        'payment_date' => null,
+                        'payment_ref' => null,
+                    ];
+                }
+                $charge = (float)($tx['charge'] ?? 0);
+                $pay = (float)($tx['payment'] ?? 0);
+                $periods[$p]['charges'] += $charge;
+                $periods[$p]['payments'] += $pay;
+                
+                if ($pay > 0 && !empty($tx['date'])) {
+                    $periods[$p]['payment_date'] = $tx['date'];
+                    $periods[$p]['payment_ref'] = $tx['ref'] ?? '';
+                }
+            }
+
+            foreach ($periods as $pName => $pData) {
+                if ($pData['charges'] <= 0) continue;
+                $balance = $pData['charges'] - $pData['payments'];
+                $dueDate = $pData['due_date'];
+                
+                $status = 'Pending';
+                if ($balance <= 0.01) {
+                    $status = 'Paid';
+                } elseif ($today > $dueDate) {
+                    $status = 'Overdue';
+                } else {
+                    $status = 'Pending';
+                }
+
+                $shortRef = 'BIL-' . $l['lease_id'] . '-' . date('mY', strtotime($dueDate));
+
+                $bills[] = [
+                    'id' => $shortRef,
+                    'lease_id' => (int)$l['lease_id'],
+                    'tenant_id' => $tid,
+                    'tenant_name' => $l['first_name'] . ' ' . $l['last_name'],
+                    'room' => ($l['building'] ? $l['building'] . ' — ' : '') . ($l['room_number'] ?: $l['room_type'] ?: 'Unit'),
+                    'period' => $pName,
+                    'amount' => (float)$pData['charges'],
+                    'amount_paid' => (float)$pData['payments'],
+                    'balance' => max(0, (float)$balance),
+                    'due_date' => $dueDate,
+                    'payment_date' => $pData['payment_date'],
+                    'payment_ref' => $pData['payment_ref'],
+                    'status' => $status
+                ];
+            }
+        }
+
+        // Sort newest due date first
+        usort($bills, function($a, $b) {
+            return strcmp($b['due_date'], $a['due_date']);
+        });
+
+        $this->view('admin/mis_admin/apartment_records', [
+            'active_page' => 'apartment_records',
+            'kpis' => [
+                'totalUnits' => $totalUnits,
+                'availableUnits' => $availableUnits,
+                'occupiedUnits' => $occupiedUnits
+            ],
+            'unitCategories' => $unitCategories,
+            'allUnits' => $allUnits,
+            'apartmentBills' => $bills
+        ]);
     }
 
     public function apartmentConfirmation(): void {
@@ -1233,6 +1363,14 @@ class AdminController extends Controller
                         }
                     }
 
+                    // Calculate accurate due date matching the lease start anniversary day
+                    $leaseStartDay = (int)$leaseStart->format('j');
+                    $dueYear = (int)$currentDate->format('Y');
+                    $dueMonth = (int)$currentDate->format('n');
+                    $maxDayInMonth = (int)date('t', mktime(0, 0, 0, $dueMonth, 1, $dueYear));
+                    $actualDay = min($leaseStartDay, $maxDayInMonth);
+                    $dueDate = new \DateTime(sprintf('%04d-%02d-%02d', $dueYear, $dueMonth, $actualDay));
+
                     // Determine single invoice status
                     $status = 'Pending';
                     if ($itemsPaidCount === $totItems) {
@@ -1240,10 +1378,6 @@ class AdminController extends Controller
                         $totalRevenue += $invoiceAmount;
                         $paidCount++;
                     } else {
-                        // Not fully paid: Check if it's past the 5th
-                        $dueDate = clone $currentDate; 
-                        $dueDate->modify('first day of this month')->modify('+4 days'); // 5th of the month
-                        
                         if ($now > $dueDate) {
                             $status = 'Overdue';
                             $overdueBilling++;
@@ -1264,7 +1398,7 @@ class AdminController extends Controller
                         'room_number' => $lease['room_number'],
                         'building' => $lease['building'],
                         'amount' => $invoiceAmount,
-                        'due_date' => $currentDate->format('Y-m-05'),
+                        'due_date' => $dueDate->format('Y-m-d'),
                         'status' => $status
                     ];
                 } // End if > 0

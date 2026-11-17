@@ -166,7 +166,7 @@
           </div>
           <div class="section-card-body" style="padding:0;">
             <div class="table-wrapper">
-              <table class="mis-table">
+              <table class="mis-table" id="invoices-table" data-paginate="false">
                 <thead>
                   <tr>
                     <th>Invoice ID</th>
@@ -180,6 +180,7 @@
                 <tbody id="billing-tbody"></tbody>
               </table>
             </div>
+            <div id="billing-pagination" class="mis-pagination-bar"></div>
           </div>
         </div>
 
@@ -210,11 +211,15 @@
         ];
     }, $invoices)) ?>;
 
+    let currentPage = 1;
+    const pageSize = 10;
+
     function switchTab(tabId) {
       currentTab = tabId;
+      currentPage = 1;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       event.currentTarget.classList.add('active');
-      renderAll();
+      renderAll(true);
     }
 
     function statusBadge(status) {
@@ -227,10 +232,62 @@
 
     const tabTitles = { all: 'All Invoices', pending: 'Pending Payments', overdue: 'Overdue Invoices', paid: 'Paid Invoices' };
 
+    function buildBillingPagination(curr, total) {
+      const bar = document.getElementById('billing-pagination');
+      if (!bar) return;
+      if (total <= 1) {
+        bar.innerHTML = '<div class="mis-pagination-info">Showing all invoices</div>';
+        return;
+      }
+      let btns = `<button type="button" class="mis-page-btn" data-act="prev" ${curr === 1 ? 'disabled' : ''}>&laquo; Prev</button>`;
+      const pages = [];
+      if (total <= 7) {
+        for (let i = 1; i <= total; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        if (curr > 3) pages.push('...');
+        const start = Math.max(2, curr - 1);
+        const end = Math.min(total - 1, curr + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (curr < total - 2) pages.push('...');
+        pages.push(total);
+      }
+      pages.forEach(p => {
+        if (p === '...') btns += `<span class="mis-page-ellipsis">&hellip;</span>`;
+        else btns += `<button type="button" class="mis-page-btn ${p === curr ? 'active' : ''}" data-p="${p}">${p}</button>`;
+      });
+      btns += `<button type="button" class="mis-page-btn" data-act="next" ${curr === total ? 'disabled' : ''}>Next &raquo;</button>`;
+
+      const ctrlDiv = document.createElement('div');
+      ctrlDiv.className = 'mis-pagination-controls';
+      ctrlDiv.innerHTML = btns;
+      ctrlDiv.querySelectorAll('.mis-page-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (btn.disabled) return;
+          const p = btn.getAttribute('data-p');
+          const act = btn.getAttribute('data-act');
+          if (p) {
+            currentPage = parseInt(p, 10);
+            renderAll(false);
+          } else if (act === 'prev' && currentPage > 1) {
+            currentPage--;
+            renderAll(false);
+          } else if (act === 'next' && currentPage < total) {
+            currentPage++;
+            renderAll(false);
+          }
+        });
+      });
+      bar.appendChild(ctrlDiv);
+    }
+
     // ══ RENDER ══
-    function renderAll() {
+    function renderAll(resetPage = false) {
+      if (resetPage) currentPage = 1;
+
       // Filter handling
-      const term = document.getElementById('search-input').value.toLowerCase();
+      const term = document.getElementById('search-input').value.toLowerCase().trim();
       const m = document.getElementById('filter-month').value;
       const y = document.getElementById('filter-year').value;
 
@@ -282,30 +339,47 @@
       document.getElementById('table-title').textContent = tabTitles[currentTab] || 'All Invoices';
       document.getElementById('table-count').textContent = filtered.length + ' record' + (filtered.length !== 1 ? 's' : '');
 
+      // Pagination slice
+      const totalItems = filtered.length;
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIdx = (currentPage - 1) * pageSize;
+      const endIdx = Math.min(startIdx + pageSize, totalItems);
+      const pageItems = filtered.slice(startIdx, endIdx);
+
       // Render single tbody
       const tbody = document.getElementById('billing-tbody');
-      if (filtered.length === 0) {
+      const bar = document.getElementById('billing-pagination');
+
+      if (totalItems === 0) {
         const emptyMsgs = { all: 'No Invoices', pending: 'No Pending Payments', overdue: 'No Overdue Invoices', paid: 'No Paid Invoices' };
         tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M6 2h7.5C16.54 2 19 4.46 19 7.5S16.54 13 13.5 13H8.5v8H6V2zm2.5 9H13.5c1.93 0 3.5-1.57 3.5-3.5S15.43 4 13.5 4H8.5v7z"/><path d="M3 6h15v2H3z"/><path d="M3 9.5h14v2H3z"/></svg><h4>' + (emptyMsgs[currentTab] || 'No Records') + '</h4><p>No records match your filters.</p></div></td></tr>';
+        if (bar) bar.innerHTML = '<div class="mis-pagination-info">Showing 0 of 0 invoices</div>';
       } else {
-        tbody.innerHTML = filtered.map(r => `
+        tbody.innerHTML = pageItems.map(r => `
               <tr>
                 <td class="td-id">${r.id}</td>
                 <td style="font-weight:600;">${r.tenantName}</td>
                 <td>${r.unit}</td>
-                <td style="font-weight:700;">₱${r.amount.toLocaleString()}</td>
+                <td style="font-weight:700;">₱${r.amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td>${formatDate(r.dueDate)}</td>
                 <td>${statusBadge(r.status)}</td>
               </tr>
             `).join('');
+
+        if (bar) {
+          bar.innerHTML = `<div class="mis-pagination-info">Showing ${startIdx + 1}–${endIdx} of ${totalItems} invoices</div>`;
+          buildBillingPagination(currentPage, totalPages);
+        }
       }
     }
 
-    document.getElementById('search-input').addEventListener('input', renderAll);
-    document.getElementById('filter-month').addEventListener('change', renderAll);
-    document.getElementById('filter-year').addEventListener('change', renderAll);
+    document.getElementById('search-input').addEventListener('input', () => renderAll(true));
+    document.getElementById('filter-month').addEventListener('change', () => renderAll(true));
+    document.getElementById('filter-year').addEventListener('change', () => renderAll(true));
 
-    renderAll();
+    renderAll(true);
   </script>
 </body>
 
