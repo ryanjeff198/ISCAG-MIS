@@ -647,7 +647,7 @@
                   <th>Case Ref</th>
                   <th>Service Requested</th>
                   <th>Deceased / Informant</th>
-                  <th>Cemetery Plot</th>
+                  <th>Burial Cemetery / Location</th>
                   <th>Submission Date</th>
                   <th>Certificate Status</th>
                   <th>Status</th>
@@ -662,7 +662,7 @@
                     <td class="td-id">BUR-<?= $b['id'] ?></td>
                     <td style="font-weight:600;">Burial Assistance</td>
                     <td><?= htmlspecialchars($b['deceased_name'] ?: ($b['tenant_name'] ?: 'N/A')) ?></td>
-                    <td><?= htmlspecialchars($b['assigned_plot_number'] ?: 'Plot: Pending') ?> (<?= htmlspecialchars($b['cemetery_preference'] ?: 'Local') ?>)</td>
+                    <td><?= htmlspecialchars($b['cemetery_preference'] ?: 'ISCAG Cemetery / Muslim Cemetery') ?></td>
                     <td><?= format_datetime_html($b['submitted_at'] ?? '') ?></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars($b['death_cert_status'] ?: 'Certified') ?></span></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars(ucfirst($b['status'])) ?></span></td>
@@ -673,7 +673,7 @@
                     <td class="td-id">FNC-<?= $fc['id'] ?></td>
                     <td style="font-weight:600;">Funeral Case Management</td>
                     <td><?= htmlspecialchars(($fc['deceased_first_name'] ?? '') . ' ' . ($fc['deceased_last_name'] ?? '')) ?></td>
-                    <td><?= htmlspecialchars($fc['grave_reference'] ?: 'Plot: Pending') ?></td>
+                    <td><?= htmlspecialchars($fc['requested_services'] ?: 'Burial Facility / Local Cemetery') ?></td>
                     <td><?= format_datetime_html($fc['reported_at'] ?? '') ?></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars($fc['certificate_status'] ?: 'Submitted') ?></span></td>
                     <td><span class="badge-status badge-paid"><?= htmlspecialchars(ucfirst($fc['status'])) ?></span></td>
@@ -897,8 +897,7 @@
     const REAL_FINANCE = {
       actualPaidRevenue: <?= (float)($actualPaidRevenue ?? 0) ?>,
       verifiedDonationsAmount: <?= (float)($verifiedDonationsAmount ?? 0) ?>,
-      totalCemeteryPlots: <?= (int)($totalCemeteryPlots ?? 38) ?>,
-      availCemeteryPlots: <?= (int)($availCemeteryPlots ?? 31) ?>,
+      completedDamayanCount: <?= (int)($completedDamayanCount ?? 0) ?>,
       totalEduStudents: <?= (int)($totalEduStudents ?? 0) ?>,
       avgEduProgress: <?= (int)($avgEduProgress ?? 0) ?>,
       totalDawahServices: <?= (int)(($counselingCount ?? 0) + ($marriageCount ?? 0) + ($conversionCount ?? 0)) ?>,
@@ -1193,10 +1192,10 @@
         } else if (dept === 'Damayan') {
           if (recLabel) recLabel.textContent = 'Burial & Funeral Cases';
           if (recSub) recSub.innerHTML = '<span>View Damayan Cases</span> <span class="nav-arr">→</span>';
-          card4Label.textContent = 'Cemetery Plots Available';
-          card4Val.textContent = (REAL_FINANCE.availCemeteryPlots || 0) + ' / ' + (REAL_FINANCE.totalCemeteryPlots || 0) + ' Available';
+          card4Label.textContent = 'Completed Burial Services';
+          card4Val.textContent = (REAL_FINANCE.completedDamayanCount || 0) + ' Completed';
           card4Val.style.color = 'var(--primary)';
-          card4Sub.innerHTML = '<span>View Cemetery Plot Allotments</span> <span class="nav-arr">→</span>';
+          card4Sub.innerHTML = '<span>View Damayan Records</span> <span class="nav-arr">→</span>';
         } else if (dept.includes('Charity')) {
           if (recLabel) recLabel.textContent = 'Donation Records';
           if (recSub) recSub.innerHTML = '<span>View Received Donations</span> <span class="nav-arr">→</span>';

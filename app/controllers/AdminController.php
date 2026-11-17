@@ -1557,8 +1557,12 @@ class AdminController extends Controller
         $actualPaidRevenue = (float)$db->query("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE payment_status = 'Paid'")->fetchColumn();
         $totalRevenue = $actualPaidRevenue;
         $verifiedDonationsAmount = (float)$db->query("SELECT COALESCE(SUM(amount), 0) FROM charity_donations_records WHERE donation_type = 'monetary' AND status NOT IN ('Rejected', 'Cancelled', 'Pending Receipt', 'Pending Verification')")->fetchColumn();
-        $totalCemeteryPlots = (int)$db->query("SELECT COUNT(*) FROM cemetery_plots")->fetchColumn();
-        $availCemeteryPlots = (int)$db->query("SELECT COUNT(*) FROM cemetery_plots WHERE status = 'Available' AND (assigned_deceased_name IS NULL OR TRIM(assigned_deceased_name) = '')")->fetchColumn();
+        $completedDamayanCount = (int)$db->query("
+            SELECT (
+                (SELECT COUNT(*) FROM burial_requests WHERE status IN ('Completed', 'Released', 'Approved', 'Accepted')) +
+                (SELECT COUNT(*) FROM funeral_cases WHERE status IN ('Completed', 'Released', 'Registered', 'Accepted'))
+            )
+        ")->fetchColumn();
 
         // User / Tenant Stats
         $userStats = $db->query("SELECT role, COUNT(*) as count FROM tenant_accounts GROUP BY role")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -1702,7 +1706,7 @@ class AdminController extends Controller
                 SELECT b.id, 'Damayan' as department, 'Burial Service' as service_type,
                        COALESCE(b.deceased_name, CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,''))) as subject_name,
                        b.informant_contact as contact, b.submitted_at as report_date, b.status,
-                       CONCAT('Plot: ', COALESCE(b.assigned_plot_number,'Pending'), ' (', COALESCE(b.cemetery_preference,'Local'), ')') as detail_info
+                       CONCAT('Burial Facility: ', COALESCE(b.cemetery_preference,'ISCAG / Muslim Cemetery')) as detail_info
                 FROM burial_requests b
                 LEFT JOIN tenant_accounts u ON b.tenant_id = u.tenant_id
                 ORDER BY b.id DESC LIMIT 20
@@ -1799,8 +1803,7 @@ class AdminController extends Controller
             'totalRevenue' => $totalRevenue,
             'actualPaidRevenue' => $actualPaidRevenue,
             'verifiedDonationsAmount' => $verifiedDonationsAmount,
-            'totalCemeteryPlots' => $totalCemeteryPlots,
-            'availCemeteryPlots' => $availCemeteryPlots,
+            'completedDamayanCount' => $completedDamayanCount,
             'userStats' => $userStats,
             'totalUsers' => $totalUsers,
             'eduEnrollments' => $eduEnrollments,
@@ -4034,26 +4037,6 @@ class AdminController extends Controller
             return strtotime($b['date'] ?? '1970-01-01') - strtotime($a['date'] ?? '1970-01-01');
         });
 
-        // 3. Cemetery Plots Registry
-        $cemeteryPlots = $db->query("
-            SELECT p.*,
-                   COALESCE(p.assigned_deceased_name, 'Vacant') as occupant_name
-            FROM cemetery_plots p
-            ORDER BY p.section, p.plot_number
-        ")->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        $totalPlots = count($cemeteryPlots);
-        $occupiedPlots = 0;
-        $availablePlots = 0;
-        foreach ($cemeteryPlots as $cp) {
-            $isOcc = (strcasecmp($cp['status'] ?? '', 'Occupied') === 0) || !empty($cp['assigned_deceased_name']);
-            if ($isOcc) {
-                $occupiedPlots++;
-            } else {
-                $availablePlots++;
-            }
-        }
-
         $pendingCount = 0;
         $completedCount = 0;
         foreach ($damayanRequests as $dr) {
@@ -4070,16 +4053,12 @@ class AdminController extends Controller
             'damayanRequests' => $damayanRequests,
             'burials' => $burials,
             'funeralCases' => $funeralCases,
-            'cemeteryPlots' => $cemeteryPlots,
             'stats' => [
                 'totalRequests' => count($damayanRequests),
                 'burialsCount' => count($burials),
                 'funeralCasesCount' => count($funeralCases),
                 'pendingCount' => $pendingCount,
-                'completedCount' => $completedCount,
-                'totalPlots' => $totalPlots,
-                'occupiedPlots' => $occupiedPlots,
-                'availablePlots' => $availablePlots
+                'completedCount' => $completedCount
             ]
         ]);
     }

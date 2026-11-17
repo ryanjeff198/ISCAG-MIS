@@ -3,16 +3,12 @@ $active_page = 'damayan_records';
 $damayanRequests = $damayanRequests ?? [];
 $burials = $burials ?? [];
 $funeralCases = $funeralCases ?? [];
-$cemeteryPlots = $cemeteryPlots ?? [];
 $stats = $stats ?? [
     'totalRequests' => count($damayanRequests),
     'burialsCount' => count($burials),
     'funeralCasesCount' => count($funeralCases),
     'pendingCount' => 0,
-    'completedCount' => 0,
-    'totalPlots' => count($cemeteryPlots),
-    'occupiedPlots' => 0,
-    'availablePlots' => 0
+    'completedCount' => 0
 ];
 ?>
 <!DOCTYPE html>
