@@ -499,16 +499,16 @@
             </div>
           </div>
 
-          <!-- Security & Integrity Scanner -->
+          <!-- Total Transactions -->
           <div class="kpi-card">
-            <div class="kpi-icon-wrap" style="background:<?= ($integrityScan['total_issues'] ?? 0) === 0 ? '#ecfdf5' : '#fef2f2' ?>;color:<?= ($integrityScan['total_issues'] ?? 0) === 0 ? '#059669' : '#dc2626' ?>;">
+            <div class="kpi-icon-wrap" style="background:#eff6ff;color:#2563eb;">
               <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
               </svg>
             </div>
             <div>
-              <div class="kpi-val" style="color:<?= ($integrityScan['total_issues'] ?? 0) === 0 ? '#059669' : '#dc2626' ?>;"><?= ($integrityScan['total_issues'] ?? 0) === 0 ? 'HEALTHY' : ($integrityScan['total_issues'] . ' ISSUES') ?></div>
-              <div class="kpi-sub">DB Security &amp; Integrity</div>
+              <div class="kpi-val" style="color:#2563eb;"><?= (int)($summary['total_count'] ?? 0) ?></div>
+              <div class="kpi-sub">Total Transactions</div>
             </div>
           </div>
         </div>
@@ -523,15 +523,6 @@
             <button type="button" class="btn-row-action" id="btnViewAudit" onclick="switchMainView('audit')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
               Immutable Audit Trail (<?= count($auditLogs ?? []) ?>)
-            </button>
-            <button type="button" class="btn-row-action" id="btnViewIntegrity" onclick="switchMainView('integrity')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-              Data Integrity Scanner
-              <?php if (($integrityScan['total_issues'] ?? 0) > 0): ?>
-                <span style="background:#dc2626; color:white; padding:1px 6px; border-radius:10px; font-size:0.7rem; margin-left:4px;"><?= $integrityScan['total_issues'] ?></span>
-              <?php else: ?>
-                <span style="background:#15803d; color:white; padding:1px 6px; border-radius:10px; font-size:0.7rem; margin-left:4px;">0</span>
-              <?php endif; ?>
             </button>
           </div>
           <div style="font-size:0.78rem; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
@@ -793,65 +784,6 @@
               </tbody>
             </table>
           </div>
-        </div>
-
-        <!-- ═══════ INTEGRITY SCANNER CONTAINER ═══════ -->
-        <div class="donations-card" id="integrityScannerContainer" style="display:none; padding:24px;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:16px; flex-wrap:wrap; gap:12px;">
-            <div>
-              <h4 style="margin:0; font-size:1.1rem; font-weight:700; color:var(--text-main);">Automated Database Integrity &amp; Security Scanner</h4>
-              <div style="font-size:0.8rem; color:var(--text-muted); margin-top:3px;">
-                Active MariaDB triggers and constraint verification against duplicate references, invalid amounts, and over-allocations.
-              </div>
-            </div>
-            <div>
-              <span style="font-size:0.8rem; font-weight:800; padding:6px 14px; border-radius:20px; <?= ($integrityScan['total_issues'] ?? 0) === 0 ? 'background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;' : 'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;' ?>">
-                <?= ($integrityScan['total_issues'] ?? 0) === 0 ? '✓ SYSTEM HEALTHY: 0 ANOMALIES' : '⚠ WARNING: ' . $integrityScan['total_issues'] . ' ISSUES FOUND' ?>
-              </span>
-            </div>
-          </div>
-
-          <!-- Active Security Mechanisms -->
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-bottom:24px;">
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
-              <div style="font-size:0.75rem; font-weight:700; color:#0369a1; text-transform:uppercase;">Audit Immutability Trigger</div>
-              <div style="font-weight:700; color:#0f172a; margin-top:2px;">trg_donation_audit_no_update</div>
-              <div style="font-size:0.74rem; color:var(--text-muted); margin-top:4px;">Blocks UPDATE statements on donation_audit_logs via SIGNAL SQLSTATE 45000.</div>
-            </div>
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
-              <div style="font-size:0.75rem; font-weight:700; color:#0369a1; text-transform:uppercase;">Audit Anti-Tamper Delete Trigger</div>
-              <div style="font-weight:700; color:#0f172a; margin-top:2px;">trg_donation_audit_no_delete</div>
-              <div style="font-size:0.74rem; color:var(--text-muted); margin-top:4px;">Blocks DELETE operations on donation_audit_logs at the MySQL/MariaDB engine level.</div>
-            </div>
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
-              <div style="font-size:0.75rem; font-weight:700; color:#0369a1; text-transform:uppercase;">Verified Record Protection</div>
-              <div style="font-weight:700; color:#0f172a; margin-top:2px;">trg_prevent_verified_donation_delete</div>
-              <div style="font-size:0.74rem; color:var(--text-muted); margin-top:4px;">Blocks deletion of any confirmed/allocated donation record in charity_donations_records.</div>
-            </div>
-          </div>
-
-          <!-- Issues List -->
-          <?php if (empty($integrityScan['issues'])): ?>
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:24px; text-align:center;">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="#16a34a" style="margin-bottom:8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-              <h5 style="color:#15803d; font-weight:700; margin-bottom:4px;">No Discrepancies or Inconsistencies Detected</h5>
-              <p style="color:#166534; font-size:0.85rem; margin:0;">
-                All monetary donations have positive balances, zero duplicate payment references across non-rejected transactions, and all allocations strictly conform to total principal.
-              </p>
-            </div>
-          <?php else: ?>
-            <div style="display:flex; flex-direction:column; gap:12px;">
-              <?php foreach ($integrityScan['issues'] as $iss): ?>
-                <div style="background:#fff5f5; border:1px solid #fed7d7; border-left:4px solid #e53e3e; border-radius:8px; padding:14px;">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <strong style="color:#c53030; font-size:0.9rem;"><?= htmlspecialchars($iss['title']) ?></strong>
-                    <span style="font-size:0.72rem; font-weight:800; background:#e53e3e; color:white; padding:2px 8px; border-radius:10px;"><?= htmlspecialchars($iss['severity']) ?></span>
-                  </div>
-                  <div style="font-size:0.83rem; color:#4a5568; margin-top:4px;"><?= htmlspecialchars($iss['description']) ?></div>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          <?php endif; ?>
         </div>
 
       </div>
@@ -1211,36 +1143,26 @@
       openModal('reviewModal');
     }
 
-    // ── Main View Switching (Registry vs Audit Trail vs Integrity Scanner) ──
+    // ── Main View Switching (Registry vs Audit Trail) ──
     function switchMainView(view) {
       const reg = document.getElementById('donationsTable').closest('.donations-card');
       const filterBar = document.querySelector('.filter-card');
       const audit = document.getElementById('auditTrailContainer');
-      const integ = document.getElementById('integrityScannerContainer');
       const btnReg = document.getElementById('btnViewRegistry');
       const btnAud = document.getElementById('btnViewAudit');
-      const btnInt = document.getElementById('btnViewIntegrity');
 
-      [btnReg, btnAud, btnInt].forEach(b => { if (b) b.classList.remove('primary'); });
+      [btnReg, btnAud].forEach(b => { if (b) b.classList.remove('primary'); });
 
       if (view === 'registry') {
         if (reg) reg.style.display = 'block';
         if (filterBar) filterBar.style.display = 'flex';
         if (audit) audit.style.display = 'none';
-        if (integ) integ.style.display = 'none';
         if (btnReg) btnReg.classList.add('primary');
       } else if (view === 'audit') {
         if (reg) reg.style.display = 'none';
         if (filterBar) filterBar.style.display = 'none';
         if (audit) audit.style.display = 'block';
-        if (integ) integ.style.display = 'none';
         if (btnAud) btnAud.classList.add('primary');
-      } else if (view === 'integrity') {
-        if (reg) reg.style.display = 'none';
-        if (filterBar) filterBar.style.display = 'none';
-        if (audit) audit.style.display = 'none';
-        if (integ) integ.style.display = 'block';
-        if (btnInt) btnInt.classList.add('primary');
       }
     }
 
