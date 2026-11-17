@@ -714,14 +714,13 @@
                   <th>Actor / Administrator</th>
                   <th>Status Transition</th>
                   <th>Documented Justification</th>
-                  <th>IP Address</th>
                   <th>Integrity Seal</th>
                 </tr>
               </thead>
               <tbody>
                 <?php if (empty($auditLogs)): ?>
                   <tr>
-                    <td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted);">
+                    <td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted);">
                       No audit log entries recorded yet. All administrative actions are permanently logged here.
                     </td>
                   </tr>
@@ -769,9 +768,6 @@
                       </td>
                       <td style="font-size:0.8rem; max-width:240px;">
                         <?= htmlspecialchars($log['reason'] ?: 'None documented') ?>
-                      </td>
-                      <td style="font-family:monospace; font-size:0.75rem; color:var(--text-muted);">
-                        <?= htmlspecialchars($log['ip_address']) ?>
                       </td>
                       <td>
                         <span style="font-family:monospace; font-size:0.72rem; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:4px; color:#475569;" title="<?= htmlspecialchars($log['integrity_hash']) ?>">

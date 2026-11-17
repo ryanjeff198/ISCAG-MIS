@@ -288,10 +288,16 @@ class CharityProgram
     public function getDonationAuditLogs(array $filters = []): array
     {
         try {
-            $sql = "SELECT l.*, d.donor_name, d.amount, d.donation_type, d.target_program 
+            $sql = "SELECT l.id, l.donation_id, l.donation_ref, l.action, l.actor_id, l.actor_name, l.actor_role,
+                           l.previous_status, l.new_status, l.previous_values, l.new_values, l.reason,
+                           l.integrity_hash, l.created_at,
+                           d.donor_name, d.amount, d.donation_type, d.target_program 
                     FROM donation_audit_logs l
-                    LEFT JOIN charity_donations_records d ON l.donation_id = d.id
-                    WHERE 1=1";
+                    INNER JOIN charity_donations_records d ON l.donation_id = d.id
+                    WHERE l.donation_ref NOT LIKE 'TEST-%'
+                      AND l.actor_name NOT IN ('Test Actor')
+                      AND d.donor_name NOT LIKE '%Intervention Test%'
+                      AND (l.new_values IS NULL OR l.new_values NOT LIKE '%TEST-PAYREF%')";
             $params = [];
 
             if (!empty($filters['donation_id'])) {
