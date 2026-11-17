@@ -1,12 +1,115 @@
+<?php
+$active_page = 'damayan_records';
+$damayanRequests = $damayanRequests ?? [];
+$burials = $burials ?? [];
+$funeralCases = $funeralCases ?? [];
+$cemeteryPlots = $cemeteryPlots ?? [];
+$stats = $stats ?? [
+    'totalRequests' => count($damayanRequests),
+    'burialsCount' => count($burials),
+    'funeralCasesCount' => count($funeralCases),
+    'pendingCount' => 0,
+    'completedCount' => 0,
+    'totalPlots' => count($cemeteryPlots),
+    'occupiedPlots' => 0,
+    'availablePlots' => 0
+];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ISCAG MIS — Damayan Records</title>
+  <title>ISCAG MIS — Damayan & Burial Records</title>
   <link rel="icon" type="image/x-icon" href="<?= asset('assets/favicon_io/favicon.ico') ?>">
   <link rel="stylesheet" href="<?= asset('css/admin-shared.css') ?>" />
+  <style>
+    .damayan-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 14px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+    }
+    .damayan-toolbar-left,
+    .damayan-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .pill-tabs {
+      display: inline-flex;
+      background: var(--surface-hover, #f1f5f3);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .pill-tab {
+      border: none;
+      background: transparent;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pill-tab.active {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .toolbar-search {
+      position: relative;
+    }
+    .toolbar-search input {
+      height: 34px;
+      padding: 0 12px 0 32px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.82rem;
+      width: 250px;
+      background: #ffffff;
+      color: var(--text-main);
+    }
+    .toolbar-search svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      fill: var(--text-muted);
+      pointer-events: none;
+    }
+    .toolbar-select {
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.82rem;
+      background: #ffffff;
+      color: var(--text-main);
+    }
+    .td-stacked {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .td-sub {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+  </style>
 </head>
 
 <body>
@@ -16,119 +119,132 @@
     <main class="main-content">
       <div class="top-bar">
         <div class="top-bar-left">
-          
           <div>
-            <div class="top-bar-title">Damayan Records</div>
-            <div class="top-bar-subtitle">Manage burial service requests, scheduling, and documentation</div>
+            <div class="top-bar-title">Damayan & Burial Service Records</div>
+            <div class="top-bar-subtitle">Civil registration, Islamic burial services coordination, and cemetery plot allocations</div>
           </div>
         </div>
-        <div class="top-bar-actions"><a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a></div>
+        <div class="top-bar-actions">
+          <a href="<?= url('/admin/mis_admin/reports?dept=Damayan') ?>" class="btn-topbar primary">Department Report</a>
+          <a href="<?= url('/admin/dashboard') ?>" class="btn-topbar">← Dashboard</a>
+        </div>
       </div>
+
       <div class="page-body">
         
         <div class="breadcrumb-bar">
-          <a href="<?= url('/admin/dashboard') ?>">MIS Admin</a><span class="sep">›</span><span class="current">Damayan
-            Records</span>
+          <a href="<?= url('/admin/dashboard') ?>">MIS Admin</a>
+          <span class="sep">›</span>
+          <span class="current">Damayan Burial</span>
         </div>
 
-        <!-- STATS -->
+        <!-- STATS ROW (Accurate metrics directly from database) -->
         <div class="stats-row">
           <div class="stat-card">
-            <div class="stat-icon purple"><svg viewBox="0 0 24 24">
+            <div class="stat-icon purple">
+              <svg viewBox="0 0 24 24">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-              </svg></div>
+              </svg>
+            </div>
             <div>
-              <div class="stat-value" id="s-total">0</div>
+              <div class="stat-value" id="s-total"><?= (int)$stats['totalRequests'] ?></div>
               <div class="stat-label">Total Requests</div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon gold"><svg viewBox="0 0 24 24">
+            <div class="stat-icon gold">
+              <svg viewBox="0 0 24 24">
                 <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2z" />
-              </svg></div>
+              </svg>
+            </div>
             <div>
-              <div class="stat-value" id="s-pending">0</div>
-              <div class="stat-label">Pending</div>
+              <div class="stat-value" id="s-pending"><?= (int)$stats['pendingCount'] ?></div>
+              <div class="stat-label">Pending Review</div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon green"><svg viewBox="0 0 24 24">
+            <div class="stat-icon green">
+              <svg viewBox="0 0 24 24">
                 <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-              </svg></div>
+              </svg>
+            </div>
             <div>
-              <div class="stat-value" id="s-completed">0</div>
-              <div class="stat-label">Completed</div>
+              <div class="stat-value" id="s-completed"><?= (int)$stats['completedCount'] ?></div>
+              <div class="stat-label">Completed & Released</div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon blue"><svg viewBox="0 0 24 24">
-                <path d="M6 2h7.5C16.54 2 19 4.46 19 7.5S16.54 13 13.5 13H8.5v8H6V2zm2.5 9H13.5c1.93 0 3.5-1.57 3.5-3.5S15.43 4 13.5 4H8.5v7z"/><path d="M3 6h15v2H3z"/><path d="M3 9.5h14v2H3z"/>
-              </svg></div>
+            <div class="stat-icon blue">
+              <svg viewBox="0 0 24 24">
+                <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4z" />
+              </svg>
+            </div>
             <div>
-              <div class="stat-value" id="s-billing">0</div>
-              <div class="stat-label">Billing</div>
+              <div class="stat-value" id="s-plots"><?= (int)$stats['availablePlots'] ?> / <?= (int)$stats['totalPlots'] ?></div>
+              <div class="stat-label">Plots Available</div>
             </div>
           </div>
         </div>
 
-        <!-- BURIAL REQUESTS -->
+        <!-- ══════════════ DAMAYAN CASE REGISTRY ══════════════ -->
         <div class="section-card">
           <div class="section-card-header">
-            <h6><svg viewBox="0 0 24 24">
+            <h6>
+              <svg viewBox="0 0 24 24">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-              </svg>Burial Service Requests</h6>
-            <span style="font-size:0.75rem;color:var(--text-muted);" id="req-count">0 records</span>
+              </svg>
+              Damayan Records & Cases
+            </h6>
+            <div class="pill-tabs" id="damayanViewSwitch">
+              <button type="button" class="pill-tab active" data-view="all">All Cases (<?= count($damayanRequests) ?>)</button>
+              <button type="button" class="pill-tab" data-view="burial">Burial Requests (<?= count($burials) ?>)</button>
+              <button type="button" class="pill-tab" data-view="funeral">Funeral Cases (<?= count($funeralCases) ?>)</button>
+              <button type="button" class="pill-tab" data-view="plots">Cemetery Plots (<?= count($cemeteryPlots) ?>)</button>
+            </div>
           </div>
+
+          <div class="damayan-toolbar">
+            <div class="damayan-toolbar-left">
+              <div class="toolbar-search">
+                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" id="damayan-search" placeholder="Search ref, deceased, informant, plot..." />
+              </div>
+              <select class="toolbar-select" id="damayan-status-filter">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending / Under Review</option>
+                <option value="Completed">Completed / Released</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="damayan-toolbar-right" id="damayan-view-counter" style="font-size:0.8rem;color:var(--text-muted);">
+              Total: <?= count($damayanRequests) ?> verified records
+            </div>
+          </div>
+
           <div class="section-card-body" style="padding:0;">
             <div class="table-wrapper">
-              <table class="mis-table">
-                <thead>
-                  <tr>
-                    <th>Ref #</th>
-                    <th>Requestor</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Updated</th>
-                    <th>Actions</th>
-                  </tr>
+              <table class="mis-table" id="damayan-table" data-paginate="false">
+                <thead id="damayan-thead">
+                  <!-- Populated dynamically based on active tab -->
                 </thead>
-                <tbody id="req-tbody"></tbody>
+                <tbody id="damayan-tbody">
+                  <!-- Populated dynamically -->
+                </tbody>
               </table>
             </div>
+            <!-- Pagination Controls (10 per page) -->
+            <div id="damayan-pagination" class="mis-pagination-bar"></div>
           </div>
         </div>
 
-        <!-- BILLING -->
-        <div class="section-card">
-          <div class="section-card-header">
-            <h6><svg viewBox="0 0 24 24">
-                <path d="M6 2h7.5C16.54 2 19 4.46 19 7.5S16.54 13 13.5 13H8.5v8H6V2zm2.5 9H13.5c1.93 0 3.5-1.57 3.5-3.5S15.43 4 13.5 4H8.5v7z"/><path d="M3 6h15v2H3z"/><path d="M3 9.5h14v2H3z"/>
-              </svg>Burial Service Billing</h6>
-          </div>
-          <div class="section-card-body" style="padding:0;">
-            <div class="table-wrapper">
-              <table class="mis-table">
-                <thead>
-                  <tr>
-                    <th>Bill ID</th>
-                    <th>Name</th>
-                    <th>Amount</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="bill-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
       </div>
     </main>
   </div>
 
-  <!-- IN-PAGE MIS ADMIN REVIEW MODAL (stays inside MIS Admin) -->
+  <!-- IN-PAGE MIS ADMIN REVIEW MODAL (Accurate DB Data) -->
   <div id="damayan-review-modal" class="mis-review-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:2000;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this) closeDamayanReviewModal()">
-    <div style="background:var(--bg-card,#fff);border-radius:16px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.22);border:1px solid var(--border-color,#e2e8f0);">
+    <div style="background:var(--bg-card,#fff);border-radius:16px;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.22);border:1px solid var(--border-color,#e2e8f0);">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border-color,#e2e8f0);">
         <div>
           <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--primary,#1a5632);">MIS Admin • Damayan Record Review</div>
@@ -146,70 +262,329 @@
 
   <script src="<?= asset('JS/admin-shared.js') ?>"></script>
   <script>
-    standardizePage('admin');
-    const dbDamayanReqs = <?= json_encode($damayanRequests ?? [], JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    const reqs = (dbDamayanReqs && dbDamayanReqs.length > 0) ? dbDamayanReqs : getRequests().filter(r => r.type === 'burial_service');
-    const bills = getBilling().filter(b => b.type.toLowerCase().includes('burial'));
+    // ══════════════════════════════════════════════════════════
+    // REAL DATABASE RECORDS (Accurate data, zero mock)
+    // ══════════════════════════════════════════════════════════
+    const RAW_REQUESTS = <?= json_encode($damayanRequests, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    const RAW_PLOTS = <?= json_encode($cemeteryPlots, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+    const PAGE_SIZE = 10;
+    let currentView = 'all'; // 'all', 'burial', 'funeral', 'plots'
+    let currentPage = 1;
 
     function escHtml(v) {
       return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
-    document.getElementById('s-total').textContent = reqs.length;
-    document.getElementById('s-pending').textContent = reqs.filter(r => (r.status || '').toLowerCase().includes('pend') || (r.status || '').toLowerCase().includes('submit')).length;
-    document.getElementById('s-completed').textContent = reqs.filter(r => (r.status || '').toLowerCase().includes('complet') || (r.status || '').toLowerCase().includes('releas')).length;
-    document.getElementById('s-billing').textContent = bills.length;
-    document.getElementById('req-count').textContent = reqs.length + ' records';
-
-    // Requests
-    const tbody = document.getElementById('req-tbody');
-    if (!reqs.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">No burial or funeral requests found.</td></tr>';
-    } else {
-      tbody.innerHTML = reqs.map(r => `<tr data-id="${escHtml(r.id)}" data-kind="${escHtml(r.record_kind || 'burial')}">
-        <td class="td-id">${escHtml(r.ref_code || ('#' + r.id))}</td>
-        <td style="font-weight:600;">${escHtml(r.name || 'Unknown')} <div style="font-size:0.72rem;color:var(--text-muted);">${escHtml(r.service_type || 'Burial Service')}</div></td>
-        <td>${formatDateTimeHtml(r.date)}</td>
-        <td><span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span></td>
-        <td style="color:var(--text-muted);font-size:0.8rem;">${escHtml(r.plot_number || 'Plot: Pending')} (${escHtml(r.cemetery_pref || 'Local')})</td>
-        <td>
-          <button type="button" class="card-badge" style="border:none;cursor:pointer;" onclick="openDamayanReviewModal('${escHtml(r.record_kind || 'burial')}', '${escHtml(r.id)}')">Review</button>
-        </td>
-      </tr>`).join('');
+    function formatDisplayDate(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     }
 
+    function formatDisplayDateTime(dateStr) {
+      if (!dateStr) return '—';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) +
+        ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getBadgeHtml(status) {
+      const s = (status || '').toLowerCase();
+      if (s.includes('complet') || s.includes('releas') || s === 'registered' || s === 'available') {
+        return `<span class="badge-status badge-approved">${escHtml(status)}</span>`;
+      }
+      if (s.includes('accept') || s.includes('verified') || s === 'ready for registration') {
+        return `<span class="badge-status badge-approved" style="background:#e0f2fe;color:#0369a1;border-color:#bae6fd;">${escHtml(status)}</span>`;
+      }
+      if (s.includes('reject') || s.includes('returned') || s === 'occupied') {
+        return `<span class="badge-status badge-rejected">${escHtml(status)}</span>`;
+      }
+      return `<span class="badge-status badge-pending">${escHtml(status || 'Pending')}</span>`;
+    }
+
+    function buildPaginationControls(curr, total) {
+      const container = document.getElementById('damayan-pagination');
+      if (!container) return;
+
+      if (total <= 1) {
+        container.querySelector('.mis-pagination-controls')?.remove();
+        return;
+      }
+
+      let btns = `<button type="button" class="mis-page-btn" data-act="prev" ${curr === 1 ? 'disabled' : ''}>&laquo; Prev</button>`;
+
+      const pages = [];
+      if (total <= 7) {
+        for (let i = 1; i <= total; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        if (curr > 3) pages.push('...');
+        const start = Math.max(2, curr - 1);
+        const end = Math.min(total - 1, curr + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (curr < total - 2) pages.push('...');
+        pages.push(total);
+      }
+
+      pages.forEach(p => {
+        if (p === '...') {
+          btns += `<span class="mis-page-ellipsis">&hellip;</span>`;
+        } else {
+          btns += `<button type="button" class="mis-page-btn ${p === curr ? 'active' : ''}" data-page="${p}">${p}</button>`;
+        }
+      });
+
+      btns += `<button type="button" class="mis-page-btn" data-act="next" ${curr === total ? 'disabled' : ''}>Next &raquo;</button>`;
+
+      container.querySelector('.mis-pagination-controls')?.remove();
+      const ctrlDiv = document.createElement('div');
+      ctrlDiv.className = 'mis-pagination-controls';
+      ctrlDiv.innerHTML = btns;
+
+      ctrlDiv.querySelectorAll('.mis-page-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (btn.disabled) return;
+          const page = btn.getAttribute('data-page');
+          const act = btn.getAttribute('data-act');
+          if (page) {
+            currentPage = parseInt(page, 10);
+            renderTable(false);
+          } else if (act === 'prev' && currentPage > 1) {
+            currentPage--;
+            renderTable(false);
+          } else if (act === 'next' && currentPage < total) {
+            currentPage++;
+            renderTable(false);
+          }
+        });
+      });
+
+      container.appendChild(ctrlDiv);
+    }
+
+    function renderTable(resetPage = false) {
+      if (resetPage) currentPage = 1;
+
+      const searchTerm = (document.getElementById('damayan-search').value || '').toLowerCase().trim();
+      const statusFilter = (document.getElementById('damayan-status-filter').value || '').toLowerCase().trim();
+      const thead = document.getElementById('damayan-thead');
+      const tbody = document.getElementById('damayan-tbody');
+      const paginationBar = document.getElementById('damayan-pagination');
+      const counterLabel = document.getElementById('damayan-view-counter');
+
+      if (currentView === 'plots') {
+        // Cemetery plots view
+        thead.innerHTML = `
+          <tr>
+            <th>Plot No.</th>
+            <th>Section</th>
+            <th>Cemetery Facility</th>
+            <th>Orientation / Details</th>
+            <th>Assigned Deceased</th>
+            <th>Assignment Date</th>
+            <th>Status</th>
+          </tr>
+        `;
+
+        const filtered = RAW_PLOTS.filter(p => {
+          const matchSearch = !searchTerm ||
+            (p.plot_number && p.plot_number.toLowerCase().includes(searchTerm)) ||
+            (p.section && p.section.toLowerCase().includes(searchTerm)) ||
+            (p.cemetery_name && p.cemetery_name.toLowerCase().includes(searchTerm)) ||
+            (p.occupant_name && p.occupant_name.toLowerCase().includes(searchTerm));
+
+          let matchStatus = true;
+          if (statusFilter) {
+            const isOcc = (p.status || '').toLowerCase() === 'occupied' || (p.occupant_name && p.occupant_name !== 'Vacant');
+            if (statusFilter === 'completed' || statusFilter === 'accepted') matchStatus = isOcc;
+            else if (statusFilter === 'pending') matchStatus = !isOcc;
+          }
+          return matchSearch && matchStatus;
+        });
+
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const startIdx = (currentPage - 1) * PAGE_SIZE;
+        const endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
+        const pageItems = filtered.slice(startIdx, endIdx);
+
+        counterLabel.textContent = `Showing: ${totalItems} cemetery plots`;
+
+        if (totalItems === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--text-muted);">No cemetery plots match the specified criteria.</td></tr>`;
+          paginationBar.innerHTML = `<div class="mis-pagination-info">Showing 0 of 0 plots</div>`;
+          return;
+        }
+
+        tbody.innerHTML = pageItems.map(p => {
+          const isOcc = (p.status || '').toLowerCase() === 'occupied' || (p.occupant_name && p.occupant_name !== 'Vacant');
+          const plotBadge = isOcc
+            ? '<span class="badge-status badge-rejected">Occupied</span>'
+            : '<span class="badge-status badge-approved">Available</span>';
+
+          const deceasedDisplay = isOcc
+            ? `<span style="font-weight:600;color:var(--primary);">${escHtml(p.occupant_name)}</span>`
+            : `<span style="color:var(--text-muted);font-style:italic;">Vacant</span>`;
+
+          return `
+            <tr>
+              <td class="td-id" style="font-weight:700;">${escHtml(p.plot_number)}</td>
+              <td style="font-weight:600;">${escHtml(p.section || 'General')}</td>
+              <td>${escHtml(p.cemetery_name || 'ISCAG Cemetery')}</td>
+              <td style="font-size:0.8rem;color:var(--text-muted);">${escHtml(p.notes || 'Sunnah orientation')}</td>
+              <td>${deceasedDisplay}</td>
+              <td style="color:var(--text-muted);font-size:0.82rem;">${formatDisplayDateTime(p.assigned_date)}</td>
+              <td>${plotBadge}</td>
+            </tr>
+          `;
+        }).join('');
+
+        paginationBar.innerHTML = `<div class="mis-pagination-info">Showing ${startIdx + 1}–${endIdx} of ${totalItems} plots</div>`;
+        buildPaginationControls(currentPage, totalPages);
+
+      } else {
+        // Case Records View (all, burial, or funeral)
+        thead.innerHTML = `
+          <tr>
+            <th>Ref / Case #</th>
+            <th>Service Type</th>
+            <th>Deceased Full Name</th>
+            <th>Informant / Contact</th>
+            <th>Submitted / Reported</th>
+            <th>Cemetery & Plot</th>
+            <th>Civil Cert Status</th>
+            <th>Status</th>
+            <th style="text-align:center;">Action</th>
+          </tr>
+        `;
+
+        const filtered = RAW_REQUESTS.filter(r => {
+          if (currentView === 'burial' && r.record_kind !== 'burial') return false;
+          if (currentView === 'funeral' && r.record_kind !== 'funeral') return false;
+
+          const matchSearch = !searchTerm ||
+            (r.ref_code && r.ref_code.toLowerCase().includes(searchTerm)) ||
+            (r.name && r.name.toLowerCase().includes(searchTerm)) ||
+            (r.informant_name && r.informant_name.toLowerCase().includes(searchTerm)) ||
+            (r.plot_number && r.plot_number.toLowerCase().includes(searchTerm)) ||
+            (r.service_type && r.service_type.toLowerCase().includes(searchTerm));
+
+          let matchStatus = true;
+          if (statusFilter) {
+            const st = (r.status || '').toLowerCase();
+            if (statusFilter === 'pending') matchStatus = st.includes('pend') || st.includes('submit') || st.includes('request') || st.includes('review');
+            else if (statusFilter === 'completed') matchStatus = st.includes('complet') || st.includes('releas') || st === 'registered';
+            else if (statusFilter === 'accepted') matchStatus = st.includes('accept') || st.includes('verified');
+            else if (statusFilter === 'rejected') matchStatus = st.includes('reject') || st.includes('returned');
+          }
+          return matchSearch && matchStatus;
+        });
+
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const startIdx = (currentPage - 1) * PAGE_SIZE;
+        const endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
+        const pageItems = filtered.slice(startIdx, endIdx);
+
+        counterLabel.textContent = `Showing: ${totalItems} case records`;
+
+        if (totalItems === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--text-muted);">No records found matching the filter criteria.</td></tr>`;
+          paginationBar.innerHTML = `<div class="mis-pagination-info">Showing 0 of 0 records</div>`;
+          return;
+        }
+
+        tbody.innerHTML = pageItems.map(r => {
+          const refDisplay = r.ref_code || ('#' + r.id);
+          const contactDisplay = r.contact ? `<div class="td-sub">${escHtml(r.contact)}</div>` : '';
+          const plotDisplay = r.plot_number && r.plot_number !== 'Pending'
+            ? `<span style="font-weight:600;color:var(--primary);">Plot ${escHtml(r.plot_number)}</span>`
+            : `<span style="color:var(--text-muted);font-style:italic;">Pending Assignment</span>`;
+
+          const certStatusDisplay = r.death_cert_status
+            ? `<span style="font-size:0.78rem;font-weight:600;">${escHtml(r.death_cert_status)}</span>`
+            : `<span style="color:var(--text-muted);font-size:0.78rem;">—</span>`;
+
+          return `
+            <tr>
+              <td class="td-id" style="font-weight:700;">${escHtml(refDisplay)}</td>
+              <td>
+                <span class="card-badge" style="font-size:0.75rem;padding:3px 8px;border-radius:4px;">
+                  ${escHtml(r.service_type || 'Burial Service')}
+                </span>
+              </td>
+              <td style="font-weight:600;">${escHtml(r.name || 'Unknown')}</td>
+              <td>
+                <div class="td-stacked">
+                  <span style="font-weight:600;">${escHtml(r.informant_name || '—')}</span>
+                  ${contactDisplay}
+                </div>
+              </td>
+              <td style="color:var(--text-muted);font-size:0.82rem;">${formatDisplayDateTime(r.date)}</td>
+              <td>
+                <div class="td-stacked">
+                  ${plotDisplay}
+                  <span class="td-sub">${escHtml(r.cemetery_pref || 'Local')}</span>
+                </div>
+              </td>
+              <td>${certStatusDisplay}</td>
+              <td>${getBadgeHtml(r.status)}</td>
+              <td style="text-align:center;">
+                <button type="button" class="btn-sm" onclick="openDamayanReviewModal('${escHtml(r.record_kind || 'burial')}', '${escHtml(r.id)}')" style="padding:4px 10px;font-size:0.78rem;border-radius:4px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:600;">
+                  Review
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        paginationBar.innerHTML = `<div class="mis-pagination-info">Showing ${startIdx + 1}–${endIdx} of ${totalItems} records</div>`;
+        buildPaginationControls(currentPage, totalPages);
+      }
+    }
+
+    // ── Review Modal ──
     function openDamayanReviewModal(kind, id) {
-      const r = reqs.find(x => String(x.id) === String(id) && (!kind || String(x.record_kind || 'burial') === String(kind)))
-             || reqs.find(x => String(x.id) === String(id));
+      const r = RAW_REQUESTS.find(x => String(x.id) === String(id) && (!kind || String(x.record_kind || 'burial') === String(kind)))
+             || RAW_REQUESTS.find(x => String(x.id) === String(id));
       if (!r) return;
 
       const refDisplay = r.ref_code || ('#' + r.id);
-      document.getElementById('damayan-mdl-title').textContent = `${refDisplay} — ${r.service_type || 'Damayan Service'}`;
+      document.getElementById('damayan-mdl-title').textContent = `${refDisplay} — ${r.service_type || 'Damayan Case'}`;
+
       const rows = [
-        ['Deceased / Record Name', r.name || 'Unknown'],
-        ['Service Type', r.service_type || 'Burial Service'],
-        ['Informant / Requestor', r.informant_name || '—'],
-        ['Informant Contact', r.contact || '—'],
-        ['Status', `<span class="badge-status ${badgeClass(r.status)}">${statusLabel(r.status)}</span>`],
-        ['Submitted / Reported', formatDateTime(r.date)]
+        ['Record / Case Reference', refDisplay],
+        ['Service Classification', r.service_type || 'Burial Service'],
+        ['Deceased Full Name', r.name || 'Unknown'],
+        ['Informant / Applicant', r.informant_name || '—'],
+        ['Contact Details', r.contact || '—'],
+        ['Overall Case Status', getBadgeHtml(r.status)],
+        ['Submitted / Reported Date', formatDisplayDateTime(r.date)]
       ];
-      if (r.request_type) rows.push(['Request / Certificate Type', r.request_type]);
-      if (r.date_of_death) rows.push(['Date of Death', r.date_of_death]);
+
+      if (r.date_of_death) rows.push(['Date of Death', formatDisplayDate(r.date_of_death)]);
       if (r.place_of_death) rows.push(['Place of Death', r.place_of_death]);
-      if (r.requested_services) rows.push(['Requested Services / Location', r.requested_services]);
-      rows.push(['Cemetery & Plot', `${r.plot_number || 'Pending'} (${r.cemetery_pref || 'Local'})`]);
-      if (r.death_cert_status) rows.push(['Certificate Status', r.death_cert_status]);
-      if (r.cemetery_plot_status) rows.push(['Plot Assignment Status', r.cemetery_plot_status]);
-      if (r.scheduled_release_date) rows.push(['Scheduled Burial / Release', r.scheduled_release_date]);
-      if (r.assigned_staff_name) rows.push(['Assigned Staff', r.assigned_staff_name]);
-      if (r.details) rows.push(['Notes / Remarks', r.details]);
+      if (r.cemetery_pref || r.plot_number) rows.push(['Cemetery & Plot Reference', `${r.plot_number || 'Pending'} (${r.cemetery_pref || 'ISCAG Cemetery'})`]);
+      if (r.death_cert_status) rows.push(['Civil Death Certificate Status', r.death_cert_status]);
+      if (r.scheduled_release_date) rows.push(['Scheduled Burial / Release', formatDisplayDate(r.scheduled_release_date)]);
+      if (r.assigned_staff_name) rows.push(['Assigned Handling Staff', r.assigned_staff_name]);
+      if (r.requested_services) rows.push(['Services Requested / Location', r.requested_services]);
+      if (r.details) rows.push(['Remarks / Case Notes', r.details]);
 
       document.getElementById('damayan-mdl-body').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr;gap:10px;">
           ${rows.map(([k, v]) => `
             <div style="display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px dashed var(--border-color,#e2e8f0);">
-              <span style="color:var(--text-muted);font-weight:600;min-width:155px;">${escHtml(k)}</span>
-              <span style="text-align:right;font-weight:600;word-break:break-word;">${k === 'Status' ? v : escHtml(v)}</span>
+              <span style="color:var(--text-muted);font-weight:600;min-width:170px;">${escHtml(k)}</span>
+              <span style="text-align:right;font-weight:600;word-break:break-word;">${k === 'Overall Case Status' ? v : escHtml(v)}</span>
             </div>
           `).join('')}
         </div>`;
@@ -220,21 +595,23 @@
       document.getElementById('damayan-review-modal').style.display = 'none';
     }
 
-    // Billing
-    const billTb = document.getElementById('bill-tbody');
-    if (!bills.length) {
-      billTb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted);">No billing records.</td></tr>';
-    } else {
-      billTb.innerHTML = bills.map(b => `<tr>
-        <td class="td-id">${b.id}</td><td style="font-weight:600;">${b.name}</td>
-        <td style="font-weight:700;">${currencyFormat(b.amount)}</td>
-        <td style="color:var(--text-muted);">${formatDate(b.dueDate)}</td>
-        <td><span class="badge-status ${badgeClass(b.status)}">${statusLabel(b.status)}</span></td>
-      </tr>`).join('');
-    }
+    // ── View switch listener ──
+    document.querySelectorAll('#damayanViewSwitch .pill-tab').forEach(tab => {
+      tab.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('#damayanViewSwitch .pill-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        currentView = this.dataset.view;
+        renderTable(true);
+      });
+    });
 
-    // Auto-open review modal when navigated from MIS Admin Dashboard (?type=...&id=...)
-    (function initDamayanParams() {
+    // ── Input change listeners ──
+    document.getElementById('damayan-search').addEventListener('input', () => renderTable(true));
+    document.getElementById('damayan-status-filter').addEventListener('change', () => renderTable(true));
+
+    // ── Handle URL parameters (e.g. ?type=...&id=...) ──
+    (function initUrlParams() {
       const params = new URLSearchParams(window.location.search);
       const qType = params.get('type') || '';
       const qId = params.get('id');
@@ -242,8 +619,10 @@
         openDamayanReviewModal(qType, qId);
       }
     })();
+
+    // ── Initial Render ──
+    renderTable(true);
   </script>
 </body>
 
 </html>
-
