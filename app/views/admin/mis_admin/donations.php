@@ -23,9 +23,9 @@
       --info: #0284c7;
     }
 
-    .kpi-grid-5 {
+    .kpi-grid-4 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -258,27 +258,6 @@
     }
 
     /* Badges */
-    .seal-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-family: 'JetBrains Mono', 'Courier New', monospace;
-      font-size: 0.72rem;
-      font-weight: 700;
-      background: #ecfdf5;
-      color: #047857;
-      border: 1px solid #a7f3d0;
-      padding: 3px 8px;
-      border-radius: 6px;
-      letter-spacing: 0.02em;
-    }
-
-    .seal-badge svg {
-      width: 12px;
-      height: 12px;
-      fill: currentColor;
-    }
-
     .status-tag {
       display: inline-block;
       padding: 4px 9px;
@@ -438,35 +417,6 @@
       color: var(--text-main);
     }
 
-    .integrity-box {
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 8px;
-      padding: 12px 14px;
-      margin-top: 14px;
-      font-size: 0.8rem;
-    }
-
-    .integrity-box-title {
-      font-weight: 700;
-      color: #166534;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 4px;
-    }
-
-    .integrity-hash-code {
-      font-family: 'JetBrains Mono', monospace;
-      word-break: break-all;
-      background: #dcfce7;
-      padding: 4px 8px;
-      border-radius: 4px;
-      margin-top: 4px;
-      color: #14532d;
-      font-size: 0.72rem;
-    }
-
     .modal-footer {
       padding: 14px 22px;
       background: #f8faf9;
@@ -509,7 +459,7 @@
         </div>
 
         <!-- ═══════ KPI SUMMARY RIBBON ═══════ -->
-        <div class="kpi-grid-5">
+        <div class="kpi-grid-4">
           <!-- Total Verified Revenue -->
           <div class="kpi-card">
             <div class="kpi-icon-wrap" style="background:#ecfdf5;color:#059669;">
@@ -519,7 +469,7 @@
             </div>
             <div>
               <div class="kpi-val" style="color:#059669;">₱<?= number_format($summary['monetary_total'] ?? 0, 2) ?></div>
-              <div class="kpi-sub">Verified Donations</div>
+              <div class="kpi-sub">Total Monetary Donations</div>
             </div>
           </div>
 
@@ -559,19 +509,6 @@
             <div>
               <div class="kpi-val" style="color:#ea580c;"><?= number_format($summary['pending_count'] ?? 0) ?></div>
               <div class="kpi-sub">Awaiting Review</div>
-            </div>
-          </div>
-
-          <!-- Data Integrity Status -->
-          <div class="kpi-card">
-            <div class="kpi-icon-wrap" style="background:#f0fdf4;color:#16a34a;">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
-              </svg>
-            </div>
-            <div>
-              <div class="kpi-val" style="color:#16a34a;">100%</div>
-              <div class="kpi-sub">Verified Records</div>
             </div>
           </div>
         </div>
@@ -623,7 +560,7 @@
         <!-- ═══════ DONATIONS DATA TABLE ═══════ -->
         <div class="donations-card">
           <div class="table-container">
-            <table class="donations-table" id="donationsTable">
+            <table class="donations-table" id="donationsTable" data-paginate="false">
               <thead>
                 <tr>
                   <th>Ref # &amp; Date</th>
@@ -733,6 +670,7 @@
               </tbody>
             </table>
           </div>
+          <div id="donations-pagination" class="mis-pagination-bar"></div>
         </div>
 
       </div>
@@ -855,26 +793,60 @@
   <script>
     standardizePage('admin');
 
-    // ── Tab Navigation ──
+    // ── Tab Navigation & Pagination ──
     let activeTab = 'all';
+    let currentPage = 1;
+    const perPage = 10;
+
     document.querySelectorAll('#tabPills .tab-pill').forEach(pill => {
       pill.addEventListener('click', function(e) {
         e.preventDefault();
         document.querySelectorAll('#tabPills .tab-pill').forEach(p => p.classList.remove('active'));
         this.classList.add('active');
         activeTab = this.dataset.filter;
-        filterDonationsTable();
+        filterDonationsTable(true);
       });
     });
 
-    // ── Live Filtering ──
-    function filterDonationsTable() {
+    function buildPaginationButtons(curr, total) {
+      if (total <= 1) return '';
+      let html = `<button type="button" class="mis-page-btn" data-dir="prev" ${curr === 1 ? 'disabled' : ''} aria-label="Previous Page">&laquo; Prev</button>`;
+      
+      const pages = [];
+      if (total <= 7) {
+        for (let i = 1; i <= total; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        if (curr > 3) pages.push('...');
+        const start = Math.max(2, curr - 1);
+        const end = Math.min(total - 1, curr + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (curr < total - 2) pages.push('...');
+        pages.push(total);
+      }
+
+      pages.forEach(p => {
+        if (p === '...') {
+          html += `<span class="mis-page-ellipsis">…</span>`;
+        } else {
+          html += `<button type="button" class="mis-page-btn ${p === curr ? 'active' : ''}" data-p="${p}">${p}</button>`;
+        }
+      });
+
+      html += `<button type="button" class="mis-page-btn" data-dir="next" ${curr === total ? 'disabled' : ''} aria-label="Next Page">Next &raquo;</button>`;
+      return html;
+    }
+
+    // ── Live Filtering & Paginated Display ──
+    function filterDonationsTable(resetPage = true) {
+      if (resetPage) currentPage = 1;
       const search = (document.getElementById('searchInput').value || '').toLowerCase().trim();
       const cat = (document.getElementById('categorySelect').value || '').toLowerCase().trim();
       const prog = (document.getElementById('programSelect').value || '').toLowerCase().trim();
-      const rows = document.querySelectorAll('#donationsTbody tr');
+      const rows = Array.from(document.querySelectorAll('#donationsTbody tr'));
 
-      let visibleCount = 0;
+      const matchedRows = [];
+      const hiddenRows = [];
 
       rows.forEach(row => {
         // Skip empty placeholder row if present
@@ -903,13 +875,89 @@
         let matchProg = !prog || rProg.includes(prog);
 
         if (matchTab && matchSearch && matchCat && matchProg) {
-          row.style.display = '';
-          visibleCount++;
+          matchedRows.push(row);
         } else {
-          row.style.display = 'none';
+          hiddenRows.push(row);
         }
       });
+
+      hiddenRows.forEach(r => {
+        r.style.display = 'none';
+        r.classList.add('mis-page-hidden');
+      });
+
+      const total = matchedRows.length;
+      const bar = document.getElementById('donations-pagination');
+
+      // Empty state handling
+      let emptyRow = document.getElementById('donations-filter-empty-row');
+      if (total === 0) {
+        if (!emptyRow) {
+          emptyRow = document.createElement('tr');
+          emptyRow.id = 'donations-filter-empty-row';
+          emptyRow.innerHTML = '<td colspan="8" style="text-align:center;padding:36px;color:var(--text-muted);">No donation records match the selected filters.</td>';
+          document.getElementById('donationsTbody').appendChild(emptyRow);
+        }
+        emptyRow.style.display = '';
+        if (bar) bar.style.display = 'none';
+        return;
+      } else if (emptyRow) {
+        emptyRow.style.display = 'none';
+      }
+
+      const totalPages = Math.max(1, Math.ceil(total / perPage));
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      const startIdx = (currentPage - 1) * perPage;
+      const endIdx = Math.min(startIdx + perPage, total);
+
+      matchedRows.forEach((r, idx) => {
+        if (idx >= startIdx && idx < endIdx) {
+          r.style.display = '';
+          r.classList.remove('mis-page-hidden');
+        } else {
+          r.style.display = 'none';
+          r.classList.add('mis-page-hidden');
+        }
+      });
+
+      if (bar) {
+        bar.style.display = 'flex';
+        bar.innerHTML = `
+          <div class="mis-pagination-info">Showing ${startIdx + 1}–${endIdx} of ${total} donations</div>
+          <div class="mis-pagination-controls">
+            ${buildPaginationButtons(currentPage, totalPages)}
+          </div>
+        `;
+
+        bar.querySelectorAll('.mis-page-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (btn.disabled) return;
+            const p = btn.getAttribute('data-p');
+            const dir = btn.getAttribute('data-dir');
+            if (p) {
+              const target = parseInt(p, 10);
+              if (target !== currentPage) {
+                currentPage = target;
+                filterDonationsTable(false);
+              }
+            } else if (dir === 'prev' && currentPage > 1) {
+              currentPage--;
+              filterDonationsTable(false);
+            } else if (dir === 'next' && currentPage < totalPages) {
+              currentPage++;
+              filterDonationsTable(false);
+            }
+          });
+        });
+      }
     }
+
+    // Auto-run on load
+    document.addEventListener('DOMContentLoaded', () => filterDonationsTable(true));
+    filterDonationsTable(true);
 
     // ── Modal Handlers ──
     function openModal(id) {

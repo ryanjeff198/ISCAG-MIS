@@ -1686,8 +1686,8 @@ class AdminController extends Controller
 
     /**
      * MIS Admin: Received Donations Portal
-     * Displays all donations across categories (Monetary & In-Kind) with live cryptographic
-     * verification seals (SHA-256), search, filtering, and export capabilities.
+     * Displays all donations across categories (Monetary & In-Kind) with search,
+     * filtering, and export capabilities.
      */
     public function donations(): void {
         Auth::protectRole(['Admin', 'Staff_Tenant']);
@@ -1715,8 +1715,7 @@ class AdminController extends Controller
             'inkind_count'         => 0,
             'inkind_items_total'   => 0,
             'pending_count'        => 0,
-            'verified_count'       => 0,
-            'integrity_pass_count' => 0
+            'verified_count'       => 0
         ];
 
         foreach ($donations as &$d) {
@@ -1742,13 +1741,6 @@ class AdminController extends Controller
                 $summary['pending_count']++;
             } elseif (!in_array($stLow, ['rejected', 'cancelled'])) {
                 $summary['verified_count']++;
-            }
-
-            // Cryptographic Integrity Verification
-            $integrity = $charity->verifyRecordIntegrity($d);
-            $d['integrity_check'] = $integrity;
-            if ($integrity['is_valid']) {
-                $summary['integrity_pass_count']++;
             }
         }
         unset($d);

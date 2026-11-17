@@ -573,8 +573,6 @@ class CharityProgram
         foreach ($rows as &$r) {
             $r['available_amount'] = max(0, (float)$r['amount'] - (float)$r['allocated_amount']);
             $r['available_quantity'] = max(0, (int)$r['quantity'] - (int)$r['allocated_quantity']);
-            $r['integrity_seal'] = strtoupper(substr($this->generateIntegritySeal($r), 0, 12));
-            $r['integrity_valid'] = true;
         }
 
         return $rows;
